@@ -1,0 +1,166 @@
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE QuasiQuotes           #-}
+{-# LANGUAGE TemplateHaskell       #-}
+
+
+module GHCup.Platform where
+
+
+import           GHCup.Errors
+import           GHCup.Types
+import           GHCup.Types.JSON               ( )
+import           GHCup.Utils.Bash
+import           GHCup.Utils.File
+import           GHCup.Utils.Prelude
+import           GHCup.Utils.String.QQ
+
+import           Control.Applicative
+import           Control.Exception.Safe
+import           Control.Monad
+import           Control.Monad.Logger
+import           Control.Monad.Reader
+import           Control.Monad.Trans.Class      ( lift )
+import           Data.Foldable
+import           Data.Maybe
+import           Data.String.Interpolate
+import           Data.Text                      ( Text )
+import           Data.Versions
+import           HPath
+import           HPath.IO
+import           Haskus.Utils.Variant.Excepts
+import           Prelude                 hiding ( abs
+                                                , readFile
+                                                , writeFile
+                                                )
+import           System.Info
+
+import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as E
+import qualified Data.Text.ICU                 as ICU
+
+    --------------------------
+    --[ Platform detection ]--
+    --------------------------
+
+
+getArchitecture :: Either NoCompatibleArch Architecture
+getArchitecture = case arch of
+  "x86_64" -> Right A_64
+  "i386"   -> Right A_32
+  what     -> Left (NoCompatibleArch what)
+
+
+
+getPlatform :: (MonadLogger m, MonadCatch m, MonadIO m)
+            => Excepts
+                 '[NoCompatiblePlatform , DistroNotFound]
+                 m
+                 PlatformResult
+getPlatform = do
+  pfr <- case os of
+    "linux" -> do
+      (distro, ver) <- liftE getLinuxDistro
+      pure $ PlatformResult { _platform = Linux distro, _distroVersion = ver }
+    -- TODO: these are not verified
+    "darwin" ->
+      pure $ PlatformResult { _platform = Darwin, _distroVersion = Nothing }
+    "freebsd" -> do
+      ver <- getFreeBSDVersion
+      pure $ PlatformResult { _platform = FreeBSD, _distroVersion = ver }
+    what -> throwE $ NoCompatiblePlatform what
+  lift $ $(logDebug) [i|Identified Platform as: #{pfr}|]
+  pure pfr
+  where getFreeBSDVersion = pure Nothing
+
+
+getLinuxDistro :: (MonadCatch m, MonadIO m)
+               => Excepts '[DistroNotFound] m (LinuxDistro, Maybe Versioning)
+getLinuxDistro = do
+  -- TODO: don't do alternative on IO, because it hides bugs
+  (name, ver) <- handleIO (\_ -> throwE DistroNotFound) $ liftIO $ asum
+    [ try_os_release
+    , try_lsb_release_cmd
+    , try_lsb_release
+    , try_redhat_release
+    , try_debian_version
+    ]
+  let parsedVer = ver >>= either (const Nothing) Just . versioning
+      distro    = if
+        | hasWord name ["debian"]  -> Debian
+        | hasWord name ["ubuntu"]  -> Ubuntu
+        | hasWord name ["linuxmint", "Linux Mint"] -> Mint
+        | hasWord name ["fedora"]  -> Fedora
+        | hasWord name ["centos"]  -> CentOS
+        | hasWord name ["Red Hat"] -> RedHat
+        | hasWord name ["alpine"]  -> Alpine
+        | hasWord name ["exherbo"] -> Exherbo
+        | hasWord name ["gentoo"]  -> Gentoo
+        | hasWord name ["amazonlinux", "Amazon Linux"] -> AmazonLinux
+        | otherwise                -> UnknownLinux
+  pure (distro, parsedVer)
+ where
+  hasWord t matches = foldr
+    (\x y ->
+      ( isJust
+        . ICU.find (ICU.regex [ICU.CaseInsensitive] ([s|\b|] <> x <> [s|\b|]))
+        $ t
+        )
+        || y
+    )
+    False
+    (T.pack <$> matches)
+
+  os_release :: Path Abs
+  os_release = [abs|/etc/os-release|]
+  lsb_release :: Path Abs
+  lsb_release = [abs|/etc/lsb-release|]
+  lsb_release_cmd :: Path Rel
+  lsb_release_cmd = [rel|lsb-release|]
+  redhat_release :: Path Abs
+  redhat_release = [abs|/etc/redhat-release|]
+  debian_version :: Path Abs
+  debian_version = [abs|/etc/debian_version|]
+
+  try_os_release :: IO (Text, Maybe Text)
+  try_os_release = do
+    (Just name) <- getAssignmentValueFor os_release "NAME"
+    ver         <- getAssignmentValueFor os_release "VERSION_ID"
+    pure (T.pack name, fmap T.pack ver)
+
+  try_lsb_release_cmd :: IO (Text, Maybe Text)
+  try_lsb_release_cmd = do
+    (Just _) <- findExecutable lsb_release_cmd
+    name     <- fmap _stdOut $ executeOut lsb_release_cmd [[s|-si|]] Nothing
+    ver      <- fmap _stdOut $ executeOut lsb_release_cmd [[s|-sr|]] Nothing
+    pure (E.decodeUtf8 name, Just $ E.decodeUtf8 ver)
+
+  try_lsb_release :: IO (Text, Maybe Text)
+  try_lsb_release = do
+    (Just name) <- getAssignmentValueFor lsb_release "DISTRIB_ID"
+    ver         <- getAssignmentValueFor lsb_release "DISTRIB_RELEASE"
+    pure (T.pack name, fmap T.pack ver)
+
+  try_redhat_release :: IO (Text, Maybe Text)
+  try_redhat_release = do
+    t <- fmap lBS2sT $ readFile redhat_release
+    let nameRe n =
+          join
+            . fmap (ICU.group 0)
+            . ICU.find
+                (ICU.regex [ICU.CaseInsensitive] ([s|\b|] <> fS n <> [s|\b|]))
+            $ t
+        verRe =
+          join
+            . fmap (ICU.group 0)
+            . ICU.find
+                (ICU.regex [ICU.CaseInsensitive] [s|\b(\d)+(.(\d)+)*\b|])
+            $ t
+    (Just name) <- pure
+      (nameRe "CentOS" <|> nameRe "Fedora" <|> nameRe "Red Hat")
+    pure (name, verRe)
+
+  try_debian_version :: IO (Text, Maybe Text)
+  try_debian_version = do
+    ver <- readFile debian_version
+    pure (T.pack "debian", Just $ lBS2sT ver)
