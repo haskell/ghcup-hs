@@ -104,10 +104,10 @@ getDownloads = do
   lift $ $(logDebug) [i|Receiving download info from: #{urlSource}|]
   case urlSource of
     GHCupURL -> do
-      bs <- reThrowAll DownloadFailed $ dl ghcupURL
+      bs <- reThrowAll DownloadFailed $ smartDl ghcupURL
       lE' JSONDecodeError $ eitherDecode' bs
     (OwnSource url) -> do
-      bs <- reThrowAll DownloadFailed $ dl url
+      bs <- reThrowAll DownloadFailed $ downloadBS url
       lE' JSONDecodeError $ eitherDecode' bs
     (OwnSpec av) -> pure $ av
 
@@ -121,7 +121,7 @@ getDownloads = do
   -- than the local file.
   --
   -- Always save the local file with the mod time of the remote file.
-  dl :: forall m1
+  smartDl :: forall m1
       . (MonadCatch m1, MonadIO m1, MonadFail m1, MonadLogger m1)
      => URI
      -> Excepts
@@ -134,7 +134,7 @@ getDownloads = do
            ]
           m1
           L.ByteString
-  dl uri' = do
+  smartDl uri' = do
     let path = view pathL' uri'
     json_file <- (liftIO $ ghcupCacheDir)
       >>= \cacheDir -> (cacheDir </>) <$> urlBaseName path
