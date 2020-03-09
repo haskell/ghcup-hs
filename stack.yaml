@@ -1,0 +1,39 @@
+resolver: lts-14.27
+packages:
+    - .
+extra-deps:
+    - IfElse-0.85@sha256:6939b94acc6a55f545f63a168a349dd2fbe4b9a7cca73bf60282db5cc6aa47d2
+    - ascii-string-1.0.1.3
+    - brotli-0.0.0.0@sha256:448061ceabdcaa752bbaf208f255bbb7e90bbcf8ea8a913d26ffa7887636823b
+    - brotli-streams-0.0.0.0@sha256:c75a1d5d33420cbc9399c315e9b50a1976a5370f4fa8a40c71e11d011c2fedd6
+    - case-insensitive-1.2.1.0
+    - data-default-instances-base-0.1.0.1@sha256:985a13d7103e45a65f06f277b735ef025636014f0d29dd6de998bc7628e09be9
+    - fusion-plugin-types-0.1.0@sha256:0f11bbc445ab8ae3dbbb3d5d2ea198bdb1ac020518b7f4f7579035dc89182438
+    - generics-sop-0.5.0.0
+    - haskus-utils-data-1.2@sha256:48f62aa23d84b94edd0338379d3b3d74a34d3c2dbabf8c448a774a89ca70ea5d
+    - haskus-utils-types-1.5
+    - haskus-utils-variant-3.0
+    - hpath-0.11.0
+    - hpath-directory-0.13.2
+    - hpath-filepath-0.10.4
+    - hpath-io-0.13.1
+    - hpath-posix-0.13.1
+    - http-io-streams-0.1.2.0
+    - indexed-profunctors-0.1@sha256:ddf618d0d4c58319c1e735e746bc69a1021f13b6f475dc9614b80af03432e6d4
+    - language-bash-0.9.0
+    - optics-0.2
+    - optics-core-0.2@sha256:cfdf39871553769b59fcc54863a3521d262ea25d8d05d0f41ab87296c560cfa6
+    - optics-extra-0.2@sha256:211ce1dfd1b3ffd95c1158d8c8beb53cbd17c4d477169e226b1831607f6789eb
+    - optics-th-0.2@sha256:b4f6c5a3f134c697837190ed6da969dd284aefe79e43c3ef793093b607bb83b9
+    - optics-vl-0.2
+    - optparse-applicative-0.15.1.0
+    - pretty-terminal-0.1.0.0
+    - sop-core-0.5.0.0@sha256:8734ab38b8c84837094eec657da0b58942e481e20166131f34cf6c7fe9787b07
+    - streamly-0.7.1
+    - streamly-bytestring-0.1.2
+    - streamly-posix-0.1.0.0
+    - strict-base-0.4.0.0
+    - string-interpolate-0.2.0.0
+    - table-layout-0.8.0.5
+    - tar-bytestring-0.6.3.0
+    - time-1.9.3
