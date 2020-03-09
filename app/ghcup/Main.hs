@@ -18,11 +18,13 @@ import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 import           GHCup.Version
 
+import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Bifunctor
 import           Data.Char
+import           Data.Either
 import           Data.List                      ( intercalate )
 import           Data.Semigroup                 ( (<>) )
 import           Data.String.Interpolate
@@ -127,8 +129,11 @@ opts =
     <*> (optional
           (option
             (eitherReader parseUri)
-            (short 's' <> long "url-source" <> metavar "URL" <> help
-              "Alternative ghcup download info url" <> internal
+            (  short 's'
+            <> long "url-source"
+            <> metavar "URL"
+            <> help "Alternative ghcup download info url"
+            <> internal
             )
           )
         )
@@ -167,13 +172,13 @@ com =
                  (progDesc "Upgrade ghcup (per default in ~/.ghcup/bin/)")
                )
            )
-          <> command
-               "compile"
-               (   Compile
-               <$> (info (compileP <**> helper)
-                         (progDesc "Compile a tool from source")
-                   )
+      <> command
+           "compile"
+           (   Compile
+           <$> (info (compileP <**> helper)
+                     (progDesc "Compile a tool from source")
                )
+           )
       <> commandGroup "Main commands:"
       )
     <|> subparser
@@ -416,7 +421,6 @@ main = do
                       , DistroNotFound
                       , FileDoesNotExistError
                       , CopyError
-                      , JSONError
                       , NoCompatibleArch
                       , NoDownload
                       , NotInstalled
@@ -427,22 +431,21 @@ main = do
                       , DownloadFailed
                       ]
 
-          let runSetGHC =
-                runLogger
-                  . flip runReaderT settings
-                  . runE
-                    @'[ FileDoesNotExistError
-                      , NotInstalled
-                      , TagNotFound
-                      , JSONError
-                      , TagNotFound
-                      , DownloadFailed
-                      ]
+          let
+            runSetGHC =
+              runLogger
+                . flip runReaderT settings
+                . runE
+                  @'[ FileDoesNotExistError
+                    , NotInstalled
+                    , TagNotFound
+                    , TagNotFound
+                    ]
 
           let runListGHC =
                 runLogger
                   . flip runReaderT settings
-                  . runE @'[FileDoesNotExistError , JSONError , DownloadFailed]
+                  . runE @'[FileDoesNotExistError]
 
           let runRmGHC =
                 runLogger . flip runReaderT settings . runE @'[NotInstalled]
@@ -461,12 +464,10 @@ main = do
                     @'[ AlreadyInstalled
                       , BuildFailed
                       , DigestError
-                      , DownloadFailed
                       , GHCupSetError
                       , NoDownload
                       , UnknownArchive
-                     --
-                      , JSONError
+                      , DownloadFailed
                       ]
 
           let runCompileCabal =
@@ -474,12 +475,11 @@ main = do
                   . flip runReaderT settings
                   . runResourceT
                   . runE
-                    @'[ JSONError
-                      , UnknownArchive
+                    @'[ UnknownArchive
                       , NoDownload
                       , DigestError
-                      , DownloadFailed
                       , BuildFailed
+                      , DownloadFailed
                       ]
 
           let runUpgrade =
@@ -493,18 +493,29 @@ main = do
                       , NoCompatibleArch
                       , NoDownload
                       , FileDoesNotExistError
-                      , JSONError
-                      , DownloadFailed
                       , CopyError
+                      , DownloadFailed
                       ]
 
+          dls <-
+            ( runLogger
+              . flip runReaderT settings
+              . runE @'[JSONError , DownloadFailed]
+              $ liftE getDownloads
+              )
+              >>= \case
+                    VRight r -> pure r
+                    VLeft e ->
+                      runLogger
+                          ($(logError) [i|Error fetching download info: #{e}|])
+                        >> exitFailure
+          runLogger $ checkForUpdates dls
 
           case optCommand of
             Install (InstallGHC InstallOptions {..}) ->
               void
                 $   (runInstTool $ do
-                      dls <- liftE getDownloads
-                      v   <- liftE $ fromVersion dls instVer GHC
+                      v <- liftE $ fromVersion dls instVer GHC
                       liftE $ installGHCBin dls v Nothing
                     )
                 >>= \case
@@ -527,8 +538,7 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
             Install (InstallCabal InstallOptions {..}) ->
               void
                 $   (runInstTool $ do
-                      dls <- liftE getDownloads
-                      v   <- liftE $ fromVersion dls instVer Cabal
+                      v <- liftE $ fromVersion dls instVer Cabal
                       liftE $ installCabalBin dls v Nothing
                     )
                 >>= \case
@@ -546,8 +556,7 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
             SetGHC (SetGHCOptions {..}) ->
               void
                 $   (runSetGHC $ do
-                      dls <- liftE getDownloads
-                      v   <- liftE $ fromVersion dls ghcVer GHC
+                      v <- liftE $ fromVersion dls ghcVer GHC
                       liftE $ setGHC v SetGHCOnly
                     )
                 >>= \case
@@ -559,7 +568,6 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
             List (ListOptions {..}) ->
               void
                 $   (runListGHC $ do
-                      dls <- liftE getDownloads
                       liftIO $ listVersions dls lTool lCriteria
                     )
                 >>= \case
@@ -590,7 +598,6 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
             Compile (CompileGHC CompileOptions {..}) ->
               void
                 $   (runCompileGHC $ do
-                      dls <- liftE getDownloads
                       liftE
                         $ compileGHC dls targetVer bootstrapVer jobs buildConfig
                     )
@@ -613,11 +620,7 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
             Compile (CompileCabal CompileOptions {..}) ->
               void
                 $   (runCompileCabal $ do
-                      dls <- liftE getDownloads
-                      liftE $ compileCabal dls
-                                           targetVer
-                                           bootstrapVer
-                                           jobs
+                      liftE $ compileCabal dls targetVer bootstrapVer jobs
                     )
                 >>= \case
                       VRight _ ->
@@ -645,7 +648,6 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
 
               void
                 $   (runUpgrade $ do
-                      dls <- liftE getDownloads
                       liftE $ upgradeGHCup dls target
                     )
                 >>= \case
@@ -700,3 +702,12 @@ printListResult lr = do
             )
             lr
   putStrLn $ formatted
+
+
+checkForUpdates :: (MonadFail m, MonadLogger m) => GHCupDownloads -> m ()
+checkForUpdates dls = do
+  forM_ (getLatest dls GHCup) $ \l -> do
+    (Right ghc_ver) <- pure $ version $ prettyPVP ghcUpVer
+    when (l > ghc_ver)
+      $ $(logWarn)
+          [i|New GHCup version available: #{prettyVer l}. To upgrade, run 'ghcup upgrade'|]
