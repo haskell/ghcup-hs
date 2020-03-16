@@ -336,11 +336,11 @@ listVersions av lt criteria = case lt of
       pure ListResult { lVer = v, lTag = tags, lTool = t, .. }
     Cabal -> do
       lSet       <- fmap (== v) $ cabalSet
-      lInstalled <- cabalInstalled v
+      let lInstalled = lSet
       pure ListResult { lVer = v, lTag = tags, lTool = t, fromSrc = False, .. }
     GHCup -> do
       let lSet       = prettyPVP ghcUpVer == prettyVer v
-      let lInstalled = True
+      let lInstalled = lSet
       pure ListResult { lVer = v, lTag = tags, lTool = t, fromSrc = False, .. }
 
 
@@ -651,7 +651,7 @@ upgradeGHCup :: ( MonadMask m
                   Version
 upgradeGHCup dls mtarget = do
   lift $ $(logInfo) [i|Upgrading GHCup...|]
-  let latestVer = head $ getTagged dls GHCup Latest
+  let latestVer = fromJust $ getLatest dls GHCup
   dli <- liftE $ getDownloadInfo dls GHCup latestVer Nothing
   tmp <- lift withGHCupTmpDir
   let fn = [rel|ghcup|]
