@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 
@@ -21,6 +22,7 @@ import           Control.Monad
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Class      ( lift )
+import           Data.ByteString                ( ByteString )
 import           Data.Foldable
 import           Data.Maybe
 import           Data.String.Interpolate
@@ -34,10 +36,10 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.Info
+import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
-import qualified Data.Text.ICU                 as ICU
 
     --------------------------
     --[ Platform detection ]--
@@ -100,16 +102,11 @@ getLinuxDistro = do
         | otherwise                -> UnknownLinux
   pure (distro, parsedVer)
  where
-  hasWord t matches = foldr
-    (\x y ->
-      ( isJust
-        . ICU.find (ICU.regex [ICU.CaseInsensitive] ([s|\b|] <> x <> [s|\b|]))
-        $ t
-        )
-        || y
-    )
-    False
-    (T.pack <$> matches)
+  hasWord t matches = foldr (\x y -> match (regex x) (T.unpack t) || y)
+                            False
+                            matches
+   where
+    regex x = makeRegexOpts compIgnoreCase execBlank ([s|\<|] ++ x ++ [s|\>|])
 
   os_release :: Path Abs
   os_release = [abs|/etc/os-release|]
@@ -144,21 +141,25 @@ getLinuxDistro = do
   try_redhat_release :: IO (Text, Maybe Text)
   try_redhat_release = do
     t <- fmap lBS2sT $ readFile redhat_release
-    let nameRe n =
-          join
-            . fmap (ICU.group 0)
-            . ICU.find
-                (ICU.regex [ICU.CaseInsensitive] ([s|\b|] <> fS n <> [s|\b|]))
-            $ t
-        verRe =
-          join
-            . fmap (ICU.group 0)
-            . ICU.find
-                (ICU.regex [ICU.CaseInsensitive] [s|\b(\d)+(.(\d)+)*\b|])
-            $ t
+    let nameRegex n =
+          makeRegexOpts
+            compIgnoreCase
+            execBlank
+            (([s|\<|] <> fS n <> [s|\>|] :: ByteString)) :: Regex
+    let verRegex =
+          makeRegexOpts
+            compIgnoreCase
+            execBlank
+            ([s|\<([0-9])+(.([0-9])+)*\>|] :: ByteString) :: Regex
+    let nameRe n = fromEmpty . match (nameRegex n) $ T.unpack t :: Maybe String
+        verRe = fromEmpty . match verRegex $ T.unpack t :: Maybe String
     (Just name) <- pure
       (nameRe "CentOS" <|> nameRe "Fedora" <|> nameRe "Red Hat")
-    pure (name, verRe)
+    pure (T.pack name, fmap T.pack verRe)
+   where
+    fromEmpty :: String -> Maybe String
+    fromEmpty ""  = Nothing
+    fromEmpty s' = Just s'
 
   try_debian_version :: IO (Text, Maybe Text)
   try_debian_version = do

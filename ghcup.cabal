@@ -52,6 +52,7 @@ common optics-vl { build-depends: optics-vl >= 0.2 }
 common optparse-applicative { build-depends: optparse-applicative >= 0.15.1.0 }
 common parsec { build-depends: parsec >= 3.1 }
 common pretty-terminal { build-depends: pretty-terminal >= 0.1.0.0 }
+common regex-posix { build-depends: regex-posix >= 0.96 }
 common resourcet { build-depends: resourcet >= 1.2.2 }
 common safe { build-depends: safe >= 0.3.18 }
 common safe-exceptions { build-depends: safe-exceptions >= 0.1 }
@@ -65,7 +66,6 @@ common tar-bytestring { build-depends: tar-bytestring >= 0.6.3.0 }
 common template-haskell { build-depends: template-haskell >= 2.7 }
 common terminal-progress-bar { build-depends: terminal-progress-bar >= 0.4.1 }
 common text { build-depends: text >= 1.2 }
-common text-icu { build-depends: text-icu >= 0.7 }
 common time { build-depends: time >= 1.9.3 }
 common transformers { build-depends: transformers >= 0.5 }
 common unix { build-depends: unix >= 2.7 }
@@ -124,6 +124,7 @@ library
                      , optics-vl
                      , parsec
                      , pretty-terminal
+                     , regex-posix
                      , resourcet
                      , safe
                      , safe-exceptions
@@ -136,7 +137,6 @@ library
                      , template-haskell
                      , terminal-progress-bar
                      , text
-                     , text-icu
                      , time
                      , transformers
                      , unix
