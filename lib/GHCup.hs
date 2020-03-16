@@ -133,13 +133,13 @@ installGHCBin bDls ver mpfReq = do
     lEM $ liftIO $ execLogged [s|./configure|]
                               False
                               [[s|--prefix=|] <> toFilePath inst]
-                              ([rel|ghc-configure.log|] :: Path Rel)
+                              [rel|ghc-configure.log|]
                               (Just path)
                               Nothing
     lEM $ liftIO $ execLogged [s|make|]
                               True
                               [[s|install|]]
-                              ([rel|ghc-make.log|] :: Path Rel)
+                              [rel|ghc-make.log|]
                               (Just path)
                               Nothing
     pure ()
@@ -196,7 +196,7 @@ installCabalBin bDls ver mpfReq = do
                 -> Excepts '[CopyError] m ()
   installCabal' path inst = do
     lift $ $(logInfo) [s|Installing cabal|]
-    let cabalFile = [rel|cabal|] :: Path Rel
+    let cabalFile = [rel|cabal|]
     liftIO $ createDirIfMissing newDirPerms inst
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
       (path </> cabalFile)
@@ -273,7 +273,7 @@ setGHC ver sghc = do
     destdir <- liftIO $ ghcupBaseDir
     case sghc of
       SetGHCOnly -> do
-        let sharedir     = [rel|share|] :: Path Rel
+        let sharedir     = [rel|share|]
         let fullsharedir = ghcdir </> sharedir
         whenM (liftIO $ doesDirectoryExist fullsharedir) $ do
           let fullF   = destdir </> sharedir
@@ -393,7 +393,7 @@ rmGHCVer ver = do
         $   ghcupBaseDir
         >>= hideError doesNotExistErrorType
         .   deleteFile
-        .   (</> ([rel|share|] :: Path Rel))
+        .   (</> [rel|share|])
     else throwE (NotInstalled GHC ver)
 
 
@@ -509,7 +509,7 @@ GhcWithLlvmCodeGen = YES|]
         lEM $ liftIO $ execLogged [s|./configure|]
                                   False
                                   [[s|--prefix=|] <> toFilePath ghcdir]
-                                  ([rel|ghc-configure.log|] :: Path Rel)
+                                  [rel|ghc-configure.log|]
                                   (Just workdir)
                                   (Just newEnv)
       | otherwise -> do
@@ -519,7 +519,7 @@ GhcWithLlvmCodeGen = YES|]
           [ [s|--prefix=|] <> toFilePath ghcdir
           , [s|--with-ghc=|] <> toFilePath bghc
           ]
-          ([rel|ghc-configure.log|] :: Path Rel)
+          [rel|ghc-configure.log|]
           (Just workdir)
           Nothing
 
@@ -537,7 +537,7 @@ GhcWithLlvmCodeGen = YES|]
     lEM $ liftIO $ execLogged [s|make|]
                               True
                               (maybe [] (\j -> [[s|-j|] <> fS (show j)]) jobs)
-                              ([rel|ghc-make.log|] :: Path Rel)
+                              [rel|ghc-make.log|]
                               (Just workdir)
                               Nothing
 
@@ -545,7 +545,7 @@ GhcWithLlvmCodeGen = YES|]
     lEM $ liftIO $ execLogged [s|make|]
                               True
                               [[s|install|]]
-                              ([rel|ghc-make.log|] :: Path Rel)
+                              [rel|ghc-make.log|]
                               (Just workdir)
                               Nothing
 
@@ -553,7 +553,7 @@ GhcWithLlvmCodeGen = YES|]
     let dest = (ghcdir </> ghcUpSrcBuiltFile)
     liftIO $ copyFile (build_mk workdir) dest Overwrite
 
-  build_mk workdir = workdir </> ([rel|mk/build.mk|] :: Path Rel)
+  build_mk workdir = workdir </> [rel|mk/build.mk|]
 
 
 compileCabal :: ( MonadReader Settings m
@@ -616,7 +616,7 @@ compileCabal dls tver bver jobs = do
     lEM $ liftIO $ execLogged [s|./bootstrap.sh|]
                               False
                               (maybe [] (\j -> [[s|-j|], fS (show j)]) jobs)
-                              ([rel|cabal-bootstrap.log|] :: Path Rel)
+                              [rel|cabal-bootstrap.log|]
                               (Just workdir)
                               (Just newEnv)
 
@@ -654,7 +654,7 @@ upgradeGHCup dls mtarget = do
   let latestVer = head $ getTagged dls GHCup Latest
   dli <- liftE $ getDownloadInfo dls GHCup latestVer Nothing
   tmp <- lift withGHCupTmpDir
-  let fn = [rel|ghcup|] :: Path Rel
+  let fn = [rel|ghcup|]
   p <- liftE $ download dli tmp (Just fn)
   case mtarget of
     Nothing -> do

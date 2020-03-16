@@ -43,10 +43,10 @@ ghcupBaseDir = do
     Just r  -> parseAbs r
     Nothing -> do
       home <- liftIO getHomeDirectory
-      pure (home </> ([rel|.ghcup|] :: Path Rel))
+      pure (home </> [rel|.ghcup|])
 
 ghcupGHCBaseDir :: IO (Path Abs)
-ghcupGHCBaseDir = ghcupBaseDir <&> (</> ([rel|ghc|] :: Path Rel))
+ghcupGHCBaseDir = ghcupBaseDir <&> (</> [rel|ghc|])
 
 ghcupGHCDir :: Version -> IO (Path Abs)
 ghcupGHCDir ver = do
@@ -56,13 +56,13 @@ ghcupGHCDir ver = do
 
 
 ghcupBinDir :: IO (Path Abs)
-ghcupBinDir = ghcupBaseDir <&> (</> ([rel|bin|] :: Path Rel))
+ghcupBinDir = ghcupBaseDir <&> (</> [rel|bin|])
 
 ghcupCacheDir :: IO (Path Abs)
-ghcupCacheDir = ghcupBaseDir <&> (</> ([rel|cache|] :: Path Rel))
+ghcupCacheDir = ghcupBaseDir <&> (</> [rel|cache|])
 
 ghcupLogsDir :: IO (Path Abs)
-ghcupLogsDir = ghcupBaseDir <&> (</> ([rel|logs|] :: Path Rel))
+ghcupLogsDir = ghcupBaseDir <&> (</> [rel|logs|])
 
 
 mkGhcupTmpDir :: (MonadThrow m, MonadIO m) => m (Path Abs)

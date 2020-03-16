@@ -403,7 +403,7 @@ main = do
           let settings = toSettings opt
 
           -- logger interpreter
-          logfile <- initGHCupFileLogging ([rel|ghcup.log|] :: Path Rel)
+          logfile <- initGHCupFileLogging [rel|ghcup.log|]
           let runLogger = myLoggerT LoggerConfig
                 { lcPrintDebug = optVerbose
                 , colorOutter  = B.hPut stderr
@@ -644,7 +644,7 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
                 (UpgradeAt p)   -> pure $ Just p
                 UpgradeGHCupDir -> do
                   bdir <- liftIO $ ghcupBinDir
-                  pure (Just (bdir </> ([rel|ghcup|] :: Path Rel)))
+                  pure (Just (bdir </> [rel|ghcup|]))
 
               void
                 $   (runUpgrade $ do

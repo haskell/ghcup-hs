@@ -157,7 +157,7 @@ ghcSrcInstalled ver = do
 
 ghcSet :: (MonadIO m, MonadThrow m) => m (Maybe Version)
 ghcSet = do
-  ghcBin <- (</> ([rel|ghc|] :: Path Rel)) <$> liftIO ghcupBinDir
+  ghcBin <- (</> [rel|ghc|]) <$> liftIO ghcupBinDir
 
   -- link destination is of the form ../ghc/<ver>/bin/ghc
   liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
@@ -172,7 +172,7 @@ cabalInstalled ver = do
 
 cabalSet :: (MonadIO m, MonadThrow m) => m Version
 cabalSet = do
-  cabalbin <- (</> ([rel|cabal|] :: Path Rel)) <$> liftIO ghcupBinDir
+  cabalbin <- (</> [rel|cabal|]) <$> liftIO ghcupBinDir
   mc       <- liftIO $ executeOut cabalbin [[s|--numeric-version|]] Nothing
   let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ mc
   case version (E.decodeUtf8 reportedVer) of
