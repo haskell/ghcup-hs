@@ -32,6 +32,7 @@ import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           Data.Void
+import           GHC.IO.Encoding
 import           Haskus.Utils.Variant.Excepts
 import           HPath
 import           HPath.IO
@@ -777,6 +778,9 @@ fromVersion av (Just (ToolTag Recommended)) tool =
 
 printListResult :: [ListResult] -> IO ()
 printListResult lr = do
+  -- https://gitlab.haskell.org/ghc/ghc/issues/8118
+  setLocaleEncoding utf8
+
   let
     formatted =
       gridString
