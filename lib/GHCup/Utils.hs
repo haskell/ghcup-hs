@@ -44,7 +44,7 @@ import           Prelude                 hiding ( abs
                                                 )
 import           Safe
 import           System.IO.Error
-import           System.Posix.FilePath          ( takeFileName )
+import           System.Posix.FilePath          ( getSearchPath, takeFileName )
 import           System.Posix.Files.ByteString  ( readSymbolicLink )
 import           URI.ByteString
 
@@ -325,3 +325,12 @@ ghcToolFiles ver = do
 -- this GHC was built from source. It contains the build config.
 ghcUpSrcBuiltFile :: Path Rel
 ghcUpSrcBuiltFile = [rel|.ghcup_src_built|]
+
+
+-- | Calls gmake if it exists in PATH, otherwise make.
+make :: [ByteString] -> Maybe (Path Abs) -> IO (Either ProcessError ())
+make args workdir = do
+  spaths    <- catMaybes . fmap parseAbs <$> getSearchPath
+  has_gmake <- isJust <$> searchPath spaths [rel|gmake|]
+  let mymake = if has_gmake then [s|gmake|] else [s|make|]
+  execLogged mymake True args [rel|ghc-make.log|] workdir Nothing

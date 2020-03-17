@@ -140,12 +140,7 @@ installGHCBin bDls ver mpfReq = do
                               [rel|ghc-configure.log|]
                               (Just path)
                               Nothing
-    lEM $ liftIO $ execLogged [s|make|]
-                              True
-                              [[s|install|]]
-                              [rel|ghc-make.log|]
-                              (Just path)
-                              Nothing
+    lEM $ liftIO $ make [[s|install|]] (Just path)
     pure ()
 
 
@@ -541,20 +536,11 @@ GhcWithLlvmCodeGen = YES|]
     lift
       $ $(logInfo)
           [i|Building (this may take a while)... Run 'tail -f ~/.ghcup/logs/ghc-make.log' to see the progress.|]
-    lEM $ liftIO $ execLogged [s|make|]
-                              True
-                              (maybe [] (\j -> [[s|-j|] <> fS (show j)]) jobs)
-                              [rel|ghc-make.log|]
-                              (Just workdir)
-                              Nothing
+    lEM $ liftIO $ make (maybe [] (\j -> [[s|-j|] <> fS (show j)]) jobs)
+                        (Just workdir)
 
     lift $ $(logInfo) [i|Installing...|]
-    lEM $ liftIO $ execLogged [s|make|]
-                              True
-                              [[s|install|]]
-                              [rel|ghc-make.log|]
-                              (Just workdir)
-                              Nothing
+    lEM $ liftIO $ make [[s|install|]] (Just workdir)
 
   markSrcBuilt ghcdir workdir = do
     let dest = (ghcdir </> ghcUpSrcBuiltFile)
