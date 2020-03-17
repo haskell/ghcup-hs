@@ -588,6 +588,10 @@ main = do
                       , DownloadFailed
                       ]
 
+          -- create ~/.ghcup dir
+          ghcdir <- ghcupBaseDir
+          createDirIfMissing newDirPerms ghcdir
+
           dls <-
             ( runLogger
               . flip runReaderT settings
