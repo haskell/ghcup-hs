@@ -619,7 +619,7 @@ main = do
                       VLeft (V (BuildFailed tmpdir e)) ->
                         runLogger
                             ($(logError) [i|Build failed with #{e}
-Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.|]
+Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
                             )
                           >> exitFailure
                       VLeft e -> do
@@ -703,7 +703,7 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
                       VLeft (V (BuildFailed tmpdir e)) ->
                         runLogger
                             ($(logError) [i|Build failed with #{e}
-Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.|]
+Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
                             )
                           >> exitFailure
                       VLeft e ->
@@ -721,7 +721,7 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
                       VLeft (V (BuildFailed tmpdir e)) ->
                         runLogger
                             ($(logError) [i|Build failed with #{e}
-Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.|]
+Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
                             )
                           >> exitFailure
                       VLeft e ->
