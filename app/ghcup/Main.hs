@@ -416,6 +416,7 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
   distroP :: MP.Parsec Void Text LinuxDistro
   distroP = choice'
     [ MP.chunk [s|debian|] $> Debian
+    , MP.chunk [s|deb|] $> Debian
     , MP.chunk [s|ubuntu|] $> Ubuntu
     , MP.chunk [s|mint|] $> Mint
     , MP.chunk [s|fedora|] $> Fedora
