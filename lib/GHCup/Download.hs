@@ -608,7 +608,7 @@ checkDigest dli file = do
   verify <- lift ask <&> (not . noVerify)
   when verify $ do
     let p' = toFilePath file
-    lift $ $(logInfo) [i|veryfing digest of: #{p'}|]
+    lift $ $(logInfo) [i|verifying digest of: #{p'}|]
     c <- liftIO $ readFile file
     let cDigest = E.decodeUtf8 . toHex . digest (digestByName "sha256") $ c
         eDigest = view dlHash dli
