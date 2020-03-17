@@ -25,10 +25,13 @@ import           Control.Monad.Trans.Resource
 import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
+import           Data.Functor
 import           Data.List                      ( intercalate )
 import           Data.Semigroup                 ( (<>) )
 import           Data.String.Interpolate
+import           Data.Text                      ( Text )
 import           Data.Versions
+import           Data.Void
 import           Haskus.Utils.Variant.Excepts
 import           HPath
 import           HPath.IO
@@ -47,6 +50,7 @@ import qualified Data.ByteString.UTF8          as UTF8
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
+import qualified Text.Megaparsec               as MP
 
 
 
@@ -59,6 +63,7 @@ data Options = Options
   , optCache     :: Bool
   , optUrlSource :: Maybe URI
   , optNoVerify  :: Bool
+  , optPlatform  :: Maybe PlatformRequest
   -- commands
   , optCommand   :: Command
   }
@@ -141,6 +146,18 @@ opts =
           (short 'n' <> long "no-verify" <> help
             "Skip tarball checksum verification (default: False)"
           )
+    <*> (optional
+          (option
+            (eitherReader platformParser)
+            (  short 'p'
+            <> long "platform"
+            <> metavar "PLATFORM"
+            <> help
+                 "Override for platform (triple matching ghc tarball names), e.g. x86_64-fedora27-linux"
+            <> internal
+            )
+          )
+        )
     <*> com
  where
   parseUri s' =
@@ -359,6 +376,80 @@ criteriaParser s' | t == T.pack "installed" = Right ListInstalled
                   | t == T.pack "set"       = Right ListSet
                   | otherwise               = Left ("Unknown criteria: " <> s')
   where t = T.toLower (T.pack s')
+
+
+platformParser :: String -> Either String PlatformRequest
+platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
+  Right r -> pure r
+  Left  e -> Left $ errorBundlePretty e
+ where
+  archP :: MP.Parsec Void Text Architecture
+  archP =
+    (MP.try (MP.chunk [s|x86_64|] $> A_64)) <|> (MP.chunk [s|i386|] $> A_32)
+  platformP :: MP.Parsec Void Text PlatformRequest
+  platformP = choice'
+    [ (\a mv -> PlatformRequest a FreeBSD mv)
+    <$> (archP <* MP.chunk [s|-|])
+    <*> (  MP.chunk [s|portbld|]
+        *> (   MP.try (Just <$> verP (MP.chunk [s|-freebsd|] <* MP.eof))
+           <|> pure Nothing
+           )
+        <* MP.chunk [s|-freebsd|]
+        )
+    , (\a mv -> PlatformRequest a Darwin mv)
+    <$> (archP <* MP.chunk [s|-|])
+    <*> (  MP.chunk [s|apple|]
+        *> (   MP.try (Just <$> verP (MP.chunk [s|-darwin|] <* MP.eof))
+           <|> pure Nothing
+           )
+        <* MP.chunk [s|-darwin|]
+        )
+    , (\a d mv -> PlatformRequest a (Linux d) mv)
+    <$> (archP <* MP.chunk [s|-|])
+    <*> distroP
+    <*> (  (   MP.try (Just <$> verP (MP.chunk [s|-linux|] <* MP.eof))
+           <|> pure Nothing
+           )
+        <* MP.chunk [s|-linux|]
+        )
+    ]
+  distroP :: MP.Parsec Void Text LinuxDistro
+  distroP = choice'
+    [ MP.chunk [s|debian|] $> Debian
+    , MP.chunk [s|ubuntu|] $> Ubuntu
+    , MP.chunk [s|mint|] $> Mint
+    , MP.chunk [s|fedora|] $> Fedora
+    , MP.chunk [s|centos|] $> CentOS
+    , MP.chunk [s|redhat|] $> RedHat
+    , MP.chunk [s|alpine|] $> Alpine
+    , MP.chunk [s|gentoo|] $> Gentoo
+    , MP.chunk [s|exherbo|] $> Exherbo
+    , MP.chunk [s|unknown|] $> UnknownLinux
+    ]
+  verP :: MP.Parsec Void Text Text -> MP.Parsec Void Text Versioning
+  verP suffix = do
+    ver <- parseUntil suffix
+    if T.null ver
+      then fail "empty version"
+      else do
+        rest <- MP.getInput
+        MP.setInput ver
+        v <- versioning'
+        MP.setInput rest
+        pure v
+
+  choice' []       = fail "Empty list"
+  choice' [x     ] = x
+  choice' (x : xs) = MP.try x <|> choice' xs
+
+  parseUntil :: MP.Parsec Void Text Text -> MP.Parsec Void Text Text
+  parseUntil p = do
+    (MP.try (MP.lookAhead p) $> mempty)
+      <|> (do
+            c  <- T.singleton <$> MP.anySingle
+            c2 <- parseUntil p
+            pure (c `mappend` c2)
+          )
 
 
 toSettings :: Options -> Settings
