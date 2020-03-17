@@ -63,7 +63,6 @@ data Options = Options
   , optCache     :: Bool
   , optUrlSource :: Maybe URI
   , optNoVerify  :: Bool
-  , optPlatform  :: Maybe PlatformRequest
   -- commands
   , optCommand   :: Command
   }
@@ -86,7 +85,8 @@ data InstallCommand = InstallGHC InstallOptions
                     | InstallCabal InstallOptions
 
 data InstallOptions = InstallOptions
-  { instVer :: Maybe ToolVersion
+  { instVer      :: Maybe ToolVersion
+  , instPlatform :: Maybe PlatformRequest
   }
 
 data SetGHCOptions = SetGHCOptions
@@ -146,18 +146,6 @@ opts =
           (short 'n' <> long "no-verify" <> help
             "Skip tarball checksum verification (default: False)"
           )
-    <*> (optional
-          (option
-            (eitherReader platformParser)
-            (  short 'p'
-            <> long "platform"
-            <> metavar "PLATFORM"
-            <> help
-                 "Override for platform (triple matching ghc tarball names), e.g. x86_64-fedora27-linux"
-            <> internal
-            )
-          )
-        )
     <*> com
  where
   parseUri s' =
@@ -248,7 +236,21 @@ installP = subparser
   )
 
 installOpts :: Parser InstallOptions
-installOpts = InstallOptions <$> optional toolVersionParser
+installOpts =
+  InstallOptions
+    <$> optional toolVersionParser
+    <*> (optional
+          (option
+            (eitherReader platformParser)
+            (  short 'p'
+            <> long "platform"
+            <> metavar "PLATFORM"
+            <> help
+                 "Override for platform (triple matching ghc tarball names), e.g. x86_64-fedora27-linux"
+            )
+          )
+        )
+
 
 setGHCOpts :: Parser SetGHCOptions
 setGHCOpts = SetGHCOptions <$> optional toolVersionParser
@@ -612,7 +614,7 @@ main = do
               void
                 $   (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer GHC
-                      liftE $ installGHCBin dls v optPlatform
+                      liftE $ installGHCBin dls v instPlatform
                     )
                 >>= \case
                       VRight _ -> runLogger
@@ -635,7 +637,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
               void
                 $   (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer Cabal
-                      liftE $ installCabalBin dls v optPlatform
+                      liftE $ installCabalBin dls v instPlatform
                     )
                 >>= \case
                       VRight _ -> runLogger
