@@ -493,6 +493,10 @@ main = do
     >>= \opt@Options {..} -> do
           let settings = toSettings opt
 
+          -- create ~/.ghcup dir
+          ghcdir <- ghcupBaseDir
+          createDirIfMissing newDirPerms ghcdir
+
           -- logger interpreter
           logfile <- initGHCupFileLogging [rel|ghcup.log|]
           let runLogger = myLoggerT LoggerConfig
@@ -587,10 +591,6 @@ main = do
                       , CopyError
                       , DownloadFailed
                       ]
-
-          -- create ~/.ghcup dir
-          ghcdir <- ghcupBaseDir
-          createDirIfMissing newDirPerms ghcdir
 
           dls <-
             ( runLogger

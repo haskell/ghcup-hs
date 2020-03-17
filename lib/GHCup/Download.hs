@@ -135,13 +135,10 @@ getDownloads urlSource = do
                L.ByteString
   smartDl uri' = do
     let path = view pathL' uri'
-    json_file <- (liftIO $ ghcupCacheDir)
-      >>= \cacheDir -> (cacheDir </>) <$> urlBaseName path
+    cacheDir <- liftIO $ ghcupCacheDir
+    json_file <- (cacheDir </>) <$> urlBaseName path
     e <-
-      liftIO
-      $ HIO.handleIOError
-          (\e -> if isDoesNotExistError e then pure False else throwIO e)
-      $ doesFileExist json_file
+      liftIO $ doesFileExist json_file
     if e
       then do
         accessTime <-
@@ -168,6 +165,7 @@ getDownloads urlSource = do
           else -- access in less than 5 minutes, re-use file
                liftIO $ readFile json_file
       else do
+        liftIO $ createDirIfMissing newDirPerms cacheDir
         getModTime >>= \case
           Just modTime -> do
             bs <- liftE $ downloadBS uri'
