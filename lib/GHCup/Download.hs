@@ -43,7 +43,7 @@ import           Data.Time.Format
 import           Data.Versions
 import           GHC.IO.Exception
 import           HPath
-import           HPath.IO
+import           HPath.IO                      as HIO
 import           Haskus.Utils.Variant.Excepts
 import           Network.Http.Client     hiding ( URL )
 import           OpenSSL.Digest
@@ -137,7 +137,11 @@ getDownloads urlSource = do
     let path = view pathL' uri'
     json_file <- (liftIO $ ghcupCacheDir)
       >>= \cacheDir -> (cacheDir </>) <$> urlBaseName path
-    e <- liftIO $ doesFileExist json_file
+    e <-
+      liftIO
+      $ HIO.handleIOError
+          (\e -> if isDoesNotExistError e then pure False else throwIO e)
+      $ doesFileExist json_file
     if e
       then do
         accessTime <-

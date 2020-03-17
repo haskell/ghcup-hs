@@ -108,14 +108,18 @@ installGHCBin bDls ver mpfReq = do
   ghcdir <- liftIO $ ghcupGHCDir ver
 
   -- the subdir of the archive where we do the work
-  let archiveSubdir = maybe tmpUnpack (tmpUnpack </>) (view dlSubdir dlinfo)
+  let workdir = maybe tmpUnpack (tmpUnpack </>) (view dlSubdir dlinfo)
 
-  catchAllE
-      (\es ->
-        liftIO (hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
-          >> throwE (BuildFailed archiveSubdir es)
-      )
-    $ installGHC' archiveSubdir ghcdir
+  -- Be careful about cleanup. We must catch both pure exceptions
+  -- as well as async ones.
+  flip onException
+       (liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
+    $ catchAllE
+        (\es -> do
+          liftIO (hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
+            >> throwE (BuildFailed workdir es)
+        )
+    $ installGHC' workdir ghcdir
 
   -- only clean up dir if the build succeeded
   liftIO $ deleteDirRecursive tmpUnpack
@@ -183,9 +187,9 @@ installCabalBin bDls ver mpfReq = do
   bindir <- liftIO ghcupBinDir
 
   -- the subdir of the archive where we do the work
-  let archiveSubdir = maybe tmpUnpack (tmpUnpack </>) (view dlSubdir dlinfo)
+  let workdir = maybe tmpUnpack (tmpUnpack </>) (view dlSubdir dlinfo)
 
-  liftE $ installCabal' archiveSubdir bindir
+  liftE $ installCabal' workdir bindir
   pure ()
 
  where
@@ -335,7 +339,7 @@ listVersions av lt criteria = case lt of
       fromSrc    <- ghcSrcInstalled v
       pure ListResult { lVer = v, lTag = tags, lTool = t, .. }
     Cabal -> do
-      lSet       <- fmap (== v) $ cabalSet
+      lSet <- fmap (== v) $ cabalSet
       let lInstalled = lSet
       pure ListResult { lVer = v, lTag = tags, lTool = t, fromSrc = False, .. }
     GHCup -> do
@@ -467,11 +471,15 @@ compileGHC dls tver bver jobs mbuildConfig = do
   let workdir = maybe id (flip (</>)) (view dlSubdir dlInfo) $ tmpUnpack
   ghcdir <- liftIO $ ghcupGHCDir tver
 
-  catchAllE
-      (\es ->
-        liftIO (hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
-          >> throwE (BuildFailed workdir es)
-      )
+  -- Be careful about cleanup. We must catch both pure exceptions
+  -- as well as async ones.
+  flip onException
+       (liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
+    $ catchAllE
+        (\es ->
+          liftIO (hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
+            >> throwE (BuildFailed workdir es)
+        )
     $ compile bghc ghcdir workdir
   markSrcBuilt ghcdir workdir
 
