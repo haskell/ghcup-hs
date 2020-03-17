@@ -404,19 +404,18 @@ rmGHCVer ver = do
     ------------------
 
 
-getDebugInfo :: (MonadLogger m, MonadCatch m, MonadReader Settings m, MonadIO m)
+getDebugInfo :: (MonadLogger m, MonadCatch m, MonadIO m)
              => Excepts
                   '[NoCompatiblePlatform , NoCompatibleArch , DistroNotFound]
                   m
                   DebugInfo
 getDebugInfo = do
-  diBaseDir   <- liftIO $ ghcupBaseDir
-  diBinDir    <- liftIO $ ghcupBinDir
-  diGHCDir    <- liftIO $ ghcupGHCBaseDir
-  diCacheDir  <- liftIO $ ghcupCacheDir
-  diURLSource <- lift $ getUrlSource
-  diArch      <- lE getArchitecture
-  diPlatform  <- liftE $ getPlatform
+  diBaseDir  <- liftIO $ ghcupBaseDir
+  diBinDir   <- liftIO $ ghcupBinDir
+  diGHCDir   <- liftIO $ ghcupGHCBaseDir
+  diCacheDir <- liftIO $ ghcupCacheDir
+  diArch     <- lE getArchitecture
+  diPlatform <- liftE $ getPlatform
   pure $ DebugInfo { .. }
 
 

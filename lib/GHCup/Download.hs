@@ -93,14 +93,13 @@ getDownloads :: ( FromJSONKey Tool
                 , FromJSON VersionInfo
                 , MonadIO m
                 , MonadCatch m
-                , MonadReader Settings m
                 , MonadLogger m
                 , MonadThrow m
                 , MonadFail m
                 )
-             => Excepts '[JSONError , DownloadFailed] m GHCupDownloads
-getDownloads = do
-  urlSource <- lift getUrlSource
+             => URLSource
+             -> Excepts '[JSONError , DownloadFailed] m GHCupDownloads
+getDownloads urlSource = do
   lift $ $(logDebug) [i|Receiving download info from: #{urlSource}|]
   case urlSource of
     GHCupURL -> do
@@ -122,18 +121,18 @@ getDownloads = do
   --
   -- Always save the local file with the mod time of the remote file.
   smartDl :: forall m1
-      . (MonadCatch m1, MonadIO m1, MonadFail m1, MonadLogger m1)
-     => URI
-     -> Excepts
-          '[ FileDoesNotExistError
-           , HTTPStatusError
-           , URIParseError
-           , UnsupportedScheme
-           , NoLocationHeader
-           , TooManyRedirs
-           ]
-          m1
-          L.ByteString
+           . (MonadCatch m1, MonadIO m1, MonadFail m1, MonadLogger m1)
+          => URI
+          -> Excepts
+               '[ FileDoesNotExistError
+                , HTTPStatusError
+                , URIParseError
+                , UnsupportedScheme
+                , NoLocationHeader
+                , TooManyRedirs
+                ]
+               m1
+               L.ByteString
   smartDl uri' = do
     let path = view pathL' uri'
     json_file <- (liftIO $ ghcupCacheDir)
@@ -204,11 +203,7 @@ getDownloads = do
 
 
 
-getDownloadInfo :: ( MonadLogger m
-                   , MonadCatch m
-                   , MonadIO m
-                   , MonadReader Settings m
-                   )
+getDownloadInfo :: (MonadLogger m, MonadCatch m, MonadIO m)
                 => GHCupDownloads
                 -> Tool
                 -> Version

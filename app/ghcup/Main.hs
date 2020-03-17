@@ -454,9 +454,8 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
 
 toSettings :: Options -> Settings
 toSettings Options {..} =
-  let cache     = optCache
-      urlSource = maybe GHCupURL OwnSource optUrlSource
-      noVerify  = optNoVerify
+  let cache    = optCache
+      noVerify = optNoVerify
   in  Settings { .. }
 
 
@@ -592,7 +591,8 @@ main = do
             ( runLogger
               . flip runReaderT settings
               . runE @'[JSONError , DownloadFailed]
-              $ liftE getDownloads
+              $ liftE
+              $ getDownloads (maybe GHCupURL OwnSource optUrlSource)
               )
               >>= \case
                     VRight r -> pure r
@@ -607,7 +607,7 @@ main = do
               void
                 $   (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer GHC
-                      liftE $ installGHCBin dls v Nothing
+                      liftE $ installGHCBin dls v optPlatform
                     )
                 >>= \case
                       VRight _ -> runLogger
@@ -630,7 +630,7 @@ Check the logs at ~/ghcup/logs and the build directory #{tmpdir} for more clues.
               void
                 $   (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer Cabal
-                      liftE $ installCabalBin dls v Nothing
+                      liftE $ installCabalBin dls v optPlatform
                     )
                 >>= \case
                       VRight _ -> runLogger

@@ -277,9 +277,6 @@ getRecommended av tool = headOf folded $ getTagged av tool Recommended
     -----------------------
 
 
-getUrlSource :: MonadReader Settings m => m URLSource
-getUrlSource = ask <&> urlSource
-
 getCache :: MonadReader Settings m => m Bool
 getCache = ask <&> cache
 

@@ -161,7 +161,7 @@ validateTarballs dls = do
 
  where
   downloadAll dli = do
-    let settings = Settings True GHCupURL False
+    let settings = Settings True False
     let runLogger = myLoggerT LoggerConfig { lcPrintDebug = True
                                            , colorOutter  = B.hPut stderr
                                            , rawOutter    = (\_ -> pure ())

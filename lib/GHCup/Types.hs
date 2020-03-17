@@ -104,21 +104,19 @@ data URLSource = GHCupURL
 
 
 data Settings = Settings
-  { cache     :: Bool
-  , urlSource :: URLSource
-  , noVerify  :: Bool
+  { cache    :: Bool
+  , noVerify :: Bool
   }
   deriving Show
 
 
 data DebugInfo = DebugInfo
-  { diBaseDir   :: Path Abs
-  , diBinDir    :: Path Abs
-  , diGHCDir    :: Path Abs
-  , diCacheDir  :: Path Abs
-  , diURLSource :: URLSource
-  , diArch      :: Architecture
-  , diPlatform  :: PlatformResult
+  { diBaseDir  :: Path Abs
+  , diBinDir   :: Path Abs
+  , diGHCDir   :: Path Abs
+  , diCacheDir :: Path Abs
+  , diArch     :: Architecture
+  , diPlatform :: PlatformResult
   }
   deriving Show
 
@@ -141,4 +139,3 @@ data PlatformRequest = PlatformRequest
   , _rVersion  :: Maybe Versioning
   }
   deriving (Eq, Show)
-
