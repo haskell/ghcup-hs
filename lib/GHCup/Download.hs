@@ -135,10 +135,9 @@ getDownloads urlSource = do
                L.ByteString
   smartDl uri' = do
     let path = view pathL' uri'
-    cacheDir <- liftIO $ ghcupCacheDir
+    cacheDir  <- liftIO $ ghcupCacheDir
     json_file <- (cacheDir </>) <$> urlBaseName path
-    e <-
-      liftIO $ doesFileExist json_file
+    e         <- liftIO $ doesFileExist json_file
     if e
       then do
         accessTime <-
@@ -300,8 +299,14 @@ download dli dest mfn
     -- download
     fd       <- liftIO $ createRegularFileFd newFilePerms destFile
     let stepper = fdWrite fd
-    flip finally (liftIO $ closeFd fd)
-      $ reThrowAll DownloadFailed
+    flip onException
+         (liftIO $ hideError doesNotExistErrorType $ deleteFile destFile)
+      $ flip finally (liftIO $ closeFd fd)
+      $ catchAllE
+          (\e ->
+            (liftIO $ hideError doesNotExistErrorType $ deleteFile destFile)
+              >> (throwE . DownloadFailed $ e)
+          )
       $ downloadInternal True https host fullPath port stepper
 
     liftE $ checkDigest dli destFile
