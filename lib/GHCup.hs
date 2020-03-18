@@ -503,17 +503,21 @@ GhcWithLlvmCodeGen = YES|]
                ()
   compile bghc ghcdir workdir = do
     lift $ $(logInfo) [i|configuring build|]
+
+    -- force ld.bfd for build (others seem to misbehave, like lld from FreeBSD)
+    newEnv <- addToCurrentEnv [([s|LD|], [s|ld.bfd|])]
+
     if
       | tver >= [vver|8.8.0|] -> do
         spaths   <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
         bghcPath <- (liftIO $ searchPath spaths bghc) !? NoDownload
-        newEnv   <- addToCurrentEnv [([s|GHC|], toFilePath bghcPath)]
-        lEM $ liftIO $ execLogged [s|./configure|]
-                                  False
-                                  [[s|--prefix=|] <> toFilePath ghcdir]
-                                  [rel|ghc-configure.log|]
-                                  (Just workdir)
-                                  (Just newEnv)
+        lEM $ liftIO $ execLogged
+          [s|./configure|]
+          False
+          [[s|--prefix=|] <> toFilePath ghcdir]
+          [rel|ghc-configure.log|]
+          (Just workdir)
+          (Just (([s|GHC|], toFilePath bghcPath) : newEnv))
       | otherwise -> do
         lEM $ liftIO $ execLogged
           [s|./configure|]
@@ -523,7 +527,7 @@ GhcWithLlvmCodeGen = YES|]
           ]
           [rel|ghc-configure.log|]
           (Just workdir)
-          Nothing
+          (Just newEnv)
 
     case mbuildConfig of
       Just bc -> liftIOException
