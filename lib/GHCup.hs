@@ -3,10 +3,11 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module GHCup where
 
@@ -133,14 +134,14 @@ installGHCBin bDls ver mpfReq = do
               -> Path Abs      -- ^ Path to install to
               -> Excepts '[ProcessError] m ()
   installGHC' path inst = do
-    lift $ $(logInfo) [s|Installing GHC (this may take a while)|]
-    lEM $ liftIO $ execLogged [s|./configure|]
+    lift $ $(logInfo) "Installing GHC (this may take a while)"
+    lEM $ liftIO $ execLogged "./configure"
                               False
-                              [[s|--prefix=|] <> toFilePath inst]
+                              ["--prefix=" <> toFilePath inst]
                               [rel|ghc-configure.log|]
                               (Just path)
                               Nothing
-    lEM $ liftIO $ make [[s|install|]] (Just path)
+    lEM $ liftIO $ make ["install"] (Just path)
     pure ()
 
 
@@ -194,7 +195,7 @@ installCabalBin bDls ver mpfReq = do
                 -> Path Abs      -- ^ Path to install to
                 -> Excepts '[CopyError] m ()
   installCabal' path inst = do
-    lift $ $(logInfo) [s|Installing cabal|]
+    lift $ $(logInfo) "Installing cabal"
     let cabalFile = [rel|cabal|]
     liftIO $ createDirIfMissing newDirPerms inst
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
@@ -246,7 +247,7 @@ setGHC ver sghc = do
       SetGHCOnly -> pure file
       SetGHC_XY  -> do
         major' <-
-          (\(mj, mi) -> E.encodeUtf8 $ intToText mj <> [s|.|] <> intToText mi)
+          (\(mj, mi) -> E.encodeUtf8 $ intToText mj <> "." <> intToText mi)
             <$> getGHCMajor ver
         parseRel (toFilePath file <> B.singleton _hyphen <> major')
       SetGHC_XYZ -> parseRel (toFilePath file <> B.singleton _hyphen <> verBS)
@@ -276,7 +277,7 @@ setGHC ver sghc = do
         let fullsharedir = ghcdir </> sharedir
         whenM (liftIO $ doesDirectoryExist fullsharedir) $ do
           let fullF   = destdir </> sharedir
-          let targetF = [s|./ghc/|] <> verBS <> [s|/|] <> toFilePath sharedir
+          let targetF = "./ghc/" <> verBS <> "/" <> toFilePath sharedir
           $(logDebug) [i|rm -f #{fullF}|]
           liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
           $(logDebug) [i|ln -s #{targetF} #{fullF}|]
@@ -462,7 +463,7 @@ compileGHC dls tver bver jobs mbuildConfig = do
   tmpUnpack <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
 
-  bghc <- parseRel ([s|ghc-|] <> verToBS bver)
+  bghc <- parseRel ("ghc-" <> verToBS bver)
   let workdir = maybe id (flip (</>)) (view dlSubdir dlInfo) $ tmpUnpack
   ghcdir <- liftIO $ ghcupGHCDir tver
 
@@ -505,26 +506,24 @@ GhcWithLlvmCodeGen = YES|]
     lift $ $(logInfo) [i|configuring build|]
 
     -- force ld.bfd for build (others seem to misbehave, like lld from FreeBSD)
-    newEnv <- addToCurrentEnv [([s|LD|], [s|ld.bfd|])]
+    newEnv <- addToCurrentEnv [("LD", "ld.bfd")]
 
     if
       | tver >= [vver|8.8.0|] -> do
         spaths   <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
         bghcPath <- (liftIO $ searchPath spaths bghc) !? NoDownload
         lEM $ liftIO $ execLogged
-          [s|./configure|]
+          "./configure"
           False
-          [[s|--prefix=|] <> toFilePath ghcdir]
+          ["--prefix=" <> toFilePath ghcdir]
           [rel|ghc-configure.log|]
           (Just workdir)
-          (Just (([s|GHC|], toFilePath bghcPath) : newEnv))
+          (Just (("GHC", toFilePath bghcPath) : newEnv))
       | otherwise -> do
         lEM $ liftIO $ execLogged
-          [s|./configure|]
+          "./configure"
           False
-          [ [s|--prefix=|] <> toFilePath ghcdir
-          , [s|--with-ghc=|] <> toFilePath bghc
-          ]
+          ["--prefix=" <> toFilePath ghcdir, "--with-ghc=" <> toFilePath bghc]
           [rel|ghc-configure.log|]
           (Just workdir)
           (Just newEnv)
@@ -540,11 +539,11 @@ GhcWithLlvmCodeGen = YES|]
     lift
       $ $(logInfo)
           [i|Building (this may take a while)... Run 'tail -f ~/.ghcup/logs/ghc-make.log' to see the progress.|]
-    lEM $ liftIO $ make (maybe [] (\j -> [[s|-j|] <> fS (show j)]) jobs)
+    lEM $ liftIO $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs)
                         (Just workdir)
 
     lift $ $(logInfo) [i|Installing...|]
-    lEM $ liftIO $ make [[s|install|]] (Just workdir)
+    lEM $ liftIO $ make ["install"] (Just workdir)
 
   markSrcBuilt ghcdir workdir = do
     let dest = (ghcdir </> ghcUpSrcBuiltFile)
@@ -604,15 +603,15 @@ compileCabal dls tver bver jobs = do
     let v' = verToBS bver
     cabal_bin <- liftIO $ ghcupBinDir
     newEnv    <- lift $ addToCurrentEnv
-      [ ([s|GHC|]    , [s|ghc-|] <> v')
-      , ([s|GHC_PKG|], [s|ghc-pkg-|] <> v')
-      , ([s|GHC_VER|], v')
-      , ([s|PREFIX|] , toFilePath cabal_bin)
+      [ ("GHC"    , "ghc-" <> v')
+      , ("GHC_PKG", "ghc-pkg-" <> v')
+      , ("GHC_VER", v')
+      , ("PREFIX" , toFilePath cabal_bin)
       ]
 
-    lEM $ liftIO $ execLogged [s|./bootstrap.sh|]
+    lEM $ liftIO $ execLogged "./bootstrap.sh"
                               False
-                              (maybe [] (\j -> [[s|-j|], fS (show j)]) jobs)
+                              (maybe [] (\j -> ["-j", fS (show j)]) jobs)
                               [rel|cabal-bootstrap.log|]
                               (Just workdir)
                               (Just newEnv)

@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 
@@ -17,7 +18,6 @@ import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.File
 import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
 
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -44,7 +44,9 @@ import           Prelude                 hiding ( abs
                                                 )
 import           Safe
 import           System.IO.Error
-import           System.Posix.FilePath          ( getSearchPath, takeFileName )
+import           System.Posix.FilePath          ( getSearchPath
+                                                , takeFileName
+                                                )
 import           System.Posix.Files.ByteString  ( readSymbolicLink )
 import           URI.ByteString
 
@@ -70,14 +72,14 @@ import qualified Data.Text.Encoding            as E
 ghcLinkDestination :: ByteString -- ^ the tool, such as 'ghc', 'haddock' etc.
                    -> Version
                    -> ByteString
-ghcLinkDestination tool ver = [s|../ghc/|] <> verToBS ver <> [s|/bin/|] <> tool
+ghcLinkDestination tool ver = "../ghc/" <> verToBS ver <> "/bin/" <> tool
 
 
 -- | Extract the version part of the result of `ghcLinkDestination`.
 ghcLinkVersion :: MonadThrow m => ByteString -> m Version
 ghcLinkVersion = either (throwM . ParseError) pure . parseOnly parser
  where
-  parser    = string [s|../ghc/|] *> verParser <* string [s|/bin/ghc|]
+  parser    = string "../ghc/" *> verParser <* string "/bin/ghc"
   verParser = many1' (notWord8 _slash) >>= \t ->
     case version $ E.decodeUtf8 $ B.pack t of
       Left  e -> fail $ show e
@@ -90,7 +92,7 @@ rmMinorSymlinks ver = do
   bindir <- liftIO $ ghcupBinDir
   files  <- liftIO $ getDirsFiles' bindir
   let myfiles =
-        filter (\x -> ([s|-|] <> verToBS ver) `B.isSuffixOf` toFilePath x) files
+        filter (\x -> ("-" <> verToBS ver) `B.isSuffixOf` toFilePath x) files
   forM_ myfiles $ \f -> do
     let fullF = (bindir </> f)
     $(logDebug) [i|rm -f #{toFilePath fullF}|]
@@ -117,12 +119,12 @@ rmPlain ver = do
 rmMajorSymlinks :: (MonadLogger m, MonadIO m) => Version -> m ()
 rmMajorSymlinks ver = do
   (mj, mi) <- liftIO $ getGHCMajor ver
-  let v' = E.encodeUtf8 $ intToText mj <> [s|.|] <> intToText mi
+  let v' = E.encodeUtf8 $ intToText mj <> "." <> intToText mi
 
   bindir <- liftIO ghcupBinDir
 
   files  <- liftIO $ getDirsFiles' bindir
-  let myfiles = filter (\x -> ([s|-|] <> v') `B.isSuffixOf` toFilePath x) files
+  let myfiles = filter (\x -> ("-" <> v') `B.isSuffixOf` toFilePath x) files
   forM_ myfiles $ \f -> do
     let fullF = (bindir </> f)
     $(logDebug) [i|rm -f #{toFilePath fullF}|]
@@ -173,7 +175,7 @@ cabalInstalled ver = do
 cabalSet :: (MonadIO m, MonadThrow m) => m Version
 cabalSet = do
   cabalbin <- (</> [rel|cabal|]) <$> liftIO ghcupBinDir
-  mc       <- liftIO $ executeOut cabalbin [[s|--numeric-version|]] Nothing
+  mc       <- liftIO $ executeOut cabalbin ["--numeric-version"] Nothing
   let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ mc
   case version (E.decodeUtf8 reportedVer) of
     Left  e -> throwM e
@@ -235,15 +237,15 @@ unpackToDir dest av = do
 
   -- extract, depending on file extension
   if
-    | [s|.tar.gz|] `B.isSuffixOf` fn -> liftIO
+    | ".tar.gz" `B.isSuffixOf` fn -> liftIO
       (untar . GZip.decompress =<< readFile av)
-    | [s|.tar.xz|] `B.isSuffixOf` fn -> do
+    | ".tar.xz" `B.isSuffixOf` fn -> do
       filecontents <- liftIO $ readFile av
       let decompressed = Lzma.decompress filecontents
       liftIO $ untar decompressed
-    | [s|.tar.bz2|] `B.isSuffixOf` fn -> liftIO
+    | ".tar.bz2" `B.isSuffixOf` fn -> liftIO
       (untar . BZip.decompress =<< readFile av)
-    | [s|.tar|] `B.isSuffixOf` fn -> liftIO (untar =<< readFile av)
+    | ".tar" `B.isSuffixOf` fn -> liftIO (untar =<< readFile av)
     | otherwise -> throwE $ UnknownArchive fn
 
 
@@ -313,7 +315,7 @@ ghcToolFiles ver = do
   -- figure out the <ver> suffix, because this might not be `Version` for
   -- alpha/rc releases, but x.y.a.somedate.
   (Just symver) <-
-    (B.stripPrefix [s|ghc-|] . takeFileName)
+    (B.stripPrefix "ghc-" . takeFileName)
       <$> (liftIO $ readSymbolicLink $ toFilePath (bindir </> [rel|ghc|]))
   when (B.null symver)
        (throwIO $ userError $ "Fatal: ghc symlink target is broken")
@@ -332,5 +334,5 @@ make :: [ByteString] -> Maybe (Path Abs) -> IO (Either ProcessError ())
 make args workdir = do
   spaths    <- catMaybes . fmap parseAbs <$> getSearchPath
   has_gmake <- isJust <$> searchPath spaths [rel|gmake|]
-  let mymake = if has_gmake then [s|gmake|] else [s|make|]
+  let mymake = if has_gmake then "gmake" else "make"
   execLogged mymake True args [rel|ghc-make.log|] workdir Nothing

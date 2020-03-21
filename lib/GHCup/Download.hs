@@ -1,10 +1,11 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 
 module GHCup.Download where
@@ -18,7 +19,6 @@ import           GHCup.Types.Optics
 import           GHCup.Utils
 import           GHCup.Utils.File
 import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
 
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -190,7 +190,7 @@ getDownloads urlSource = do
 
   parseModifiedHeader :: (M.Map (CI ByteString) ByteString) -> Maybe UTCTime
   parseModifiedHeader headers =
-    (M.lookup (CI.mk [s|Last-Modified|]) headers) >>= \h -> parseTimeM
+    (M.lookup (CI.mk "Last-Modified") headers) >>= \h -> parseTimeM
       True
       defaultTimeLocale
       "%a, %d %b %Y %H:%M:%S %Z"
@@ -271,9 +271,9 @@ download :: ( MonadMask m
          -> Maybe (Path Rel)  -- ^ optional filename
          -> Excepts '[DigestError , DownloadFailed] m (Path Abs)
 download dli dest mfn
-  | scheme == [s|https|] = dl
-  | scheme == [s|http|] = dl
-  | scheme == [s|file|] = cp
+  | scheme == "https" = dl
+  | scheme == "http"  = dl
+  | scheme == "file"  = cp
   | otherwise = throwE $ DownloadFailed (variantFromValue UnsupportedScheme)
 
  where
@@ -370,11 +370,11 @@ downloadBS :: (MonadCatch m, MonadIO m)
                 m
                 L.ByteString
 downloadBS uri'
-  | scheme == [s|https|]
+  | scheme == "https"
   = dl True
-  | scheme == [s|http|]
+  | scheme == "http"
   = dl False
-  | scheme == [s|file|]
+  | scheme == "file"
   = liftIOException doesNotExistErrorType (FileDoesNotExistError path)
     $ (liftIO $ RD.readFile path)
   | otherwise
@@ -447,7 +447,7 @@ downloadInternal = go (5 :: Int)
           let scode = getStatusCode r
           if
             | scode >= 200 && scode < 300 -> downloadStream r i' >> pure Nothing
-            | scode >= 300 && scode < 400 -> case getHeader r [s|Location|] of
+            | scode >= 300 && scode < 400 -> case getHeader r "Location" of
               Just r' -> pure $ Just $ r'
               Nothing -> throwE NoLocationHeader
             | otherwise -> throwE $ HTTPStatusError scode
@@ -460,7 +460,7 @@ downloadInternal = go (5 :: Int)
       Left e -> throwE e
 
     downloadStream r i' = do
-      let size = case getHeader r [s|Content-Length|] of
+      let size = case getHeader r "Content-Length" of
             Just x' -> case decimal $ E.decodeUtf8 x' of
               Left  _       -> 0
               Right (r', _) -> r'
@@ -492,9 +492,9 @@ getHead :: (MonadCatch m, MonadIO m)
               ]
              m
              (M.Map (CI ByteString) ByteString)
-getHead uri' | scheme == [s|https|] = head' True
-             | scheme == [s|http|] = head' False
-             | otherwise           = throwE UnsupportedScheme
+getHead uri' | scheme == "https" = head' True
+             | scheme == "http"  = head' False
+             | otherwise         = throwE UnsupportedScheme
 
  where
   scheme = view (uriSchemeL' % schemeBSL') uri'
@@ -542,7 +542,7 @@ headInternal = go (5 :: Int)
             | scode >= 200 && scode < 300 -> do
               let headers = getHeaderMap r
               pure $ Right $ headers
-            | scode >= 300 && scode < 400 -> case getHeader r [s|Location|] of
+            | scode >= 300 && scode < 400 -> case getHeader r "Location" of
               Just r' -> pure $ Left $ r'
               Nothing -> throwE NoLocationHeader
             | otherwise -> throwE $ HTTPStatusError scode
@@ -585,19 +585,17 @@ uriToQuadruple URI {..} = do
       ?? UnsupportedScheme
 
   https <- if
-    | scheme == [s|https|] -> pure True
-    | scheme == [s|http|] -> pure False
-    | otherwise           -> throwE UnsupportedScheme
+    | scheme == "https" -> pure True
+    | scheme == "http"  -> pure False
+    | otherwise         -> throwE UnsupportedScheme
 
-  let
-    queryBS =
-      BS.intercalate [s|&|]
-        . fmap (\(x, y) -> encodeQuery x <> [s|=|] <> encodeQuery y)
-        $ (queryPairs uriQuery)
-    port =
-      preview (_Just % authorityPortL' % _Just % portNumberL') uriAuthority
-    fullpath =
-      if BS.null queryBS then uriPath else uriPath <> [s|?|] <> queryBS
+  let queryBS =
+        BS.intercalate "&"
+          . fmap (\(x, y) -> encodeQuery x <> "=" <> encodeQuery y)
+          $ (queryPairs uriQuery)
+      port =
+        preview (_Just % authorityPortL' % _Just % portNumberL') uriAuthority
+      fullpath = if BS.null queryBS then uriPath else uriPath <> "?" <> queryBS
   pure (https, host, fullpath, port)
   where encodeQuery = L.toStrict . B.toLazyByteString . urlEncodeQuery
 

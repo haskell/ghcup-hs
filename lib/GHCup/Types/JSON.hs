@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -13,7 +14,6 @@ module GHCup.Types.JSON where
 
 import           GHCup.Types
 import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
 
 import           Data.Aeson
 import           Data.Aeson.TH
@@ -138,7 +138,7 @@ instance FromJSONKey Tool where
 instance ToJSON (Path Rel) where
   toJSON p = case and . fmap isAscii . BS.unpack $ fp of
     True  -> toJSON . E.decodeUtf8 $ fp
-    False -> String [s|/not/a/valid/path|]
+    False -> String "/not/a/valid/path"
     where fp = toFilePath p
 
 instance FromJSON (Path Rel) where

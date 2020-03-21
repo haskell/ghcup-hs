@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 
@@ -128,8 +129,8 @@ getLinuxDistro = do
   try_lsb_release_cmd :: IO (Text, Maybe Text)
   try_lsb_release_cmd = do
     (Just _) <- findExecutable lsb_release_cmd
-    name     <- fmap _stdOut $ executeOut lsb_release_cmd [[s|-si|]] Nothing
-    ver      <- fmap _stdOut $ executeOut lsb_release_cmd [[s|-sr|]] Nothing
+    name     <- fmap _stdOut $ executeOut lsb_release_cmd ["-si"] Nothing
+    ver      <- fmap _stdOut $ executeOut lsb_release_cmd ["-sr"] Nothing
     pure (E.decodeUtf8 name, Just $ E.decodeUtf8 ver)
 
   try_lsb_release :: IO (Text, Maybe Text)
@@ -142,23 +143,22 @@ getLinuxDistro = do
   try_redhat_release = do
     t <- fmap lBS2sT $ readFile redhat_release
     let nameRegex n =
-          makeRegexOpts
-            compIgnoreCase
-            execBlank
-            (([s|\<|] <> fS n <> [s|\>|] :: ByteString)) :: Regex
+          makeRegexOpts compIgnoreCase
+                        execBlank
+                        (([s|\<|] <> fS n <> [s|\>|] :: ByteString)) :: Regex
     let verRegex =
-          makeRegexOpts
-            compIgnoreCase
-            execBlank
-            ([s|\<([0-9])+(.([0-9])+)*\>|] :: ByteString) :: Regex
-    let nameRe n = fromEmpty . match (nameRegex n) $ T.unpack t :: Maybe String
+          makeRegexOpts compIgnoreCase
+                        execBlank
+                        ([s|\<([0-9])+(.([0-9])+)*\>|] :: ByteString) :: Regex
+    let nameRe n =
+          fromEmpty . match (nameRegex n) $ T.unpack t :: Maybe String
         verRe = fromEmpty . match verRegex $ T.unpack t :: Maybe String
     (Just name) <- pure
       (nameRe "CentOS" <|> nameRe "Fedora" <|> nameRe "Red Hat")
     pure (T.pack name, fmap T.pack verRe)
    where
     fromEmpty :: String -> Maybe String
-    fromEmpty ""  = Nothing
+    fromEmpty "" = Nothing
     fromEmpty s' = Just s'
 
   try_debian_version :: IO (Text, Maybe Text)

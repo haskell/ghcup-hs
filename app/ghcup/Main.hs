@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 
@@ -15,7 +16,6 @@ import           GHCup.Types
 import           GHCup.Utils
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
 import           GHCup.Version
 
 import           Control.Monad.Fail             ( MonadFail )
@@ -387,48 +387,46 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
   Left  e -> Left $ errorBundlePretty e
  where
   archP :: MP.Parsec Void Text Architecture
-  archP =
-    (MP.try (MP.chunk [s|x86_64|] $> A_64)) <|> (MP.chunk [s|i386|] $> A_32)
+  archP = (MP.try (MP.chunk "x86_64" $> A_64)) <|> (MP.chunk "i386" $> A_32)
   platformP :: MP.Parsec Void Text PlatformRequest
   platformP = choice'
     [ (\a mv -> PlatformRequest a FreeBSD mv)
-    <$> (archP <* MP.chunk [s|-|])
-    <*> (  MP.chunk [s|portbld|]
-        *> (   MP.try (Just <$> verP (MP.chunk [s|-freebsd|] <* MP.eof))
+    <$> (archP <* MP.chunk "-")
+    <*> (  MP.chunk "portbld"
+        *> (   MP.try (Just <$> verP (MP.chunk "-freebsd" <* MP.eof))
            <|> pure Nothing
            )
-        <* MP.chunk [s|-freebsd|]
+        <* MP.chunk "-freebsd"
         )
     , (\a mv -> PlatformRequest a Darwin mv)
-    <$> (archP <* MP.chunk [s|-|])
-    <*> (  MP.chunk [s|apple|]
-        *> (   MP.try (Just <$> verP (MP.chunk [s|-darwin|] <* MP.eof))
+    <$> (archP <* MP.chunk "-")
+    <*> (  MP.chunk "apple"
+        *> (   MP.try (Just <$> verP (MP.chunk "-darwin" <* MP.eof))
            <|> pure Nothing
            )
-        <* MP.chunk [s|-darwin|]
+        <* MP.chunk "-darwin"
         )
     , (\a d mv -> PlatformRequest a (Linux d) mv)
-    <$> (archP <* MP.chunk [s|-|])
+    <$> (archP <* MP.chunk "-")
     <*> distroP
-    <*> (  (   MP.try (Just <$> verP (MP.chunk [s|-linux|] <* MP.eof))
-           <|> pure Nothing
-           )
-        <* MP.chunk [s|-linux|]
+    <*> ((MP.try (Just <$> verP (MP.chunk "-linux" <* MP.eof)) <|> pure Nothing
+         )
+        <* MP.chunk "-linux"
         )
     ]
   distroP :: MP.Parsec Void Text LinuxDistro
   distroP = choice'
-    [ MP.chunk [s|debian|] $> Debian
-    , MP.chunk [s|deb|] $> Debian
-    , MP.chunk [s|ubuntu|] $> Ubuntu
-    , MP.chunk [s|mint|] $> Mint
-    , MP.chunk [s|fedora|] $> Fedora
-    , MP.chunk [s|centos|] $> CentOS
-    , MP.chunk [s|redhat|] $> RedHat
-    , MP.chunk [s|alpine|] $> Alpine
-    , MP.chunk [s|gentoo|] $> Gentoo
-    , MP.chunk [s|exherbo|] $> Exherbo
-    , MP.chunk [s|unknown|] $> UnknownLinux
+    [ MP.chunk "debian" $> Debian
+    , MP.chunk "deb" $> Debian
+    , MP.chunk "ubuntu" $> Ubuntu
+    , MP.chunk "mint" $> Mint
+    , MP.chunk "fedora" $> Fedora
+    , MP.chunk "centos" $> CentOS
+    , MP.chunk "redhat" $> RedHat
+    , MP.chunk "alpine" $> Alpine
+    , MP.chunk "gentoo" $> Gentoo
+    , MP.chunk "exherbo" $> Exherbo
+    , MP.chunk "unknown" $> UnknownLinux
     ]
   verP :: MP.Parsec Void Text Text -> MP.Parsec Void Text Versioning
   verP suffix = do
@@ -618,8 +616,8 @@ main = do
                       liftE $ installGHCBin dls v instPlatform
                     )
                 >>= \case
-                      VRight _ -> runLogger
-                        $ $(logInfo) ([s|GHC installation successful|])
+                      VRight _ ->
+                        runLogger $ $(logInfo) ("GHC installation successful")
                       VLeft (V (AlreadyInstalled _ v)) ->
                         runLogger $ $(logWarn)
                           [i|GHC ver #{prettyVer v} already installed|]
@@ -641,8 +639,8 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                       liftE $ installCabalBin dls v instPlatform
                     )
                 >>= \case
-                      VRight _ -> runLogger
-                        $ $(logInfo) ([s|Cabal installation successful|])
+                      VRight _ ->
+                        runLogger $ $(logInfo) ("Cabal installation successful")
                       VLeft (V (AlreadyInstalled _ v)) ->
                         runLogger $ $(logWarn)
                           [i|Cabal ver #{prettyVer v} already installed|]
@@ -660,7 +658,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                     )
                 >>= \case
                       VRight _ ->
-                        runLogger $ $(logInfo) ([s|GHC successfully set|])
+                        runLogger $ $(logInfo) ("GHC successfully set")
                       VLeft e ->
                         runLogger ($(logError) [i|#{e}|]) >> exitFailure
 
@@ -703,7 +701,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                 >>= \case
                       VRight _ ->
                         runLogger $ $(logInfo)
-                          ([s|GHC successfully compiled and installed|])
+                          ("GHC successfully compiled and installed")
                       VLeft (V (AlreadyInstalled _ v)) ->
                         runLogger $ $(logWarn)
                           [i|GHC ver #{prettyVer v} already installed|]
@@ -724,7 +722,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                 >>= \case
                       VRight _ ->
                         runLogger $ $(logInfo)
-                          ([s|Cabal successfully compiled and installed|])
+                          ("Cabal successfully compiled and installed")
                       VLeft (V (BuildFailed tmpdir e)) ->
                         runLogger
                             ($(logError) [i|Build failed with #{e}

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
 module GHCup.Utils.Dirs where
@@ -5,7 +6,6 @@ module GHCup.Utils.Dirs where
 
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
 
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -39,7 +39,7 @@ import qualified System.Posix.User             as PU
 
 ghcupBaseDir :: IO (Path Abs)
 ghcupBaseDir = do
-  getEnv [s|GHCUP_INSTALL_BASE_PREFIX|] >>= \case
+  getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
     Just r  -> parseAbs r
     Nothing -> do
       home <- liftIO getHomeDirectory
@@ -67,8 +67,8 @@ ghcupLogsDir = ghcupBaseDir <&> (</> [rel|logs|])
 
 mkGhcupTmpDir :: (MonadThrow m, MonadIO m) => m (Path Abs)
 mkGhcupTmpDir = do
-  tmpdir <- liftIO $ getEnvDefault [s|TMPDIR|] [s|/tmp|]
-  tmp    <- liftIO $ mkdtemp $ (tmpdir FP.</> [s|ghcup-|])
+  tmpdir <- liftIO $ getEnvDefault "TMPDIR" "/tmp"
+  tmp    <- liftIO $ mkdtemp $ (tmpdir FP.</> "ghcup-")
   parseAbs tmp
 
 
@@ -83,7 +83,7 @@ withGHCupTmpDir = snd <$> allocate mkGhcupTmpDir deleteDirRecursive
 
 getHomeDirectory :: IO (Path Abs)
 getHomeDirectory = do
-  e <- getEnv [s|HOME|]
+  e <- getEnv "HOME"
   case e of
     Just fp -> parseAbs fp
     Nothing -> do
