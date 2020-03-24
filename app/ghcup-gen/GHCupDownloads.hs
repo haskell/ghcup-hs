@@ -1680,7 +1680,7 @@ ghcupDownloads = M.fromList
     )
   , ( GHCup
     , M.fromList
-      [ ( [vver|0.1.0|]
+      [ ( [vver|0.0.0|]
         , VersionInfo [Recommended, Latest] Nothing $ M.fromList
           [ ( A_64
             , M.fromList

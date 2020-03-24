@@ -335,4 +335,4 @@ make args workdir = do
   spaths    <- catMaybes . fmap parseAbs <$> getSearchPath
   has_gmake <- isJust <$> searchPath spaths [rel|gmake|]
   let mymake = if has_gmake then "gmake" else "make"
-  execLogged mymake True args [rel|ghc-make.log|] workdir Nothing
+  execLogged mymake True args [rel|ghc-make|] workdir Nothing

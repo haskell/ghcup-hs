@@ -1,18 +1,21 @@
-{-# LANGUAGE QuasiQuotes     #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module GHCup.Utils.File where
 
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.Prelude
 
+import           Control.Concurrent
 import           Control.Exception.Safe
 import           Control.Monad
-import           Data.ByteString
+import           Data.ByteString                ( ByteString )
 import           Data.ByteString.Unsafe         ( unsafeUseAsCStringLen )
 import           Data.Char
 import           Data.Foldable
 import           Data.Functor
+import           Data.IORef
 import           Data.Maybe
 import           GHC.Foreign                    ( peekCStringLen )
 import           GHC.IO.Encoding                ( getLocaleEncoding )
@@ -23,7 +26,10 @@ import           Optics
 import           Streamly
 import           Streamly.External.ByteString
 import           Streamly.External.ByteString.Lazy
+import           System.Console.Pretty
+import           System.Console.Regions
 import           System.IO
+import           System.IO.Error
 import           System.Posix.Directory.ByteString
 import           System.Posix.FD               as FD
 import           System.Posix.FilePath   hiding ( (</>) )
@@ -34,6 +40,9 @@ import           System.Posix.Process           ( ProcessStatus(..) )
 import           System.Posix.Types
 
 
+import qualified Control.Exception             as EX
+import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as E
 import qualified System.Posix.Process.ByteString
                                                as SPPB
 import           Streamly.External.Posix.DirStream
@@ -42,7 +51,16 @@ import qualified Streamly.Internal.Memory.ArrayStream
 import qualified Streamly.FileSystem.Handle    as FH
 import qualified Streamly.Internal.Data.Unfold as SU
 import qualified Streamly.Prelude              as S
+import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as L
+import qualified "unix-bytestring" System.Posix.IO.ByteString
+                                               as SPIB
+
+
+data StopThread = StopThread Bool
+  deriving Show
+
+instance Exception StopThread
 
 
 data ProcessError = NonZeroExit Int ByteString [ByteString]
@@ -99,7 +117,7 @@ findExecutable ex = do
 
 -- | Execute the given command and collect the stdout, stderr and the exit code.
 -- The command is run in a subprocess.
-executeOut :: Path b          -- ^ command as filename, e.g. 'ls'
+executeOut :: Path b            -- ^ command as filename, e.g. 'ls'
            -> [ByteString]      -- ^ arguments to the command
            -> Maybe (Path Abs)  -- ^ chdir to this path
            -> IO CapturedProcess
@@ -116,26 +134,110 @@ execLogged :: ByteString       -- ^ thing to execute
            -> Maybe [(ByteString, ByteString)] -- ^ optional environment
            -> IO (Either ProcessError ())
 execLogged exe spath args lfile chdir env = do
-  ldir <- ghcupLogsDir
-  let logfile = ldir </> lfile
+  ldir    <- ghcupLogsDir
+  logfile <- (ldir </>) <$> parseRel (toFilePath lfile <> ".log")
   bracket (createFile (toFilePath logfile) newFilePerms) closeFd action
  where
   action fd = do
-    pid <- SPPB.forkProcess $ do
-      -- dup stdout
-      void $ dupTo fd stdOutput
+    actionWithPipes $ \(stdoutRead, stdoutWrite) -> do
+      -- start the thread that logs to stdout in a region
+      done <- newEmptyMVar
+      tid  <-
+        forkIO
+        $ EX.handle (\(_ :: StopThread) -> pure ())
+        $ EX.handle (\(_ :: IOException) -> pure ())
+        $ flip finally (putMVar done ())
+        $ printToRegion fd stdoutRead 6
 
-      -- dup stderr
-      void $ dupTo fd stdError
+      -- fork our subprocess
+      pid <- SPPB.forkProcess $ do
+        void $ dupTo stdoutWrite stdOutput
+        void $ dupTo stdoutWrite stdError
+        closeFd stdoutWrite
+        closeFd stdoutRead
 
-      -- execute the action
-      maybe (pure ()) (changeWorkingDirectory . toFilePath) chdir
-      SPPB.executeFile exe spath args env
+        -- execute the action
+        maybe (pure ()) (changeWorkingDirectory . toFilePath) chdir
+        SPPB.executeFile exe spath args env
+
+      closeFd stdoutWrite
+
+      -- wait for the subprocess to finish
+      e <- SPPB.getProcessStatus True True pid >>= \case
+        i@(Just (SPPB.Exited _)) -> pure $ toProcessError exe args i
+        i                        -> pure $ toProcessError exe args i
+
+      -- make sure the logging thread stops
+      case e of
+        Left  _ -> EX.throwTo tid (StopThread False)
+        Right _ -> EX.throwTo tid (StopThread True)
+      takeMVar done
+
+      closeFd stdoutRead
+      pure e
+
+  -- Reads fdIn and logs the output in a continous scrolling area
+  -- of 'size' terminal lines. Also writes to a log file.
+  printToRegion fileFd fdIn size = do
+    ref <- newIORef ([] :: [ByteString])
+    displayConsoleRegions $ do
+      rs <- sequence . replicate size . openConsoleRegion $ Linear
+      flip finally (readTilEOF (lineAction ref rs) fdIn) -- make sure the last few lines don't get cut off
+        $ handle
+            (\(StopThread b) -> do
+              when b (forM_ rs closeConsoleRegion)
+              EX.throw (StopThread b)
+            )
+        $ readForever (lineAction ref rs) fdIn
+
+   where
+    -- action to perform line by line
+    lineAction ref rs bs' = do
+      modifyIORef' ref (swapRegs bs')
+      regs <- readIORef ref
+      forM (zip regs rs) $ \(bs, r) -> do
+        setConsoleRegion r $ do
+          w <- consoleWidth
+          return
+            . T.pack
+            . color Blue
+            . T.unpack
+            . E.decodeUtf8
+            . trim w
+            . (\b -> "[ " <> toFilePath lfile <> " ] " <> b)
+            $ bs
+        SPIB.fdWrite fileFd (bs <> "\n")
 
 
-    SPPB.getProcessStatus True True pid >>= \case
-      i@(Just (SPPB.Exited _)) -> pure $ toProcessError exe args i
-      i                         -> pure $ toProcessError exe args i
+    swapRegs bs regs | length regs < size = regs ++ [bs]
+                     | otherwise          = tail regs ++ [bs]
+
+    -- trim output line to terminal width
+    trim w bs | BS.length bs > w && w > 5 = BS.take (w - 4) bs <> "..."
+              | otherwise                 = bs
+
+    -- read an entire line from the file descriptor (removes the newline char)
+    readLine fd' = do
+      bs <-
+        handle
+            (\(e :: IOError) -> do
+              if isEOFError e then threadDelay 1000 >> pure "" else throw e
+            )
+          $ SPIB.fdRead fd' 1
+      if
+        | bs == "\n" -> pure ""
+        | bs == ""   -> pure ""
+        | otherwise  -> fmap (bs <>) $ readLine fd'
+
+    readForever action' fd' = do
+      bs <- readLine fd'
+      if not $ BS.null bs
+        then action' bs >> readForever action' fd'
+        else readForever action' fd'
+
+    readTilEOF action' fd' = do
+      bs <- readLine fd'
+      when (not $ BS.null bs) (action' bs >> readTilEOF action' fd')
 
 
 -- | Capture the stdout and stderr of the given action, which
@@ -176,10 +278,13 @@ captureOutStreams action =
                                  }
         _ -> throwIO $ userError $ ("No such PID " ++ show pid)
 
- where
-  actionWithPipes a =
-    createPipe >>= \(p1, p2) -> (flip finally) (cleanup [p1, p2]) $ a (p1, p2)
-  cleanup fds = for_ fds $ \fd -> handleIO (\_ -> pure ()) $ closeFd fd
+
+actionWithPipes :: ((Fd, Fd) -> IO b) -> IO b
+actionWithPipes a =
+  createPipe >>= \(p1, p2) -> (flip finally) (cleanup [p1, p2]) $ a (p1, p2)
+
+cleanup :: [Fd] -> IO ()
+cleanup fds = for_ fds $ \fd -> handleIO (\_ -> pure ()) $ closeFd fd
 
 
 

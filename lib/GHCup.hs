@@ -138,7 +138,7 @@ installGHCBin bDls ver mpfReq = do
     lEM $ liftIO $ execLogged "./configure"
                               False
                               ["--prefix=" <> toFilePath inst]
-                              [rel|ghc-configure.log|]
+                              [rel|ghc-configure|]
                               (Just path)
                               Nothing
     lEM $ liftIO $ make ["install"] (Just path)
@@ -516,7 +516,7 @@ GhcWithLlvmCodeGen = YES|]
           "./configure"
           False
           ["--prefix=" <> toFilePath ghcdir]
-          [rel|ghc-configure.log|]
+          [rel|ghc-conf|]
           (Just workdir)
           (Just (("GHC", toFilePath bghcPath) : newEnv))
       | otherwise -> do
@@ -524,7 +524,7 @@ GhcWithLlvmCodeGen = YES|]
           "./configure"
           False
           ["--prefix=" <> toFilePath ghcdir, "--with-ghc=" <> toFilePath bghc]
-          [rel|ghc-configure.log|]
+          [rel|ghc-conf|]
           (Just workdir)
           (Just newEnv)
 
@@ -612,7 +612,7 @@ compileCabal dls tver bver jobs = do
     lEM $ liftIO $ execLogged "./bootstrap.sh"
                               False
                               (maybe [] (\j -> ["-j", fS (show j)]) jobs)
-                              [rel|cabal-bootstrap.log|]
+                              [rel|cabal-bootstrap|]
                               (Just workdir)
                               (Just newEnv)
 
