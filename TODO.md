@@ -2,6 +2,8 @@
 
 ## Now
 
+* travis
+
 * requirements
   * for ghcup (bootstrap script)
   * per tool
@@ -11,6 +13,12 @@
 
 * bootstrap-haskell with new ghcup
   * add warning to ghcup script about new binary
+
+* make sure smart-dl is not broken
+
+* handle SIGINT better (remove dirs)
+
+* review symlink handling (maybe fixed set of tools?)
 
 ## Maybe
 
