@@ -22,7 +22,6 @@ import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.Logger
 import           Control.Monad.Reader
-import           Control.Monad.Trans.Class      ( lift )
 import           Data.ByteString                ( ByteString )
 import           Data.Foldable
 import           Data.Maybe

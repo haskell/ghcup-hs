@@ -11,11 +11,9 @@ module GHCup.Utils.Version.QQ where
 import           Data.Data
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           GHC.Base
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Quote      ( QuasiQuoter(..) )
-import           Language.Haskell.TH.Syntax     ( Exp(..)
-                                                , Lift
+import           Language.Haskell.TH.Syntax     ( Lift
                                                 , dataToExpQ
                                                 )
 import qualified Data.Text                     as T
@@ -33,12 +31,10 @@ deriving instance Data Mess
 deriving instance Lift Mess
 deriving instance Data PVP
 deriving instance Lift PVP
-deriving instance Lift (NonEmpty Word)
 deriving instance Lift VSep
 deriving instance Data VSep
 deriving instance Lift VUnit
 deriving instance Data VUnit
-instance Lift Text
 
 qq :: (Text -> Q Exp) -> QuasiQuoter
 qq quoteExp' = QuasiQuoter

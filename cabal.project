@@ -1,6 +1,6 @@
 packages: ./ghcup.cabal
 
-with-compiler: ghc-8.6.5
+with-compiler: ghc-8.8.3
 
 optimization: 2
 
@@ -15,4 +15,5 @@ package tar-bytestring
 
 constraints: http-io-streams -brotli
 
-index-state: 2020-03-09T18:53:34Z
+allow-newer: base
+

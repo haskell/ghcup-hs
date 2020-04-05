@@ -18,7 +18,6 @@ import           GHCup.Utils.Prelude
 import           Data.Aeson
 import           Data.Aeson.TH
 import           Data.Aeson.Types
-import           Data.Text.Encoding             ( decodeUtf8 )
 import           Data.Text.Encoding            as E
 import           Data.Versions
 import           Data.Word8

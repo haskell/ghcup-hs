@@ -22,10 +22,8 @@ import           GHCup.Utils.Prelude
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
-import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Logger
 import           Control.Monad.Reader
-import           Control.Monad.Trans.Class      ( lift )
 import           Data.Attoparsec.ByteString
 import           Data.ByteString                ( ByteString )
 import           Data.List

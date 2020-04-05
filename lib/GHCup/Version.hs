@@ -8,4 +8,4 @@ import           GHCup.Utils.Version.QQ
 import           Data.Versions
 
 ghcUpVer :: PVP
-ghcUpVer = [pver|0.0.0|]
+ghcUpVer = [pver|0.0.1|]

@@ -18,7 +18,6 @@ import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
 import           GHCup.Version
 
-import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
@@ -27,7 +26,6 @@ import           Data.Char
 import           Data.Either
 import           Data.Functor
 import           Data.List                      ( intercalate )
-import           Data.Semigroup                 ( (<>) )
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions

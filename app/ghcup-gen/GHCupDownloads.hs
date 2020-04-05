@@ -832,6 +832,64 @@ ghc_883_32_musl = DownloadInfo
 
 
 
+    -----------------
+    --[ GHC 8.10.1 ]--
+    -----------------
+
+
+
+ghc_8101_32_deb9 :: DownloadInfo
+ghc_8101_32_deb9 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-i386-deb9-linux.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "8b53eef2c827b5f634d72920a93c0c9dd66ea288691a2bfe28def45d3c686ee2"
+
+
+ghc_8101_64_deb9 :: DownloadInfo
+ghc_8101_64_deb9 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-deb9-linux.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "d1cf7886f27af070f3b7dbe1975a78b43ef2d32b86362cbe953e79464fe70761"
+
+
+ghc_8101_64_deb10 :: DownloadInfo
+ghc_8101_64_deb10 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-deb10-linux.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "c1e31d798b013699b3c0de4fda27fb4cda47f572df0e75e3bd598a3012060615"
+
+
+ghc_8101_64_fedora :: DownloadInfo
+ghc_8101_64_fedora = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-fedora27-linux.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "3c4cd72b4806045779739e8f5d1658e30e57123d88c2c8966422cdbcae448470"
+
+
+ghc_8101_64_centos :: DownloadInfo
+ghc_8101_64_centos = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-centos7-linux.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "0618b94854edc6be5302489df905e627820b71be6b66c950f5e3088fe92df0a1"
+
+
+ghc_8101_64_darwin :: DownloadInfo
+ghc_8101_64_darwin = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-apple-darwin.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "65b1ca361093de4804a7e40b3e68178e1ef720f84f743641ec8d95e56a45b3a8"
+
+
+ghc_8101_64_alpine :: DownloadInfo
+ghc_8101_64_alpine = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-alpine3.10-linux-integer-simple.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "cb13b645d103e2fba2eb8dfcc4e5f2fbd9550c00c4df42f342b4210436dcb8a8"
+
+
+
+
+
     ---------------------
     --[ Cabal-2.4.1.0 ]--
     ---------------------
@@ -895,13 +953,39 @@ cabal_3000_64_darwin = DownloadInfo
 
 
 
+    ---------------------
+    --[ Cabal-3.2.0.0 ]--
+    ---------------------
+
+
+cabal_3200_32_linux :: DownloadInfo
+cabal_3200_32_linux = DownloadInfo
+  [uri|https://downloads.haskell.org/cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-i386-unknown-linux.tar.xz|]
+  Nothing
+  "2b3ac28549916de5f3379241797eaf60e84b6c001f2abbe73d9fadbbaf768e93"
+
+cabal_3200_64_linux :: DownloadInfo
+cabal_3200_64_linux = DownloadInfo
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-unknown-linux.tar.xz|]
+  Nothing
+  "32d1f7cf1065c37cb0ef99a66adb405f409b9763f14c0926f5424ae408c738ac"
+
+cabal_3200_64_darwin :: DownloadInfo
+cabal_3200_64_darwin = DownloadInfo
+  [uri|https://downloads.haskell.org/cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-apple-darwin17.7.0.tar.xz|]
+  Nothing
+  "9197c17d2ece0f934f5b33e323cfcaf486e4681952687bc3d249488ce3cbe0e9"
+
+
+
+
     -------------
     --[ GHCup ]--
     -------------
 
 
-ghcup_010_64_linux :: DownloadInfo
-ghcup_010_64_linux = DownloadInfo
+ghcup_001_64_linux :: DownloadInfo
+ghcup_001_64_linux = DownloadInfo
   [uri|file:///home/maerwald/tmp/ghcup-exe|]
   Nothing
   "558126339252788a3d44a3f910417277c7ab656f0796b68bdc58afe73296b8cd"
@@ -1420,7 +1504,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.6.5|]
         , VersionInfo
-            [Recommended]
+            []
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-src.tar.xz|]
               (Just [rel|ghc-8.6.5|])
@@ -1570,7 +1654,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.8.3|]
         , VersionInfo
-            [Latest]
+            [Recommended]
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-src.tar.xz|]
               (Just [rel|ghc-8.8.3|])
@@ -1618,6 +1702,71 @@ ghcupDownloads = M.fromList
                 )
               ]
         )
+      , ( [vver|8.10.1|]
+        , VersionInfo
+            [Latest]
+            (Just $ DownloadInfo
+              [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-src.tar.xz|]
+              (Just [rel|ghc-8.10.1|])
+              "4e3b07f83a266b3198310f19f71e371ebce97c769b14f0d688f4cbf2a2a1edf5"
+            )
+          $ M.fromList
+              [ ( A_64
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, ghc_8101_64_fedora)]
+                    )
+                  , ( Linux Fedora
+                    , M.fromList
+                      [ (Nothing        , ghc_8101_64_fedora)
+                      , (Just [vers|27|], ghc_8101_64_fedora)
+                      ]
+                    )
+                  , ( Linux CentOS
+                    , M.fromList
+                      [ (Nothing       , ghc_8101_64_centos)
+                      , (Just [vers|7|], ghc_8101_64_centos)
+                      ]
+                    )
+                  , ( Linux AmazonLinux
+                    , M.fromList [(Nothing, ghc_8101_64_centos)]
+                    )
+                  , ( Linux Ubuntu
+                    , M.fromList
+                      [ (Nothing           , ghc_8101_64_fedora)
+                      , (Just [vers|16.04|], ghc_8101_64_deb9)
+                      , (Just [vers|18.04|], ghc_8101_64_deb9)
+                      ]
+                    )
+                  , (Linux Mint, M.fromList [(Nothing, ghc_8101_64_deb10)])
+                  , ( Linux Debian
+                    , M.fromList
+                      [ (Nothing        , ghc_8101_64_deb9)
+                      , (Just [vers|9|] , ghc_8101_64_deb9)
+                      , (Just [vers|10|], ghc_8101_64_deb10)
+                      ]
+                    )
+                  , (Darwin      , M.fromList [(Nothing, ghc_8101_64_darwin)])
+                  , (Linux Alpine, M.fromList [(Nothing, ghc_8101_64_alpine)])
+                  ]
+                )
+              , ( A_32
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, ghc_8101_32_deb9)]
+                    )
+                  , (Linux Ubuntu, M.fromList [(Nothing, ghc_8101_32_deb9)])
+                  , (Linux Mint  , M.fromList [(Nothing, ghc_8101_32_deb9)])
+                  , ( Linux Debian
+                    , M.fromList
+                      [ (Nothing       , ghc_8101_32_deb9)
+                      , (Just [vers|9|], ghc_8101_32_deb9)
+                      ]
+                    )
+                  ]
+                )
+              ]
+        )
       ]
     )
   , ( Cabal
@@ -1652,7 +1801,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|3.0.0.0|]
         , VersionInfo
-            [Recommended, Latest]
+            []
             (Just $ DownloadInfo
               [uri|https://github.com/haskell/cabal/archive/cabal-install-v3.0.0.0.tar.gz|]
               (Just [rel|cabal-cabal-install-v3.0.0.0/cabal-install|])
@@ -1676,15 +1825,41 @@ ghcupDownloads = M.fromList
                 )
               ]
         )
+      , ( [vver|3.2.0.0|]
+        , VersionInfo
+            [Recommended, Latest]
+            (Just $ DownloadInfo
+              [uri|https://github.com/haskell/cabal/archive/cabal-install-v3.2.0.0.tar.gz|]
+              (Just [rel|cabal-cabal-install-v3.2.0.0/cabal-install|])
+              "77202358bdf0b481c09326268ce18880df14194c5aaa840f99510bdd1a124b75"
+            )
+          $ M.fromList
+              [ ( A_64
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, cabal_3200_64_linux)]
+                    )
+                  , (Darwin, M.fromList [(Nothing, cabal_3200_64_darwin)])
+                  ]
+                )
+              , ( A_32
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, cabal_3200_32_linux)]
+                    )
+                  ]
+                )
+              ]
+        )
       ]
     )
   , ( GHCup
     , M.fromList
-      [ ( [vver|0.0.0|]
+      [ ( [vver|0.0.1|]
         , VersionInfo [Recommended, Latest] Nothing $ M.fromList
           [ ( A_64
             , M.fromList
-              [(Linux UnknownLinux, M.fromList [(Nothing, ghcup_010_64_linux)])]
+              [(Linux UnknownLinux, M.fromList [(Nothing, ghcup_001_64_linux)])]
             )
           ]
         )

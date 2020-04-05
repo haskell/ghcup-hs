@@ -23,10 +23,8 @@ import           GHCup.Utils.Prelude
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
-import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Logger
 import           Control.Monad.Reader
-import           Control.Monad.Trans.Class      ( lift )
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.Aeson
@@ -57,8 +55,6 @@ import "unix"    System.Posix.IO.ByteString
                                          hiding ( fdWrite )
 import "unix-bytestring" System.Posix.IO.ByteString
                                                 ( fdWrite )
-import           System.Posix.RawFilePath.Directory.Errors
-                                                ( hideError )
 import           System.ProgressBar
 import           URI.ByteString
 import           URI.ByteString.QQ

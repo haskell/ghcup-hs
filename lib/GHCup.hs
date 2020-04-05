@@ -28,10 +28,8 @@ import           GHCup.Version
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
-import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Logger
 import           Control.Monad.Reader
-import           Control.Monad.Trans.Class      ( lift )
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.ByteString                ( ByteString )
@@ -51,8 +49,6 @@ import           Prelude                 hiding ( abs
                                                 )
 import           System.IO.Error
 import           System.Posix.FilePath          ( getSearchPath )
-import           System.Posix.RawFilePath.Directory.Errors
-                                                ( hideError )
 
 import qualified Data.ByteString               as B
 import qualified Data.Map.Strict               as Map

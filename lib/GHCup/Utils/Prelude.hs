@@ -17,7 +17,6 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Class      ( lift )
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
-import           Data.Monoid                    ( (<>) )
 import           Data.String
 import           Data.Text                      ( Text )
 import           Data.Versions
