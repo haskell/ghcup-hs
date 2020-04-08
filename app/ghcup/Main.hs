@@ -108,7 +108,7 @@ data CompileCommand = CompileGHC CompileOptions
 
 data CompileOptions = CompileOptions
   { targetVer    :: Version
-  , bootstrapVer :: Version
+  , bootstrapGhc :: Either Version (Path Abs)
   , jobs         :: Maybe Int
   , buildConfig  :: Maybe (Path Abs)
   }
@@ -310,12 +310,16 @@ compileOpts =
         )
     <*> (option
           (eitherReader
-            (bimap (const "Not a valid version") id . version . T.pack)
+            (\x ->
+              (bimap (const "Not a valid version") Left . version . T.pack $ x)
+                <|> (bimap show Right . parseAbs . E.encodeUtf8 . T.pack $ x)
+            )
           )
           (  short 'b'
-          <> long "bootstrap-version"
-          <> metavar "BOOTSTRAP_VERSION"
-          <> help "The GHC version to bootstrap with (must be installed)"
+          <> long "bootstrap-ghc"
+          <> metavar "BOOTSTRAP_GHC"
+          <> help
+               "The GHC version (or full path) to bootstrap with (must be installed)"
           )
         )
     <*> optional
@@ -694,7 +698,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
               void
                 $   (runCompileGHC $ do
                       liftE
-                        $ compileGHC dls targetVer bootstrapVer jobs buildConfig
+                        $ compileGHC dls targetVer bootstrapGhc jobs buildConfig
                     )
                 >>= \case
                       VRight _ ->
@@ -715,7 +719,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
             Compile (CompileCabal CompileOptions {..}) ->
               void
                 $   (runCompileCabal $ do
-                      liftE $ compileCabal dls targetVer bootstrapVer jobs
+                      liftE $ compileCabal dls targetVer bootstrapGhc jobs
                     )
                 >>= \case
                       VRight _ ->

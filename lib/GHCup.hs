@@ -431,10 +431,10 @@ compileGHC :: ( MonadMask m
               , MonadFail m
               )
            => GHCupDownloads
-           -> Version          -- ^ version to install
-           -> Version          -- ^ version to bootstrap with
-           -> Maybe Int        -- ^ jobs
-           -> Maybe (Path Abs) -- ^ build config
+           -> Version                    -- ^ version to install
+           -> Either Version (Path Abs)  -- ^ version to bootstrap with
+           -> Maybe Int                  -- ^ jobs
+           -> Maybe (Path Abs)           -- ^ build config
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
@@ -446,8 +446,8 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 ()
-compileGHC dls tver bver jobs mbuildConfig = do
-  lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bver}|]
+compileGHC dls tver bstrap jobs mbuildConfig = do
+  lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
   whenM (liftIO $ toolAlreadyInstalled GHC tver)
         (throwE $ AlreadyInstalled GHC tver)
 
@@ -459,7 +459,9 @@ compileGHC dls tver bver jobs mbuildConfig = do
   tmpUnpack <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
 
-  bghc <- parseRel ("ghc-" <> verToBS bver)
+  bghc <- case bstrap of
+    Right g    -> pure $ Right g
+    Left  bver -> Left <$> parseRel ("ghc-" <> verToBS bver)
   let workdir = maybe id (flip (</>)) (view dlSubdir dlInfo) $ tmpUnpack
   ghcdir <- liftIO $ ghcupGHCDir tver
 
@@ -491,7 +493,7 @@ HADDOCK_DOCS = YES
 GhcWithLlvmCodeGen = YES|]
 
   compile :: (MonadCatch m, MonadLogger m, MonadIO m)
-          => Path Rel
+          => Either (Path Rel) (Path Abs)
           -> Path Abs
           -> Path Abs
           -> Excepts
@@ -506,8 +508,11 @@ GhcWithLlvmCodeGen = YES|]
 
     if
       | tver >= [vver|8.8.0|] -> do
-        spaths   <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
-        bghcPath <- (liftIO $ searchPath spaths bghc) !? NoDownload
+        bghcPath <- case bghc of
+          Right ghc' -> pure ghc'
+          Left  bver -> do
+            spaths <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
+            (liftIO $ searchPath spaths bver) !? NoDownload
         lEM $ liftIO $ execLogged
           "./configure"
           False
@@ -519,7 +524,9 @@ GhcWithLlvmCodeGen = YES|]
         lEM $ liftIO $ execLogged
           "./configure"
           False
-          ["--prefix=" <> toFilePath ghcdir, "--with-ghc=" <> toFilePath bghc]
+          [ "--prefix=" <> toFilePath ghcdir
+          , "--with-ghc=" <> either toFilePath toFilePath bghc
+          ]
           [rel|ghc-conf|]
           (Just workdir)
           (Just newEnv)
@@ -532,9 +539,7 @@ GhcWithLlvmCodeGen = YES|]
       Nothing ->
         liftIO $ writeFile (build_mk workdir) (Just newFilePerms) defaultConf
 
-    lift
-      $ $(logInfo)
-          [i|Building (this may take a while)... Run 'tail -f ~/.ghcup/logs/ghc-make.log' to see the progress.|]
+    lift $ $(logInfo) [i|Building (this may take a while)...|]
     lEM $ liftIO $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs)
                         (Just workdir)
 
@@ -556,7 +561,7 @@ compileCabal :: ( MonadReader Settings m
                 )
              => GHCupDownloads
              -> Version          -- ^ version to install
-             -> Version          -- ^ GHC version to build with
+             -> Either Version (Path Abs)  -- ^ version to bootstrap with
              -> Maybe Int
              -> Excepts
                   '[ BuildFailed
@@ -567,8 +572,8 @@ compileCabal :: ( MonadReader Settings m
                    ]
                   m
                   ()
-compileCabal dls tver bver jobs = do
-  lift $ $(logDebug) [i|Requested to compile: #{tver} with ghc-#{bver}|]
+compileCabal dls tver bghc jobs = do
+  lift $ $(logDebug) [i|Requested to compile: #{tver} with ghc-#{bghc}|]
 
   -- download source tarball
   dlInfo <- preview (ix Cabal % ix tver % viSourceDL % _Just) dls ?? NoDownload
@@ -588,22 +593,31 @@ compileCabal dls tver bver jobs = do
   pure ()
 
  where
-  compile :: (MonadLogger m, MonadIO m)
+  compile :: (MonadThrow m, MonadLogger m, MonadIO m)
           => Path Abs
           -> Excepts '[ProcessError] m ()
   compile workdir = do
-    lift
-      $ $(logInfo)
-          [i|Building (this may take a while)... Run 'tail -f ~/.ghcup/logs/cabal-bootstrap.log' to see the progress.|]
+    lift $ $(logInfo) [i|Building (this may take a while)...|]
 
-    let v' = verToBS bver
+    ghcEnv <- case bghc of
+      Right path -> do
+        -- recover the version from /foo/ghc-6.5.4
+        bn <- basename path
+        let dn  = toFilePath $ dirname path
+        let ver = snd . B.break (== _hyphen) . toFilePath $ bn
+
+        pure
+          [ ("GHC"    , toFilePath path)
+          , ("GHC_PKG", dn <> "/" <> "ghc-pkg" <> ver)
+          ]
+      Left bver -> do
+        let v' = verToBS bver
+        pure [("GHC", "ghc-" <> v'), ("GHC_PKG", "ghc-pkg-" <> v')]
+
     cabal_bin <- liftIO $ ghcupBinDir
-    newEnv    <- lift $ addToCurrentEnv
-      [ ("GHC"    , "ghc-" <> v')
-      , ("GHC_PKG", "ghc-pkg-" <> v')
-      , ("GHC_VER", v')
-      , ("PREFIX" , toFilePath cabal_bin)
-      ]
+    newEnv    <- lift
+      $ addToCurrentEnv (("PREFIX", toFilePath cabal_bin) : ghcEnv)
+    lift $ $(logDebug) [i|Environment: #{newEnv}|]
 
     lEM $ liftIO $ execLogged "./bootstrap.sh"
                               False
