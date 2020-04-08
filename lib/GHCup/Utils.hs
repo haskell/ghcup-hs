@@ -334,3 +334,23 @@ make args workdir = do
   has_gmake <- isJust <$> searchPath spaths [rel|gmake|]
   let mymake = if has_gmake then "gmake" else "make"
   execLogged mymake True args [rel|ghc-make|] workdir Nothing
+
+
+-- | Try to apply patches in order. Fails with 'PatchFailed'
+-- on first failure.
+applyPatches :: (MonadLogger m, MonadIO m)
+             => Path Abs   -- ^ dir containing patches
+             -> Path Abs   -- ^ dir to apply patches in
+             -> Excepts '[PatchFailed] m ()
+applyPatches pdir ddir = do
+  patches <- liftIO $ getDirsFiles pdir
+  forM_ (sort patches) $ \patch' -> do
+    lift $ $(logInfo) [i|Applying patch #{patch'}|]
+    (fmap (either (const Nothing) Just) $ liftIO $ exec
+        "patch"
+        True
+        ["-p1", "-i", toFilePath patch']
+        (Just ddir)
+        Nothing
+      )
+      !? PatchFailed

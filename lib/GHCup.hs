@@ -435,6 +435,7 @@ compileGHC :: ( MonadMask m
            -> Either Version (Path Abs)  -- ^ version to bootstrap with
            -> Maybe Int                  -- ^ jobs
            -> Maybe (Path Abs)           -- ^ build config
+           -> Maybe (Path Abs)
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
@@ -442,11 +443,12 @@ compileGHC :: ( MonadMask m
                  , DownloadFailed
                  , GHCupSetError
                  , NoDownload
+                 , PatchFailed
                  , UnknownArchive
                  ]
                 m
                 ()
-compileGHC dls tver bstrap jobs mbuildConfig = do
+compileGHC dls tver bstrap jobs mbuildConfig patchdir = do
   lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
   whenM (liftIO $ toolAlreadyInstalled GHC tver)
         (throwE $ AlreadyInstalled GHC tver)
@@ -497,11 +499,17 @@ GhcWithLlvmCodeGen = YES|]
           -> Path Abs
           -> Path Abs
           -> Excepts
-               '[NoDownload , FileDoesNotExistError , ProcessError]
+               '[ NoDownload
+                , FileDoesNotExistError
+                , PatchFailed
+                , ProcessError
+                ]
                m
                ()
   compile bghc ghcdir workdir = do
     lift $ $(logInfo) [i|configuring build|]
+
+    forM_ patchdir $ \dir -> liftE $ applyPatches dir workdir
 
     -- force ld.bfd for build (others seem to misbehave, like lld from FreeBSD)
     newEnv <- addToCurrentEnv [("LD", "ld.bfd")]
@@ -563,16 +571,18 @@ compileCabal :: ( MonadReader Settings m
              -> Version          -- ^ version to install
              -> Either Version (Path Abs)  -- ^ version to bootstrap with
              -> Maybe Int
+             -> Maybe (Path Abs)
              -> Excepts
                   '[ BuildFailed
                    , DigestError
                    , DownloadFailed
                    , NoDownload
+                   , PatchFailed
                    , UnknownArchive
                    ]
                   m
                   ()
-compileCabal dls tver bghc jobs = do
+compileCabal dls tver bghc jobs patchdir = do
   lift $ $(logDebug) [i|Requested to compile: #{tver} with ghc-#{bghc}|]
 
   -- download source tarball
@@ -595,9 +605,11 @@ compileCabal dls tver bghc jobs = do
  where
   compile :: (MonadThrow m, MonadLogger m, MonadIO m)
           => Path Abs
-          -> Excepts '[ProcessError] m ()
+          -> Excepts '[ProcessError , PatchFailed] m ()
   compile workdir = do
     lift $ $(logInfo) [i|Building (this may take a while)...|]
+
+    forM_ patchdir $ \dir -> liftE $ applyPatches dir workdir
 
     ghcEnv <- case bghc of
       Right path -> do

@@ -111,6 +111,7 @@ data CompileOptions = CompileOptions
   , bootstrapGhc :: Either Version (Path Abs)
   , jobs         :: Maybe Int
   , buildConfig  :: Maybe (Path Abs)
+  , patchDir     :: Maybe (Path Abs)
   }
 
 data UpgradeOpts = UpgradeInplace
@@ -342,6 +343,19 @@ compileOpts =
               "Absolute path to build config file"
             )
           )
+    <*> optional
+          (option
+            (eitherReader
+              (\x ->
+                bimap show id . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
+                    String
+                    (Path Abs)
+              )
+            )
+            (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
+              "Absolute path to patch directory (applied in order, uses -p1)"
+            )
+          )
 
 
 versionParser :: Parser Version
@@ -564,6 +578,7 @@ main = do
                       , DigestError
                       , GHCupSetError
                       , NoDownload
+                      , PatchFailed
                       , UnknownArchive
                       , DownloadFailed
                       ]
@@ -577,6 +592,7 @@ main = do
                       , NoDownload
                       , DigestError
                       , BuildFailed
+                      , PatchFailed
                       , DownloadFailed
                       ]
 
@@ -698,7 +714,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
               void
                 $   (runCompileGHC $ do
                       liftE
-                        $ compileGHC dls targetVer bootstrapGhc jobs buildConfig
+                        $ compileGHC dls targetVer bootstrapGhc jobs buildConfig patchDir
                     )
                 >>= \case
                       VRight _ ->
@@ -719,7 +735,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
             Compile (CompileCabal CompileOptions {..}) ->
               void
                 $   (runCompileCabal $ do
-                      liftE $ compileCabal dls targetVer bootstrapGhc jobs
+                      liftE $ compileCabal dls targetVer bootstrapGhc jobs patchDir
                     )
                 >>= \case
                       VRight _ ->

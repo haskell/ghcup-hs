@@ -88,6 +88,10 @@ data NoLocationHeader = NoLocationHeader
 data TooManyRedirs = TooManyRedirs
   deriving Show
 
+-- | A patch could not be applied.
+data PatchFailed = PatchFailed
+  deriving Show
+
 
 
     -------------------------
