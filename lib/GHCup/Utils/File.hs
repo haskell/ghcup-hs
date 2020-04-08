@@ -43,6 +43,7 @@ import           System.Posix.Types
 import qualified Control.Exception             as EX
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
+import qualified Data.Text.Encoding.Error      as E
 import qualified System.Posix.Process.ByteString
                                                as SPPB
 import           Streamly.External.Posix.DirStream
@@ -202,7 +203,7 @@ execLogged exe spath args lfile chdir env = do
             . T.pack
             . color Blue
             . T.unpack
-            . E.decodeUtf8
+            . E.decodeUtf8With E.lenientDecode
             . trim w
             . (\b -> "[ " <> toFilePath lfile <> " ] " <> b)
             $ bs
