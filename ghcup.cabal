@@ -21,6 +21,11 @@ source-repository head
   type:     git
   location: https://github.com/hasufell/ghcup-hs
 
+flag Curl
+  description: Use curl instead of http-io-streams for download
+  default:     False
+  manual:      True
+
 common HsOpenSSL
   build-depends: HsOpenSSL >=0.11.4.18
 
@@ -238,8 +243,6 @@ library
     , hpath-filepath
     , hpath-io
     , hpath-posix
-    , http-io-streams
-    , io-streams
     , language-bash
     , lzma
     , monad-logger
@@ -259,7 +262,6 @@ library
     , string-interpolate
     , tar-bytestring
     , template-haskell
-    , terminal-progress-bar
     , text
     , time
     , transformers
@@ -277,6 +279,7 @@ library
   exposed-modules:
     GHCup
     GHCup.Download
+    GHCup.Download.Utils
     GHCup.Errors
     GHCup.Platform
     GHCup.Types
@@ -295,6 +298,15 @@ library
   -- other-modules:
   -- other-extensions:
   hs-source-dirs:  lib
+
+  if !flag(curl)
+    import:
+      , http-io-streams
+      , io-streams
+      , terminal-progress-bar
+    exposed-modules: GHCup.Download.IOStreams
+  else
+    cpp-options:     -DCURL
 
 executable ghcup
   import:

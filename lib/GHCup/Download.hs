@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -10,15 +11,21 @@
 
 module GHCup.Download where
 
-
+#if !defined(CURL)
+import           GHCup.Download.IOStreams
+import           GHCup.Download.Utils
+#endif
 import           GHCup.Errors
 import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
 import           GHCup.Utils
+#if defined(CURL)
 import           GHCup.Utils.File
+#endif
 import           GHCup.Utils.Prelude
+import           GHCup.Version
 
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -29,12 +36,9 @@ import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.Aeson
 import           Data.ByteString                ( ByteString )
-import           Data.ByteString.Builder
 import           Data.CaseInsensitive           ( CI )
-import           Data.IORef
 import           Data.Maybe
 import           Data.String.Interpolate
-import           Data.Text.Read
 import           Data.Time.Clock
 import           Data.Time.Clock.POSIX
 import           Data.Time.Format
@@ -43,7 +47,6 @@ import           GHC.IO.Exception
 import           HPath
 import           HPath.IO                      as HIO
 import           Haskus.Utils.Variant.Excepts
-import           Network.Http.Client     hiding ( URL )
 import           OpenSSL.Digest
 import           Optics
 import           Prelude                 hiding ( abs
@@ -51,30 +54,19 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.IO.Error
-import "unix"    System.Posix.IO.ByteString
-                                         hiding ( fdWrite )
-import "unix-bytestring" System.Posix.IO.ByteString
-                                                ( fdWrite )
-import           System.ProgressBar
 import           URI.ByteString
-import           URI.ByteString.QQ
 
-import qualified Data.Binary.Builder           as B
-import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.CaseInsensitive          as CI
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
-import qualified System.IO.Streams             as Streams
 import qualified System.Posix.Files.ByteString as PF
 import qualified System.Posix.RawFilePath.Directory
                                                as RD
 
 
 
-ghcupURL :: URI
-ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.1.json|]
 
 
 
@@ -126,6 +118,7 @@ getDownloads urlSource = do
                 , UnsupportedScheme
                 , NoLocationHeader
                 , TooManyRedirs
+                , ProcessError
                 ]
                m1
                L.ByteString
@@ -154,7 +147,7 @@ getDownloads urlSource = do
                     pure bs
                   else liftIO $ readFile json_file
               Nothing -> do
-                lift $ $(logWarn) [i|Unable to get/parse Last-Modified header|]
+                lift $ $(logDebug) [i|Unable to get/parse Last-Modified header|]
                 liftIO $ deleteFile json_file
                 liftE $ downloadBS uri'
           else -- access in less than 5 minutes, re-use file
@@ -167,11 +160,14 @@ getDownloads urlSource = do
             liftIO $ writeFileWithModTime modTime json_file bs
             pure bs
           Nothing -> do
-            lift $ $(logWarn) [i|Unable to get/parse Last-Modified header|]
+            lift $ $(logDebug) [i|Unable to get/parse Last-Modified header|]
             liftE $ downloadBS uri'
 
    where
     getModTime = do
+#if defined(CURL)
+      pure Nothing
+#else
       headers <-
         handleIO (\_ -> pure mempty)
         $ liftE
@@ -182,7 +178,7 @@ getDownloads urlSource = do
           $ getHead uri'
           )
       pure $ parseModifiedHeader headers
-
+#endif
 
   parseModifiedHeader :: (M.Map (CI ByteString) ByteString) -> Maybe UTCTime
   parseModifiedHeader headers =
@@ -285,25 +281,25 @@ download dli dest mfn
     let uri' = E.decodeUtf8 (serializeURIRef' (view dlUri dli))
     lift $ $(logInfo) [i|downloading: #{uri'}|]
 
-    (https, host, fullPath, port) <- reThrowAll DownloadFailed
-      $ uriToQuadruple (view dlUri dli)
-
     -- destination dir must exist
     liftIO $ hideError AlreadyExists $ createDirRecursive newDirPerms dest
     destFile <- getDestFile
 
     -- download
-    fd       <- liftIO $ createRegularFileFd newFilePerms destFile
-    let stepper = fdWrite fd
     flip onException
          (liftIO $ hideError doesNotExistErrorType $ deleteFile destFile)
-      $ flip finally (liftIO $ closeFd fd)
-      $ catchAllE
+     $ catchAllE @_ @'[ProcessError, DownloadFailed, UnsupportedScheme]
           (\e ->
             (liftIO $ hideError doesNotExistErrorType $ deleteFile destFile)
               >> (throwE . DownloadFailed $ e)
-          )
-      $ downloadInternal True https host fullPath port stepper
+          ) $ do
+#if defined(CURL)
+              liftE $ lEM @_ @'[ProcessError] $ liftIO $ exec "curl" True
+                ["-sSfL", "-o", toFilePath destFile , serializeURIRef' $ view dlUri dli] Nothing Nothing
+#else
+              (https, host, fullPath, port) <- liftE $ uriToQuadruple (view dlUri dli)
+              liftE $ downloadToFile https host fullPath port destFile
+#endif
 
     liftE $ checkDigest dli destFile
     pure destFile
@@ -352,6 +348,8 @@ downloadCached dli mfn = do
     ------------------
 
 
+
+
 -- | This is used for downloading the JSON.
 downloadBS :: (MonadCatch m, MonadIO m)
            => URI
@@ -362,6 +360,7 @@ downloadBS :: (MonadCatch m, MonadIO m)
                  , UnsupportedScheme
                  , NoLocationHeader
                  , TooManyRedirs
+                 , ProcessError
                  ]
                 m
                 L.ByteString
@@ -380,220 +379,17 @@ downloadBS uri'
   scheme = view (uriSchemeL' % schemeBSL') uri'
   path   = view pathL' uri'
   dl https = do
+#if defined(CURL)
+    let exe = [rel|curl|]
+        args = ["-sSfL", serializeURIRef' uri']
+    liftIO (executeOut exe args Nothing) >>= \case
+      CapturedProcess ExitSuccess stdout _ -> do
+        pure $ L.fromStrict stdout
+      CapturedProcess (ExitFailure i') _ _ -> throwE $ NonZeroExit i' (toFilePath exe) args
+#else
     (_, host', fullPath', port') <- liftE $ uriToQuadruple uri'
     liftE $ downloadBS' https host' fullPath' port'
-
-
--- | Load the result of this download into memory at once.
-downloadBS' :: MonadIO m
-            => Bool             -- ^ https?
-            -> ByteString       -- ^ host (e.g. "www.example.com")
-            -> ByteString       -- ^ path (e.g. "/my/file") including query
-            -> Maybe Int        -- ^ optional port (e.g. 3000)
-            -> Excepts
-                 '[ HTTPStatusError
-                  , URIParseError
-                  , UnsupportedScheme
-                  , NoLocationHeader
-                  , TooManyRedirs
-                  ]
-                 m
-                 (L.ByteString)
-downloadBS' https host path port = do
-  bref <- liftIO $ newIORef (mempty :: Builder)
-  let stepper bs = modifyIORef bref (<> byteString bs)
-  downloadInternal False https host path port stepper
-  liftIO (readIORef bref <&> toLazyByteString)
-
-
-downloadInternal :: MonadIO m
-                 => Bool        -- ^ whether to show a progress bar
-                 -> Bool        -- ^ https?
-                 -> ByteString  -- ^ host
-                 -> ByteString  -- ^ path with query
-                 -> Maybe Int   -- ^ optional port
-                 -> (ByteString -> IO a)   -- ^ the consuming step function
-                 -> Excepts
-                      '[ HTTPStatusError
-                       , URIParseError
-                       , UnsupportedScheme
-                       , NoLocationHeader
-                       , TooManyRedirs
-                       ]
-                      m
-                      ()
-downloadInternal = go (5 :: Int)
-
- where
-  go redirs progressBar https host path port consumer = do
-    r <- liftIO $ withConnection' https host port action
-    veitherToExcepts r >>= \case
-      Just r' ->
-        if redirs > 0 then followRedirectURL r' else throwE TooManyRedirs
-      Nothing -> pure ()
-   where
-    action c = do
-      let q = buildRequest1 $ http GET path
-
-      sendRequest c q emptyBody
-
-      receiveResponse
-        c
-        (\r i' -> runE $ do
-          let scode = getStatusCode r
-          if
-            | scode >= 200 && scode < 300 -> downloadStream r i' >> pure Nothing
-            | scode >= 300 && scode < 400 -> case getHeader r "Location" of
-              Just r' -> pure $ Just $ r'
-              Nothing -> throwE NoLocationHeader
-            | otherwise -> throwE $ HTTPStatusError scode
-        )
-
-    followRedirectURL bs = case parseURI strictURIParserOptions bs of
-      Right uri' -> do
-        (https', host', fullPath', port') <- liftE $ uriToQuadruple uri'
-        go (redirs - 1) progressBar https' host' fullPath' port' consumer
-      Left e -> throwE e
-
-    downloadStream r i' = do
-      let size = case getHeader r "Content-Length" of
-            Just x' -> case decimal $ E.decodeUtf8 x' of
-              Left  _       -> 0
-              Right (r', _) -> r'
-            Nothing -> 0
-
-      mpb <- if progressBar
-        then Just <$> (liftIO $ newProgressBar defStyle 10 (Progress 0 size ()))
-        else pure Nothing
-
-      outStream <- liftIO $ Streams.makeOutputStream
-        (\case
-          Just bs -> do
-            forM_ mpb $ \pb -> incProgress pb (BS.length bs)
-            void $ consumer bs
-          Nothing -> pure ()
-        )
-      liftIO $ Streams.connect i' outStream
-
-
-
-getHead :: (MonadCatch m, MonadIO m)
-        => URI
-        -> Excepts
-             '[ HTTPStatusError
-              , URIParseError
-              , UnsupportedScheme
-              , NoLocationHeader
-              , TooManyRedirs
-              ]
-             m
-             (M.Map (CI ByteString) ByteString)
-getHead uri' | scheme == "https" = head' True
-             | scheme == "http"  = head' False
-             | otherwise         = throwE UnsupportedScheme
-
- where
-  scheme = view (uriSchemeL' % schemeBSL') uri'
-  head' https = do
-    (_, host', fullPath', port') <- liftE $ uriToQuadruple uri'
-    liftE $ headInternal https host' fullPath' port'
-
-
-
-headInternal :: MonadIO m
-             => Bool        -- ^ https?
-             -> ByteString  -- ^ host
-             -> ByteString  -- ^ path with query
-             -> Maybe Int   -- ^ optional port
-             -> Excepts
-                  '[ HTTPStatusError
-                   , URIParseError
-                   , UnsupportedScheme
-                   , TooManyRedirs
-                   , NoLocationHeader
-                   ]
-                  m
-                  (M.Map (CI ByteString) ByteString)
-headInternal = go (5 :: Int)
-
- where
-  go redirs https host path port = do
-    r <- liftIO $ withConnection' https host port action
-    veitherToExcepts r >>= \case
-      Left r' ->
-        if redirs > 0 then followRedirectURL r' else throwE TooManyRedirs
-      Right hs -> pure hs
-   where
-
-    action c = do
-      let q = buildRequest1 $ http HEAD path
-
-      sendRequest c q emptyBody
-
-      unsafeReceiveResponse
-        c
-        (\r _ -> runE $ do
-          let scode = getStatusCode r
-          if
-            | scode >= 200 && scode < 300 -> do
-              let headers = getHeaderMap r
-              pure $ Right $ headers
-            | scode >= 300 && scode < 400 -> case getHeader r "Location" of
-              Just r' -> pure $ Left $ r'
-              Nothing -> throwE NoLocationHeader
-            | otherwise -> throwE $ HTTPStatusError scode
-        )
-
-    followRedirectURL bs = case parseURI strictURIParserOptions bs of
-      Right uri' -> do
-        (https', host', fullPath', port') <- liftE $ uriToQuadruple uri'
-        go (redirs - 1) https' host' fullPath' port'
-      Left e -> throwE e
-
-
-withConnection' :: Bool
-                -> ByteString
-                -> Maybe Int
-                -> (Connection -> IO a)
-                -> IO a
-withConnection' https host port action = bracket acquire closeConnection action
-
- where
-  acquire = case https of
-    True -> do
-      ctx <- baselineContextSSL
-      openConnectionSSL ctx host (fromIntegral $ fromMaybe 443 port)
-    False -> openConnection host (fromIntegral $ fromMaybe 80 port)
-
-
--- | Extracts from a URI type: (https?, host, path+query, port)
-uriToQuadruple :: Monad m
-               => URI
-               -> Excepts
-                    '[UnsupportedScheme]
-                    m
-                    (Bool, ByteString, ByteString, Maybe Int)
-uriToQuadruple URI {..} = do
-  let scheme = view schemeBSL' uriScheme
-
-  host <-
-    preview (_Just % authorityHostL' % hostBSL') uriAuthority
-      ?? UnsupportedScheme
-
-  https <- if
-    | scheme == "https" -> pure True
-    | scheme == "http"  -> pure False
-    | otherwise         -> throwE UnsupportedScheme
-
-  let queryBS =
-        BS.intercalate "&"
-          . fmap (\(x, y) -> encodeQuery x <> "=" <> encodeQuery y)
-          $ (queryPairs uriQuery)
-      port =
-        preview (_Just % authorityPortL' % _Just % portNumberL') uriAuthority
-      fullpath = if BS.null queryBS then uriPath else uriPath <> "?" <> queryBS
-  pure (https, host, fullpath, port)
-  where encodeQuery = L.toStrict . B.toLazyByteString . urlEncodeQuery
+#endif
 
 
 checkDigest :: (MonadIO m, MonadLogger m, MonadReader Settings m)
@@ -609,3 +405,4 @@ checkDigest dli file = do
     let cDigest = E.decodeUtf8 . toHex . digest (digestByName "sha256") $ c
         eDigest = view dlHash dli
     when ((cDigest /= eDigest) && verify) $ throwE (DigestError cDigest eDigest)
+
