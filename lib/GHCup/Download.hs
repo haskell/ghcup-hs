@@ -45,7 +45,6 @@ import           GHC.IO.Exception
 import           HPath
 import           HPath.IO                      as HIO
 import           Haskus.Utils.Variant.Excepts
-import           OpenSSL.Digest
 import           Optics
 import           Prelude                 hiding ( abs
                                                 , readFile
@@ -54,6 +53,8 @@ import           Prelude                 hiding ( abs
 import           System.IO.Error
 import           URI.ByteString
 
+import qualified Crypto.Hash.SHA256            as SHA256
+import qualified Data.ByteString.Base16        as B16
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.CaseInsensitive          as CI
 import qualified Data.Map.Strict               as M
@@ -400,7 +401,7 @@ checkDigest dli file = do
     let p' = toFilePath file
     lift $ $(logInfo) [i|verifying digest of: #{p'}|]
     c <- liftIO $ readFile file
-    let cDigest = E.decodeUtf8 . toHex . digest (digestByName "sha256") $ c
+    let cDigest = E.decodeUtf8 . B16.encode . SHA256.hashlazy $ c
         eDigest = view dlHash dli
     when ((cDigest /= eDigest) && verify) $ throwE (DigestError cDigest eDigest)
 

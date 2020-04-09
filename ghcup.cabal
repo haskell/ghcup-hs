@@ -47,6 +47,9 @@ common attoparsec
 common base
   build-depends: base >=4.12 && <5
 
+common base16-bytestring
+  build-depends: base16-bytestring >= 0.1.1.6
+
 common binary
   build-depends: binary >=0.8.6.0
 
@@ -65,6 +68,9 @@ common concurrent-output
 common containers
   build-depends: containers >=0.6
 
+common cryptohash-sha256
+  build-depends: cryptohash-sha256 >= 0.11.101.0
+
 common generics-sop
   build-depends: generics-sop >=0.5
 
@@ -73,9 +79,6 @@ common haskus-utils-types
 
 common haskus-utils-variant
   build-depends: haskus-utils-variant >=3.0
-
-common hopenssl
-  build-depends: hopenssl >=2.2.4
 
 common hpath
   build-depends: hpath >=0.11
@@ -223,7 +226,7 @@ library
   import:
     config
     , base
-    , HsOpenSSL
+    , base16-bytestring
     , aeson
     , ascii-string
     , async
@@ -234,10 +237,10 @@ library
     , case-insensitive
     , concurrent-output
     , containers
+    , cryptohash-sha256
     , generics-sop
     , haskus-utils-types
     , haskus-utils-variant
-    , hopenssl
     , hpath
     , hpath-directory
     , hpath-filepath
@@ -301,6 +304,7 @@ library
 
   if !flag(curl)
     import:
+      , HsOpenSSL
       , http-io-streams
       , io-streams
       , terminal-progress-bar
