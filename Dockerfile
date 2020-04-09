@@ -22,9 +22,6 @@ RUN apk add --no-cache \
 
 ## Package specific
 RUN apk add --no-cache \
-	libbz2 \
-	bzip2-dev \
-	bzip2-static \
 	zlib \
 	zlib-dev \
 	zlib-static \
@@ -35,7 +32,7 @@ RUN apk add --no-cache \
 	xz \
 	xz-dev
 
-
+RUN cabal v2-update
 
 COPY . /app
 
