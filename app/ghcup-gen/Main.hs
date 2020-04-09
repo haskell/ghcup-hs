@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -14,7 +15,9 @@ import           GHCupDownloads
 
 import           Data.Aeson                     ( eitherDecode )
 import           Data.Aeson.Encode.Pretty
+#if !MIN_VERSION_base(4,13,0)
 import           Data.Semigroup                 ( (<>) )
+#endif
 import           Options.Applicative     hiding ( style )
 import           System.Console.Pretty
 import           System.Exit

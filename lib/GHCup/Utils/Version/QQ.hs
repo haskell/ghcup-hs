@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-orphans    #-}
+{-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveLift         #-}
 {-# LANGUAGE FlexibleInstances  #-}
@@ -11,6 +12,9 @@ module GHCup.Utils.Version.QQ where
 import           Data.Data
 import           Data.Text                      ( Text )
 import           Data.Versions
+#if !MIN_VERSION_base(4,13,0)
+import           GHC.Base
+#endif
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Quote      ( QuasiQuoter(..) )
 import           Language.Haskell.TH.Syntax     ( Lift
@@ -35,6 +39,11 @@ deriving instance Lift VSep
 deriving instance Data VSep
 deriving instance Lift VUnit
 deriving instance Data VUnit
+
+#if !MIN_VERSION_base(4,13,0)
+deriving instance Lift (NonEmpty Word)
+instance Lift Text
+#endif
 
 qq :: (Text -> Q Exp) -> QuasiQuoter
 qq quoteExp' = QuasiQuoter

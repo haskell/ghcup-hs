@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -18,6 +19,9 @@ import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
 import           GHCup.Version
 
+#if !MIN_VERSION_base(4,13,0)
+import           Control.Monad.Fail             ( MonadFail )
+#endif
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource

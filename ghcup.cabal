@@ -277,8 +277,6 @@ library
     , word8
     , zlib
 
-  -- deps
-  -- cabal-fmt: expand lib
   exposed-modules:
     GHCup
     GHCup.Download

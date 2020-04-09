@@ -28,18 +28,25 @@ import           GHCup.Version
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
+#if !MIN_VERSION_base(4,13,0)
+import           Control.Monad.Fail             ( MonadFail )
+#endif
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.Aeson
+#if !defined(CURL)
 import           Data.ByteString                ( ByteString )
 import           Data.CaseInsensitive           ( CI )
+#endif
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Time.Clock
 import           Data.Time.Clock.POSIX
+#if !defined(CURL)
 import           Data.Time.Format
+#endif
 import           Data.Versions
 import           GHC.IO.Exception
 import           HPath
@@ -56,9 +63,11 @@ import           URI.ByteString
 import qualified Crypto.Hash.SHA256            as SHA256
 import qualified Data.ByteString.Base16        as B16
 import qualified Data.ByteString.Lazy          as L
+#if !defined(CURL)
 import qualified Data.CaseInsensitive          as CI
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
+#endif
 import qualified Data.Text.Encoding            as E
 import qualified System.Posix.Files.ByteString as PF
 import qualified System.Posix.RawFilePath.Directory
@@ -177,7 +186,6 @@ getDownloads urlSource = do
           $ getHead uri'
           )
       pure $ parseModifiedHeader headers
-#endif
 
   parseModifiedHeader :: (M.Map (CI ByteString) ByteString) -> Maybe UTCTime
   parseModifiedHeader headers =
@@ -186,6 +194,8 @@ getDownloads urlSource = do
       defaultTimeLocale
       "%a, %d %b %Y %H:%M:%S %Z"
       (T.unpack . E.decodeUtf8 $ h)
+
+#endif
 
   writeFileWithModTime :: UTCTime -> Path Abs -> L.ByteString -> IO ()
   writeFileWithModTime utctime path content = do
@@ -377,8 +387,8 @@ downloadBS uri'
  where
   scheme = view (uriSchemeL' % schemeBSL') uri'
   path   = view pathL' uri'
-  dl https = do
 #if defined(CURL)
+  dl _ = do
     let exe = [rel|curl|]
         args = ["-sSfL", serializeURIRef' uri']
     liftIO (executeOut exe args Nothing) >>= \case
@@ -386,6 +396,7 @@ downloadBS uri'
         pure $ L.fromStrict stdout
       CapturedProcess (ExitFailure i') _ _ -> throwE $ NonZeroExit i' (toFilePath exe) args
 #else
+  dl https = do
     (_, host', fullPath', port') <- liftE $ uriToQuadruple uri'
     liftE $ downloadBS' https host' fullPath' port'
 #endif

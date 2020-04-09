@@ -1,7 +1,5 @@
 packages: ./ghcup.cabal
 
-with-compiler: ghc-8.8.3
-
 optimization: 2
 
 package streamly
@@ -16,4 +14,3 @@ package tar-bytestring
 constraints: http-io-streams -brotli
 
 allow-newer: base
-

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -22,6 +23,9 @@ import           GHCup.Utils.Prelude
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
+#if !MIN_VERSION_base(4,13,0)
+import           Control.Monad.Fail             ( MonadFail )
+#endif
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Data.Attoparsec.ByteString
@@ -293,7 +297,7 @@ urlBaseName :: MonadThrow m
 urlBaseName = parseRel . snd . B.breakEnd (== _slash) . urlDecode False
 
 
--- Get tool files from ~/.ghcup/bin/ghc/<ver>/bin/*
+-- Get tool files from '~/.ghcup/bin/ghc/<ver>/bin/*'
 -- while ignoring *-<ver> symlinks.
 --
 -- Returns unversioned relative files, e.g.:

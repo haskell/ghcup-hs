@@ -232,7 +232,7 @@ execLogged exe spath args lfile chdir env = do
 
     readTilEOF action' fd' = do
       bs <- readLine fd'
-      action' bs
+      void $ action' bs
       readTilEOF action' fd'
 
 
@@ -309,7 +309,7 @@ captureOutStreams action = do
 
   readTilEOF ~action' fd' = do
     bs <- SPIB.fdRead fd' 512
-    action' bs
+    void $ action' bs
     readTilEOF action' fd'
 
 
