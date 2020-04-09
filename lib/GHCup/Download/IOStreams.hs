@@ -13,6 +13,7 @@ module GHCup.Download.IOStreams where
 
 import           GHCup.Download.Utils
 import           GHCup.Errors
+import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.File
 import           GHCup.Utils.Prelude

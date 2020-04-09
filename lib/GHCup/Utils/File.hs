@@ -59,6 +59,7 @@ import qualified "unix-bytestring" System.Posix.IO.ByteString
                                                as SPIB
 
 
+-- | Bool signals whether the regions should be cleaned.
 data StopThread = StopThread Bool
   deriving Show
 
@@ -190,7 +191,10 @@ execLogged exe spath args lfile chdir env = do
               when b (forM_ rs closeConsoleRegion)
               EX.throw (StopThread b)
             )
-        $ readForever (lineAction ref rs) fdIn
+        $ do
+            hideError eofErrorType $ readTilEOF (lineAction ref rs) fdIn
+            -- wait for explicit stop from the parent to signal what cleanup to run
+            forever (threadDelay 5000)
 
    where
     -- action to perform line by line
@@ -220,26 +224,16 @@ execLogged exe spath args lfile chdir env = do
 
     -- read an entire line from the file descriptor (removes the newline char)
     readLine fd' = do
-      bs <-
-        handle
-            (\(e :: IOError) -> do
-              if isEOFError e then threadDelay 1000 >> pure "" else throw e
-            )
-          $ SPIB.fdRead fd' 1
+      bs <- SPIB.fdRead fd' 1
       if
         | bs == "\n" -> pure ""
         | bs == ""   -> pure ""
         | otherwise  -> fmap (bs <>) $ readLine fd'
 
-    readForever action' fd' = do
-      bs <- readLine fd'
-      if not $ BS.null bs
-        then action' bs >> readForever action' fd'
-        else readForever action' fd'
-
     readTilEOF action' fd' = do
       bs <- readLine fd'
-      when (not $ BS.null bs) (action' bs >> readTilEOF action' fd')
+      action' bs
+      readTilEOF action' fd'
 
 
 -- | Capture the stdout and stderr of the given action, which
@@ -274,7 +268,7 @@ captureOutStreams action = do
       refOut <- newIORef BS.empty
       refErr <- newIORef BS.empty
       done   <- newEmptyMVar
-      _    <-
+      _      <-
         forkIO
         $ EX.handle (\(_ :: StopThread) -> pure ())
         $ EX.handle (\(_ :: IOException) -> pure ())
@@ -301,21 +295,22 @@ captureOutStreams action = do
     doneOut <- newEmptyMVar
     void
       $ forkIO
-      $ EX.handle (\(_ :: IOException) -> pure ())
+      $ hideError eofErrorType
       $ flip finally (putMVar doneOut ())
       $ readTilEOF (\x -> modifyIORef' rout (<> x)) pout
     doneErr <- newEmptyMVar
     void
       $ forkIO
-      $ EX.handle (\(_ :: IOException) -> pure ())
+      $ hideError eofErrorType
       $ flip finally (putMVar doneErr ())
       $ readTilEOF (\x -> modifyIORef' rerr (<> x)) perr
     takeMVar doneOut
     takeMVar doneErr
 
-  readTilEOF action' fd' = do
+  readTilEOF ~action' fd' = do
     bs <- SPIB.fdRead fd' 512
-    when (not $ BS.null bs) (action' bs >> readTilEOF action' fd')
+    action' bs
+    readTilEOF action' fd'
 
 
 actionWithPipes :: ((Fd, Fd) -> IO b) -> IO b

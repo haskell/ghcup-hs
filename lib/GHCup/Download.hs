@@ -21,9 +21,7 @@ import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
 import           GHCup.Utils
-#if defined(CURL)
 import           GHCup.Utils.File
-#endif
 import           GHCup.Utils.Prelude
 import           GHCup.Version
 
