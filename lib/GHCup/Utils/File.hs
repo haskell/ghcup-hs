@@ -8,6 +8,7 @@ import           GHCup.Utils.Dirs
 import           GHCup.Utils.Prelude
 
 import           Control.Concurrent
+import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
 import           Data.ByteString                ( ByteString )
@@ -247,7 +248,7 @@ execLogged exe spath args lfile chdir env = do
 captureOutStreams :: IO a
                      -- ^ the action to execute in a subprocess
                   -> IO CapturedProcess
-captureOutStreams action =
+captureOutStreams action = do
   actionWithPipes $ \(parentStdoutRead, childStdoutWrite) ->
     actionWithPipes $ \(parentStderrRead, childStderrWrite) -> do
       pid <- SPPB.forkProcess $ do
@@ -262,22 +263,59 @@ captureOutStreams action =
         closeFd parentStderrRead
 
         -- execute the action
-        void $ action
+        a <- action
+        void $ evaluate a
 
       -- close everything we don't need
       closeFd childStdoutWrite
       closeFd childStderrWrite
 
-      SPPB.getProcessStatus True True pid >>= \case
+      -- start thread that writes the output
+      refOut <- newIORef BS.empty
+      refErr <- newIORef BS.empty
+      done   <- newEmptyMVar
+      _    <-
+        forkIO
+        $ EX.handle (\(_ :: StopThread) -> pure ())
+        $ EX.handle (\(_ :: IOException) -> pure ())
+        $ flip finally (putMVar done ())
+        $ writeStds parentStdoutRead parentStderrRead refOut refErr
+
+      status <- SPPB.getProcessStatus True True pid
+      takeMVar done
+
+      case status of
         -- readFd will take care of closing the fd
         Just (SPPB.Exited es) -> do
-          stdout' <- L.toStrict <$> readFd parentStdoutRead
-          stderr' <- L.toStrict <$> readFd parentStderrRead
+          stdout' <- readIORef refOut
+          stderr' <- readIORef refErr
           pure $ CapturedProcess { _exitCode = es
                                  , _stdOut   = stdout'
                                  , _stdErr   = stderr'
                                  }
+
         _ -> throwIO $ userError $ ("No such PID " ++ show pid)
+
+ where
+  writeStds pout perr rout rerr = do
+    doneOut <- newEmptyMVar
+    void
+      $ forkIO
+      $ EX.handle (\(_ :: IOException) -> pure ())
+      $ flip finally (putMVar doneOut ())
+      $ readTilEOF (\x -> modifyIORef' rout (<> x)) pout
+    doneErr <- newEmptyMVar
+    void
+      $ forkIO
+      $ EX.handle (\(_ :: IOException) -> pure ())
+      $ flip finally (putMVar doneErr ())
+      $ readTilEOF (\x -> modifyIORef' rerr (<> x)) perr
+    takeMVar doneOut
+    takeMVar doneErr
+
+  readTilEOF action' fd' = do
+    bs <- SPIB.fdRead fd' 512
+    when (not $ BS.null bs) (action' bs >> readTilEOF action' fd')
 
 
 actionWithPipes :: ((Fd, Fd) -> IO b) -> IO b
