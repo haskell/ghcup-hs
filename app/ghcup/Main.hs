@@ -588,11 +588,14 @@ main = do
                     @'[ AlreadyInstalled
                       , BuildFailed
                       , DigestError
+                      , DistroNotFound
+                      , DownloadFailed
                       , GHCupSetError
+                      , NoCompatibleArch
+                      , NoCompatiblePlatform
                       , NoDownload
                       , PatchFailed
                       , UnknownArchive
-                      , DownloadFailed
                       ]
 
           let runCompileCabal =
@@ -600,12 +603,15 @@ main = do
                   . flip runReaderT settings
                   . runResourceT
                   . runE
-                    @'[ UnknownArchive
-                      , NoDownload
+                    @'[ BuildFailed
                       , DigestError
-                      , BuildFailed
-                      , PatchFailed
+                      , DistroNotFound
                       , DownloadFailed
+                      , NoCompatibleArch
+                      , NoCompatiblePlatform
+                      , NoDownload
+                      , PatchFailed
+                      , UnknownArchive
                       ]
 
           let runUpgrade =

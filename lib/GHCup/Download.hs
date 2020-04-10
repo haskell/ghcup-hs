@@ -16,7 +16,6 @@ import           GHCup.Download.IOStreams
 import           GHCup.Download.Utils
 #endif
 import           GHCup.Errors
-import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
@@ -204,43 +203,13 @@ getDownloads urlSource = do
     setModificationTimeHiRes path mod_time
 
 
-
-getDownloadInfo :: (MonadLogger m, MonadCatch m, MonadIO m)
-                => GHCupDownloads
-                -> Tool
+getDownloadInfo :: Tool
                 -> Version
-                -> Maybe PlatformRequest
-                -> Excepts
-                     '[ DistroNotFound
-                      , NoCompatiblePlatform
-                      , NoCompatibleArch
-                      , NoDownload
-                      ]
-                     m
-                     DownloadInfo
-getDownloadInfo bDls t v mpfReq = do
-  (PlatformRequest arch' plat ver) <- case mpfReq of
-    Just x  -> pure x
-    Nothing -> do
-      (PlatformResult rp rv) <- liftE getPlatform
-      ar                     <- lE getArchitecture
-      pure $ PlatformRequest ar rp rv
-
-  lE $ getDownloadInfo' t v arch' plat ver bDls
-
-
-getDownloadInfo' :: Tool
-                 -> Version
                 -- ^ tool version
-                 -> Architecture
-                -- ^ user arch
-                 -> Platform
-                -- ^ user platform
-                 -> Maybe Versioning
-                -- ^ optional version of the platform
-                 -> GHCupDownloads
-                 -> Either NoDownload DownloadInfo
-getDownloadInfo' t v a p mv dls = maybe
+                -> PlatformRequest
+                -> GHCupDownloads
+                -> Either NoDownload DownloadInfo
+getDownloadInfo t v (PlatformRequest a p mv) dls = maybe
   (Left NoDownload)
   Right
   (with_distro <|> without_distro_ver <|> without_distro)

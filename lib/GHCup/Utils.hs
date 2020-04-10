@@ -358,3 +358,13 @@ applyPatches pdir ddir = do
         Nothing
       )
       !? PatchFailed
+
+
+darwinNotarization :: Platform -> Path Abs -> IO (Either ProcessError ())
+darwinNotarization Darwin path = exec
+  "xattr"
+  True
+  ["-r", "-d", "com.apple.quarantine", toFilePath path]
+  Nothing
+  Nothing
+darwinNotarization _ _ = pure $ Right ()

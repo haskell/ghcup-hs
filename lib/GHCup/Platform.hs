@@ -46,6 +46,21 @@ import qualified Data.Text.Encoding            as E
     --------------------------
 
 
+-- | Get the full platform request, consisting of architecture, distro, ...
+platformRequest :: (MonadLogger m, MonadCatch m, MonadIO m)
+                => Excepts
+                     '[ NoCompatiblePlatform
+                      , NoCompatibleArch
+                      , DistroNotFound
+                      ]
+                     m
+                     PlatformRequest
+platformRequest = do
+  (PlatformResult rp rv) <- liftE getPlatform
+  ar                     <- lE getArchitecture
+  pure $ PlatformRequest ar rp rv
+
+
 getArchitecture :: Either NoCompatibleArch Architecture
 getArchitecture = case arch of
   "x86_64" -> Right A_64

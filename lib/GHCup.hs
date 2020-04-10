@@ -96,14 +96,16 @@ installGHCBin bDls ver mpfReq = do
   whenM (liftIO $ toolAlreadyInstalled GHC ver)
     $ (throwE $ AlreadyInstalled GHC ver)
   Settings {..} <- lift ask
+  pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
 
   -- download (or use cached version)
-  dlinfo        <- liftE $ getDownloadInfo bDls GHC ver mpfReq
+  dlinfo        <- lE $ getDownloadInfo GHC ver pfreq bDls
   dl            <- liftE $ downloadCached dlinfo Nothing
 
   -- unpack
   tmpUnpack     <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
+  void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
   -- prepare paths
   ghcdir <- liftIO $ ghcupGHCDir ver
@@ -170,14 +172,16 @@ installCabalBin :: ( MonadMask m
 installCabalBin bDls ver mpfReq = do
   lift $ $(logDebug) [i|Requested to install cabal version #{ver}|]
   Settings {..} <- lift ask
+  pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
 
   -- download (or use cached version)
-  dlinfo        <- liftE $ getDownloadInfo bDls Cabal ver mpfReq
+  dlinfo        <- lE $ getDownloadInfo Cabal ver pfreq bDls
   dl            <- liftE $ downloadCached dlinfo Nothing
 
   -- unpack
   tmpUnpack     <- lift withGHCupTmpDir
   liftE $ unpackToDir tmpUnpack dl
+  void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
   -- prepare paths
   bindir <- liftIO ghcupBinDir
@@ -444,8 +448,11 @@ compileGHC :: ( MonadMask m
                 '[ AlreadyInstalled
                  , BuildFailed
                  , DigestError
+                 , DistroNotFound
                  , DownloadFailed
                  , GHCupSetError
+                 , NoCompatibleArch
+                 , NoCompatiblePlatform
                  , NoDownload
                  , PatchFailed
                  , UnknownArchive
@@ -464,6 +471,8 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir = do
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
+  (PlatformRequest {..}) <- liftE $ platformRequest
+  void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
   bghc <- case bstrap of
     Right g    -> pure $ Right g
@@ -579,7 +588,10 @@ compileCabal :: ( MonadReader Settings m
              -> Excepts
                   '[ BuildFailed
                    , DigestError
+                   , DistroNotFound
                    , DownloadFailed
+                   , NoCompatibleArch
+                   , NoCompatiblePlatform
                    , NoDownload
                    , PatchFailed
                    , UnknownArchive
@@ -596,6 +608,8 @@ compileCabal dls tver bghc jobs patchdir = do
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
+  (PlatformRequest {..}) <- liftE $ platformRequest
+  void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
   let workdir = maybe id (flip (</>)) (view dlSubdir dlInfo) $ tmpUnpack
 
@@ -674,7 +688,8 @@ upgradeGHCup :: ( MonadMask m
 upgradeGHCup dls mtarget = do
   lift $ $(logInfo) [i|Upgrading GHCup...|]
   let latestVer = fromJust $ getLatest dls GHCup
-  dli <- liftE $ getDownloadInfo dls GHCup latestVer Nothing
+  pfreq <- liftE platformRequest
+  dli <- lE $ getDownloadInfo GHCup latestVer pfreq dls
   tmp <- lift withGHCupTmpDir
   let fn = [rel|ghcup|]
   p <- liftE $ download dli tmp (Just fn)
