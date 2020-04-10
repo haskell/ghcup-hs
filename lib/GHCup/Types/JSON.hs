@@ -39,6 +39,8 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VUnit
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Tag
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 
 
 instance ToJSON URI where
@@ -69,11 +71,11 @@ instance FromJSONKey Versioning where
 instance ToJSONKey (Maybe Versioning) where
   toJSONKey = toJSONKeyText $ \case
     Just x  -> prettyV x
-    Nothing -> T.pack "unknown_version"
+    Nothing -> T.pack "unknown_versioning"
 
 instance FromJSONKey (Maybe Versioning) where
   fromJSONKey = FromJSONKeyTextParser $ \t ->
-    if t == T.pack "unknown_version" then pure Nothing else pure $ just t
+    if t == T.pack "unknown_versioning" then pure Nothing else pure $ just t
    where
     just t = case versioning t of
       Right x -> pure x
@@ -111,6 +113,19 @@ instance ToJSONKey Architecture where
 
 instance FromJSONKey Architecture where
   fromJSONKey = genericFromJSONKey defaultJSONKeyOptions
+
+instance ToJSONKey (Maybe Version) where
+  toJSONKey = toJSONKeyText $ \case
+    Just x  -> prettyVer x
+    Nothing -> T.pack "unknown_version"
+
+instance FromJSONKey (Maybe Version) where
+  fromJSONKey = FromJSONKeyTextParser $ \t ->
+    if t == T.pack "unknown_version" then pure Nothing else pure $ just t
+   where
+    just t = case version t of
+      Right x -> pure x
+      Left  e -> fail $ "Failure in (Maybe Version) (FromJSONKey)" <> show e
 
 instance ToJSON Version where
   toJSON = toJSON . prettyVer

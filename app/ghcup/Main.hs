@@ -13,6 +13,8 @@ module Main where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
+import           GHCup.Platform
+import           GHCup.Requirements
 import           GHCup.Types
 import           GHCup.Utils
 import           GHCup.Utils.Logger
@@ -79,6 +81,7 @@ data Command
   | Compile CompileCommand
   | Upgrade UpgradeOpts
   | NumericVersion
+  | ToolRequirements
 
 data ToolVersion = ToolVersion Version
                  | ToolTag Tag
@@ -217,6 +220,11 @@ com =
                "numeric-version"
                (   (\_ -> NumericVersion)
                <$> (info (helper) (progDesc "Show the numeric version"))
+               )
+          <> command
+               "tool-requirements"
+               (   (\_ -> ToolRequirements)
+               <$> (info (helper) (progDesc "Show the requirements for ghc/cabal"))
                )
           <> commandGroup "Other commands:"
           <> hidden
@@ -615,7 +623,7 @@ main = do
                       , DownloadFailed
                       ]
 
-          dls <-
+          (GHCupInfo treq dls) <-
             ( runLogger
               . flip runReaderT settings
               . runE @'[JSONError , DownloadFailed]
@@ -779,6 +787,21 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                         runLogger ($(logError) [i|#{e}|]) >> exitFailure
 
             NumericVersion -> T.hPutStr stdout (prettyPVP ghcUpVer)
+            ToolRequirements -> (runLogger $ runE
+                      @'[ NoCompatiblePlatform
+                        , DistroNotFound
+                        , NoToolRequirements
+                        ] $ do
+                platform <- liftE $ getPlatform
+                req <- (getCommonRequirements platform $ treq)
+                         ?? NoToolRequirements
+                liftIO $ T.hPutStr stdout (prettyRequirements req))
+              >>= \case
+                    VRight r -> pure r
+                    VLeft e ->
+                      runLogger
+                          ($(logError) [i|Error getting tool requirements: #{e}|])
+                        >> exitFailure
   pure ()
 
 

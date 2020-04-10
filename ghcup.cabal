@@ -283,6 +283,7 @@ library
     GHCup.Download.Utils
     GHCup.Errors
     GHCup.Platform
+    GHCup.Requirements
     GHCup.Types
     GHCup.Types.JSON
     GHCup.Types.Optics
@@ -368,8 +369,11 @@ executable ghcup-gen
 
   --
   main-is:          Main.hs
-  other-modules: GHCupDownloads
-                 Validate
+  other-modules:
+    GHCupDownloads
+    GHCupInfo
+    ToolRequirements
+    Validate
 
   -- other-extensions:
   build-depends:    ghcup

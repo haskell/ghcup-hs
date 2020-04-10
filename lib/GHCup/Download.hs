@@ -94,7 +94,7 @@ getDownloads :: ( FromJSONKey Tool
                 , MonadFail m
                 )
              => URLSource
-             -> Excepts '[JSONError , DownloadFailed] m GHCupDownloads
+             -> Excepts '[JSONError , DownloadFailed] m GHCupInfo
 getDownloads urlSource = do
   lift $ $(logDebug) [i|Receiving download info from: #{urlSource}|]
   case urlSource of

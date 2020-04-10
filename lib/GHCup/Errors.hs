@@ -92,6 +92,9 @@ data TooManyRedirs = TooManyRedirs
 data PatchFailed = PatchFailed
   deriving Show
 
+-- | The tool requirements could not be found.
+data NoToolRequirements = NoToolRequirements
+  deriving Show
 
 
     -------------------------

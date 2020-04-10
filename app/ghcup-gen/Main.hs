@@ -9,9 +9,10 @@
 
 module Main where
 
+import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Logger
-import           GHCupDownloads
+import           GHCupInfo
 
 import           Data.Aeson                     ( eitherDecode )
 import           Data.Aeson.Encode.Pretty
@@ -135,7 +136,7 @@ main = do
           GenJSON gopts -> do
             let
               bs = encodePretty' (defConfig { confIndent = Spaces 2 })
-                                 ghcupDownloads
+                                 ghcupInfo
             case gopts of
               GenJSONOpts { output = Nothing }        -> L.hPutStr stdout bs
               GenJSONOpts { output = Just StdOutput } -> L.hPutStr stdout bs
@@ -159,7 +160,7 @@ main = do
 
  where
   valAndExit f contents = do
-    av <- case eitherDecode contents of
+    (GHCupInfo _ av) <- case eitherDecode contents of
       Right r -> pure r
       Left  e -> die (color Red $ show e)
     myLoggerT (LoggerConfig True (B.hPut stdout) (\_ -> pure ())) (f av)

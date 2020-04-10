@@ -12,6 +12,39 @@ import qualified GHC.Generics                  as GHC
 
 
 
+    --------------------
+    --[ GHCInfo Tree ]--
+    --------------------
+
+
+data GHCupInfo = GHCupInfo
+  { _toolRequirements :: ToolRequirements
+  , _ghcupDownloads   :: GHCupDownloads
+  }
+  deriving (Show, GHC.Generic)
+
+
+
+    -------------------------
+    --[ Requirements Tree ]--
+    -------------------------
+
+
+type ToolRequirements = Map Tool ToolReqVersionSpec
+type ToolReqVersionSpec = Map (Maybe Version) PlatformReqSpec
+type PlatformReqSpec = Map Platform PlatformReqVersionSpec
+type PlatformReqVersionSpec = Map (Maybe Versioning) Requirements
+
+
+data Requirements = Requirements
+  { _distroPKGs :: [Text]
+  , _notes      :: Text
+  }
+  deriving (Show, GHC.Generic)
+
+
+
+
 
     ---------------------
     --[ Download Tree ]--
@@ -99,7 +132,7 @@ data DownloadInfo = DownloadInfo
 -- | Where to fetch GHCupDownloads from.
 data URLSource = GHCupURL
                | OwnSource URI
-               | OwnSpec GHCupDownloads
+               | OwnSpec GHCupInfo
                deriving Show
 
 
