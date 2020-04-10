@@ -304,7 +304,7 @@ download dli dest mfn
           ) $ do
 #if defined(CURL)
               liftE $ lEM @_ @'[ProcessError] $ liftIO $ exec "curl" True
-                ["-sSfL", "-o", toFilePath destFile , serializeURIRef' $ view dlUri dli] Nothing Nothing
+                ["-fL", "-o", toFilePath destFile , serializeURIRef' $ view dlUri dli] Nothing Nothing
 #else
               (https, host, fullPath, port) <- liftE $ uriToQuadruple (view dlUri dli)
               liftE $ downloadToFile https host fullPath port destFile
