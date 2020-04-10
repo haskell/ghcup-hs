@@ -63,6 +63,10 @@ data AlreadyInstalled = AlreadyInstalled Tool Version
 data NotInstalled = NotInstalled Tool Version
   deriving Show
 
+-- | An executable was expected to be in PATH, but was not found.
+data NotFoundInPATH = NotFoundInPATH (Path Rel)
+  deriving Show
+
 -- | JSON decoding failed.
 data JSONError = JSONDecodeError String
   deriving Show

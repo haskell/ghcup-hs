@@ -594,6 +594,7 @@ main = do
                       , NoCompatibleArch
                       , NoCompatiblePlatform
                       , NoDownload
+                      , NotFoundInPATH
                       , PatchFailed
                       , UnknownArchive
                       ]

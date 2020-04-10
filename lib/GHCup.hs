@@ -454,6 +454,7 @@ compileGHC :: ( MonadMask m
                  , NoCompatibleArch
                  , NoCompatiblePlatform
                  , NoDownload
+                 , NotFoundInPATH
                  , PatchFailed
                  , UnknownArchive
                  ]
@@ -512,10 +513,10 @@ GhcWithLlvmCodeGen = YES|]
           -> Path Abs
           -> Path Abs
           -> Excepts
-               '[ NoDownload
-                , FileDoesNotExistError
+               '[ FileDoesNotExistError
                 , PatchFailed
                 , ProcessError
+                , NotFoundInPATH
                 ]
                m
                ()
@@ -533,7 +534,7 @@ GhcWithLlvmCodeGen = YES|]
           Right ghc' -> pure ghc'
           Left  bver -> do
             spaths <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
-            (liftIO $ searchPath spaths bver) !? NoDownload
+            (liftIO $ searchPath spaths bver) !? NotFoundInPATH bver
         lEM $ liftIO $ execLogged
           "./configure"
           False
