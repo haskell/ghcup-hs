@@ -79,16 +79,24 @@ getPlatform = do
     "linux" -> do
       (distro, ver) <- liftE getLinuxDistro
       pure $ PlatformResult { _platform = Linux distro, _distroVersion = ver }
-    -- TODO: these are not verified
-    "darwin" ->
-      pure $ PlatformResult { _platform = Darwin, _distroVersion = Nothing }
+    "darwin" -> do
+      ver <-
+        (either (const Nothing) Just . versioning . E.decodeUtf8)
+          <$> getDarwinVersion
+      pure $ PlatformResult { _platform = Darwin, _distroVersion = ver }
     "freebsd" -> do
-      ver <- getFreeBSDVersion
+      ver <-
+        (either (const Nothing) Just . versioning . E.decodeUtf8)
+          <$> getFreeBSDVersion
       pure $ PlatformResult { _platform = FreeBSD, _distroVersion = ver }
     what -> throwE $ NoCompatiblePlatform what
   lift $ $(logDebug) [i|Identified Platform as: #{pfr}|]
   pure pfr
-  where getFreeBSDVersion = pure Nothing
+ where
+  getFreeBSDVersion =
+    liftIO $ fmap _stdOut $ executeOut [rel|freebsd-version|] [] Nothing
+  getDarwinVersion =
+    liftIO $ fmap _stdOut $ executeOut [rel|sw_vers|] ["-productVersion"] Nothing
 
 
 getLinuxDistro :: (MonadCatch m, MonadIO m)
