@@ -2113,14 +2113,21 @@
       }
     },
     "GHCup": {
-      "0.0.1": {
+      "0.1.0": {
         "viArch": {
           "A_64": {
+            "FreeBSD": {
+              "unknown_versioning": {
+                "dlHash": "1ef384ad54af02d7a9c1151e17cd96273c857395dc4a6696eef11b369c0a1b46",
+                "dlSubdir": null,
+                "dlUri": "https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-portbld-freebsd-ghcup"
+              }
+            },
             "Linux_UnknownLinux": {
               "unknown_versioning": {
-                "dlHash": "558126339252788a3d44a3f910417277c7ab656f0796b68bdc58afe73296b8cd",
+                "dlHash": "f0105c69669285aaa8db101ce44f04e2ff69d4939882e52110b330a9d02409aa",
                 "dlSubdir": null,
-                "dlUri": "file:/home/maerwald/tmp/ghcup-exe"
+                "dlUri": "https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-pc-linux-ghcup"
               }
             }
           }

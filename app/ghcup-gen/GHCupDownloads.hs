@@ -984,11 +984,18 @@ cabal_3200_64_darwin = DownloadInfo
     -------------
 
 
-ghcup_001_64_linux :: DownloadInfo
-ghcup_001_64_linux = DownloadInfo
-  [uri|file:///home/maerwald/tmp/ghcup-exe|]
+ghcup_010_64_linux :: DownloadInfo
+ghcup_010_64_linux = DownloadInfo
+  [uri|https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-pc-linux-ghcup|]
   Nothing
-  "558126339252788a3d44a3f910417277c7ab656f0796b68bdc58afe73296b8cd"
+  "f0105c69669285aaa8db101ce44f04e2ff69d4939882e52110b330a9d02409aa"
+
+
+ghcup_010_64_freebsd :: DownloadInfo
+ghcup_010_64_freebsd = DownloadInfo
+  [uri|https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-portbld-freebsd-ghcup|]
+  Nothing
+  "1ef384ad54af02d7a9c1151e17cd96273c857395dc4a6696eef11b369c0a1b46"
 
 
 
@@ -1855,11 +1862,13 @@ ghcupDownloads = M.fromList
     )
   , ( GHCup
     , M.fromList
-      [ ( [vver|0.0.1|]
+      [ ( [vver|0.1.0|]
         , VersionInfo [Recommended, Latest] Nothing $ M.fromList
           [ ( A_64
             , M.fromList
-              [(Linux UnknownLinux, M.fromList [(Nothing, ghcup_001_64_linux)])]
+              [ (Linux UnknownLinux, M.fromList [(Nothing, ghcup_010_64_linux)])
+              , (FreeBSD, M.fromList [(Nothing, ghcup_010_64_freebsd)])
+              ]
             )
           ]
         )
