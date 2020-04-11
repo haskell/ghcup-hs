@@ -1,0 +1,183 @@
+#!/bin/sh
+
+# safety subshell to avoid executing anything in case this script is not downloaded properly
+(
+
+: "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}"
+
+die() {
+    (>&2 printf "\\033[0;31m%s\\033[0m\\n" "$1")
+    exit 2
+}
+
+edo()
+{
+    "$@" || die "\"$*\" failed!"
+}
+
+eghcup() {
+    if [ -z "${BOOTSTRAP_HASKELL_VERBOSE}" ] ; then
+        edo ghcup "$@"
+    else
+        edo ghcup --verbose "$@"
+    fi
+}
+
+download_ghcup() {
+	_plat="$(uname -s)"
+	_arch=$(uname -m)
+
+	case "${_arch}" in
+		x86_64|amd64)
+			;;
+		i*86)
+			die "i386 currently not supported!"
+			;;
+		*) die "Unknown architecture: ${_arch}"
+			;;
+	esac
+
+    case "${_plat}" in
+        "linux"|"Linux")
+			edo curl -Lf https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-pc-linux-ghcup > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+			;;
+        "FreeBSD"|"freebsd")
+			edo curl -Lf https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-portbld-freebsd-ghcup > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+            ;;
+        "Darwin"|"darwin")
+			edo curl -Lf https://github.com/hasufell/ghcup-hs/releases/download/travis-0.1.8/x86_64-apple-darwin-10.13-ghcup > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+            ;;
+        *) die "Unknown platform: ${_plat}"
+			;;
+    esac
+
+	unset _plat _arch
+}
+
+
+echo
+echo "Welcome to Haskell!"
+echo
+echo "This will download and install the Glasgow Haskell Compiler (GHC)"
+echo "and the Cabal build tool."
+echo
+echo "ghcup installs only into the following directory, which can be removed anytime:"
+echo "  $GHCUP_INSTALL_BASE_PREFIX/.ghcup"
+echo
+
+if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+    printf "\\033[0;35m%s\\033[0m\\n" "Press ENTER to proceed"
+    printf "\\033[0;35m%s\\033[0m\\n" "or ctrl-c to abort."
+    printf "\\033[0;35m%s\\033[0m\\n" "Note that this script can be re-run at any given time."
+    echo
+    # Wait for user input to continue.
+    # shellcheck disable=SC2034
+    read -r answer </dev/tty
+fi
+
+edo mkdir -p "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin
+
+if command -V "ghcup" >/dev/null 2>&1 ; then
+    if [ -z "${BOOTSTRAP_HASKELL_NO_UPGRADE}" ] ; then
+        eghcup upgrade
+    fi
+else
+	download_ghcup
+    edo chmod +x "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+
+	cat <<-EOF > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/env || die "Failed to create env file"
+		export PATH="\$HOME/.cabal/bin:\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/bin:\$PATH"
+		EOF
+	# shellcheck disable=SC1090
+    edo . "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/env
+fi
+
+echo
+echo "$(ghcup tool-requirements)"
+echo
+
+if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+    printf "\\033[0;35m%s\\033[0m\\n" "Press ENTER to proceed"
+    printf "\\033[0;35m%s\\033[0m\\n" "or ctrl-c to abort."
+    printf "\\033[0;35m%s\\033[0m\\n" "Installation may take a while."
+    echo
+
+    # Wait for user input to continue.
+    # shellcheck disable=SC2034
+    read -r answer </dev/tty
+fi
+
+eghcup --cache install ghc
+
+eghcup set
+eghcup --cache install cabal
+
+edo cabal new-update
+
+printf "\\033[0;35m%s\\033[0m\\n" ""
+printf "\\033[0;35m%s\\033[0m\\n" "Installation done!"
+printf "\\033[0;35m%s\\033[0m\\n" ""
+
+if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+    echo "In order to run ghc and cabal, you need to adjust your PATH variable."
+    echo "You may want to source '$GHCUP_INSTALL_BASE_PREFIX/.ghcup/env' in your shell"
+    echo "configuration to do so (e.g. ~/.bashrc)."
+
+	case $SHELL in
+		*/zsh) # login shell is zsh
+			GHCUP_PROFILE_FILE="$HOME/.zshrc"
+			MY_SHELL="zsh" ;;
+		*/bash) # login shell is bash
+			if [ -f "$HOME/.bashrc" ] ; then # bashrc is not sourced by default, so assume it isn't if file does not exist
+				GHCUP_PROFILE_FILE="$HOME/.bashrc"
+			else
+				GHCUP_PROFILE_FILE="$HOME/.bash_profile"
+			fi
+
+			MY_SHELL="bash" ;;
+		*/sh) # login shell is sh, but might be a symlink to bash or zsh
+			if [ -n "${BASH}" ] ; then
+				if [ -f "$HOME/.bashrc" ] ; then # bashrc is not sourced by default, so assume it isn't if file does not exist
+					GHCUP_PROFILE_FILE="$HOME/.bashrc"
+				else
+					GHCUP_PROFILE_FILE="$HOME/.bash_profile"
+				fi
+
+				MY_SHELL="bash"
+			elif [ -n "${ZSH_VERSION}" ] ; then
+				GHCUP_PROFILE_FILE="$HOME/.zshrc"
+				MY_SHELL="zsh"
+			else
+				exit 0
+			fi
+			;;
+		*) exit 0 ;;
+	esac
+
+
+	printf "\\033[0;35m%s\\033[0m\\n" ""
+	printf "\\033[0;35m%s\\033[0m\\n" "Detected ${MY_SHELL} shell on your system..."
+	printf "\\033[0;35m%s\\033[0m\\n" "If you want ghcup to automatically add the required PATH variable to \"${GHCUP_PROFILE_FILE}\""
+	printf "\\033[0;35m%s\\033[0m\\n" "answer with YES, otherwise with NO and press ENTER."
+	printf "\\033[0;35m%s\\033[0m\\n" ""
+
+    while true; do
+        read -r next_answer </dev/tty
+
+        case $next_answer in
+            [Yy]*)
+                echo "[ -f \"\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/env\" ] && source \"\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/env\"" >> "${GHCUP_PROFILE_FILE}"
+                printf "\\033[0;35m%s\\033[0m\\n" "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
+                printf "\\033[0;35m%s\\033[0m\\n" "or type \"source ${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/env\" to apply them in your current terminal session."
+                exit 0;;
+            [Nn]*)
+                exit 0;;
+            *)
+                echo "Please type YES or NO and press enter.";;
+        esac
+    done
+fi
+)
+
+# vim: tabstop=4 shiftwidth=4 expandtab
+
