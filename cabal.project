@@ -6,13 +6,10 @@ package streamly
     ghc-options: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16
 
 package ghcup
-    ghc-options: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16 -split-sections
+    ghc-options: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16
 
 package tar-bytestring
     ghc-options: -O2
-
-package *
-    ghc-options: -split-sections
 
 constraints: http-io-streams -brotli
 

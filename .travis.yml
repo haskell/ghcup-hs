@@ -1,0 +1,42 @@
+jobs:
+  include:
+    - os: osx
+      osx_image: xcode10.1
+      language: generic
+      env: ARTIFACT=x86_64-apple-darwin-10.13-ghcup
+      addons:
+        homebrew:
+          packages:
+          - curl
+          - libffi
+          - libiconv
+          - make
+          - ncurses
+          - xz
+
+    - os: osx
+      osx_image: xcode11.3
+      language: generic
+      env: ARTIFACT=x86_64-apple-darwin-10.14-ghcup
+      addons:
+        homebrew:
+          packages:
+          - curl
+          - libffi
+          - libiconv
+          - make
+          - ncurses
+          - xz
+
+script: ".travis/build.sh"
+
+deploy:
+  provider: releases
+  api_key:
+    secure: bZW4SpPYvjA5vCdTTHhME1yKcNwvix9OgNiQ6foJanySNoE5x1TED2ZZD9wFtVNYMCldlkL3DlosrlDNHyvEAlC5myraKLIfZ26F1hGBbtxenCb+nAbcW3wDRMUXA30PNcp4hKuFU+mBKwE2xwav/wWLfX+YlaVvjD6t4ZaQriubtuE/zIIWW0itirorcpAAgW6Lojif/oPGEtC6LsA3+hmHX8OaTjNnsWiSurxobraNqKUWh/0JlC5xCWkqi8hYq0fHRfzVU+k7MMuWkHV4LkaW2FUlpbRzs2CzeZjCRmNHbvhUdSEo5e6ux/2YCKEOSRUUASzsbKodvVQS9rC5bNQZZ0XFtG9VpddzSTLUYEGGzLM671vAL+iT91kF4q4zt9EtKhZnKwfCVO1X2/SBEzOYSzkqtV1a6aP3B9CI22WByJQmh2AoZ6gbd1Id7ntjTqFjm1WyCwsyIEjKPb7jCG+xNUDlZnqNYYEI9qnXUR6wC1tOYEY95U23cU2xYjLvxArEGXG77qXm6sBgnBZoTlIU4aoDOniMdxADJNmHpSFTK7zQirSmPmF/BEPF+GeyqmpmpCivSXuBfM+63tU+o98XMqeRA5nIwIQ3L2MJfv1d69IjKASOL7Yq/P5lY3hBh1v8jZiU2LiT9yj7y4P8V9+8yg5XwDldpZPcD5fB7ls=
+  file: $ARTIFACT
+  on:
+    repo: hasufell/ghcup-hs
+    tags: true
+  skip_cleanup: true
+  draft: true
