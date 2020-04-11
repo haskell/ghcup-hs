@@ -81,7 +81,11 @@ getPlatform = do
       pure $ PlatformResult { _platform = Linux distro, _distroVersion = ver }
     "darwin" -> do
       ver <-
-        (either (const Nothing) Just . versioning . E.decodeUtf8)
+        ( either (const Nothing) Just
+          . versioning
+          . getMajorVersion
+          . E.decodeUtf8
+          )
           <$> getDarwinVersion
       pure $ PlatformResult { _platform = Darwin, _distroVersion = ver }
     "freebsd" -> do
@@ -93,10 +97,12 @@ getPlatform = do
   lift $ $(logDebug) [i|Identified Platform as: #{pfr}|]
   pure pfr
  where
+  getMajorVersion = T.intercalate "." . take 2 . T.split (== '.')
   getFreeBSDVersion =
     liftIO $ fmap _stdOut $ executeOut [rel|freebsd-version|] [] Nothing
-  getDarwinVersion =
-    liftIO $ fmap _stdOut $ executeOut [rel|sw_vers|] ["-productVersion"] Nothing
+  getDarwinVersion = liftIO $ fmap _stdOut $ executeOut [rel|sw_vers|]
+                                                        ["-productVersion"]
+                                                        Nothing
 
 
 getLinuxDistro :: (MonadCatch m, MonadIO m)
