@@ -988,28 +988,28 @@ ghcup_010_64_linux :: DownloadInfo
 ghcup_010_64_linux = DownloadInfo
   [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-linux-ghcup-0.1.0|]
   Nothing
-  "b2dc576926c74336805a30c647056eeb1b4204742bcfc5c51680d4e7c34b87a1"
+  "9281da4d8db628bbfbf1d3f3b748a2556f828cc60308559bc87c5d657cb06bdf"
 
 
 ghcup_010_64_freebsd :: DownloadInfo
 ghcup_010_64_freebsd = DownloadInfo
   [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-portbld-freebsd-ghcup-0.1.0|]
   Nothing
-  "d300e36beb63eb5199169b669cc0550e581d871f404f2ce1a2581829c1d2f431"
+  "992a375cc4d296a9ceed3712b8bb329a0ac605a614b5a9b8a5f3dba05183d2a5"
 
 
 ghcup_010_64_darwin10_13 :: DownloadInfo
 ghcup_010_64_darwin10_13 = DownloadInfo
   [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-apple-darwin-10.13-ghcup-0.1.0|]
   Nothing
-  "3f8fd787c25f6b9b990c968f79c423036155733d7ec8531a84e2cda874e26a32"
+  "adeaa6943611cf68c0c8224037788eac2a84a9136c59685eaea28ed16f3953c7"
 
 
 ghcup_010_64_darwin10_14 :: DownloadInfo
 ghcup_010_64_darwin10_14 = DownloadInfo
   [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-apple-darwin-10.14-ghcup-0.1.0|]
   Nothing
-  "f89fadbecabae0aeb97ed33687c133845dffc0530a9a71a408024e6bbebf46c9"
+  "6ad7824af3f03bd01e6367de105c2522916d3672a8cdce3f09c3b772f19c9bc8"
 
 
 
