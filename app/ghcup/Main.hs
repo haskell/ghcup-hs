@@ -73,7 +73,8 @@ data Options = Options
   }
 
 data Command
-  = Install InstallCommand
+  = Install InstallOptions
+  | InstallCabal InstallOptions
   | SetGHC SetGHCOptions
   | List ListOptions
   | Rm RmOptions
@@ -86,9 +87,6 @@ data Command
 data ToolVersion = ToolVersion Version
                  | ToolTag Tag
 
-
-data InstallCommand = InstallGHC InstallOptions
-                    | InstallCabal InstallOptions
 
 data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
@@ -164,11 +162,29 @@ com =
   subparser
       (  command
           "install"
-          (   Install
-          <$> (info (installP <**> helper)
-                    (progDesc "Install or update GHC/cabal")
-              )
+          ((info ((Install <$> installOpts) <**> helper)
+                 (progDesc "Install or update GHC")
+           )
           )
+      <> command
+           "set"
+           (   SetGHC
+           <$> (info (setGHCOpts <**> helper)
+                     (progDesc "Set currently active GHC version")
+               )
+           )
+      <> command
+           "rm"
+           (   Rm
+           <$> (info (rmOpts <**> helper) (progDesc "Remove a GHC version"))
+           )
+
+      <> command
+           "install-cabal"
+           ((info ((InstallCabal <$> installOpts) <**> helper)
+                  (progDesc "Install or update cabal")
+            )
+           )
       <> command
            "list"
            (   List
@@ -179,10 +195,7 @@ com =
       <> command
            "upgrade"
            (   Upgrade
-           <$> (info
-                 (upgradeOptsP <**> helper)
-                 (progDesc "Upgrade ghcup (per default in ~/.ghcup/bin/)")
-               )
+           <$> (info (upgradeOptsP <**> helper) (progDesc "Upgrade ghcup"))
            )
       <> command
            "compile"
@@ -195,25 +208,6 @@ com =
       )
     <|> subparser
           (  command
-              "set"
-              (   SetGHC
-              <$> (info (setGHCOpts <**> helper)
-                        (progDesc "Set the currently active GHC version")
-                  )
-              )
-          <> command
-               "rm"
-               (   Rm
-               <$> (info
-                     (rmOpts <**> helper)
-                     (progDesc "Remove a GHC version installed by ghcup")
-                   )
-               )
-          <> commandGroup "GHC commands:"
-          <> hidden
-          )
-    <|> subparser
-          (  command
               "debug-info"
               ((\_ -> DInfo) <$> (info (helper) (progDesc "Show debug info")))
           <> command
@@ -224,34 +218,19 @@ com =
           <> command
                "tool-requirements"
                (   (\_ -> ToolRequirements)
-               <$> (info (helper) (progDesc "Show the requirements for ghc/cabal"))
+               <$> (info (helper)
+                         (progDesc "Show the requirements for ghc/cabal")
+                   )
                )
           <> commandGroup "Other commands:"
           <> hidden
           )
 
 
-installP :: Parser InstallCommand
-installP = subparser
-  (  command
-      "ghc"
-      (   InstallGHC
-      <$> (info (installOpts <**> helper) (progDesc "Install a GHC version"))
-      )
-  <> command
-       "cabal"
-       (   InstallCabal
-       <$> (info (installOpts <**> helper)
-                 (progDesc "Install or update a Cabal version")
-           )
-       )
-  )
-
 installOpts :: Parser InstallOptions
 installOpts =
-  InstallOptions
-    <$> optional toolVersionParser
-    <*> (optional
+  (flip InstallOptions)
+    <$> (optional
           (option
             (eitherReader platformParser)
             (  short 'p'
@@ -262,10 +241,11 @@ installOpts =
             )
           )
         )
+    <*> optional toolVersionArgument
 
 
 setGHCOpts :: Parser SetGHCOptions
-setGHCOpts = SetGHCOptions <$> optional toolVersionParser
+setGHCOpts = SetGHCOptions <$> optional toolVersionArgument
 
 listOpts :: Parser ListOptions
 listOpts =
@@ -289,7 +269,7 @@ listOpts =
         )
 
 rmOpts :: Parser RmOptions
-rmOpts = RmOptions <$> versionParser
+rmOpts = RmOptions <$> versionArgument
 
 
 compileP :: Parser CompileCommand
@@ -370,13 +350,6 @@ compileOpts =
           )
 
 
-versionParser :: Parser Version
-versionParser = option
-  (eitherReader (bimap (const "Not a valid version") id . version . T.pack))
-  (short 'v' <> long "version" <> metavar "VERSION" <> help "The target version"
-  )
-
-
 toolVersionParser :: Parser ToolVersion
 toolVersionParser = verP <|> toolP
  where
@@ -384,15 +357,43 @@ toolVersionParser = verP <|> toolP
   toolP =
     ToolTag
       <$> (option
-            (eitherReader
-              (\s' -> case fmap toLower s' of
-                "recommended" -> Right Recommended
-                "latest"      -> Right Latest
-                other         -> Left ([i|Unknown tag #{other}|])
-              )
-            )
+            (eitherReader tagEither)
             (short 't' <> long "tag" <> metavar "TAG" <> help "The target tag")
           )
+
+-- | same as toolVersionParser, except as an argument.
+toolVersionArgument :: Parser ToolVersion
+toolVersionArgument =
+  argument (eitherReader toolVersionEither) (metavar "VERSION|TAG")
+
+
+versionArgument :: Parser Version
+versionArgument = argument
+  (eitherReader versionEither)
+  (metavar "VERSION")
+
+versionParser :: Parser Version
+versionParser = option
+  (eitherReader versionEither)
+  (short 'v' <> long "version" <> metavar "VERSION" <> help "The target version"
+  )
+
+tagEither :: String -> Either String Tag
+tagEither s' = case fmap toLower s' of
+  "recommended" -> Right Recommended
+  "latest"      -> Right Latest
+  other         -> Left ([i|Unknown tag #{other}|])
+
+versionEither :: String -> Either String Version
+versionEither s' =
+  -- 'version' is a bit too lax and will parse typoed tags
+  case readMaybe ((:[]) . head $ s') :: Maybe Int of
+    Just _  -> bimap (const "Not a valid version") id . version . T.pack $ s'
+    Nothing -> Left "Not a valid version"
+
+toolVersionEither :: String -> Either String ToolVersion
+toolVersionEither s' =
+  bimap id ToolTag (tagEither s') <|> bimap id ToolVersion (versionEither s')
 
 
 toolParser :: String -> Either String Tool
@@ -646,7 +647,7 @@ main = do
           runLogger $ checkForUpdates dls
 
           case optCommand of
-            Install (InstallGHC InstallOptions {..}) ->
+            Install (InstallOptions {..}) ->
               void
                 $   (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer GHC
@@ -669,7 +670,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                           $(logError) [i|#{e}|]
                           $(logError) [i|Also check the logs in ~/.ghcup/logs|]
                         exitFailure
-            Install (InstallCabal InstallOptions {..}) ->
+            InstallCabal (InstallOptions {..}) ->
               void
                 $   (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer Cabal

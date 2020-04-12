@@ -45,16 +45,16 @@ Common use cases are:
 ghcup list
 
 # install the recommended GHC version
-ghcup install ghc
+ghcup install
 
 # install a specific GHC version
-ghcup install ghc -v 8.2.2
+ghcup install 8.2.2
 
 # set the currently "active" GHC version
-ghcup set -v 8.4.4
+ghcup set 8.4.4
 
 # install cabal-install
-ghcup install cabal
+ghcup install-cabal
 
 # update ghcup itself
 ghcup upgrade
