@@ -690,17 +690,22 @@ upgradeGHCup dls mtarget = do
   lift $ $(logInfo) [i|Upgrading GHCup...|]
   let latestVer = fromJust $ getLatest dls GHCup
   pfreq <- liftE platformRequest
-  dli <- lE $ getDownloadInfo GHCup latestVer pfreq dls
-  tmp <- lift withGHCupTmpDir
+  dli   <- lE $ getDownloadInfo GHCup latestVer pfreq dls
+  tmp   <- lift withGHCupTmpDir
   let fn = [rel|ghcup|]
   p <- liftE $ download dli tmp (Just fn)
   case mtarget of
     Nothing -> do
       dest <- liftIO $ ghcupBinDir
+      liftIO $ hideError NoSuchThing $ deleteFile (dest </> fn)
       handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                                (dest </> fn)
                                                                Overwrite
-    Just fullDest -> liftIO $ copyFile p fullDest Overwrite
+    Just fullDest -> do
+      liftIO $ hideError NoSuchThing $ deleteFile fullDest
+      handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
+                                                               fullDest
+                                                               Overwrite
   pure latestVer
 
 
