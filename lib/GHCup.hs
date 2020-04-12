@@ -53,6 +53,7 @@ import           Prelude                 hiding ( abs
                                                 )
 import           System.IO.Error
 import           System.Posix.FilePath          ( getSearchPath )
+import           System.Posix.Files.ByteString
 
 import qualified Data.ByteString               as B
 import qualified Data.Map.Strict               as Map
@@ -694,6 +695,11 @@ upgradeGHCup dls mtarget = do
   tmp   <- lift withGHCupTmpDir
   let fn = [rel|ghcup|]
   p <- liftE $ download dli tmp (Just fn)
+  let fileMode' =
+        newFilePerms
+          `unionFileModes` ownerExecuteMode
+          `unionFileModes` groupExecuteMode
+          `unionFileModes` otherExecuteMode
   case mtarget of
     Nothing -> do
       dest <- liftIO $ ghcupBinDir
@@ -701,11 +707,13 @@ upgradeGHCup dls mtarget = do
       handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                                (dest </> fn)
                                                                Overwrite
+      liftIO $ setFileMode (toFilePath (dest </> fn)) fileMode'
     Just fullDest -> do
       liftIO $ hideError NoSuchThing $ deleteFile fullDest
       handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                                fullDest
                                                                Overwrite
+      liftIO $ setFileMode (toFilePath fullDest) fileMode'
   pure latestVer
 
 
