@@ -39,19 +39,26 @@ download_ghcup() {
 
     case "${_plat}" in
         "linux"|"Linux")
-			edo curl -Lf https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-pc-linux-ghcup > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+			_url=https://www.haskell.org/ghcup/bin/x86_64-linux-ghcup
 			;;
         "FreeBSD"|"freebsd")
-			edo curl -Lf https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-portbld-freebsd-ghcup > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+			_url=https://www.haskell.org/ghcup/bin/x86_64-portbld-freebsd-ghcup
             ;;
         "Darwin"|"darwin")
-			edo curl -Lf https://github.com/hasufell/ghcup-hs/releases/download/travis-0.1.8/x86_64-apple-darwin-10.13-ghcup > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+			case "$(sw_vers -productVersion || echo "none")" in
+				10.15.*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.14-ghcup ;;
+				10.14.*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.14-ghcup ;;
+				10.13.*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.13-ghcup ;;
+				*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.13-ghcup ;;
+			esac
             ;;
         *) die "Unknown platform: ${_plat}"
 			;;
     esac
 
-	unset _plat _arch
+	edo curl -Lf "${_url}" > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+
+	unset _plat _arch _url
 }
 
 

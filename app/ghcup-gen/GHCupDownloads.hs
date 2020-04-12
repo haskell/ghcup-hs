@@ -986,16 +986,30 @@ cabal_3200_64_darwin = DownloadInfo
 
 ghcup_010_64_linux :: DownloadInfo
 ghcup_010_64_linux = DownloadInfo
-  [uri|https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-pc-linux-ghcup|]
+  [uri|https://www.haskell.org/ghcup/bin/0.1.0/x86_64-linux-ghcup-0.1.0|]
   Nothing
-  "f0105c69669285aaa8db101ce44f04e2ff69d4939882e52110b330a9d02409aa"
+  "e2e124903193551df84679887a5741021f0d67df45442c9d3d2429e83b95aad1"
 
 
 ghcup_010_64_freebsd :: DownloadInfo
 ghcup_010_64_freebsd = DownloadInfo
-  [uri|https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-portbld-freebsd-ghcup|]
+  [uri|https://www.haskell.org/ghcup/bin/0.1.0/x86_64-portbld-freebsd-ghcup-0.1.0|]
   Nothing
-  "1ef384ad54af02d7a9c1151e17cd96273c857395dc4a6696eef11b369c0a1b46"
+  "c6024c7f2849b6ed83cd683bb0a0e3d5b559aee3fba2ee78ada4f0c9804dbe36"
+
+
+ghcup_010_64_darwin10_13 :: DownloadInfo
+ghcup_010_64_darwin10_13 = DownloadInfo
+  [uri|https://www.haskell.org/ghcup/bin/0.1.0/x86_64-apple-darwin-10.13-ghcup-0.1.0|]
+  Nothing
+  "39b96cd984b6e8393bcb93eaeab2f4648e7ef4e4547afe623283774643eede58"
+
+
+ghcup_010_64_darwin10_14 :: DownloadInfo
+ghcup_010_64_darwin10_14 = DownloadInfo
+  [uri|https://www.haskell.org/ghcup/bin/0.1.0/x86_64-apple-darwin-10.14-ghcup-0.1.0|]
+  Nothing
+  "adfcf500f0414951685e53f72bbc9c1e3b2f41c06e562ed3f63fbd645bf61e54"
 
 
 
@@ -1867,6 +1881,14 @@ ghcupDownloads = M.fromList
           [ ( A_64
             , M.fromList
               [ (Linux UnknownLinux, M.fromList [(Nothing, ghcup_010_64_linux)])
+              , ( Darwin
+                , M.fromList
+                  [ (Nothing           , ghcup_010_64_darwin10_13)
+                  , (Just [vers|10.13|], ghcup_010_64_darwin10_13)
+                  , (Just [vers|10.14|], ghcup_010_64_darwin10_14)
+                  , (Just [vers|10.15|], ghcup_010_64_darwin10_14)
+                  ]
+                )
               , (FreeBSD, M.fromList [(Nothing, ghcup_010_64_freebsd)])
               ]
             )

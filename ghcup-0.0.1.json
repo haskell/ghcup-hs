@@ -2118,16 +2118,38 @@
           "A_64": {
             "FreeBSD": {
               "unknown_versioning": {
-                "dlHash": "1ef384ad54af02d7a9c1151e17cd96273c857395dc4a6696eef11b369c0a1b46",
+                "dlHash": "c6024c7f2849b6ed83cd683bb0a0e3d5b559aee3fba2ee78ada4f0c9804dbe36",
                 "dlSubdir": null,
-                "dlUri": "https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-portbld-freebsd-ghcup"
+                "dlUri": "https://www.haskell.org/ghcup/bin/0.1.0/x86_64-portbld-freebsd-ghcup-0.1.0"
+              }
+            },
+            "Darwin": {
+              "unknown_versioning": {
+                "dlHash": "39b96cd984b6e8393bcb93eaeab2f4648e7ef4e4547afe623283774643eede58",
+                "dlSubdir": null,
+                "dlUri": "https://www.haskell.org/ghcup/bin/0.1.0/x86_64-apple-darwin-10.13-ghcup-0.1.0"
+              },
+              "10.14": {
+                "dlHash": "adfcf500f0414951685e53f72bbc9c1e3b2f41c06e562ed3f63fbd645bf61e54",
+                "dlSubdir": null,
+                "dlUri": "https://www.haskell.org/ghcup/bin/0.1.0/x86_64-apple-darwin-10.14-ghcup-0.1.0"
+              },
+              "10.13": {
+                "dlHash": "39b96cd984b6e8393bcb93eaeab2f4648e7ef4e4547afe623283774643eede58",
+                "dlSubdir": null,
+                "dlUri": "https://www.haskell.org/ghcup/bin/0.1.0/x86_64-apple-darwin-10.13-ghcup-0.1.0"
+              },
+              "10.15": {
+                "dlHash": "adfcf500f0414951685e53f72bbc9c1e3b2f41c06e562ed3f63fbd645bf61e54",
+                "dlSubdir": null,
+                "dlUri": "https://www.haskell.org/ghcup/bin/0.1.0/x86_64-apple-darwin-10.14-ghcup-0.1.0"
               }
             },
             "Linux_UnknownLinux": {
               "unknown_versioning": {
-                "dlHash": "f0105c69669285aaa8db101ce44f04e2ff69d4939882e52110b330a9d02409aa",
+                "dlHash": "e2e124903193551df84679887a5741021f0d67df45442c9d3d2429e83b95aad1",
                 "dlSubdir": null,
-                "dlUri": "https://github.com/hasufell/ghcup-hs/releases/download/0.1.0-pre/x86_64-pc-linux-ghcup"
+                "dlUri": "https://www.haskell.org/ghcup/bin/0.1.0/x86_64-linux-ghcup-0.1.0"
               }
             }
           }
