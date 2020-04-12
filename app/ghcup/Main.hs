@@ -130,11 +130,11 @@ opts =
   Options
     <$> switch
           (short 'v' <> long "verbose" <> help
-            "Whether to enable verbosity (default: False)"
+            "Enable verbosity"
           )
     <*> switch
           (short 'c' <> long "cache" <> help
-            "Whether to cache downloads (default: False)"
+            "Cache downloads in ~/.ghcup/cache"
           )
     <*> (optional
           (option
@@ -149,7 +149,7 @@ opts =
         )
     <*> switch
           (short 'n' <> long "no-verify" <> help
-            "Skip tarball checksum verification (default: False)"
+            "Skip tarball checksum verification"
           )
     <*> com
  where
