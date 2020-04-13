@@ -1,10 +1,11 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns    #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeApplications  #-}
 
 
 module Main where
@@ -14,7 +15,7 @@ import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Logger
 import           GHCupInfo
 
-import           Data.Aeson                     ( eitherDecode )
+import           Data.Aeson                     ( eitherDecode, encode )
 import           Data.Aeson.Encode.Pretty
 #if !MIN_VERSION_base(4,13,0)
 import           Data.Semigroup                 ( (<>) )
@@ -61,10 +62,13 @@ outputP = fileOutput <|> stdOutput
 
 data GenJSONOpts = GenJSONOpts
   { output :: Maybe Output
+  , pretty :: Bool
   }
 
 genJSONOpts :: Parser GenJSONOpts
-genJSONOpts = GenJSONOpts <$> optional outputP
+genJSONOpts = GenJSONOpts <$> optional outputP <*> switch
+  (short 'p' <> long "pretty" <> help "Make JSON output pretty (human readable)"
+  )
 
 
 data Input
@@ -134,14 +138,16 @@ main = do
   customExecParser (prefs showHelpOnError) (info (opts <**> helper) idm)
     >>= \Options {..} -> case optCommand of
           GenJSON gopts -> do
-            let
-              bs = encodePretty' (defConfig { confIndent = Spaces 2 })
-                                 ghcupInfo
+            let bs True =
+                  encodePretty' (defConfig { confIndent = Spaces 2 }) ghcupInfo
+                bs False = encode ghcupInfo
             case gopts of
-              GenJSONOpts { output = Nothing }        -> L.hPutStr stdout bs
-              GenJSONOpts { output = Just StdOutput } -> L.hPutStr stdout bs
-              GenJSONOpts { output = Just (FileOutput file) } ->
-                L.writeFile file bs
+              GenJSONOpts { output = Nothing, pretty } ->
+                L.hPutStr stdout (bs pretty)
+              GenJSONOpts { output = Just StdOutput, pretty } ->
+                L.hPutStr stdout (bs pretty)
+              GenJSONOpts { output = Just (FileOutput file), pretty } ->
+                L.writeFile file (bs pretty)
           ValidateJSON vopts -> case vopts of
             ValidateJSONOpts { input = Nothing } ->
               L.getContents >>= valAndExit validate
@@ -165,4 +171,3 @@ main = do
       Left  e -> die (color Red $ show e)
     myLoggerT (LoggerConfig True (B.hPut stdout) (\_ -> pure ())) (f av)
       >>= exitWith
-
