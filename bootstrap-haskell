@@ -31,10 +31,10 @@ download_ghcup() {
         "linux"|"Linux")
 			case "${_arch}" in
 				x86_64|amd64)
-					_url=https://www.haskell.org/ghcup/bin/x86_64-linux-ghcup
+					_url=https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup
 					;;
 				i*86)
-					_url=https://www.haskell.org/ghcup/bin/i386-linux-ghcup
+					_url=https://downloads.haskell.org/~ghcup/i386-linux-ghcup
 					;;
 				*) die "Unknown architecture: ${_arch}"
 					;;
@@ -50,7 +50,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${_arch}"
 					;;
 			esac
-			_url=https://www.haskell.org/ghcup/bin/x86_64-portbld-freebsd-ghcup
+			_url=https://downloads.haskell.org/~ghcup/x86_64-portbld-freebsd-ghcup
             ;;
         "Darwin"|"darwin")
 			case "${_arch}" in
@@ -62,13 +62,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${_arch}"
 					;;
 			esac
-			case "$(sw_vers -productVersion || echo "none")" in
-				10.15.*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.14-ghcup ;;
-				10.14.*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.14-ghcup ;;
-				10.13.*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.13-ghcup ;;
-				*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.13-ghcup ;;
-			esac
-            ;;
+			_url=https://downloads.haskell.org/~ghcup/x86_64-apple-darwin-ghcup ;;
         *) die "Unknown platform: ${_plat}"
 			;;
     esac

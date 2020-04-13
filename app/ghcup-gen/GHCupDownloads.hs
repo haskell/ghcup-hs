@@ -986,37 +986,31 @@ cabal_3200_64_darwin = DownloadInfo
 
 ghcup_010_32_linux :: DownloadInfo
 ghcup_010_32_linux = DownloadInfo
-  [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/i386-linux-ghcup-0.1.0|]
+  [uri|https://downloads.haskell.org/~ghcup/i386-linux-ghcup|]
   Nothing
   "ce95fd3044ea249c2ea02e122112a787d710cc4be2dcf1e78d8c68b540a70920"
 
 
 ghcup_010_64_linux :: DownloadInfo
 ghcup_010_64_linux = DownloadInfo
-  [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-linux-ghcup-0.1.0|]
+  [uri|https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup|]
   Nothing
   "9281da4d8db628bbfbf1d3f3b748a2556f828cc60308559bc87c5d657cb06bdf"
 
 
 ghcup_010_64_freebsd :: DownloadInfo
 ghcup_010_64_freebsd = DownloadInfo
-  [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-portbld-freebsd-ghcup-0.1.0|]
+  [uri|https://downloads.haskell.org/~ghcup/x86_64-portbld-freebsd-ghcup|]
   Nothing
   "992a375cc4d296a9ceed3712b8bb329a0ac605a614b5a9b8a5f3dba05183d2a5"
 
 
 ghcup_010_64_darwin10_13 :: DownloadInfo
 ghcup_010_64_darwin10_13 = DownloadInfo
-  [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-apple-darwin-10.13-ghcup-0.1.0|]
+  [uri|https://downloads.haskell.org/~ghcup/x86_64-apple-darwin-ghcup|]
   Nothing
   "adeaa6943611cf68c0c8224037788eac2a84a9136c59685eaea28ed16f3953c7"
 
-
-ghcup_010_64_darwin10_14 :: DownloadInfo
-ghcup_010_64_darwin10_14 = DownloadInfo
-  [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-apple-darwin-10.14-ghcup-0.1.0|]
-  Nothing
-  "1f151e308622cfd010549bfb7ac06659794995f6c0a0eeb3ed14eed34573e237"
 
 
 
@@ -1888,14 +1882,7 @@ ghcupDownloads = M.fromList
           [ ( A_64
             , M.fromList
               [ (Linux UnknownLinux, M.fromList [(Nothing, ghcup_010_64_linux)])
-              , ( Darwin
-                , M.fromList
-                  [ (Nothing           , ghcup_010_64_darwin10_13)
-                  , (Just [vers|10.13|], ghcup_010_64_darwin10_13)
-                  , (Just [vers|10.14|], ghcup_010_64_darwin10_14)
-                  , (Just [vers|10.15|], ghcup_010_64_darwin10_14)
-                  ]
-                )
+              , (Darwin, M.fromList [(Nothing, ghcup_010_64_darwin10_13)])
               , (FreeBSD, M.fromList [(Nothing, ghcup_010_64_freebsd)])
               ]
             )
