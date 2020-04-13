@@ -16,7 +16,23 @@ I consider haskell-TLS an interesting experiment, but not a battle-tested and pe
 
 ### Optics instead of lens
 
-They're a little safer (less Monoid weirdness with view) and have better error messages. Consider: `view (_Just . to (++ "abc")) Nothing` (lens) vs `view (_Just % to (++ "abc")) Nothing` (optics). The latter does not compile (good).
+They're a little safer (less Monoid weirdness with view) and have better error messages. Consider the following wit lens
+
+```
+> view (_Just . to (++ "abc")) Nothing
+""
+```
+
+vs optics
+
+```
+view (_Just % to (++ "abc")) Nothing
+
+<interactive>:2:1: error:
+    • An_AffineFold cannot be used as A_Getter
+    • In the expression: view (_Just % to (++ "abc")) Nothing
+      In an equation for ‘it’: it = view (_Just % to (++ "abc")) Nothing
+```
 
 ### Strict and StrictData on by default
 
