@@ -27,24 +27,41 @@ download_ghcup() {
 	_plat="$(uname -s)"
 	_arch=$(uname -m)
 
-	case "${_arch}" in
-		x86_64|amd64)
-			;;
-		i*86)
-			die "i386 currently not supported!"
-			;;
-		*) die "Unknown architecture: ${_arch}"
-			;;
-	esac
-
     case "${_plat}" in
         "linux"|"Linux")
-			_url=https://www.haskell.org/ghcup/bin/x86_64-linux-ghcup
+			case "${_arch}" in
+				x86_64|amd64)
+					_url=https://www.haskell.org/ghcup/bin/x86_64-linux-ghcup
+					;;
+				i*86)
+					_url=https://www.haskell.org/ghcup/bin/i386-linux-ghcup
+					;;
+				*) die "Unknown architecture: ${_arch}"
+					;;
+			esac
 			;;
         "FreeBSD"|"freebsd")
+			case "${_arch}" in
+				x86_64|amd64)
+					;;
+				i*86)
+					die "i386 currently not supported!"
+					;;
+				*) die "Unknown architecture: ${_arch}"
+					;;
+			esac
 			_url=https://www.haskell.org/ghcup/bin/x86_64-portbld-freebsd-ghcup
             ;;
         "Darwin"|"darwin")
+			case "${_arch}" in
+				x86_64|amd64)
+					;;
+				i*86)
+					die "i386 currently not supported!"
+					;;
+				*) die "Unknown architecture: ${_arch}"
+					;;
+			esac
 			case "$(sw_vers -productVersion || echo "none")" in
 				10.15.*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.14-ghcup ;;
 				10.14.*) _url=https://www.haskell.org/ghcup/bin/x86_64-apple-darwin-10.14-ghcup ;;

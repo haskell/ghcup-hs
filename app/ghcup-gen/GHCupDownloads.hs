@@ -984,6 +984,13 @@ cabal_3200_64_darwin = DownloadInfo
     -------------
 
 
+ghcup_010_32_linux :: DownloadInfo
+ghcup_010_32_linux = DownloadInfo
+  [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/i386-linux-ghcup-0.1.0|]
+  Nothing
+  "ce95fd3044ea249c2ea02e122112a787d710cc4be2dcf1e78d8c68b540a70920"
+
+
 ghcup_010_64_linux :: DownloadInfo
 ghcup_010_64_linux = DownloadInfo
   [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-linux-ghcup-0.1.0|]
@@ -1891,6 +1898,10 @@ ghcupDownloads = M.fromList
                 )
               , (FreeBSD, M.fromList [(Nothing, ghcup_010_64_freebsd)])
               ]
+            )
+          , ( A_32
+            , M.fromList
+              [(Linux UnknownLinux, M.fromList [(Nothing, ghcup_010_32_linux)])]
             )
           ]
         )
