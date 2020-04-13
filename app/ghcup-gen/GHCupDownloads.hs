@@ -1009,7 +1009,7 @@ ghcup_010_64_darwin10_14 :: DownloadInfo
 ghcup_010_64_darwin10_14 = DownloadInfo
   [uri|https://github.com/hasufell/ghcup-hs/releases/download/v0.1.0/x86_64-apple-darwin-10.14-ghcup-0.1.0|]
   Nothing
-  "6ad7824af3f03bd01e6367de105c2522916d3672a8cdce3f09c3b772f19c9bc8"
+  "1f151e308622cfd010549bfb7ac06659794995f6c0a0eeb3ed14eed34573e237"
 
 
 
