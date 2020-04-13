@@ -25,7 +25,7 @@ Follow the instructions at [https://www.haskell.org/ghcup/](https://www.haskell.
 
 ### Manual install
 
-Download the binary for your platform at [https://github.com/hasufell/ghcup-hs/releases](https://github.com/hasufell/ghcup-hs/releases)
+Download the binary for your platform at [https://downloads.haskell.org/~ghcup/](https://downloads.haskell.org/~ghcup/)
 and place it into your `PATH` anywhere.
 
 Then adjust your `PATH` in `~/.bashrc` (or similar, depending on your shell) like so:
