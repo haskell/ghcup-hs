@@ -26,7 +26,7 @@ They're a little safer (less Monoid weirdness with view) and have better error m
 vs optics
 
 ```
-view (_Just % to (++ "abc")) Nothing
+> view (_Just % to (++ "abc")) Nothing
 
 <interactive>:2:1: error:
     • An_AffineFold cannot be used as A_Getter
