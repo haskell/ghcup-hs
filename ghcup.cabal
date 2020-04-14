@@ -6,8 +6,8 @@ description:
   A rewrite of the shell script ghcup, for providing
   a more stable user experience and exposing an API.
 
-homepage:           https://github.com/hasufell/ghcup-hs
-bug-reports:        https://github.com/hasufell/ghcup-hs/issues
+homepage:           https://gitlab.haskell.org/haskell/ghcup-hs
+bug-reports:        https://gitlab.haskell.org/haskell/ghcup-hs/issues
 license:            LGPL-3.0-only
 license-file:       LICENSE
 author:             Julian Ospald
@@ -19,7 +19,7 @@ extra-source-files: CHANGELOG.md
 
 source-repository head
   type:     git
-  location: https://github.com/hasufell/ghcup-hs
+  location: https://gitlab.haskell.org/haskell/ghcup-hs.git
 
 flag Curl
   description: Use curl instead of http-io-streams for download
