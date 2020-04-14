@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               ghcup
-version:            0.1.0
+version:            0.1.1
 synopsis:           ghc toolchain installer as an exe/library
 description:
   A rewrite of the shell script ghcup, for providing
@@ -84,7 +84,7 @@ common hpath
   build-depends: hpath >=0.11
 
 common hpath-directory
-  build-depends: hpath-directory >=0.13.2
+  build-depends: hpath-directory >=0.13.3
 
 common hpath-filepath
   build-depends: hpath-filepath >=0.10.3
@@ -93,7 +93,7 @@ common hpath-io
   build-depends: hpath-io >=0.13.1
 
 common hpath-posix
-  build-depends: hpath-posix >=0.11.1
+  build-depends: hpath-posix >=0.13.2
 
 common http-io-streams
   build-depends: http-io-streams >=0.1.2.0
