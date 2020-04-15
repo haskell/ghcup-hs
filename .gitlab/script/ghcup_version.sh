@@ -54,8 +54,8 @@ ghci --version
 ghc-$(ghc --numeric-version) --version
 ghci-$(ghc --numeric-version) --version
 
+eghcup rm $(ghc --numeric-version)
+
 eghcup upgrade
 eghcup upgrade -f
-
-eghcup rm $(ghc --numeric-version)
 
