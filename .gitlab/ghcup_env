@@ -1,0 +1,3 @@
+export GHCUP_INSTALL_BASE_PREFIX="$CI_PROJECT_DIR"
+export PATH="$CI_PROJECT_DIR/.ghcup/bin:$CI_PROJECT_DIR/.local/bin:$PATH"
+
