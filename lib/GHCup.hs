@@ -228,7 +228,7 @@ installCabalBin bDls ver mpfReq = do
 setGHC :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
        => Version
        -> SetGHC
-       -> Excepts '[NotInstalled] m ()
+       -> Excepts '[NotInstalled] m Version
 setGHC ver sghc = do
   let verBS = verToBS ver
   ghcdir <- liftIO $ ghcupGHCDir ver
@@ -266,7 +266,7 @@ setGHC ver sghc = do
   -- create symlink for share dir
   lift $ symlinkShareDir ghcdir verBS
 
-  pure ()
+  pure ver
 
  where
 
@@ -732,7 +732,7 @@ postGHCInstall :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
                => Version
                -> Excepts '[NotInstalled] m ()
 postGHCInstall ver = do
-  liftE $ setGHC ver SetGHC_XYZ
+  void $ liftE $ setGHC ver SetGHC_XYZ
 
   -- Create ghc-x.y symlinks. This may not be the current
   -- version, create it regardless.

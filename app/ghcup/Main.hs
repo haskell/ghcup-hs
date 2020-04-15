@@ -699,8 +699,8 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                       liftE $ setGHC v SetGHCOnly
                     )
                 >>= \case
-                      VRight _ ->
-                        runLogger $ $(logInfo) ("GHC successfully set")
+                      VRight v ->
+                        runLogger $ $(logInfo) [i|GHC #{prettyVer v} successfully set as default version|]
                       VLeft e ->
                         runLogger ($(logError) [i|#{e}|]) >> exitFailure
 
