@@ -986,28 +986,28 @@ cabal_3200_64_darwin = DownloadInfo
 
 ghcup_012_32_linux :: DownloadInfo
 ghcup_012_32_linux = DownloadInfo
-  [uri|https://downloads.haskell.org/ghcup/0.1.2/i386-linux-ghcup-0.1.2|]
+  [uri|https://downloads.haskell.org/~ghcup/0.1.2/i386-linux-ghcup-0.1.2|]
   Nothing
   "a1b3f1b62798a2b1162e7433530e697292b87a9255516d8a08e07f0708a72550"
 
 
 ghcup_012_64_linux :: DownloadInfo
 ghcup_012_64_linux = DownloadInfo
-  [uri|https://downloads.haskell.org/ghcup/0.1.2/x86_64-linux-ghcup-0.1.2|]
+  [uri|https://downloads.haskell.org/~ghcup/0.1.2/x86_64-linux-ghcup-0.1.2|]
   Nothing
   "ef8b39bacce3661efc63d43d0a926b6803497e01c13afbea3947a6d320ecacbf"
 
 
 ghcup_012_64_freebsd :: DownloadInfo
 ghcup_012_64_freebsd = DownloadInfo
-  [uri|https://downloads.haskell.org/ghcup/0.1.2/x86_64-portbld-freebsd-ghcup-0.1.2|]
+  [uri|https://downloads.haskell.org/~ghcup/0.1.2/x86_64-portbld-freebsd-ghcup-0.1.2|]
   Nothing
   "03407b869a860c5f6fb0b94436a4dd17f0d2937a3b6fa348f2a71f64b1daba82"
 
 
 ghcup_012_64_darwin10_13 :: DownloadInfo
 ghcup_012_64_darwin10_13 = DownloadInfo
-  [uri|https://downloads.haskell.org/ghcup/0.1.2/x86_64-apple-darwin-ghcup-0.1.2|]
+  [uri|https://downloads.haskell.org/~ghcup/0.1.2/x86_64-apple-darwin-ghcup-0.1.2|]
   Nothing
   "bea293d4a0475f853284d3bf4790565fa270922c8dae60730490dd3753a6ad63"
 
