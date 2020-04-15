@@ -39,11 +39,10 @@ import qualified System.Posix.User             as PU
 
 ghcupBaseDir :: IO (Path Abs)
 ghcupBaseDir = do
-  getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
+  bdir <- getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
     Just r  -> parseAbs r
-    Nothing -> do
-      home <- liftIO getHomeDirectory
-      pure (home </> [rel|.ghcup|])
+    Nothing -> liftIO getHomeDirectory
+  pure (bdir </> [rel|.ghcup|])
 
 ghcupGHCBaseDir :: IO (Path Abs)
 ghcupGHCBaseDir = ghcupBaseDir <&> (</> [rel|ghc|])
