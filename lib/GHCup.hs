@@ -675,6 +675,8 @@ upgradeGHCup :: ( MonadMask m
                 )
              => GHCupDownloads
              -> Maybe (Path Abs)  -- ^ full file destination to write ghcup into
+             -> Bool              -- ^ whether to force update regardless
+                                  --   of currently installed version
              -> Excepts
                   '[ CopyError
                    , DigestError
@@ -683,12 +685,14 @@ upgradeGHCup :: ( MonadMask m
                    , NoCompatibleArch
                    , NoCompatiblePlatform
                    , NoDownload
+                   , NoUpdate
                    ]
                   m
                   Version
-upgradeGHCup dls mtarget = do
+upgradeGHCup dls mtarget force = do
   lift $ $(logInfo) [i|Upgrading GHCup...|]
   let latestVer = fromJust $ getLatest dls GHCup
+  when (not force && (latestVer < pvpToVersion ghcUpVer)) $ throwE NoUpdate
   pfreq <- liftE platformRequest
   dli   <- lE $ getDownloadInfo GHCup latestVer pfreq dls
   tmp   <- lift withGHCupTmpDir

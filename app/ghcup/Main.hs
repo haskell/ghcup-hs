@@ -80,7 +80,7 @@ data Command
   | Rm RmOptions
   | DInfo
   | Compile CompileCommand
-  | Upgrade UpgradeOpts
+  | Upgrade UpgradeOpts Bool
   | NumericVersion
   | ToolRequirements
 
@@ -194,9 +194,12 @@ com =
            )
       <> command
            "upgrade"
-           (   Upgrade
-           <$> (info (upgradeOptsP <**> helper) (progDesc "Upgrade ghcup"))
-           )
+           (info ((Upgrade <$> upgradeOptsP <*>
+            switch
+            (short 'f' <> long "force" <> help
+              "Force update"
+            )
+           ) <**> helper) (progDesc "Upgrade ghcup"))
       <> command
            "compile"
            (   Compile
@@ -626,6 +629,7 @@ main = do
                       , NoCompatiblePlatform
                       , NoCompatibleArch
                       , NoDownload
+                      , NoUpdate
                       , FileDoesNotExistError
                       , CopyError
                       , DownloadFailed
@@ -770,7 +774,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                       VLeft e ->
                         runLogger ($(logError) [i|#{e}|]) >> exitFailure
 
-            Upgrade (uOpts) -> do
+            Upgrade (uOpts) force -> do
               target <- case uOpts of
                 UpgradeInplace -> do
                   efp <- liftIO $ getExecutablePath
@@ -783,7 +787,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
 
               void
                 $   (runUpgrade $ do
-                      liftE $ upgradeGHCup dls target
+                      liftE $ upgradeGHCup dls target force
                     )
                 >>= \case
                       VRight v' -> do
@@ -791,6 +795,9 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                         runLogger
                           $ $(logInfo)
                               [i|Successfully upgraded GHCup to version #{pretty_v}|]
+                      VLeft (V NoUpdate) ->
+                        runLogger $ $(logWarn)
+                          [i|No GHCup update available|]
                       VLeft e ->
                         runLogger ($(logError) [i|#{e}|]) >> exitFailure
 

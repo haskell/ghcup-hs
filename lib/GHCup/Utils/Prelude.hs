@@ -240,3 +240,7 @@ addToCurrentEnv :: MonadIO m
 addToCurrentEnv adds = do
   cEnv <- liftIO $ getEnvironment
   pure (adds ++ cEnv)
+
+
+pvpToVersion :: PVP -> Version
+pvpToVersion = either (\_ -> error "Couldn't convert PVP to Version") id . version . prettyPVP

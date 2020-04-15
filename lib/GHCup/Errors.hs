@@ -30,6 +30,10 @@ data NoCompatiblePlatform = NoCompatiblePlatform String -- the platform we got
 data NoDownload = NoDownload
   deriving Show
 
+-- | No update available or necessary.
+data NoUpdate = NoUpdate
+  deriving Show
+
 -- | The Architecture is unknown and unsupported.
 data NoCompatibleArch = NoCompatibleArch String
   deriving Show
