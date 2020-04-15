@@ -10,6 +10,9 @@ ecabal() {
 	cabal --store-dir="$(pwd)"/.store "$@"
 }
 
+eghcup() {
+	ghcup -v -c -s file://$(pwd)/ghcup-${JSON_VERSION}.json "$@"
+}
 
 # build
 ecabal update
@@ -32,27 +35,27 @@ rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
 
 ghcup-gen check -f ghcup-${JSON_VERSION}.json
 
-ghcup numeric-version
+eghcup numeric-version
 
-ghcup -v -c install ${GHC_VERSION}
-ghcup -v -c set ${GHC_VERSION}
-ghcup -v -c install-cabal
+eghcup install ${GHC_VERSION}
+eghcup set ${GHC_VERSION}
+eghcup install-cabal
 
 cabal --version
 
-ghcup -v -c debug-info
+eghcup debug-info
 
-ghcup -v -c list
-ghcup -v -c list -t ghc
-ghcup -v -c list -t cabal
+eghcup list
+eghcup list -t ghc
+eghcup list -t cabal
 
 ghc --version
 ghci --version
 ghc-$(ghc --numeric-version) --version
 ghci-$(ghc --numeric-version) --version
 
-ghcup -v upgrade
-ghcup -v upgrade -f
+eghcup upgrade
+eghcup upgrade -f
 
-ghcup -v rm $(ghc --numeric-version)
+eghcup rm $(ghc --numeric-version)
 
