@@ -2,10 +2,7 @@
 
 ## Now
 
-* ghcup migration
-* update static links
-
-* releases, update download info and bootstrap-haskell
+* move out GHCup.Version module, bc it's not library-ish
 
 ## Maybe
 

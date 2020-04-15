@@ -14,4 +14,4 @@ ghcupURL :: URI
 ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.1.json|]
 
 ghcUpVer :: PVP
-ghcUpVer = [pver|0.1.1|]
+ghcUpVer = [pver|0.1.2|]
