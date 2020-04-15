@@ -31,10 +31,10 @@ download_ghcup() {
         "linux"|"Linux")
 			case "${_arch}" in
 				x86_64|amd64)
-					_url=https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup
+					_url=https://downloads.haskell.org/~ghcup/0.1.3/x86_64-linux-ghcup-0.1.3
 					;;
 				i*86)
-					_url=https://downloads.haskell.org/~ghcup/i386-linux-ghcup
+					_url=https://downloads.haskell.org/~ghcup/0.1.3/i386-linux-ghcup-0.1.3
 					;;
 				*) die "Unknown architecture: ${_arch}"
 					;;
@@ -50,7 +50,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${_arch}"
 					;;
 			esac
-			_url=https://downloads.haskell.org/~ghcup/x86_64-portbld-freebsd-ghcup
+			_url=https://downloads.haskell.org/~ghcup/0.1.3/x86_64-portbld-freebsd-ghcup-0.1.3
             ;;
         "Darwin"|"darwin")
 			case "${_arch}" in
@@ -62,7 +62,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${_arch}"
 					;;
 			esac
-			_url=https://downloads.haskell.org/~ghcup/x86_64-apple-darwin-ghcup ;;
+			_url=https://downloads.haskell.org/~ghcup/0.1.3/x86_64-apple-darwin-ghcup-0.1.3 ;;
         *) die "Unknown platform: ${_plat}"
 			;;
     esac
@@ -108,6 +108,7 @@ else
 		EOF
 	# shellcheck disable=SC1090
     edo . "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/env
+    eghcup upgrade
 fi
 
 echo
