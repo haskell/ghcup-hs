@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## 0.1.3 -- 2020-04-15
+
+* Fix lesser bug when skipping ghcup update
+
 ## 0.1.2 -- 2020-04-15
 
 * Fix bug when removing the set GHC version
