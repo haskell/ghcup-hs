@@ -376,6 +376,10 @@ rmGHCVer ver = do
   if exists
     then do
       -- this isn't atomic, order matters
+      when isSetGHC $ do
+        lift $ $(logInfo) [i|Removing ghc symlinks|]
+        liftE $ rmPlain ver
+
       lift $ $(logInfo) [i|Removing directory recursively: #{d'}|]
       liftIO $ deleteDirRecursive dir
 
@@ -388,11 +392,6 @@ rmGHCVer ver = do
       -- then fix them (e.g. with an earlier version)
       (mj, mi) <- getGHCMajor ver
       getGHCForMajor mj mi >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
-
-
-      when isSetGHC $ do
-        lift $ $(logInfo) [i|Removing ghc symlinks|]
-        liftE $ rmPlain ver
 
       liftIO
         $   ghcupBaseDir
