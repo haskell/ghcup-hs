@@ -371,8 +371,7 @@ searchPath paths needle = go paths
  where
   go [] = pure Nothing
   go (x : xs) =
-    hideErrorDefM PermissionDenied (go xs)
-      $ hideErrorDefM NoSuchThing (go xs)
+    hideErrorDefM [InappropriateType, PermissionDenied, NoSuchThing] (go xs)
       $ do
           dirStream <- openDirStream (toFilePath x)
           S.findM (\(_, p) -> isMatch x p) (dirContentsStream dirStream)

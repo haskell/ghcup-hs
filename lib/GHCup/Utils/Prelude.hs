@@ -168,14 +168,14 @@ liftIOException errType ex =
     . lift
 
 
-hideErrorDef :: IOErrorType -> a -> IO a -> IO a
-hideErrorDef err def =
-  handleIO (\e -> if err == ioeGetErrorType e then pure def else ioError e)
+hideErrorDef :: [IOErrorType] -> a -> IO a -> IO a
+hideErrorDef errs def =
+  handleIO (\e -> if ioeGetErrorType e `elem` errs then pure def else ioError e)
 
 
-hideErrorDefM :: IOErrorType -> IO a -> IO a -> IO a
-hideErrorDefM err def =
-  handleIO (\e -> if err == ioeGetErrorType e then def else ioError e)
+hideErrorDefM :: [IOErrorType] -> IO a -> IO a -> IO a
+hideErrorDefM errs def =
+  handleIO (\e -> if ioeGetErrorType e `elem` errs then def else ioError e)
 
 
 -- TODO: does this work?
