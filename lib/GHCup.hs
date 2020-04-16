@@ -247,7 +247,6 @@ setGHC ver sghc = do
   -- for ghc tools (ghc, ghci, haddock, ...)
   verfiles <- ghcToolFiles ver
   forM_ verfiles $ \file -> do
-    liftIO $ hideError doesNotExistErrorType $ deleteFile (bindir </> file)
     targetFile <- case sghc of
       SetGHCOnly -> pure file
       SetGHC_XY  -> do
