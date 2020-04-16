@@ -49,10 +49,24 @@ eghcup list
 eghcup list -t ghc
 eghcup list -t cabal
 
+ghc_ver=$(ghc --numeric-version)
 ghc --version
 ghci --version
 ghc-$(ghc --numeric-version) --version
 ghci-$(ghc --numeric-version) --version
+
+
+# test installing new ghc doesn't mess with currently set GHC
+# https://gitlab.haskell.org/haskell/ghcup-hs/issues/7
+eghcup install 8.4.4
+[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
+eghcup set 8.4.4
+eghcup set 8.4.4
+[ "$(ghc --numeric-version)" = "8.4.4" ]
+eghcup set ${GHC_VERSION}
+[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
+eghcup rm 8.4.4
+[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 
 eghcup rm $(ghc --numeric-version)
 
