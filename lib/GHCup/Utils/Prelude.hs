@@ -29,6 +29,7 @@ import qualified Data.ByteString.Lazy          as L
 import qualified Data.Strict.Maybe             as S
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
+import qualified Data.Text.Encoding.Error      as E
 import qualified Data.Text.Lazy                as TL
 import qualified Data.Text.Lazy.Builder        as B
 import qualified Data.Text.Lazy.Builder.Int    as B
@@ -86,10 +87,6 @@ whileM_ ~action = void . whileM action
 
 guardM :: (Monad m, Alternative m) => m Bool -> m ()
 guardM ~f = guard =<< f
-
-lBS2sT :: L.ByteString -> Text
-lBS2sT = TL.toStrict . TLE.decodeUtf8
-
 
 
 handleIO' :: (MonadIO m, MonadCatch m)
@@ -243,4 +240,16 @@ addToCurrentEnv adds = do
 
 
 pvpToVersion :: PVP -> Version
-pvpToVersion = either (\_ -> error "Couldn't convert PVP to Version") id . version . prettyPVP
+pvpToVersion =
+  either (\_ -> error "Couldn't convert PVP to Version") id
+    . version
+    . prettyPVP
+
+
+-- | Safe 'decodeUtf8With'. Replaces an invalid input byte with
+-- the Unicode replacement character U+FFFD.
+decUTF8Safe :: ByteString -> Text
+decUTF8Safe = E.decodeUtf8With E.lenientDecode
+
+decUTF8Safe' :: L.ByteString -> Text
+decUTF8Safe' = TL.toStrict . TLE.decodeUtf8With E.lenientDecode

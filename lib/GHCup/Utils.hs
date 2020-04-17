@@ -83,9 +83,11 @@ ghcLinkVersion = either (throwM . ParseError) pure . parseOnly parser
  where
   parser    = string "../ghc/" *> verParser <* string "/bin/ghc"
   verParser = many1' (notWord8 _slash) >>= \t ->
-    case version $ E.decodeUtf8 $ B.pack t of
-      Left  e -> fail $ show e
-      Right r -> pure r
+    case
+        version (decUTF8Safe $ B.pack t)
+      of
+        Left  e -> fail $ show e
+        Right r -> pure r
 
 
 -- e.g. ghc-8.6.5
@@ -179,7 +181,7 @@ cabalSet = do
   cabalbin <- (</> [rel|cabal|]) <$> liftIO ghcupBinDir
   mc       <- liftIO $ executeOut cabalbin ["--numeric-version"] Nothing
   let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ mc
-  case version (E.decodeUtf8 reportedVer) of
+  case version $ decUTF8Safe reportedVer of
     Left  e -> throwM e
     Right r -> pure r
 
@@ -206,7 +208,8 @@ getGHCForMajor :: (MonadIO m, MonadThrow m)
 getGHCForMajor major' minor' = do
   p       <- liftIO $ ghcupGHCBaseDir
   ghcs    <- liftIO $ getDirsFiles' p
-  semvers <- forM ghcs $ throwEither . semver . E.decodeUtf8 . toFilePath
+  semvers <- forM ghcs $ \ghc ->
+    throwEither . semver =<< (throwEither . E.decodeUtf8' . toFilePath $ ghc)
   mapM (throwEither . version)
     . fmap prettySemVer
     . lastMay
@@ -232,8 +235,9 @@ unpackToDir :: (MonadLogger m, MonadIO m, MonadThrow m)
             -> Path Abs       -- ^ archive path
             -> Excepts '[UnknownArchive] m ()
 unpackToDir dest av = do
-  let fp = E.decodeUtf8 (toFilePath av)
-  lift $ $(logInfo) [i|Unpacking: #{fp}|]
+  fp <- (decUTF8Safe . toFilePath) <$> basename av
+  let dfp = decUTF8Safe . toFilePath $ dest
+  lift $ $(logInfo) [i|Unpacking: #{fp} to #{dfp}|]
   fn <- toFilePath <$> basename av
   let untar = Tar.unpack (toFilePath dest) . Tar.read
 

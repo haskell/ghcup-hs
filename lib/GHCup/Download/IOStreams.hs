@@ -47,7 +47,6 @@ import           URI.ByteString
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.Map.Strict               as M
-import qualified Data.Text.Encoding            as E
 import qualified System.IO.Streams             as Streams
 
 
@@ -146,7 +145,7 @@ downloadInternal = go (5 :: Int)
 
     downloadStream r i' = do
       let size = case getHeader r "Content-Length" of
-            Just x' -> case decimal $ E.decodeUtf8 x' of
+            Just x' -> case decimal $ decUTF8Safe x' of
               Left  _       -> 0
               Right (r', _) -> r'
             Nothing -> 0

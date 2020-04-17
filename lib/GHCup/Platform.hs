@@ -39,7 +39,6 @@ import           System.Info
 import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as E
 
     --------------------------
     --[ Platform detection ]--
@@ -84,13 +83,13 @@ getPlatform = do
         ( either (const Nothing) Just
           . versioning
           . getMajorVersion
-          . E.decodeUtf8
+          . decUTF8Safe
           )
           <$> getDarwinVersion
       pure $ PlatformResult { _platform = Darwin, _distroVersion = ver }
     "freebsd" -> do
       ver <-
-        (either (const Nothing) Just . versioning . E.decodeUtf8)
+        (either (const Nothing) Just . versioning . decUTF8Safe)
           <$> getFreeBSDVersion
       pure $ PlatformResult { _platform = FreeBSD, _distroVersion = ver }
     what -> throwE $ NoCompatiblePlatform what
@@ -159,7 +158,7 @@ getLinuxDistro = do
     (Just _) <- findExecutable lsb_release_cmd
     name     <- fmap _stdOut $ executeOut lsb_release_cmd ["-si"] Nothing
     ver      <- fmap _stdOut $ executeOut lsb_release_cmd ["-sr"] Nothing
-    pure (E.decodeUtf8 name, Just $ E.decodeUtf8 ver)
+    pure (decUTF8Safe name, Just $ decUTF8Safe ver)
 
   try_lsb_release :: IO (Text, Maybe Text)
   try_lsb_release = do
@@ -169,7 +168,7 @@ getLinuxDistro = do
 
   try_redhat_release :: IO (Text, Maybe Text)
   try_redhat_release = do
-    t <- fmap lBS2sT $ readFile redhat_release
+    t <- fmap decUTF8Safe' $ readFile redhat_release
     let nameRegex n =
           makeRegexOpts compIgnoreCase
                         execBlank
@@ -192,4 +191,4 @@ getLinuxDistro = do
   try_debian_version :: IO (Text, Maybe Text)
   try_debian_version = do
     ver <- readFile debian_version
-    pure (T.pack "debian", Just $ lBS2sT ver)
+    pure (T.pack "debian", Just . decUTF8Safe' $ ver)

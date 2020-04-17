@@ -192,7 +192,7 @@ getDownloads urlSource = do
       True
       defaultTimeLocale
       "%a, %d %b %Y %H:%M:%S %Z"
-      (T.unpack . E.decodeUtf8 $ h)
+      (T.unpack . decUTF8Safe $ h)
 
 #endif
 
@@ -256,7 +256,7 @@ download dli dest mfn
     liftIO $ copyFile fromFile destFile Strict
     pure destFile
   dl = do
-    let uri' = E.decodeUtf8 (serializeURIRef' (view dlUri dli))
+    let uri' = decUTF8Safe (serializeURIRef' (view dlUri dli))
     lift $ $(logInfo) [i|downloading: #{uri'}|]
 
     -- destination dir must exist
@@ -371,17 +371,17 @@ downloadBS uri'
 #endif
 
 
-checkDigest :: (MonadIO m, MonadLogger m, MonadReader Settings m)
+checkDigest :: (MonadIO m, MonadThrow m, MonadLogger m, MonadReader Settings m)
             => DownloadInfo
             -> Path Abs
             -> Excepts '[DigestError] m ()
 checkDigest dli file = do
   verify <- lift ask <&> (not . noVerify)
   when verify $ do
-    let p' = toFilePath file
+    p' <- toFilePath <$> basename file
     lift $ $(logInfo) [i|verifying digest of: #{p'}|]
     c <- liftIO $ readFile file
-    let cDigest = E.decodeUtf8 . B16.encode . SHA256.hashlazy $ c
-        eDigest = view dlHash dli
+    cDigest <- throwEither . E.decodeUtf8' . B16.encode . SHA256.hashlazy $ c
+    let eDigest = view dlHash dli
     when ((cDigest /= eDigest) && verify) $ throwE (DigestError cDigest eDigest)
 

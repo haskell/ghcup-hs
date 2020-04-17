@@ -44,7 +44,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requir
 
 
 instance ToJSON URI where
-  toJSON = toJSON . decodeUtf8 . serializeURIRef'
+  toJSON = toJSON . decUTF8Safe . serializeURIRef'
 
 instance FromJSON URI where
   parseJSON = withText "URL" $ \t ->
@@ -151,7 +151,7 @@ instance FromJSONKey Tool where
 
 instance ToJSON (Path Rel) where
   toJSON p = case and . fmap isAscii . BS.unpack $ fp of
-    True  -> toJSON . E.decodeUtf8 $ fp
+    True  -> toJSON . decUTF8Safe $ fp
     False -> String "/not/a/valid/path"
     where fp = toFilePath p
 
