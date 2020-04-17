@@ -664,136 +664,147 @@ main = do
               )
               >>= \case
                     VRight r -> pure r
-                    VLeft e ->
+                    VLeft e -> do
                       runLogger
                           ($(logError) [i|Error fetching download info: #{e}|])
-                        >> exitFailure
+                      exitWith (ExitFailure 2)
           runLogger $ checkForUpdates dls
 
-          case optCommand of
+          res <- case optCommand of
             Install (InstallOptions {..}) ->
-              void
-                $   (runInstTool $ do
+                (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer GHC
                       liftE $ installGHCBin dls v instPlatform
                     )
                 >>= \case
-                      VRight _ ->
+                      VRight _ -> do
                         runLogger $ $(logInfo) ("GHC installation successful")
-                      VLeft (V (AlreadyInstalled _ v)) ->
+                        pure ExitSuccess
+                      VLeft (V (AlreadyInstalled _ v)) -> do
                         runLogger $ $(logWarn)
                           [i|GHC ver #{prettyVer v} already installed|]
-                      VLeft (V (BuildFailed tmpdir e)) ->
+                        pure ExitSuccess
+                      VLeft (V (BuildFailed tmpdir e)) -> do
                         runLogger
                             ($(logError) [i|Build failed with #{e}
 Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
                             )
-                          >> exitFailure
+                        pure $ ExitFailure 3
                       VLeft e -> do
                         runLogger $ do
                           $(logError) [i|#{e}|]
                           $(logError) [i|Also check the logs in ~/.ghcup/logs|]
-                        exitFailure
+                        pure $ ExitFailure 3
             InstallCabal (InstallOptions {..}) ->
-              void
-                $   (runInstTool $ do
+                (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer Cabal
                       liftE $ installCabalBin dls v instPlatform
                     )
                 >>= \case
-                      VRight _ ->
+                      VRight _ -> do
                         runLogger $ $(logInfo) ("Cabal installation successful")
-                      VLeft (V (AlreadyInstalled _ v)) ->
+                        pure ExitSuccess
+                      VLeft (V (AlreadyInstalled _ v)) -> do
                         runLogger $ $(logWarn)
                           [i|Cabal ver #{prettyVer v} already installed|]
+                        pure ExitSuccess
                       VLeft e -> do
                         runLogger $ do
                           $(logError) [i|#{e}|]
                           $(logError) [i|Also check the logs in ~/.ghcup/logs|]
-                        exitFailure
+                        pure $ ExitFailure 4
 
             SetGHC (SetGHCOptions {..}) ->
-              void
-                $   (runSetGHC $ do
+                (runSetGHC $ do
                       v <- liftE $ fromVersion dls ghcVer GHC
                       liftE $ setGHC v SetGHCOnly
                     )
                 >>= \case
-                      VRight v ->
+                      VRight v -> do
                         runLogger $ $(logInfo) [i|GHC #{prettyVer v} successfully set as default version|]
-                      VLeft e ->
-                        runLogger ($(logError) [i|#{e}|]) >> exitFailure
+                        pure ExitSuccess
+                      VLeft e -> do
+                        runLogger ($(logError) [i|#{e}|])
+                        pure $ ExitFailure 5
 
             List (ListOptions {..}) ->
-              void
-                $   (runListGHC $ do
+                (runListGHC $ do
                       liftIO $ listVersions dls lTool lCriteria
                     )
                 >>= \case
-                      VRight r -> liftIO $ printListResult r
-                      VLeft e ->
-                        runLogger ($(logError) [i|#{e}|]) >> exitFailure
+                      VRight r -> do
+                        liftIO $ printListResult r
+                        pure ExitSuccess
+                      VLeft e -> do
+                        runLogger ($(logError) [i|#{e}|])
+                        pure $ ExitFailure 6
 
             Rm (RmOptions {..}) ->
-              void
-                $   (runRmGHC $ do
+                (runRmGHC $ do
                       liftE $ rmGHCVer ghcVer
                     )
                 >>= \case
-                      VRight _ -> pure ()
-                      VLeft e ->
-                        runLogger ($(logError) [i|#{e}|]) >> exitFailure
+                      VRight _ ->
+                        pure ExitSuccess
+                      VLeft e -> do
+                        runLogger ($(logError) [i|#{e}|])
+                        pure $ ExitFailure 7
 
             DInfo -> do
-              void
-                $   (runDebugInfo $ do
+                (runDebugInfo $ do
                       liftE $ getDebugInfo
                     )
                 >>= \case
-                      VRight dinfo -> putStrLn $ prettyDebugInfo dinfo
-                      VLeft e ->
-                        runLogger ($(logError) [i|#{e}|]) >> exitFailure
+                      VRight dinfo -> do
+                        putStrLn $ prettyDebugInfo dinfo
+                        pure ExitSuccess
+                      VLeft e -> do
+                        runLogger ($(logError) [i|#{e}|])
+                        pure $ ExitFailure 8
 
             Compile (CompileGHC CompileOptions {..}) ->
-              void
-                $   (runCompileGHC $ do
+                (runCompileGHC $ do
                       liftE
                         $ compileGHC dls targetVer bootstrapGhc jobs buildConfig patchDir
                     )
                 >>= \case
-                      VRight _ ->
+                      VRight _ -> do
                         runLogger $ $(logInfo)
                           ("GHC successfully compiled and installed")
-                      VLeft (V (AlreadyInstalled _ v)) ->
+                        pure ExitSuccess
+                      VLeft (V (AlreadyInstalled _ v)) -> do
                         runLogger $ $(logWarn)
                           [i|GHC ver #{prettyVer v} already installed|]
-                      VLeft (V (BuildFailed tmpdir e)) ->
+                        pure ExitSuccess
+                      VLeft (V (BuildFailed tmpdir e)) -> do
                         runLogger
                             ($(logError) [i|Build failed with #{e}
 Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
 Make sure to clean up #{tmpdir} afterwards.|]
                             )
-                          >> exitFailure
-                      VLeft e ->
-                        runLogger ($(logError) [i|#{e}|]) >> exitFailure
+                        pure $ ExitFailure 9
+                      VLeft e -> do
+                        runLogger ($(logError) [i|#{e}|])
+                        pure $ ExitFailure 9
 
             Compile (CompileCabal CompileOptions {..}) ->
-              void
-                $   (runCompileCabal $ do
+                (runCompileCabal $ do
                       liftE $ compileCabal dls targetVer bootstrapGhc jobs patchDir
                     )
                 >>= \case
-                      VRight _ ->
-                        runLogger $ $(logInfo)
-                          ("Cabal successfully compiled and installed")
-                      VLeft (V (BuildFailed tmpdir e)) ->
+                      VRight _ -> do
+                        runLogger ($(logInfo)
+                          "Cabal successfully compiled and installed")
+                        pure ExitSuccess
+                      VLeft (V (BuildFailed tmpdir e)) -> do
                         runLogger
                             ($(logError) [i|Build failed with #{e}
 Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
                             )
-                          >> exitFailure
-                      VLeft e ->
-                        runLogger ($(logError) [i|#{e}|]) >> exitFailure
+                        pure $ ExitFailure 10
+                      VLeft e -> do
+                        runLogger ($(logError) [i|#{e}|])
+                        pure $ ExitFailure 10
 
             Upgrade (uOpts) force -> do
               target <- case uOpts of
@@ -806,21 +817,21 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                   bdir <- liftIO $ ghcupBinDir
                   pure (Just (bdir </> [rel|ghcup|]))
 
-              void
-                $   (runUpgrade $ do
-                      liftE $ upgradeGHCup dls target force
-                    )
-                >>= \case
-                      VRight v' -> do
-                        let pretty_v = prettyVer v'
-                        runLogger
-                          $ $(logInfo)
-                              [i|Successfully upgraded GHCup to version #{pretty_v}|]
-                      VLeft (V NoUpdate) ->
-                        runLogger $ $(logWarn)
-                          [i|No GHCup update available|]
-                      VLeft e ->
-                        runLogger ($(logError) [i|#{e}|]) >> exitFailure
+              (runUpgrade $ (liftE $ upgradeGHCup dls target force))
+                  >>= \case
+                              VRight v' -> do
+                                let pretty_v = prettyVer v'
+                                runLogger
+                                  $ $(logInfo)
+                                      [i|Successfully upgraded GHCup to version #{pretty_v}|]
+                                pure ExitSuccess
+                              VLeft (V NoUpdate) -> do
+                                runLogger $ $(logWarn)
+                                  [i|No GHCup update available|]
+                                pure ExitSuccess
+                              VLeft e -> do
+                                runLogger ($(logError) [i|#{e}|])
+                                pure $ ExitFailure 11
 
             ToolRequirements -> (runLogger $ runE
                       @'[ NoCompatiblePlatform
@@ -832,11 +843,17 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                          ?? NoToolRequirements
                 liftIO $ T.hPutStr stdout (prettyRequirements req))
               >>= \case
-                    VRight r -> pure r
-                    VLeft e ->
+                    VRight _ -> pure ExitSuccess
+                    VLeft e -> do
                       runLogger
                           ($(logError) [i|Error getting tool requirements: #{e}|])
-                        >> exitFailure
+                      pure $ ExitFailure 12
+
+          case res of
+            ExitSuccess        -> pure ()
+            ef@(ExitFailure _) -> do
+              runLogger ($(logError) [i|If you think this is a bug, report at: https://gitlab.haskell.org/haskell/ghcup-hs/issues|])
+              exitWith ef
   pure ()
 
 
@@ -912,3 +929,4 @@ Version: #{describe_result}|]
     = show plat <> ", " <> show v'
   prettyPlatform PlatformResult { _platform = plat, _distroVersion = Nothing }
     = show plat
+
