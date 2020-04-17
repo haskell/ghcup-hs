@@ -43,6 +43,7 @@ import           HPath
 import           HPath.IO
 import           Language.Haskell.TH
 import           Options.Applicative     hiding ( style )
+import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Console.Pretty
 import           System.Environment
@@ -164,14 +165,14 @@ com =
       (  command
           "install"
           ((info ((Install <$> installOpts) <**> helper)
-                 (progDesc "Install or update GHC")
+                 (progDesc "Install or update GHC" <> footerDoc (Just $ text installFooter))
            )
           )
       <> command
            "set"
            (   SetGHC
            <$> (info (setGHCOpts <**> helper)
-                     (progDesc "Set currently active GHC version")
+                     (progDesc "Set currently active GHC version" <> footerDoc (Just $ text setFooter))
                )
            )
       <> command
@@ -183,7 +184,7 @@ com =
       <> command
            "install-cabal"
            ((info ((InstallCabal <$> installOpts) <**> helper)
-                  (progDesc "Install or update cabal")
+                  (progDesc "Install or update cabal" <> footerDoc (Just $ text installCabalFooter))
             )
            )
       <> command
@@ -224,6 +225,22 @@ com =
           <> commandGroup "Other commands:"
           <> hidden
           )
+ where
+  installFooter = [i|Discussion:
+  Installs the specified GHC version (or a recommended default one) into
+  a self-contained "~/.ghcup/ghc/<ghcver>" directory
+  and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".|]
+  setFooter = [i|Discussion:
+  Sets the the current GHC version by creating non-versioned
+  symlinks for all ghc binaries of the specified version in
+  "~/.ghcup/bin/<binary>".|]
+  installCabalFooter = [i|Discussion:
+  Installs the specified cabal-install version (or a recommended default one)
+  into "~/.ghcup/bin", so it can be overwritten by later
+  "cabal install cabal-install", which installs into "~/.cabal/bin" by
+  default. Make sure to set up your PATH appropriately, so the cabal
+  installation takes precedence.|]
+
 
 
 installOpts :: Parser InstallOptions
@@ -276,17 +293,34 @@ compileP = subparser
   (  command
       "ghc"
       (   CompileGHC
-      <$> (info (compileOpts <**> helper) (progDesc "Compile GHC from source")
+      <$> (info (compileOpts <**> helper) (progDesc "Compile GHC from source" <> footerDoc (Just $ text compileFooter))
           )
       )
   <> command
        "cabal"
        (   CompileCabal
        <$> (info (compileOpts <**> helper)
-                 (progDesc "Compile Cabal from source")
+                 (progDesc "Compile Cabal from source" <> footerDoc (Just $ text compileCabalFooter))
            )
        )
   )
+ where
+  compileFooter = [i|Discussion:
+  Compiles and installs the specified GHC version into
+  a self-contained "~/.ghcup/ghc/<ghcver>" directory
+  and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".
+
+Examples:
+  ghcup compile ghc -j 4 -v 8.4.2 -b 8.2.2
+  ghcup compile ghc -j 4 -v 8.4.2 -b /usr/bin/ghc-8.2.2|]
+  compileCabalFooter = [i|Discussion:
+  Compiles and installs the specified Cabal version
+  into "~/.ghcup/bin".
+
+Examples:
+  ghcup compile cabal -j 4 -v 3.2.0.0 -b 8.6.5
+  ghcup compile cabal -j 4 -v 3.2.0.0 -b /usr/bin/ghc-8.6.5|]
+
 
 
 compileOpts :: Parser CompileOptions
@@ -531,16 +565,24 @@ main = do
         ( ("The GHCup Haskell installer, version " <>)
         $ (head . lines $ describe_result)
         )
-        (long "version" <> help "Show version")
+        (long "version" <> help "Show version" <> hidden)
   let numericVersionHelp = infoOption
         numericVer
         (  long "numeric-version"
         <> help "Show the numeric version (for use in scripts)"
+        <> hidden
         )
+
+  let main_footer = [i|Discussion:
+  ghcup installs the Glasgow Haskell Compiler from the official
+  release channels, enabling you to easily switch between different
+  versions.
+
+Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
   customExecParser
       (prefs showHelpOnError)
-      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp) idm)
+      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp) (footerDoc (Just $ text main_footer)))
     >>= \opt@Options {..} -> do
           let settings = toSettings opt
 
