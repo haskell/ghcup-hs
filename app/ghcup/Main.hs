@@ -527,13 +527,11 @@ describe_result = $( (LitE . StringL) <$>
 
 main :: IO ()
 main = do
-  let
-    versionHelp = infoOption
-      (("The GHCup Haskell installer, version " <>
-       )
-      $ (head . lines $ describe_result)
-      )
-      (long "version" <> help "Show version")
+  let versionHelp = infoOption
+        ( ("The GHCup Haskell installer, version " <>)
+        $ (head . lines $ describe_result)
+        )
+        (long "version" <> help "Show version")
   let numericVersionHelp = infoOption
         numericVer
         (  long "numeric-version"
@@ -664,18 +662,18 @@ main = do
               )
               >>= \case
                     VRight r -> pure r
-                    VLeft e -> do
+                    VLeft  e -> do
                       runLogger
-                          ($(logError) [i|Error fetching download info: #{e}|])
+                        ($(logError) [i|Error fetching download info: #{e}|])
                       exitWith (ExitFailure 2)
           runLogger $ checkForUpdates dls
 
           res <- case optCommand of
             Install (InstallOptions {..}) ->
-                (runInstTool $ do
-                      v <- liftE $ fromVersion dls instVer GHC
-                      liftE $ installGHCBin dls v instPlatform
-                    )
+              (runInstTool $ do
+                  v <- liftE $ fromVersion dls instVer GHC
+                  liftE $ installGHCBin dls v instPlatform
+                )
                 >>= \case
                       VRight _ -> do
                         runLogger $ $(logInfo) ("GHC installation successful")
@@ -686,9 +684,9 @@ main = do
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
                         runLogger
-                            ($(logError) [i|Build failed with #{e}
+                          ($(logError) [i|Build failed with #{e}
 Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
-                            )
+                          )
                         pure $ ExitFailure 3
                       VLeft e -> do
                         runLogger $ do
@@ -696,10 +694,10 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                           $(logError) [i|Also check the logs in ~/.ghcup/logs|]
                         pure $ ExitFailure 3
             InstallCabal (InstallOptions {..}) ->
-                (runInstTool $ do
-                      v <- liftE $ fromVersion dls instVer Cabal
-                      liftE $ installCabalBin dls v instPlatform
-                    )
+              (runInstTool $ do
+                  v <- liftE $ fromVersion dls instVer Cabal
+                  liftE $ installCabalBin dls v instPlatform
+                )
                 >>= \case
                       VRight _ -> do
                         runLogger $ $(logInfo) ("Cabal installation successful")
@@ -715,22 +713,24 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                         pure $ ExitFailure 4
 
             SetGHC (SetGHCOptions {..}) ->
-                (runSetGHC $ do
-                      v <- liftE $ fromVersion dls ghcVer GHC
-                      liftE $ setGHC v SetGHCOnly
-                    )
+              (runSetGHC $ do
+                  v <- liftE $ fromVersion dls ghcVer GHC
+                  liftE $ setGHC v SetGHCOnly
+                )
                 >>= \case
                       VRight v -> do
-                        runLogger $ $(logInfo) [i|GHC #{prettyVer v} successfully set as default version|]
+                        runLogger
+                          $ $(logInfo)
+                              [i|GHC #{prettyVer v} successfully set as default version|]
                         pure ExitSuccess
                       VLeft e -> do
                         runLogger ($(logError) [i|#{e}|])
                         pure $ ExitFailure 5
 
             List (ListOptions {..}) ->
-                (runListGHC $ do
-                      liftIO $ listVersions dls lTool lCriteria
-                    )
+              (runListGHC $ do
+                  liftIO $ listVersions dls lTool lCriteria
+                )
                 >>= \case
                       VRight r -> do
                         liftIO $ printListResult r
@@ -740,20 +740,18 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                         pure $ ExitFailure 6
 
             Rm (RmOptions {..}) ->
-                (runRmGHC $ do
-                      liftE $ rmGHCVer ghcVer
-                    )
+              (runRmGHC $ do
+                  liftE $ rmGHCVer ghcVer
+                )
                 >>= \case
-                      VRight _ ->
-                        pure ExitSuccess
-                      VLeft e -> do
+                      VRight _ -> pure ExitSuccess
+                      VLeft  e -> do
                         runLogger ($(logError) [i|#{e}|])
                         pure $ ExitFailure 7
 
-            DInfo -> do
-                (runDebugInfo $ do
-                      liftE $ getDebugInfo
-                    )
+            DInfo ->
+              do
+                  (runDebugInfo $ liftE $ getDebugInfo)
                 >>= \case
                       VRight dinfo -> do
                         putStrLn $ prettyDebugInfo dinfo
@@ -763,10 +761,13 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                         pure $ ExitFailure 8
 
             Compile (CompileGHC CompileOptions {..}) ->
-                (runCompileGHC $ do
-                      liftE
-                        $ compileGHC dls targetVer bootstrapGhc jobs buildConfig patchDir
-                    )
+              (runCompileGHC $ liftE $ compileGHC dls
+                                                  targetVer
+                                                  bootstrapGhc
+                                                  jobs
+                                                  buildConfig
+                                                  patchDir
+                )
                 >>= \case
                       VRight _ -> do
                         runLogger $ $(logInfo)
@@ -778,29 +779,31 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
                         runLogger
-                            ($(logError) [i|Build failed with #{e}
+                          ($(logError) [i|Build failed with #{e}
 Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
 Make sure to clean up #{tmpdir} afterwards.|]
-                            )
+                          )
                         pure $ ExitFailure 9
                       VLeft e -> do
                         runLogger ($(logError) [i|#{e}|])
                         pure $ ExitFailure 9
 
             Compile (CompileCabal CompileOptions {..}) ->
-                (runCompileCabal $ do
-                      liftE $ compileCabal dls targetVer bootstrapGhc jobs patchDir
-                    )
+              (runCompileCabal $ do
+                  liftE $ compileCabal dls targetVer bootstrapGhc jobs patchDir
+                )
                 >>= \case
                       VRight _ -> do
-                        runLogger ($(logInfo)
-                          "Cabal successfully compiled and installed")
+                        runLogger
+                          ($(logInfo)
+                            "Cabal successfully compiled and installed"
+                          )
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
                         runLogger
-                            ($(logError) [i|Build failed with #{e}
+                          ($(logError) [i|Build failed with #{e}
 Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
-                            )
+                          )
                         pure $ ExitFailure 10
                       VLeft e -> do
                         runLogger ($(logError) [i|#{e}|])
@@ -817,42 +820,46 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                   bdir <- liftIO $ ghcupBinDir
                   pure (Just (bdir </> [rel|ghcup|]))
 
-              (runUpgrade $ (liftE $ upgradeGHCup dls target force))
-                  >>= \case
-                              VRight v' -> do
-                                let pretty_v = prettyVer v'
-                                runLogger
-                                  $ $(logInfo)
-                                      [i|Successfully upgraded GHCup to version #{pretty_v}|]
-                                pure ExitSuccess
-                              VLeft (V NoUpdate) -> do
-                                runLogger $ $(logWarn)
-                                  [i|No GHCup update available|]
-                                pure ExitSuccess
-                              VLeft e -> do
-                                runLogger ($(logError) [i|#{e}|])
-                                pure $ ExitFailure 11
+              (runUpgrade $ (liftE $ upgradeGHCup dls target force)) >>= \case
+                VRight v' -> do
+                  let pretty_v = prettyVer v'
+                  runLogger $ $(logInfo)
+                    [i|Successfully upgraded GHCup to version #{pretty_v}|]
+                  pure ExitSuccess
+                VLeft (V NoUpdate) -> do
+                  runLogger $ $(logWarn) [i|No GHCup update available|]
+                  pure ExitSuccess
+                VLeft e -> do
+                  runLogger ($(logError) [i|#{e}|])
+                  pure $ ExitFailure 11
 
-            ToolRequirements -> (runLogger $ runE
-                      @'[ NoCompatiblePlatform
-                        , DistroNotFound
-                        , NoToolRequirements
-                        ] $ do
-                platform <- liftE $ getPlatform
-                req <- (getCommonRequirements platform $ treq)
-                         ?? NoToolRequirements
-                liftIO $ T.hPutStr stdout (prettyRequirements req))
-              >>= \case
-                    VRight _ -> pure ExitSuccess
-                    VLeft e -> do
-                      runLogger
-                          ($(logError) [i|Error getting tool requirements: #{e}|])
-                      pure $ ExitFailure 12
+            ToolRequirements ->
+              ( runLogger
+                $ runE
+                  @'[NoCompatiblePlatform , DistroNotFound , NoToolRequirements]
+                $ do
+                    platform <- liftE $ getPlatform
+                    req      <-
+                      (getCommonRequirements platform $ treq)
+                        ?? NoToolRequirements
+                    liftIO $ T.hPutStr stdout (prettyRequirements req)
+                )
+                >>= \case
+                      VRight _ -> pure ExitSuccess
+                      VLeft  e -> do
+                        runLogger
+                          ($(logError)
+                            [i|Error getting tool requirements: #{e}|]
+                          )
+                        pure $ ExitFailure 12
 
           case res of
             ExitSuccess        -> pure ()
             ef@(ExitFailure _) -> do
-              runLogger ($(logError) [i|If you think this is a bug, report at: https://gitlab.haskell.org/haskell/ghcup-hs/issues|])
+              runLogger
+                ($(logError)
+                  [i|If you think this is a bug, report at: https://gitlab.haskell.org/haskell/ghcup-hs/issues|]
+                )
               exitWith ef
   pure ()
 
