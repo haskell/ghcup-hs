@@ -750,7 +750,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                       liftE $ getDebugInfo
                     )
                 >>= \case
-                      VRight dinfo -> putStrLn $ show dinfo
+                      VRight dinfo -> putStrLn $ prettyDebugInfo dinfo
                       VLeft e ->
                         runLogger ($(logError) [i|#{e}|]) >> exitFailure
 
@@ -891,3 +891,24 @@ checkForUpdates dls = do
     when (l > ghc_ver)
       $ $(logWarn)
           [i|New GHCup version available: #{prettyVer l}. To upgrade, run 'ghcup upgrade'|]
+
+
+prettyDebugInfo :: DebugInfo -> String
+prettyDebugInfo DebugInfo {..} = [i|Debug Info
+==========
+GHCup base dir: #{toFilePath diBaseDir}
+GHCup bin dir: #{toFilePath diBinDir}
+GHCup GHC directory: #{toFilePath diGHCDir}
+GHCup cache directory: #{toFilePath diCacheDir}
+Architecture: #{prettyArch diArch}
+Platform: #{prettyPlatform diPlatform}
+Version: #{describe_result}|]
+ where
+  prettyArch :: Architecture -> String
+  prettyArch A_64 = "amd64"
+  prettyArch A_32 = "i386"
+  prettyPlatform :: PlatformResult -> String
+  prettyPlatform PlatformResult { _platform = plat, _distroVersion = Just v' }
+    = show plat <> ", " <> show v'
+  prettyPlatform PlatformResult { _platform = plat, _distroVersion = Nothing }
+    = show plat
