@@ -17,6 +17,7 @@ import           GHCup.Platform
 import           GHCup.Requirements
 import           GHCup.Types
 import           GHCup.Utils
+import           GHCup.Utils.File
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
 import           GHCup.Version
@@ -40,6 +41,7 @@ import           GHC.IO.Encoding
 import           Haskus.Utils.Variant.Excepts
 import           HPath
 import           HPath.IO
+import           Language.Haskell.TH
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Console.Pretty
@@ -81,7 +83,6 @@ data Command
   | DInfo
   | Compile CompileCommand
   | Upgrade UpgradeOpts Bool
-  | NumericVersion
   | ToolRequirements
 
 data ToolVersion = ToolVersion Version
@@ -213,11 +214,6 @@ com =
           (  command
               "debug-info"
               ((\_ -> DInfo) <$> (info (helper) (progDesc "Show debug info")))
-          <> command
-               "numeric-version"
-               (   (\_ -> NumericVersion)
-               <$> (info (helper) (progDesc "Show the numeric version"))
-               )
           <> command
                "tool-requirements"
                (   (\_ -> ToolRequirements)
@@ -518,11 +514,35 @@ upgradeOptsP =
 
 
 
+describe_result :: String
+describe_result = $( (LitE . StringL) <$>
+                     runIO (do
+                             CapturedProcess{..} <- executeOut [rel|git|] ["describe"] Nothing
+                             case _exitCode of
+                               ExitSuccess   -> pure . T.unpack . decUTF8Safe $ _stdOut
+                               ExitFailure _ -> pure numericVer
+                     )
+                   )
+
 
 main :: IO ()
 main = do
+  let
+    versionHelp = infoOption
+      (("The GHCup Haskell installer, version " <>
+       )
+      $ (head . lines $ describe_result)
+      )
+      (long "version" <> help "Show version")
+  let numericVersionHelp = infoOption
+        numericVer
+        (  long "numeric-version"
+        <> help "Show the numeric version (for use in scripts)"
+        )
 
-  customExecParser (prefs showHelpOnError) (info (opts <**> helper) idm)
+  customExecParser
+      (prefs showHelpOnError)
+      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp) idm)
     >>= \opt@Options {..} -> do
           let settings = toSettings opt
 
@@ -802,7 +822,6 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                       VLeft e ->
                         runLogger ($(logError) [i|#{e}|]) >> exitFailure
 
-            NumericVersion -> T.hPutStr stdout (prettyPVP ghcUpVer)
             ToolRequirements -> (runLogger $ runE
                       @'[ NoCompatiblePlatform
                         , DistroNotFound

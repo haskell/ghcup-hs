@@ -328,6 +328,7 @@ executable ghcup
     , resourcet
     , string-interpolate
     , table-layout
+    , template-haskell
     , text
     , uri-bytestring
     , utf8-string
