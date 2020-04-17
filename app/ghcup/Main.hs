@@ -855,12 +855,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
 
           case res of
             ExitSuccess        -> pure ()
-            ef@(ExitFailure _) -> do
-              runLogger
-                ($(logError)
-                  [i|If you think this is a bug, report at: https://gitlab.haskell.org/haskell/ghcup-hs/issues|]
-                )
-              exitWith ef
+            ef@(ExitFailure _) -> exitWith ef
   pure ()
 
 
