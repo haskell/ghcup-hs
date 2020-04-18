@@ -46,6 +46,7 @@ import           Language.Haskell.TH
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
+import           Safe
 import           System.Console.Pretty
 import           System.Environment
 import           System.Exit
@@ -1030,13 +1031,33 @@ printListResult lr = do
   putStrLn $ formatted
 
 
-checkForUpdates :: (MonadFail m, MonadLogger m) => GHCupDownloads -> m ()
+checkForUpdates :: (MonadIO m, MonadFail m, MonadLogger m)
+                => GHCupDownloads
+                -> m ()
 checkForUpdates dls = do
   forM_ (getLatest dls GHCup) $ \l -> do
     (Right ghc_ver) <- pure $ version $ prettyPVP ghcUpVer
     when (l > ghc_ver)
       $ $(logWarn)
           [i|New GHCup version available: #{prettyVer l}. To upgrade, run 'ghcup upgrade'|]
+
+  forM_ (getLatest dls GHC) $ \l -> do
+    mghc_ver <- latestInstalled GHC
+    forM mghc_ver $ \ghc_ver ->
+      when (l > ghc_ver)
+        $ $(logWarn)
+            [i|New GHC version available: #{prettyVer l}. To upgrade, run 'ghcup install #{prettyVer l}'|]
+
+  forM_ (getLatest dls Cabal) $ \l -> do
+    mcabal_ver <- latestInstalled Cabal
+    forM mcabal_ver $ \cabal_ver ->
+      when (l > cabal_ver)
+        $ $(logWarn)
+            [i|New Cabal version available: #{prettyVer l}. To upgrade, run 'ghcup install-cabal #{prettyVer l}'|]
+
+ where
+  latestInstalled tool = (fmap lVer . lastMay)
+    <$> liftIO (listVersions dls (Just tool) (Just ListInstalled))
 
 
 prettyDebugInfo :: DebugInfo -> String

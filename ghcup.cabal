@@ -326,6 +326,7 @@ executable ghcup
     , optparse-applicative
     , pretty-terminal
     , resourcet
+    , safe
     , string-interpolate
     , table-layout
     , template-haskell
