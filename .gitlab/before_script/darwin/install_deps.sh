@@ -4,11 +4,11 @@ set -eux
 
 . "$( cd "$(dirname "$0")" ; pwd -P )/../../ghcup_env"
 
-curl -sSfL https://gitlab.haskell.org/haskell/ghcup/-/raw/master/ghcup > ./ghcup-legacy
-chmod +x ghcup-legacy
+curl -sSfL https://downloads.haskell.org/~ghcup/x86_64-apple-darwin-ghcup > ./ghcup-bin
+chmod +x ghcup-bin
 
-./ghcup-legacy install ${GHC_VERSION}
-./ghcup-legacy set ${GHC_VERSION}
-./ghcup-legacy install-cabal
+./ghcup-bin install ${GHC_VERSION}
+./ghcup-bin set ${GHC_VERSION}
+./ghcup-bin install-cabal ${CABAL_VERSION}
 
 exit 0

@@ -17,6 +17,10 @@ variables:
   tags:
     - x86_64-darwin
 
+.freebsd:
+  tags:
+    - x86_64-freebsd
+
 .test_ghcup_version:
   script:
     - ./.gitlab/script/ghcup_version.sh
@@ -48,31 +52,67 @@ variables:
     - exit 0
 
 
+.test_ghcup_version:freebsd:
+  extends:
+    - .test_ghcup_version
+    - .freebsd
+  before_script:
+    - ./.gitlab/before_script/freebsd/install_deps.sh
+  variables:
+    OS: "FREEBSD"
+  after_script:
+    - BUILD_DIR=$CI_PROJECT_DIR
+    - echo "Cleaning $BUILD_DIR"
+    - cd $HOME
+    - rm -Rf "$BUILD_DIR"/*
+    - exit 0
 
-######## linux ########
+
+
+######## linux test ########
 
 test:linux:recommended:
   extends: .test_ghcup_version:linux
   variables:
-    GHC_VERSION: "recommended"
+    GHC_VERSION: "8.6.5"
+    CABAL_VERSION: "3.2.0.0"
 
 test:linux:latest:
   extends: .test_ghcup_version:linux
   variables:
-    GHC_VERSION: "latest"
+    GHC_VERSION: "8.8.3"
+    CABAL_VERSION: "3.2.0.0"
   allow_failure: true
 
 
-######## darwin ########
+######## darwin test ########
 
 test:mac:recommended:
   extends: .test_ghcup_version:darwin
   variables:
-    GHC_VERSION: "recommended"
+    GHC_VERSION: "8.6.5"
+    CABAL_VERSION: "3.2.0.0"
 
 test:mac:latest:
   extends: .test_ghcup_version:darwin
   variables:
-    GHC_VERSION: "latest"
+    GHC_VERSION: "8.8.3"
+    CABAL_VERSION: "3.2.0.0"
+  allow_failure: true
+
+
+######## freebsd test ########
+
+test:freebsd:recommended:
+  extends: .test_ghcup_version:freebsd
+  variables:
+    GHC_VERSION: "8.6.5"
+    CABAL_VERSION: "3.2.0.0"
+
+test:freebsd:latest:
+  extends: .test_ghcup_version:freebsd
+  variables:
+    GHC_VERSION: "8.8.3"
+    CABAL_VERSION: "3.2.0.0"
   allow_failure: true
 

@@ -14,32 +14,44 @@ eghcup() {
 	ghcup -v -c -s file://$(pwd)/ghcup-${JSON_VERSION}.json "$@"
 }
 
-# build
+
+### build
+
 ecabal update
 
 if [ "${OS}" = "DARWIN" ] ; then
-	ecabal build -fcurl
+	ecabal build -w ghc-${GHC_VERSION} -fcurl
 else
-	ecabal build
+	ecabal build -w ghc-${GHC_VERSION}
 fi
 
 cp "$(ecabal new-exec --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup')" .
 cp "$(ecabal new-exec --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" .
 
-
-# testing
-
 cp ./ghcup "$CI_PROJECT_DIR"/.local/bin/ghcup
 cp ./ghcup-gen "$CI_PROJECT_DIR"/.local/bin/ghcup-gen
+
+### cleanup
+
 rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
+
+
+### manual cli based testing
+
 
 ghcup-gen check -f ghcup-${JSON_VERSION}.json
 
 eghcup --numeric-version
 
+# TODO: rm once we have tarballs
+if [ "${OS}"  = "FREEBSD" ] ; then
+	GHC_VERSION=8.6.3
+	CABAL_VERSION=2.4.1.0
+fi
+
 eghcup install ${GHC_VERSION}
 eghcup set ${GHC_VERSION}
-eghcup install-cabal
+eghcup install-cabal ${CABAL_VERSION}
 
 cabal --version
 
