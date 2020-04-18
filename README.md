@@ -142,3 +142,6 @@ ghcup is not a reimplementation of stack. The only common part is automatic inst
 
 Consider using [Chocolatey](https://chocolatey.org/search?q=ghc) or [ghcups](https://github.com/kakkun61/ghcups).
 
+3. Why the haskell reimplementation?
+
+Why not?
