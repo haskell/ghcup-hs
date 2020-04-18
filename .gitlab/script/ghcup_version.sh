@@ -35,7 +35,7 @@ rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
 
 ghcup-gen check -f ghcup-${JSON_VERSION}.json
 
-eghcup numeric-version
+eghcup --numeric-version
 
 eghcup install ${GHC_VERSION}
 eghcup set ${GHC_VERSION}
