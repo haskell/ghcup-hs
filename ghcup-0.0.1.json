@@ -170,6 +170,7 @@
           "dlSubdir": "ghc-8.6.2",
           "dlUri": "https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.6.2/docs/html/users_guide/8.6.2-notes.html",
         "viTags": []
       },
       "8.0.2": {
@@ -264,6 +265,7 @@
           "dlSubdir": "ghc-8.0.2",
           "dlUri": "https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.0.2/docs/html/users_guide/8.0.1-notes.html",
         "viTags": []
       },
       "8.6.4": {
@@ -377,6 +379,7 @@
           "dlSubdir": "ghc-8.6.4",
           "dlUri": "https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.6.4/docs/html/users_guide/8.6.4-notes.html",
         "viTags": []
       },
       "8.4.1": {
@@ -482,6 +485,7 @@
           "dlSubdir": "ghc-8.4.1",
           "dlUri": "https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.4.1/docs/html/users_guide/8.4.1-notes.html",
         "viTags": []
       },
       "8.6.3": {
@@ -616,6 +620,7 @@
           "dlSubdir": "ghc-8.6.3",
           "dlUri": "https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.6.3/docs/html/users_guide/8.6.3-notes.html",
         "viTags": []
       },
       "8.10.1": {
@@ -756,6 +761,7 @@
           "dlSubdir": "ghc-8.10.1",
           "dlUri": "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.10.1/docs/html/users_guide/8.10.1-notes.html",
         "viTags": [
           "Latest"
         ]
@@ -885,6 +891,7 @@
           "dlSubdir": "ghc-8.6.5",
           "dlUri": "https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.6.5/docs/html/users_guide/8.6.5-notes.html",
         "viTags": []
       },
       "8.4.2": {
@@ -1005,6 +1012,7 @@
           "dlSubdir": "ghc-8.4.2",
           "dlUri": "https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.4.2/docs/html/users_guide/8.4.2-notes.html",
         "viTags": []
       },
       "8.8.1": {
@@ -1132,6 +1140,7 @@
           "dlSubdir": "ghc-8.8.1",
           "dlUri": "https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.8.1/docs/html/users_guide/8.8.1-notes.html",
         "viTags": []
       },
       "8.4.3": {
@@ -1245,6 +1254,7 @@
           "dlSubdir": "ghc-8.4.3",
           "dlUri": "https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.4.3/docs/html/users_guide/8.4.3-notes.html",
         "viTags": []
       },
       "8.6.1": {
@@ -1365,6 +1375,7 @@
           "dlSubdir": "ghc-8.6.1",
           "dlUri": "https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.6.1/docs/html/users_guide/8.6.1-notes.html",
         "viTags": []
       },
       "8.8.2": {
@@ -1492,6 +1503,7 @@
           "dlSubdir": "ghc-8.8.2",
           "dlUri": "https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.8.2/docs/html/users_guide/8.8.2-notes.html",
         "viTags": []
       },
       "7.10.3": {
@@ -1618,6 +1630,7 @@
           "dlSubdir": "ghc-7.10.3",
           "dlUri": "https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/7.10.3/docs/html/users_guide/release-7-10-1.html",
         "viTags": []
       },
       "8.2.2": {
@@ -1722,6 +1735,7 @@
           "dlSubdir": "ghc-8.2.2",
           "dlUri": "https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.2.2/docs/html/users_guide/8.2.2-notes.html",
         "viTags": []
       },
       "8.4.4": {
@@ -1856,6 +1870,7 @@
           "dlSubdir": "ghc-8.4.4",
           "dlUri": "https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.4.4/docs/html/users_guide/8.4.4-notes.html",
         "viTags": []
       },
       "8.8.3": {
@@ -1983,6 +1998,7 @@
           "dlSubdir": "ghc-8.8.3",
           "dlUri": "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-src.tar.xz"
         },
+        "viChangeLog": "https://downloads.haskell.org/ghc/8.8.3/docs/html/users_guide/8.8.3-notes.html",
         "viTags": [
           "Recommended"
         ]
@@ -2022,6 +2038,7 @@
           "dlSubdir": "cabal-cabal-install-v3.0.0.0/cabal-install",
           "dlUri": "https://github.com/haskell/cabal/archive/cabal-install-v3.0.0.0.tar.gz"
         },
+        "viChangeLog": "https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/changelog",
         "viTags": []
       },
       "3.2.0.0": {
@@ -2057,6 +2074,7 @@
           "dlSubdir": "cabal-cabal-install-v3.2.0.0/cabal-install",
           "dlUri": "https://github.com/haskell/cabal/archive/cabal-install-v3.2.0.0.tar.gz"
         },
+        "viChangeLog": "https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/changelog",
         "viTags": [
           "Recommended",
           "Latest"
@@ -2109,6 +2127,7 @@
           "dlSubdir": "cabal-cabal-install-v2.4.1.0/cabal-install",
           "dlUri": "https://github.com/haskell/cabal/archive/cabal-install-v2.4.1.0.tar.gz"
         },
+        "viChangeLog": "https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/changelog",
         "viTags": []
       }
     },
@@ -2149,6 +2168,7 @@
           }
         },
         "viSourceDL": null,
+        "viChangeLog": "https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/CHANGELOG.md",
         "viTags": [
           "Recommended",
           "Latest"

@@ -33,6 +33,7 @@ import           Data.Char
 import           Data.Either
 import           Data.Functor
 import           Data.List                      ( intercalate )
+import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
@@ -85,6 +86,7 @@ data Command
   | Compile CompileCommand
   | Upgrade UpgradeOpts Bool
   | ToolRequirements
+  | ChangeLog ChangeLogOptions
 
 data ToolVersion = ToolVersion Version
                  | ToolTag Tag
@@ -126,17 +128,19 @@ data UpgradeOpts = UpgradeInplace
                  | UpgradeGHCupDir
                  deriving Show
 
+data ChangeLogOptions = ChangeLogOptions
+  { clOpen    :: Bool
+  , clTool    :: Maybe Tool
+  , clToolVer :: Maybe ToolVersion
+  }
+
 
 opts :: Parser Options
 opts =
   Options
-    <$> switch
-          (short 'v' <> long "verbose" <> help
-            "Enable verbosity"
-          )
+    <$> switch (short 'v' <> long "verbose" <> help "Enable verbosity")
     <*> switch
-          (short 'c' <> long "cache" <> help
-            "Cache downloads in ~/.ghcup/cache"
+          (short 'c' <> long "cache" <> help "Cache downloads in ~/.ghcup/cache"
           )
     <*> (optional
           (option
@@ -164,15 +168,21 @@ com =
   subparser
       (  command
           "install"
-          ((info ((Install <$> installOpts) <**> helper)
-                 (progDesc "Install or update GHC" <> footerDoc (Just $ text installFooter))
+          ((info
+             ((Install <$> installOpts) <**> helper)
+             (  progDesc "Install or update GHC"
+             <> footerDoc (Just $ text installFooter)
+             )
            )
           )
       <> command
            "set"
            (   SetGHC
-           <$> (info (setGHCOpts <**> helper)
-                     (progDesc "Set currently active GHC version" <> footerDoc (Just $ text setFooter))
+           <$> (info
+                 (setGHCOpts <**> helper)
+                 (  progDesc "Set currently active GHC version"
+                 <> footerDoc (Just $ text setFooter)
+                 )
                )
            )
       <> command
@@ -183,8 +193,11 @@ com =
 
       <> command
            "install-cabal"
-           ((info ((InstallCabal <$> installOpts) <**> helper)
-                  (progDesc "Install or update cabal" <> footerDoc (Just $ text installCabalFooter))
+           ((info
+              ((InstallCabal <$> installOpts) <**> helper)
+              (  progDesc "Install or update cabal"
+              <> footerDoc (Just $ text installCabalFooter)
+              )
             )
            )
       <> command
@@ -196,12 +209,14 @@ com =
            )
       <> command
            "upgrade"
-           (info ((Upgrade <$> upgradeOptsP <*>
-            switch
-            (short 'f' <> long "force" <> help
-              "Force update"
-            )
-           ) <**> helper) (progDesc "Upgrade ghcup"))
+           (info
+             (    (Upgrade <$> upgradeOptsP <*> switch
+                    (short 'f' <> long "force" <> help "Force update")
+                  )
+             <**> helper
+             )
+             (progDesc "Upgrade ghcup")
+           )
       <> command
            "compile"
            (   Compile
@@ -222,6 +237,14 @@ com =
                          (progDesc "Show the requirements for ghc/cabal")
                    )
                )
+          <> command
+               "changelog"
+               ((info (fmap ChangeLog changelogP <**> helper)
+                      (progDesc "Find/show changelog"
+                      <> footerDoc (Just $ text changeLogFooter)
+                      )
+                )
+               )
           <> commandGroup "Other commands:"
           <> hidden
           )
@@ -240,7 +263,9 @@ com =
   "cabal install cabal-install", which installs into "~/.cabal/bin" by
   default. Make sure to set up your PATH appropriately, so the cabal
   installation takes precedence.|]
-
+  changeLogFooter = [i|Discussion:
+  By default returns the URI of the ChangeLog of the latest GHC release.
+  Pass '-o' to automatically open via xdg-open.|]
 
 
 installOpts :: Parser InstallOptions
@@ -288,19 +313,47 @@ rmOpts :: Parser RmOptions
 rmOpts = RmOptions <$> versionArgument
 
 
+changelogP :: Parser ChangeLogOptions
+changelogP =
+  (\x y -> ChangeLogOptions x y)
+    <$> switch (short 'o' <> long "open" <> help "xdg-open the changelog url")
+    <*> (optional
+          (option
+            (eitherReader
+              (\s' -> case fmap toLower s' of
+                "ghc"   -> Right GHC
+                "cabal" -> Right Cabal
+                "ghcup" -> Right GHCup
+                e       -> Left $ e
+              )
+            )
+            (short 't' <> long "tool" <> metavar "<ghc|cabal|ghcup>" <> help
+              "Open changelog for given tool (default: ghc)"
+            )
+          )
+        )
+    <*> optional toolVersionArgument
+
 compileP :: Parser CompileCommand
 compileP = subparser
   (  command
       "ghc"
       (   CompileGHC
-      <$> (info (compileOpts <**> helper) (progDesc "Compile GHC from source" <> footerDoc (Just $ text compileFooter))
+      <$> (info
+            (compileOpts <**> helper)
+            (  progDesc "Compile GHC from source"
+            <> footerDoc (Just $ text compileFooter)
+            )
           )
       )
   <> command
        "cabal"
        (   CompileCabal
-       <$> (info (compileOpts <**> helper)
-                 (progDesc "Compile Cabal from source" <> footerDoc (Just $ text compileCabalFooter))
+       <$> (info
+             (compileOpts <**> helper)
+             (  progDesc "Compile Cabal from source"
+             <> footerDoc (Just $ text compileCabalFooter)
+             )
            )
        )
   )
@@ -401,9 +454,7 @@ toolVersionArgument =
 
 
 versionArgument :: Parser Version
-versionArgument = argument
-  (eitherReader versionEither)
-  (metavar "VERSION")
+versionArgument = argument (eitherReader versionEither) (metavar "VERSION")
 
 versionParser :: Parser Version
 versionParser = option
@@ -420,9 +471,9 @@ tagEither s' = case fmap toLower s' of
 versionEither :: String -> Either String Version
 versionEither s' =
   -- 'version' is a bit too lax and will parse typoed tags
-  case readMaybe ((:[]) . head $ s') :: Maybe Int of
-    Just _  -> bimap (const "Not a valid version") id . version . T.pack $ s'
-    Nothing -> Left "Not a valid version"
+                   case readMaybe ((: []) . head $ s') :: Maybe Int of
+  Just _  -> bimap (const "Not a valid version") id . version . T.pack $ s'
+  Nothing -> Left "Not a valid version"
 
 toolVersionEither :: String -> Either String ToolVersion
 toolVersionEither s' =
@@ -582,7 +633,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
   customExecParser
       (prefs showHelpOnError)
-      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp) (footerDoc (Just $ text main_footer)))
+      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp)
+            (footerDoc (Just $ text main_footer))
+      )
     >>= \opt@Options {..} -> do
           let settings = toSettings opt
 
@@ -894,6 +947,38 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                             [i|Error getting tool requirements: #{e}|]
                           )
                         pure $ ExitFailure 12
+
+            ChangeLog (ChangeLogOptions {..}) -> do
+              let tool = fromMaybe GHC clTool
+                  ver' = maybe
+                    (Right Latest)
+                    (\case
+                      ToolVersion tv -> Left tv
+                      ToolTag     t  -> Right t
+                    )
+                    clToolVer
+                  muri = getChangeLog dls tool ver'
+              case muri of
+                Nothing -> do
+                  runLogger
+                    ($(logWarn)
+                      [i|Could not find ChangeLog for #{tool}, version #{either (T.unpack . prettyVer) show ver'}|]
+                    )
+                  pure ExitSuccess
+                Just uri -> do
+                  let uri' = T.unpack . decUTF8Safe . serializeURIRef' $ uri
+                  if clOpen
+                    then
+                      exec "xdg-open"
+                           True
+                           [serializeURIRef' uri]
+                           Nothing
+                           Nothing
+                        >>= \case
+                              Right _ -> pure ExitSuccess
+                              Left  e -> runLogger ($(logError) [i|#{e}|])
+                                >> pure (ExitFailure 13)
+                    else putStrLn uri' >> pure ExitSuccess
 
           case res of
             ExitSuccess        -> pure ()

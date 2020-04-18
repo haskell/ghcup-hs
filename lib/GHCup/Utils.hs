@@ -15,6 +15,7 @@ where
 
 import           GHCup.Errors
 import           GHCup.Types
+import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.File
@@ -262,21 +263,20 @@ unpackToDir dest av = do
     ------------
 
 
--- | Get the tool versions that have this tag.
-getTagged :: GHCupDownloads -> Tool -> Tag -> [Version]
-getTagged av tool tag = toListOf
-  ( ix tool
-  % to (Map.filter (\VersionInfo {..} -> elem tag _viTags))
-  % to Map.keys
-  % folded
+-- | Get the tool version that has this tag. If multiple have it,
+-- picks the greatest version.
+getTagged :: Tag -> AffineFold (Map.Map Version VersionInfo) (Version, VersionInfo)
+getTagged tag =
+  ( to (Map.filter (\VersionInfo {..} -> elem tag _viTags))
+  % to Map.toDescList
+  % _head
   )
-  av
 
 getLatest :: GHCupDownloads -> Tool -> Maybe Version
-getLatest av tool = headOf folded $ getTagged av tool Latest
+getLatest av tool = headOf (ix tool % getTagged Latest % to fst) $ av
 
 getRecommended :: GHCupDownloads -> Tool -> Maybe Version
-getRecommended av tool = headOf folded $ getTagged av tool Recommended
+getRecommended av tool = headOf (ix tool % getTagged Recommended % to fst) $ av
 
 
 
@@ -372,3 +372,15 @@ darwinNotarization Darwin path = exec
   Nothing
   Nothing
 darwinNotarization _ _ = pure $ Right ()
+
+
+getChangeLog :: GHCupDownloads -> Tool -> Either Version Tag -> Maybe URI
+getChangeLog dls tool (Left v') =
+  preview (ix tool % ix v' % viChangeLog % _Just) dls
+getChangeLog dls tool (Right tag) = preview
+  ( ix tool
+  % getTagged tag
+  % to snd
+  % viChangeLog
+  % _Just
+  ) dls

@@ -70,9 +70,10 @@ data Tool = GHC
 -- | All necessary information of a tool version, including
 -- source download and per-architecture downloads.
 data VersionInfo = VersionInfo
-  { _viTags     :: [Tag]              -- ^ version specific tag
-  , _viSourceDL :: Maybe DownloadInfo -- ^ source tarball
-  , _viArch     :: ArchitectureSpec   -- ^ descend for binary downloads per arch
+  { _viTags      :: [Tag]              -- ^ version specific tag
+  , _viChangeLog :: Maybe URI
+  , _viSourceDL  :: Maybe DownloadInfo -- ^ source tarball
+  , _viArch      :: ArchitectureSpec   -- ^ descend for binary downloads per arch
   }
   deriving (Eq, Show)
 

@@ -1027,6 +1027,9 @@ ghcupDownloads = M.fromList
       [ ( [vver|7.10.3|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/7.10.3/docs/html/users_guide/release-7-10-1.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-src.tar.xz|]
               (Just [rel|ghc-7.10.3|])
@@ -1070,6 +1073,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.0.2|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.0.2/docs/html/users_guide/8.0.1-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-src.tar.xz|]
               (Just [rel|ghc-8.0.2|])
@@ -1113,6 +1119,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.2.2|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.2.2/docs/html/users_guide/8.2.2-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-src.tar.xz|]
               (Just [rel|ghc-8.2.2|])
@@ -1162,6 +1171,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.4.1|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.4.1/docs/html/users_guide/8.4.1-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-src.tar.xz|]
               (Just [rel|ghc-8.4.1|])
@@ -1198,6 +1210,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.4.2|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.4.2/docs/html/users_guide/8.4.2-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-src.tar.xz|]
               (Just [rel|ghc-8.4.2|])
@@ -1245,6 +1260,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.4.3|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.4.3/docs/html/users_guide/8.4.3-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-src.tar.xz|]
               (Just [rel|ghc-8.4.3|])
@@ -1291,6 +1309,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.4.4|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.4.4/docs/html/users_guide/8.4.4-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-src.tar.xz|]
               (Just [rel|ghc-8.4.4|])
@@ -1342,6 +1363,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.6.1|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.6.1/docs/html/users_guide/8.6.1-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-src.tar.xz|]
               (Just [rel|ghc-8.6.1|])
@@ -1389,6 +1413,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.6.2|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.6.2/docs/html/users_guide/8.6.2-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-src.tar.xz|]
               (Just [rel|ghc-8.6.2|])
@@ -1430,6 +1457,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.6.3|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.6.3/docs/html/users_guide/8.6.3-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-src.tar.xz|]
               (Just [rel|ghc-8.6.3|])
@@ -1481,6 +1511,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.6.4|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.6.4/docs/html/users_guide/8.6.4-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-src.tar.xz|]
               (Just [rel|ghc-8.6.4|])
@@ -1527,6 +1560,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.6.5|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.6.5/docs/html/users_guide/8.6.5-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-src.tar.xz|]
               (Just [rel|ghc-8.6.5|])
@@ -1577,6 +1613,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.8.1|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.8.1/docs/html/users_guide/8.8.1-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-src.tar.xz|]
               (Just [rel|ghc-8.8.1|])
@@ -1627,6 +1666,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.8.2|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.8.2/docs/html/users_guide/8.8.2-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-src.tar.xz|]
               (Just [rel|ghc-8.8.2|])
@@ -1677,6 +1719,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.8.3|]
         , VersionInfo
             [Recommended]
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.8.3/docs/html/users_guide/8.8.3-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-src.tar.xz|]
               (Just [rel|ghc-8.8.3|])
@@ -1727,6 +1772,9 @@ ghcupDownloads = M.fromList
       , ( [vver|8.10.1|]
         , VersionInfo
             [Latest]
+            (Just
+              [uri|https://downloads.haskell.org/ghc/8.10.1/docs/html/users_guide/8.10.1-notes.html|]
+            )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-src.tar.xz|]
               (Just [rel|ghc-8.10.1|])
@@ -1796,6 +1844,9 @@ ghcupDownloads = M.fromList
       [ ( [vver|2.4.1.0|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/changelog|]
+            )
             (Just $ DownloadInfo
               [uri|https://github.com/haskell/cabal/archive/cabal-install-v2.4.1.0.tar.gz|]
               (Just [rel|cabal-cabal-install-v2.4.1.0/cabal-install|])
@@ -1824,6 +1875,9 @@ ghcupDownloads = M.fromList
       , ( [vver|3.0.0.0|]
         , VersionInfo
             []
+            (Just
+              [uri|https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/changelog|]
+            )
             (Just $ DownloadInfo
               [uri|https://github.com/haskell/cabal/archive/cabal-install-v3.0.0.0.tar.gz|]
               (Just [rel|cabal-cabal-install-v3.0.0.0/cabal-install|])
@@ -1850,6 +1904,9 @@ ghcupDownloads = M.fromList
       , ( [vver|3.2.0.0|]
         , VersionInfo
             [Recommended, Latest]
+            (Just
+              [uri|https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/changelog|]
+            )
             (Just $ DownloadInfo
               [uri|https://github.com/haskell/cabal/archive/cabal-install-v3.2.0.0.tar.gz|]
               (Just [rel|cabal-cabal-install-v3.2.0.0/cabal-install|])
@@ -1878,19 +1935,30 @@ ghcupDownloads = M.fromList
   , ( GHCup
     , M.fromList
       [ ( [vver|0.1.4|]
-        , VersionInfo [Recommended, Latest] Nothing $ M.fromList
-          [ ( A_64
-            , M.fromList
-              [ (Linux UnknownLinux, M.fromList [(Nothing, ghcup_014_64_linux)])
-              , (Darwin, M.fromList [(Nothing, ghcup_014_64_darwin10_13)])
-              , (FreeBSD, M.fromList [(Nothing, ghcup_014_64_freebsd)])
+        , VersionInfo
+            [Recommended, Latest]
+            (Just
+              [uri|https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/CHANGELOG.md|]
+            )
+            Nothing
+          $ M.fromList
+              [ ( A_64
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, ghcup_014_64_linux)]
+                    )
+                  , (Darwin , M.fromList [(Nothing, ghcup_014_64_darwin10_13)])
+                  , (FreeBSD, M.fromList [(Nothing, ghcup_014_64_freebsd)])
+                  ]
+                )
+              , ( A_32
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, ghcup_014_32_linux)]
+                    )
+                  ]
+                )
               ]
-            )
-          , ( A_32
-            , M.fromList
-              [(Linux UnknownLinux, M.fromList [(Nothing, ghcup_014_32_linux)])]
-            )
-          ]
         )
       ]
     )
