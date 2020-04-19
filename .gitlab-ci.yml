@@ -12,14 +12,37 @@ variables:
   image: "registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb9:$DOCKER_REV"
   tags:
     - x86_64-linux
+  variables:
+    OS: "LINUX"
+
+.alpine:
+  image: "alpine:edge"
+  tags:
+    - x86_64-linux
+  variables:
+    OS: "LINUX"
 
 .darwin:
   tags:
     - x86_64-darwin
+  variables:
+    OS: "DARWIN"
 
 .freebsd:
   tags:
     - x86_64-freebsd
+  variables:
+    OS: "FREEBSD"
+
+.root_cleanup:
+  after_script:
+    - BUILD_DIR=$CI_PROJECT_DIR
+    - echo "Cleaning $BUILD_DIR"
+    - cd $HOME
+    - test -n "$BUILD_DIR"
+    - shopt -s extglob
+    - rm -Rf "$BUILD_DIR"/!(out)
+    - exit 0
 
 .test_ghcup_version:
   script:
@@ -33,41 +56,32 @@ variables:
     - .debian
   before_script:
     - ./.gitlab/before_script/linux/install_deps.sh
-  variables:
-    OS: "LINUX"
 
 .test_ghcup_version:darwin:
   extends:
     - .test_ghcup_version
     - .darwin
+    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/darwin/install_deps.sh
-  variables:
-    OS: "DARWIN"
-  after_script:
-    - BUILD_DIR=$CI_PROJECT_DIR
-    - echo "Cleaning $BUILD_DIR"
-    - cd $HOME
-    - rm -Rf "$BUILD_DIR"/*
-    - exit 0
-
 
 .test_ghcup_version:freebsd:
   extends:
     - .test_ghcup_version
     - .freebsd
+    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/freebsd/install_deps.sh
-  variables:
-    OS: "FREEBSD"
-  after_script:
-    - BUILD_DIR=$CI_PROJECT_DIR
-    - echo "Cleaning $BUILD_DIR"
-    - cd $HOME
-    - rm -Rf "$BUILD_DIR"/*
-    - exit 0
 
-
+.release_ghcup:
+  script:
+    - ./.gitlab/script/ghcup_release.sh
+  artifacts:
+    expire_in: 2 week
+    paths:
+      - out
+  only:
+    - tags
 
 ######## linux test ########
 
@@ -115,4 +129,47 @@ test:freebsd:latest:
     GHC_VERSION: "8.8.3"
     CABAL_VERSION: "3.2.0.0"
   allow_failure: true
+
+
+######## linux release ########
+
+release:linux:
+  extends:
+    - .alpine
+    - .release_ghcup
+  before_script:
+    - ./.gitlab/before_script/linux/alpine/install_deps.sh
+  variables:
+    ARTIFACT: "x86_64-linux-ghcup"
+    GHC_VERSION: "8.8.3"
+
+
+######## darwin release ########
+
+release:darwin:
+  extends:
+    - .darwin
+    - .release_ghcup
+    - .root_cleanup
+  before_script:
+    - ./.gitlab/before_script/darwin/install_deps.sh
+  variables:
+    ARTIFACT: "x86_64-apple-darwin-ghcup"
+    GHC_VERSION: "8.8.3"
+    CABAL_VERSION: "3.2.0.0"
+    MACOSX_DEPLOYMENT_TARGET: "10.7"
+
+
+######## freebsd release ########
+
+release:freebsd:
+  extends:
+    - .freebsd
+    - .release_ghcup
+    - .root_cleanup
+  before_script:
+    - ./.gitlab/before_script/freebsd/install_deps.sh
+  variables:
+    ARTIFACT: "x86_64-portbld-freebsd-ghcup"
+    GHC_VERSION: "8.6.5"
 
