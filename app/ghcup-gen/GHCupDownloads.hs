@@ -827,7 +827,7 @@ ghc_883_32_musl :: DownloadInfo
 ghc_883_32_musl = DownloadInfo
   [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.3-musl/ghc-8.8.3-i386-unknown-linux-musl.tar.xz|]
   (Just [rel|ghc-8.8.3|])
-  "23779adb4cf4b314d0f8c66ee215ba6e74154c0768a573780475943544020bec"
+  "7a5f41646d06777e75636291a1855d60a0984552bbdf33c3d107565d302f38a4"
 
 
 
