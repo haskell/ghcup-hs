@@ -15,8 +15,8 @@ mkdir -p "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin
 # ./ghcup-bin set ${GHC_VERSION}
 
 # install cabal-3.2.0.0
-curl -sSfL -o freebsd.tar.xz 'https://hasufell.de/f/48aa72dcfaff4c3ea452/?dl=1'
-tar xf freebsd.tar.xz
+curl -sSfL -o cabal-install-3.2.0.0-x86_64-portbld-freebsd.tar.xz 'https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.2.0.0-x86_64-portbld-freebsd.tar.xz&dl=1'
+tar xf cabal-install-3.2.0.0-x86_64-portbld-freebsd.tar.xz
 cp cabal "${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/bin/cabal"
 chmod +x "${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/bin/cabal"
 

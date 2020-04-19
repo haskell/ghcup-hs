@@ -20,7 +20,7 @@ else
 fi
 
 mkdir out
-cp "$(ecabal new-exec --verbose=0 --offline sh -- -c 'command -v ghcup')" .
+cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup')" .
 ver=$(./ghcup --numeric-version)
 cp ghcup out/${ARTIFACT}-${ver}
 
