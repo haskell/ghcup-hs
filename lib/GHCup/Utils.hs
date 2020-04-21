@@ -162,7 +162,7 @@ ghcSrcInstalled ver = do
   doesFileExist (ghcdir </> ghcUpSrcBuiltFile)
 
 
-ghcSet :: (MonadIO m, MonadThrow m) => m (Maybe Version)
+ghcSet :: (MonadIO m) => m (Maybe Version)
 ghcSet = do
   ghcBin <- (</> [rel|ghc|]) <$> liftIO ghcupBinDir
 

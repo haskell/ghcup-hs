@@ -85,7 +85,7 @@ validate dls = do
       [i|FreeBSD missing for #{t} #{v'} #{arch}|]
 
   checkUniqueTags tool = do
-    let allTags = join $ fmap snd $ availableToolVersions dls tool
+    let allTags = join $ M.elems $ availableToolVersions dls tool
     let nonUnique =
           fmap fst
             .   filter (\(_, b) -> not b)
@@ -118,7 +118,7 @@ validate dls = do
 
   -- a tool must have at least one of each mandatory tags
   checkMandatoryTags tool = do
-    let allTags = join $ fmap snd $ availableToolVersions dls tool
+    let allTags = join $ M.elems $ availableToolVersions dls tool
     forM_ [Latest, Recommended] $ \t -> case elem t allTags of
       False -> do
         lift $ $(logError) [i|Tag #{t} missing from #{tool}|]

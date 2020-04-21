@@ -9,6 +9,7 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 module GHCup where
 
@@ -305,25 +306,38 @@ data ListResult = ListResult
   , lVer       :: Version
   , lTag       :: [Tag]
   , lInstalled :: Bool
-  , lSet       :: Bool
-  , fromSrc    :: Bool
+  , lSet       :: Bool -- ^ currently active version
+  , fromSrc    :: Bool -- ^ compiled from source
+  , lStray     :: Bool -- ^ not in download info
   }
-  deriving Show
+  deriving (Eq, Ord, Show)
 
 
-availableToolVersions :: GHCupDownloads -> Tool -> [(Version, [Tag])]
-availableToolVersions av tool = toListOf
-  (ix tool % to (fmap (\(v, vi) -> (v, (_viTags vi))) . Map.toList) % folded)
+availableToolVersions :: GHCupDownloads -> Tool -> Map.Map Version [Tag]
+availableToolVersions av tool = view
+  (at tool % non Map.empty % to (fmap (_viTags)))
   av
 
 
-listVersions :: GHCupDownloads
+-- | List all versions from the download info, as well as stray
+-- versions.
+listVersions :: (MonadLogger m, MonadIO m)
+             => GHCupDownloads
              -> Maybe Tool
              -> Maybe ListCriteria
-             -> IO [ListResult]
+             -> m [ListResult]
 listVersions av lt criteria = case lt of
   Just t -> do
-    filter' <$> forM (availableToolVersions av t) (toListResult t)
+    -- get versions from GHCupDownloads
+    let avTools = availableToolVersions av t
+    lr <- filter' <$> forM (Map.toList avTools) (liftIO . toListResult t)
+
+    case t of
+      -- append stray GHCs
+      GHC -> do
+        slr <- strayGHCs avTools
+        pure $ (sort (slr ++ lr))
+      _ -> pure lr
   Nothing -> do
     ghcvers   <- listVersions av (Just GHC) criteria
     cabalvers <- listVersions av (Just Cabal) criteria
@@ -331,21 +345,60 @@ listVersions av lt criteria = case lt of
     pure (ghcvers <> cabalvers <> ghcupvers)
 
  where
+  strayGHCs :: (MonadLogger m, MonadIO m)
+            => Map.Map Version [Tag]
+            -> m [ListResult]
+  strayGHCs avTools = do
+    ghcdir <- liftIO $ ghcupGHCBaseDir
+    fs     <- liftIO $ getDirsFiles' ghcdir
+    fmap catMaybes $ forM fs $ \(toFilePath -> f) -> do
+      case version . decUTF8Safe $ f of
+        Right v' -> do
+          case Map.lookup v' avTools of
+            Just _  -> pure Nothing
+            Nothing -> do
+              lSet    <- fmap (maybe False (== v')) $ ghcSet
+              fromSrc <- liftIO $ ghcSrcInstalled v'
+              pure $ Just $ ListResult
+                { lTool      = GHC
+                , lVer       = v'
+                , lTag       = []
+                , lInstalled = True
+                , lStray     = maybe True (const False) (Map.lookup v' avTools)
+                , ..
+                }
+        Left e -> do
+          $(logWarn)
+            [i|Could not parse version of stray directory #{toFilePath ghcdir}/#{f}: #{e}|]
+          pure Nothing
+
   toListResult :: Tool -> (Version, [Tag]) -> IO ListResult
   toListResult t (v, tags) = case t of
     GHC -> do
       lSet       <- fmap (maybe False (== v)) $ ghcSet
       lInstalled <- ghcInstalled v
       fromSrc    <- ghcSrcInstalled v
-      pure ListResult { lVer = v, lTag = tags, lTool = t, .. }
+      pure ListResult { lVer = v, lTag = tags, lTool = t, lStray = False, .. }
     Cabal -> do
       lSet <- fmap (== v) $ cabalSet
       let lInstalled = lSet
-      pure ListResult { lVer = v, lTag = tags, lTool = t, fromSrc = False, .. }
+      pure ListResult { lVer    = v
+                      , lTag    = tags
+                      , lTool   = t
+                      , fromSrc = False
+                      , lStray  = False
+                      , ..
+                      }
     GHCup -> do
       let lSet       = prettyPVP ghcUpVer == prettyVer v
       let lInstalled = lSet
-      pure ListResult { lVer = v, lTag = tags, lTool = t, fromSrc = False, .. }
+      pure ListResult { lVer    = v
+                      , lTag    = tags
+                      , lTool   = t
+                      , fromSrc = False
+                      , lStray  = False
+                      , ..
+                      }
 
 
   filter' :: [ListResult] -> [ListResult]

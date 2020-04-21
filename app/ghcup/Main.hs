@@ -684,10 +684,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     , TagNotFound
                     ]
 
-          let runListGHC =
-                runLogger
-                  . flip runReaderT settings
-                  . runE @'[FileDoesNotExistError]
+          let runListGHC = runE @'[] . runLogger
 
           let runRmGHC =
                 runLogger . flip runReaderT settings . runE @'[NotInstalled]
@@ -825,7 +822,8 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
 
             List (ListOptions {..}) ->
               (runListGHC $ do
-                  liftIO $ listVersions dls lTool lCriteria
+                  l <- listVersions dls lTool lCriteria
+                  pure l
                 )
                 >>= \case
                       VRight r -> do
@@ -1024,14 +1022,16 @@ printListResult lr = do
               , fmap toLower . show $ lTool
               , T.unpack . prettyVer $ lVer
               , intercalate "," $ ((fmap . fmap) toLower . fmap show $ lTag)
-              , if fromSrc then (color Blue "compiled") else mempty
+              , intercalate "," $
+                (if fromSrc then [color Blue "compiled"] else mempty)
+                ++ (if lStray then [color Blue "stray"] else mempty)
               ]
             )
             lr
   putStrLn $ formatted
 
 
-checkForUpdates :: (MonadIO m, MonadFail m, MonadLogger m)
+checkForUpdates :: (MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
                 => GHCupDownloads
                 -> m ()
 checkForUpdates dls = do
@@ -1057,7 +1057,7 @@ checkForUpdates dls = do
 
  where
   latestInstalled tool = (fmap lVer . lastMay)
-    <$> liftIO (listVersions dls (Just tool) (Just ListInstalled))
+    <$> (listVersions dls (Just tool) (Just ListInstalled))
 
 
 prettyDebugInfo :: DebugInfo -> String
