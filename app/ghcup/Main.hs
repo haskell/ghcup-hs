@@ -654,6 +654,12 @@ main = do
         <> help "Show the numeric version (for use in scripts)"
         <> hidden
         )
+  let listCommands = infoOption
+        "install set rm install-cabal list upgrade compile debug-info tool-requirements changelog"
+        (  long "list-commands"
+        <> help "List available commands for shell completion"
+        <> internal
+        )
 
   let main_footer = [i|Discussion:
   ghcup installs the Glasgow Haskell Compiler from the official
@@ -668,7 +674,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
   customExecParser
       (prefs showHelpOnError)
-      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp)
+      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp <**> listCommands)
             (footerDoc (Just $ text main_footer))
       )
     >>= \opt@Options {..} -> do

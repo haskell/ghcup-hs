@@ -1,0 +1,11 @@
+_ghcup()
+{
+	local cur
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	if [[ ${#COMP_WORDS[*]} -le 2 ]]; then
+		COMPREPLY=($(compgen -W "$(ghcup --list-commands)" -- $cur))
+	fi
+	return 0
+} &&
+complete -F _ghcup ghcup
