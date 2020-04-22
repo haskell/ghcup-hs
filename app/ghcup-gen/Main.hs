@@ -10,10 +10,10 @@
 
 module Main where
 
+import           GHCup.Data.GHCupInfo
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Logger
-import           GHCupInfo
 
 import           Data.Aeson                     ( eitherDecode, encode )
 import           Data.Aeson.Encode.Pretty

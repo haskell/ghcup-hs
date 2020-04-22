@@ -279,6 +279,9 @@ library
 
   exposed-modules:
     GHCup
+    GHCup.Data.GHCupDownloads
+    GHCup.Data.GHCupInfo
+    GHCup.Data.ToolRequirements
     GHCup.Download
     GHCup.Download.Utils
     GHCup.Errors
@@ -372,9 +375,6 @@ executable ghcup-gen
   --
   main-is:          Main.hs
   other-modules:
-    GHCupDownloads
-    GHCupInfo
-    ToolRequirements
     Validate
 
   -- other-extensions:

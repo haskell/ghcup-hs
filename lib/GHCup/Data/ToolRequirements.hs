@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 
-module ToolRequirements where
+module GHCup.Data.ToolRequirements where
 
 import           GHCup.Types
 import           GHCup.Utils.String.QQ

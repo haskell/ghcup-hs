@@ -2,7 +2,7 @@
 {-# LANGUAGE QuasiQuotes       #-}
 
 
-module GHCupDownloads where
+module GHCup.Data.GHCupDownloads where
 
 import           GHCup.Types
 import           GHCup.Utils.Version.QQ
@@ -951,6 +951,24 @@ cabal_3000_64_darwin = DownloadInfo
   Nothing
   "d4857e068560515e4cbb0e8ca124c370e07892f2a28804d87152834e5fe2b845"
 
+cabal_3000_64_freebsd :: DownloadInfo
+cabal_3000_64_freebsd = DownloadInfo
+  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.0.0.0-x86_64-portbld-freebsd.tar.xz&dl=1|]
+  Nothing
+  "d97b6469ed612a1367ad1032d0722469ee5277668879694d7d4336233b937516"
+
+cabal_3000_32_alpine :: DownloadInfo
+cabal_3000_32_alpine = DownloadInfo
+  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.0.0.0-i386-alpine-linux-musl.tar.xz&dl=1|]
+  Nothing
+  "a4191cd5a645b00e6a9c53abe6f3cb91fe700de7d7c520c9cb36ce8ec5c9919a"
+
+cabal_3000_64_alpine :: DownloadInfo
+cabal_3000_64_alpine = DownloadInfo
+  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.0.0.0-x86_64-alpine-linux-musl.tar.xz&dl=1|]
+  Nothing
+  "7b35e5986aba4a40fc37141cbde26612bfc916e95a2d2ff35a413612d8c7cd3a"
+
 
 
     ---------------------
@@ -975,6 +993,24 @@ cabal_3200_64_darwin = DownloadInfo
   [uri|https://downloads.haskell.org/cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-apple-darwin17.7.0.tar.xz|]
   Nothing
   "9197c17d2ece0f934f5b33e323cfcaf486e4681952687bc3d249488ce3cbe0e9"
+
+cabal_3200_64_freebsd :: DownloadInfo
+cabal_3200_64_freebsd = DownloadInfo
+  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.2.0.0-x86_64-portbld-freebsd.tar.xz&dl=1|]
+  Nothing
+  "e4dc00ab7fef51354e7624dd03e49c6bb684887fc95acb9b33bc52f357a5ef8c"
+
+cabal_3200_32_alpine :: DownloadInfo
+cabal_3200_32_alpine = DownloadInfo
+  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.2.0.0-i386-alpine-linux-musl.tar.xz&dl=1|]
+  Nothing
+  "4aaa52fbc337ae1ef855a2aa2808186580b21ec36883aafec7473e7d899bc5ec"
+
+cabal_3200_64_alpine :: DownloadInfo
+cabal_3200_64_alpine = DownloadInfo
+  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.2.0.0-x86_64-alpine-linux-musl.tar.xz&dl=1|]
+  Nothing
+  "c1f3c21a5307cea8d2a0bd9a2eab9f56f3dd90e947ae64e231f909024980992b"
 
 
 
@@ -1837,6 +1873,30 @@ ghcupDownloads = M.fromList
                 )
               ]
         )
+      , ( [vver|8.10.1-p1|]
+        , VersionInfo
+            []
+            Nothing
+            Nothing
+          $ M.fromList
+              [ ( A_64
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList
+                      [ ( Nothing
+                        ,
+                        (DownloadInfo
+                         [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-fedora27-linux.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "3c4cd72b4806045779739e8f5d1658e30e57123d88c2c8966422cdbcae448470"
+                          )
+                        )
+                      ]
+                    )
+                  ]
+                )
+              ]
+        )
       ]
     )
   , ( Cabal
@@ -1889,7 +1949,9 @@ ghcupDownloads = M.fromList
                   [ ( Linux UnknownLinux
                     , M.fromList [(Nothing, cabal_3000_64_linux)]
                     )
-                  , (Darwin, M.fromList [(Nothing, cabal_3000_64_darwin)])
+                  , (Linux Alpine, M.fromList [(Nothing, cabal_3000_64_alpine)])
+                  , (Darwin      , M.fromList [(Nothing, cabal_3000_64_darwin)])
+                  , (FreeBSD, M.fromList [(Nothing, cabal_3000_64_freebsd)])
                   ]
                 )
               , ( A_32
@@ -1897,6 +1959,7 @@ ghcupDownloads = M.fromList
                   [ ( Linux UnknownLinux
                     , M.fromList [(Nothing, cabal_3000_32_linux)]
                     )
+                  , (Linux Alpine, M.fromList [(Nothing, cabal_3000_32_alpine)])
                   ]
                 )
               ]
@@ -1918,7 +1981,9 @@ ghcupDownloads = M.fromList
                   [ ( Linux UnknownLinux
                     , M.fromList [(Nothing, cabal_3200_64_linux)]
                     )
-                  , (Darwin, M.fromList [(Nothing, cabal_3200_64_darwin)])
+                  , (Linux Alpine, M.fromList [(Nothing, cabal_3200_64_alpine)])
+                  , (Darwin      , M.fromList [(Nothing, cabal_3200_64_darwin)])
+                  , (FreeBSD, M.fromList [(Nothing, cabal_3200_64_freebsd)])
                   ]
                 )
               , ( A_32
@@ -1926,6 +1991,7 @@ ghcupDownloads = M.fromList
                   [ ( Linux UnknownLinux
                     , M.fromList [(Nothing, cabal_3200_32_linux)]
                     )
+                  , (Linux Alpine, M.fromList [(Nothing, cabal_3200_32_alpine)])
                   ]
                 )
               ]

@@ -1,7 +1,7 @@
-module GHCupInfo where
+module GHCup.Data.GHCupInfo where
 
-import           GHCupDownloads
-import           ToolRequirements
+import           GHCup.Data.GHCupDownloads
+import           GHCup.Data.ToolRequirements
 import           GHCup.Types
 
 
