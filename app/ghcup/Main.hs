@@ -32,7 +32,7 @@ import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
 import           Data.Functor
-import           Data.List                      ( intercalate, sortBy )
+import           Data.List                      ( intercalate, sort )
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
@@ -1038,7 +1038,7 @@ printListResult raw lr = do
               in  (if raw then [] else [marks])
                     ++ [ fmap toLower . show $ lTool
                        , T.unpack . prettyVer $ lVer
-                       , intercalate "," $ (fmap printTag $ sortBy tagOrd lTag)
+                       , intercalate "," $ (fmap printTag $ sort lTag)
                        , intercalate ","
                        $  (if fromSrc then [color' Blue "compiled"] else mempty)
                        ++ (if lStray then [color' Blue "stray"] else mempty)
@@ -1049,14 +1049,11 @@ printListResult raw lr = do
  where
   printTag Recommended        = color' Green "recommended"
   printTag Latest             = color' Yellow "latest"
-  printTag (Base pvp'') = color' Blue ("base-" ++ T.unpack (prettyPVP pvp''))
+  printTag (Base pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
   printTag (UnknownTag t    ) = t
   color' = case raw of
     True  -> flip const
     False -> color
-  tagOrd (Base _) _        = LT
-  tagOrd _        (Base _) = GT
-  tagOrd a        b        = compare a b
 
 checkForUpdates :: (MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
                 => GHCupDownloads
