@@ -63,6 +63,7 @@ validate dls = do
 
     checkGHCisSemver
     forM_ (M.toList dls) $ \(t, _) -> checkMandatoryTags t
+    _ <- checkGHCHasBaseVersion
 
     -- exit
     e <- liftIO $ readIORef ref
@@ -105,9 +106,10 @@ validate dls = do
         lift $ $(logError) [i|Tags not unique for #{tool}: #{xs}|]
         addError
    where
-    isUniqueTag Latest      = True
-    isUniqueTag Recommended = True
-    isUniqueTag (Base _)    = False
+    isUniqueTag Latest         = True
+    isUniqueTag Recommended    = True
+    isUniqueTag (Base       _) = False
+    isUniqueTag (UnknownTag _) = False
 
   checkGHCisSemver = do
     let ghcVers = toListOf (ix GHC % to M.keys % folded) dls
@@ -126,6 +128,17 @@ validate dls = do
         addError
       True -> pure ()
 
+  -- all GHC versions must have a base tag
+  checkGHCHasBaseVersion = do
+    let allTags = M.toList $ availableToolVersions dls GHC
+    forM allTags $ \(ver, tags) -> case any isBase tags of
+      False -> do
+        lift $ $(logError) [i|Base tag missing from GHC ver #{ver}|]
+        addError
+      True -> pure ()
+
+  isBase (Base _) = True
+  isBase _        = False
 
 validateTarballs :: ( Monad m
                     , MonadLogger m
