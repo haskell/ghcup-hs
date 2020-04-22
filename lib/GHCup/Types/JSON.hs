@@ -37,11 +37,24 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Tool
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VSep
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VUnit
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Tag
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 
+instance ToJSON Tag where
+  toJSON Latest = String "Latest"
+  toJSON Recommended = String "Recommended"
+  toJSON (Base pvp'') = String ("base-" <> prettyPVP pvp'')
+  toJSON (UnknownTag x) = String (T.pack x)
+
+instance FromJSON Tag where
+  parseJSON = withText "Tag" $ \t -> case T.unpack t of
+    "Latest" -> pure Latest
+    "Recommended" -> pure Recommended
+    ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
+                                    Right x -> pure $ Base x
+                                    Left e -> fail . show $ e
+    x -> pure (UnknownTag x)
 
 instance ToJSON URI where
   toJSON = toJSON . decUTF8Safe . serializeURIRef'
@@ -142,6 +155,14 @@ instance FromJSONKey Version where
   fromJSONKey = FromJSONKeyTextParser $ \t -> case version t of
     Right x -> pure x
     Left  e -> fail $ "Failure in Version (FromJSONKey)" <> show e
+
+instance ToJSON PVP where
+  toJSON = toJSON . prettyPVP
+
+instance FromJSON PVP where
+  parseJSON = withText "PVP" $ \t -> case pvp t of
+    Right x -> pure x
+    Left  e -> fail $ "Failure in PVP (FromJSON)" <> show e
 
 instance ToJSONKey Tool where
   toJSONKey = genericToJSONKey defaultJSONKeyOptions

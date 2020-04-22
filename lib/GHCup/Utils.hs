@@ -279,6 +279,11 @@ getRecommended :: GHCupDownloads -> Tool -> Maybe Version
 getRecommended av tool = headOf (ix tool % getTagged Recommended % to fst) $ av
 
 
+-- | Gets the latest GHC with a given base version.
+getLatestBaseVersion :: GHCupDownloads -> PVP -> Maybe Version
+getLatestBaseVersion av pvpVer = headOf (ix GHC % getTagged (Base pvpVer) % to fst) av
+
+
 
     -----------------------
     --[ Settings Getter ]--

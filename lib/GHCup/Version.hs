@@ -13,7 +13,7 @@ import qualified Data.Text                     as T
 
 -- | This reflects the API version of the JSON.
 ghcupURL :: URI
-ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.1.json|]
+ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.2.json|]
 
 ghcUpVer :: PVP
 ghcUpVer = [pver|0.1.4|]

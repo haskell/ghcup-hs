@@ -467,6 +467,9 @@ tagEither :: String -> Either String Tag
 tagEither s' = case fmap toLower s' of
   "recommended" -> Right Recommended
   "latest"      -> Right Latest
+  ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
+                                  Right x -> Right (Base x)
+                                  Left  _ -> Left [i|Invalid PVP version for base #{ver'}|]
   other         -> Left ([i|Unknown tag #{other}|])
 
 versionEither :: String -> Either String Version
@@ -997,6 +1000,10 @@ fromVersion av (Just (ToolTag Latest)) tool =
   getLatest av tool ?? TagNotFound Latest tool
 fromVersion av (Just (ToolTag Recommended)) tool =
   getRecommended av tool ?? TagNotFound Recommended tool
+fromVersion av (Just (ToolTag (Base pvp''))) GHC =
+  getLatestBaseVersion av pvp'' ?? TagNotFound (Base pvp'') GHC
+fromVersion _ (Just (ToolTag t')) tool =
+  throwE $ TagNotFound t' tool
 
 
 printListResult :: [ListResult] -> IO ()
@@ -1021,7 +1028,7 @@ printListResult lr = do
                 | otherwise  -> (color Red "✗")
               , fmap toLower . show $ lTool
               , T.unpack . prettyVer $ lVer
-              , intercalate "," $ ((fmap . fmap) toLower . fmap show $ lTag)
+              , intercalate "," $ (fmap printTag $ lTag)
               , intercalate "," $
                 (if fromSrc then [color Blue "compiled"] else mempty)
                 ++ (if lStray then [color Blue "stray"] else mempty)
@@ -1029,6 +1036,11 @@ printListResult lr = do
             )
             lr
   putStrLn $ formatted
+ where
+  printTag Recommended = color Green "recommended"
+  printTag Latest = color Yellow "latest"
+  printTag (Base pvp'') = color Blue ("base-" ++ T.unpack (prettyPVP pvp''))
+  printTag (UnknownTag t) = t
 
 
 checkForUpdates :: (MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)

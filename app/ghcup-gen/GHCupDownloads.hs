@@ -1026,7 +1026,7 @@ ghcupDownloads = M.fromList
     , M.fromList
       [ ( [vver|7.10.3|]
         , VersionInfo
-            []
+            [Base [pver|4.8.2.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/7.10.3/docs/html/users_guide/release-7-10-1.html|]
             )
@@ -1072,7 +1072,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.0.2|]
         , VersionInfo
-            []
+            [Base [pver|4.9.1.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.0.2/docs/html/users_guide/8.0.1-notes.html|]
             )
@@ -1118,7 +1118,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.2.2|]
         , VersionInfo
-            []
+            [Base [pver|4.10.1.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.2.2/docs/html/users_guide/8.2.2-notes.html|]
             )
@@ -1170,7 +1170,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.4.1|]
         , VersionInfo
-            []
+            [Base [pver|4.11.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.4.1/docs/html/users_guide/8.4.1-notes.html|]
             )
@@ -1209,7 +1209,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.4.2|]
         , VersionInfo
-            []
+            [Base [pver|4.11.1.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.4.2/docs/html/users_guide/8.4.2-notes.html|]
             )
@@ -1259,7 +1259,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.4.3|]
         , VersionInfo
-            []
+            [Base [pver|4.11.1.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.4.3/docs/html/users_guide/8.4.3-notes.html|]
             )
@@ -1308,7 +1308,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.4.4|]
         , VersionInfo
-            []
+            [Base [pver|4.11.1.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.4.4/docs/html/users_guide/8.4.4-notes.html|]
             )
@@ -1362,7 +1362,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.6.1|]
         , VersionInfo
-            []
+            [Base [pver|4.12.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.6.1/docs/html/users_guide/8.6.1-notes.html|]
             )
@@ -1412,7 +1412,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.6.2|]
         , VersionInfo
-            []
+            [Base [pver|4.12.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.6.2/docs/html/users_guide/8.6.2-notes.html|]
             )
@@ -1456,7 +1456,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.6.3|]
         , VersionInfo
-            []
+            [Base [pver|4.12.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.6.3/docs/html/users_guide/8.6.3-notes.html|]
             )
@@ -1510,7 +1510,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.6.4|]
         , VersionInfo
-            []
+            [Base [pver|4.12.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.6.4/docs/html/users_guide/8.6.4-notes.html|]
             )
@@ -1559,7 +1559,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.6.5|]
         , VersionInfo
-            []
+            [Base [pver|4.12.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.6.5/docs/html/users_guide/8.6.5-notes.html|]
             )
@@ -1612,7 +1612,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.8.1|]
         , VersionInfo
-            []
+            [Base [pver|4.13.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.8.1/docs/html/users_guide/8.8.1-notes.html|]
             )
@@ -1665,7 +1665,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.8.2|]
         , VersionInfo
-            []
+            [Base [pver|4.13.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.8.2/docs/html/users_guide/8.8.2-notes.html|]
             )
@@ -1718,7 +1718,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.8.3|]
         , VersionInfo
-            [Recommended]
+            [Recommended, Base [pver|4.13.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.8.3/docs/html/users_guide/8.8.3-notes.html|]
             )
@@ -1771,7 +1771,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.10.1|]
         , VersionInfo
-            [Latest]
+            [Latest, Base [pver|4.14.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/ghc/8.10.1/docs/html/users_guide/8.10.1-notes.html|]
             )

@@ -107,6 +107,7 @@ validate dls = do
    where
     isUniqueTag Latest      = True
     isUniqueTag Recommended = True
+    isUniqueTag (Base _)    = False
 
   checkGHCisSemver = do
     let ghcVers = toListOf (ix GHC % to M.keys % folded) dls
