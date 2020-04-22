@@ -97,15 +97,15 @@ installGHCBin bDls ver mpfReq = do
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
   whenM (liftIO $ toolAlreadyInstalled GHC ver)
     $ (throwE $ AlreadyInstalled GHC ver)
-  Settings {..} <- lift ask
+  Settings {..}                <- lift ask
   pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
 
   -- download (or use cached version)
-  dlinfo        <- lE $ getDownloadInfo GHC ver pfreq bDls
-  dl            <- liftE $ downloadCached dlinfo Nothing
+  dlinfo                       <- lE $ getDownloadInfo GHC ver pfreq bDls
+  dl                           <- liftE $ downloadCached dlinfo Nothing
 
   -- unpack
-  tmpUnpack     <- lift mkGhcupTmpDir
+  tmpUnpack                    <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
   void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
@@ -115,19 +115,7 @@ installGHCBin bDls ver mpfReq = do
   -- the subdir of the archive where we do the work
   let workdir = maybe tmpUnpack (tmpUnpack </>) (view dlSubdir dlinfo)
 
-  -- Be careful about cleanup. We must catch both pure exceptions
-  -- as well as async ones.
-  flip onException
-       (liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
-    $ catchAllE
-        (\es -> do
-          liftIO (hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
-            >> throwE (BuildFailed workdir es)
-        )
-    $ installGHC' workdir ghcdir
-
-  -- only clean up dir if the build succeeded
-  liftIO $ deleteDirRecursive tmpUnpack
+  liftE $ runBuildAction tmpUnpack (Just ghcdir) (installGHC' workdir ghcdir)
 
   liftE $ postGHCInstall ver
 
@@ -533,20 +521,10 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir = do
   let workdir = maybe id (flip (</>)) (view dlSubdir dlInfo) $ tmpUnpack
   ghcdir <- liftIO $ ghcupGHCDir tver
 
-  -- Be careful about cleanup. We must catch both pure exceptions
-  -- as well as async ones.
-  flip onException
-       (liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
-    $ catchAllE
-        (\es ->
-          liftIO (hideError doesNotExistErrorType $ deleteDirRecursive ghcdir)
-            >> throwE (BuildFailed workdir es)
-        )
-    $ compile bghc ghcdir workdir
-  markSrcBuilt ghcdir workdir
-
-  -- only clean up dir if the build succeeded
-  liftIO $ deleteDirRecursive tmpUnpack
+  liftE $ runBuildAction
+    tmpUnpack
+    (Just ghcdir)
+    (compile bghc ghcdir workdir >> markSrcBuilt ghcdir workdir)
 
   reThrowAll GHCupSetError $ postGHCInstall tver
   pure ()
@@ -666,7 +644,11 @@ compileCabal dls tver bghc jobs patchdir = do
 
   let workdir = maybe id (flip (</>)) (view dlSubdir dlInfo) $ tmpUnpack
 
-  reThrowAll (BuildFailed workdir) $ compile workdir
+
+  liftE $ runBuildAction
+    tmpUnpack
+    Nothing
+    (compile workdir)
 
   -- only clean up dir if the build succeeded
   liftIO $ deleteDirRecursive tmpUnpack

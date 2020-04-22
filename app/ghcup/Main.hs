@@ -74,6 +74,7 @@ data Options = Options
   , optCache     :: Bool
   , optUrlSource :: Maybe URI
   , optNoVerify  :: Bool
+  , optKeepDirs  :: KeepDirs
   -- commands
   , optCommand   :: Command
   }
@@ -163,6 +164,14 @@ opts =
     <*> switch
           (short 'n' <> long "no-verify" <> help
             "Skip tarball checksum verification"
+          )
+    <*> option
+          (eitherReader keepOnParser)
+          (  long "keep"
+          <> metavar "<always|errors|never>"
+          <> help
+               "Keep build directories?"
+          <> value Never
           )
     <*> com
  where
@@ -507,6 +516,14 @@ criteriaParser s' | t == T.pack "installed" = Right ListInstalled
   where t = T.toLower (T.pack s')
 
 
+keepOnParser :: String -> Either String KeepDirs
+keepOnParser s' | t == T.pack "always" = Right Always
+                | t == T.pack "errors" = Right Errors
+                | t == T.pack "never"  = Right Never
+                | otherwise            = Left ("Unknown keep value: " <> s')
+  where t = T.toLower (T.pack s')
+
+
 platformParser :: String -> Either String PlatformRequest
 platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
   Right r -> pure r
@@ -584,6 +601,7 @@ toSettings :: Options -> Settings
 toSettings Options {..} =
   let cache    = optCache
       noVerify = optNoVerify
+      keepDirs = optKeepDirs
   in  Settings { .. }
 
 
@@ -654,7 +672,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             (footerDoc (Just $ text main_footer))
       )
     >>= \opt@Options {..} -> do
-          let settings = toSettings opt
+          let settings@Settings{..} = toSettings opt
 
           -- create ~/.ghcup dir
           ghcdir <- ghcupBaseDir
@@ -792,10 +810,11 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           [i|GHC ver #{prettyVer v} already installed|]
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
-                        runLogger
-                          ($(logError) [i|Build failed with #{e}
-Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
-                          )
+                        case keepDirs of
+                          Never -> runLogger ($(logError) [i|Build failed with #{e}|])
+                          _ -> runLogger ($(logError) [i|Build failed with #{e}
+Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
+Make sure to clean up #{tmpdir} afterwards.|])
                         pure $ ExitFailure 3
                       VLeft (V NoDownload) -> do
 
@@ -902,11 +921,11 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                           [i|GHC ver #{prettyVer v} already installed|]
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
-                        runLogger
-                          ($(logError) [i|Build failed with #{e}
+                        case keepDirs of
+                          Never -> runLogger ($(logError) [i|Build failed with #{e}|])
+                          _ -> runLogger ($(logError) [i|Build failed with #{e}
 Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
-Make sure to clean up #{tmpdir} afterwards.|]
-                          )
+Make sure to clean up #{tmpdir} afterwards.|])
                         pure $ ExitFailure 9
                       VLeft e -> do
                         runLogger ($(logError) [i|#{e}|])
@@ -924,10 +943,11 @@ Make sure to clean up #{tmpdir} afterwards.|]
                           )
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
-                        runLogger
-                          ($(logError) [i|Build failed with #{e}
-Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
-                          )
+                        case keepDirs of
+                          Never -> runLogger ($(logError) [i|Build failed with #{e}|])
+                          _ -> runLogger ($(logError) [i|Build failed with #{e}
+Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
+Make sure to clean up #{tmpdir} afterwards.|])
                         pure $ ExitFailure 10
                       VLeft e -> do
                         runLogger ($(logError) [i|#{e}|])

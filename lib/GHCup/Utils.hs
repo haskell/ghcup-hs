@@ -406,3 +406,40 @@ getChangeLog dls tool (Right tag) = preview
   % viChangeLog
   % _Just
   ) dls
+
+
+-- | Execute a build action while potentially cleaning up:
+--
+--   1. the build directory, depending on the KeepDirs setting
+--   2. the install destination, depending on whether the build failed
+runBuildAction :: (Show (V e), MonadReader Settings m, MonadIO m, MonadMask m)
+               => Path Abs          -- ^ build directory
+               -> Maybe (Path Abs)  -- ^ install location (e.g. for GHC)
+               -> Excepts e m ()
+               -> Excepts '[BuildFailed] m ()
+runBuildAction bdir instdir action = do
+  Settings {..} <- lift ask
+  flip
+      onException
+      (do
+        forM_ instdir $ \dir ->
+          liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive dir
+        when (keepDirs == Never)
+          $ liftIO
+          $ hideError doesNotExistErrorType
+          $ deleteDirRecursive bdir
+      )
+    $ catchAllE
+        (\es -> do
+          forM_ instdir $ \dir ->
+            liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive dir
+          when (keepDirs == Never)
+            $ liftIO
+            $ hideError doesNotExistErrorType
+            $ deleteDirRecursive bdir
+          throwE (BuildFailed bdir es)
+        )
+    $ action
+
+  when (keepDirs == Never || keepDirs == Errors) $ liftIO $ deleteDirRecursive
+    bdir

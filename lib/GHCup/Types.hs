@@ -142,8 +142,15 @@ data URLSource = GHCupURL
 data Settings = Settings
   { cache    :: Bool
   , noVerify :: Bool
+  , keepDirs :: KeepDirs
   }
   deriving Show
+
+
+data KeepDirs = Always
+              | Errors
+              | Never
+  deriving (Eq, Show, Ord)
 
 
 data DebugInfo = DebugInfo
