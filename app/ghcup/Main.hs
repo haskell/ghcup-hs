@@ -32,7 +32,7 @@ import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
 import           Data.Functor
-import           Data.List                      ( intercalate )
+import           Data.List                      ( intercalate, sortBy )
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
@@ -103,8 +103,9 @@ data SetGHCOptions = SetGHCOptions
   }
 
 data ListOptions = ListOptions
-  { lTool     :: Maybe Tool
-  , lCriteria :: Maybe ListCriteria
+  { lTool      :: Maybe Tool
+  , lCriteria  :: Maybe ListCriteria
+  , lRawFormat :: Bool
   }
 
 data RmOptions = RmOptions
@@ -309,6 +310,9 @@ listOpts =
             )
           )
         )
+    <*> switch
+          (short 'r' <> long "raw-format" <> help "More machine-parsable format"
+          )
 
 rmOpts :: Parser RmOptions
 rmOpts = RmOptions <$> versionArgument
@@ -830,7 +834,7 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                 )
                 >>= \case
                       VRight r -> do
-                        liftIO $ printListResult r
+                        liftIO $ printListResult lRawFormat r
                         pure ExitSuccess
                       VLeft e -> do
                         runLogger ($(logError) [i|#{e}|])
@@ -1006,42 +1010,53 @@ fromVersion _ (Just (ToolTag t')) tool =
   throwE $ TagNotFound t' tool
 
 
-printListResult :: [ListResult] -> IO ()
-printListResult lr = do
+printListResult :: Bool -> [ListResult] -> IO ()
+printListResult raw lr = do
   -- https://gitlab.haskell.org/ghc/ghc/issues/8118
   setLocaleEncoding utf8
 
   let
     formatted =
       gridString
-          [ column expand left def def
-          , column expand left def def
-          , column expand left def def
-          , column expand left def def
-          , column expand left def def
-          ]
+          (  (if raw then [] else [column expand left def def])
+          ++ [ column expand left def def
+             , column expand left def def
+             , column expand left def def
+             , column expand left def def
+             ]
+          )
+        . (\x -> if raw
+            then x
+            else [color Green "", "Tool", "Version", "Tags", "Notes"] : x
+          )
         $ fmap
             (\ListResult {..} ->
-              [ if
-                | lSet       -> (color Green "✔✔")
-                | lInstalled -> (color Green "✓")
-                | otherwise  -> (color Red "✗")
-              , fmap toLower . show $ lTool
-              , T.unpack . prettyVer $ lVer
-              , intercalate "," $ (fmap printTag $ lTag)
-              , intercalate "," $
-                (if fromSrc then [color Blue "compiled"] else mempty)
-                ++ (if lStray then [color Blue "stray"] else mempty)
-              ]
+              let marks = if
+                    | lSet       -> (color Green "✔✔")
+                    | lInstalled -> (color Green "✓")
+                    | otherwise  -> (color Red "✗")
+              in  (if raw then [] else [marks])
+                    ++ [ fmap toLower . show $ lTool
+                       , T.unpack . prettyVer $ lVer
+                       , intercalate "," $ (fmap printTag $ sortBy tagOrd lTag)
+                       , intercalate ","
+                       $  (if fromSrc then [color' Blue "compiled"] else mempty)
+                       ++ (if lStray then [color' Blue "stray"] else mempty)
+                       ]
             )
             lr
   putStrLn $ formatted
  where
-  printTag Recommended = color Green "recommended"
-  printTag Latest = color Yellow "latest"
-  printTag (Base pvp'') = color Blue ("base-" ++ T.unpack (prettyPVP pvp''))
-  printTag (UnknownTag t) = t
-
+  printTag Recommended        = color' Green "recommended"
+  printTag Latest             = color' Yellow "latest"
+  printTag (Base pvp'') = color' Blue ("base-" ++ T.unpack (prettyPVP pvp''))
+  printTag (UnknownTag t    ) = t
+  color' = case raw of
+    True  -> flip const
+    False -> color
+  tagOrd (Base _) _        = LT
+  tagOrd _        (Base _) = GT
+  tagOrd a        b        = compare a b
 
 checkForUpdates :: (MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
                 => GHCupDownloads
