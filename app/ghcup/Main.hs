@@ -640,7 +640,11 @@ main = do
   let main_footer = [i|Discussion:
   ghcup installs the Glasgow Haskell Compiler from the official
   release channels, enabling you to easily switch between different
-  versions.
+  versions. It maintains a self-contained ~/.ghcup directory.
+
+ENV variables:
+  * TMPDIR: where ghcup does the work (unpacking, building, ...)
+  * GHCUP_INSTALL_BASE_PREFIX: the base of ghcup (default: $HOME)
 
 Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
