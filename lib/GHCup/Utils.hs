@@ -222,6 +222,23 @@ getGHCForMajor major' minor' = do
     $ semvers
 
 
+-- | Get the latest available ghc for X.Y major version.
+getLatestGHCFor :: Int -- ^ major version component
+                -> Int -- ^ minor version component
+                -> GHCupDownloads
+                -> Maybe Version
+getLatestGHCFor major' minor' dls = do
+  join . fmap
+      (lastMay . filter
+        (\v -> case semver $ prettyVer v of
+                 Right SemVer{..} -> fromIntegral _svMajor == major' && fromIntegral _svMinor == minor'
+                 Left _ -> False
+        )
+      )
+    . preview (ix GHC % to Map.keys) $ dls
+
+
+
 
 
     -----------------

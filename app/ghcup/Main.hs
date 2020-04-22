@@ -33,6 +33,7 @@ import           Data.Char
 import           Data.Either
 import           Data.Functor
 import           Data.List                      ( intercalate, sort )
+import           Data.List.NonEmpty             (NonEmpty ((:|)))
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
@@ -91,6 +92,10 @@ data Command
 
 data ToolVersion = ToolVersion Version
                  | ToolTag Tag
+
+prettyToolVer :: ToolVersion -> String
+prettyToolVer (ToolVersion v') = T.unpack $ prettyVer v'
+prettyToolVer (ToolTag t) = show t
 
 
 data InstallOptions = InstallOptions
@@ -788,6 +793,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.|]
                           )
                         pure $ ExitFailure 3
+                      VLeft (V NoDownload) -> do
+
+                        runLogger $ do
+                          case instVer of
+                            Just iver -> $(logError) [i|No available GHC version for #{prettyToolVer iver}|]
+                            Nothing -> $(logError) [i|No available recommended GHC version|]
+                        pure $ ExitFailure 3
                       VLeft e -> do
                         runLogger $ do
                           $(logError) [i|#{e}|]
@@ -806,6 +818,13 @@ Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues
                         runLogger $ $(logWarn)
                           [i|Cabal ver #{prettyVer v} already installed|]
                         pure ExitSuccess
+                      VLeft (V NoDownload) -> do
+
+                        runLogger $ do
+                          case instVer of
+                            Just iver -> $(logError) [i|No available Cabal version for #{prettyToolVer iver}|]
+                            Nothing -> $(logError) [i|No available recommended Cabal version|]
+                        pure $ ExitFailure 4
                       VLeft e -> do
                         runLogger $ do
                           $(logError) [i|#{e}|]
@@ -999,7 +1018,14 @@ fromVersion :: Monad m
             -> Excepts '[TagNotFound] m Version
 fromVersion av Nothing tool =
   getRecommended av tool ?? TagNotFound Recommended tool
-fromVersion _ (Just (ToolVersion v)) _ = pure v
+fromVersion av (Just (ToolVersion v)) _ = do
+  case pvp $ prettyVer v of
+    Left _ -> pure v
+    Right (PVP (major' :|[minor'])) ->
+      case getLatestGHCFor (fromIntegral major') (fromIntegral minor') av of
+        Just v' -> pure v'
+        Nothing -> pure v
+    Right _ -> pure v
 fromVersion av (Just (ToolTag Latest)) tool =
   getLatest av tool ?? TagNotFound Latest tool
 fromVersion av (Just (ToolTag Recommended)) tool =
