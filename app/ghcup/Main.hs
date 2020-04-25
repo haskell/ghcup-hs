@@ -19,6 +19,7 @@ import           GHCup.Types
 import           GHCup.Utils
 import           GHCup.Utils.File
 import           GHCup.Utils.Logger
+import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 import           GHCup.Version
 
@@ -37,7 +38,7 @@ import           Data.List.NonEmpty             (NonEmpty ((:|)))
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
-import           Data.Versions
+import           Data.Versions           hiding ( str )
 import           Data.Void
 import           GHC.IO.Encoding
 import           Haskus.Utils.Variant.Excepts
@@ -92,11 +93,11 @@ data Command
   | ToolRequirements
   | ChangeLog ChangeLogOptions
 
-data ToolVersion = ToolVersion Version
+data ToolVersion = ToolVersion GHCTargetVersion -- target is ignored for cabal
                  | ToolTag Tag
 
 prettyToolVer :: ToolVersion -> String
-prettyToolVer (ToolVersion v') = T.unpack $ prettyVer v'
+prettyToolVer (ToolVersion v') = T.unpack $ prettyTVer v'
 prettyToolVer (ToolTag t) = show t
 
 
@@ -116,15 +117,25 @@ data ListOptions = ListOptions
   }
 
 data RmOptions = RmOptions
-  { ghcVer :: Version
+  { ghcVer :: GHCTargetVersion
   }
 
 
-data CompileCommand = CompileGHC CompileOptions
-                    | CompileCabal CompileOptions
+data CompileCommand = CompileGHC GHCCompileOptions
+                    | CompileCabal CabalCompileOptions
 
 
-data CompileOptions = CompileOptions
+data GHCCompileOptions = GHCCompileOptions
+  { targetVer    :: Version
+  , bootstrapGhc :: Either Version (Path Abs)
+  , jobs         :: Maybe Int
+  , buildConfig  :: Maybe (Path Abs)
+  , patchDir     :: Maybe (Path Abs)
+  , crossTarget  :: Maybe Text
+  , addConfArgs  :: [Text]
+  }
+
+data CabalCompileOptions = CabalCompileOptions
   { targetVer    :: Version
   , bootstrapGhc :: Either Version (Path Abs)
   , jobs         :: Maybe Int
@@ -377,7 +388,7 @@ compileP = subparser
       "ghc"
       (   CompileGHC
       <$> (info
-            (compileOpts <**> helper)
+            (ghcCompileOpts <**> helper)
             (  progDesc "Compile GHC from source"
             <> footerDoc (Just $ text compileFooter)
             )
@@ -387,7 +398,7 @@ compileP = subparser
        "cabal"
        (   CompileCabal
        <$> (info
-             (compileOpts <**> helper)
+             (cabalCompileOpts <**> helper)
              (  progDesc "Compile Cabal from source"
              <> footerDoc (Just $ text compileCabalFooter)
              )
@@ -400,9 +411,19 @@ compileP = subparser
   a self-contained "~/.ghcup/ghc/<ghcver>" directory
   and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".
 
+  This also allows building a cross-compiler. Consult the documentation
+  first: <https://gitlab.haskell.org/ghc/ghc/-/wikis/building/cross-compiling#configuring-the-build>
+
+ENV variables:
+  Various toolchain variables will be passed onto the ghc build system,
+  such as: CC, LD, OBJDUMP, NM, AR, RANLIB.
+
 Examples:
   ghcup compile ghc -j 4 -v 8.4.2 -b 8.2.2
-  ghcup compile ghc -j 4 -v 8.4.2 -b /usr/bin/ghc-8.2.2|]
+  # specify path to bootstrap ghc
+  ghcup compile ghc -j 4 -v 8.4.2 -b /usr/bin/ghc-8.2.2
+  # build cross compiler
+  ghcup compile ghc -j 4 -v 8.4.2 -b 8.2.2 -x armv7-unknown-linux-gnueabihf --config $(pwd)/build.mk -- --enable-unregisterised|]
   compileCabalFooter = [i|Discussion:
   Compiles and installs the specified Cabal version
   into "~/.ghcup/bin".
@@ -412,10 +433,24 @@ Examples:
   ghcup compile cabal -j 4 -v 3.2.0.0 -b /usr/bin/ghc-8.6.5|]
 
 
+ghcCompileOpts :: Parser GHCCompileOptions
+ghcCompileOpts =
+  (\CabalCompileOptions {..} crossTarget addConfArgs -> GHCCompileOptions { .. }
+    )
+    <$> cabalCompileOpts
+    <*> (optional
+          (option
+            str
+            (short 'x' <> long "cross-target" <> metavar "CROSS_TARGET" <> help
+              "Build cross-compiler for this platform"
+            )
+          )
+        )
+    <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to configure, prefix with '-- ' (longopts)"))
 
-compileOpts :: Parser CompileOptions
-compileOpts =
-  CompileOptions
+cabalCompileOpts :: Parser CabalCompileOptions
+cabalCompileOpts =
+  CabalCompileOptions
     <$> (option
           (eitherReader
             (bimap (const "Not a valid version") id . version . T.pack)
@@ -490,12 +525,12 @@ toolVersionArgument =
   argument (eitherReader toolVersionEither) (metavar "VERSION|TAG")
 
 
-versionArgument :: Parser Version
-versionArgument = argument (eitherReader versionEither) (metavar "VERSION")
+versionArgument :: Parser GHCTargetVersion
+versionArgument = argument (eitherReader tVersionEither) (metavar "VERSION")
 
-versionParser :: Parser Version
+versionParser :: Parser GHCTargetVersion
 versionParser = option
-  (eitherReader versionEither)
+  (eitherReader tVersionEither)
   (short 'v' <> long "version" <> metavar "VERSION" <> help "The target version"
   )
 
@@ -508,16 +543,15 @@ tagEither s' = case fmap toLower s' of
                                   Left  _ -> Left [i|Invalid PVP version for base #{ver'}|]
   other         -> Left ([i|Unknown tag #{other}|])
 
-versionEither :: String -> Either String Version
-versionEither s' =
-  -- 'version' is a bit too lax and will parse typoed tags
-                   case readMaybe ((: []) . head $ s') :: Maybe Int of
-  Just _  -> bimap (const "Not a valid version") id . version . T.pack $ s'
-  Nothing -> Left "Not a valid version"
+
+tVersionEither :: String -> Either String GHCTargetVersion
+tVersionEither =
+  bimap (const "Not a valid version") id . MP.parse ghcTargetVerP "" . T.pack
+
 
 toolVersionEither :: String -> Either String ToolVersion
 toolVersionEither s' =
-  bimap id ToolTag (tagEither s') <|> bimap id ToolVersion (versionEither s')
+  bimap id ToolTag (tagEither s') <|> bimap id ToolVersion (tVersionEither s')
 
 
 toolParser :: String -> Either String Tool
@@ -611,18 +645,7 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
         MP.setInput rest
         pure v
 
-  choice' []       = fail "Empty list"
-  choice' [x     ] = x
-  choice' (x : xs) = MP.try x <|> choice' xs
 
-  parseUntil :: MP.Parsec Void Text Text -> MP.Parsec Void Text Text
-  parseUntil p = do
-    (MP.try (MP.lookAhead p) $> mempty)
-      <|> (do
-            c  <- T.singleton <$> MP.anySingle
-            c2 <- parseUntil p
-            pure (c `mappend` c2)
-          )
 
 
 toSettings :: Options -> Settings
@@ -834,7 +857,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Install (InstallOptions {..}) ->
               (runInstTool $ do
                   v <- liftE $ fromVersion dls instVer GHC
-                  liftE $ installGHCBin dls v instPlatform
+                  liftE $ installGHCBin dls (_tvVersion v) instPlatform -- FIXME: ugly sharing of tool version
                 )
                 >>= \case
                       VRight _ -> do
@@ -866,7 +889,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
             InstallCabal (InstallOptions {..}) ->
               (runInstTool $ do
                   v <- liftE $ fromVersion dls instVer Cabal
-                  liftE $ installCabalBin dls v instPlatform
+                  liftE $ installCabalBin dls (_tvVersion v) instPlatform -- FIXME: ugly sharing of tool version
                 )
                 >>= \case
                       VRight _ -> do
@@ -895,10 +918,10 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   liftE $ setGHC v SetGHCOnly
                 )
                 >>= \case
-                      VRight v -> do
+                      VRight (GHCTargetVersion{..}) -> do
                         runLogger
                           $ $(logInfo)
-                              [i|GHC #{prettyVer v} successfully set as default version|]
+                              [i|GHC #{prettyVer _tvVersion} successfully set as default version#{maybe "" (" for cross target " <>) _tvTarget}|]
                         pure ExitSuccess
                       VLeft e -> do
                         runLogger ($(logError) [i|#{e}|])
@@ -938,13 +961,14 @@ Make sure to clean up #{tmpdir} afterwards.|])
                         runLogger ($(logError) [i|#{e}|])
                         pure $ ExitFailure 8
 
-            Compile (CompileGHC CompileOptions {..}) ->
+            Compile (CompileGHC GHCCompileOptions {..}) ->
               (runCompileGHC $ liftE $ compileGHC dls
-                                                  targetVer
+                                                  (GHCTargetVersion crossTarget targetVer)
                                                   bootstrapGhc
                                                   jobs
                                                   buildConfig
                                                   patchDir
+                                                  addConfArgs
                 )
                 >>= \case
                       VRight _ -> do
@@ -957,7 +981,8 @@ Make sure to clean up #{tmpdir} afterwards.|])
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
                         case keepDirs of
-                          Never -> runLogger ($(logError) [i|Build failed with #{e}|])
+                          Never -> runLogger ($(logError) [i|Build failed with #{e}
+Check the logs at ~/.ghcup/logs|])
                           _ -> runLogger ($(logError) [i|Build failed with #{e}
 Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
 Make sure to clean up #{tmpdir} afterwards.|])
@@ -966,7 +991,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                         runLogger ($(logError) [i|#{e}|])
                         pure $ ExitFailure 9
 
-            Compile (CompileCabal CompileOptions {..}) ->
+            Compile (CompileCabal CabalCompileOptions {..}) ->
               (runCompileCabal $ do
                   liftE $ compileCabal dls targetVer bootstrapGhc jobs patchDir
                 )
@@ -1037,7 +1062,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   ver' = maybe
                     (Right Latest)
                     (\case
-                      ToolVersion tv -> Left tv
+                      ToolVersion tv -> Left (_tvVersion tv) -- FIXME: ugly sharing of ToolVersion
                       ToolTag     t  -> Right t
                     )
                     clToolVer
@@ -1074,23 +1099,23 @@ fromVersion :: Monad m
             => GHCupDownloads
             -> Maybe ToolVersion
             -> Tool
-            -> Excepts '[TagNotFound] m Version
+            -> Excepts '[TagNotFound] m GHCTargetVersion
 fromVersion av Nothing tool =
-  getRecommended av tool ?? TagNotFound Recommended tool
+  mkTVer <$> getRecommended av tool ?? TagNotFound Recommended tool
 fromVersion av (Just (ToolVersion v)) _ = do
-  case pvp $ prettyVer v of
+  case pvp $ prettyVer (_tvVersion v) of
     Left _ -> pure v
     Right (PVP (major' :|[minor'])) ->
       case getLatestGHCFor (fromIntegral major') (fromIntegral minor') av of
-        Just v' -> pure v'
+        Just v' -> pure $ GHCTargetVersion (_tvTarget v) v'
         Nothing -> pure v
     Right _ -> pure v
 fromVersion av (Just (ToolTag Latest)) tool =
-  getLatest av tool ?? TagNotFound Latest tool
+  mkTVer <$> getLatest av tool ?? TagNotFound Latest tool
 fromVersion av (Just (ToolTag Recommended)) tool =
-  getRecommended av tool ?? TagNotFound Recommended tool
+  mkTVer <$> getRecommended av tool ?? TagNotFound Recommended tool
 fromVersion av (Just (ToolTag (Base pvp''))) GHC =
-  getLatestBaseVersion av pvp'' ?? TagNotFound (Base pvp'') GHC
+  mkTVer <$> getLatestBaseVersion av pvp'' ?? TagNotFound (Base pvp'') GHC
 fromVersion _ (Just (ToolTag t')) tool =
   throwE $ TagNotFound t' tool
 
@@ -1122,7 +1147,9 @@ printListResult raw lr = do
                     | otherwise  -> (color Red "✗")
               in  (if raw then [] else [marks])
                     ++ [ fmap toLower . show $ lTool
-                       , T.unpack . prettyVer $ lVer
+                       , case lCross of
+                           Nothing -> T.unpack . prettyVer $ lVer
+                           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
                        , intercalate "," $ (fmap printTag $ sort lTag)
                        , intercalate ","
                        $  (if fromSrc then [color' Blue "compiled"] else mempty)

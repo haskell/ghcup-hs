@@ -1,10 +1,13 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 module GHCup.Utils.Dirs where
 
 
+import           GHCup.Types
 import           GHCup.Types.JSON               ( )
+import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 
 import           Control.Applicative
@@ -13,7 +16,6 @@ import           Control.Monad
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Maybe
-import           Data.Versions
 import           HPath
 import           HPath.IO
 import           Optics
@@ -27,8 +29,10 @@ import           System.Posix.Env.ByteString    ( getEnv
 import           System.Posix.Temp.ByteString   ( mkdtemp )
 
 import qualified Data.ByteString.UTF8          as UTF8
+import qualified Data.Text.Encoding            as E
 import qualified System.Posix.FilePath         as FP
 import qualified System.Posix.User             as PU
+import qualified Text.Megaparsec               as MP
 
 
 
@@ -37,6 +41,7 @@ import qualified System.Posix.User             as PU
     -------------------------
 
 
+-- | ~/.ghcup by default
 ghcupBaseDir :: IO (Path Abs)
 ghcupBaseDir = do
   bdir <- getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
@@ -44,14 +49,28 @@ ghcupBaseDir = do
     Nothing -> liftIO getHomeDirectory
   pure (bdir </> [rel|.ghcup|])
 
+
+-- | ~/.ghcup/ghc by default.
 ghcupGHCBaseDir :: IO (Path Abs)
 ghcupGHCBaseDir = ghcupBaseDir <&> (</> [rel|ghc|])
 
-ghcupGHCDir :: Version -> IO (Path Abs)
+
+-- | Gets '~/.ghcup/ghc/<ghcupGHCDir>'.
+-- The dir may be of the form
+--   * armv7-unknown-linux-gnueabihf-8.8.3
+--   * 8.8.4
+ghcupGHCDir :: GHCTargetVersion -> IO (Path Abs)
 ghcupGHCDir ver = do
   ghcbasedir <- ghcupGHCBaseDir
-  verdir     <- parseRel (verToBS ver)
+  verdir     <- parseRel $ E.encodeUtf8 (prettyTVer ver)
   pure (ghcbasedir </> verdir)
+
+
+-- | See 'ghcupToolParser'.
+parseGHCupGHCDir :: MonadThrow m => Path Rel -> m GHCTargetVersion
+parseGHCupGHCDir (toFilePath -> f) = do
+  fp <- throwEither $ E.decodeUtf8' f
+  throwEither $ MP.parse ghcTargetVerP "" fp
 
 
 ghcupBinDir :: IO (Path Abs)

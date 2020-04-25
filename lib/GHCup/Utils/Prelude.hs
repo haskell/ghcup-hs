@@ -218,6 +218,12 @@ throwEither a = case a of
   Right r -> pure r
 
 
+throwEither' :: (Exception a, MonadThrow m) => a -> Either x b -> m b
+throwEither' e eth = case eth of
+  Left  _ -> throwM e
+  Right r -> pure r
+
+
 verToBS :: Version -> ByteString
 verToBS = E.encodeUtf8 . prettyVer
 

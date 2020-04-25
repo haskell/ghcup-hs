@@ -11,6 +11,8 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
    * [Installation](#installation)
    * [Usage](#usage)
      * [Manpages](#manpages)
+     * [Shell-completion](#shell-completion)
+     * [Cross support](#cross-support)
    * [Design goals](#design-goals)
    * [How](#how)
    * [Known users](#known-users)
@@ -76,6 +78,17 @@ For bash: install `shell-completions/bash`
 as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
 and make sure your bashrc sources the startup script
 (`/usr/share/bash-completion/bash_completion` on some distros).
+
+### Cross support
+
+ghcup can compile and install a cross GHC for any target. However, this
+requires that the build host has a complete cross toolchain and various
+libraries installed for the target platform.
+
+Consult the GHC documentation on the [prerequisites](https://gitlab.haskell.org/ghc/ghc/-/wikis/building/cross-compiling#tools-to-install).
+For distributions with non-standard locations of cross toolchain and
+libraries, this may need some tweaking of `build.mk` or configure args.
+See `ghcup compile ghc --help` for further information.
 
 ## Design goals
 

@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 
 module GHCup.Utils
@@ -19,7 +20,9 @@ import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.File
+import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
+import           GHCup.Utils.String.QQ
 
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -29,11 +32,12 @@ import           Control.Monad.Fail             ( MonadFail )
 #endif
 import           Control.Monad.Logger
 import           Control.Monad.Reader
-import           Data.Attoparsec.ByteString
 import           Data.ByteString                ( ByteString )
+import           Data.Either
 import           Data.List
 import           Data.Maybe
 import           Data.String.Interpolate
+import           Data.Text                      ( Text )
 import           Data.Versions
 import           Data.Word8
 import           GHC.IO.Exception
@@ -51,6 +55,7 @@ import           System.Posix.FilePath          ( getSearchPath
                                                 , takeFileName
                                                 )
 import           System.Posix.Files.ByteString  ( readSymbolicLink )
+import           Text.Regex.Posix
 import           URI.ByteString
 
 import qualified Codec.Archive.Tar             as Tar
@@ -60,7 +65,7 @@ import qualified Codec.Compression.Lzma        as Lzma
 import qualified Data.ByteString               as B
 import qualified Data.Map.Strict               as Map
 import qualified Data.Text.Encoding            as E
-
+import qualified Text.Megaparsec               as MP
 
 
 
@@ -73,64 +78,69 @@ import qualified Data.Text.Encoding            as E
 
 -- | The symlink destination of a ghc tool.
 ghcLinkDestination :: ByteString -- ^ the tool, such as 'ghc', 'haddock' etc.
-                   -> Version
+                   -> GHCTargetVersion
                    -> ByteString
-ghcLinkDestination tool ver = "../ghc/" <> verToBS ver <> "/bin/" <> tool
-
-
--- | Extract the version part of the result of `ghcLinkDestination`.
-ghcLinkVersion :: MonadThrow m => ByteString -> m Version
-ghcLinkVersion = either (throwM . ParseError) pure . parseOnly parser
- where
-  parser    = string "../ghc/" *> verParser <* string "/bin/ghc"
-  verParser = many1' (notWord8 _slash) >>= \t ->
-    case
-        version (decUTF8Safe $ B.pack t)
-      of
-        Left  e -> fail $ show e
-        Right r -> pure r
+ghcLinkDestination tool ver =
+  "../ghc/" <> E.encodeUtf8 (prettyTVer ver) <> "/bin/" <> tool
 
 
 -- e.g. ghc-8.6.5
-rmMinorSymlinks :: (MonadIO m, MonadLogger m) => Version -> m ()
-rmMinorSymlinks ver = do
+rmMinorSymlinks :: (MonadIO m, MonadLogger m) => GHCTargetVersion -> m ()
+rmMinorSymlinks GHCTargetVersion {..} = do
   bindir <- liftIO $ ghcupBinDir
-  files  <- liftIO $ getDirsFiles' bindir
-  let myfiles =
-        filter (\x -> ("-" <> verToBS ver) `B.isSuffixOf` toFilePath x) files
-  forM_ myfiles $ \f -> do
+
+  files  <- liftIO $ findFiles'
+    bindir
+    (  maybe mempty (\x -> MP.chunk (x <> "-")) _tvTarget
+    *> parseUntil1 (MP.chunk $ prettyVer _tvVersion)
+    *> (MP.chunk $ prettyVer _tvVersion)
+    *> MP.eof
+    )
+
+  forM_ files $ \f -> do
     let fullF = (bindir </> f)
     $(logDebug) [i|rm -f #{toFilePath fullF}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
 
--- E.g. ghc, if this version is the set one.
--- This reads `ghcupGHCDir`.
+
+-- Removes the set ghc version for the given target, if any.
 rmPlain :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
-        => Version
+  => Maybe Text -- ^ target
         -> Excepts '[NotInstalled] m ()
-rmPlain ver = do
-  files  <- liftE $ ghcToolFiles ver
-  bindir <- liftIO $ ghcupBinDir
-  forM_ files $ \f -> do
-    let fullF = (bindir </> f)
-    lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
-    liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
-  -- old ghcup
-  let hdc_file = (bindir </> [rel|haddock-ghc|])
-  lift $ $(logDebug) [i|rm -f #{toFilePath hdc_file}|]
-  liftIO $ hideError doesNotExistErrorType $ deleteFile hdc_file
+rmPlain target = do
+  mtv <- ghcSet target
+  forM_ mtv $ \tv -> do
+    files  <- liftE $ ghcToolFiles tv
+    bindir <- liftIO $ ghcupBinDir
+    forM_ files $ \f -> do
+      let fullF = (bindir </> f)
+      lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
+      liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
+    -- old ghcup
+    let hdc_file = (bindir </> [rel|haddock-ghc|])
+    lift $ $(logDebug) [i|rm -f #{toFilePath hdc_file}|]
+    liftIO $ hideError doesNotExistErrorType $ deleteFile hdc_file
+
 
 -- e.g. ghc-8.6
-rmMajorSymlinks :: (MonadLogger m, MonadIO m) => Version -> m ()
-rmMajorSymlinks ver = do
-  (mj, mi) <- liftIO $ getGHCMajor ver
-  let v' = E.encodeUtf8 $ intToText mj <> "." <> intToText mi
+rmMajorSymlinks :: (MonadThrow m, MonadLogger m, MonadIO m)
+                => GHCTargetVersion
+                -> m ()
+rmMajorSymlinks GHCTargetVersion {..} = do
+  (mj, mi) <- getMajorMinorV _tvVersion
+  let v' = intToText mj <> "." <> intToText mi
 
   bindir <- liftIO ghcupBinDir
 
-  files  <- liftIO $ getDirsFiles' bindir
-  let myfiles = filter (\x -> ("-" <> v') `B.isSuffixOf` toFilePath x) files
-  forM_ myfiles $ \f -> do
+  files  <- liftIO $ findFiles'
+    bindir
+    (  maybe mempty (\x -> MP.chunk (x <> "-")) _tvTarget
+    *> parseUntil1 (MP.chunk v')
+    *> MP.chunk v'
+    *> MP.eof
+    )
+
+  forM_ files $ \f -> do
     let fullF = (bindir </> f)
     $(logDebug) [i|rm -f #{toFilePath fullF}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
@@ -143,33 +153,61 @@ rmMajorSymlinks ver = do
     -----------------------------------
 
 
-toolAlreadyInstalled :: Tool -> Version -> IO Bool
-toolAlreadyInstalled tool ver = case tool of
-  GHC   -> ghcInstalled ver
-  Cabal -> cabalInstalled ver
-  GHCup -> pure True
-
-
-ghcInstalled :: Version -> IO Bool
+ghcInstalled :: GHCTargetVersion -> IO Bool
 ghcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
   doesDirectoryExist ghcdir
 
 
-ghcSrcInstalled :: Version -> IO Bool
+ghcSrcInstalled :: GHCTargetVersion -> IO Bool
 ghcSrcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
   doesFileExist (ghcdir </> ghcUpSrcBuiltFile)
 
 
-ghcSet :: (MonadIO m) => m (Maybe Version)
-ghcSet = do
-  ghcBin <- (</> [rel|ghc|]) <$> liftIO ghcupBinDir
+ghcSet :: (MonadThrow m, MonadIO m)
+       => Maybe Text   -- ^ the target of the GHC version, if any
+                       --  (e.g. armv7-unknown-linux-gnueabihf)
+       -> m (Maybe GHCTargetVersion)
+ghcSet mtarget = do
+  ghc    <- parseRel $ E.encodeUtf8 (maybe "ghc" (<> "-ghc") mtarget)
+  ghcBin <- (</> ghc) <$> liftIO ghcupBinDir
 
   -- link destination is of the form ../ghc/<ver>/bin/ghc
+  -- for old ghcup, it is ../ghc/<ver>/bin/ghc-<ver>
   liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
     link <- readSymbolicLink $ toFilePath ghcBin
     Just <$> ghcLinkVersion link
+ where
+  ghcLinkVersion :: MonadThrow m => ByteString -> m GHCTargetVersion
+  ghcLinkVersion bs = do
+    t <- throwEither $ E.decodeUtf8' bs
+    throwEither $ MP.parse parser "" t
+   where
+    parser =
+      MP.chunk "../ghc/"
+        *> (do
+             r    <- parseUntil1 (MP.chunk "/")
+             rest <- MP.getInput
+             MP.setInput r
+             x <- ghcTargetVerP
+             MP.setInput rest
+             pure x
+           )
+        <* MP.chunk "/"
+        <* MP.takeRest
+        <* MP.eof
+
+
+-- | Get all installed GHCs by reading ~/.ghcup/ghc/<dir>.
+-- If a dir cannot be parsed, returns left.
+getInstalledGHCs :: MonadIO m => m [Either (Path Rel) GHCTargetVersion]
+getInstalledGHCs = do
+  ghcdir <- liftIO $ ghcupGHCBaseDir
+  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ getDirsFiles' ghcdir
+  forM fs $ \f -> case parseGHCupGHCDir f of
+    Right r -> pure $ Right r
+    Left  _ -> pure $ Left f
 
 
 cabalInstalled :: Version -> IO Bool
@@ -193,33 +231,36 @@ cabalSet = do
     -----------------------------------------
 
 
--- | We assume GHC is in semver format. I hope it is.
-getGHCMajor :: MonadThrow m => Version -> m (Int, Int)
-getGHCMajor ver = do
-  SemVer {..} <- throwEither (semver $ prettyVer ver)
-  pure (fromIntegral _svMajor, fromIntegral _svMinor)
+getMajorMinorV :: MonadThrow m => Version -> m (Int, Int)
+getMajorMinorV Version {..} = case _vChunks of
+  ([Digits x] : [Digits y] : _) -> pure (fromIntegral x, fromIntegral y)
+  _ -> throwM $ ParseError "Could not parse X.Y from version"
+
+
+matchMajor :: Version -> Int -> Int -> Bool
+matchMajor v' major' minor' = case getMajorMinorV v' of
+  Just (x, y) -> x == major' && y == minor'
+  Nothing     -> False
 
 
 -- | Get the latest installed full GHC version that satisfies X.Y.
 -- This reads `ghcupGHCBaseDir`.
 getGHCForMajor :: (MonadIO m, MonadThrow m)
-               => Int -- ^ major version component
-               -> Int -- ^ minor version component
-               -> m (Maybe Version)
-getGHCForMajor major' minor' = do
-  p       <- liftIO $ ghcupGHCBaseDir
-  ghcs    <- liftIO $ getDirsFiles' p
-  semvers <- forM ghcs $ \ghc ->
-    throwEither . semver =<< (throwEither . E.decodeUtf8' . toFilePath $ ghc)
-  mapM (throwEither . version)
-    . fmap prettySemVer
+               => Int        -- ^ major version component
+               -> Int        -- ^ minor version component
+               -> Maybe Text -- ^ the target triple
+               -> m (Maybe GHCTargetVersion)
+getGHCForMajor major' minor' mt = do
+  ghcs <- rights <$> getInstalledGHCs
+
+  pure
     . lastMay
-    . sort
+    . sortBy (\x y -> compare (_tvVersion x) (_tvVersion y))
     . filter
-        (\SemVer {..} ->
-          fromIntegral _svMajor == major' && fromIntegral _svMinor == minor'
+        (\GHCTargetVersion {..} ->
+          _tvTarget == mt && matchMajor _tvVersion major' minor'
         )
-    $ semvers
+    $ ghcs
 
 
 -- | Get the latest available ghc for X.Y major version.
@@ -228,14 +269,10 @@ getLatestGHCFor :: Int -- ^ major version component
                 -> GHCupDownloads
                 -> Maybe Version
 getLatestGHCFor major' minor' dls = do
-  join . fmap
-      (lastMay . filter
-        (\v -> case semver $ prettyVer v of
-                 Right SemVer{..} -> fromIntegral _svMajor == major' && fromIntegral _svMinor == minor'
-                 Left _ -> False
-        )
-      )
-    . preview (ix GHC % to Map.keys) $ dls
+  join
+    . fmap (lastMay . filter (\v -> matchMajor v major' minor'))
+    . preview (ix GHC % to Map.keys)
+    $ dls
 
 
 
@@ -282,7 +319,8 @@ unpackToDir dest av = do
 
 -- | Get the tool version that has this tag. If multiple have it,
 -- picks the greatest version.
-getTagged :: Tag -> AffineFold (Map.Map Version VersionInfo) (Version, VersionInfo)
+getTagged :: Tag
+          -> AffineFold (Map.Map Version VersionInfo) (Version, VersionInfo)
 getTagged tag =
   ( to (Map.filter (\VersionInfo {..} -> elem tag _viTags))
   % to Map.toDescList
@@ -298,7 +336,8 @@ getRecommended av tool = headOf (ix tool % getTagged Recommended % to fst) $ av
 
 -- | Gets the latest GHC with a given base version.
 getLatestBaseVersion :: GHCupDownloads -> PVP -> Maybe Version
-getLatestBaseVersion av pvpVer = headOf (ix GHC % getTagged (Base pvpVer) % to fst) av
+getLatestBaseVersion av pvpVer =
+  headOf (ix GHC % getTagged (Base pvpVer) % to fst) av
 
 
 
@@ -328,12 +367,12 @@ urlBaseName = parseRel . snd . B.breakEnd (== _slash) . urlDecode False
 
 
 -- Get tool files from '~/.ghcup/bin/ghc/<ver>/bin/*'
--- while ignoring *-<ver> symlinks.
+-- while ignoring *-<ver> symlinks and accounting for cross triple prefix.
 --
 -- Returns unversioned relative files, e.g.:
 --   ["hsc2hs","haddock","hpc","runhaskell","ghc","ghc-pkg","ghci","runghc","hp2ps"]
 ghcToolFiles :: (MonadThrow m, MonadFail m, MonadIO m)
-             => Version
+             => GHCTargetVersion
              -> Excepts '[NotInstalled] m [Path Rel]
 ghcToolFiles ver = do
   ghcdir <- liftIO $ ghcupGHCDir ver
@@ -341,18 +380,28 @@ ghcToolFiles ver = do
 
   -- fail if ghc is not installed
   whenM (fmap not $ liftIO $ doesDirectoryExist ghcdir)
-        (throwE (NotInstalled GHC ver))
+        (throwE (NotInstalled GHC (prettyTVer ver)))
 
-  files         <- liftIO $ getDirsFiles' bindir
+  files    <- liftIO $ getDirsFiles' bindir
   -- figure out the <ver> suffix, because this might not be `Version` for
   -- alpha/rc releases, but x.y.a.somedate.
+
+  -- for cross, this won't be "ghc", but e.g.
+  -- "armv7-unknown-linux-gnueabihf-ghc"
+  [ghcbin] <- liftIO $ findFiles
+    bindir
+    (makeRegexOpts compExtended
+                   execBlank
+                   ([s|^([a-zA-Z0-9_-]*[a-zA-Z0-9_]-)?ghc$|] :: ByteString)
+    )
+
   (Just symver) <-
-    (B.stripPrefix "ghc-" . takeFileName)
-      <$> (liftIO $ readSymbolicLink $ toFilePath (bindir </> [rel|ghc|]))
+    (B.stripPrefix (toFilePath ghcbin <> "-") . takeFileName)
+      <$> (liftIO $ readSymbolicLink $ toFilePath (bindir </> ghcbin))
   when (B.null symver)
        (throwIO $ userError $ "Fatal: ghc symlink target is broken")
 
-  pure $ filter (\x -> not $ symver `B.isSuffixOf` toFilePath x) files
+  pure . filter (\x -> not $ symver `B.isSuffixOf` toFilePath x) $ files
 
 
 -- | This file, when residing in ~/.ghcup/ghc/<ver>/ signals that
@@ -403,13 +452,8 @@ darwinNotarization _ _ = pure $ Right ()
 getChangeLog :: GHCupDownloads -> Tool -> Either Version Tag -> Maybe URI
 getChangeLog dls tool (Left v') =
   preview (ix tool % ix v' % viChangeLog % _Just) dls
-getChangeLog dls tool (Right tag) = preview
-  ( ix tool
-  % getTagged tag
-  % to snd
-  % viChangeLog
-  % _Just
-  ) dls
+getChangeLog dls tool (Right tag) =
+  preview (ix tool % getTagged tag % to snd % viChangeLog % _Just) dls
 
 
 -- | Execute a build action while potentially cleaning up:

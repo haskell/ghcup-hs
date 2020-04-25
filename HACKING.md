@@ -55,3 +55,10 @@ Anything dealing with ghcup specific directories is in
 Download information on where to fetch bindists from is in
 `GHCup.Data.GHCupDownloads`.
 
+## Major refactors
+
+1. First major refactor included adding cross support. This added
+   `GHCTargetVersion`, which includes the target in addition to the version.
+   Most of the `Version` parameters to functions had to be replaced with
+   that and ensured the logic is consistent for cross and non-cross
+   installs.

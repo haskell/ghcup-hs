@@ -41,9 +41,6 @@ common ascii-string
 common async
   build-depends: async >=0.8
 
-common attoparsec
-  build-depends: attoparsec >=0.13
-
 common base
   build-depends: base >=4.12 && <5
 
@@ -230,7 +227,6 @@ library
     , aeson
     , ascii-string
     , async
-    , attoparsec
     , binary
     , bytestring
     , bz2
@@ -248,6 +244,7 @@ library
     , hpath-posix
     , language-bash
     , lzma
+    , megaparsec
     , monad-logger
     , mtl
     , optics
@@ -295,6 +292,7 @@ library
     GHCup.Utils.Dirs
     GHCup.Utils.File
     GHCup.Utils.Logger
+    GHCup.Utils.MegaParsec
     GHCup.Utils.Prelude
     GHCup.Utils.String.QQ
     GHCup.Utils.Version.QQ

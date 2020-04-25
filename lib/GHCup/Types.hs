@@ -1,5 +1,6 @@
-{-# LANGUAGE CPP           #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module GHCup.Types where
 
@@ -190,3 +191,23 @@ data PlatformRequest = PlatformRequest
   , _rVersion  :: Maybe Versioning
   }
   deriving (Eq, Show)
+
+
+-- | A GHC identified by the target platform triple
+-- and the version.
+data GHCTargetVersion = GHCTargetVersion
+  { _tvTarget  :: Maybe Text
+  , _tvVersion :: Version
+  }
+  deriving (Ord, Eq, Show)
+
+
+mkTVer :: Version -> GHCTargetVersion
+mkTVer = GHCTargetVersion Nothing
+
+
+-- | Assembles a path of the form: <target-triple>-<version>
+prettyTVer :: GHCTargetVersion -> Text
+prettyTVer (GHCTargetVersion (Just t) v') = t <> "-" <> prettyVer v'
+prettyTVer (GHCTargetVersion Nothing  v') = prettyVer v'
+

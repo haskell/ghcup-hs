@@ -41,6 +41,7 @@ import           Data.ByteString                ( ByteString )
 import           Data.List
 import           Data.Maybe
 import           Data.String.Interpolate
+import           Data.Text                      ( Text )
 import           Data.Versions
 import           Data.Word8
 import           GHC.IO.Exception
@@ -53,11 +54,14 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.IO.Error
+import           System.Posix.Env.ByteString    ( getEnvironment )
 import           System.Posix.FilePath          ( getSearchPath )
 import           System.Posix.Files.ByteString
 
 import qualified Data.ByteString               as B
+import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
+import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 
 
@@ -94,8 +98,9 @@ installGHCBin :: ( MonadFail m
                    m
                    ()
 installGHCBin bDls ver mpfReq = do
+  let tver = (mkTVer ver)
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
-  whenM (liftIO $ toolAlreadyInstalled GHC ver)
+  whenM (liftIO $ ghcInstalled tver)
     $ (throwE $ AlreadyInstalled GHC ver)
   Settings {..}                <- lift ask
   pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
@@ -110,14 +115,14 @@ installGHCBin bDls ver mpfReq = do
   void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
   -- prepare paths
-  ghcdir <- liftIO $ ghcupGHCDir ver
+  ghcdir <- liftIO $ ghcupGHCDir tver
 
   -- the subdir of the archive where we do the work
   let workdir = maybe tmpUnpack (tmpUnpack </>) (view dlSubdir dlinfo)
 
   liftE $ runBuildAction tmpUnpack (Just ghcdir) (installGHC' workdir ghcdir)
 
-  liftE $ postGHCInstall ver
+  liftE $ postGHCInstall tver
 
  where
   -- | Install an unpacked GHC distribution. This only deals with the GHC build system and nothing else.
@@ -161,15 +166,15 @@ installCabalBin :: ( MonadMask m
                      ()
 installCabalBin bDls ver mpfReq = do
   lift $ $(logDebug) [i|Requested to install cabal version #{ver}|]
-  Settings {..} <- lift ask
+  Settings {..}                <- lift ask
   pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
 
   -- download (or use cached version)
-  dlinfo        <- lE $ getDownloadInfo Cabal ver pfreq bDls
-  dl            <- liftE $ downloadCached dlinfo Nothing
+  dlinfo                       <- lE $ getDownloadInfo Cabal ver pfreq bDls
+  dl                           <- liftE $ downloadCached dlinfo Nothing
 
   -- unpack
-  tmpUnpack     <- lift withGHCupTmpDir
+  tmpUnpack                    <- lift withGHCupTmpDir
   liftE $ unpackToDir tmpUnpack dl
   void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
@@ -215,11 +220,11 @@ installCabalBin bDls ver mpfReq = do
 -- Additionally creates a ~/.ghcup/share -> ~/.ghcup/ghc/<ver>/share symlink
 -- for `SetGHCOnly` constructor.
 setGHC :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
-       => Version
+       => GHCTargetVersion
        -> SetGHC
-       -> Excepts '[NotInstalled] m Version
+       -> Excepts '[NotInstalled] m GHCTargetVersion
 setGHC ver sghc = do
-  let verBS = verToBS ver
+  let verBS = verToBS (_tvVersion ver)
   ghcdir <- liftIO $ ghcupGHCDir ver
 
   -- symlink destination
@@ -229,7 +234,7 @@ setGHC ver sghc = do
   -- first delete the old symlinks (this fixes compatibility issues
   -- with old ghcup)
   case sghc of
-    SetGHCOnly -> liftE $ rmPlain ver
+    SetGHCOnly -> liftE $ rmPlain (_tvTarget ver)
     SetGHC_XY  -> lift $ rmMajorSymlinks ver
     SetGHC_XYZ -> lift $ rmMinorSymlinks ver
 
@@ -239,9 +244,8 @@ setGHC ver sghc = do
     targetFile <- case sghc of
       SetGHCOnly -> pure file
       SetGHC_XY  -> do
-        major' <-
-          (\(mj, mi) -> E.encodeUtf8 $ intToText mj <> "." <> intToText mi)
-            <$> getGHCMajor ver
+        major' <- (\(mj, mi) -> E.encodeUtf8 $ intToText mj <> "." <> intToText mi)
+                     <$> getMajorMinorV (_tvVersion ver)
         parseRel (toFilePath file <> B.singleton _hyphen <> major')
       SetGHC_XYZ -> parseRel (toFilePath file <> B.singleton _hyphen <> verBS)
 
@@ -252,7 +256,7 @@ setGHC ver sghc = do
     liftIO $ createSymlink fullF destL
 
   -- create symlink for share dir
-  lift $ symlinkShareDir ghcdir verBS
+  when (isNothing . _tvTarget $ ver) $ lift $ symlinkShareDir ghcdir verBS
 
   pure ver
 
@@ -292,6 +296,7 @@ data ListCriteria = ListInstalled
 data ListResult = ListResult
   { lTool      :: Tool
   , lVer       :: Version
+  , lCross     :: Maybe Text -- ^ currently only for GHC
   , lTag       :: [Tag]
   , lInstalled :: Bool
   , lSet       :: Bool -- ^ currently active version
@@ -309,7 +314,7 @@ availableToolVersions av tool = view
 
 -- | List all versions from the download info, as well as stray
 -- versions.
-listVersions :: (MonadLogger m, MonadIO m)
+listVersions :: (MonadThrow m, MonadLogger m, MonadIO m)
              => GHCupDownloads
              -> Maybe Tool
              -> Maybe ListCriteria
@@ -333,44 +338,58 @@ listVersions av lt criteria = case lt of
     pure (ghcvers <> cabalvers <> ghcupvers)
 
  where
-  strayGHCs :: (MonadLogger m, MonadIO m)
+  strayGHCs :: (MonadThrow m, MonadLogger m, MonadIO m)
             => Map.Map Version [Tag]
             -> m [ListResult]
   strayGHCs avTools = do
-    ghcdir <- liftIO $ ghcupGHCBaseDir
-    fs     <- liftIO $ liftIO $ hideErrorDef [NoSuchThing] [] $ getDirsFiles' ghcdir
-    fmap catMaybes $ forM fs $ \(toFilePath -> f) -> do
-      case version . decUTF8Safe $ f of
-        Right v' -> do
-          case Map.lookup v' avTools of
-            Just _  -> pure Nothing
-            Nothing -> do
-              lSet    <- fmap (maybe False (== v')) $ ghcSet
-              fromSrc <- liftIO $ ghcSrcInstalled v'
-              pure $ Just $ ListResult
-                { lTool      = GHC
-                , lVer       = v'
-                , lTag       = []
-                , lInstalled = True
-                , lStray     = maybe True (const False) (Map.lookup v' avTools)
-                , ..
-                }
-        Left e -> do
-          $(logWarn)
-            [i|Could not parse version of stray directory #{toFilePath ghcdir}/#{f}: #{e}|]
-          pure Nothing
+    ghcs <- getInstalledGHCs
+    fmap catMaybes $ forM ghcs $ \case
+      Right tver@GHCTargetVersion{ _tvTarget = Nothing, .. } -> do
+        case Map.lookup _tvVersion avTools of
+          Just _  -> pure Nothing
+          Nothing -> do
+            lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet Nothing
+            fromSrc <- liftIO $ ghcSrcInstalled tver
+            pure $ Just $ ListResult
+              { lTool      = GHC
+              , lVer       = _tvVersion
+              , lCross     = Nothing
+              , lTag       = []
+              , lInstalled = True
+              , lStray     = maybe True (const False) (Map.lookup _tvVersion avTools)
+              , ..
+              }
+      Right tver@GHCTargetVersion{ .. } -> do
+        lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet _tvTarget
+        fromSrc <- liftIO $ ghcSrcInstalled tver
+        pure $ Just $ ListResult
+          { lTool      = GHC
+          , lVer       = _tvVersion
+          , lCross     = _tvTarget
+          , lTag       = []
+          , lInstalled = True
+          , lStray     = True -- NOTE: cross currently cannot be installed via bindist
+          , ..
+          }
+      Left e -> do
+        $(logWarn)
+          [i|Could not parse version of stray directory #{toFilePath e}|]
+        pure Nothing
 
+  -- NOTE: this are not cross ones, because no bindists
   toListResult :: Tool -> (Version, [Tag]) -> IO ListResult
   toListResult t (v, tags) = case t of
     GHC -> do
-      lSet       <- fmap (maybe False (== v)) $ ghcSet
-      lInstalled <- ghcInstalled v
-      fromSrc    <- ghcSrcInstalled v
-      pure ListResult { lVer = v, lTag = tags, lTool = t, lStray = False, .. }
+      let tver = mkTVer v
+      lSet       <- fmap (maybe False (\(GHCTargetVersion _ v') -> v' == v)) $ ghcSet Nothing
+      lInstalled <- ghcInstalled tver
+      fromSrc    <- ghcSrcInstalled tver
+      pure ListResult { lVer = v, lCross = Nothing , lTag = tags, lTool = t, lStray = False, .. }
     Cabal -> do
       lSet <- fmap (== v) $ cabalSet
       let lInstalled = lSet
       pure ListResult { lVer    = v
+                      , lCross  = Nothing
                       , lTag    = tags
                       , lTool   = t
                       , fromSrc = False
@@ -382,6 +401,7 @@ listVersions av lt criteria = case lt of
       let lInstalled = lSet
       pure ListResult { lVer    = v
                       , lTag    = tags
+                      , lCross  = Nothing
                       , lTool   = t
                       , fromSrc = False
                       , lStray  = False
@@ -404,10 +424,10 @@ listVersions av lt criteria = case lt of
 
 -- | This function may throw and crash in various ways.
 rmGHCVer :: (MonadThrow m, MonadLogger m, MonadIO m, MonadFail m)
-         => Version
+         => GHCTargetVersion
          -> Excepts '[NotInstalled] m ()
 rmGHCVer ver = do
-  isSetGHC <- fmap (maybe False (== ver)) $ ghcSet
+  isSetGHC <- fmap (maybe False (== ver)) $ ghcSet (_tvTarget ver)
   dir      <- liftIO $ ghcupGHCDir ver
   let d' = toFilePath dir
   exists <- liftIO $ doesDirectoryExist dir
@@ -418,7 +438,7 @@ rmGHCVer ver = do
       -- this isn't atomic, order matters
       when isSetGHC $ do
         lift $ $(logInfo) [i|Removing ghc symlinks|]
-        liftE $ rmPlain ver
+        liftE $ rmPlain (_tvTarget ver)
 
       lift $ $(logInfo) [i|Removing directory recursively: #{d'}|]
       liftIO $ deleteDirRecursive dir
@@ -430,15 +450,15 @@ rmGHCVer ver = do
       -- first remove
       lift $ rmMajorSymlinks ver
       -- then fix them (e.g. with an earlier version)
-      (mj, mi) <- getGHCMajor ver
-      getGHCForMajor mj mi >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
+      (mj, mi) <- getMajorMinorV (_tvVersion ver)
+      getGHCForMajor mj mi (_tvTarget ver) >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
 
       liftIO
         $   ghcupBaseDir
         >>= hideError doesNotExistErrorType
         .   deleteFile
         .   (</> [rel|share|])
-    else throwE (NotInstalled GHC ver)
+    else throwE (NotInstalled GHC (ver ^. tvVersion % to prettyVer))
 
 
 
@@ -479,11 +499,12 @@ compileGHC :: ( MonadMask m
               , MonadFail m
               )
            => GHCupDownloads
-           -> Version                    -- ^ version to install
+           -> GHCTargetVersion           -- ^ version to install
            -> Either Version (Path Abs)  -- ^ version to bootstrap with
            -> Maybe Int                  -- ^ jobs
            -> Maybe (Path Abs)           -- ^ build config
-           -> Maybe (Path Abs)
+           -> Maybe (Path Abs)           -- ^ patch directory
+           -> [Text]                     -- ^ additional args to ./configure
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
@@ -500,13 +521,15 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 ()
-compileGHC dls tver bstrap jobs mbuildConfig patchdir = do
+compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs = do
   lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
-  whenM (liftIO $ toolAlreadyInstalled GHC tver)
-        (throwE $ AlreadyInstalled GHC tver)
+  whenM (liftIO $ ghcInstalled tver)
+        (throwE $ AlreadyInstalled GHC (tver ^. tvVersion))
 
   -- download source tarball
-  dlInfo    <- preview (ix GHC % ix tver % viSourceDL % _Just) dls ?? NoDownload
+  dlInfo <-
+    preview (ix GHC % ix (tver ^. tvVersion) % viSourceDL % _Just) dls
+      ?? NoDownload
   dl        <- liftE $ downloadCached dlInfo Nothing
 
   -- unpack
@@ -530,13 +553,20 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir = do
   pure ()
 
  where
-  defaultConf = [s|
+  defaultConf = case _tvTarget tver of
+                  Nothing -> [s|
 V=0
 BUILD_MAN = NO
 BUILD_SPHINX_HTML = NO
 BUILD_SPHINX_PDF = NO
-HADDOCK_DOCS = YES
-GhcWithLlvmCodeGen = YES|]
+HADDOCK_DOCS = YES|]
+                  Just _ -> [s|
+V=0
+BUILD_MAN = NO
+BUILD_SPHINX_HTML = NO
+BUILD_SPHINX_PDF = NO
+HADDOCK_DOCS = NO
+Stage1Only = YES|]
 
   compile :: (MonadCatch m, MonadLogger m, MonadIO m)
           => Either (Path Rel) (Path Abs)
@@ -544,6 +574,7 @@ GhcWithLlvmCodeGen = YES|]
           -> Path Abs
           -> Excepts
                '[ FileDoesNotExistError
+                , InvalidBuildConfig
                 , PatchFailed
                 , ProcessError
                 , NotFoundInPATH
@@ -552,14 +583,14 @@ GhcWithLlvmCodeGen = YES|]
                ()
   compile bghc ghcdir workdir = do
     lift $ $(logInfo) [i|configuring build|]
+    liftE $ checkBuildConfig
 
     forM_ patchdir $ \dir -> liftE $ applyPatches dir workdir
 
-    -- force ld.bfd for build (others seem to misbehave, like lld from FreeBSD)
-    newEnv <- addToCurrentEnv [("LD", "ld.bfd")]
+    cEnv <- liftIO $ getEnvironment
 
     if
-      | tver >= [vver|8.8.0|] -> do
+      | (_tvVersion tver) >= [vver|8.8.0|] -> do
         bghcPath <- case bghc of
           Right ghc' -> pure ghc'
           Left  bver -> do
@@ -568,20 +599,32 @@ GhcWithLlvmCodeGen = YES|]
         lEM $ liftIO $ execLogged
           "./configure"
           False
-          ["--prefix=" <> toFilePath ghcdir]
+          (  ["--prefix=" <> toFilePath ghcdir]
+          ++ (maybe mempty
+                    (\x -> ["--target=" <> E.encodeUtf8 x])
+                    (_tvTarget tver)
+             )
+          ++ fmap E.encodeUtf8 aargs
+          )
           [rel|ghc-conf|]
           (Just workdir)
-          (Just (("GHC", toFilePath bghcPath) : newEnv))
+          (Just (("GHC", toFilePath bghcPath) : cEnv))
       | otherwise -> do
         lEM $ liftIO $ execLogged
           "./configure"
           False
-          [ "--prefix=" <> toFilePath ghcdir
-          , "--with-ghc=" <> either toFilePath toFilePath bghc
-          ]
+          (  [ "--prefix=" <> toFilePath ghcdir
+             , "--with-ghc=" <> either toFilePath toFilePath bghc
+             ]
+          ++ (maybe mempty
+                    (\x -> ["--target=" <> E.encodeUtf8 x])
+                    (_tvTarget tver)
+             )
+          ++ fmap E.encodeUtf8 aargs
+          )
           [rel|ghc-conf|]
           (Just workdir)
-          (Just newEnv)
+          (Just cEnv)
 
     case mbuildConfig of
       Just bc -> liftIOException
@@ -603,6 +646,30 @@ GhcWithLlvmCodeGen = YES|]
     liftIO $ copyFile (build_mk workdir) dest Overwrite
 
   build_mk workdir = workdir </> [rel|mk/build.mk|]
+
+  checkBuildConfig :: (MonadCatch m, MonadIO m)
+                   => Excepts
+                        '[FileDoesNotExistError , InvalidBuildConfig]
+                        m
+                        ()
+  checkBuildConfig = do
+    c <- case mbuildConfig of
+      Just bc -> do
+        BL.toStrict <$> liftIOException doesNotExistErrorType
+                                        (FileDoesNotExistError $ toFilePath bc)
+                                        (liftIO $ readFile bc)
+      Nothing -> pure defaultConf
+    let lines' = fmap T.strip . T.lines $ decUTF8Safe c
+
+   -- for cross, we need Stage1Only
+    case _tvTarget tver of
+      Just _ -> when (not $ elem "Stage1Only = YES" lines') $ throwE
+        (InvalidBuildConfig
+          [s|Cross compiling needs to be a Stage1 build, add "Stage1Only = YES" to your config!|]
+        )
+      Nothing -> pure ()
+
+
 
 
 compileCabal :: ( MonadReader Settings m
@@ -763,12 +830,12 @@ upgradeGHCup dls mtarget force = do
 -- | Creates ghc-x.y.z and ghc-x.y symlinks. This is used for
 -- both installing from source and bindist.
 postGHCInstall :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
-               => Version
+               => GHCTargetVersion
                -> Excepts '[NotInstalled] m ()
-postGHCInstall ver = do
+postGHCInstall ver@GHCTargetVersion{..} = do
   void $ liftE $ setGHC ver SetGHC_XYZ
 
   -- Create ghc-x.y symlinks. This may not be the current
   -- version, create it regardless.
-  (mj, mi) <- liftIO $ getGHCMajor ver
-  getGHCForMajor mj mi >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
+  (mj, mi) <- getMajorMinorV _tvVersion
+  getGHCForMajor mj mi _tvTarget >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)

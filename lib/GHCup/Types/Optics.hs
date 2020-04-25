@@ -19,6 +19,8 @@ makeLenses ''DownloadInfo
 makeLenses ''Tag
 makeLenses ''VersionInfo
 
+makeLenses ''GHCTargetVersion
+
 makeLenses ''GHCupInfo
 
 uriSchemeL' :: Lens' (URIRef Absolute) Scheme

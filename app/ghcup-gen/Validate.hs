@@ -27,9 +27,12 @@ import           Haskus.Utils.Variant.Excepts
 import           Optics
 import           System.Exit
 import           System.IO
+import           Text.ParserCombinators.ReadP
 
 import qualified Data.ByteString               as B
 import qualified Data.Map.Strict               as M
+import qualified Data.Text                     as T
+import qualified Data.Version                  as V
 
 
 data ValidationError = InternalError String
@@ -61,7 +64,7 @@ validate dls = do
         forM_ (M.toList $ _viArch vi) $ \(arch, pspecs) -> do
           checkHasRequiredPlatforms t v arch (M.keys pspecs)
 
-    checkGHCisSemver
+    checkGHCVerIsValid
     forM_ (M.toList dls) $ \(t, _) -> checkMandatoryTags t
     _ <- checkGHCHasBaseVersion
 
@@ -111,13 +114,14 @@ validate dls = do
     isUniqueTag (Base       _) = False
     isUniqueTag (UnknownTag _) = False
 
-  checkGHCisSemver = do
+  checkGHCVerIsValid = do
     let ghcVers = toListOf (ix GHC % to M.keys % folded) dls
-    forM_ ghcVers $ \v -> case semver (prettyVer v) of
-      Left _ -> do
-        lift $ $(logError) [i|GHC version #{v} is not valid semver|]
-        addError
-      Right _ -> pure ()
+    forM_ ghcVers $ \v ->
+      case [ x | (x,"") <- readP_to_S V.parseVersion (T.unpack . prettyVer $ v) ] of
+        [_] -> pure ()
+        _   -> do
+          lift $ $(logError) [i|GHC version #{v} is not valid |]
+          addError
 
   -- a tool must have at least one of each mandatory tags
   checkMandatoryTags tool = do

@@ -18,6 +18,8 @@ import           Data.Foldable
 import           Data.Functor
 import           Data.IORef
 import           Data.Maybe
+import           Data.Text                      ( Text )
+import           Data.Void
 import           GHC.Foreign                    ( peekCStringLen )
 import           GHC.IO.Encoding                ( getLocaleEncoding )
 import           GHC.IO.Exception
@@ -39,10 +41,12 @@ import "unix"    System.Posix.IO.ByteString
                                          hiding ( openFd )
 import           System.Posix.Process           ( ProcessStatus(..) )
 import           System.Posix.Types
+import           Text.Regex.Posix
 
 
 import qualified Control.Exception             as EX
 import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as E
 import qualified System.Posix.Process.ByteString
                                                as SPPB
 import           Streamly.External.Posix.DirStream
@@ -51,10 +55,12 @@ import qualified Streamly.Internal.Memory.ArrayStream
 import qualified Streamly.FileSystem.Handle    as FH
 import qualified Streamly.Internal.Data.Unfold as SU
 import qualified Streamly.Prelude              as S
+import qualified Text.Megaparsec               as MP
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as L
 import qualified "unix-bytestring" System.Posix.IO.ByteString
                                                as SPIB
+
 
 
 -- | Bool signals whether the regions should be cleaned.
@@ -379,3 +385,27 @@ searchPath paths needle = go paths
     if p == toFilePath needle
       then isExecutable (basedir </> needle)
       else pure False
+
+
+findFiles :: Path Abs -> Regex -> IO [Path Rel]
+findFiles path regex = do
+  dirStream <- openDirStream (toFilePath path)
+  f         <-
+    (fmap . fmap) snd
+    . S.toList
+    . S.filter (\(_, p) -> match regex p)
+    $ dirContentsStream dirStream
+  pure $ join $ fmap parseRel f
+
+
+findFiles' :: Path Abs -> MP.Parsec Void Text () -> IO [Path Rel]
+findFiles' path parser = do
+  dirStream <- openDirStream (toFilePath path)
+  f         <-
+    (fmap . fmap) snd
+    . S.toList
+    . S.filter (\(_, p) -> case E.decodeUtf8' p of
+                             Left _ -> False
+                             Right p' -> isJust $ MP.parseMaybe parser p')
+    $ dirContentsStream dirStream
+  pure $ join $ fmap parseRel f

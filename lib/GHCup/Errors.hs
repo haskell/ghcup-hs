@@ -64,7 +64,7 @@ data AlreadyInstalled = AlreadyInstalled Tool Version
 
 -- | The tool is not installed. Some operations rely on a tool
 -- to be installed (such as setting the current GHC version).
-data NotInstalled = NotInstalled Tool Version
+data NotInstalled = NotInstalled Tool Text
   deriving Show
 
 -- | An executable was expected to be in PATH, but was not found.
@@ -102,6 +102,9 @@ data PatchFailed = PatchFailed
 
 -- | The tool requirements could not be found.
 data NoToolRequirements = NoToolRequirements
+  deriving Show
+
+data InvalidBuildConfig = InvalidBuildConfig Text
   deriving Show
 
 

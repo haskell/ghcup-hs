@@ -42,18 +42,18 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupI
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 
 instance ToJSON Tag where
-  toJSON Latest = String "Latest"
-  toJSON Recommended = String "Recommended"
-  toJSON (Base pvp'') = String ("base-" <> prettyPVP pvp'')
-  toJSON (UnknownTag x) = String (T.pack x)
+  toJSON Latest             = String "Latest"
+  toJSON Recommended        = String "Recommended"
+  toJSON (Base       pvp'') = String ("base-" <> prettyPVP pvp'')
+  toJSON (UnknownTag x    ) = String (T.pack x)
 
 instance FromJSON Tag where
   parseJSON = withText "Tag" $ \t -> case T.unpack t of
-    "Latest" -> pure Latest
-    "Recommended" -> pure Recommended
-    ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
-                                    Right x -> pure $ Base x
-                                    Left e -> fail . show $ e
+    "Latest"                             -> pure Latest
+    "Recommended"                        -> pure Recommended
+    ('b' : 'a' : 's' : 'e' : '-' : ver') -> case pvp (T.pack ver') of
+      Right x -> pure $ Base x
+      Left  e -> fail . show $ e
     x -> pure (UnknownTag x)
 
 instance ToJSON URI where
