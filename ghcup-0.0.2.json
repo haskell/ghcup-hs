@@ -175,22 +175,6 @@
           "base-4.12.0.0"
         ]
       },
-      "8.10.1-p1": {
-        "viArch": {
-          "A_64": {
-            "Linux_UnknownLinux": {
-              "unknown_versioning": {
-                "dlHash": "3c4cd72b4806045779739e8f5d1658e30e57123d88c2c8966422cdbcae448470",
-                "dlSubdir": "ghc-8.10.1",
-                "dlUri": "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-fedora27-linux.tar.xz"
-              }
-            }
-          }
-        },
-        "viSourceDL": null,
-        "viChangeLog": null,
-        "viTags": []
-      },
       "8.0.2": {
         "viArch": {
           "A_64": {

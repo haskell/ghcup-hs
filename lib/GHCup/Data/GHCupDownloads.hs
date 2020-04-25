@@ -1873,30 +1873,6 @@ ghcupDownloads = M.fromList
                 )
               ]
         )
-      , ( [vver|8.10.1-p1|]
-        , VersionInfo
-            []
-            Nothing
-            Nothing
-          $ M.fromList
-              [ ( A_64
-                , M.fromList
-                  [ ( Linux UnknownLinux
-                    , M.fromList
-                      [ ( Nothing
-                        ,
-                        (DownloadInfo
-                         [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-fedora27-linux.tar.xz|]
-  (Just [rel|ghc-8.10.1|])
-  "3c4cd72b4806045779739e8f5d1658e30e57123d88c2c8966422cdbcae448470"
-                          )
-                        )
-                      ]
-                    )
-                  ]
-                )
-              ]
-        )
       ]
     )
   , ( Cabal
