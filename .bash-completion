@@ -1,11 +1,14 @@
 _ghcup()
 {
-	local cur
-	COMPREPLY=()
-	cur="${COMP_WORDS[COMP_CWORD]}"
-	if [[ ${#COMP_WORDS[*]} -le 2 ]]; then
-		COMPREPLY=($(compgen -W "$(ghcup --list-commands)" -- $cur))
-	fi
-	return 0
-} &&
-complete -F _ghcup ghcup
+    local CMDLINE
+    local IFS=$'\n'
+    CMDLINE=(--bash-completion-index $COMP_CWORD)
+
+    for arg in ${COMP_WORDS[@]}; do
+        CMDLINE=(${CMDLINE[@]} --bash-completion-word $arg)
+    done
+
+    COMPREPLY=( $(ghcup "${CMDLINE[@]}") )
+}
+
+complete -o filenames -F _ghcup ghcup
