@@ -199,6 +199,7 @@ execLogged exe spath args lfile chdir env = do
     lineAction ref rs bs' = do
       modifyIORef' ref (swapRegs bs')
       regs <- readIORef ref
+      void $ SPIB.fdWrite fileFd (bs' <> "\n")
       forM (zip regs rs) $ \(bs, r) -> do
         setConsoleRegion r $ do
           w <- consoleWidth
@@ -210,8 +211,6 @@ execLogged exe spath args lfile chdir env = do
             . trim w
             . (\b -> "[ " <> toFilePath lfile <> " ] " <> b)
             $ bs
-        SPIB.fdWrite fileFd (bs <> "\n")
-
 
     swapRegs bs regs | length regs < size = regs ++ [bs]
                      | otherwise          = tail regs ++ [bs]
