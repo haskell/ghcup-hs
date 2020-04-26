@@ -338,7 +338,7 @@ listVersions av lt criteria = case lt of
             -> m [ListResult]
   strayGHCs avTools = do
     ghcdir <- liftIO $ ghcupGHCBaseDir
-    fs     <- liftIO $ getDirsFiles' ghcdir
+    fs     <- liftIO $ liftIO $ hideErrorDef [NoSuchThing] [] $ getDirsFiles' ghcdir
     fmap catMaybes $ forM fs $ \(toFilePath -> f) -> do
       case version . decUTF8Safe $ f of
         Right v' -> do
