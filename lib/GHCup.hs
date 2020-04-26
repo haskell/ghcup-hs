@@ -120,7 +120,7 @@ installGHCBin bDls ver mpfReq = do
   liftE $ postGHCInstall ver
 
  where
-    -- | Install an unpacked GHC distribution. This only deals with the GHC build system and nothing else.
+  -- | Install an unpacked GHC distribution. This only deals with the GHC build system and nothing else.
   installGHC' :: (MonadLogger m, MonadIO m)
               => Path Abs      -- ^ Path to the unpacked GHC bindist (where the configure script resides)
               -> Path Abs      -- ^ Path to install to
@@ -183,7 +183,7 @@ installCabalBin bDls ver mpfReq = do
   pure ()
 
  where
-    -- | Install an unpacked cabal distribution.
+  -- | Install an unpacked cabal distribution.
   installCabal' :: (MonadLogger m, MonadCatch m, MonadIO m)
                 => Path Abs      -- ^ Path to the unpacked cabal bindist (where the executable resides)
                 -> Path Abs      -- ^ Path to install to
