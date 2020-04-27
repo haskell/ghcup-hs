@@ -5,6 +5,7 @@ module GHCup.Data.ToolRequirements where
 
 import           GHCup.Types
 import           GHCup.Utils.String.QQ
+import           GHCup.Utils.Version.QQ
 
 import qualified Data.Map                      as M
 
@@ -56,6 +57,35 @@ toolRequirements = M.fromList
                   , "libffi-dev"
                   , "libncurses-dev"
                   , "libtinfo5"
+                  ]
+                  ""
+                )
+              ]
+            )
+          , ( Linux CentOS
+            , M.fromList
+              [ ( Nothing
+                , Requirements
+                  [ "gcc"
+                  , "gcc-c++"
+                  , "gmp"
+                  , "make"
+                  , "ncurses"
+                  , "ncurses-compat-libs"
+                  , "xz"
+                  , "perl"
+                  ]
+                  ""
+                ),
+              ( Just [vers|7|]
+                , Requirements
+                  [ "gcc"
+                  , "gcc-c++"
+                  , "gmp"
+                  , "make"
+                  , "ncurses"
+                  , "xz"
+                  , "perl"
                   ]
                   ""
                 )
