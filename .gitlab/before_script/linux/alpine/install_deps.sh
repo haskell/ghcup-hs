@@ -42,7 +42,8 @@ chmod +x "${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/bin/cabal"
 
 # utils
 apk add --no-cache \
-	bash
+	bash \
+	git
 
 ## Package specific
 apk add --no-cache \
