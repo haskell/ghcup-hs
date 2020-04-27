@@ -789,9 +789,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           (GHCupInfo treq dls) <-
             ( runLogger
               . flip runReaderT settings
-              . runE @'[JSONError , DownloadFailed]
+              . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
               $ liftE
-              $ getDownloads (maybe GHCupURL OwnSource optUrlSource)
+              $ getDownloadsF (maybe GHCupURL OwnSource optUrlSource)
               )
               >>= \case
                     VRight r -> pure r

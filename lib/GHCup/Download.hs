@@ -82,6 +82,47 @@ import qualified System.Posix.RawFilePath.Directory
     ------------------
 
 
+-- | Like 'getDownloads', but tries to fall back to
+-- cached ~/.ghcup/cache/ghcup-<format-ver>.json
+getDownloadsF :: ( FromJSONKey Tool
+                 , FromJSONKey Version
+                 , FromJSON VersionInfo
+                 , MonadIO m
+                 , MonadCatch m
+                 , MonadLogger m
+                 , MonadThrow m
+                 , MonadFail m
+                 )
+              => URLSource
+              -> Excepts
+                   '[JSONError , DownloadFailed , FileDoesNotExistError]
+                   m
+                   GHCupInfo
+getDownloadsF urlSource = do
+  case urlSource of
+    GHCupURL ->
+      liftE
+        $ handleIO (\_ -> readFromCache)
+        $ catchE @_ @'[JSONError , FileDoesNotExistError]
+            (\(DownloadFailed _) -> readFromCache)
+        $ getDownloads urlSource
+    (OwnSource _) -> liftE $ getDownloads urlSource
+    (OwnSpec   _) -> liftE $ getDownloads urlSource
+ where
+  readFromCache = do
+    lift $ $(logWarn)
+      [i|Could not get download info, trying cached version (this may not be recent!)|]
+    let path = view pathL' ghcupURL
+    cacheDir  <- liftIO $ ghcupCacheDir
+    json_file <- (cacheDir </>) <$> urlBaseName path
+    bs        <-
+      handleIO' NoSuchThing
+                (\_ -> throwE $ FileDoesNotExistError (toFilePath json_file))
+      $ liftIO
+      $ readFile json_file
+    lE' JSONDecodeError $ eitherDecode' bs
+
+
 -- | Downloads the download information! But only if we need to ;P
 getDownloads :: ( FromJSONKey Tool
                 , FromJSONKey Version
@@ -148,29 +189,36 @@ getDownloads urlSource = do
               Just modTime -> do
                 fileMod <- liftIO $ getModificationTime json_file
                 if modTime > fileMod
-                  then do
-                    bs <- liftE $ downloadBS uri'
-                    liftIO $ writeFileWithModTime modTime json_file bs
-                    pure bs
+                  then dlWithMod modTime json_file
                   else liftIO $ readFile json_file
               Nothing -> do
                 lift $ $(logDebug) [i|Unable to get/parse Last-Modified header|]
-                liftIO $ deleteFile json_file
-                liftE $ downloadBS uri'
+                dlWithoutMod json_file
           else -- access in less than 5 minutes, re-use file
                liftIO $ readFile json_file
       else do
         liftIO $ createDirIfMissing newDirPerms cacheDir
         getModTime >>= \case
-          Just modTime -> do
-            bs <- liftE $ downloadBS uri'
-            liftIO $ writeFileWithModTime modTime json_file bs
-            pure bs
+          Just modTime -> dlWithMod modTime json_file
           Nothing -> do
+            -- although we don't know last-modified, we still save
+            -- it to a file, so we might use it in offline mode
             lift $ $(logDebug) [i|Unable to get/parse Last-Modified header|]
-            liftE $ downloadBS uri'
+            dlWithoutMod json_file
 
    where
+    dlWithMod modTime json_file = do
+      bs <- liftE $ downloadBS uri'
+      liftIO $ writeFileWithModTime modTime json_file bs
+      pure bs
+    dlWithoutMod json_file = do
+      bs <- liftE $ downloadBS uri'
+      liftIO $ hideError doesNotExistErrorType $ deleteFile json_file
+      liftIO $ writeFileL json_file (Just newFilePerms) bs
+      liftIO $ setModificationTime json_file (fromIntegral @Int 0)
+      pure bs
+
+
     getModTime = do
 #if defined(CURL)
       pure Nothing
@@ -329,7 +377,7 @@ downloadCached dli mfn = do
 
 
 -- | This is used for downloading the JSON.
-downloadBS :: (MonadCatch m, MonadIO m)
+downloadBS :: (MonadCatch m, MonadIO m, MonadLogger m)
            => URI
            -> Excepts
                 '[ FileDoesNotExistError
@@ -358,6 +406,7 @@ downloadBS uri'
   path   = view pathL' uri'
 #if defined(CURL)
   dl _ = do
+    lift $ $(logDebug) [i|downloading: #{serializeURIRef' uri'}|]
     let exe = [rel|curl|]
         args = ["-sSfL", serializeURIRef' uri']
     liftIO (executeOut exe args Nothing) >>= \case
