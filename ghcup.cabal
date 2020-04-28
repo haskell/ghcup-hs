@@ -21,8 +21,8 @@ source-repository head
   type:     git
   location: https://gitlab.haskell.org/haskell/ghcup-hs.git
 
-flag Curl
-  description: Use curl instead of http-io-streams for download
+flag internal-downloader
+  description: Compile the internal downloader, which links against OpenSSL
   default:     False
   manual:      True
 
@@ -304,15 +304,14 @@ library
   -- other-extensions:
   hs-source-dirs:  lib
 
-  if !flag(curl)
+  if flag(internal-downloader)
     import:
       , HsOpenSSL
       , http-io-streams
       , io-streams
       , terminal-progress-bar
     exposed-modules: GHCup.Download.IOStreams
-  else
-    cpp-options:     -DCURL
+    cpp-options:     -DINTERNAL_DOWNLOADER
 
 executable ghcup
   import:

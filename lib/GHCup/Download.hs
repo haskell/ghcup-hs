@@ -11,7 +11,7 @@
 
 module GHCup.Download where
 
-#if !defined(CURL)
+#if defined(INTERNAL_DOWNLOADER)
 import           GHCup.Download.IOStreams
 import           GHCup.Download.Utils
 #endif
@@ -35,7 +35,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.Aeson
-#if !defined(CURL)
+#if defined(INTERNAL_DOWNLOADER)
 import           Data.ByteString                ( ByteString )
 import           Data.CaseInsensitive           ( CI )
 #endif
@@ -43,7 +43,7 @@ import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Time.Clock
 import           Data.Time.Clock.POSIX
-#if !defined(CURL)
+#if defined(INTERNAL_DOWNLOADER)
 import           Data.Time.Format
 #endif
 import           Data.Versions
@@ -62,7 +62,7 @@ import           URI.ByteString
 import qualified Crypto.Hash.SHA256            as SHA256
 import qualified Data.ByteString.Base16        as B16
 import qualified Data.ByteString.Lazy          as L
-#if !defined(CURL)
+#if defined(INTERNAL_DOWNLOADER)
 import qualified Data.CaseInsensitive          as CI
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
@@ -220,7 +220,7 @@ getDownloads urlSource = do
 
 
     getModTime = do
-#if defined(CURL)
+#if !defined(INTERNAL_DOWNLOADER)
       pure Nothing
 #else
       headers <-
@@ -319,7 +319,7 @@ download dli dest mfn
             (liftIO $ hideError doesNotExistErrorType $ deleteFile destFile)
               >> (throwE . DownloadFailed $ e)
           ) $ do
-#if defined(CURL)
+#if !defined(INTERNAL_DOWNLOADER)
               liftE $ lEM @_ @'[ProcessError] $ liftIO $ exec "curl" True
                 ["-fL", "-o", toFilePath destFile , serializeURIRef' $ view dlUri dli] Nothing Nothing
 #else
@@ -404,7 +404,7 @@ downloadBS uri'
  where
   scheme = view (uriSchemeL' % schemeBSL') uri'
   path   = view pathL' uri'
-#if defined(CURL)
+#if !defined(INTERNAL_DOWNLOADER)
   dl _ = do
     lift $ $(logDebug) [i|downloading: #{serializeURIRef' uri'}|]
     let exe = [rel|curl|]

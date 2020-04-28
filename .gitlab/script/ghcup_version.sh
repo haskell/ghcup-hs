@@ -20,9 +20,9 @@ eghcup() {
 ecabal update
 
 if [ "${OS}" = "DARWIN" ] ; then
-	ecabal build -w ghc-${GHC_VERSION} -fcurl
-else
 	ecabal build -w ghc-${GHC_VERSION}
+else
+	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader
 fi
 
 cp "$(ecabal new-exec --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup')" .

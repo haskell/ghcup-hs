@@ -14,11 +14,11 @@ ecabal() {
 ecabal update
 
 if [ "${OS}" = "LINUX" ] ; then
-	ecabal build -w ghc-${GHC_VERSION} -fcurl --ghc-options='-split-sections -optl-static'
+	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections -optl-static'
 elif [ "${OS}" = "FREEBSD" ] ; then
-	ecabal build -w ghc-${GHC_VERSION} -fcurl --ghc-options='-split-sections'
+	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections'
 else
-	ecabal build -w ghc-${GHC_VERSION} -fcurl
+	ecabal build -w ghc-${GHC_VERSION}
 fi
 
 mkdir out
