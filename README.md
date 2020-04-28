@@ -68,11 +68,14 @@ handles your haskell packages and can demand that [a specific version](https://c
 For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man` provider, then issue `man ghc`. Manpages only work for the currently set ghc.
 `MANPATH` may be required to be unset.
 
-### Bash-completion
+### Shell-completion
 
-Depending on your distro and setup, install `.bash-completion` from this repo
-as e.g. `/etc/bash_completion.d/ghcup` and make sure your bashrc sources the
-startup script (`/usr/share/bash-completion/bash_completion` on some distros).
+Shell completions are in `shell-completions`.
+
+For bash: install `shell-completions/bash`
+as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
+and make sure your bashrc sources the startup script
+(`/usr/share/bash-completion/bash_completion` on some distros).
 
 ## Design goals
 

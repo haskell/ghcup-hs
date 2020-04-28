@@ -4,8 +4,11 @@
 
 2. Add/fix downloads to `GHCupDownloads` module, then run `ghcup-gen gen` to generate the new json and validate it via `ghcup-gen check`.
 
-3. Commit and git push with tag. Wait for tests to succeed.
+3. Commit and git push with tag. Wait for tests to succeed and release artifacts to build.
 
-4. Upload the new `ghcup-<ver>.json` to `webhost.haskell.org/ghcup/data/`.
+4. Download release artifacts and upload them `downloads.haskell.org/ghcup`
 
-5. Build ghcup releases for Linux (fully static), mac (with `-fcurl`) and FreeBSD (with `-fcurl`). Upload to `webhost.haskell.org/ghcup/bin/` and update symlinks.
+5. Add release artifacts to GHCupDownloads (see point 2.)
+
+6. Upload the final `ghcup-<ver>.json` to `webhost.haskell.org/ghcup/data/`.
+

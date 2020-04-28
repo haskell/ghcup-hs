@@ -43,3 +43,15 @@ Kazu Yamamoto [explained it in his PR](https://github.com/yesodweb/wai/pull/752#
 1. Brittany
 2. mtl-style preferred
 3. no overly pointfree style
+
+## Code structure
+
+Main functionality is in `GHCup` module. Utility functions are
+organised tree-ish in `GHCup.Utils` and `GHCup.Utils.*`.
+
+Anything dealing with ghcup specific directories is in
+`GHCup.Utils.Dirs`.
+
+Download information on where to fetch bindists from is in
+`GHCup.Data.GHCupDownloads`.
+
