@@ -71,10 +71,10 @@ ghci-$(ghc --numeric-version) --version
 
 # test installing new ghc doesn't mess with currently set GHC
 # https://gitlab.haskell.org/haskell/ghcup-hs/issues/7
-if [ "${OS}" = "DARWIN" ] ; then
-	eghcup install 8.4.4
-else # test wget a bit
+if [ "${OS}" = "LINUX" ] ; then
 	eghcup --downloader=wget install 8.4.4
+else # test wget a bit
+	eghcup install 8.4.4
 fi
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 eghcup set 8.4.4
