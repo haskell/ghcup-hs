@@ -35,8 +35,8 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.Aeson
-#if defined(INTERNAL_DOWNLOADER)
 import           Data.ByteString                ( ByteString )
+#if defined(INTERNAL_DOWNLOADER)
 import           Data.CaseInsensitive           ( CI )
 #endif
 import           Data.Maybe
