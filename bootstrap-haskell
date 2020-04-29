@@ -31,10 +31,10 @@ download_ghcup() {
         "linux"|"Linux")
 			case "${_arch}" in
 				x86_64|amd64)
-					_url=https://downloads.haskell.org/~ghcup/0.1.4/x86_64-linux-ghcup-0.1.4
+					_url=https://downloads.haskell.org/~ghcup/0.1.5/x86_64-linux-ghcup-0.1.5
 					;;
 				i*86)
-					_url=https://downloads.haskell.org/~ghcup/0.1.4/i386-linux-ghcup-0.1.4
+					_url=https://downloads.haskell.org/~ghcup/0.1.5/i386-linux-ghcup-0.1.5
 					;;
 				*) die "Unknown architecture: ${_arch}"
 					;;
@@ -50,7 +50,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${_arch}"
 					;;
 			esac
-			_url=https://downloads.haskell.org/~ghcup/0.1.4/x86_64-portbld-freebsd-ghcup-0.1.4
+			_url=https://downloads.haskell.org/~ghcup/0.1.5/x86_64-portbld-freebsd-ghcup-0.1.5
             ;;
         "Darwin"|"darwin")
 			case "${_arch}" in
@@ -62,7 +62,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${_arch}"
 					;;
 			esac
-			_url=https://downloads.haskell.org/~ghcup/0.1.4/x86_64-apple-darwin-ghcup-0.1.4 ;;
+			_url=https://downloads.haskell.org/~ghcup/0.1.5/x86_64-apple-darwin-ghcup-0.1.5 ;;
         *) die "Unknown platform: ${_plat}"
 			;;
     esac

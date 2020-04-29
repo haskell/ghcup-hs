@@ -1020,32 +1020,32 @@ cabal_3200_64_alpine = DownloadInfo
     -------------
 
 
-ghcup_014_32_linux :: DownloadInfo
-ghcup_014_32_linux = DownloadInfo
-  [uri|https://downloads.haskell.org/~ghcup/0.1.4/i386-linux-ghcup-0.1.4|]
+ghcup_015_32_linux :: DownloadInfo
+ghcup_015_32_linux = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghcup/0.1.5/i386-linux-ghcup-0.1.5|]
   Nothing
-  "057cc1cc39abdacd92cb1d4fb44c850fd9c5398a36b893286248ac5c38bc0c70"
+  "3707f60d703912709335dc0103fb1af5e5dfa83050825a8156b56bc81760b2a8"
 
 
-ghcup_014_64_linux :: DownloadInfo
-ghcup_014_64_linux = DownloadInfo
-  [uri|https://downloads.haskell.org/~ghcup/0.1.4/x86_64-linux-ghcup-0.1.4|]
+ghcup_015_64_linux :: DownloadInfo
+ghcup_015_64_linux = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghcup/0.1.5/x86_64-linux-ghcup-0.1.5|]
   Nothing
-  "78d69ed4c9a810a445af89ea25e4217a632799ecb427b06cd2320ffb574f555e"
+  "cfdb01dde77121859b5d90b6707238b54e23787fcbb3003e18ab52a5dbfee330"
 
 
-ghcup_014_64_freebsd :: DownloadInfo
-ghcup_014_64_freebsd = DownloadInfo
-  [uri|https://downloads.haskell.org/~ghcup/0.1.4/x86_64-portbld-freebsd-ghcup-0.1.4|]
+ghcup_015_64_freebsd :: DownloadInfo
+ghcup_015_64_freebsd = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghcup/0.1.5/x86_64-portbld-freebsd-ghcup-0.1.5|]
   Nothing
-  "cda0b959f053abc04ab0a1b9919a505b8c9304e2898a291f527a370cb0e00731"
+  "6dd57cc5958ef3a6ba7de22808d9292d31dada8af95277578b69be35fc090194"
 
 
-ghcup_014_64_darwin10_13 :: DownloadInfo
-ghcup_014_64_darwin10_13 = DownloadInfo
-  [uri|https://downloads.haskell.org/~ghcup/0.1.4/x86_64-apple-darwin-ghcup-0.1.4|]
+ghcup_015_64_darwin10_13 :: DownloadInfo
+ghcup_015_64_darwin10_13 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghcup/0.1.5/x86_64-apple-darwin-ghcup-0.1.5|]
   Nothing
-  "2422b79933ae037237ccb8f836417b90b3111d7931beb7ae8b9e33a1945c641e"
+  "5be3324b65c737af942cc5ed1a025d4882f29c1efcc7dcd971a893efab78d394"
 
 
 
@@ -1976,7 +1976,7 @@ ghcupDownloads = M.fromList
     )
   , ( GHCup
     , M.fromList
-      [ ( [vver|0.1.4|]
+      [ ( [vver|0.1.5|]
         , VersionInfo
             [Recommended, Latest]
             (Just
@@ -1987,16 +1987,16 @@ ghcupDownloads = M.fromList
               [ ( A_64
                 , M.fromList
                   [ ( Linux UnknownLinux
-                    , M.fromList [(Nothing, ghcup_014_64_linux)]
+                    , M.fromList [(Nothing, ghcup_015_64_linux)]
                     )
-                  , (Darwin , M.fromList [(Nothing, ghcup_014_64_darwin10_13)])
-                  , (FreeBSD, M.fromList [(Nothing, ghcup_014_64_freebsd)])
+                  , (Darwin , M.fromList [(Nothing, ghcup_015_64_darwin10_13)])
+                  , (FreeBSD, M.fromList [(Nothing, ghcup_015_64_freebsd)])
                   ]
                 )
               , ( A_32
                 , M.fromList
                   [ ( Linux UnknownLinux
-                    , M.fromList [(Nothing, ghcup_014_32_linux)]
+                    , M.fromList [(Nothing, ghcup_015_32_linux)]
                     )
                   ]
                 )
