@@ -311,6 +311,10 @@ getCache :: MonadReader Settings m => m Bool
 getCache = ask <&> cache
 
 
+getDownloader :: MonadReader Settings m => m Downloader
+getDownloader = ask <&> downloader
+
+
 
     -------------
     --[ Other ]--

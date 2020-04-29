@@ -346,6 +346,10 @@ executable ghcup
   hs-source-dirs:   app/ghcup
   default-language: Haskell2010
 
+  if flag(internal-downloader)
+    cpp-options:     -DINTERNAL_DOWNLOADER
+
+
 executable ghcup-gen
   import:
     config

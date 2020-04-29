@@ -75,6 +75,7 @@ data Options = Options
   , optUrlSource :: Maybe URI
   , optNoVerify  :: Bool
   , optKeepDirs  :: KeepDirs
+  , optsDownloader :: Downloader
   -- commands
   , optCommand   :: Command
   }
@@ -170,8 +171,25 @@ opts =
           (  long "keep"
           <> metavar "<always|errors|never>"
           <> help
-               "Keep build directories?"
+               "Keep build directories? (default: never)"
           <> value Never
+          <> hidden
+          )
+    <*> option
+          (eitherReader downloaderParser)
+          (  long "downloader"
+#if defined(INTERNAL_DOWNLOADER)
+          <> metavar "<internal|curl|wget>"
+          <> help
+          "Downloader to use (default: internal)"
+          <> value Internal
+#else
+          <> metavar "<curl|wget>"
+          <> help
+          "Downloader to use (default: curl)"
+          <> value Curl
+#endif
+          <> hidden
           )
     <*> com
  where
@@ -524,6 +542,16 @@ keepOnParser s' | t == T.pack "always" = Right Always
   where t = T.toLower (T.pack s')
 
 
+downloaderParser :: String -> Either String Downloader
+downloaderParser s' | t == T.pack "curl"     = Right Curl
+                    | t == T.pack "wget"     = Right Wget
+#if defined(INTERNAL_DOWNLOADER)
+                    | t == T.pack "internal" = Right Internal
+#endif
+                    | otherwise = Left ("Unknown downloader value: " <> s')
+  where t = T.toLower (T.pack s')
+
+
 platformParser :: String -> Either String PlatformRequest
 platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
   Right r -> pure r
@@ -599,9 +627,10 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
 
 toSettings :: Options -> Settings
 toSettings Options {..} =
-  let cache    = optCache
-      noVerify = optNoVerify
-      keepDirs = optKeepDirs
+  let cache      = optCache
+      noVerify   = optNoVerify
+      keepDirs   = optKeepDirs
+      downloader = optsDownloader
   in  Settings { .. }
 
 

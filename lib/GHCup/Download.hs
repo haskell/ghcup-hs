@@ -47,6 +47,7 @@ import           Data.Time.Clock.POSIX
 import           Data.Time.Format
 #endif
 import           Data.Versions
+import           Data.Word8
 import           GHC.IO.Exception
 import           HPath
 import           HPath.IO                      as HIO
@@ -57,9 +58,11 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.IO.Error
+import           System.Posix.Env.ByteString    ( getEnv )
 import           URI.ByteString
 
 import qualified Crypto.Hash.SHA256            as SHA256
+import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Base16        as B16
 import qualified Data.ByteString.Lazy          as L
 #if defined(INTERNAL_DOWNLOADER)
@@ -92,6 +95,7 @@ getDownloadsF :: ( FromJSONKey Tool
                  , MonadLogger m
                  , MonadThrow m
                  , MonadFail m
+                 , MonadReader Settings m
                  )
               => URLSource
               -> Excepts
@@ -132,6 +136,7 @@ getDownloads :: ( FromJSONKey Tool
                 , MonadLogger m
                 , MonadThrow m
                 , MonadFail m
+                , MonadReader Settings m
                 )
              => URLSource
              -> Excepts '[JSONError , DownloadFailed] m GHCupInfo
@@ -157,7 +162,12 @@ getDownloads urlSource = do
   --
   -- Always save the local file with the mod time of the remote file.
   smartDl :: forall m1
-           . (MonadCatch m1, MonadIO m1, MonadFail m1, MonadLogger m1)
+           . ( MonadCatch m1
+             , MonadIO m1
+             , MonadFail m1
+             , MonadLogger m1
+             , MonadReader Settings m1
+             )
           => URI
           -> Excepts
                '[ FileDoesNotExistError
@@ -319,12 +329,19 @@ download dli dest mfn
             (liftIO $ hideError doesNotExistErrorType $ deleteFile destFile)
               >> (throwE . DownloadFailed $ e)
           ) $ do
-#if !defined(INTERNAL_DOWNLOADER)
-              liftE $ lEM @_ @'[ProcessError] $ liftIO $ exec "curl" True
-                ["-fL", "-o", toFilePath destFile , serializeURIRef' $ view dlUri dli] Nothing Nothing
-#else
-              (https, host, fullPath, port) <- liftE $ uriToQuadruple (view dlUri dli)
-              liftE $ downloadToFile https host fullPath port destFile
+              lift getDownloader >>= \case
+                Curl -> do
+                  o' <- liftIO getCurlOpts
+                  liftE $ lEM @_ @'[ProcessError] $ liftIO $ exec "curl" True
+                    (o' ++ ["-fL", "-o", toFilePath destFile, serializeURIRef' $ view dlUri dli]) Nothing Nothing
+                Wget -> do
+                  o' <- liftIO getWgetOpts
+                  liftE $ lEM @_ @'[ProcessError] $ liftIO $ exec "wget" True
+                    (o' ++ ["-O", toFilePath destFile , serializeURIRef' $ view dlUri dli]) Nothing Nothing
+#if defined(INTERNAL_DOWNLOADER)
+                Internal -> do
+                  (https, host, fullPath, port) <- liftE $ uriToQuadruple (view dlUri dli)
+                  liftE $ downloadToFile https host fullPath port destFile
 #endif
 
     liftE $ checkDigest dli destFile
@@ -377,7 +394,7 @@ downloadCached dli mfn = do
 
 
 -- | This is used for downloading the JSON.
-downloadBS :: (MonadCatch m, MonadIO m, MonadLogger m)
+downloadBS :: (MonadReader Settings m, MonadCatch m, MonadIO m, MonadLogger m)
            => URI
            -> Excepts
                 '[ FileDoesNotExistError
@@ -404,19 +421,33 @@ downloadBS uri'
  where
   scheme = view (uriSchemeL' % schemeBSL') uri'
   path   = view pathL' uri'
-#if !defined(INTERNAL_DOWNLOADER)
-  dl _ = do
-    lift $ $(logDebug) [i|downloading: #{serializeURIRef' uri'}|]
-    let exe = [rel|curl|]
-        args = ["-sSfL", serializeURIRef' uri']
-    liftIO (executeOut exe args Nothing) >>= \case
-      CapturedProcess ExitSuccess stdout _ -> do
-        pure $ L.fromStrict stdout
-      CapturedProcess (ExitFailure i') _ _ -> throwE $ NonZeroExit i' (toFilePath exe) args
-#else
+#if defined(INTERNAL_DOWNLOADER)
   dl https = do
-    (_, host', fullPath', port') <- liftE $ uriToQuadruple uri'
-    liftE $ downloadBS' https host' fullPath' port'
+#else
+  dl _ = do
+#endif
+    lift $ $(logDebug) [i|downloading: #{serializeURIRef' uri'}|]
+    lift getDownloader >>= \case
+      Curl -> do
+        o' <- liftIO getCurlOpts
+        let exe = [rel|curl|]
+            args = o' ++ ["-sSfL", serializeURIRef' uri']
+        liftIO (executeOut exe args Nothing) >>= \case
+          CapturedProcess ExitSuccess stdout _ -> do
+            pure $ L.fromStrict stdout
+          CapturedProcess (ExitFailure i') _ _ -> throwE $ NonZeroExit i' (toFilePath exe) args
+      Wget -> do
+        o' <- liftIO getWgetOpts
+        let exe = [rel|wget|]
+            args = o' ++ ["-qO-", serializeURIRef' uri']
+        liftIO (executeOut exe args Nothing) >>= \case
+          CapturedProcess ExitSuccess stdout _ -> do
+            pure $ L.fromStrict stdout
+          CapturedProcess (ExitFailure i') _ _ -> throwE $ NonZeroExit i' (toFilePath exe) args
+#if defined(INTERNAL_DOWNLOADER)
+      Internal -> do
+        (_, host', fullPath', port') <- liftE $ uriToQuadruple uri'
+        liftE $ downloadBS' https host' fullPath' port'
 #endif
 
 
@@ -433,4 +464,20 @@ checkDigest dli file = do
     cDigest <- throwEither . E.decodeUtf8' . B16.encode . SHA256.hashlazy $ c
     let eDigest = view dlHash dli
     when ((cDigest /= eDigest) && verify) $ throwE (DigestError cDigest eDigest)
+
+
+-- | Get additional curl args from env. This is an undocumented option.
+getCurlOpts :: IO [ByteString]
+getCurlOpts =
+  getEnv "GHCUP_CURL_OPTS" >>= \case
+    Just r  -> pure $ BS.split _space r
+    Nothing -> pure []
+
+
+-- | Get additional wget args from env. This is an undocumented option.
+getWgetOpts :: IO [ByteString]
+getWgetOpts =
+  getEnv "GHCUP_WGET_OPTS" >>= \case
+    Just r  -> pure $ BS.split _space r
+    Nothing -> pure []
 

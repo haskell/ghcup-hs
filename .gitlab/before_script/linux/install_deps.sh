@@ -3,7 +3,7 @@
 set -eux
 
 sudo apt-get update -y
-sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev git
+sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev git wget
 
 . "$( cd "$(dirname "$0")" ; pwd -P )/../../ghcup_env"
 

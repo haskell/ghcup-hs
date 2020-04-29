@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP           #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module GHCup.Types where
@@ -140,9 +141,10 @@ data URLSource = GHCupURL
 
 
 data Settings = Settings
-  { cache    :: Bool
-  , noVerify :: Bool
-  , keepDirs :: KeepDirs
+  { cache      :: Bool
+  , noVerify   :: Bool
+  , keepDirs   :: KeepDirs
+  , downloader :: Downloader
   }
   deriving Show
 
@@ -152,6 +154,12 @@ data KeepDirs = Always
               | Never
   deriving (Eq, Show, Ord)
 
+data Downloader = Curl
+                | Wget
+#if defined(INTERNAL_DOWNLOADER)
+                | Internal
+#endif
+  deriving (Eq, Show, Ord)
 
 data DebugInfo = DebugInfo
   { diBaseDir  :: Path Abs
