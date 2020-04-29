@@ -74,7 +74,7 @@ ghci-$(ghc --numeric-version) --version
 if [ "${OS}" = "DARWIN" ] ; then
 	eghcup install 8.4.4
 else # test wget a bit
-	eghcup install --downloader=wget 8.4.4
+	eghcup --downloader=wget install 8.4.4
 fi
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 eghcup set 8.4.4
