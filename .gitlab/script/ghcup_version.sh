@@ -14,6 +14,7 @@ eghcup() {
 	ghcup -v -c -s file://$(pwd)/ghcup-${JSON_VERSION}.json "$@"
 }
 
+git describe
 
 ### build
 

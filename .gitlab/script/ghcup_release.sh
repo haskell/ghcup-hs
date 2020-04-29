@@ -10,6 +10,8 @@ ecabal() {
 	cabal --store-dir="$(pwd)"/.store "$@"
 }
 
+git describe
+
 # build
 ecabal update
 
