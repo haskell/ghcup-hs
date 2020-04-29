@@ -2,20 +2,19 @@
 
 ## Now
 
-* try to run exe before upgrade (backup to ~/.ghcup/bin/ghcup.old)
-* allow to build 8.8
-* curl DL does not cache json
-* explain environment variables
-* add --keep=<always|error> option
-
-* allow to switch to curl/wget at runtime
-
-* cross support
+* ghcup init?
+* merge two download files
+* fetch/unpack functionality
 * installing multiple versions of the same
+* post-install
 
 * proper test suite
-* add more logging
 
+* !! update of 0.1.5 must go in ghcup-0.0.1.json !!
+
+* try to run exe before upgrade (backup to ~/.ghcup/bin/ghcup.old)
+* stdout flushing?
+* resume support (for make-install only)
 
 ## Maybe
 
