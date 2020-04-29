@@ -58,6 +58,33 @@
             "distroPKGs": [],
             "notes": "You need the following packages: curl g++ gcc gmp make ncurses realpath xz-utils. Consult your distro documentation on the exact names of those packages."
           }
+        },
+        "Linux_CentOS": {
+          "7": {
+            "distroPKGs": [
+              "gcc",
+              "gcc-c++",
+              "gmp",
+              "make",
+              "ncurses",
+              "xz",
+              "perl"
+            ],
+            "notes": ""
+          },
+          "unknown_versioning": {
+            "distroPKGs": [
+              "gcc",
+              "gcc-c++",
+              "gmp",
+              "make",
+              "ncurses",
+              "ncurses-compat-libs",
+              "xz",
+              "perl"
+            ],
+            "notes": ""
+          }
         }
       }
     }
