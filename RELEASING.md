@@ -12,7 +12,8 @@
 
 6. Download release artifacts and upload them `downloads.haskell.org/ghcup`
 
-7. Add release artifacts to GHCupDownloads (see point 2.)
+7. Add release artifacts to GHCupDownloads (see point 4.)
 
 8. Upload the final `ghcup-<ver>.json` to `webhost.haskell.org/ghcup/data/`.
 
+9. Update bootstrap-haskell and symlinks on `downloads.haskell.org/ghcup`
