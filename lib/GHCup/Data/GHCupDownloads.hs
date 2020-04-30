@@ -897,25 +897,25 @@ ghc_8101_64_alpine = DownloadInfo
 
 cabal_2410_32_linux :: DownloadInfo
 cabal_2410_32_linux = DownloadInfo
-  [uri|https://downloads.haskell.org/cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-i386-unknown-linux.tar.xz|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-i386-unknown-linux.tar.xz|]
   Nothing
   "b2da736cc27609442b10f77fc1a687aba603a7a33045b722dbf1a0066fade198"
 
 cabal_2410_64_linux :: DownloadInfo
 cabal_2410_64_linux = DownloadInfo
-  [uri|https://downloads.haskell.org/cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-unknown-linux.tar.xz|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-unknown-linux.tar.xz|]
   Nothing
   "6136c189ffccaa39916f9cb5788f757166444a2d0c473b987856a79ecbf0c714"
 
 cabal_2410_64_darwin :: DownloadInfo
 cabal_2410_64_darwin = DownloadInfo
-  [uri|https://downloads.haskell.org/cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-apple-darwin-sierra.tar.xz|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-apple-darwin-sierra.tar.xz|]
   Nothing
   "56361cf4b0d920fe23174751fea1fb82a8e1ce522bd9706a3fbe47a72e458c9c"
 
 cabal_2410_64_alpine :: DownloadInfo
 cabal_2410_64_alpine = DownloadInfo
-  [uri|https://downloads.haskell.org/cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-alpine-linux-musl.tar.xz|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-alpine-linux-musl.tar.xz|]
   Nothing
   "720bef015f834a03deb7180be2952a44e7c2e6c8429137570404c3de4f46b984"
 
@@ -935,7 +935,7 @@ cabal_2410_64_freebsd = DownloadInfo
 
 cabal_3000_32_linux :: DownloadInfo
 cabal_3000_32_linux = DownloadInfo
-  [uri|https://downloads.haskell.org/cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-i386-unknown-linux.tar.xz|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-i386-unknown-linux.tar.xz|]
   Nothing
   "6898ccd6e6dc0872999c06daaf61d546164e12f60a1880d09852c9f0c59c5cf6"
 
@@ -947,27 +947,27 @@ cabal_3000_64_linux = DownloadInfo
 
 cabal_3000_64_darwin :: DownloadInfo
 cabal_3000_64_darwin = DownloadInfo
-  [uri|https://downloads.haskell.org/cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-x86_64-apple-darwin17.7.0.tar.xz|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-x86_64-apple-darwin17.7.0.tar.xz|]
   Nothing
   "d4857e068560515e4cbb0e8ca124c370e07892f2a28804d87152834e5fe2b845"
 
 cabal_3000_64_freebsd :: DownloadInfo
 cabal_3000_64_freebsd = DownloadInfo
-  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.0.0.0-x86_64-portbld-freebsd.tar.xz&dl=1|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-x86_64-portbld-freebsd.tar.xz|]
   Nothing
-  "d97b6469ed612a1367ad1032d0722469ee5277668879694d7d4336233b937516"
+  "2240842ab2ae7b955feb8b526aba1c7991248c803383107adf39990441294d2a"
 
 cabal_3000_32_alpine :: DownloadInfo
 cabal_3000_32_alpine = DownloadInfo
-  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.0.0.0-i386-alpine-linux-musl.tar.xz&dl=1|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-i386-alpine-linux-musl.tar.xz|]
   Nothing
-  "a4191cd5a645b00e6a9c53abe6f3cb91fe700de7d7c520c9cb36ce8ec5c9919a"
+  "ac018f061993d40bf146517e32629bcab274b4d9f5527b1c37a665ebdf3f5ac6"
 
 cabal_3000_64_alpine :: DownloadInfo
 cabal_3000_64_alpine = DownloadInfo
-  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.0.0.0-x86_64-alpine-linux-musl.tar.xz&dl=1|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-x86_64-alpine-linux-musl.tar.xz|]
   Nothing
-  "7b35e5986aba4a40fc37141cbde26612bfc916e95a2d2ff35a413612d8c7cd3a"
+  "2b7ea63601e11a0db2941b96e6a7036a48efc2a1ab3849d7dfce08b45f5daa58"
 
 
 
@@ -978,7 +978,7 @@ cabal_3000_64_alpine = DownloadInfo
 
 cabal_3200_32_linux :: DownloadInfo
 cabal_3200_32_linux = DownloadInfo
-  [uri|https://downloads.haskell.org/cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-i386-unknown-linux.tar.xz|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-i386-unknown-linux.tar.xz|]
   Nothing
   "2b3ac28549916de5f3379241797eaf60e84b6c001f2abbe73d9fadbbaf768e93"
 
@@ -990,27 +990,27 @@ cabal_3200_64_linux = DownloadInfo
 
 cabal_3200_64_darwin :: DownloadInfo
 cabal_3200_64_darwin = DownloadInfo
-  [uri|https://downloads.haskell.org/cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-apple-darwin17.7.0.tar.xz|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-apple-darwin17.7.0.tar.xz|]
   Nothing
   "9197c17d2ece0f934f5b33e323cfcaf486e4681952687bc3d249488ce3cbe0e9"
 
 cabal_3200_64_freebsd :: DownloadInfo
 cabal_3200_64_freebsd = DownloadInfo
-  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.2.0.0-x86_64-portbld-freebsd.tar.xz&dl=1|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-portbld-freebsd.tar.xz|]
   Nothing
-  "e4dc00ab7fef51354e7624dd03e49c6bb684887fc95acb9b33bc52f357a5ef8c"
+  "f1e35151cca91541b0fb4bdb3ed18f3c348038eab751845ad19c11307d66c273"
 
 cabal_3200_32_alpine :: DownloadInfo
 cabal_3200_32_alpine = DownloadInfo
-  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.2.0.0-i386-alpine-linux-musl.tar.xz&dl=1|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-i386-alpine-linux-musl.tar.xz|]
   Nothing
-  "4aaa52fbc337ae1ef855a2aa2808186580b21ec36883aafec7473e7d899bc5ec"
+  "c2a419dedf730987b60daf8d24e871d115a09ea608d740d7c61b36e3f5b9c830"
 
 cabal_3200_64_alpine :: DownloadInfo
 cabal_3200_64_alpine = DownloadInfo
-  [uri|https://hasufell.de/d/d3e215db133e4fcaa61e/files/?p=/cabal-install-3.2.0.0-x86_64-alpine-linux-musl.tar.xz&dl=1|]
+  [uri|https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-alpine-linux-musl.tar.xz|]
   Nothing
-  "c1f3c21a5307cea8d2a0bd9a2eab9f56f3dd90e947ae64e231f909024980992b"
+  "8bae37a1ce8b5f10440b5591fed734935e1411c1b765258325ffe268e2cc2042"
 
 
 
@@ -1064,7 +1064,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.8.2.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/7.10.3/docs/html/users_guide/release-7-10-1.html|]
+              [uri|https://downloads.haskell.org/~ghc/7.10.3/docs/html/users_guide/release-7-10-1.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-src.tar.xz|]
@@ -1110,7 +1110,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.9.1.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.0.2/docs/html/users_guide/8.0.1-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.0.2/docs/html/users_guide/8.0.1-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-src.tar.xz|]
@@ -1156,7 +1156,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.10.1.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.2.2/docs/html/users_guide/8.2.2-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.2.2/docs/html/users_guide/8.2.2-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-src.tar.xz|]
@@ -1208,7 +1208,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.11.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.4.1/docs/html/users_guide/8.4.1-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.4.1/docs/html/users_guide/8.4.1-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-src.tar.xz|]
@@ -1247,7 +1247,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.11.1.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.4.2/docs/html/users_guide/8.4.2-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.4.2/docs/html/users_guide/8.4.2-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-src.tar.xz|]
@@ -1297,7 +1297,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.11.1.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.4.3/docs/html/users_guide/8.4.3-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.4.3/docs/html/users_guide/8.4.3-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-src.tar.xz|]
@@ -1346,7 +1346,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.11.1.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.4.4/docs/html/users_guide/8.4.4-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.4.4/docs/html/users_guide/8.4.4-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-src.tar.xz|]
@@ -1400,7 +1400,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.12.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.6.1/docs/html/users_guide/8.6.1-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.6.1/docs/html/users_guide/8.6.1-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-src.tar.xz|]
@@ -1450,7 +1450,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.12.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.6.2/docs/html/users_guide/8.6.2-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.6.2/docs/html/users_guide/8.6.2-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-src.tar.xz|]
@@ -1494,7 +1494,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.12.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.6.3/docs/html/users_guide/8.6.3-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.6.3/docs/html/users_guide/8.6.3-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-src.tar.xz|]
@@ -1548,7 +1548,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.12.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.6.4/docs/html/users_guide/8.6.4-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.6.4/docs/html/users_guide/8.6.4-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-src.tar.xz|]
@@ -1597,7 +1597,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.12.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.6.5/docs/html/users_guide/8.6.5-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.6.5/docs/html/users_guide/8.6.5-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-src.tar.xz|]
@@ -1650,7 +1650,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.13.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.8.1/docs/html/users_guide/8.8.1-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.8.1/docs/html/users_guide/8.8.1-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-src.tar.xz|]
@@ -1703,7 +1703,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Base [pver|4.13.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.8.2/docs/html/users_guide/8.8.2-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.8.2/docs/html/users_guide/8.8.2-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-src.tar.xz|]
@@ -1756,7 +1756,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Recommended, Base [pver|4.13.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.8.3/docs/html/users_guide/8.8.3-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.8.3/docs/html/users_guide/8.8.3-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-src.tar.xz|]
@@ -1809,7 +1809,7 @@ ghcupDownloads = M.fromList
         , VersionInfo
             [Latest, Base [pver|4.14.0.0|]]
             (Just
-              [uri|https://downloads.haskell.org/ghc/8.10.1/docs/html/users_guide/8.10.1-notes.html|]
+              [uri|https://downloads.haskell.org/~ghc/8.10.1/docs/html/users_guide/8.10.1-notes.html|]
             )
             (Just $ DownloadInfo
               [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-src.tar.xz|]
