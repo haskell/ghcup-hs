@@ -26,15 +26,16 @@ eghcup() {
 download_ghcup() {
 	_plat="$(uname -s)"
 	_arch=$(uname -m)
+	_ghver="0.1.5"
 
     case "${_plat}" in
         "linux"|"Linux")
 			case "${_arch}" in
 				x86_64|amd64)
-					_url=https://downloads.haskell.org/~ghcup/0.1.5/x86_64-linux-ghcup-0.1.5
+					_url=https://downloads.haskell.org/~ghcup/${_ghver}/x86_64-linux-ghcup-${_ghver}
 					;;
 				i*86)
-					_url=https://downloads.haskell.org/~ghcup/0.1.5/i386-linux-ghcup-0.1.5
+					_url=https://downloads.haskell.org/~ghcup/${_ghver}/i386-linux-ghcup-${_ghver}
 					;;
 				*) die "Unknown architecture: ${_arch}"
 					;;
@@ -50,7 +51,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${_arch}"
 					;;
 			esac
-			_url=https://downloads.haskell.org/~ghcup/0.1.5/x86_64-portbld-freebsd-ghcup-0.1.5
+			_url=https://downloads.haskell.org/~ghcup/${_ghver}/x86_64-portbld-freebsd-ghcup-${_ghver}
             ;;
         "Darwin"|"darwin")
 			case "${_arch}" in
@@ -62,14 +63,14 @@ download_ghcup() {
 				*) die "Unknown architecture: ${_arch}"
 					;;
 			esac
-			_url=https://downloads.haskell.org/~ghcup/0.1.5/x86_64-apple-darwin-ghcup-0.1.5 ;;
+			_url=https://downloads.haskell.org/~ghcup/${_ghver}/x86_64-apple-darwin-ghcup-${_ghver} ;;
         *) die "Unknown platform: ${_plat}"
 			;;
     esac
 
 	edo curl -Lf "${_url}" > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
 
-	unset _plat _arch _url
+	unset _plat _arch _url _ghver
 }
 
 
