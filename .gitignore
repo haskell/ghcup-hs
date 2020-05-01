@@ -1,3 +1,4 @@
 dist-newstyle/
+cabal.project.local
 .stack-work/
 bin/
