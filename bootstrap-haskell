@@ -148,21 +148,11 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 			GHCUP_PROFILE_FILE="$HOME/.zshrc"
 			MY_SHELL="zsh" ;;
 		*/bash) # login shell is bash
-			if [ -f "$HOME/.bashrc" ] ; then # bashrc is not sourced by default, so assume it isn't if file does not exist
-				GHCUP_PROFILE_FILE="$HOME/.bashrc"
-			else
-				GHCUP_PROFILE_FILE="$HOME/.bash_profile"
-			fi
-
+			GHCUP_PROFILE_FILE="$HOME/.bashrc"
 			MY_SHELL="bash" ;;
 		*/sh) # login shell is sh, but might be a symlink to bash or zsh
 			if [ -n "${BASH}" ] ; then
-				if [ -f "$HOME/.bashrc" ] ; then # bashrc is not sourced by default, so assume it isn't if file does not exist
-					GHCUP_PROFILE_FILE="$HOME/.bashrc"
-				else
-					GHCUP_PROFILE_FILE="$HOME/.bash_profile"
-				fi
-
+				GHCUP_PROFILE_FILE="$HOME/.bashrc"
 				MY_SHELL="bash"
 			elif [ -n "${ZSH_VERSION}" ] ; then
 				GHCUP_PROFILE_FILE="$HOME/.zshrc"
