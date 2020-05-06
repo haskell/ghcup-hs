@@ -77,16 +77,17 @@ download_ghcup() {
 echo
 echo "Welcome to Haskell!"
 echo
-echo "This will download and install the Glasgow Haskell Compiler (GHC)"
-echo "and the Cabal build tool."
+echo "This script will download and install the following binaries:"
+echo "  * ghcup - The Haskell toolchain installer (for managing GHC/cabal versions)"
+echo "  * ghc   - The Glasgow Haskell Compiler"
+echo "  * cabal - The Cabal build tool"
 echo
 echo "ghcup installs only into the following directory, which can be removed anytime:"
 echo "  $GHCUP_INSTALL_BASE_PREFIX/.ghcup"
 echo
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
-    printf "\\033[0;35m%s\\033[0m\\n" "Press ENTER to proceed"
-    printf "\\033[0;35m%s\\033[0m\\n" "or ctrl-c to abort."
+    printf "\\033[0;35m%s\\033[0m\\n" "Press ENTER to proceed or ctrl-c to abort."
     printf "\\033[0;35m%s\\033[0m\\n" "Note that this script can be re-run at any given time."
     echo
     # Wait for user input to continue.
@@ -117,8 +118,7 @@ echo "$(ghcup tool-requirements)"
 echo
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
-    printf "\\033[0;35m%s\\033[0m\\n" "Press ENTER to proceed"
-    printf "\\033[0;35m%s\\033[0m\\n" "or ctrl-c to abort."
+    printf "\\033[0;35m%s\\033[0m\\n" "Press ENTER to proceed or ctrl-c to abort."
     printf "\\033[0;35m%s\\033[0m\\n" "Installation may take a while."
     echo
 
