@@ -1043,9 +1043,9 @@ ghcup_015_64_freebsd = DownloadInfo
 
 ghcup_015_64_darwin10_13 :: DownloadInfo
 ghcup_015_64_darwin10_13 = DownloadInfo
-  [uri|https://downloads.haskell.org/~ghcup/0.1.5/x86_64-apple-darwin-ghcup-0.1.5|]
+  [uri|https://downloads.haskell.org/~ghcup/0.1.5/x86_64-apple-darwin-ghcup-0.1.5-p1|]
   Nothing
-  "5be3324b65c737af942cc5ed1a025d4882f29c1efcc7dcd971a893efab78d394"
+  "68212040a0c975322e78b3bb97b670be9a6298bba4454a1f4488dc91e95b6720"
 
 
 
