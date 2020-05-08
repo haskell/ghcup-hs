@@ -18,5 +18,5 @@ ghcup set 8.8.3
 ## install ghcup
 
 cabal update
-cabal build
+cabal build --constraint="zlib static" --constraint="lzma static"
 cp "$(cabal new-exec --verbose=0 --offline sh -- -c 'command -v ghcup')" "./${ARTIFACT}"

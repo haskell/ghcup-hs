@@ -18,9 +18,9 @@ ecabal update
 if [ "${OS}" = "LINUX" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections -optl-static'
 elif [ "${OS}" = "FREEBSD" ] ; then
-	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections'
+	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections' --constraint="zlib static"
 else
-	ecabal build -w ghc-${GHC_VERSION}
+	ecabal build -w ghc-${GHC_VERSION} --constraint="zlib static" --constraint="lzma static"
 fi
 
 mkdir out
