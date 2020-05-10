@@ -82,11 +82,11 @@ data Options = Options
   }
 
 data Command
-  = Install InstallOptions
-  | InstallCabal InstallOptions
-  | SetGHC SetGHCOptions
+  = Install (Either InstallCommand InstallOptions)
+  | InstallCabalLegacy InstallOptions
+  | Set (Either SetCommand SetOptions)
   | List ListOptions
-  | Rm RmOptions
+  | Rm (Either RmCommand RmOptions)
   | DInfo
   | Compile CompileCommand
   | Upgrade UpgradeOpts Bool
@@ -101,13 +101,19 @@ prettyToolVer (ToolVersion v') = T.unpack $ prettyTVer v'
 prettyToolVer (ToolTag t) = show t
 
 
+data InstallCommand = InstallGHC InstallOptions
+                    | InstallCabal InstallOptions
+
 data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
   , instPlatform :: Maybe PlatformRequest
   }
 
-data SetGHCOptions = SetGHCOptions
-  { ghcVer :: Maybe ToolVersion
+data SetCommand = SetGHC SetOptions
+                | SetCabal SetOptions
+
+data SetOptions = SetOptions
+  { sToolVer :: Maybe ToolVersion
   }
 
 data ListOptions = ListOptions
@@ -115,6 +121,9 @@ data ListOptions = ListOptions
   , lCriteria  :: Maybe ListCriteria
   , lRawFormat :: Bool
   }
+
+data RmCommand = RmGHC RmOptions
+               | RmCabal Version
 
 data RmOptions = RmOptions
   { ghcVer :: GHCTargetVersion
@@ -213,44 +222,38 @@ com =
   subparser
       (  command
           "install"
-          ((info
-             ((Install <$> installOpts) <**> helper)
-             (  progDesc "Install or update GHC"
-             <> footerDoc (Just $ text installFooter)
-             )
-           )
+          (   Install
+          <$> (info
+                (installParser <**> helper)
+                (  progDesc "Install or update GHC/cabal"
+                <> footerDoc (Just $ text installToolFooter)
+                )
+              )
           )
       <> command
            "set"
-           (   SetGHC
-           <$> (info
-                 (setGHCOpts <**> helper)
-                 (  progDesc "Set currently active GHC version"
-                 <> footerDoc (Just $ text setFooter)
-                 )
-               )
-           )
-      <> command
-           "rm"
-           (   Rm
-           <$> (info (rmOpts <**> helper) (progDesc "Remove a GHC version"))
-           )
-
-      <> command
-           "install-cabal"
            ((info
-              ((InstallCabal <$> installOpts) <**> helper)
-              (  progDesc "Install or update cabal"
-              <> footerDoc (Just $ text installCabalFooter)
+              (Set <$> setParser <**> helper)
+              (  progDesc "Set currently active GHC/cabal version"
+              <> footerDoc (Just $ text setFooter)
               )
             )
            )
       <> command
+           "rm"
+           ((info
+              (Rm <$> rmParser <**> helper)
+              (  progDesc "Remove a GHC/cabal version"
+              <> footerDoc (Just $ text rmFooter)
+              )
+            )
+           )
+
+      <> command
            "list"
-           (   List
-           <$> (info (listOpts <**> helper)
-                     (progDesc "Show available GHCs and other tools")
-               )
+           ((info (List <$> listOpts <**> helper)
+                  (progDesc "Show available GHCs and other tools")
+            )
            )
       <> command
            "upgrade"
@@ -284,33 +287,95 @@ com =
                )
           <> command
                "changelog"
-               ((info (fmap ChangeLog changelogP <**> helper)
-                      (progDesc "Find/show changelog"
-                      <> footerDoc (Just $ text changeLogFooter)
-                      )
+               ((info
+                  (fmap ChangeLog changelogP <**> helper)
+                  (  progDesc "Find/show changelog"
+                  <> footerDoc (Just $ text changeLogFooter)
+                  )
                 )
                )
           <> commandGroup "Other commands:"
           <> hidden
           )
+    <|> subparser
+          (  command
+              "install-cabal"
+              ((info
+                 ((InstallCabalLegacy <$> installOpts) <**> helper)
+                 (  progDesc "Install or update cabal"
+                 <> footerDoc (Just $ text installCabalFooter)
+                 )
+               )
+              )
+          <> internal
+          )
  where
-  installFooter = [i|Discussion:
-  Installs the specified GHC version (or a recommended default one) into
-  a self-contained "~/.ghcup/ghc/<ghcver>" directory
-  and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".|]
+  installToolFooter :: String
+  installToolFooter = [i|Discussion:
+  Installs GHC or cabal. When no command is given, installs GHC
+  with the specified version/tag.
+  It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
+
+  setFooter :: String
   setFooter = [i|Discussion:
-  Sets the the current GHC version by creating non-versioned
-  symlinks for all ghc binaries of the specified version in
-  "~/.ghcup/bin/<binary>".|]
-  installCabalFooter = [i|Discussion:
+  Sets the currently active GHC or cabal version. When no command is given,
+  defaults to setting GHC with the specified version/tag (if no tag
+  is given, sets GHC to 'recommended' version).
+  It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
+
+  rmFooter :: String
+  rmFooter = [i|Discussion:
+  Remove the given GHC or cabal version. When no command is given,
+  defaults to removing GHC with the specified version.
+  It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
+
+  changeLogFooter :: String
+  changeLogFooter = [i|Discussion:
+  By default returns the URI of the ChangeLog of the latest GHC release.
+  Pass '-o' to automatically open via xdg-open.|]
+
+
+installCabalFooter :: String
+installCabalFooter = [i|Discussion:
   Installs the specified cabal-install version (or a recommended default one)
   into "~/.ghcup/bin", so it can be overwritten by later
   "cabal install cabal-install", which installs into "~/.cabal/bin" by
   default. Make sure to set up your PATH appropriately, so the cabal
   installation takes precedence.|]
-  changeLogFooter = [i|Discussion:
-  By default returns the URI of the ChangeLog of the latest GHC release.
-  Pass '-o' to automatically open via xdg-open.|]
+
+
+installParser :: Parser (Either InstallCommand InstallOptions)
+installParser =
+  (Left <$> subparser
+      (  command
+          "ghc"
+          (   InstallGHC
+          <$> (info
+                (installOpts <**> helper)
+                (  progDesc "Install GHC"
+                <> footerDoc (Just $ text installGHCFooter)
+                )
+              )
+          )
+      <> command
+           "cabal"
+           (   InstallCabal
+           <$> (info
+                 (installOpts <**> helper)
+                 (  progDesc "Install Cabal"
+                 <> footerDoc (Just $ text installCabalFooter)
+                 )
+               )
+           )
+      )
+    )
+    <|> (Right <$> installOpts)
+ where
+  installGHCFooter :: String
+  installGHCFooter = [i|Discussion:
+  Installs the specified GHC version (or a recommended default one) into
+  a self-contained "~/.ghcup/ghc/<ghcver>" directory
+  and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".|]
 
 
 installOpts :: Parser InstallOptions
@@ -330,8 +395,46 @@ installOpts =
     <*> optional toolVersionArgument
 
 
-setGHCOpts :: Parser SetGHCOptions
-setGHCOpts = SetGHCOptions <$> optional toolVersionArgument
+setParser :: Parser (Either SetCommand SetOptions)
+setParser =
+  (Left <$> subparser
+      (  command
+          "ghc"
+          (   SetGHC
+          <$> (info
+                (setOpts <**> helper)
+                (  progDesc "Set GHC version"
+                <> footerDoc (Just $ text setGHCFooter)
+                )
+              )
+          )
+      <> command
+           "cabal"
+           (   SetCabal
+           <$> (info
+                 (setOpts <**> helper)
+                 (  progDesc "Set Cabal version"
+                 <> footerDoc (Just $ text setCabalFooter)
+                 )
+               )
+           )
+      )
+    )
+    <|> (Right <$> setOpts)
+ where
+  setGHCFooter :: String
+  setGHCFooter = [i|Discussion:
+    Sets the the current GHC version by creating non-versioned
+    symlinks for all ghc binaries of the specified version in
+    "~/.ghcup/bin/<binary>".|]
+
+  setCabalFooter :: String
+  setCabalFooter = [i|Discussion:
+    Sets the the current Cabal version.|]
+
+
+setOpts :: Parser SetOptions
+setOpts = SetOptions <$> optional toolVersionArgument
 
 listOpts :: Parser ListOptions
 listOpts =
@@ -356,6 +459,26 @@ listOpts =
     <*> switch
           (short 'r' <> long "raw-format" <> help "More machine-parsable format"
           )
+
+
+rmParser :: Parser (Either RmCommand RmOptions)
+rmParser =
+  (Left <$> subparser
+      (  command
+          "ghc"
+          (RmGHC <$> (info (rmOpts <**> helper) (progDesc "Remove GHC version")))
+      <> command
+           "cabal"
+           (   RmCabal
+           <$> (info (versionParser' <**> helper)
+                     (progDesc "Remove Cabal version")
+               )
+           )
+      )
+    )
+    <|> (Right <$> rmOpts)
+
+
 
 rmOpts :: Parser RmOptions
 rmOpts = RmOptions <$> versionArgument
@@ -533,6 +656,12 @@ versionParser = option
   (eitherReader tVersionEither)
   (short 'v' <> long "version" <> metavar "VERSION" <> help "The target version"
   )
+
+versionParser' :: Parser Version
+versionParser' = argument
+  (eitherReader (bimap show id . version . T.pack))
+  (metavar "VERSION")
+
 
 tagEither :: String -> Either String Tag
 tagEither s' = case fmap toLower s' of
@@ -744,7 +873,11 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 , rawOutter    = appendFile logfile
                 }
 
-          -- wrapper to run effects with settings
+
+          -------------------------
+          -- Effect interpreters --
+          -------------------------
+
           let runInstTool =
                 runLogger
                   . flip runReaderT settings
@@ -773,6 +906,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   @'[ FileDoesNotExistError
                     , NotInstalled
                     , TagNotFound
+                    , TagNotFound
+                    ]
+
+          let
+            runSetCabal =
+              runLogger
+                . runE
+                  @'[ NotInstalled
                     , TagNotFound
                     ]
 
@@ -811,13 +952,16 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   . flip runReaderT settings
                   . runResourceT
                   . runE
-                    @'[ BuildFailed
+                    @'[ AlreadyInstalled
+                      , BuildFailed
+                      , CopyError
                       , DigestError
                       , DistroNotFound
                       , DownloadFailed
                       , NoCompatibleArch
                       , NoCompatiblePlatform
                       , NoDownload
+                      , NotInstalled
                       , PatchFailed
                       , UnknownArchive
                       ]
@@ -838,6 +982,11 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , DownloadFailed
                       ]
 
+
+          ---------------------------
+          -- Getting download info --
+          ---------------------------
+
           (GHCupInfo treq dls) <-
             ( runLogger
               . flip runReaderT settings
@@ -853,79 +1002,134 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       exitWith (ExitFailure 2)
           runLogger $ checkForUpdates dls
 
+
+          -----------------------
+          -- Command functions --
+          -----------------------
+
+          let installGHC InstallOptions{..} =
+                  (runInstTool $ do
+                      v <- liftE $ fromVersion dls instVer GHC
+                      liftE $ installGHCBin dls (_tvVersion v) instPlatform -- FIXME: ugly sharing of tool version
+                    )
+                    >>= \case
+                          VRight _ -> do
+                            runLogger $ $(logInfo) ("GHC installation successful")
+                            pure ExitSuccess
+                          VLeft (V (AlreadyInstalled _ v)) -> do
+                            runLogger $ $(logWarn)
+                              [i|GHC ver #{prettyVer v} already installed|]
+                            pure ExitSuccess
+                          VLeft (V (BuildFailed tmpdir e)) -> do
+                            case keepDirs of
+                              Never -> runLogger ($(logError) [i|Build failed with #{e}|])
+                              _ -> runLogger ($(logError) [i|Build failed with #{e}
+    Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
+    Make sure to clean up #{tmpdir} afterwards.|])
+                            pure $ ExitFailure 3
+                          VLeft (V NoDownload) -> do
+
+                            runLogger $ do
+                              case instVer of
+                                Just iver -> $(logError) [i|No available GHC version for #{prettyToolVer iver}|]
+                                Nothing -> $(logError) [i|No available recommended GHC version|]
+                            pure $ ExitFailure 3
+                          VLeft e -> do
+                            runLogger $ do
+                              $(logError) [i|#{e}|]
+                              $(logError) [i|Also check the logs in ~/.ghcup/logs|]
+                            pure $ ExitFailure 3
+
+
+          let installCabal InstallOptions{..} =
+                (runInstTool $ do
+                    v <- liftE $ fromVersion dls instVer Cabal
+                    liftE $ installCabalBin dls (_tvVersion v) instPlatform -- FIXME: ugly sharing of tool version
+                  )
+                  >>= \case
+                        VRight _ -> do
+                          runLogger $ $(logInfo) ("Cabal installation successful")
+                          pure ExitSuccess
+                        VLeft (V (AlreadyInstalled _ v)) -> do
+                          runLogger $ $(logWarn)
+                            [i|Cabal ver #{prettyVer v} already installed|]
+                          pure ExitSuccess
+                        VLeft (V NoDownload) -> do
+
+                          runLogger $ do
+                            case instVer of
+                              Just iver -> $(logError) [i|No available Cabal version for #{prettyToolVer iver}|]
+                              Nothing -> $(logError) [i|No available recommended Cabal version|]
+                          pure $ ExitFailure 4
+                        VLeft e -> do
+                          runLogger $ do
+                            $(logError) [i|#{e}|]
+                            $(logError) [i|Also check the logs in ~/.ghcup/logs|]
+                          pure $ ExitFailure 4
+
+          let setGHC' SetOptions{..} =
+                (runSetGHC $ do
+                    v <- liftE $ fromVersion dls sToolVer GHC
+                    liftE $ setGHC v SetGHCOnly
+                  )
+                  >>= \case
+                        VRight (GHCTargetVersion{..}) -> do
+                          runLogger
+                            $ $(logInfo)
+                                [i|GHC #{prettyVer _tvVersion} successfully set as default version#{maybe "" (" for cross target " <>) _tvTarget}|]
+                          pure ExitSuccess
+                        VLeft e -> do
+                          runLogger ($(logError) [i|#{e}|])
+                          pure $ ExitFailure 5
+
+          let setCabal' SetOptions{..} =
+                (runSetCabal $ do
+                    v <- liftE $ fromVersion dls sToolVer Cabal
+                    liftE $ setCabal (_tvVersion v)
+                  )
+                  >>= \case
+                        VRight _ -> pure ExitSuccess
+                        VLeft  e -> do
+                          runLogger ($(logError) [i|#{e}|])
+                          pure $ ExitFailure 14
+
+          let rmGHC' RmOptions{..} =
+                (runRmGHC $ do
+                    liftE $ rmGHCVer ghcVer
+                  )
+                  >>= \case
+                        VRight _ -> pure ExitSuccess
+                        VLeft  e -> do
+                          runLogger ($(logError) [i|#{e}|])
+                          pure $ ExitFailure 7
+
+          let rmCabal' tv =
+                (runSetCabal $ do
+                    liftE $ rmCabalVer tv
+                  )
+                  >>= \case
+                        VRight _ -> pure ExitSuccess
+                        VLeft  e -> do
+                          runLogger ($(logError) [i|#{e}|])
+                          pure $ ExitFailure 15
+
+
+
           res <- case optCommand of
-            Install (InstallOptions {..}) ->
-              (runInstTool $ do
-                  v <- liftE $ fromVersion dls instVer GHC
-                  liftE $ installGHCBin dls (_tvVersion v) instPlatform -- FIXME: ugly sharing of tool version
-                )
-                >>= \case
-                      VRight _ -> do
-                        runLogger $ $(logInfo) ("GHC installation successful")
-                        pure ExitSuccess
-                      VLeft (V (AlreadyInstalled _ v)) -> do
-                        runLogger $ $(logWarn)
-                          [i|GHC ver #{prettyVer v} already installed|]
-                        pure ExitSuccess
-                      VLeft (V (BuildFailed tmpdir e)) -> do
-                        case keepDirs of
-                          Never -> runLogger ($(logError) [i|Build failed with #{e}|])
-                          _ -> runLogger ($(logError) [i|Build failed with #{e}
-Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
-Make sure to clean up #{tmpdir} afterwards.|])
-                        pure $ ExitFailure 3
-                      VLeft (V NoDownload) -> do
+            Install (Right iopts) -> do
+              runLogger ($(logWarn) [i|This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.|])
+              installGHC iopts
+            Install (Left (InstallGHC iopts)) -> installGHC iopts
+            Install (Left (InstallCabal iopts)) -> installCabal iopts
+            InstallCabalLegacy iopts -> do
+              runLogger ($(logWarn) [i|This is an old-style command for installing cabal. Use 'ghcup install cabal' instead.|])
+              installCabal iopts
 
-                        runLogger $ do
-                          case instVer of
-                            Just iver -> $(logError) [i|No available GHC version for #{prettyToolVer iver}|]
-                            Nothing -> $(logError) [i|No available recommended GHC version|]
-                        pure $ ExitFailure 3
-                      VLeft e -> do
-                        runLogger $ do
-                          $(logError) [i|#{e}|]
-                          $(logError) [i|Also check the logs in ~/.ghcup/logs|]
-                        pure $ ExitFailure 3
-            InstallCabal (InstallOptions {..}) ->
-              (runInstTool $ do
-                  v <- liftE $ fromVersion dls instVer Cabal
-                  liftE $ installCabalBin dls (_tvVersion v) instPlatform -- FIXME: ugly sharing of tool version
-                )
-                >>= \case
-                      VRight _ -> do
-                        runLogger $ $(logInfo) ("Cabal installation successful")
-                        pure ExitSuccess
-                      VLeft (V (AlreadyInstalled _ v)) -> do
-                        runLogger $ $(logWarn)
-                          [i|Cabal ver #{prettyVer v} already installed|]
-                        pure ExitSuccess
-                      VLeft (V NoDownload) -> do
-
-                        runLogger $ do
-                          case instVer of
-                            Just iver -> $(logError) [i|No available Cabal version for #{prettyToolVer iver}|]
-                            Nothing -> $(logError) [i|No available recommended Cabal version|]
-                        pure $ ExitFailure 4
-                      VLeft e -> do
-                        runLogger $ do
-                          $(logError) [i|#{e}|]
-                          $(logError) [i|Also check the logs in ~/.ghcup/logs|]
-                        pure $ ExitFailure 4
-
-            SetGHC (SetGHCOptions {..}) ->
-              (runSetGHC $ do
-                  v <- liftE $ fromVersion dls ghcVer GHC
-                  liftE $ setGHC v SetGHCOnly
-                )
-                >>= \case
-                      VRight (GHCTargetVersion{..}) -> do
-                        runLogger
-                          $ $(logInfo)
-                              [i|GHC #{prettyVer _tvVersion} successfully set as default version#{maybe "" (" for cross target " <>) _tvTarget}|]
-                        pure ExitSuccess
-                      VLeft e -> do
-                        runLogger ($(logError) [i|#{e}|])
-                        pure $ ExitFailure 5
+            Set (Right sopts) -> do
+              runLogger ($(logWarn) [i|This is an old-style command for setting GHC. Use 'ghcup set ghc' instead.|])
+              setGHC' sopts
+            Set (Left (SetGHC sopts)) -> setGHC' sopts
+            Set (Left (SetCabal sopts)) -> setCabal' sopts
 
             List (ListOptions {..}) ->
               (runListGHC $ do
@@ -940,15 +1144,11 @@ Make sure to clean up #{tmpdir} afterwards.|])
                         runLogger ($(logError) [i|#{e}|])
                         pure $ ExitFailure 6
 
-            Rm (RmOptions {..}) ->
-              (runRmGHC $ do
-                  liftE $ rmGHCVer ghcVer
-                )
-                >>= \case
-                      VRight _ -> pure ExitSuccess
-                      VLeft  e -> do
-                        runLogger ($(logError) [i|#{e}|])
-                        pure $ ExitFailure 7
+            Rm (Right rmopts) -> do
+              runLogger ($(logWarn) [i|This is an old-style command for removing GHC. Use 'ghcup rm ghc' instead.|])
+              rmGHC' rmopts
+            Rm (Left (RmGHC rmopts)) -> rmGHC' rmopts
+            Rm (Left (RmCabal rmopts)) -> rmCabal' rmopts
 
             DInfo ->
               do
@@ -1182,14 +1382,14 @@ checkForUpdates dls = do
     forM mghc_ver $ \ghc_ver ->
       when (l > ghc_ver)
         $ $(logWarn)
-            [i|New GHC version available: #{prettyVer l}. To upgrade, run 'ghcup install #{prettyVer l}'|]
+            [i|New GHC version available: #{prettyVer l}. To upgrade, run 'ghcup install ghc #{prettyVer l}'|]
 
   forM_ (getLatest dls Cabal) $ \l -> do
     mcabal_ver <- latestInstalled Cabal
     forM mcabal_ver $ \cabal_ver ->
       when (l > cabal_ver)
         $ $(logWarn)
-            [i|New Cabal version available: #{prettyVer l}. To upgrade, run 'ghcup install-cabal #{prettyVer l}'|]
+            [i|New Cabal version available: #{prettyVer l}. To upgrade, run 'ghcup install cabal #{prettyVer l}'|]
 
  where
   latestInstalled tool = (fmap lVer . lastMay)

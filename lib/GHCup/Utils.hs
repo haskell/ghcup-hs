@@ -210,19 +210,41 @@ getInstalledGHCs = do
     Left  _ -> pure $ Left f
 
 
+getInstalledCabals :: IO [Either (Path Rel) Version]
+getInstalledCabals = do
+  bindir <- liftIO $ ghcupBinDir
+  bins   <- liftIO $ handleIO (\_ -> pure []) $ findFiles
+    bindir
+    (makeRegexOpts compExtended execBlank ([s|^cabal-.*$|] :: ByteString))
+  vs <- forM bins $ \f -> case fmap version (fmap decUTF8Safe . B.stripPrefix "cabal-" . toFilePath $ f) of
+    Just (Right r) -> pure $ Right r
+    Just (Left  _) -> pure $ Left f
+    Nothing        -> pure $ Left f
+  cs <- cabalSet -- for legacy cabal
+  pure $ maybe vs (\x -> Right x:vs) cs
+
+
 cabalInstalled :: Version -> IO Bool
 cabalInstalled ver = do
-  reportedVer <- cabalSet
-  pure (reportedVer == ver)
+  vers <- fmap rights $ getInstalledCabals
+  pure $ elem ver $ vers
 
-cabalSet :: (MonadIO m, MonadThrow m) => m Version
+
+cabalSet :: (MonadIO m, MonadThrow m) => m (Maybe Version)
 cabalSet = do
   cabalbin <- (</> [rel|cabal|]) <$> liftIO ghcupBinDir
-  mc       <- liftIO $ executeOut cabalbin ["--numeric-version"] Nothing
-  let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ mc
-  case version $ decUTF8Safe reportedVer of
-    Left  e -> throwM e
-    Right r -> pure r
+  mc       <- liftIO $ handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
+    cabalbin
+    ["--numeric-version"]
+    Nothing
+  fmap join $ forM mc $ \c -> if
+             | not (B.null (_stdOut c))
+             , _exitCode c == ExitSuccess -> do
+                  let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ c
+                  case version $ decUTF8Safe reportedVer of
+                    Left  e -> throwM e
+                    Right r -> pure $ Just r
+             | otherwise -> pure Nothing
 
 
 
@@ -463,11 +485,11 @@ getChangeLog dls tool (Right tag) =
 runBuildAction :: (Show (V e), MonadReader Settings m, MonadIO m, MonadMask m)
                => Path Abs          -- ^ build directory
                -> Maybe (Path Abs)  -- ^ install location (e.g. for GHC)
-               -> Excepts e m ()
-               -> Excepts '[BuildFailed] m ()
+               -> Excepts e m a
+               -> Excepts '[BuildFailed] m a
 runBuildAction bdir instdir action = do
   Settings {..} <- lift ask
-  flip
+  v <- flip
       onException
       (do
         forM_ instdir $ \dir ->
@@ -491,3 +513,4 @@ runBuildAction bdir instdir action = do
 
   when (keepDirs == Never || keepDirs == Errors) $ liftIO $ deleteDirRecursive
     bdir
+  pure v

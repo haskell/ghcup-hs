@@ -38,6 +38,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.ByteString                ( ByteString )
+import           Data.Either
 import           Data.List
 import           Data.Maybe
 import           Data.String.Interpolate
@@ -53,6 +54,7 @@ import           Prelude                 hiding ( abs
                                                 , readFile
                                                 , writeFile
                                                 )
+import           Safe                    hiding ( at )
 import           System.IO.Error
 import           System.Posix.Env.ByteString    ( getEnvironment )
 import           System.Posix.FilePath          ( getSearchPath )
@@ -148,24 +150,39 @@ installCabalBin :: ( MonadMask m
                    , MonadLogger m
                    , MonadResource m
                    , MonadIO m
+                   , MonadFail m
                    )
                 => GHCupDownloads
                 -> Version
                 -> Maybe PlatformRequest -- ^ if Nothing, looks up current host platform
                 -> Excepts
-                     '[ CopyError
+                     '[ AlreadyInstalled
+                      , CopyError
                       , DigestError
                       , DistroNotFound
                       , DownloadFailed
                       , NoCompatibleArch
                       , NoCompatiblePlatform
                       , NoDownload
+                      , NotInstalled
                       , UnknownArchive
                       ]
                      m
                      ()
 installCabalBin bDls ver mpfReq = do
   lift $ $(logDebug) [i|Requested to install cabal version #{ver}|]
+
+  bindir <- liftIO ghcupBinDir
+
+  whenM
+      (liftIO $ cabalInstalled ver >>= \a ->
+        handleIO (\_ -> pure False)
+          $ fmap (\x -> a && isSymbolicLink x)
+          -- ignore when the installation is a legacy cabal (binary, not symlink)
+          $ getSymbolicLinkStatus (toFilePath (bindir </> [rel|cabal|]))
+      )
+    $ (throwE $ AlreadyInstalled Cabal ver)
+
   Settings {..}                <- lift ask
   pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
 
@@ -178,13 +195,16 @@ installCabalBin bDls ver mpfReq = do
   liftE $ unpackToDir tmpUnpack dl
   void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
-  -- prepare paths
-  bindir <- liftIO ghcupBinDir
-
   -- the subdir of the archive where we do the work
   let workdir = maybe tmpUnpack (tmpUnpack </>) (view dlSubdir dlinfo)
 
   liftE $ installCabal' workdir bindir
+
+  -- create symlink if this is the latest version
+  cVers <- liftIO $ fmap rights $ getInstalledCabals
+  let lInstCabal = headMay . reverse . sort $ cVers
+  when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
+
   pure ()
 
  where
@@ -197,16 +217,17 @@ installCabalBin bDls ver mpfReq = do
     lift $ $(logInfo) "Installing cabal"
     let cabalFile = [rel|cabal|]
     liftIO $ createDirIfMissing newDirPerms inst
+    destFileName <- lift $ parseRel (toFilePath cabalFile <> "-" <> verToBS ver)
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
       (path </> cabalFile)
-      (inst </> cabalFile)
+      (inst </> destFileName)
       Overwrite
 
 
 
-    ---------------
-    --[ Set GHC ]--
-    ---------------
+    ---------------------
+    --[ Set GHC/cabal ]--
+    ---------------------
 
 
 
@@ -280,6 +301,40 @@ setGHC ver sghc = do
           $(logDebug) [i|ln -s #{targetF} #{fullF}|]
           liftIO $ createSymlink fullF targetF
       _ -> pure ()
+
+
+
+-- | Set the ~/.ghcup/bin/cabal symlink.
+setCabal :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
+         => Version
+         -> Excepts '[NotInstalled] m ()
+setCabal ver = do
+  let verBS = verToBS ver
+  targetFile <- parseRel ("cabal-" <> verBS)
+
+  -- symlink destination
+  bindir     <- liftIO $ ghcupBinDir
+  liftIO $ hideError AlreadyExists $ createDirRecursive newDirPerms bindir
+
+  whenM (liftIO $ fmap not $ doesFileExist (bindir </> targetFile))
+    $ throwE
+    $ NotInstalled Cabal (prettyVer ver)
+
+  let cabalbin = bindir </> [rel|cabal|]
+
+  -- delete old file (may be binary or symlink)
+  lift $ $(logDebug) [i|rm -f #{toFilePath cabalbin}|]
+  liftIO $ hideError doesNotExistErrorType $ deleteFile
+    cabalbin
+
+  -- create symlink
+  let destL = toFilePath targetFile
+  lift $ $(logDebug) [i|ln -s #{destL} #{toFilePath cabalbin}|]
+  liftIO $ createSymlink cabalbin destL
+
+  pure ()
+
+
 
 
 
@@ -386,8 +441,8 @@ listVersions av lt criteria = case lt of
       fromSrc    <- ghcSrcInstalled tver
       pure ListResult { lVer = v, lCross = Nothing , lTag = tags, lTool = t, lStray = False, .. }
     Cabal -> do
-      lSet <- fmap (== v) $ cabalSet
-      let lInstalled = lSet
+      lSet <- fmap (maybe False (== v)) $ cabalSet
+      lInstalled <- cabalInstalled v
       pure ListResult { lVer    = v
                       , lCross  = Nothing
                       , lTag    = tags
@@ -417,9 +472,9 @@ listVersions av lt criteria = case lt of
 
 
 
-    --------------
-    --[ GHC rm ]--
-    --------------
+    --------------------
+    --[ GHC/cabal rm ]--
+    --------------------
 
 
 -- | This function may throw and crash in various ways.
@@ -460,6 +515,26 @@ rmGHCVer ver = do
         .   (</> [rel|share|])
     else throwE (NotInstalled GHC (ver ^. tvVersion % to prettyVer))
 
+
+-- | This function may throw and crash in various ways.
+rmCabalVer :: (MonadThrow m, MonadLogger m, MonadIO m, MonadFail m)
+           => Version
+           -> Excepts '[NotInstalled] m ()
+rmCabalVer ver = do
+  whenM (fmap not $ liftIO $ cabalInstalled ver) $ throwE (NotInstalled GHC (prettyVer ver))
+
+  cSet      <- liftIO cabalSet
+
+  bindir    <- liftIO ghcupBinDir
+  cabalFile <- lift $ parseRel ("cabal-" <> verToBS ver)
+  liftIO $ hideError doesNotExistErrorType $ deleteFile (bindir </> cabalFile)
+
+  when (maybe False (== ver) cSet) $ do
+    cVers <- liftIO $ fmap rights $ getInstalledCabals
+    case headMay . reverse . sort $ cVers of
+      Just latestver -> setCabal latestver
+      Nothing        -> liftIO $ hideError doesNotExistErrorType $ deleteFile
+        (bindir </> [rel|cabal|])
 
 
 
@@ -671,26 +746,29 @@ Stage1Only = YES|]
 
 
 
-
 compileCabal :: ( MonadReader Settings m
                 , MonadResource m
                 , MonadMask m
                 , MonadLogger m
                 , MonadIO m
+                , MonadFail m
                 )
              => GHCupDownloads
-             -> Version          -- ^ version to install
+             -> Version                    -- ^ version to install
              -> Either Version (Path Abs)  -- ^ version to bootstrap with
              -> Maybe Int
              -> Maybe (Path Abs)
              -> Excepts
-                  '[ BuildFailed
+                  '[ AlreadyInstalled
+                   , BuildFailed
+                   , CopyError
                    , DigestError
                    , DistroNotFound
                    , DownloadFailed
                    , NoCompatibleArch
                    , NoCompatiblePlatform
                    , NoDownload
+                   , NotInstalled
                    , PatchFailed
                    , UnknownArchive
                    ]
@@ -698,6 +776,17 @@ compileCabal :: ( MonadReader Settings m
                   ()
 compileCabal dls tver bghc jobs patchdir = do
   lift $ $(logDebug) [i|Requested to compile: #{tver} with ghc-#{bghc}|]
+
+  bindir <- liftIO ghcupBinDir
+
+  whenM
+      (liftIO $ cabalInstalled tver >>= \a ->
+        handleIO (\_ -> pure False)
+          $ fmap (\x -> a && isSymbolicLink x)
+          -- ignore when the installation is a legacy cabal (binary, not symlink)
+          $ getSymbolicLinkStatus (toFilePath (bindir </> [rel|cabal|]))
+      )
+    $ (throwE $ AlreadyInstalled Cabal tver)
 
   -- download source tarball
   dlInfo <- preview (ix Cabal % ix tver % viSourceDL % _Just) dls ?? NoDownload
@@ -711,21 +800,25 @@ compileCabal dls tver bghc jobs patchdir = do
 
   let workdir = maybe id (flip (</>)) (view dlSubdir dlInfo) $ tmpUnpack
 
+  cbin         <- liftE $ runBuildAction tmpUnpack Nothing (compile workdir)
 
-  liftE $ runBuildAction
-    tmpUnpack
-    Nothing
-    (compile workdir)
+  destFileName <- lift $ parseRel ("cabal-" <> verToBS tver)
+  handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+    cbin
+    (bindir </> destFileName)
+    Overwrite
 
-  -- only clean up dir if the build succeeded
-  liftIO $ deleteDirRecursive tmpUnpack
+  -- create symlink if this is the latest version
+  cVers <- liftIO $ fmap rights $ getInstalledCabals
+  let lInstCabal = headMay . reverse . sort $ cVers
+  when (maybe True (tver >=) lInstCabal) $ liftE $ setCabal tver
 
   pure ()
 
  where
-  compile :: (MonadThrow m, MonadLogger m, MonadIO m)
+  compile :: (MonadThrow m, MonadLogger m, MonadIO m, MonadResource m)
           => Path Abs
-          -> Excepts '[ProcessError , PatchFailed] m ()
+          -> Excepts '[ProcessError , PatchFailed] m (Path Abs)
   compile workdir = do
     lift $ $(logInfo) [i|Building (this may take a while)...|]
 
@@ -741,14 +834,19 @@ compileCabal dls tver bghc jobs patchdir = do
         pure
           [ ("GHC"    , toFilePath path)
           , ("GHC_PKG", dn <> "/" <> "ghc-pkg" <> ver)
+          , ("HADDOCK", dn <> "/" <> "haddock" <> ver)
           ]
       Left bver -> do
         let v' = verToBS bver
-        pure [("GHC", "ghc-" <> v'), ("GHC_PKG", "ghc-pkg-" <> v')]
+        pure
+          [ ("GHC"    , "ghc-" <> v')
+          , ("GHC_PKG", "ghc-pkg-" <> v')
+          , ("HADDOCK", "haddock-" <> v')
+          ]
 
-    cabal_bin <- liftIO $ ghcupBinDir
-    newEnv    <- lift
-      $ addToCurrentEnv (("PREFIX", toFilePath cabal_bin) : ghcEnv)
+    tmp <- lift withGHCupTmpDir
+    liftIO $ createDirRecursive newDirPerms (tmp </> [rel|bin|])
+    newEnv <- lift $ addToCurrentEnv (("PREFIX", toFilePath tmp) : ghcEnv)
     lift $ $(logDebug) [i|Environment: #{newEnv}|]
 
     lEM $ liftIO $ execLogged "./bootstrap.sh"
@@ -757,6 +855,7 @@ compileCabal dls tver bghc jobs patchdir = do
                               [rel|cabal-bootstrap|]
                               (Just workdir)
                               (Just newEnv)
+    pure $ (tmp </> [rel|bin/cabal|])
 
 
 
