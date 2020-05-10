@@ -2245,9 +2245,9 @@
             },
             "Darwin": {
               "unknown_versioning": {
-                "dlHash": "68212040a0c975322e78b3bb97b670be9a6298bba4454a1f4488dc91e95b6720",
+                "dlHash": "456770c3b1510d44a0e401e0677faa9f5670ef81a11646f47cbba1b95404e788",
                 "dlSubdir": null,
-                "dlUri": "https://downloads.haskell.org/~ghcup/0.1.5/x86_64-apple-darwin-ghcup-0.1.5-p1"
+                "dlUri": "https://downloads.haskell.org/~ghcup/0.1.5/x86_64-apple-darwin-ghcup-0.1.5-p2"
               }
             },
             "Linux_UnknownLinux": {
