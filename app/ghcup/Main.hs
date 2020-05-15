@@ -23,6 +23,7 @@ import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 import           GHCup.Version
 
+import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
@@ -53,7 +54,7 @@ import           System.Console.Pretty
 import           System.Environment
 import           System.Exit
 import           System.IO               hiding ( appendFile )
-import           Text.Read
+import           Text.Read               hiding ( lift )
 import           Text.Layout.Table
 import           URI.ByteString
 
@@ -917,7 +918,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     , TagNotFound
                     ]
 
-          let runListGHC = runE @'[] . runLogger
+          let runListGHC = runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound]
 
           let runRmGHC =
                 runLogger . flip runReaderT settings . runE @'[NotInstalled]
@@ -1000,7 +1001,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       runLogger
                         ($(logError) [i|Error fetching download info: #{e}|])
                       exitWith (ExitFailure 2)
-          runLogger $ checkForUpdates dls
+          (runLogger
+              . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] $ checkForUpdates dls
+              )
+              >>= \case
+                    VRight _ -> pure ()
+                    VLeft  e -> do
+                      runLogger
+                        ($(logError) [i|Error checking for upgrades: #{e}|])
 
 
           -----------------------
@@ -1353,7 +1361,8 @@ printListResult raw lr = do
                        , intercalate "," $ (fmap printTag $ sort lTag)
                        , intercalate ","
                        $  (if fromSrc then [color' Blue "compiled"] else mempty)
-                       ++ (if lStray then [color' Blue "stray"] else mempty)
+                       ++ (if lStray then [color' Yellow "stray"] else mempty)
+                       ++ (if lNoBindist then [color' Red "no-bindist"] else mempty)
                        ]
             )
             lr
@@ -1367,28 +1376,34 @@ printListResult raw lr = do
     True  -> flip const
     False -> color
 
-checkForUpdates :: (MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
+checkForUpdates :: (MonadCatch m, MonadLogger m, MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
                 => GHCupDownloads
-                -> m ()
+                -> Excepts
+                     '[ NoCompatiblePlatform
+                      , NoCompatibleArch
+                      , DistroNotFound
+                      ]
+                     m
+                     ()
 checkForUpdates dls = do
   forM_ (getLatest dls GHCup) $ \l -> do
     (Right ghc_ver) <- pure $ version $ prettyPVP ghcUpVer
     when (l > ghc_ver)
-      $ $(logWarn)
+      $ lift $ $(logWarn)
           [i|New GHCup version available: #{prettyVer l}. To upgrade, run 'ghcup upgrade'|]
 
   forM_ (getLatest dls GHC) $ \l -> do
     mghc_ver <- latestInstalled GHC
     forM mghc_ver $ \ghc_ver ->
       when (l > ghc_ver)
-        $ $(logWarn)
+        $ lift $ $(logWarn)
             [i|New GHC version available: #{prettyVer l}. To upgrade, run 'ghcup install ghc #{prettyVer l}'|]
 
   forM_ (getLatest dls Cabal) $ \l -> do
     mcabal_ver <- latestInstalled Cabal
     forM mcabal_ver $ \cabal_ver ->
       when (l > cabal_ver)
-        $ $(logWarn)
+        $ lift $ $(logWarn)
             [i|New Cabal version available: #{prettyVer l}. To upgrade, run 'ghcup install cabal #{prettyVer l}'|]
 
  where

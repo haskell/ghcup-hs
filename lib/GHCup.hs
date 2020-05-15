@@ -357,6 +357,7 @@ data ListResult = ListResult
   , lSet       :: Bool -- ^ currently active version
   , fromSrc    :: Bool -- ^ compiled from source
   , lStray     :: Bool -- ^ not in download info
+  , lNoBindist :: Bool -- ^ whether the version is available for this platform/arch
   }
   deriving (Eq, Ord, Show)
 
@@ -369,28 +370,41 @@ availableToolVersions av tool = view
 
 -- | List all versions from the download info, as well as stray
 -- versions.
-listVersions :: (MonadThrow m, MonadLogger m, MonadIO m)
+listVersions :: ( MonadCatch m
+                , MonadLogger m
+                , MonadThrow m
+                , MonadLogger m
+                , MonadIO m
+                )
              => GHCupDownloads
              -> Maybe Tool
              -> Maybe ListCriteria
-             -> m [ListResult]
-listVersions av lt criteria = case lt of
-  Just t -> do
-    -- get versions from GHCupDownloads
-    let avTools = availableToolVersions av t
-    lr <- filter' <$> forM (Map.toList avTools) (liftIO . toListResult t)
+             -> Excepts
+                  '[ NoCompatiblePlatform
+                   , NoCompatibleArch
+                   , DistroNotFound
+                   ]
+                  m
+                  [ListResult]
+listVersions av lt criteria = do
+  pfreq <- platformRequest
+  case lt of
+    Just t -> do
+      -- get versions from GHCupDownloads
+      let avTools = availableToolVersions av t
+      lr <- filter' <$> forM (Map.toList avTools) (liftIO . toListResult pfreq t)
 
-    case t of
-      -- append stray GHCs
-      GHC -> do
-        slr <- strayGHCs avTools
-        pure $ (sort (slr ++ lr))
-      _ -> pure lr
-  Nothing -> do
-    ghcvers   <- listVersions av (Just GHC) criteria
-    cabalvers <- listVersions av (Just Cabal) criteria
-    ghcupvers <- listVersions av (Just GHCup) criteria
-    pure (ghcvers <> cabalvers <> ghcupvers)
+      case t of
+        -- append stray GHCs
+        GHC -> do
+          slr <- lift $ strayGHCs avTools
+          pure $ (sort (slr ++ lr))
+        _ -> pure lr
+    Nothing -> do
+      ghcvers   <- listVersions av (Just GHC) criteria
+      cabalvers <- listVersions av (Just Cabal) criteria
+      ghcupvers <- listVersions av (Just GHCup) criteria
+      pure (ghcvers <> cabalvers <> ghcupvers)
 
  where
   strayGHCs :: (MonadThrow m, MonadLogger m, MonadIO m)
@@ -412,6 +426,7 @@ listVersions av lt criteria = case lt of
               , lTag       = []
               , lInstalled = True
               , lStray     = maybe True (const False) (Map.lookup _tvVersion avTools)
+              , lNoBindist = False
               , ..
               }
       Right tver@GHCTargetVersion{ .. } -> do
@@ -424,6 +439,7 @@ listVersions av lt criteria = case lt of
           , lTag       = []
           , lInstalled = True
           , lStray     = True -- NOTE: cross currently cannot be installed via bindist
+          , lNoBindist = False
           , ..
           }
       Left e -> do
@@ -432,15 +448,17 @@ listVersions av lt criteria = case lt of
         pure Nothing
 
   -- NOTE: this are not cross ones, because no bindists
-  toListResult :: Tool -> (Version, [Tag]) -> IO ListResult
-  toListResult t (v, tags) = case t of
+  toListResult :: PlatformRequest -> Tool -> (Version, [Tag]) -> IO ListResult
+  toListResult pfreq t (v, tags) = case t of
     GHC -> do
+      let lNoBindist = isLeft $ getDownloadInfo GHC v pfreq av
       let tver = mkTVer v
       lSet       <- fmap (maybe False (\(GHCTargetVersion _ v') -> v' == v)) $ ghcSet Nothing
       lInstalled <- ghcInstalled tver
       fromSrc    <- ghcSrcInstalled tver
       pure ListResult { lVer = v, lCross = Nothing , lTag = tags, lTool = t, lStray = False, .. }
     Cabal -> do
+      let lNoBindist = isLeft $ getDownloadInfo Cabal v pfreq av
       lSet <- fmap (maybe False (== v)) $ cabalSet
       lInstalled <- cabalInstalled v
       pure ListResult { lVer    = v
@@ -460,6 +478,7 @@ listVersions av lt criteria = case lt of
                       , lTool   = t
                       , fromSrc = False
                       , lStray  = False
+                      , lNoBindist = False
                       , ..
                       }
 

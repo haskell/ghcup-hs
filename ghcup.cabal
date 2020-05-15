@@ -327,6 +327,7 @@ executable ghcup
     , pretty-terminal
     , resourcet
     , safe
+    , safe-exceptions
     , string-interpolate
     , table-layout
     , template-haskell
