@@ -34,14 +34,33 @@
             "notes": ""
           }
         },
+        "Linux_Debian": {
+          "unknown_versioning": {
+            "distroPKGs": [
+              "build-essential",
+              "curl",
+              "libffi-dev",
+              "libffi6",
+              "libgmp-dev",
+              "libgmp10",
+              "libncurses-dev",
+              "libncurses5",
+              "libtinfo5"
+            ],
+            "notes": ""
+          }
+        },
         "Linux_Ubuntu": {
           "unknown_versioning": {
             "distroPKGs": [
               "build-essential",
               "curl",
-              "libgmp-dev",
               "libffi-dev",
+              "libffi6",
+              "libgmp-dev",
+              "libgmp10",
               "libncurses-dev",
+              "libncurses5",
               "libtinfo5"
             ],
             "notes": ""

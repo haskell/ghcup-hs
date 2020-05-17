@@ -53,9 +53,30 @@ toolRequirements = M.fromList
                 , Requirements
                   [ "build-essential"
                   , "curl"
-                  , "libgmp-dev"
                   , "libffi-dev"
+                  , "libffi6"
+                  , "libgmp-dev"
+                  , "libgmp10"
                   , "libncurses-dev"
+                  , "libncurses5"
+                  , "libtinfo5"
+                  ]
+                  ""
+                )
+              ]
+            )
+          , ( Linux Debian
+            , M.fromList
+              [ ( Nothing
+                , Requirements
+                  [ "build-essential"
+                  , "curl"
+                  , "libffi-dev"
+                  , "libffi6"
+                  , "libgmp-dev"
+                  , "libgmp10"
+                  , "libncurses-dev"
+                  , "libncurses5"
                   , "libtinfo5"
                   ]
                   ""
