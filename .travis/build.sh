@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 
 set -ex
 
@@ -19,4 +19,6 @@ ghcup set 8.8.3
 
 cabal update
 cabal build --constraint="zlib static" --constraint="lzma static"
-cp "$(cabal new-exec --verbose=0 --offline sh -- -c 'command -v ghcup')" "./${ARTIFACT}"
+cp "$(cabal new-exec --verbose=0 --offline sh -- -c 'command -v ghcup')" .
+strip -s ghcup
+cp ghcup "./${ARTIFACT}"
