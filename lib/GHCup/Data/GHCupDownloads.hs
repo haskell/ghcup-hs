@@ -1360,6 +1360,7 @@ ghcupDownloads = M.fromList
                     , M.fromList [(Nothing, ghc_844_64_fedora)]
                     )
                   , (Linux CentOS, M.fromList [(Nothing, ghc_844_64_centos)])
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_844_64_centos)])
                   , ( Linux AmazonLinux
                     , M.fromList [(Nothing, ghc_844_64_centos)]
                     )
@@ -1509,6 +1510,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Linux Fedora, M.fromList [(Nothing, ghc_863_64_fedora)])
                   , (Linux CentOS, M.fromList [(Nothing, ghc_863_64_centos)])
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_863_64_centos)])
                   , ( Linux AmazonLinux
                     , M.fromList [(Nothing, ghc_863_64_centos)]
                     )
@@ -1612,6 +1614,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Linux Fedora, M.fromList [(Nothing, ghc_865_64_fedora)])
                   , (Linux CentOS, M.fromList [(Nothing, ghc_865_64_centos)])
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_865_64_centos)])
                   , ( Linux AmazonLinux
                     , M.fromList [(Nothing, ghc_865_64_centos)]
                     )
@@ -1665,6 +1668,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Linux Fedora, M.fromList [(Nothing, ghc_881_64_fedora)])
                   , (Linux CentOS, M.fromList [(Nothing, ghc_881_64_centos)])
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_881_64_centos)])
                   , ( Linux AmazonLinux
                     , M.fromList [(Nothing, ghc_881_64_centos)]
                     )
@@ -1718,6 +1722,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Linux Fedora, M.fromList [(Nothing, ghc_882_64_fedora)])
                   , (Linux CentOS, M.fromList [(Nothing, ghc_882_64_centos)])
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_882_64_centos)])
                   , ( Linux AmazonLinux
                     , M.fromList [(Nothing, ghc_882_64_centos)]
                     )
@@ -1771,6 +1776,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Linux Fedora, M.fromList [(Nothing, ghc_883_64_fedora)])
                   , (Linux CentOS, M.fromList [(Nothing, ghc_883_64_centos)])
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_883_64_centos)])
                   , ( Linux AmazonLinux
                     , M.fromList [(Nothing, ghc_883_64_centos)]
                     )
@@ -1829,6 +1835,12 @@ ghcupDownloads = M.fromList
                       ]
                     )
                   , ( Linux CentOS
+                    , M.fromList
+                      [ (Nothing       , ghc_8101_64_centos)
+                      , (Just [vers|7|], ghc_8101_64_centos)
+                      ]
+                    )
+                  , ( Linux RedHat
                     , M.fromList
                       [ (Nothing       , ghc_8101_64_centos)
                       , (Just [vers|7|], ghc_8101_64_centos)
