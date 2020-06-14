@@ -4,6 +4,8 @@
 (
 
 : "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}"
+: "${BOOTSTRAP_HASKELL_GHC_VERSION:=recommended}"
+: "${BOOTSTRAP_HASKELL_CABAL_VERSION:=recommended}"
 
 die() {
     (>&2 printf "\\033[0;31m%s\\033[0m\\n" "$1")
@@ -127,10 +129,10 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
     read -r answer </dev/tty
 fi
 
-eghcup --cache install
+eghcup --cache install "${BOOTSTRAP_HASKELL_GHC_VERSION}"
 
-eghcup set
-eghcup --cache install-cabal
+eghcup set "${BOOTSTRAP_HASKELL_GHC_VERSION}"
+eghcup --cache install-cabal "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
 
 edo cabal new-update
 
