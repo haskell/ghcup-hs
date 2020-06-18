@@ -1840,12 +1840,7 @@ ghcupDownloads = M.fromList
                       , (Just [vers|7|], ghc_8101_64_centos)
                       ]
                     )
-                  , ( Linux RedHat
-                    , M.fromList
-                      [ (Nothing       , ghc_8101_64_centos)
-                      , (Just [vers|7|], ghc_8101_64_centos)
-                      ]
-                    )
+                  , ( Linux RedHat, M.fromList [(Nothing, ghc_8101_64_centos)])
                   , ( Linux AmazonLinux
                     , M.fromList [(Nothing, ghc_8101_64_centos)]
                     )
