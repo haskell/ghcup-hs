@@ -883,7 +883,7 @@ ghc_8101_64_darwin = DownloadInfo
 ghc_8101_64_alpine :: DownloadInfo
 ghc_8101_64_alpine = DownloadInfo
   [uri|https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-alpine3.10-linux-integer-simple.tar.xz|]
-  (Just [rel|ghc-8.10.1|])
+  (Just [rel|ghc-8.10.1-x86_64-unknown-linux|])
   "cb13b645d103e2fba2eb8dfcc4e5f2fbd9550c00c4df42f342b4210436dcb8a8"
 
 
