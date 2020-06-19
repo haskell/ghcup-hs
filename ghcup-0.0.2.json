@@ -597,6 +597,13 @@
                 "dlUri": "https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-apple-darwin.tar.xz"
               }
             },
+            "Linux_RedHat": {
+              "unknown_versioning": {
+                "dlHash": "355bd85c69933c31bbe99b4269ce719acfd0aad0b45e359ac39b9bb13996acc6",
+                "dlSubdir": "ghc-8.6.3",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-centos7-linux.tar.xz"
+              }
+            },
             "Linux_UnknownLinux": {
               "unknown_versioning": {
                 "dlHash": "52ae92f4e8bb2ac0b7847287ea3da37081f5f7bf8bbb7c78ac35fde537d1a89f",
@@ -730,6 +737,13 @@
                 "dlHash": "65b1ca361093de4804a7e40b3e68178e1ef720f84f743641ec8d95e56a45b3a8",
                 "dlSubdir": "ghc-8.10.1",
                 "dlUri": "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-apple-darwin.tar.xz"
+              }
+            },
+            "Linux_RedHat": {
+              "unknown_versioning": {
+                "dlHash": "0618b94854edc6be5302489df905e627820b71be6b66c950f5e3088fe92df0a1",
+                "dlSubdir": "ghc-8.10.1",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-centos7-linux.tar.xz"
               }
             },
             "Linux_UnknownLinux": {
@@ -869,6 +883,13 @@
                 "dlHash": "dfc1bdb1d303a87a8552aa17f5b080e61351f2823c2b99071ec23d0837422169",
                 "dlSubdir": "ghc-8.6.5",
                 "dlUri": "https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-apple-darwin.tar.xz"
+              }
+            },
+            "Linux_RedHat": {
+              "unknown_versioning": {
+                "dlHash": "80ab566f4411299f9e5922d60749ca80f989d697db19e03ed875619d699f0edf",
+                "dlSubdir": "ghc-8.6.5",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-centos7-linux.tar.xz"
               }
             },
             "Linux_UnknownLinux": {
@@ -1122,6 +1143,13 @@
                 "dlHash": "38c8917b47c31bedf58c9305dfca3abe198d8d35570366f0773c4e2948bd8abe",
                 "dlSubdir": "ghc-8.8.1",
                 "dlUri": "https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-apple-darwin.tar.xz"
+              }
+            },
+            "Linux_RedHat": {
+              "unknown_versioning": {
+                "dlHash": "6cdd34e4dbaeb801e805811f91cf43a2d5f64b22f884718ffbd3542a2f4dd14f",
+                "dlSubdir": "ghc-8.8.1",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-centos7-linux.tar.xz"
               }
             },
             "Linux_UnknownLinux": {
@@ -1491,6 +1519,13 @@
                 "dlHash": "25c5c1a70036abf3f22b2b19c10d26adfdb08e8f8574f89d4b2042de5947f990",
                 "dlSubdir": "ghc-8.8.2",
                 "dlUri": "https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-apple-darwin.tar.xz"
+              }
+            },
+            "Linux_RedHat": {
+              "unknown_versioning": {
+                "dlHash": "f065a017d7a38f235f186ffe32d8261a4fd39c7e945d5cde85c0984c2569db99",
+                "dlSubdir": "ghc-8.8.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-centos7-linux.tar.xz"
               }
             },
             "Linux_UnknownLinux": {
@@ -1866,6 +1901,13 @@
                 "dlUri": "https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-apple-darwin.tar.xz"
               }
             },
+            "Linux_RedHat": {
+              "unknown_versioning": {
+                "dlHash": "83a96650f5a92b1e4d7651d256d6438624342d40e780e68125033435a54cd674",
+                "dlSubdir": "ghc-8.4.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-centos70-linux.tar.xz"
+              }
+            },
             "Linux_UnknownLinux": {
               "unknown_versioning": {
                 "dlHash": "8ab2befddc14d1434d0aad0c5d3c7e0c2b78ff84caa3429fa62527bfc6b86095",
@@ -1994,6 +2036,13 @@
                 "dlHash": "7016de90dd226b06fc79d0759c5d4c83c2ab01d8c678905442c28bd948dbb782",
                 "dlSubdir": "ghc-8.8.3",
                 "dlUri": "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-apple-darwin.tar.xz"
+              }
+            },
+            "Linux_RedHat": {
+              "unknown_versioning": {
+                "dlHash": "4b2b5313f7c12b81e54efcb26705fa9e4ad5b98f2b58bfc76fb0c9ba1d55eb1f",
+                "dlSubdir": "ghc-8.8.3",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-centos7-linux.tar.xz"
               }
             },
             "Linux_UnknownLinux": {
