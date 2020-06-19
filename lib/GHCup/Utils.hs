@@ -418,19 +418,23 @@ ghcToolFiles ver = do
     )
 
   let ghcbinPath = toFilePath (bindir </> ghcbin)
-  ghcIsLink <- isSymbolicLink <$> (liftIO $ getFileStatus ghcbinPath)
-  onlyUnversioned <- if ghcIsLink
-    then do
+  ghcIsHadrian <- liftIO $ isHadrian ghcbinPath
+  onlyUnversioned <- if ghcIsHadrian
+    then pure id
+    else do
       (Just symver) <-
         (B.stripPrefix (toFilePath ghcbin <> "-") . takeFileName)
           <$> (liftIO $ readSymbolicLink ghcbinPath)
       when (B.null symver)
            (throwIO $ userError $ "Fatal: ghc symlink target is broken")
       pure $ filter (\x -> not $ symver `B.isSuffixOf` toFilePath x)
-    else
-      pure id
 
   pure $ onlyUnversioned files
+  where
+    -- GHC is moving some builds to Hadrian for bindists, which doesn't create versioned binaries
+    -- https://gitlab.haskell.org/haskell/ghcup-hs/issues/31
+    isHadrian :: ByteString -> IO Bool
+    isHadrian = (not . isSymbolicLink <$>) . getFileStatus
 
 
 -- | This file, when residing in ~/.ghcup/ghc/<ver>/ signals that
