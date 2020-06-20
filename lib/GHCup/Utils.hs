@@ -54,7 +54,7 @@ import           System.IO.Error
 import           System.Posix.FilePath          ( getSearchPath
                                                 , takeFileName
                                                 )
-import           System.Posix.Files.ByteString  ( getFileStatus, isSymbolicLink, readSymbolicLink )
+import           System.Posix.Files.ByteString  ( getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink )
 import           Text.Regex.Posix
 import           URI.ByteString
 
@@ -434,7 +434,7 @@ ghcToolFiles ver = do
     -- GHC is moving some builds to Hadrian for bindists, which doesn't create versioned binaries
     -- https://gitlab.haskell.org/haskell/ghcup-hs/issues/31
     isHadrian :: ByteString -> IO Bool
-    isHadrian = (not . isSymbolicLink <$>) . getFileStatus
+    isHadrian = (not . isSymbolicLink <$>) . getSymbolicLinkStatus
 
 
 -- | This file, when residing in ~/.ghcup/ghc/<ver>/ signals that
