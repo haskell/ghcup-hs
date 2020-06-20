@@ -54,7 +54,7 @@ import           System.IO.Error
 import           System.Posix.FilePath          ( getSearchPath
                                                 , takeFileName
                                                 )
-import           System.Posix.Files.ByteString  ( readSymbolicLink )
+import           System.Posix.Files.ByteString  ( getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink )
 import           Text.Regex.Posix
 import           URI.ByteString
 
@@ -417,13 +417,24 @@ ghcToolFiles ver = do
                    ([s|^([a-zA-Z0-9_-]*[a-zA-Z0-9_]-)?ghc$|] :: ByteString)
     )
 
-  (Just symver) <-
-    (B.stripPrefix (toFilePath ghcbin <> "-") . takeFileName)
-      <$> (liftIO $ readSymbolicLink $ toFilePath (bindir </> ghcbin))
-  when (B.null symver)
-       (throwIO $ userError $ "Fatal: ghc symlink target is broken")
+  let ghcbinPath = toFilePath (bindir </> ghcbin)
+  ghcIsHadrian <- liftIO $ isHadrian ghcbinPath
+  onlyUnversioned <- if ghcIsHadrian
+    then pure id
+    else do
+      (Just symver) <-
+        (B.stripPrefix (toFilePath ghcbin <> "-") . takeFileName)
+          <$> (liftIO $ readSymbolicLink ghcbinPath)
+      when (B.null symver)
+           (throwIO $ userError $ "Fatal: ghc symlink target is broken")
+      pure $ filter (\x -> not $ symver `B.isSuffixOf` toFilePath x)
 
-  pure . filter (\x -> not $ symver `B.isSuffixOf` toFilePath x) $ files
+  pure $ onlyUnversioned files
+  where
+    -- GHC is moving some builds to Hadrian for bindists, which doesn't create versioned binaries
+    -- https://gitlab.haskell.org/haskell/ghcup-hs/issues/31
+    isHadrian :: ByteString -> IO Bool
+    isHadrian = (not . isSymbolicLink <$>) . getSymbolicLinkStatus
 
 
 -- | This file, when residing in ~/.ghcup/ghc/<ver>/ signals that
