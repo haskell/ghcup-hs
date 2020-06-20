@@ -694,7 +694,7 @@
             "Linux_Alpine": {
               "unknown_versioning": {
                 "dlHash": "cb13b645d103e2fba2eb8dfcc4e5f2fbd9550c00c4df42f342b4210436dcb8a8",
-                "dlSubdir": "ghc-8.10.1",
+                "dlSubdir": "ghc-8.10.1-x86_64-unknown-linux",
                 "dlUri": "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-alpine3.10-linux-integer-simple.tar.xz"
               }
             },
