@@ -48,10 +48,7 @@ import qualified Data.Text                     as T
 -- | Get the full platform request, consisting of architecture, distro, ...
 platformRequest :: (MonadLogger m, MonadCatch m, MonadIO m)
                 => Excepts
-                     '[ NoCompatiblePlatform
-                      , NoCompatibleArch
-                      , DistroNotFound
-                      ]
+                     '[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound]
                      m
                      PlatformRequest
 platformRequest = do
@@ -62,15 +59,21 @@ platformRequest = do
 
 getArchitecture :: Either NoCompatibleArch Architecture
 getArchitecture = case arch of
-  "x86_64" -> Right A_64
-  "i386"   -> Right A_32
-  what     -> Left (NoCompatibleArch what)
-
+  "x86_64"      -> Right A_64
+  "i386"        -> Right A_32
+  "powerpc"     -> Right A_PowerPC
+  "powerpc64"   -> Right A_PowerPC64
+  "powerpc64le" -> Right A_PowerPC64
+  "sparc"       -> Right A_Sparc
+  "sparc64"     -> Right A_Sparc64
+  "arm"         -> Right A_ARM
+  "aarch64"     -> Right A_ARM64
+  what          -> Left (NoCompatibleArch what)
 
 
 getPlatform :: (MonadLogger m, MonadCatch m, MonadIO m)
             => Excepts
-                 '[NoCompatiblePlatform , DistroNotFound]
+                 '[NoCompatiblePlatform, DistroNotFound]
                  m
                  PlatformResult
 getPlatform = do
@@ -82,6 +85,7 @@ getPlatform = do
       ver <-
         ( either (const Nothing) Just
           . versioning
+          -- TODO: maybe do this somewhere else
           . getMajorVersion
           . decUTF8Safe
           )

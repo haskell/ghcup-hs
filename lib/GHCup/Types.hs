@@ -90,6 +90,12 @@ data Tag = Latest
 
 data Architecture = A_64
                   | A_32
+                  | A_PowerPC
+                  | A_PowerPC64
+                  | A_Sparc
+                  | A_Sparc64
+                  | A_ARM
+                  | A_ARM64
   deriving (Eq, GHC.Generic, Ord, Show)
 
 
