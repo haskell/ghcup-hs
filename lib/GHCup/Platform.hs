@@ -12,7 +12,7 @@ module GHCup.Platform where
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.Bash
+import           GHCup.Utils.OsRelease
 import           GHCup.Utils.File
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
@@ -115,7 +115,6 @@ getLinuxDistro = do
   (name, ver) <- handleIO (\_ -> throwE DistroNotFound) $ liftIO $ asum
     [ try_os_release
     , try_lsb_release_cmd
-    , try_lsb_release
     , try_redhat_release
     , try_debian_version
     ]
@@ -140,10 +139,6 @@ getLinuxDistro = do
    where
     regex x = makeRegexOpts compIgnoreCase execBlank ([s|\<|] ++ x ++ [s|\>|])
 
-  os_release :: Path Abs
-  os_release = [abs|/etc/os-release|]
-  lsb_release :: Path Abs
-  lsb_release = [abs|/etc/lsb-release|]
   lsb_release_cmd :: Path Rel
   lsb_release_cmd = [rel|lsb-release|]
   redhat_release :: Path Abs
@@ -153,9 +148,8 @@ getLinuxDistro = do
 
   try_os_release :: IO (Text, Maybe Text)
   try_os_release = do
-    (Just name) <- getAssignmentValueFor os_release "NAME"
-    ver         <- getAssignmentValueFor os_release "VERSION_ID"
-    pure (T.pack name, fmap T.pack ver)
+    OsRelease { name = Just n, version_id = v } <- parseOsRelease
+    pure (T.pack n, fmap T.pack v)
 
   try_lsb_release_cmd :: IO (Text, Maybe Text)
   try_lsb_release_cmd = do
@@ -163,12 +157,6 @@ getLinuxDistro = do
     name     <- fmap _stdOut $ executeOut lsb_release_cmd ["-si"] Nothing
     ver      <- fmap _stdOut $ executeOut lsb_release_cmd ["-sr"] Nothing
     pure (decUTF8Safe name, Just $ decUTF8Safe ver)
-
-  try_lsb_release :: IO (Text, Maybe Text)
-  try_lsb_release = do
-    (Just name) <- getAssignmentValueFor lsb_release "DISTRIB_ID"
-    ver         <- getAssignmentValueFor lsb_release "DISTRIB_RELEASE"
-    pure (T.pack name, fmap T.pack ver)
 
   try_redhat_release :: IO (Text, Maybe Text)
   try_redhat_release = do

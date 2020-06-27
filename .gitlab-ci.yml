@@ -2,7 +2,7 @@ variables:
   GIT_SSL_NO_VERIFY: "1"
 
   # Commit of ghc/ci-images repository from which to pull Docker images
-  DOCKER_REV: cefaee3c742af193e0f7783f87edb0d35374515c
+  DOCKER_REV: 1ac7f435c9312f10422a82d304194778378e2a1a
 
 ############################################################
 # CI Step
