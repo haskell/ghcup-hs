@@ -1425,6 +1425,13 @@ Version: #{describe_result}|]
   prettyArch :: Architecture -> String
   prettyArch A_64 = "amd64"
   prettyArch A_32 = "i386"
+  prettyArch A_PowerPC = "PowerPC"
+  prettyArch A_PowerPC64 = "PowerPC64"
+  prettyArch A_Sparc = "Sparc"
+  prettyArch A_Sparc64 = "Sparc64"
+  prettyArch A_ARM = "ARM"
+  prettyArch A_ARM64 = "ARM64"
+
   prettyPlatform :: PlatformResult -> String
   prettyPlatform PlatformResult { _platform = plat, _distroVersion = Just v' }
     = show plat <> ", " <> show v'
