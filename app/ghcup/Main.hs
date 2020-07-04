@@ -21,6 +21,7 @@ import           GHCup.Utils.File
 import           GHCup.Utils.Logger
 import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
+import           GHCup.Utils.String.QQ
 import           GHCup.Version
 
 import           Control.Exception.Safe
@@ -312,32 +313,32 @@ com =
           )
  where
   installToolFooter :: String
-  installToolFooter = [i|Discussion:
+  installToolFooter = [s|Discussion:
   Installs GHC or cabal. When no command is given, installs GHC
   with the specified version/tag.
   It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
 
   setFooter :: String
-  setFooter = [i|Discussion:
+  setFooter = [s|Discussion:
   Sets the currently active GHC or cabal version. When no command is given,
   defaults to setting GHC with the specified version/tag (if no tag
   is given, sets GHC to 'recommended' version).
   It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
 
   rmFooter :: String
-  rmFooter = [i|Discussion:
+  rmFooter = [s|Discussion:
   Remove the given GHC or cabal version. When no command is given,
   defaults to removing GHC with the specified version.
   It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
 
   changeLogFooter :: String
-  changeLogFooter = [i|Discussion:
+  changeLogFooter = [s|Discussion:
   By default returns the URI of the ChangeLog of the latest GHC release.
   Pass '-o' to automatically open via xdg-open.|]
 
 
 installCabalFooter :: String
-installCabalFooter = [i|Discussion:
+installCabalFooter = [s|Discussion:
   Installs the specified cabal-install version (or a recommended default one)
   into "~/.ghcup/bin", so it can be overwritten by later
   "cabal install cabal-install", which installs into "~/.cabal/bin" by
@@ -373,7 +374,7 @@ installParser =
     <|> (Right <$> installOpts)
  where
   installGHCFooter :: String
-  installGHCFooter = [i|Discussion:
+  installGHCFooter = [s|Discussion:
   Installs the specified GHC version (or a recommended default one) into
   a self-contained "~/.ghcup/ghc/<ghcver>" directory
   and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".|]
@@ -424,13 +425,13 @@ setParser =
     <|> (Right <$> setOpts)
  where
   setGHCFooter :: String
-  setGHCFooter = [i|Discussion:
+  setGHCFooter = [s|Discussion:
     Sets the the current GHC version by creating non-versioned
     symlinks for all ghc binaries of the specified version in
     "~/.ghcup/bin/<binary>".|]
 
   setCabalFooter :: String
-  setCabalFooter = [i|Discussion:
+  setCabalFooter = [s|Discussion:
     Sets the the current Cabal version.|]
 
 
@@ -530,7 +531,7 @@ compileP = subparser
        )
   )
  where
-  compileFooter = [i|Discussion:
+  compileFooter = [s|Discussion:
   Compiles and installs the specified GHC version into
   a self-contained "~/.ghcup/ghc/<ghcver>" directory
   and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".
@@ -843,7 +844,7 @@ main = do
         <> internal
         )
 
-  let main_footer = [i|Discussion:
+  let main_footer = [s|Discussion:
   ghcup installs the Glasgow Haskell Compiler from the official
   release channels, enabling you to easily switch between different
   versions. It maintains a self-contained ~/.ghcup directory.
