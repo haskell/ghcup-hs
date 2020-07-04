@@ -12,26 +12,18 @@ import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
 import           Data.ByteString                ( ByteString )
-import           Data.ByteString.Unsafe         ( unsafeUseAsCStringLen )
-import           Data.Char
 import           Data.Foldable
 import           Data.Functor
 import           Data.IORef
 import           Data.Maybe
 import           Data.Text                      ( Text )
 import           Data.Void
-import           GHC.Foreign                    ( peekCStringLen )
-import           GHC.IO.Encoding                ( getLocaleEncoding )
 import           GHC.IO.Exception
 import           HPath
 import           HPath.IO
 import           Optics
-import           Streamly
-import           Streamly.External.ByteString
-import           Streamly.External.ByteString.Lazy
 import           System.Console.Pretty
 import           System.Console.Regions
-import           System.IO
 import           System.IO.Error
 import           System.Posix.Directory.ByteString
 import           System.Posix.FD               as FD
@@ -50,14 +42,9 @@ import qualified Data.Text.Encoding            as E
 import qualified System.Posix.Process.ByteString
                                                as SPPB
 import           Streamly.External.Posix.DirStream
-import qualified Streamly.Internal.Memory.ArrayStream
-                                               as AS
-import qualified Streamly.FileSystem.Handle    as FH
-import qualified Streamly.Internal.Data.Unfold as SU
 import qualified Streamly.Prelude              as S
 import qualified Text.Megaparsec               as MP
 import qualified Data.ByteString               as BS
-import qualified Data.ByteString.Lazy          as L
 import qualified "unix-bytestring" System.Posix.IO.ByteString
                                                as SPIB
 
@@ -85,25 +72,6 @@ data CapturedProcess = CapturedProcess
   deriving (Eq, Show)
 
 makeLenses ''CapturedProcess
-
-
-readFd :: Fd -> IO L.ByteString
-readFd fd = do
-  handle' <- fdToHandle fd
-  fromChunksIO $ (S.unfold (SU.finallyIO hClose FH.readChunks) handle')
-
-
--- | Read the lines of a file into a stream. The stream holds
--- a file handle as a resource and will close it once the stream
--- terminates (either through exception or because it's drained).
-readFileLines :: Path b -> IO (SerialT IO ByteString)
-readFileLines p = do
-  stream <- readFileStream p
-  pure
-    . (fmap fromArray)
-    . AS.splitOn (fromIntegral $ ord '\n')
-    . (fmap toArray)
-    $ stream
 
 
 -- | Find the given executable by searching all *absolute* PATH components.
@@ -356,14 +324,6 @@ toProcessError exe args mps = case mps of
   Just (Terminated _ _             ) -> Left $ PTerminated exe args
   Just (Stopped _                  ) -> Left $ PStopped exe args
   Nothing                            -> Left $ NoSuchPid exe args
-
-
--- | Convert the String to a ByteString with the current
--- system encoding.
-unsafePathToString :: Path b -> IO FilePath
-unsafePathToString p = do
-  enc <- getLocaleEncoding
-  unsafeUseAsCStringLen (toFilePath p) (peekCStringLen enc)
 
 
 -- | Search for a file in the search paths.
