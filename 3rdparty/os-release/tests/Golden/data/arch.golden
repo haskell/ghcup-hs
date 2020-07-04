@@ -1,0 +1,29 @@
+OsReleaseResult
+    { osRelease = OsRelease
+        { name = "Arch Linux"
+        , version = Nothing
+        , id = "arch"
+        , id_like = Nothing
+        , version_codename = Nothing
+        , version_id = Nothing
+        , pretty_name = "Arch Linux"
+        , ansi_color = Just "38;2;23;147;209"
+        , cpe_name = Nothing
+        , home_url = Just "https://www.archlinux.org/"
+        , documentation_url = Just "https://wiki.archlinux.org/"
+        , support_url = Just "https://bbs.archlinux.org/"
+        , bug_report_url = Just "https://bugs.archlinux.org/"
+        , privacy_policy_url = Nothing
+        , build_id = Just "rolling"
+        , variant = Nothing
+        , variant_id = Nothing
+        , logo = Just "archlinux"
+        }
+    , unknown_fields =
+        [
+            ( "LOGO"
+            , "archlinux"
+            )
+        ]
+    , parse_errors = []
+    }

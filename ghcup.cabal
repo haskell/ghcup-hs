@@ -173,6 +173,9 @@ common time
 common transformers
   build-depends: transformers >=0.5
 
+common os-release
+  build-depends: os-release >=1.0.0
+
 common unix
   build-depends: unix >=2.7
 
@@ -261,6 +264,7 @@ library
     , text
     , time
     , transformers
+    , os-release
     , unix
     , unix-bytestring
     , unordered-containers
@@ -285,7 +289,6 @@ library
     GHCup.Types.JSON
     GHCup.Types.Optics
     GHCup.Utils
-    GHCup.Utils.OsRelease
     GHCup.Utils.Dirs
     GHCup.Utils.File
     GHCup.Utils.Logger

@@ -1,0 +1,29 @@
+OsReleaseResult
+    { osRelease = OsRelease
+        { name = "Ubuntu"
+        , version = Just "20.04 LTS (Focal Fossa)"
+        , id = "ubuntu"
+        , id_like = Just "debian"
+        , version_codename = Just "focal"
+        , version_id = Just "20.04"
+        , pretty_name = "Ubuntu 20.04 LTS"
+        , ansi_color = Nothing
+        , cpe_name = Nothing
+        , home_url = Just "https://www.ubuntu.com/"
+        , documentation_url = Nothing
+        , support_url = Just "https://help.ubuntu.com/"
+        , bug_report_url = Just "https://bugs.launchpad.net/ubuntu/"
+        , privacy_policy_url = Just "https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+        , build_id = Nothing
+        , variant = Nothing
+        , variant_id = Nothing
+        , logo = Nothing
+        }
+    , unknown_fields =
+        [
+            ( "UBUNTU_CODENAME"
+            , "focal"
+            )
+        ]
+    , parse_errors = []
+    }

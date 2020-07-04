@@ -1,0 +1,24 @@
+OsReleaseResult
+    { osRelease = OsRelease
+        { name = "Gentoo"
+        , version = Nothing
+        , id = "gentoo"
+        , id_like = Nothing
+        , version_codename = Nothing
+        , version_id = Nothing
+        , pretty_name = "Gentoo/Linux"
+        , ansi_color = Just "1;32"
+        , cpe_name = Nothing
+        , home_url = Just "https://www.gentoo.org/"
+        , documentation_url = Nothing
+        , support_url = Just "https://www.gentoo.org/support/"
+        , bug_report_url = Just "https://bugs.gentoo.org/"
+        , privacy_policy_url = Nothing
+        , build_id = Nothing
+        , variant = Nothing
+        , variant_id = Nothing
+        , logo = Nothing
+        }
+    , unknown_fields = []
+    , parse_errors = []
+    }

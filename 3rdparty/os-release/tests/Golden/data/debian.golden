@@ -1,0 +1,24 @@
+OsReleaseResult
+    { osRelease = OsRelease
+        { name = "Debian GNU/Linux"
+        , version = Just "8 (jessie)"
+        , id = "debian"
+        , id_like = Nothing
+        , version_codename = Nothing
+        , version_id = Just "8"
+        , pretty_name = "Debian GNU/Linux 8 (jessie)"
+        , ansi_color = Nothing
+        , cpe_name = Nothing
+        , home_url = Just "http://www.debian.org/"
+        , documentation_url = Nothing
+        , support_url = Just "http://www.debian.org/support/"
+        , bug_report_url = Just "https://bugs.debian.org/"
+        , privacy_policy_url = Nothing
+        , build_id = Nothing
+        , variant = Nothing
+        , variant_id = Nothing
+        , logo = Nothing
+        }
+    , unknown_fields = []
+    , parse_errors = []
+    }

@@ -1,0 +1,29 @@
+OsReleaseResult
+    { osRelease = OsRelease
+        { name = "Linux Mint"
+        , version = Just "18.2 (Sonya)"
+        , id = "linuxmint"
+        , id_like = Just "ubuntu"
+        , version_codename = Just "sonya"
+        , version_id = Just "18.2"
+        , pretty_name = "Linux Mint 18.2"
+        , ansi_color = Nothing
+        , cpe_name = Nothing
+        , home_url = Just "http://www.linuxmint.com/"
+        , documentation_url = Nothing
+        , support_url = Just "http://forums.linuxmint.com/"
+        , bug_report_url = Just "http://bugs.launchpad.net/linuxmint/"
+        , privacy_policy_url = Nothing
+        , build_id = Nothing
+        , variant = Nothing
+        , variant_id = Nothing
+        , logo = Nothing
+        }
+    , unknown_fields =
+        [
+            ( "UBUNTU_CODENAME"
+            , "xenial"
+            )
+        ]
+    , parse_errors = []
+    }

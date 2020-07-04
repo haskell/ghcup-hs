@@ -1,0 +1,131 @@
+cabal-version:      3.0
+author:             Jan Matějka
+category:           System
+license-file:       LICENSE
+build-type:         Simple
+copyright:          2014 Jan Matějka <yac@blesmrt.net>
+license:            BSD-3-Clause
+maintainer:         Julian Ospald <hasufell@posteo.de>
+homepage:           https://github.com/yaccz/os-release
+name:               os-release
+synopsis:           /etc/os-release helpers
+version:            1.0.0
+description:
+  \/etc\/os-release helpers as per the freedesktop spec: https://www.freedesktop.org/software/systemd/man/os-release.html
+
+extra-doc-files:
+  ChangeLog.rst
+  README.rst
+
+extra-source-files: tests/Golden/data/*.golden tests/Golden/data/*.in
+
+flag devel
+  description: Enables -Werror
+  default:     False
+  manual:      True
+
+source-repository head
+  type:     git
+  location: https://github.com/yaccz/os-release.git
+
+common base
+  build-depends: base >=4.11 && <5
+
+common bytestring
+  build-depends: bytestring
+
+common aeson
+  build-depends: aeson >=1.4
+
+common filepath
+  build-depends: filepath >=1.4.2.1
+
+common hspec
+  build-depends: hspec >=2.7.1
+
+common hspec-megaparsec
+  build-depends: hspec-megaparsec >=2.1.0
+
+common megaparsec
+  build-depends: megaparsec >=8.0.0
+
+common pretty-simple
+  build-depends: pretty-simple >=1.0.0.0
+
+common safe-exceptions
+  build-depends: safe-exceptions >=0.1.7.0
+
+common tasty
+  build-depends: tasty >=1.3
+
+common tasty-golden
+  build-depends: tasty-golden >=2.3.4
+
+common tasty-hspec
+  build-depends: tasty-hspec >=1.1.5.1
+
+common text
+  build-depends: text >=1.2
+
+common unordered-containers
+  build-depends: unordered-containers >=0.2.10.0
+
+common config
+  default-language:   Haskell2010
+
+  if flag(devel)
+    ghc-options:
+      -Werror -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
+      -fwarn-incomplete-record-updates
+
+  else
+    ghc-options:
+      -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
+      -fwarn-incomplete-record-updates
+
+  default-extensions:
+    BangPatterns
+    LambdaCase
+    OverloadedStrings
+    QuasiQuotes
+    TemplateHaskell
+    TupleSections
+    TypeFamilies
+
+library
+  import:
+    config
+    , base
+    , aeson
+    , megaparsec
+    , safe-exceptions
+    , text
+    , unordered-containers
+
+  exposed-modules: System.OsRelease
+  other-modules:   System.OsRelease.Megaparsec
+  hs-source-dirs:  library
+
+test-suite tests
+  import:
+    config
+    , base
+    , bytestring
+    , filepath
+    , hspec
+    , hspec-megaparsec
+    , megaparsec
+    , pretty-simple
+    , tasty
+    , tasty-golden
+    , tasty-hspec
+    , text
+
+  build-depends:  os-release
+  hs-source-dirs: tests
+  main-is:        Main.hs
+  other-modules:
+    Golden.Real
+    Specs.Megaparsec
+
+  type:           exitcode-stdio-1.0

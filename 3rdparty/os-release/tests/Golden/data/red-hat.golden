@@ -1,0 +1,41 @@
+OsReleaseResult
+    { osRelease = OsRelease
+        { name = "Red Hat Enterprise Linux Server"
+        , version = Just "7.6 (Maipo)"
+        , id = "rhel"
+        , id_like = Just "fedora"
+        , version_codename = Nothing
+        , version_id = Just "7.6"
+        , pretty_name = "Red Hat Enterprise Linux"
+        , ansi_color = Just "0;31"
+        , cpe_name = Just "cpe:/o:redhat:enterprise_linux:7.6:GA:server"
+        , home_url = Just "https://www.redhat.com/"
+        , documentation_url = Nothing
+        , support_url = Nothing
+        , bug_report_url = Just "https://bugzilla.redhat.com/"
+        , privacy_policy_url = Nothing
+        , build_id = Nothing
+        , variant = Just "Server"
+        , variant_id = Just "server"
+        , logo = Nothing
+        }
+    , unknown_fields =
+        [
+            ( "REDHAT_SUPPORT_PRODUCT_VERSION"
+            , "7.6"
+            )
+        ,
+            ( "REDHAT_BUGZILLA_PRODUCT"
+            , "Red Hat Enterprise Linux 7"
+            )
+        ,
+            ( "REDHAT_SUPPORT_PRODUCT"
+            , "Red Hat Enterprise Linux"
+            )
+        ,
+            ( "REDHAT_BUGZILLA_PRODUCT_VERSION"
+            , "7.6"
+            )
+        ]
+    , parse_errors = []
+    }

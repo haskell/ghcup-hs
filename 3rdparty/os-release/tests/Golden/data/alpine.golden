@@ -1,0 +1,24 @@
+OsReleaseResult
+    { osRelease = OsRelease
+        { name = "Alpine Linux"
+        , version = Nothing
+        , id = "alpine"
+        , id_like = Nothing
+        , version_codename = Nothing
+        , version_id = Just "3.11.3"
+        , pretty_name = "Alpine Linux v3.11"
+        , ansi_color = Nothing
+        , cpe_name = Nothing
+        , home_url = Just "https://alpinelinux.org/"
+        , documentation_url = Nothing
+        , support_url = Nothing
+        , bug_report_url = Just "https://bugs.alpinelinux.org/"
+        , privacy_policy_url = Nothing
+        , build_id = Nothing
+        , variant = Nothing
+        , variant_id = Nothing
+        , logo = Nothing
+        }
+    , unknown_fields = []
+    , parse_errors = []
+    }
