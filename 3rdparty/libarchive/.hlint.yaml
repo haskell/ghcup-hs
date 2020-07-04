@@ -1,0 +1,13 @@
+---
+- functions:
+  - {name: undefined, within: []}
+  - {name: traceShowId, within: []}
+  - {name: print, within: []}
+  - {name: traceShow, within: []}
+  - {name: nullPtr, within: [Codec.Archive.Unpack, Codec.Archive.Foreign.Archive]}
+
+- error: {lhs: "if p then x else pure ()", rhs: "when p x"}
+- ignore: {name: Use lambda-case}
+
+- fixity: infixr 8 .*
+- fixity: infixr 8 .**

@@ -24,6 +24,7 @@ import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 import           GHCup.Version
 
+import           Codec.Archive
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -887,6 +888,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   . runE
                     @'[ AlreadyInstalled
                       , UnknownArchive
+                      , ArchiveResult
                       , DistroNotFound
                       , FileDoesNotExistError
                       , CopyError
@@ -947,6 +949,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NotFoundInPATH
                       , PatchFailed
                       , UnknownArchive
+                      , ArchiveResult
                       ]
 
           let runCompileCabal =
@@ -966,6 +969,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NotInstalled
                       , PatchFailed
                       , UnknownArchive
+                      , ArchiveResult
                       ]
 
           let runUpgrade =

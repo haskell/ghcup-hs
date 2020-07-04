@@ -86,7 +86,7 @@ test-suite lzma-tests
   -- additional dependencies that require version bounds
   build-depends:       HUnit                      >= 1.2      && <1.7
                      , QuickCheck                 >= 2.8      && <2.14
-                     , tasty                      >= 0.10     && <1.3
+                     , tasty                      >= 0.10     && <1.4
                      , tasty-hunit                >= 0.9      && <0.11
                      , tasty-quickcheck           >= 0.8.3.2  && <0.11
 

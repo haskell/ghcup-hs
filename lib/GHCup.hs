@@ -27,6 +27,7 @@ import           GHCup.Utils.String.QQ
 import           GHCup.Utils.Version.QQ
 import           GHCup.Version
 
+import           Codec.Archive                  ( ArchiveResult )
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
@@ -96,6 +97,7 @@ installGHCBin :: ( MonadFail m
                     , NoDownload
                     , NotInstalled
                     , UnknownArchive
+                    , ArchiveResult
                     ]
                    m
                    ()
@@ -166,6 +168,7 @@ installCabalBin :: ( MonadMask m
                       , NoDownload
                       , NotInstalled
                       , UnknownArchive
+                      , ArchiveResult
                       ]
                      m
                      ()
@@ -612,6 +615,7 @@ compileGHC :: ( MonadMask m
                  , NotFoundInPATH
                  , PatchFailed
                  , UnknownArchive
+                 , ArchiveResult
                  ]
                 m
                 ()
@@ -790,6 +794,7 @@ compileCabal :: ( MonadReader Settings m
                    , NotInstalled
                    , PatchFailed
                    , UnknownArchive
+                   , ArchiveResult
                    ]
                   m
                   ()

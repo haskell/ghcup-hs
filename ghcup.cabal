@@ -98,6 +98,9 @@ common http-io-streams
 common io-streams
   build-depends: io-streams >=1.5
 
+common libarchive
+  build-depends: libarchive >= 2.2.5.0
+
 common lzma
   build-depends: lzma >=0.0.0.3
 
@@ -155,8 +158,6 @@ common string-interpolate
 common table-layout
   build-depends: table-layout >=0.8
 
-common tar-bytestring
-  build-depends: tar-bytestring >=0.6.3.1
 
 common template-haskell
   build-depends: template-haskell >=2.7
@@ -242,6 +243,7 @@ library
     , hpath-filepath
     , hpath-io
     , hpath-posix
+    , libarchive
     , lzma
     , megaparsec
     , monad-logger
@@ -259,7 +261,6 @@ library
     , streamly-bytestring
     , strict-base
     , string-interpolate
-    , tar-bytestring
     , template-haskell
     , text
     , time
@@ -320,6 +321,7 @@ executable ghcup
     , haskus-utils-variant
     , hpath
     , hpath-io
+    , libarchive
     , megaparsec
     , monad-logger
     , mtl

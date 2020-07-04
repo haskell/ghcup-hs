@@ -1,0 +1,10 @@
+---
+resolver: lts-14.18
+ghc-options: {"$locals": -ddump-to-file -ddump-hi}
+extra-deps:
+  - chs-cabal-0.1.1.0@sha256:7ff37c09dd246fe950b91c1fb516ddc65533f805580cb947c38b717e92eaab3a,1098
+  - composition-prelude-2.0.5.0@sha256:2e18aa0baa6ba527b086261f077a10c2786594879f6c0cbcb50464b9d69b1521,1149
+  - Cabal-3.0.0.0@sha256:1ba37b8d80e89213b17db7b8b9ea0108da55ca65f8c0cbb7433881a284c5cf67,26027
+  - chs-deps-0.1.0.0@sha256:0cdada6d2c682c41b20331b8c63c2ecfc7e806928585195fd544c9d41f3074fd,2496
+  - dir-traverse-0.2.1.0@sha256:4f3da22394431ffb5e0ac6c0e130d78e64a0ea4f33c2a1ff8e5521c784399a2b,1548
+  - pathological-bytestrings-0.1.0.0@sha256:0649a14d6e87091cc0f9e7430881e970e53008be262f878311b25d410ebf974b,1079

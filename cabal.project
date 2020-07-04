@@ -10,9 +10,9 @@ package streamly
 package ghcup
     ghc-options: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16
 
-package tar-bytestring
-    ghc-options: -O2
-
 constraints: http-io-streams -brotli
+
+package libarchive
+  flags: static
 
 allow-newer: base
