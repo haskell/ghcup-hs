@@ -12,7 +12,6 @@ module GHCup.Platform where
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.OsRelease
 import           GHCup.Utils.File
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
@@ -36,6 +35,7 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.Info
+import           System.OsRelease
 import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
@@ -148,8 +148,9 @@ getLinuxDistro = do
 
   try_os_release :: IO (Text, Maybe Text)
   try_os_release = do
-    OsRelease { name = Just n, version_id = v } <- parseOsRelease
-    pure (T.pack n, fmap T.pack v)
+    Just (OsRelease { name = name, version_id = version_id }) <-
+      fmap osRelease <$> parseOsRelease
+    pure (T.pack name, fmap T.pack version_id)
 
   try_lsb_release_cmd :: IO (Text, Maybe Text)
   try_lsb_release_cmd = do

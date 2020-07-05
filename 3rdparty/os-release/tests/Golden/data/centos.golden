@@ -1,0 +1,45 @@
+OsReleaseResult
+    { osRelease = OsRelease
+        { name = "CentOS Linux"
+        , version = Just "8 (Core)"
+        , id = "centos"
+        , id_like = Just "rhel fedora"
+        , version_codename = Nothing
+        , version_id = Just "8"
+        , pretty_name = "CentOS Linux 8 (Core)"
+        , ansi_color = Just "0;31"
+        , cpe_name = Just "cpe:/o:centos:centos:8"
+        , home_url = Just "https://www.centos.org/"
+        , documentation_url = Nothing
+        , support_url = Nothing
+        , bug_report_url = Just "https://bugs.centos.org/"
+        , privacy_policy_url = Nothing
+        , build_id = Nothing
+        , variant = Nothing
+        , variant_id = Nothing
+        , logo = Nothing
+        }
+    , unknown_fields =
+        [
+            ( "REDHAT_SUPPORT_PRODUCT_VERSION"
+            , "8"
+            )
+        ,
+            ( "CENTOS_MANTISBT_PROJECT"
+            , "CentOS-8"
+            )
+        ,
+            ( "REDHAT_SUPPORT_PRODUCT"
+            , "centos"
+            )
+        ,
+            ( "PLATFORM_ID"
+            , "platform:el8"
+            )
+        ,
+            ( "CENTOS_MANTISBT_PROJECT_VERSION"
+            , "8"
+            )
+        ]
+    , parse_errors = []
+    }

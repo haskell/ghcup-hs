@@ -1,0 +1,14 @@
+*.swp
+.ghc.environment*
+tags
+*.prof
+*.hp
+*.eventlog
+dist-newstyle
+*.tar
+*.chi
+*.chs.h
+.hspec-failures
+.stack-work
+libarchive-*.tar.*
+libarchive-*/

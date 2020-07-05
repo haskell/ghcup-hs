@@ -1,0 +1,49 @@
+OsReleaseResult
+    { osRelease = OsRelease
+        { name = "Fedora"
+        , version = Just "31 (Container Image)"
+        , id = "fedora"
+        , id_like = Nothing
+        , version_codename = Just ""
+        , version_id = Just "31"
+        , pretty_name = "Fedora 31 (Container Image)"
+        , ansi_color = Just "0;34"
+        , cpe_name = Just "cpe:/o:fedoraproject:fedora:31"
+        , home_url = Just "https://fedoraproject.org/"
+        , documentation_url = Just "https://docs.fedoraproject.org/en-US/fedora/f31/system-administrators-guide/"
+        , support_url = Just "https://fedoraproject.org/wiki/Communicating_and_getting_help"
+        , bug_report_url = Just "https://bugzilla.redhat.com/"
+        , privacy_policy_url = Just "https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
+        , build_id = Nothing
+        , variant = Just "Container Image"
+        , variant_id = Just "container"
+        , logo = Just "fedora-logo-icon"
+        }
+    , unknown_fields =
+        [
+            ( "REDHAT_SUPPORT_PRODUCT_VERSION"
+            , "31"
+            )
+        ,
+            ( "REDHAT_BUGZILLA_PRODUCT"
+            , "Fedora"
+            )
+        ,
+            ( "REDHAT_SUPPORT_PRODUCT"
+            , "Fedora"
+            )
+        ,
+            ( "PLATFORM_ID"
+            , "platform:f31"
+            )
+        ,
+            ( "REDHAT_BUGZILLA_PRODUCT_VERSION"
+            , "31"
+            )
+        ,
+            ( "LOGO"
+            , "fedora-logo-icon"
+            )
+        ]
+    , parse_errors = []
+    }

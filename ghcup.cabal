@@ -81,13 +81,13 @@ common hpath
   build-depends: hpath >=0.11
 
 common hpath-directory
-  build-depends: hpath-directory >=0.13.3
+  build-depends: hpath-directory >=0.14
 
 common hpath-filepath
   build-depends: hpath-filepath >=0.10.3
 
 common hpath-io
-  build-depends: hpath-io >=0.13.1
+  build-depends: hpath-io >=0.14
 
 common hpath-posix
   build-depends: hpath-posix >=0.13.2
@@ -97,6 +97,9 @@ common http-io-streams
 
 common io-streams
   build-depends: io-streams >=1.5
+
+common libarchive
+  build-depends: libarchive >= 2.2.5.0
 
 common lzma
   build-depends: lzma >=0.0.0.3
@@ -155,8 +158,6 @@ common string-interpolate
 common table-layout
   build-depends: table-layout >=0.8
 
-common tar-bytestring
-  build-depends: tar-bytestring >=0.6.3.1
 
 common template-haskell
   build-depends: template-haskell >=2.7
@@ -172,6 +173,9 @@ common time
 
 common transformers
   build-depends: transformers >=0.5
+
+common os-release
+  build-depends: os-release >=1.0.0
 
 common unix
   build-depends: unix >=2.7
@@ -239,6 +243,7 @@ library
     , hpath-filepath
     , hpath-io
     , hpath-posix
+    , libarchive
     , lzma
     , megaparsec
     , monad-logger
@@ -256,11 +261,11 @@ library
     , streamly-bytestring
     , strict-base
     , string-interpolate
-    , tar-bytestring
     , template-haskell
     , text
     , time
     , transformers
+    , os-release
     , unix
     , unix-bytestring
     , unordered-containers
@@ -285,7 +290,6 @@ library
     GHCup.Types.JSON
     GHCup.Types.Optics
     GHCup.Utils
-    GHCup.Utils.OsRelease
     GHCup.Utils.Dirs
     GHCup.Utils.File
     GHCup.Utils.Logger
@@ -317,6 +321,7 @@ executable ghcup
     , haskus-utils-variant
     , hpath
     , hpath-io
+    , libarchive
     , megaparsec
     , monad-logger
     , mtl

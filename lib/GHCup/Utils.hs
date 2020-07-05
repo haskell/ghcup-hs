@@ -24,6 +24,7 @@ import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 
+import           Codec.Archive
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
@@ -58,12 +59,13 @@ import           System.Posix.Files.ByteString  ( readSymbolicLink )
 import           Text.Regex.Posix
 import           URI.ByteString
 
-import qualified Codec.Archive.Tar             as Tar
 import qualified Codec.Compression.BZip        as BZip
 import qualified Codec.Compression.GZip        as GZip
 import qualified Codec.Compression.Lzma        as Lzma
 import qualified Data.ByteString               as B
+import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
+import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 
@@ -310,25 +312,30 @@ getLatestGHCFor major' minor' dls = do
 unpackToDir :: (MonadLogger m, MonadIO m, MonadThrow m)
             => Path Abs       -- ^ destination dir
             -> Path Abs       -- ^ archive path
-            -> Excepts '[UnknownArchive] m ()
+            -> Excepts '[UnknownArchive, ArchiveResult] m ()
 unpackToDir dest av = do
   fp <- (decUTF8Safe . toFilePath) <$> basename av
   let dfp = decUTF8Safe . toFilePath $ dest
   lift $ $(logInfo) [i|Unpacking: #{fp} to #{dfp}|]
   fn <- toFilePath <$> basename av
-  let untar = Tar.unpack (toFilePath dest) . Tar.read
+
+  let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
+      untar = lEM . liftIO . runArchiveM . unpackToDirLazy (T.unpack . decUTF8Safe . toFilePath $ dest)
+
+      rf :: MonadIO m => Path Abs -> Excepts '[ArchiveResult] m BL.ByteString
+      rf = liftIO . readFile
 
   -- extract, depending on file extension
   if
-    | ".tar.gz" `B.isSuffixOf` fn -> liftIO
-      (untar . GZip.decompress =<< readFile av)
+    | ".tar.gz" `B.isSuffixOf` fn -> liftE
+      (untar . GZip.decompress =<< rf av)
     | ".tar.xz" `B.isSuffixOf` fn -> do
-      filecontents <- liftIO $ readFile av
+      filecontents <- liftE $ rf av
       let decompressed = Lzma.decompress filecontents
-      liftIO $ untar decompressed
-    | ".tar.bz2" `B.isSuffixOf` fn -> liftIO
-      (untar . BZip.decompress =<< readFile av)
-    | ".tar" `B.isSuffixOf` fn -> liftIO (untar =<< readFile av)
+      liftE $ untar decompressed
+    | ".tar.bz2" `B.isSuffixOf` fn ->
+      liftE (untar . BZip.decompress =<< rf av)
+    | ".tar" `B.isSuffixOf` fn -> liftE (untar =<< rf av)
     | otherwise -> throwE $ UnknownArchive fn
 
 
