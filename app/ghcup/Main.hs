@@ -10,6 +10,10 @@
 
 module Main where
 
+#if defined(BRICK)
+import           BrickMain                    ( brickMain )
+#endif
+
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
@@ -95,6 +99,9 @@ data Command
   | Upgrade UpgradeOpts Bool
   | ToolRequirements
   | ChangeLog ChangeLogOptions
+#if defined(BRICK)
+  | Interactive
+#endif
 
 data ToolVersion = ToolVersion GHCTargetVersion -- target is ignored for cabal
                  | ToolTag Tag
@@ -223,7 +230,20 @@ opts =
 com :: Parser Command
 com =
   subparser
+#if defined(BRICK)
       (  command
+          "tui"
+          (   (\_ -> Interactive)
+          <$> (info
+                helper
+                (  progDesc "Start the interactive GHCup UI"
+                )
+              )
+          )
+      <>  command
+#else
+      (  command
+#endif
           "install"
           (   Install
           <$> (info
@@ -870,11 +890,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           -- logger interpreter
           logfile <- initGHCupFileLogging [rel|ghcup.log|]
-          let runLogger = myLoggerT LoggerConfig
+          let loggerConfig = LoggerConfig
                 { lcPrintDebug = optVerbose
                 , colorOutter  = B.hPut stderr
                 , rawOutter    = appendFile logfile
                 }
+          let runLogger = myLoggerT loggerConfig
 
 
           -------------------------
@@ -910,7 +931,6 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   @'[ FileDoesNotExistError
                     , NotInstalled
                     , TagNotFound
-                    , TagNotFound
                     ]
 
           let
@@ -923,7 +943,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let runListGHC = runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound]
 
-          let runRmGHC =
+          let runRm =
                 runLogger . flip runReaderT settings . runE @'[NotInstalled]
 
           let runDebugInfo =
@@ -1107,7 +1127,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 14
 
           let rmGHC' RmOptions{..} =
-                (runRmGHC $ do
+                (runRm $ do
                     liftE $ rmGHCVer ghcVer
                   )
                   >>= \case
@@ -1117,7 +1137,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 7
 
           let rmCabal' tv =
-                (runSetCabal $ do
+                (runRm $ do
                     liftE $ rmCabalVer tv
                   )
                   >>= \case
@@ -1129,6 +1149,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
 
           res <- case optCommand of
+#if defined(BRICK)
+            Interactive -> liftIO $ brickMain loggerConfig >> pure ExitSuccess
+#endif
             Install (Right iopts) -> do
               runLogger ($(logWarn) [i|This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.|])
               installGHC iopts
