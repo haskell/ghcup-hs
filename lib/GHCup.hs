@@ -927,6 +927,8 @@ upgradeGHCup dls mtarget force = do
           `unionFileModes` ownerExecuteMode
           `unionFileModes` groupExecuteMode
           `unionFileModes` otherExecuteMode
+  binDir <- liftIO $ ghcupBinDir
+  liftIO $ createDirIfMissing newDirPerms binDir
   case mtarget of
     Nothing -> do
       dest <- liftIO $ ghcupBinDir
