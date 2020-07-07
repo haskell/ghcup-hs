@@ -929,20 +929,12 @@ upgradeGHCup dls mtarget force = do
           `unionFileModes` otherExecuteMode
   binDir <- liftIO $ ghcupBinDir
   liftIO $ createDirIfMissing newDirPerms binDir
-  case mtarget of
-    Nothing -> do
-      dest <- liftIO $ ghcupBinDir
-      liftIO $ hideError NoSuchThing $ deleteFile (dest </> fn)
-      handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
-                                                               (dest </> fn)
-                                                               Overwrite
-      liftIO $ setFileMode (toFilePath (dest </> fn)) fileMode'
-    Just fullDest -> do
-      liftIO $ hideError NoSuchThing $ deleteFile fullDest
-      handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
-                                                               fullDest
-                                                               Overwrite
-      liftIO $ setFileMode (toFilePath fullDest) fileMode'
+  let fullDest = fromMaybe (binDir </> fn) mtarget
+  liftIO $ hideError NoSuchThing $ deleteFile fullDest
+  handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
+                                                           fullDest
+                                                           Overwrite
+  liftIO $ setFileMode (toFilePath fullDest) fileMode'
   pure latestVer
 
 
