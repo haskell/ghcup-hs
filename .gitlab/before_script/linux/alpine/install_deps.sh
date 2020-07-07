@@ -21,9 +21,9 @@ apk add --no-cache \
 ln -s libncurses.so /usr/lib/libtinfo.so
 ln -s libncursesw.so.6 /usr/lib/libtinfow.so.6
 if [ "${BIT}" = "32" ] ; then
-	curl -sSfL https://downloads.haskell.org/~ghcup/0.1.4/i386-linux-ghcup-0.1.4 > ./ghcup-bin
+	curl -sSfL https://downloads.haskell.org/~ghcup/0.1.5/i386-linux-ghcup-0.1.5 > ./ghcup-bin
 else
-	curl -sSfL https://downloads.haskell.org/~ghcup/0.1.4/x86_64-linux-ghcup-0.1.4 > ./ghcup-bin
+	curl -sSfL https://downloads.haskell.org/~ghcup/0.1.5/x86_64-linux-ghcup-0.1.5 > ./ghcup-bin
 fi
 chmod +x ghcup-bin
 ./ghcup-bin upgrade
@@ -57,7 +57,8 @@ apk add --no-cache \
 	openssl-dev \
 	openssl-libs-static \
 	xz \
-	xz-dev
+	xz-dev \
+	ncurses-static
 
-
+ln -s libncursesw.a /usr/lib/libtinfow.a
 
