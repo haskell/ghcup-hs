@@ -71,9 +71,11 @@ ui AppState {..} =
       )
     )
     <=> ( withAttr "help"
-        $ foldr1 (\x y -> x <+> str "  " <+> y)
-        . (++ [str "↑↓:Navigation"])
-        $ (fmap (\(c, s, _) -> str (c : ':' : s)) keyHandlers)
+        . txtWrap
+        . T.pack
+        . foldr1 (\x y -> x <> "  " <> y)
+        . (++ ["↑↓:Navigation"])
+        $ (fmap (\(c, s, _) -> (c : ':' : s)) keyHandlers)
         )
 
  where
