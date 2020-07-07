@@ -21,9 +21,9 @@ git describe --always
 ecabal update
 
 if [ "${OS}" = "DARWIN" ] ; then
-	ecabal build -w ghc-${GHC_VERSION}
+	ecabal build -w ghc-${GHC_VERSION} -ftui
 else
-	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader
+	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 fi
 
 cp "$(ecabal new-exec --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup')" .
