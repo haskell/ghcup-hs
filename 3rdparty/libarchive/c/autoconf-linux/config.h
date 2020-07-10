@@ -606,7 +606,7 @@
 /* #undef HAVE_LCHFLAGS */
 
 /* Define to 1 if you have the `lchmod' function. */
-#define HAVE_LCHMOD 1
+/* #undef HAVE_LCHMOD 1 */
 
 /* Define to 1 if you have the `lchown' function. */
 #define HAVE_LCHOWN 1
@@ -1028,10 +1028,10 @@
 /* #undef HAVE_STRUCT_STAT_ST_UMTIME */
 
 /* Define to 1 if `tm_gmtoff' is a member of `struct tm'. */
-#define HAVE_STRUCT_TM_TM_GMTOFF 1
+/* #undef HAVE_STRUCT_TM_TM_GMTOFF 1 */
 
 /* Define to 1 if `__tm_gmtoff' is a member of `struct tm'. */
-#define HAVE_STRUCT_TM___TM_GMTOFF 1
+/* #undef HAVE_STRUCT_TM___TM_GMTOFF 1 */
 
 /* Define to 1 if the system has the type `struct vfsconf'. */
 /* #undef HAVE_STRUCT_VFSCONF */
