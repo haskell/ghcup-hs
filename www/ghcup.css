@@ -101,6 +101,7 @@ body#idx p.other-help {
 
 .instructions div.command-button {
 	display: flex;
+	align-items: center;
 }
 
 .instructions div.command-button button {
@@ -111,7 +112,7 @@ body#idx p.other-help {
 	border-style: solid;
 	border-radius: 3px;
 
-    margin-left: 1rem;
+    margin-left: 0.5rem;
     margin-right: auto;
 	margin-top: 25px;
 	margin-bottom: 25px;
@@ -141,13 +142,14 @@ hr {
     background-color: #515151;
     color: white;
     margin-left: auto;
-    margin-right: auto;
     padding-top: 1rem;
     padding-bottom: 1rem;
     padding-right: 1rem;
     text-align: center;
     border-radius: 3px;
     box-shadow: inset 0px 0px 20px 0px #333333;
+	font-size: 0.6em;
+	width: 40rem;
 }
 
 #platform-instructions-win32 a.windows-download,
