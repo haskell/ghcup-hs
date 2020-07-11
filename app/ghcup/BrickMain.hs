@@ -87,21 +87,24 @@ ui AppState {..} =
         ver = case lCross of
           Nothing -> T.unpack . prettyVer $ lVer
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
-    in  (   marks
-        <+> ( padLeft (Pad 2)
-            $ minHSize 20
-            $ (withAttr
-                (bool "inactive" "active" b)
-                (str $ (fmap toLower . show $ lTool) <> " " <> ver)
+        dim = if lNoBindist
+          then updateAttrMap (const dimAttributes) . withAttr "no-bindist"
+          else id
+    in  dim
+          (   marks
+          <+> ( padLeft (Pad 2)
+              $ minHSize 20
+              $ ((if b then withAttr "active" else id)
+                  (str $ (fmap toLower . show $ lTool) <> " " <> ver)
+                )
               )
-            )
-        <+> (padLeft (Pad 1) $ if null lTag
-              then emptyWidget
-              else
-                foldr1 (\x y -> x <+> str "," <+> y)
-                  $ (fmap printTag $ sort lTag)
-            )
-        )
+          <+> (padLeft (Pad 1) $ if null lTag
+                then emptyWidget
+                else
+                  foldr1 (\x y -> x <+> str "," <+> y)
+                    $ (fmap printTag $ sort lTag)
+              )
+          )
 
   printTag Recommended        = withAttr "recommended" $ str "recommended"
   printTag Latest             = withAttr "latest" $ str "latest"
@@ -117,20 +120,30 @@ app :: App AppState e String
 app = App { appDraw         = \st -> [ui st]
           , appHandleEvent  = eventHandler
           , appStartEvent   = return
-          , appAttrMap      = const theMap
+          , appAttrMap      = const defaultAttributes
           , appChooseCursor = neverShowCursor
           }
- where
-  theMap = attrMap
-    Vty.defAttr
-    [ ("active"       , bg Vty.blue)
-    , ("not-installed", fg Vty.red)
-    , ("set"          , fg Vty.green)
-    , ("installed"    , fg Vty.green)
-    , ("recommended"  , fg Vty.green)
-    , ("latest"       , fg Vty.yellow)
-    , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
-    ]
+
+defaultAttributes :: AttrMap
+defaultAttributes = attrMap
+  Vty.defAttr
+  [ ("active"       , Vty.defAttr `Vty.withBackColor` Vty.blue)
+  , ("not-installed", Vty.defAttr `Vty.withForeColor` Vty.red)
+  , ("set"          , Vty.defAttr `Vty.withForeColor` Vty.green)
+  , ("installed"    , Vty.defAttr `Vty.withForeColor` Vty.green)
+  , ("recommended"  , Vty.defAttr `Vty.withForeColor` Vty.green)
+  , ("latest"       , Vty.defAttr `Vty.withForeColor` Vty.yellow)
+  , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
+  ]
+
+
+dimAttributes :: AttrMap
+dimAttributes = attrMap
+  (Vty.defAttr `Vty.withStyle` Vty.dim)
+  [ ("active"    , Vty.defAttr `Vty.withBackColor` Vty.blue)
+  , ("no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
+  ]
+
 
 
 eventHandler :: AppState -> BrickEvent n e -> EventM n (Next AppState)
@@ -255,6 +268,11 @@ changelog' AppState {..} (_, ListResult {..}) = do
         Left  e -> pure $ Left [i|#{e}|]
 
 
+uri' :: IORef (Maybe URI)
+{-# NOINLINE uri' #-}
+uri' = unsafePerformIO (newIORef Nothing)
+
+
 settings' :: IORef Settings
 {-# NOINLINE settings' #-}
 settings' = unsafePerformIO
@@ -276,8 +294,9 @@ logger' = unsafePerformIO
   )
 
 
-brickMain :: Settings -> LoggerConfig -> IO ()
-brickMain s l = do
+brickMain :: Settings -> Maybe URI -> LoggerConfig -> IO ()
+brickMain s muri l = do
+  writeIORef uri'      muri
   writeIORef settings' s
   -- logger interpreter
   writeIORef logger'   l
@@ -300,6 +319,7 @@ brickMain s l = do
 
 getAppState :: IO (Either String AppState)
 getAppState = do
+  muri     <- readIORef uri'
   settings <- readIORef settings'
   l        <- readIORef logger'
   let runLogger = myLoggerT l
@@ -310,9 +330,10 @@ getAppState = do
     . runE
       @'[JSONError, DownloadFailed, FileDoesNotExistError, NoCompatiblePlatform, NoCompatibleArch, DistroNotFound]
     $ do
-        (GHCupInfo _ dls) <- liftE $ getDownloadsF GHCupURL
+        (GHCupInfo _ dls) <- liftE
+          $ getDownloadsF (maybe GHCupURL OwnSource muri)
 
-        lV                <- liftE $ listVersions dls Nothing Nothing
+        lV <- liftE $ listVersions dls Nothing Nothing
         pure $ (AppState (list "Tool versions" (V.fromList lV) 1) dls)
 
   case r of
