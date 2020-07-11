@@ -42,7 +42,6 @@ deriving instance Data VUnit
 
 #if !MIN_VERSION_base(4,13,0)
 deriving instance Lift (NonEmpty Word)
-instance Lift Text
 #endif
 
 qq :: (Text -> Q Exp) -> QuasiQuoter

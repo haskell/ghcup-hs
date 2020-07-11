@@ -173,7 +173,7 @@ common terminal-progress-bar
   build-depends: terminal-progress-bar >=0.4.1
 
 common text
-  build-depends: text >=1.2
+  build-depends: text >=1.2.4.0
 
 common time
   build-depends: time >=1.9.3

@@ -106,7 +106,6 @@ installGHCBin bDls ver mpfReq = do
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
   whenM (liftIO $ ghcInstalled tver)
     $ (throwE $ AlreadyInstalled GHC ver)
-  Settings {..}                <- lift ask
   pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
 
   -- download (or use cached version)
@@ -186,7 +185,6 @@ installCabalBin bDls ver mpfReq = do
       )
     $ (throwE $ AlreadyInstalled Cabal ver)
 
-  Settings {..}                <- lift ask
   pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
 
   -- download (or use cached version)
