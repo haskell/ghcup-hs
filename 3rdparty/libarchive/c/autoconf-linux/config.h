@@ -260,7 +260,7 @@
 /* #undef HAVE_ACL_IS_TRIVIAL_NP */
 
 /* Define to 1 if you have the <acl/libacl.h> header file. */
-#define HAVE_ACL_LIBACL_H 1
+/* #undef HAVE_ACL_LIBACL_H */
 
 /* Define to 1 if the system has the type `acl_permset_t'. */
 /* #undef HAVE_ACL_PERMSET_T */
@@ -453,6 +453,7 @@
 /* #undef HAVE_EXPAT_H */
 
 /* Define to 1 if you have the <ext2fs/ext2_fs.h> header file. */
+/* #undef HAVE_EXT2FS_EXT2_FS_H */
 
 /* Define to 1 if you have the `extattr_get_fd' function. */
 /* #undef HAVE_EXTATTR_GET_FD */
@@ -605,7 +606,7 @@
 /* #undef HAVE_LCHFLAGS */
 
 /* Define to 1 if you have the `lchmod' function. */
-/* #undef HAVE_LCHMOD */
+/* #undef HAVE_LCHMOD 1 */
 
 /* Define to 1 if you have the `lchown' function. */
 #define HAVE_LCHOWN 1
@@ -1027,10 +1028,10 @@
 /* #undef HAVE_STRUCT_STAT_ST_UMTIME */
 
 /* Define to 1 if `tm_gmtoff' is a member of `struct tm'. */
-#define HAVE_STRUCT_TM_TM_GMTOFF 1
+/* #undef HAVE_STRUCT_TM_TM_GMTOFF 1 */
 
 /* Define to 1 if `__tm_gmtoff' is a member of `struct tm'. */
-/* #undef HAVE_STRUCT_TM___TM_GMTOFF */
+/* #undef HAVE_STRUCT_TM___TM_GMTOFF 1 */
 
 /* Define to 1 if the system has the type `struct vfsconf'. */
 /* #undef HAVE_STRUCT_VFSCONF */
@@ -1042,9 +1043,10 @@
 #define HAVE_SYMLINK 1
 
 /* Define to 1 if you have the <sys/acl.h> header file. */
+/* #undef HAVE_SYS_ACL_H */
 
 /* Define to 1 if you have the <sys/cdefs.h> header file. */
-#define HAVE_SYS_CDEFS_H 1
+/* #undef HAVE_SYS_CDEFS_H */
 
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
@@ -1202,7 +1204,7 @@
 #define HAVE_WMEMMOVE 1
 
 /* Define to 1 if you have a working EXT2_IOC_GETFLAGS */
-#define HAVE_WORKING_EXT2_IOC_GETFLAGS 1
+/* #undef HAVE_WORKING_EXT2_IOC_GETFLAGS */
 
 /* Define to 1 if you have a working FS_IOC_GETFLAGS */
 #define HAVE_WORKING_FS_IOC_GETFLAGS 1
@@ -1289,7 +1291,7 @@
 #define STDC_HEADERS 1
 
 /* Define to 1 if strerror_r returns char *. */
-#define STRERROR_R_CHAR_P 1
+/* #undef STRERROR_R_CHAR_P */
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1

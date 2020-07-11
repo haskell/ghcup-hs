@@ -40,7 +40,13 @@ export PATH="$HOME/.cabal/bin:$HOME/.ghcup/bin:$PATH"
 
 See `ghcup --help`.
 
-Common use cases are:
+For the simple interactive TUI, run:
+
+```sh
+ghcup tui
+```
+
+For the full functionality via cli:
 
 ```sh
 # list available ghc/cabal versions

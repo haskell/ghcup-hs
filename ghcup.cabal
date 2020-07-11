@@ -21,6 +21,11 @@ source-repository head
   type:     git
   location: https://gitlab.haskell.org/haskell/ghcup-hs.git
 
+flag tui
+  description: Build the brick powered tui (ghcup tui)
+  default:     False
+  manual:      True
+
 flag internal-downloader
   description: Compile the internal downloader, which links against OpenSSL
   default:     False
@@ -49,6 +54,9 @@ common base16-bytestring
 
 common binary
   build-depends: binary >=0.8.6.0
+
+common brick
+  build-depends: brick >=0.54
 
 common bytestring
   build-depends: bytestring >=0.10
@@ -158,7 +166,6 @@ common string-interpolate
 common table-layout
   build-depends: table-layout >=0.8
 
-
 common template-haskell
   build-depends: template-haskell >=2.7
 
@@ -197,6 +204,9 @@ common vector
 
 common versions
   build-depends: versions >=3.5
+
+common vty
+  build-depends: vty >=5.28.2
 
 common word8
   build-depends: word8 >=0.1.3
@@ -350,6 +360,13 @@ executable ghcup
   if flag(internal-downloader)
     cpp-options:     -DINTERNAL_DOWNLOADER
 
+  if flag(tui)
+    import:
+      brick
+      , vector
+      , vty
+    other-modules: BrickMain
+    cpp-options:     -DBRICK
 
 executable ghcup-gen
   import:
