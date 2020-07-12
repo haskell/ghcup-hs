@@ -832,6 +832,11 @@ ghc_883_32_musl = DownloadInfo
   (Just [rel|ghc-8.8.3|])
   "7a5f41646d06777e75636291a1855d60a0984552bbdf33c3d107565d302f38a4"
 
+ghc_883_64_freebsd :: DownloadInfo
+ghc_883_64_freebsd = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.8.3-x86_64-portbld-freebsd.tar.xz|]
+  (Just [rel|ghc-8.8.3|])
+  "569719075b4d14b3875a899df522090ae31e6fe085e6dffe518e875b09a2f0be"
 
 
 
@@ -1804,6 +1809,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_883_64_darwin)])
                   , (Linux Alpine, M.fromList [(Nothing, ghc_883_64_musl)])
+                  , (FreeBSD     , M.fromList [(Nothing, ghc_883_64_freebsd)])
                   ]
                 )
               , ( A_32

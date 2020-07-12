@@ -2009,6 +2009,13 @@
                 "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.3-musl/ghc-8.8.3-x86_64-unknown-linux-musl.tar.xz"
               }
             },
+            "FreeBSD": {
+              "unknown_versioning": {
+                "dlHash": "569719075b4d14b3875a899df522090ae31e6fe085e6dffe518e875b09a2f0be",
+                "dlSubdir": "ghc-8.8.3",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.8.3-x86_64-portbld-freebsd.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "42fde2ef5a143e1e6b47ae8875162ea2d4d54b06f0f7fa32ee4f0eb86f2be7ad",
