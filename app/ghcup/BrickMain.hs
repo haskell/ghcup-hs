@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TypeApplications  #-}
@@ -19,7 +20,9 @@ import           Brick.Widgets.Border
 import           Brick.Widgets.Border.Style
 import           Brick.Widgets.Center
 import           Brick.Widgets.List
+#if !defined(TAR)
 import           Codec.Archive
+#endif
 import           Control.Exception.Safe
 import           Control.Monad.Logger
 import           Control.Monad.Reader
@@ -196,7 +199,23 @@ install' AppState {..} (_, ListResult {..}) = do
         . flip runReaderT settings
         . runResourceT
         . runE
-          @'[AlreadyInstalled, UnknownArchive, ArchiveResult, DistroNotFound, FileDoesNotExistError, CopyError, NoCompatibleArch, NoDownload, NotInstalled, NoCompatiblePlatform, BuildFailed, TagNotFound, DigestError, DownloadFailed, NoUpdate]
+          @'[AlreadyInstalled
+            , UnknownArchive
+#if !defined(TAR)
+            , ArchiveResult
+#endif
+            , DistroNotFound
+            , FileDoesNotExistError
+            , CopyError
+            , NoCompatibleArch
+            , NoDownload
+            , NotInstalled
+            , NoCompatiblePlatform
+            , BuildFailed
+            , TagNotFound
+            , DigestError
+            , DownloadFailed
+            , NoUpdate]
 
   (run $ do
       case lTool of

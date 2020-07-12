@@ -24,7 +24,9 @@ import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 
+#if !defined(TAR)
 import           Codec.Archive
+#endif
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
@@ -59,13 +61,18 @@ import           System.Posix.Files.ByteString  ( readSymbolicLink )
 import           Text.Regex.Posix
 import           URI.ByteString
 
+#if defined(TAR)
+import qualified Codec.Archive.Tar             as Tar
+#endif
 import qualified Codec.Compression.BZip        as BZip
 import qualified Codec.Compression.GZip        as GZip
 import qualified Codec.Compression.Lzma        as Lzma
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
+#if !defined(TAR)
 import qualified Data.Text                     as T
+#endif
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 
@@ -312,17 +319,30 @@ getLatestGHCFor major' minor' dls = do
 unpackToDir :: (MonadLogger m, MonadIO m, MonadThrow m)
             => Path Abs       -- ^ destination dir
             -> Path Abs       -- ^ archive path
-            -> Excepts '[UnknownArchive, ArchiveResult] m ()
+            -> Excepts '[UnknownArchive
+#if !defined(TAR)
+                        , ArchiveResult
+#endif
+                        ] m ()
 unpackToDir dest av = do
   fp <- (decUTF8Safe . toFilePath) <$> basename av
   let dfp = decUTF8Safe . toFilePath $ dest
   lift $ $(logInfo) [i|Unpacking: #{fp} to #{dfp}|]
   fn <- toFilePath <$> basename av
 
+#if defined(TAR)
+  let untar :: MonadIO m => BL.ByteString -> Excepts '[] m ()
+      untar = liftIO . Tar.unpack (toFilePath dest) . Tar.read
+#else
   let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
       untar = lEM . liftIO . runArchiveM . unpackToDirLazy (T.unpack . decUTF8Safe . toFilePath $ dest)
+#endif
 
+#if defined(TAR)
+      rf :: MonadIO m => Path Abs -> Excepts '[] m BL.ByteString
+#else
       rf :: MonadIO m => Path Abs -> Excepts '[ArchiveResult] m BL.ByteString
+#endif
       rf = liftIO . readFile
 
   -- extract, depending on file extension
