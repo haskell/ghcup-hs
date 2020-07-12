@@ -2,7 +2,10 @@
 {-# LANGUAGE QuasiQuotes       #-}
 
 
-module GHCup.Data.GHCupDownloads where
+module GHCup.Data.GHCupDownloads
+  ( ghcupDownloads
+  )
+where
 
 import           GHCup.Types
 import           GHCup.Utils.Version.QQ
@@ -887,6 +890,11 @@ ghc_8101_64_alpine = DownloadInfo
   "cb13b645d103e2fba2eb8dfcc4e5f2fbd9550c00c4df42f342b4210436dcb8a8"
 
 
+ghc_8101_64_freebsd :: DownloadInfo
+ghc_8101_64_freebsd = DownloadInfo
+  [uri|https://downloads.haskell.org/ghc/8.10.1/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "52d27dbf9de82005dde9bfc521bff612e381b5228af194259c2306d2b75825c2"
 
 
 
@@ -1840,7 +1848,7 @@ ghcupDownloads = M.fromList
                       , (Just [vers|7|], ghc_8101_64_centos)
                       ]
                     )
-                  , ( Linux RedHat, M.fromList [(Nothing, ghc_8101_64_centos)])
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_8101_64_centos)])
                   , ( Linux AmazonLinux
                     , M.fromList [(Nothing, ghc_8101_64_centos)]
                     )
@@ -1861,6 +1869,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_8101_64_darwin)])
                   , (Linux Alpine, M.fromList [(Nothing, ghc_8101_64_alpine)])
+                  , (FreeBSD     , M.fromList [(Nothing, ghc_8101_64_freebsd)])
                   ]
                 )
               , ( A_32
