@@ -2322,37 +2322,37 @@
       }
     },
     "GHCup": {
-      "0.1.5": {
+      "0.1.6": {
         "viArch": {
           "A_64": {
             "FreeBSD": {
               "unknown_versioning": {
-                "dlHash": "6dd57cc5958ef3a6ba7de22808d9292d31dada8af95277578b69be35fc090194",
+                "dlHash": "52707d89c3a4114b577855612d915c1e10295c4354e7e641b4a37a90c34fea53",
                 "dlSubdir": null,
-                "dlUri": "https://downloads.haskell.org/~ghcup/0.1.5/x86_64-portbld-freebsd-ghcup-0.1.5"
+                "dlUri": "https://downloads.haskell.org/ghcup/0.1.6/x86_64-portbld-freebsd-ghcup-0.1.6"
               }
             },
             "Darwin": {
               "unknown_versioning": {
-                "dlHash": "456770c3b1510d44a0e401e0677faa9f5670ef81a11646f47cbba1b95404e788",
+                "dlHash": "bbf56b5820f97b5ee15d292803a2df06922d31b396f9322459f9e3782e78d59c",
                 "dlSubdir": null,
-                "dlUri": "https://downloads.haskell.org/~ghcup/0.1.5/x86_64-apple-darwin-ghcup-0.1.5-p2"
+                "dlUri": "https://downloads.haskell.org/ghcup/0.1.6/x86_64-apple-darwin-ghcup-0.1.6"
               }
             },
             "Linux_UnknownLinux": {
               "unknown_versioning": {
-                "dlHash": "cfdb01dde77121859b5d90b6707238b54e23787fcbb3003e18ab52a5dbfee330",
+                "dlHash": "bdbec0cdf4c8511c4082dd83993d15034c0fbcb5722ecf418c1cee40667da8af",
                 "dlSubdir": null,
-                "dlUri": "https://downloads.haskell.org/~ghcup/0.1.5/x86_64-linux-ghcup-0.1.5"
+                "dlUri": "https://downloads.haskell.org/ghcup/0.1.6/x86_64-linux-ghcup-0.1.6"
               }
             }
           },
           "A_32": {
             "Linux_UnknownLinux": {
               "unknown_versioning": {
-                "dlHash": "3707f60d703912709335dc0103fb1af5e5dfa83050825a8156b56bc81760b2a8",
+                "dlHash": "0366ed6c00862c3c002cdefc3e37523ad80e655387956c7ab58b268aaa6fae5d",
                 "dlSubdir": null,
-                "dlUri": "https://downloads.haskell.org/~ghcup/0.1.5/i386-linux-ghcup-0.1.5"
+                "dlUri": "https://downloads.haskell.org/ghcup/0.1.6/i386-linux-ghcup-0.1.6"
               }
             }
           }

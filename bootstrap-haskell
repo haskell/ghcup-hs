@@ -28,7 +28,7 @@ eghcup() {
 download_ghcup() {
 	_plat="$(uname -s)"
 	_arch=$(uname -m)
-	_ghver="0.1.5"
+	_ghver="0.1.6"
 
     case "${_plat}" in
         "linux"|"Linux")
@@ -65,7 +65,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${_arch}"
 					;;
 			esac
-			_url=https://downloads.haskell.org/~ghcup/0.1.5/x86_64-apple-darwin-ghcup-0.1.5-p2 ;;
+			_url=https://downloads.haskell.org/~ghcup/${_ghver}/x86_64-apple-darwin-ghcup-${_ghver} ;;
         *) die "Unknown platform: ${_plat}"
 			;;
     esac
