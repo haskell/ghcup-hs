@@ -179,7 +179,7 @@ validateTarballs dls = do
 
  where
   downloadAll dli = do
-    let settings = Settings True False Never Curl
+    let settings = Settings True False Never Curl False
     let runLogger = myLoggerT LoggerConfig { lcPrintDebug = True
                                            , colorOutter  = B.hPut stderr
                                            , rawOutter    = (\_ -> pure ())

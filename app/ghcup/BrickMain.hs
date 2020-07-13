@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TypeApplications  #-}
@@ -19,7 +20,9 @@ import           Brick.Widgets.Border
 import           Brick.Widgets.Border.Style
 import           Brick.Widgets.Center
 import           Brick.Widgets.List
+#if !defined(TAR)
 import           Codec.Archive
+#endif
 import           Control.Exception.Safe
 import           Control.Monad.Logger
 import           Control.Monad.Reader
@@ -47,6 +50,7 @@ import qualified Data.Vector                   as V
 data AppState = AppState {
     lr :: LR
   , dls :: GHCupDownloads
+  , pfreq :: PlatformRequest
 }
 
 type LR = GenericList String Vector ListResult
@@ -151,9 +155,9 @@ eventHandler st (VtyEvent (Vty.EvResize _               _)) = continue st
 eventHandler st (VtyEvent (Vty.EvKey    (Vty.KChar 'q') _)) = halt st
 eventHandler st (VtyEvent (Vty.EvKey    Vty.KEsc        _)) = halt st
 eventHandler AppState {..} (VtyEvent (Vty.EvKey (Vty.KUp) _)) =
-  continue (AppState (listMoveUp lr) dls)
+  continue (AppState (listMoveUp lr) dls pfreq)
 eventHandler AppState {..} (VtyEvent (Vty.EvKey (Vty.KDown) _)) =
-  continue (AppState (listMoveDown lr) dls)
+  continue (AppState (listMoveDown lr) dls pfreq)
 eventHandler as (VtyEvent (Vty.EvKey (Vty.KChar c) _)) =
   case find (\(c', _, _) -> c' == c) keyHandlers of
     Nothing              -> continue as
@@ -175,7 +179,7 @@ withIOAction action as = case listSelectedElement (lr as) of
       Right _   -> do
         apps <- (fmap . fmap)
           (\AppState {..} -> AppState { lr = listMoveTo ix lr, .. })
-          getAppState
+          $ getAppState Nothing (pfreq as)
         case apps of
           Right nas -> do
             putStrLn "Press enter to continue"
@@ -196,13 +200,29 @@ install' AppState {..} (_, ListResult {..}) = do
         . flip runReaderT settings
         . runResourceT
         . runE
-          @'[AlreadyInstalled, UnknownArchive, ArchiveResult, DistroNotFound, FileDoesNotExistError, CopyError, NoCompatibleArch, NoDownload, NotInstalled, NoCompatiblePlatform, BuildFailed, TagNotFound, DigestError, DownloadFailed, NoUpdate]
+          @'[AlreadyInstalled
+            , UnknownArchive
+#if !defined(TAR)
+            , ArchiveResult
+#endif
+            , DistroNotFound
+            , FileDoesNotExistError
+            , CopyError
+            , NoCompatibleArch
+            , NoDownload
+            , NotInstalled
+            , NoCompatiblePlatform
+            , BuildFailed
+            , TagNotFound
+            , DigestError
+            , DownloadFailed
+            , NoUpdate]
 
   (run $ do
       case lTool of
-        GHC   -> liftE $ installGHCBin dls lVer Nothing
-        Cabal -> liftE $ installCabalBin dls lVer Nothing
-        GHCup -> liftE $ upgradeGHCup dls Nothing False $> ()
+        GHC   -> liftE $ installGHCBin dls lVer pfreq
+        Cabal -> liftE $ installCabalBin dls lVer pfreq
+        GHCup -> liftE $ upgradeGHCup dls Nothing False pfreq $> ()
     )
     >>= \case
           VRight _                          -> pure $ Right ()
@@ -280,6 +300,7 @@ settings' = unsafePerformIO
                      , noVerify   = False
                      , keepDirs   = Never
                      , downloader = Curl
+                     , verbose    = False
                      }
   )
 
@@ -294,15 +315,15 @@ logger' = unsafePerformIO
   )
 
 
-brickMain :: Settings -> Maybe URI -> LoggerConfig -> IO ()
-brickMain s muri l = do
+brickMain :: Settings -> Maybe URI -> LoggerConfig -> GHCupDownloads -> PlatformRequest -> IO ()
+brickMain s muri l av pfreq' = do
   writeIORef uri'      muri
   writeIORef settings' s
   -- logger interpreter
   writeIORef logger'   l
   let runLogger = myLoggerT l
 
-  eApps <- getAppState
+  eApps <- getAppState (Just av) pfreq'
   case eApps of
     Right as -> defaultMain app (selectLatest as) $> ()
     Left  e  -> do
@@ -317,8 +338,8 @@ brickMain s muri l = do
       $ (listElements lr)
 
 
-getAppState :: IO (Either String AppState)
-getAppState = do
+getAppState :: Maybe GHCupDownloads -> PlatformRequest -> IO (Either String AppState)
+getAppState mg pfreq' = do
   muri     <- readIORef uri'
   settings <- readIORef settings'
   l        <- readIORef logger'
@@ -328,13 +349,12 @@ getAppState = do
     runLogger
     . flip runReaderT settings
     . runE
-      @'[JSONError, DownloadFailed, FileDoesNotExistError, NoCompatiblePlatform, NoCompatibleArch, DistroNotFound]
+      @'[JSONError, DownloadFailed, FileDoesNotExistError]
     $ do
-        (GHCupInfo _ dls) <- liftE
-          $ getDownloadsF (maybe GHCupURL OwnSource muri)
+        dls <- maybe (fmap _ghcupDownloads $ liftE $ getDownloadsF (maybe GHCupURL OwnSource muri)) pure mg
 
-        lV <- liftE $ listVersions dls Nothing Nothing
-        pure $ (AppState (list "Tool versions" (V.fromList lV) 1) dls)
+        lV <- lift $ listVersions dls Nothing Nothing pfreq'
+        pure $ (AppState (list "Tool versions" (V.fromList lV) 1) dls pfreq')
 
   case r of
     VRight a -> pure $ Right a

@@ -28,7 +28,9 @@ import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 import           GHCup.Version
 
+#if !defined(TAR)
 import           Codec.Archive
+#endif
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -806,6 +808,7 @@ toSettings Options {..} =
       noVerify   = optNoVerify
       keepDirs   = optKeepDirs
       downloader = optsDownloader
+      verbose    = optVerbose
   in  Settings { .. }
 
 
@@ -909,14 +912,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   . runE
                     @'[ AlreadyInstalled
                       , UnknownArchive
+#if !defined(TAR)
                       , ArchiveResult
-                      , DistroNotFound
+#endif
                       , FileDoesNotExistError
                       , CopyError
-                      , NoCompatibleArch
                       , NoDownload
                       , NotInstalled
-                      , NoCompatiblePlatform
                       , BuildFailed
                       , TagNotFound
                       , DigestError
@@ -941,7 +943,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     , TagNotFound
                     ]
 
-          let runListGHC = runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound]
+          let runListGHC = runLogger
 
           let runRm =
                 runLogger . flip runReaderT settings . runE @'[NotInstalled]
@@ -960,16 +962,15 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     @'[ AlreadyInstalled
                       , BuildFailed
                       , DigestError
-                      , DistroNotFound
                       , DownloadFailed
                       , GHCupSetError
-                      , NoCompatibleArch
-                      , NoCompatiblePlatform
                       , NoDownload
                       , NotFoundInPATH
                       , PatchFailed
                       , UnknownArchive
+#if !defined(TAR)
                       , ArchiveResult
+#endif
                       ]
 
           let runCompileCabal =
@@ -981,15 +982,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , BuildFailed
                       , CopyError
                       , DigestError
-                      , DistroNotFound
                       , DownloadFailed
-                      , NoCompatibleArch
-                      , NoCompatiblePlatform
                       , NoDownload
                       , NotInstalled
                       , PatchFailed
                       , UnknownArchive
+#if !defined(TAR)
                       , ArchiveResult
+#endif
                       ]
 
           let runUpgrade =
@@ -998,9 +998,6 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   . runResourceT
                   . runE
                     @'[ DigestError
-                      , DistroNotFound
-                      , NoCompatiblePlatform
-                      , NoCompatibleArch
                       , NoDownload
                       , NoUpdate
                       , FileDoesNotExistError
@@ -1009,9 +1006,19 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       ]
 
 
-          ---------------------------
-          -- Getting download info --
-          ---------------------------
+          ----------------------------------------
+          -- Getting download and platform info --
+          ----------------------------------------
+
+          pfreq <- (
+            runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest
+            ) >>= \case
+                    VRight r -> pure r
+                    VLeft e -> do
+                      runLogger
+                        ($(logError) [i|Error determining Platform: #{e}|])
+                      exitWith (ExitFailure 2)
+
 
           (GHCupInfo treq dls) <-
             ( runLogger
@@ -1026,14 +1033,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       runLogger
                         ($(logError) [i|Error fetching download info: #{e}|])
                       exitWith (ExitFailure 2)
-          (runLogger
-              . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] $ checkForUpdates dls
-              )
-              >>= \case
-                    VRight _ -> pure ()
-                    VLeft  e -> do
-                      runLogger
-                        ($(logError) [i|Error checking for upgrades: #{e}|])
+          runLogger $ checkForUpdates dls pfreq
+
 
 
           -----------------------
@@ -1043,7 +1044,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let installGHC InstallOptions{..} =
                   (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer GHC
-                      liftE $ installGHCBin dls (_tvVersion v) instPlatform -- FIXME: ugly sharing of tool version
+                      liftE $ installGHCBin dls (_tvVersion v) (fromMaybe pfreq instPlatform) -- FIXME: ugly sharing of tool version
                     )
                     >>= \case
                           VRight _ -> do
@@ -1077,7 +1078,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let installCabal InstallOptions{..} =
                 (runInstTool $ do
                     v <- liftE $ fromVersion dls instVer Cabal
-                    liftE $ installCabalBin dls (_tvVersion v) instPlatform -- FIXME: ugly sharing of tool version
+                    liftE $ installCabalBin dls (_tvVersion v) (fromMaybe pfreq instPlatform) -- FIXME: ugly sharing of tool version
                   )
                   >>= \case
                         VRight _ -> do
@@ -1150,7 +1151,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           res <- case optCommand of
 #if defined(BRICK)
-            Interactive -> liftIO $ brickMain settings optUrlSource loggerConfig >> pure ExitSuccess
+            Interactive -> liftIO $ brickMain settings optUrlSource loggerConfig dls pfreq >> pure ExitSuccess
 #endif
             Install (Right iopts) -> do
               runLogger ($(logWarn) [i|This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.|])
@@ -1169,16 +1170,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
             List (ListOptions {..}) ->
               (runListGHC $ do
-                  l <- listVersions dls lTool lCriteria
-                  pure l
+                  l <- listVersions dls lTool lCriteria pfreq
+                  liftIO $ printListResult lRawFormat l
+                  pure ExitSuccess
                 )
-                >>= \case
-                      VRight r -> do
-                        liftIO $ printListResult lRawFormat r
-                        pure ExitSuccess
-                      VLeft e -> do
-                        runLogger ($(logError) [i|#{e}|])
-                        pure $ ExitFailure 6
 
             Rm (Right rmopts) -> do
               runLogger ($(logWarn) [i|This is an old-style command for removing GHC. Use 'ghcup rm ghc' instead.|])
@@ -1205,6 +1200,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                                                   buildConfig
                                                   patchDir
                                                   addConfArgs
+                                                  pfreq
                 )
                 >>= \case
                       VRight _ -> do
@@ -1229,7 +1225,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
 
             Compile (CompileCabal CabalCompileOptions {..}) ->
               (runCompileCabal $ do
-                  liftE $ compileCabal dls targetVer bootstrapGhc jobs patchDir
+                  liftE $ compileCabal dls targetVer bootstrapGhc jobs patchDir pfreq
                 )
                 >>= \case
                       VRight _ -> do
@@ -1260,7 +1256,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   bdir <- liftIO $ ghcupBinDir
                   pure (Just (bdir </> [rel|ghcup|]))
 
-              (runUpgrade $ (liftE $ upgradeGHCup dls target force)) >>= \case
+              (runUpgrade $ (liftE $ upgradeGHCup dls target force pfreq)) >>= \case
                 VRight v' -> do
                   let pretty_v = prettyVer v'
                   runLogger $ $(logInfo)
@@ -1406,37 +1402,32 @@ printListResult raw lr = do
 
 checkForUpdates :: (MonadCatch m, MonadLogger m, MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
                 => GHCupDownloads
-                -> Excepts
-                     '[ NoCompatiblePlatform
-                      , NoCompatibleArch
-                      , DistroNotFound
-                      ]
-                     m
-                     ()
-checkForUpdates dls = do
+                -> PlatformRequest
+                -> m ()
+checkForUpdates dls pfreq = do
   forM_ (getLatest dls GHCup) $ \l -> do
     (Right ghc_ver) <- pure $ version $ prettyPVP ghcUpVer
     when (l > ghc_ver)
-      $ lift $ $(logWarn)
+      $ $(logWarn)
           [i|New GHCup version available: #{prettyVer l}. To upgrade, run 'ghcup upgrade'|]
 
   forM_ (getLatest dls GHC) $ \l -> do
     mghc_ver <- latestInstalled GHC
     forM mghc_ver $ \ghc_ver ->
       when (l > ghc_ver)
-        $ lift $ $(logWarn)
+        $ $(logWarn)
             [i|New GHC version available: #{prettyVer l}. To upgrade, run 'ghcup install ghc #{prettyVer l}'|]
 
   forM_ (getLatest dls Cabal) $ \l -> do
     mcabal_ver <- latestInstalled Cabal
     forM mcabal_ver $ \cabal_ver ->
       when (l > cabal_ver)
-        $ lift $ $(logWarn)
+        $ $(logWarn)
             [i|New Cabal version available: #{prettyVer l}. To upgrade, run 'ghcup install cabal #{prettyVer l}'|]
 
  where
   latestInstalled tool = (fmap lVer . lastMay)
-    <$> (listVersions dls (Just tool) (Just ListInstalled))
+    <$> (listVersions dls (Just tool) (Just ListInstalled) pfreq)
 
 
 prettyDebugInfo :: DebugInfo -> String

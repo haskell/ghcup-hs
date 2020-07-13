@@ -31,6 +31,11 @@ flag internal-downloader
   default:     False
   manual:      True
 
+flag tar
+  description: Use tar-bytestring instead of libarchive
+  default:     False
+  manual:      True
+
 common HsOpenSSL
   build-depends: HsOpenSSL >=0.11.4.18
 
@@ -169,6 +174,9 @@ common table-layout
 common template-haskell
   build-depends: template-haskell >=2.7
 
+common tar-bytestring
+  build-depends: tar-bytestring >=0.6.3.1
+
 common terminal-progress-bar
   build-depends: terminal-progress-bar >=0.4.1
 
@@ -253,7 +261,6 @@ library
     , hpath-filepath
     , hpath-io
     , hpath-posix
-    , libarchive
     , lzma
     , megaparsec
     , monad-logger
@@ -315,12 +322,20 @@ library
 
   if flag(internal-downloader)
     import:
-      , HsOpenSSL
+        HsOpenSSL
       , http-io-streams
       , io-streams
       , terminal-progress-bar
     exposed-modules: GHCup.Download.IOStreams
     cpp-options:     -DINTERNAL_DOWNLOADER
+
+  if flag(tar)
+    import:
+        tar-bytestring
+    cpp-options:     -DTAR
+  else
+    import:
+        libarchive
 
 executable ghcup
   import:
@@ -331,7 +346,6 @@ executable ghcup
     , haskus-utils-variant
     , hpath
     , hpath-io
-    , libarchive
     , megaparsec
     , monad-logger
     , mtl
@@ -367,6 +381,12 @@ executable ghcup
       , vty
     other-modules: BrickMain
     cpp-options:     -DBRICK
+
+  if flag(tar)
+    cpp-options:     -DTAR
+  else
+    import:
+        libarchive
 
 executable ghcup-gen
   import:

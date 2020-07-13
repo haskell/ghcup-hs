@@ -2,7 +2,10 @@
 {-# LANGUAGE QuasiQuotes       #-}
 
 
-module GHCup.Data.GHCupDownloads where
+module GHCup.Data.GHCupDownloads
+  ( ghcupDownloads
+  )
+where
 
 import           GHCup.Types
 import           GHCup.Utils.Version.QQ
@@ -661,6 +664,12 @@ ghc_865_32_musl = DownloadInfo
   (Just [rel|ghc-8.6.5|])
   "db13ff894faf431f9c64db21c090a1e4e42803794d56720a704c50166c7ca05d"
 
+ghc_865_64_freebsd :: DownloadInfo
+ghc_865_64_freebsd = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-portbld-freebsd.tar.xz|]
+  (Just [rel|ghc-8.6.5|])
+  "83a3059a630d40a98e26cb5b520354e12094a96e36ba2f5ab002dad94cf2fb37"
+
 
 
     -----------------
@@ -829,6 +838,11 @@ ghc_883_32_musl = DownloadInfo
   (Just [rel|ghc-8.8.3|])
   "7a5f41646d06777e75636291a1855d60a0984552bbdf33c3d107565d302f38a4"
 
+ghc_883_64_freebsd :: DownloadInfo
+ghc_883_64_freebsd = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.8.3-x86_64-portbld-freebsd.tar.xz|]
+  (Just [rel|ghc-8.8.3|])
+  "569719075b4d14b3875a899df522090ae31e6fe085e6dffe518e875b09a2f0be"
 
 
 
@@ -887,6 +901,11 @@ ghc_8101_64_alpine = DownloadInfo
   "cb13b645d103e2fba2eb8dfcc4e5f2fbd9550c00c4df42f342b4210436dcb8a8"
 
 
+ghc_8101_64_freebsd :: DownloadInfo
+ghc_8101_64_freebsd = DownloadInfo
+  [uri|https://downloads.haskell.org/ghc/8.10.1/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz|]
+  (Just [rel|ghc-8.10.1|])
+  "52d27dbf9de82005dde9bfc521bff612e381b5228af194259c2306d2b75825c2"
 
 
 
@@ -1634,6 +1653,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_865_64_darwin)])
                   , (Linux Alpine, M.fromList [(Nothing, ghc_865_64_musl)])
+                  , (FreeBSD, M.fromList [(Nothing, ghc_865_64_freebsd)])
                   ]
                 )
               , ( A_32
@@ -1796,6 +1816,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_883_64_darwin)])
                   , (Linux Alpine, M.fromList [(Nothing, ghc_883_64_musl)])
+                  , (FreeBSD     , M.fromList [(Nothing, ghc_883_64_freebsd)])
                   ]
                 )
               , ( A_32
@@ -1840,7 +1861,7 @@ ghcupDownloads = M.fromList
                       , (Just [vers|7|], ghc_8101_64_centos)
                       ]
                     )
-                  , ( Linux RedHat, M.fromList [(Nothing, ghc_8101_64_centos)])
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_8101_64_centos)])
                   , ( Linux AmazonLinux
                     , M.fromList [(Nothing, ghc_8101_64_centos)]
                     )
@@ -1861,6 +1882,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_8101_64_darwin)])
                   , (Linux Alpine, M.fromList [(Nothing, ghc_8101_64_alpine)])
+                  , (FreeBSD     , M.fromList [(Nothing, ghc_8101_64_freebsd)])
                   ]
                 )
               , ( A_32

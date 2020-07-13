@@ -698,6 +698,13 @@
                 "dlUri": "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-alpine3.10-linux-integer-simple.tar.xz"
               }
             },
+            "FreeBSD": {
+              "unknown_versioning": {
+                "dlHash": "52d27dbf9de82005dde9bfc521bff612e381b5228af194259c2306d2b75825c2",
+                "dlSubdir": "ghc-8.10.1",
+                "dlUri": "https://downloads.haskell.org/ghc/8.10.1/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "d1cf7886f27af070f3b7dbe1975a78b43ef2d32b86362cbe953e79464fe70761",
@@ -847,6 +854,13 @@
                 "dlHash": "ec6d0417822c3bfafc7aea0b0402294901231bc5d72dd17a2b849e3f44850695",
                 "dlSubdir": "ghc-8.6.5",
                 "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.5-musl/ghc-8.6.5-x86_64-unknown-linux-musl.tar.xz"
+              }
+            },
+            "FreeBSD": {
+              "unknown_versioning": {
+                "dlHash": "83a3059a630d40a98e26cb5b520354e12094a96e36ba2f5ab002dad94cf2fb37",
+                "dlSubdir": "ghc-8.6.5",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-portbld-freebsd.tar.xz"
               }
             },
             "Linux_Debian": {
@@ -2000,6 +2014,13 @@
                 "dlHash": "77a990d76dc10abe2ed19e5fcfef4095f0e9819d4ab84bec6d82f00dd85812a7",
                 "dlSubdir": "ghc-8.8.3",
                 "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.3-musl/ghc-8.8.3-x86_64-unknown-linux-musl.tar.xz"
+              }
+            },
+            "FreeBSD": {
+              "unknown_versioning": {
+                "dlHash": "569719075b4d14b3875a899df522090ae31e6fe085e6dffe518e875b09a2f0be",
+                "dlSubdir": "ghc-8.8.3",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.8.3-x86_64-portbld-freebsd.tar.xz"
               }
             },
             "Linux_Debian": {
