@@ -1,5 +1,15 @@
 # Revision history for ghcup
 
+## 0.1.6 -- 2020-07-13
+
+* Create a new curses (brick) based TUI, accessible via `ghcup tui` #24
+* Support multiple installed versions of cabal #23
+* Improvements to `ghcup list` (show unavailable bindists for platform)
+* Fix redhat downloads #29
+* Support for hadrian bindists (fixes alpine-8.10.1) #31
+* Add FreeBSD bindists 8.6.5 and 8.8.3
+* Fix memory leak during unpack
+
 ## 0.1.5 -- 2020-04-30
 
 * Fix errors when PATH variable contains path components that are actually files
