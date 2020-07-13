@@ -194,4 +194,5 @@ release:freebsd:
   variables:
     ARTIFACT: "x86_64-portbld-freebsd-ghcup"
     GHC_VERSION: "8.8.3"
+    CABAL_VERSION: "3.2.0.0"
 
