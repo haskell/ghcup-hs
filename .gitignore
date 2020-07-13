@@ -5,3 +5,10 @@ dist-newstyle/
 cabal.project.local
 .stack-work/
 bin/
+/*.prof
+/*.ps
+/*.hp
+tags
+TAGS
+/tmp/
+.entangled
