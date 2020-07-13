@@ -20,5 +20,5 @@ ghcup set 8.8.3
 cabal update
 cabal build --constraint="zlib static" --constraint="lzma static" -ftui
 cp "$(cabal new-exec --verbose=0 --offline sh -- -c 'command -v ghcup')" .
-strip -s ghcup
+strip ./ghcup
 cp ghcup "./${ARTIFACT}"
