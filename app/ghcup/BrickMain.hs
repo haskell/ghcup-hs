@@ -283,7 +283,11 @@ changelog' AppState {..} (_, ListResult {..}) = do
     Nothing -> pure $ Left
       [i|Could not find ChangeLog for #{lTool}, version #{prettyVer lVer}|]
     Just uri -> do
-      exec "xdg-open" True [serializeURIRef' uri] Nothing Nothing >>= \case
+      let cmd = case _rPlatform pfreq of
+                  Darwin  -> "open"
+                  Linux _ -> "xdg-open"
+                  FreeBSD -> "xdg-open"
+      exec cmd True [serializeURIRef' uri] Nothing Nothing >>= \case
         Right _ -> pure $ Right ()
         Left  e -> pure $ Left [i|#{e}|]
 

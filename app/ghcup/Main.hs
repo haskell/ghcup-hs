@@ -1308,9 +1308,14 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   pure ExitSuccess
                 Just uri -> do
                   let uri' = T.unpack . decUTF8Safe . serializeURIRef' $ uri
+                      cmd = case _rPlatform pfreq of
+                              Darwin  -> "open"
+                              Linux _ -> "xdg-open"
+                              FreeBSD -> "xdg-open"
+
                   if clOpen
                     then
-                      exec "xdg-open"
+                      exec cmd
                            True
                            [serializeURIRef' uri]
                            Nothing
