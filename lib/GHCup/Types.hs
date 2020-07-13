@@ -152,6 +152,7 @@ data Settings = Settings
   , noVerify   :: Bool
   , keepDirs   :: KeepDirs
   , downloader :: Downloader
+  , verbose    :: Bool
   }
   deriving Show
 

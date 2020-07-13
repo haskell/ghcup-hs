@@ -473,10 +473,13 @@ ghcUpSrcBuiltFile = [rel|.ghcup_src_built|]
 
 
 -- | Calls gmake if it exists in PATH, otherwise make.
-make :: [ByteString] -> Maybe (Path Abs) -> IO (Either ProcessError ())
+make :: (MonadThrow m, MonadIO m, MonadReader Settings m)
+     => [ByteString]
+     -> Maybe (Path Abs)
+     -> m (Either ProcessError ())
 make args workdir = do
-  spaths    <- catMaybes . fmap parseAbs <$> getSearchPath
-  has_gmake <- isJust <$> searchPath spaths [rel|gmake|]
+  spaths    <- catMaybes . fmap parseAbs <$> (liftIO getSearchPath)
+  has_gmake <- isJust <$> (liftIO $ searchPath spaths [rel|gmake|])
   let mymake = if has_gmake then "gmake" else "make"
   execLogged mymake True args [rel|ghc-make|] workdir Nothing
 

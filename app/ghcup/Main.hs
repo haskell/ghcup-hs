@@ -808,6 +808,7 @@ toSettings Options {..} =
       noVerify   = optNoVerify
       keepDirs   = optKeepDirs
       downloader = optsDownloader
+      verbose    = optVerbose
   in  Settings { .. }
 
 

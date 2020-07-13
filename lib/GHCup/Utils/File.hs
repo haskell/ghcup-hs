@@ -1,16 +1,19 @@
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
 module GHCup.Utils.File where
 
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.Prelude
+import           GHCup.Types
 
 import           Control.Concurrent
 import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
+import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
 import           Data.Foldable
 import           Data.Functor
@@ -101,19 +104,21 @@ executeOut path args chdir = captureOutStreams $ do
   SPPB.executeFile (toFilePath path) True args Nothing
 
 
-execLogged :: ByteString       -- ^ thing to execute
+execLogged :: (MonadReader Settings m, MonadIO m, MonadThrow m)
+           => ByteString       -- ^ thing to execute
            -> Bool             -- ^ whether to search PATH for the thing
            -> [ByteString]     -- ^ args for the thing
            -> Path Rel         -- ^ log filename
            -> Maybe (Path Abs) -- ^ optionally chdir into this
            -> Maybe [(ByteString, ByteString)] -- ^ optional environment
-           -> IO (Either ProcessError ())
+           -> m (Either ProcessError ())
 execLogged exe spath args lfile chdir env = do
-  ldir    <- ghcupLogsDir
+  Settings{..} <- ask
+  ldir    <- liftIO ghcupLogsDir
   logfile <- (ldir </>) <$> parseRel (toFilePath lfile <> ".log")
-  bracket (createFile (toFilePath logfile) newFilePerms) closeFd action
+  liftIO $ bracket (createFile (toFilePath logfile) newFilePerms) closeFd (action verbose)
  where
-  action fd = do
+  action verbose fd = do
     actionWithPipes $ \(stdoutRead, stdoutWrite) -> do
       -- start the thread that logs to stdout in a region
       done <- newEmptyMVar
@@ -122,7 +127,7 @@ execLogged exe spath args lfile chdir env = do
         $ EX.handle (\(_ :: StopThread) -> pure ())
         $ EX.handle (\(_ :: IOException) -> pure ())
         $ flip finally (putMVar done ())
-        $ printToRegion fd stdoutRead 6
+        $ (if verbose then tee fd stdoutRead else printToRegion fd stdoutRead 6)
 
       -- fork our subprocess
       pid <- SPPB.forkProcess $ do
@@ -151,6 +156,17 @@ execLogged exe spath args lfile chdir env = do
       closeFd stdoutRead
       pure e
 
+  tee fileFd fdIn = do
+      flip finally (readTilEOF lineAction fdIn) -- make sure the last few lines don't get cut off
+        $ do
+            hideError eofErrorType $ readTilEOF lineAction fdIn
+            forever (threadDelay 5000)
+
+   where
+    lineAction bs' = do
+      void $ SPIB.fdWrite fileFd (bs' <> "\n")
+      void $ SPIB.fdWrite stdOutput (bs' <> "\n")
+
   -- Reads fdIn and logs the output in a continous scrolling area
   -- of 'size' terminal lines. Also writes to a log file.
   printToRegion fileFd fdIn size = do
@@ -170,6 +186,7 @@ execLogged exe spath args lfile chdir env = do
 
    where
     -- action to perform line by line
+    -- TODO: do this with vty for efficiency
     lineAction ref rs bs' = do
       modifyIORef' ref (swapRegs bs')
       regs <- readIORef ref
@@ -193,18 +210,18 @@ execLogged exe spath args lfile chdir env = do
     trim w bs | BS.length bs > w && w > 5 = BS.take (w - 4) bs <> "..."
               | otherwise                 = bs
 
-    -- read an entire line from the file descriptor (removes the newline char)
-    readLine fd' = do
-      bs <- SPIB.fdRead fd' 1
-      if
-        | bs == "\n" -> pure ""
-        | bs == ""   -> pure ""
-        | otherwise  -> fmap (bs <>) $ readLine fd'
+  -- read an entire line from the file descriptor (removes the newline char)
+  readLine fd' = do
+    bs <- SPIB.fdRead fd' 1
+    if
+      | bs == "\n" -> pure ""
+      | bs == ""   -> pure ""
+      | otherwise  -> fmap (bs <>) $ readLine fd'
 
-    readTilEOF action' fd' = do
-      bs <- readLine fd'
-      void $ action' bs
-      readTilEOF action' fd'
+  readTilEOF action' fd' = do
+    bs <- readLine fd'
+    void $ action' bs
+    readTilEOF action' fd'
 
 
 -- | Capture the stdout and stderr of the given action, which

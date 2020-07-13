@@ -133,19 +133,19 @@ installGHCBin bDls ver mpfReq = do
 
  where
   -- | Install an unpacked GHC distribution. This only deals with the GHC build system and nothing else.
-  installGHC' :: (MonadLogger m, MonadIO m)
+  installGHC' :: (MonadReader Settings m, MonadThrow m, MonadLogger m, MonadIO m)
               => Path Abs      -- ^ Path to the unpacked GHC bindist (where the configure script resides)
               -> Path Abs      -- ^ Path to install to
               -> Excepts '[ProcessError] m ()
   installGHC' path inst = do
     lift $ $(logInfo) "Installing GHC (this may take a while)"
-    lEM $ liftIO $ execLogged "./configure"
+    lEM $ execLogged "./configure"
                               False
                               ["--prefix=" <> toFilePath inst]
                               [rel|ghc-configure|]
                               (Just path)
                               Nothing
-    lEM $ liftIO $ make ["install"] (Just path)
+    lEM $ make ["install"] (Just path)
     pure ()
 
 
@@ -672,7 +672,7 @@ BUILD_SPHINX_PDF = NO
 HADDOCK_DOCS = NO
 Stage1Only = YES|]
 
-  compile :: (MonadCatch m, MonadLogger m, MonadIO m)
+  compile :: (MonadReader Settings m, MonadThrow m, MonadCatch m, MonadLogger m, MonadIO m)
           => Either (Path Rel) (Path Abs)
           -> Path Abs
           -> Path Abs
@@ -700,7 +700,7 @@ Stage1Only = YES|]
           Left  bver -> do
             spaths <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
             (liftIO $ searchPath spaths bver) !? NotFoundInPATH bver
-        lEM $ liftIO $ execLogged
+        lEM $ execLogged
           "./configure"
           False
           (  ["--prefix=" <> toFilePath ghcdir]
@@ -714,7 +714,7 @@ Stage1Only = YES|]
           (Just workdir)
           (Just (("GHC", toFilePath bghcPath) : cEnv))
       | otherwise -> do
-        lEM $ liftIO $ execLogged
+        lEM $ execLogged
           "./configure"
           False
           (  [ "--prefix=" <> toFilePath ghcdir
@@ -739,11 +739,11 @@ Stage1Only = YES|]
         liftIO $ writeFile (build_mk workdir) (Just newFilePerms) defaultConf
 
     lift $ $(logInfo) [i|Building (this may take a while)...|]
-    lEM $ liftIO $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs)
+    lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs)
                         (Just workdir)
 
     lift $ $(logInfo) [i|Installing...|]
-    lEM $ liftIO $ make ["install"] (Just workdir)
+    lEM $ make ["install"] (Just workdir)
 
   markSrcBuilt ghcdir workdir = do
     let dest = (ghcdir </> ghcUpSrcBuiltFile)
@@ -848,7 +848,7 @@ compileCabal dls tver bghc jobs patchdir = do
   pure ()
 
  where
-  compile :: (MonadThrow m, MonadLogger m, MonadIO m, MonadResource m)
+  compile :: (MonadReader Settings m, MonadThrow m, MonadLogger m, MonadIO m, MonadResource m)
           => Path Abs
           -> Excepts '[ProcessError , PatchFailed] m (Path Abs)
   compile workdir = do
@@ -881,7 +881,7 @@ compileCabal dls tver bghc jobs patchdir = do
     newEnv <- lift $ addToCurrentEnv (("PREFIX", toFilePath tmp) : ghcEnv)
     lift $ $(logDebug) [i|Environment: #{newEnv}|]
 
-    lEM $ liftIO $ execLogged "./bootstrap.sh"
+    lEM $ execLogged "./bootstrap.sh"
                               False
                               (maybe [] (\j -> ["-j", fS (show j)]) jobs)
                               [rel|cabal-bootstrap|]

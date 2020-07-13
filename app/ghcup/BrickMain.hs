@@ -299,6 +299,7 @@ settings' = unsafePerformIO
                      , noVerify   = False
                      , keepDirs   = Never
                      , downloader = Curl
+                     , verbose    = False
                      }
   )
 
