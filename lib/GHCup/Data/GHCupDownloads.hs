@@ -664,6 +664,12 @@ ghc_865_32_musl = DownloadInfo
   (Just [rel|ghc-8.6.5|])
   "db13ff894faf431f9c64db21c090a1e4e42803794d56720a704c50166c7ca05d"
 
+ghc_865_64_freebsd :: DownloadInfo
+ghc_865_64_freebsd = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-portbld-freebsd.tar.xz|]
+  (Just [rel|ghc-8.6.5|])
+  "83a3059a630d40a98e26cb5b520354e12094a96e36ba2f5ab002dad94cf2fb37"
+
 
 
     -----------------
@@ -1647,6 +1653,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_865_64_darwin)])
                   , (Linux Alpine, M.fromList [(Nothing, ghc_865_64_musl)])
+                  , (FreeBSD, M.fromList [(Nothing, ghc_865_64_freebsd)])
                   ]
                 )
               , ( A_32

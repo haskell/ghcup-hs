@@ -856,6 +856,13 @@
                 "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.5-musl/ghc-8.6.5-x86_64-unknown-linux-musl.tar.xz"
               }
             },
+            "FreeBSD": {
+              "unknown_versioning": {
+                "dlHash": "83a3059a630d40a98e26cb5b520354e12094a96e36ba2f5ab002dad94cf2fb37",
+                "dlSubdir": "ghc-8.6.5",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-portbld-freebsd.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "bc75f5601a9f41d58b2ba161b9e28fad52143a7229060f1e084168d9b2e914df",
