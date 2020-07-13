@@ -87,15 +87,12 @@ installGHCBin :: ( MonadFail m
                  )
               => GHCupDownloads
               -> Version
-              -> Maybe PlatformRequest -- ^ if Nothing, looks up current host platform
+              -> PlatformRequest
               -> Excepts
                    '[ AlreadyInstalled
                     , BuildFailed
                     , DigestError
-                    , DistroNotFound
                     , DownloadFailed
-                    , NoCompatibleArch
-                    , NoCompatiblePlatform
                     , NoDownload
                     , NotInstalled
                     , UnknownArchive
@@ -105,12 +102,11 @@ installGHCBin :: ( MonadFail m
                     ]
                    m
                    ()
-installGHCBin bDls ver mpfReq = do
+installGHCBin bDls ver pfreq@(PlatformRequest {..}) = do
   let tver = (mkTVer ver)
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
   whenM (liftIO $ ghcInstalled tver)
     $ (throwE $ AlreadyInstalled GHC ver)
-  pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
 
   -- download (or use cached version)
   dlinfo                       <- lE $ getDownloadInfo GHC ver pfreq bDls
@@ -159,15 +155,12 @@ installCabalBin :: ( MonadMask m
                    )
                 => GHCupDownloads
                 -> Version
-                -> Maybe PlatformRequest -- ^ if Nothing, looks up current host platform
+                -> PlatformRequest
                 -> Excepts
                      '[ AlreadyInstalled
                       , CopyError
                       , DigestError
-                      , DistroNotFound
                       , DownloadFailed
-                      , NoCompatibleArch
-                      , NoCompatiblePlatform
                       , NoDownload
                       , NotInstalled
                       , UnknownArchive
@@ -177,7 +170,7 @@ installCabalBin :: ( MonadMask m
                       ]
                      m
                      ()
-installCabalBin bDls ver mpfReq = do
+installCabalBin bDls ver pfreq@(PlatformRequest {..}) = do
   lift $ $(logDebug) [i|Requested to install cabal version #{ver}|]
 
   bindir <- liftIO ghcupBinDir
@@ -190,8 +183,6 @@ installCabalBin bDls ver mpfReq = do
           $ getSymbolicLinkStatus (toFilePath (bindir </> [rel|cabal|]))
       )
     $ (throwE $ AlreadyInstalled Cabal ver)
-
-  pfreq@(PlatformRequest {..}) <- maybe (liftE $ platformRequest) pure mpfReq
 
   -- download (or use cached version)
   dlinfo                       <- lE $ getDownloadInfo Cabal ver pfreq bDls
@@ -386,31 +377,25 @@ listVersions :: ( MonadCatch m
              => GHCupDownloads
              -> Maybe Tool
              -> Maybe ListCriteria
-             -> Excepts
-                  '[ NoCompatiblePlatform
-                   , NoCompatibleArch
-                   , DistroNotFound
-                   ]
-                  m
-                  [ListResult]
-listVersions av lt criteria = do
-  pfreq <- platformRequest
+             -> PlatformRequest
+             -> m [ListResult]
+listVersions av lt criteria pfreq = do
   case lt of
     Just t -> do
       -- get versions from GHCupDownloads
       let avTools = availableToolVersions av t
-      lr <- filter' <$> forM (Map.toList avTools) (liftIO . toListResult pfreq t)
+      lr <- filter' <$> forM (Map.toList avTools) (liftIO . toListResult t)
 
       case t of
         -- append stray GHCs
         GHC -> do
-          slr <- lift $ strayGHCs avTools
+          slr <- strayGHCs avTools
           pure $ (sort (slr ++ lr))
         _ -> pure lr
     Nothing -> do
-      ghcvers   <- listVersions av (Just GHC) criteria
-      cabalvers <- listVersions av (Just Cabal) criteria
-      ghcupvers <- listVersions av (Just GHCup) criteria
+      ghcvers   <- listVersions av (Just GHC) criteria pfreq
+      cabalvers <- listVersions av (Just Cabal) criteria pfreq
+      ghcupvers <- listVersions av (Just GHCup) criteria pfreq
       pure (ghcvers <> cabalvers <> ghcupvers)
 
  where
@@ -455,8 +440,8 @@ listVersions av lt criteria = do
         pure Nothing
 
   -- NOTE: this are not cross ones, because no bindists
-  toListResult :: PlatformRequest -> Tool -> (Version, [Tag]) -> IO ListResult
-  toListResult pfreq t (v, tags) = case t of
+  toListResult :: Tool -> (Version, [Tag]) -> IO ListResult
+  toListResult t (v, tags) = case t of
     GHC -> do
       let lNoBindist = isLeft $ getDownloadInfo GHC v pfreq av
       let tver = mkTVer v
@@ -606,15 +591,13 @@ compileGHC :: ( MonadMask m
            -> Maybe (Path Abs)           -- ^ build config
            -> Maybe (Path Abs)           -- ^ patch directory
            -> [Text]                     -- ^ additional args to ./configure
+           -> PlatformRequest
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
                  , DigestError
-                 , DistroNotFound
                  , DownloadFailed
                  , GHCupSetError
-                 , NoCompatibleArch
-                 , NoCompatiblePlatform
                  , NoDownload
                  , NotFoundInPATH
                  , PatchFailed
@@ -625,7 +608,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 ()
-compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs = do
+compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs PlatformRequest {..} = do
   lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
   whenM (liftIO $ ghcInstalled tver)
         (throwE $ AlreadyInstalled GHC (tver ^. tvVersion))
@@ -639,7 +622,6 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs = do
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
-  (PlatformRequest {..}) <- liftE $ platformRequest
   void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
   bghc <- case bstrap of
@@ -787,15 +769,13 @@ compileCabal :: ( MonadReader Settings m
              -> Either Version (Path Abs)  -- ^ version to bootstrap with
              -> Maybe Int
              -> Maybe (Path Abs)
+             -> PlatformRequest
              -> Excepts
                   '[ AlreadyInstalled
                    , BuildFailed
                    , CopyError
                    , DigestError
-                   , DistroNotFound
                    , DownloadFailed
-                   , NoCompatibleArch
-                   , NoCompatiblePlatform
                    , NoDownload
                    , NotInstalled
                    , PatchFailed
@@ -806,7 +786,7 @@ compileCabal :: ( MonadReader Settings m
                    ]
                   m
                   ()
-compileCabal dls tver bghc jobs patchdir = do
+compileCabal dls tver bghc jobs patchdir PlatformRequest{..} = do
   lift $ $(logDebug) [i|Requested to compile: #{tver} with ghc-#{bghc}|]
 
   bindir <- liftIO ghcupBinDir
@@ -827,7 +807,6 @@ compileCabal dls tver bghc jobs patchdir = do
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
-  (PlatformRequest {..}) <- liftE $ platformRequest
   void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
   let workdir = maybe id (flip (</>)) (view dlSubdir dlInfo) $ tmpUnpack
@@ -909,23 +888,20 @@ upgradeGHCup :: ( MonadMask m
              -> Maybe (Path Abs)  -- ^ full file destination to write ghcup into
              -> Bool              -- ^ whether to force update regardless
                                   --   of currently installed version
+             -> PlatformRequest
              -> Excepts
                   '[ CopyError
                    , DigestError
-                   , DistroNotFound
                    , DownloadFailed
-                   , NoCompatibleArch
-                   , NoCompatiblePlatform
                    , NoDownload
                    , NoUpdate
                    ]
                   m
                   Version
-upgradeGHCup dls mtarget force = do
+upgradeGHCup dls mtarget force pfreq = do
   lift $ $(logInfo) [i|Upgrading GHCup...|]
   let latestVer = fromJust $ getLatest dls GHCup
   when (not force && (latestVer <= pvpToVersion ghcUpVer)) $ throwE NoUpdate
-  pfreq <- liftE platformRequest
   dli   <- lE $ getDownloadInfo GHCup latestVer pfreq dls
   tmp   <- lift withGHCupTmpDir
   let fn = [rel|ghcup|]
