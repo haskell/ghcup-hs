@@ -205,13 +205,10 @@ install' AppState {..} (_, ListResult {..}) = do
 #if !defined(TAR)
             , ArchiveResult
 #endif
-            , DistroNotFound
             , FileDoesNotExistError
             , CopyError
-            , NoCompatibleArch
             , NoDownload
             , NotInstalled
-            , NoCompatiblePlatform
             , BuildFailed
             , TagNotFound
             , DigestError
