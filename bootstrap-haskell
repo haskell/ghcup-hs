@@ -164,6 +164,9 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 				exit 0
 			fi
 			;;
+		*/fish) # login shell is fish
+			GHCUP_PROFILE_FILE="$HOME/.config/fish/config.fish"
+			MY_SHELL="fish" ;;
 		*) exit 0 ;;
 	esac
 
@@ -179,7 +182,16 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 
         case $next_answer in
             [Yy]*)
-                echo "[ -f \"\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/env\" ] && source \"\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/env\"" >> "${GHCUP_PROFILE_FILE}"
+				case $MY_SHELL in
+					"") break ;;
+					fish)
+						echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME" >> "${GHCUP_PROFILE_FILE}"
+						echo "test -f \$GHCUP_INSTALL_BASE_PREFIX/.ghcup/env ; and set -gx PATH \$HOME/.cabal/bin \$GHCUP_INSTALL_BASE_PREFIX/.ghcup/bin \$PATH" >> "${GHCUP_PROFILE_FILE}"
+						break ;;
+					*)
+						echo "[ -f \"\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/env\" ] && source \"\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/env\"" >> "${GHCUP_PROFILE_FILE}"
+						break ;;
+				esac
                 printf "\\033[0;35m%s\\033[0m\\n" "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
                 printf "\\033[0;35m%s\\033[0m\\n" "or type \"source ${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/env\" to apply them in your current terminal session."
                 exit 0;;
