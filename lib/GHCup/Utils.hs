@@ -45,7 +45,7 @@ import           Data.Versions
 import           Data.Word8
 import           GHC.IO.Exception
 import           HPath
-import           HPath.IO
+import           HPath.IO                hiding ( hideError )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
 import           Prelude                 hiding ( abs

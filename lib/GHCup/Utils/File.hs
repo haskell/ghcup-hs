@@ -14,6 +14,7 @@ import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.Reader
+import           Control.Monad.Trans.State.Strict
 import           Data.ByteString                ( ByteString )
 import           Data.Foldable
 import           Data.Functor
@@ -23,7 +24,7 @@ import           Data.Text                      ( Text )
 import           Data.Void
 import           GHC.IO.Exception
 import           HPath
-import           HPath.IO
+import           HPath.IO                hiding ( hideError )
 import           Optics
 import           System.Console.Pretty
 import           System.Console.Regions
@@ -50,6 +51,7 @@ import qualified Text.Megaparsec               as MP
 import qualified Data.ByteString               as BS
 import qualified "unix-bytestring" System.Posix.IO.ByteString
                                                as SPIB
+
 
 
 
@@ -120,7 +122,7 @@ execLogged exe spath args lfile chdir env = do
  where
   action verbose fd = do
     actionWithPipes $ \(stdoutRead, stdoutWrite) -> do
-      -- start the thread that logs to stdout in a region
+      -- start the thread that logs to stdout
       done <- newEmptyMVar
       tid  <-
         forkIO
@@ -143,9 +145,7 @@ execLogged exe spath args lfile chdir env = do
       closeFd stdoutWrite
 
       -- wait for the subprocess to finish
-      e <- SPPB.getProcessStatus True True pid >>= \case
-        i@(Just (SPPB.Exited _)) -> pure $ toProcessError exe args i
-        i                        -> pure $ toProcessError exe args i
+      e <- toProcessError exe args <$!> SPPB.getProcessStatus True True pid
 
       -- make sure the logging thread stops
       case e of
@@ -156,42 +156,47 @@ execLogged exe spath args lfile chdir env = do
       closeFd stdoutRead
       pure e
 
+  tee :: Fd -> Fd -> IO a
   tee fileFd fdIn = do
-      flip finally (readTilEOF lineAction fdIn) -- make sure the last few lines don't get cut off
-        $ do
-            hideError eofErrorType $ readTilEOF lineAction fdIn
-            forever (threadDelay 5000)
+    hideError eofErrorType $ readTilEOF lineAction fdIn
+    forever (threadDelay 5000)
 
    where
+    lineAction :: ByteString -> IO ()
     lineAction bs' = do
       void $ SPIB.fdWrite fileFd (bs' <> "\n")
       void $ SPIB.fdWrite stdOutput (bs' <> "\n")
 
   -- Reads fdIn and logs the output in a continous scrolling area
   -- of 'size' terminal lines. Also writes to a log file.
+  printToRegion :: Fd -> Fd -> Int -> IO ()
   printToRegion fileFd fdIn size = do
-    ref <- newIORef ([] :: [ByteString])
-    displayConsoleRegions $ do
-      rs <- sequence . replicate size . openConsoleRegion $ Linear
-      flip finally (readTilEOF (lineAction ref rs) fdIn) -- make sure the last few lines don't get cut off
+    void $ displayConsoleRegions $ do
+      rs <- liftIO . sequence . replicate size . openConsoleRegion $ Linear
+      flip runStateT []
         $ handle
-            (\(StopThread b) -> do
-              when b (forM_ rs closeConsoleRegion)
-              EX.throw (StopThread b)
+            (\ex@(StopThread b) -> do
+              hideError eofErrorType $ readTilEOF (lineAction rs) fdIn
+              when b (forM_ rs (liftIO . closeConsoleRegion))
+              EX.throw ex
             )
         $ do
-            hideError eofErrorType $ readTilEOF (lineAction ref rs) fdIn
+            hideError eofErrorType $ readTilEOF (lineAction rs) fdIn
             -- wait for explicit stop from the parent to signal what cleanup to run
-            forever (threadDelay 5000)
+            forever (liftIO $ threadDelay 5000)
 
    where
     -- action to perform line by line
     -- TODO: do this with vty for efficiency
-    lineAction ref rs bs' = do
-      modifyIORef' ref (swapRegs bs')
-      regs <- readIORef ref
-      void $ SPIB.fdWrite fileFd (bs' <> "\n")
-      forM (zip regs rs) $ \(bs, r) -> do
+    lineAction :: (MonadMask m, MonadIO m)
+               => [ConsoleRegion]
+               -> ByteString
+               -> StateT [ByteString] m ()
+    lineAction rs = \bs' -> do
+      void $ liftIO $ SPIB.fdWrite fileFd (bs' <> "\n")
+      modify (swapRegs bs')
+      regs <- get
+      liftIO $ forM_ (zip regs rs) $ \(bs, r) ->
         setConsoleRegion r $ do
           w <- consoleWidth
           return
@@ -203,21 +208,25 @@ execLogged exe spath args lfile chdir env = do
             . (\b -> "[ " <> toFilePath lfile <> " ] " <> b)
             $ bs
 
-    swapRegs bs regs | length regs < size = regs ++ [bs]
-                     | otherwise          = tail regs ++ [bs]
+    swapRegs :: a -> [a] -> [a]
+    swapRegs bs = \regs -> if | length regs < size -> regs ++ [bs]
+                              | otherwise          -> tail regs ++ [bs]
 
     -- trim output line to terminal width
-    trim w bs | BS.length bs > w && w > 5 = BS.take (w - 4) bs <> "..."
-              | otherwise                 = bs
+    trim :: Int -> ByteString -> ByteString
+    trim w = \bs -> if | BS.length bs > w && w > 5 -> BS.take (w - 4) bs <> "..."
+                       | otherwise                 -> bs
 
   -- read an entire line from the file descriptor (removes the newline char)
+  readLine :: MonadIO m => Fd -> m ByteString
   readLine fd' = do
-    bs <- SPIB.fdRead fd' 1
+    bs <- liftIO $ SPIB.fdRead fd' 1
     if
       | bs == "\n" -> pure ""
       | bs == ""   -> pure ""
-      | otherwise  -> fmap (bs <>) $ readLine fd'
+      | otherwise  -> (bs <>) <$!> readLine fd'
 
+  readTilEOF :: MonadIO m => (ByteString -> m a) -> Fd -> m b
   readTilEOF action' fd' = do
     bs <- readLine fd'
     void $ action' bs

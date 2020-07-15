@@ -114,6 +114,9 @@ common io-streams
 common libarchive
   build-depends: libarchive >= 2.2.5.0
 
+common lifted-base
+  build-depends: lifted-base >= 0.2.3.12
+
 common lzma
   build-depends: lzma >=0.0.0.3
 
@@ -261,6 +264,7 @@ library
     , hpath-filepath
     , hpath-io
     , hpath-posix
+    , lifted-base
     , lzma
     , megaparsec
     , monad-logger
