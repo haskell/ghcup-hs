@@ -129,13 +129,16 @@ execLogged exe spath args lfile chdir env = do
     actionWithPipes $ \(stdoutRead, stdoutWrite) -> do
       -- start the thread that logs to stdout
       pState <- newEmptyMVar
-      done <- newEmptyMVar
-      tid  <-
-        forkIO
+      done   <- newEmptyMVar
+      void
+        $ forkOS
         $ EX.handle (\(_ :: StopThread) -> pure ())
         $ EX.handle (\(_ :: IOException) -> pure ())
         $ flip finally (putMVar done ())
-        $ (if verbose then tee fd stdoutRead else printToRegion fd stdoutRead 6 pState)
+        $ (if verbose
+            then tee fd stdoutRead
+            else printToRegion fd stdoutRead 6 pState
+          )
 
       -- fork the subprocess
       pid <- SPPB.forkProcess $ do
@@ -147,10 +150,6 @@ execLogged exe spath args lfile chdir env = do
         -- execute the action
         maybe (pure ()) (changeWorkingDirectory . toFilePath) chdir
         void $ SPPB.executeFile exe spath args env
-
-        -- signal EOF to the consumer
-        closeFd stdOutput
-        closeFd stdError
 
       closeFd stdoutWrite
 
@@ -188,15 +187,12 @@ execLogged exe spath args lfile chdir env = do
         $ Linear
       flip runStateT mempty
         $ handle
-            (\ex@(StopThread b) -> do
-              ps <- liftIO $ tryTakeMVar pState
-              when (ps == Just True) (forM_ rs (liftIO . closeConsoleRegion))
-              EX.throw ex
+            (\(ex :: SomeException) -> do
+              ps <- liftIO $ takeMVar pState
+              when (ps == True) (forM_ rs (liftIO . closeConsoleRegion))
+              throw ex
             )
-        $ do
-            readTilEOF (lineAction rs) fdIn
-            -- wait for explicit stop from the parent to signal what cleanup to run
-            forever (liftIO $ threadDelay 5000)
+        $ readTilEOF (lineAction rs) fdIn
 
    where
     -- action to perform line by line
@@ -240,21 +236,16 @@ execLogged exe spath args lfile chdir env = do
     if
       | BS.length rest /= 0 -> pure (line, BS.tail rest)
       | otherwise -> (\(l, r) -> (line <> l, r)) <$!> readLine fd mempty
-   where
-    read' =
-      liftIO
-        $ handleIO (\e -> if isEOFError e then pure "" else ioError e)
-        $ SPIB.fdRead fd 1
+    where read' = liftIO $ SPIB.fdRead fd 512
 
 
-  readTilEOF :: MonadIO m => (ByteString -> m a) -> Fd -> m b
-  readTilEOF action' fd' = go mempty
+  readTilEOF :: MonadIO m => (ByteString -> m a) -> Fd -> m ()
+  readTilEOF ~action' fd' = go mempty
    where
     go bs' = do
       (bs, rest) <- readLine fd' bs'
       if
-        | BS.length bs == 0 -> liftIO
-        $ ioError (mkIOError eofErrorType "" Nothing Nothing)
+        | BS.length bs == 0 -> pure ()
         | otherwise -> do
           void $ action' bs
           go rest
