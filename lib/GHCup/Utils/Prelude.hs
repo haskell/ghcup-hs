@@ -165,6 +165,11 @@ liftIOException errType ex =
     . lift
 
 
+-- | Uses safe-exceptions.
+hideError :: (MonadIO m, MonadCatch m) => IOErrorType -> m () -> m ()
+hideError err = handleIO (\e -> if err == ioeGetErrorType e then pure () else liftIO . ioError $ e)
+
+
 hideErrorDef :: [IOErrorType] -> a -> IO a -> IO a
 hideErrorDef errs def =
   handleIO (\e -> if ioeGetErrorType e `elem` errs then pure def else ioError e)
