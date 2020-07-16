@@ -847,6 +847,51 @@ ghc_883_64_freebsd = DownloadInfo
 
 
     -----------------
+    --[ GHC 8.8.4 ]--
+    -----------------
+
+
+
+ghc_884_64_deb8 :: DownloadInfo
+ghc_884_64_deb8 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb8-linux.tar.xz|]
+  (Just [rel|ghc-8.8.4|])
+  "51a36892f1264744195274187298d13ac62bce2da86d4ddf76d8054ab90f2feb"
+
+ghc_884_64_deb9 :: DownloadInfo
+ghc_884_64_deb9 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb9-linux.tar.xz|]
+  (Just [rel|ghc-8.8.4|])
+  "4862559d221153caf978f4bf2c15a82c114d1e1f43b298b2ecff2ac94b586d20"
+
+ghc_884_32_deb9 :: DownloadInfo
+ghc_884_32_deb9 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-i386-deb9-linux.tar.xz|]
+  (Just [rel|ghc-8.8.4|])
+  "43dd954910c9027694312cef0aabc7774d102d0422b7172802cfb72f7d5da3a0"
+
+ghc_884_64_fedora :: DownloadInfo
+ghc_884_64_fedora = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-fedora27-linux.tar.xz|]
+  (Just [rel|ghc-8.8.4|])
+  "f32e37f8aa03e74bad533ae02f62dc27a4521e78199576af490888ba34b515db"
+
+ghc_884_64_centos :: DownloadInfo
+ghc_884_64_centos = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-centos7-linux.tar.xz|]
+  (Just [rel|ghc-8.8.4|])
+  "a12aa4b1fd3c64240a8a6d15196d33e1c0e0d55b51ff78c387242126d0ef7910"
+
+ghc_884_64_darwin :: DownloadInfo
+ghc_884_64_darwin = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-apple-darwin.tar.xz|]
+  (Just [rel|ghc-8.8.4|])
+  "e80a789e9d8cfb41dd87f3284b75432427c4461c1731d220d04ead8733ccdb5e"
+
+
+
+
+    -----------------
     --[ GHC 8.10.1 ]--
     -----------------
 
@@ -1653,7 +1698,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_865_64_darwin)])
                   , (Linux Alpine, M.fromList [(Nothing, ghc_865_64_musl)])
-                  , (FreeBSD, M.fromList [(Nothing, ghc_865_64_freebsd)])
+                  , (FreeBSD     , M.fromList [(Nothing, ghc_865_64_freebsd)])
                   ]
                 )
               , ( A_32
@@ -1828,6 +1873,58 @@ ghcupDownloads = M.fromList
                   , (Linux Mint  , M.fromList [(Nothing, ghc_883_32_deb9)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_883_32_deb9)])
                   , (Linux Alpine, M.fromList [(Nothing, ghc_883_32_musl)])
+                  ]
+                )
+              ]
+        )
+      , ( [vver|8.8.4|]
+        , VersionInfo
+            [Base [pver|4.13.0.0|]]
+            (Just
+              [uri|https://downloads.haskell.org/~ghc/8.8.4/docs/html/users_guide/8.8.4-notes.html|]
+            )
+            (Just $ DownloadInfo
+              [uri|https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-src.tar.xz|]
+              (Just [rel|ghc-8.8.4|])
+              "f0505e38b2235ff9f1090b51f44d6c8efd371068e5a6bb42a2a6d8b67b5ffc2d"
+            )
+          $ M.fromList
+              [ ( A_64
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, ghc_884_64_fedora)]
+                    )
+                  , (Linux Fedora, M.fromList [(Nothing, ghc_884_64_fedora)])
+                  , (Linux CentOS, M.fromList [(Nothing, ghc_884_64_centos)])
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_884_64_centos)])
+                  , ( Linux AmazonLinux
+                    , M.fromList [(Nothing, ghc_884_64_centos)]
+                    )
+                  , ( Linux Ubuntu
+                    , M.fromList
+                      [ (Nothing           , ghc_884_64_fedora)
+                      , (Just [vers|16.04|], ghc_884_64_deb9)
+                      , (Just [vers|18.04|], ghc_884_64_deb9)
+                      ]
+                    )
+                  , (Linux Mint, M.fromList [(Nothing, ghc_884_64_deb9)])
+                  , ( Linux Debian
+                    , M.fromList
+                      [ (Nothing       , ghc_884_64_deb9)
+                      , (Just [vers|8|], ghc_884_64_deb8)
+                      ]
+                    )
+                  , (Darwin, M.fromList [(Nothing, ghc_884_64_darwin)])
+                  ]
+                )
+              , ( A_32
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, ghc_884_32_deb9)]
+                    )
+                  , (Linux Ubuntu, M.fromList [(Nothing, ghc_884_32_deb9)])
+                  , (Linux Mint  , M.fromList [(Nothing, ghc_884_32_deb9)])
+                  , (Linux Debian, M.fromList [(Nothing, ghc_884_32_deb9)])
                   ]
                 )
               ]

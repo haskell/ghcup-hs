@@ -1250,6 +1250,129 @@
           "base-4.13.0.0"
         ]
       },
+      "8.8.4": {
+        "viArch": {
+          "A_64": {
+            "Linux_Debian": {
+              "unknown_versioning": {
+                "dlHash": "4862559d221153caf978f4bf2c15a82c114d1e1f43b298b2ecff2ac94b586d20",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb9-linux.tar.xz"
+              },
+              "8": {
+                "dlHash": "51a36892f1264744195274187298d13ac62bce2da86d4ddf76d8054ab90f2feb",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb8-linux.tar.xz"
+              }
+            },
+            "Linux_Ubuntu": {
+              "unknown_versioning": {
+                "dlHash": "f32e37f8aa03e74bad533ae02f62dc27a4521e78199576af490888ba34b515db",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-fedora27-linux.tar.xz"
+              },
+              "16.04": {
+                "dlHash": "4862559d221153caf978f4bf2c15a82c114d1e1f43b298b2ecff2ac94b586d20",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb9-linux.tar.xz"
+              },
+              "18.04": {
+                "dlHash": "4862559d221153caf978f4bf2c15a82c114d1e1f43b298b2ecff2ac94b586d20",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb9-linux.tar.xz"
+              }
+            },
+            "Darwin": {
+              "unknown_versioning": {
+                "dlHash": "e80a789e9d8cfb41dd87f3284b75432427c4461c1731d220d04ead8733ccdb5e",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-apple-darwin.tar.xz"
+              }
+            },
+            "Linux_RedHat": {
+              "unknown_versioning": {
+                "dlHash": "a12aa4b1fd3c64240a8a6d15196d33e1c0e0d55b51ff78c387242126d0ef7910",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-centos7-linux.tar.xz"
+              }
+            },
+            "Linux_UnknownLinux": {
+              "unknown_versioning": {
+                "dlHash": "f32e37f8aa03e74bad533ae02f62dc27a4521e78199576af490888ba34b515db",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-fedora27-linux.tar.xz"
+              }
+            },
+            "Linux_Mint": {
+              "unknown_versioning": {
+                "dlHash": "4862559d221153caf978f4bf2c15a82c114d1e1f43b298b2ecff2ac94b586d20",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb9-linux.tar.xz"
+              }
+            },
+            "Linux_Fedora": {
+              "unknown_versioning": {
+                "dlHash": "f32e37f8aa03e74bad533ae02f62dc27a4521e78199576af490888ba34b515db",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-fedora27-linux.tar.xz"
+              }
+            },
+            "Linux_CentOS": {
+              "unknown_versioning": {
+                "dlHash": "a12aa4b1fd3c64240a8a6d15196d33e1c0e0d55b51ff78c387242126d0ef7910",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-centos7-linux.tar.xz"
+              }
+            },
+            "Linux_AmazonLinux": {
+              "unknown_versioning": {
+                "dlHash": "a12aa4b1fd3c64240a8a6d15196d33e1c0e0d55b51ff78c387242126d0ef7910",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-centos7-linux.tar.xz"
+              }
+            }
+          },
+          "A_32": {
+            "Linux_Debian": {
+              "unknown_versioning": {
+                "dlHash": "43dd954910c9027694312cef0aabc7774d102d0422b7172802cfb72f7d5da3a0",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-i386-deb9-linux.tar.xz"
+              }
+            },
+            "Linux_Ubuntu": {
+              "unknown_versioning": {
+                "dlHash": "43dd954910c9027694312cef0aabc7774d102d0422b7172802cfb72f7d5da3a0",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-i386-deb9-linux.tar.xz"
+              }
+            },
+            "Linux_UnknownLinux": {
+              "unknown_versioning": {
+                "dlHash": "43dd954910c9027694312cef0aabc7774d102d0422b7172802cfb72f7d5da3a0",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-i386-deb9-linux.tar.xz"
+              }
+            },
+            "Linux_Mint": {
+              "unknown_versioning": {
+                "dlHash": "43dd954910c9027694312cef0aabc7774d102d0422b7172802cfb72f7d5da3a0",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-i386-deb9-linux.tar.xz"
+              }
+            }
+          }
+        },
+        "viSourceDL": {
+          "dlHash": "f0505e38b2235ff9f1090b51f44d6c8efd371068e5a6bb42a2a6d8b67b5ffc2d",
+          "dlSubdir": "ghc-8.8.4",
+          "dlUri": "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-src.tar.xz"
+        },
+        "viChangeLog": "https://downloads.haskell.org/~ghc/8.8.4/docs/html/users_guide/8.8.4-notes.html",
+        "viTags": [
+          "base-4.13.0.0"
+        ]
+      },
       "8.4.3": {
         "viArch": {
           "A_64": {
