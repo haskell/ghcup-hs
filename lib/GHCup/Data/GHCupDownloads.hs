@@ -888,6 +888,11 @@ ghc_884_64_darwin = DownloadInfo
   (Just [rel|ghc-8.8.4|])
   "e80a789e9d8cfb41dd87f3284b75432427c4461c1731d220d04ead8733ccdb5e"
 
+ghc_884_64_freebsd :: DownloadInfo
+ghc_884_64_freebsd = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-portbld-freebsd.tar.xz|]
+  (Just [rel|ghc-8.8.4|])
+  "8cebe5ccf454e82acd1ff52ca57590d1ab0f3f44a981b46257ec12158c8c447e"
 
 
 
@@ -1925,6 +1930,7 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_884_32_deb9)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_884_32_deb9)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_884_32_deb9)])
+                  , (FreeBSD     , M.fromList [(Nothing, ghc_884_64_freebsd)])
                   ]
                 )
               ]

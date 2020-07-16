@@ -1333,6 +1333,13 @@
             }
           },
           "A_32": {
+            "FreeBSD": {
+              "unknown_versioning": {
+                "dlHash": "8cebe5ccf454e82acd1ff52ca57590d1ab0f3f44a981b46257ec12158c8c447e",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-portbld-freebsd.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "43dd954910c9027694312cef0aabc7774d102d0422b7172802cfb72f7d5da3a0",
