@@ -652,11 +652,11 @@ ghc_865_64_darwin = DownloadInfo
   (Just [rel|ghc-8.6.5|])
   "dfc1bdb1d303a87a8552aa17f5b080e61351f2823c2b99071ec23d0837422169"
 
-ghc_865_64_musl :: DownloadInfo
-ghc_865_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.5-musl/ghc-8.6.5-x86_64-unknown-linux-musl.tar.xz|]
+ghc_865_64_alpine :: DownloadInfo
+ghc_865_64_alpine = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-alpine-linux.tar.xz|]
   (Just [rel|ghc-8.6.5|])
-  "ec6d0417822c3bfafc7aea0b0402294901231bc5d72dd17a2b849e3f44850695"
+  "76cedc5a9ed9fe259bc7e279defa789f833c5d7144a83915ba8b67371aca481b"
 
 ghc_865_32_musl :: DownloadInfo
 ghc_865_32_musl = DownloadInfo
@@ -893,6 +893,12 @@ ghc_884_64_freebsd = DownloadInfo
   [uri|https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-portbld-freebsd.tar.xz|]
   (Just [rel|ghc-8.8.4|])
   "8cebe5ccf454e82acd1ff52ca57590d1ab0f3f44a981b46257ec12158c8c447e"
+
+ghc_884_64_alpine :: DownloadInfo
+ghc_884_64_alpine = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-alpine-linux.tar.xz|]
+  (Just [rel|ghc-8.8.4|])
+  "5b8dbe2f2430bd66ddc0572fa5a5b5201b9fb7c9a66e13fd5bfb377a5a891bac"
 
 
 
@@ -1702,7 +1708,7 @@ ghcupDownloads = M.fromList
                       ]
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_865_64_darwin)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_865_64_musl)])
+                  , (Linux Alpine, M.fromList [(Nothing, ghc_865_64_alpine)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_865_64_freebsd)])
                   ]
                 )
@@ -1920,6 +1926,8 @@ ghcupDownloads = M.fromList
                       ]
                     )
                   , (Darwin, M.fromList [(Nothing, ghc_884_64_darwin)])
+                  , (Linux Alpine, M.fromList [(Nothing, ghc_884_64_alpine)])
+                  , (FreeBSD     , M.fromList [(Nothing, ghc_884_64_freebsd)])
                   ]
                 )
               , ( A_32
@@ -1930,7 +1938,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_884_32_deb9)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_884_32_deb9)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_884_32_deb9)])
-                  , (FreeBSD     , M.fromList [(Nothing, ghc_884_64_freebsd)])
                   ]
                 )
               ]

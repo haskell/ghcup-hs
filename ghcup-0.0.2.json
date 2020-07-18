@@ -851,9 +851,9 @@
           "A_64": {
             "Linux_Alpine": {
               "unknown_versioning": {
-                "dlHash": "ec6d0417822c3bfafc7aea0b0402294901231bc5d72dd17a2b849e3f44850695",
+                "dlHash": "76cedc5a9ed9fe259bc7e279defa789f833c5d7144a83915ba8b67371aca481b",
                 "dlSubdir": "ghc-8.6.5",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.5-musl/ghc-8.6.5-x86_64-unknown-linux-musl.tar.xz"
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-alpine-linux.tar.xz"
               }
             },
             "FreeBSD": {
@@ -1253,6 +1253,20 @@
       "8.8.4": {
         "viArch": {
           "A_64": {
+            "Linux_Alpine": {
+              "unknown_versioning": {
+                "dlHash": "5b8dbe2f2430bd66ddc0572fa5a5b5201b9fb7c9a66e13fd5bfb377a5a891bac",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-alpine-linux.tar.xz"
+              }
+            },
+            "FreeBSD": {
+              "unknown_versioning": {
+                "dlHash": "8cebe5ccf454e82acd1ff52ca57590d1ab0f3f44a981b46257ec12158c8c447e",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-portbld-freebsd.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "4862559d221153caf978f4bf2c15a82c114d1e1f43b298b2ecff2ac94b586d20",
@@ -1333,13 +1347,6 @@
             }
           },
           "A_32": {
-            "FreeBSD": {
-              "unknown_versioning": {
-                "dlHash": "8cebe5ccf454e82acd1ff52ca57590d1ab0f3f44a981b46257ec12158c8c447e",
-                "dlSubdir": "ghc-8.8.4",
-                "dlUri": "https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-portbld-freebsd.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "43dd954910c9027694312cef0aabc7774d102d0422b7172802cfb72f7d5da3a0",
