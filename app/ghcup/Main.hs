@@ -1033,7 +1033,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       runLogger
                         ($(logError) [i|Error fetching download info: #{e}|])
                       exitWith (ExitFailure 2)
-          runLogger $ checkForUpdates dls pfreq
+
+          case optCommand of
+            Upgrade _ _ -> pure ()
+            _ -> runLogger $ checkForUpdates dls pfreq
 
 
 
