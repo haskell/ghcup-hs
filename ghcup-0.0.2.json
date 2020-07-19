@@ -115,13 +115,6 @@
       "8.6.2": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "5be9f98c25c49dbfb65223e2642335d4a45220f0c4044c8af70bbcaebe688467",
-                "dlSubdir": "ghc-8.6.2",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.2-musl/ghc-8.6.2-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "13f96e8b83bb5bb60f955786ff9085744c24927a33be8a17773f84c7c248533a",
@@ -176,13 +169,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "a1add75822258fbb6e57ad049919ef5f757bac10d3c7a6eaeee50d2521ffeb4e",
-                "dlSubdir": "ghc-8.6.2",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.2-musl/ghc-8.6.2-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "a288026d9ef22f7ac387edab6b29ef7dcb3b28945c8ea532a15c1fa35d4733ed",
@@ -228,9 +214,9 @@
           "A_64": {
             "Linux_Alpine": {
               "unknown_versioning": {
-                "dlHash": "7f9ef3e048ca6f2a2a589e6c168d8c7699fbe32b1b39a9d7c72eff9b26e90c67",
+                "dlHash": "325b48b2ea199b4f62c16dc9c3ff99b42ea6bb1dde5a74fa640dfeb8d63894d0",
                 "dlSubdir": "ghc-8.0.2",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.0.2-musl/ghc-8.0.2-x86_64-unknown-linux-musl.tar.xz"
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.0.2-x86_64-alpine-linux.tar.xz"
               }
             },
             "FreeBSD": {
@@ -284,9 +270,9 @@
           "A_32": {
             "Linux_Alpine": {
               "unknown_versioning": {
-                "dlHash": "815c68181013cd3f4dc748ddb5502a5e7a1a4011ba57d8eff6d66da411c72e84",
+                "dlHash": "b4cd12a1048b2fff2f23c9eec0dd3a1174d54d017f8d79ec79af4534118e6881",
                 "dlSubdir": "ghc-8.0.2",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.0.2-musl/ghc-8.0.2-i386-unknown-linux-musl.tar.xz"
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.0.2-i386-alpine-linux.tar.xz"
               }
             },
             "Linux_Debian": {
@@ -323,13 +309,6 @@
       "8.6.4": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "ec73167bae1a173a9af07612df5fa1289e924f13ed9241339cb5617337cb2979",
-                "dlSubdir": "ghc-8.6.4",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.4-musl/ghc-8.6.4-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "ef74222ef3c01c3fc5b926f67e8b4ef612fe8efa40ac937317cff9b0eed8d863",
@@ -389,13 +368,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "21b39b89edadbb6ab5b98d46dfacc0fd0799f9b16465a05c64e48f41dcbb1f7a",
-                "dlSubdir": "ghc-8.6.4",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.4-musl/ghc-8.6.4-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "5e2ce88f4d13d23ac37e278e0c7b51c801008931359b9fa8a631d804d2da552c",
@@ -439,13 +411,6 @@
       "8.4.1": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "82d4ea6247a91e7e76065c0cdf66eec813ab679c1f24de0fb92c89bba3ef27f2",
-                "dlSubdir": "ghc-8.4.1",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.1-musl/ghc-8.4.1-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "FreeBSD": {
               "unknown_versioning": {
                 "dlHash": "e748daec098445c6190090fe32bb2817a1140553be5acd2188e1af05ad24e5aa",
@@ -497,13 +462,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "e5feee34b58c1a1cd6c270fbe696c178a4649675398f4e0d56a4bfad9641b736",
-                "dlSubdir": "ghc-8.4.1",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.1-musl/ghc-8.4.1-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "c56c589c76c7ddcb77cdbef885a811761e669d3e76868b723d5be56dedcd4f69",
@@ -547,13 +505,6 @@
       "8.6.3": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "274f7ea959e6f1c830b33efd462ab9d0ff32d1cb5be051a2a318464d05d674dd",
-                "dlSubdir": "ghc-8.6.3",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.3-musl/ghc-8.6.3-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "FreeBSD": {
               "unknown_versioning": {
                 "dlHash": "bc2419fa180f8a7808c49775987866435995df9bdd9ce08bcd38352d63ba6031",
@@ -641,13 +592,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "dc0b53a7f0e52232930abcfad427ccd0917c90797203fbc7b5d72f5335d85a7d",
-                "dlSubdir": "ghc-8.6.3",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.3-musl/ghc-8.6.3-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "b57070ba8c70b1333a3e47ce124baf791be39c20a592954772532fd6dd51882f",
@@ -851,7 +795,7 @@
           "A_64": {
             "Linux_Alpine": {
               "unknown_versioning": {
-                "dlHash": "76cedc5a9ed9fe259bc7e279defa789f833c5d7144a83915ba8b67371aca481b",
+                "dlHash": "b9d3ed7f7aa24ef2d58bb579252289caa0b8877adee3685e3af2fb73d440afdc",
                 "dlSubdir": "ghc-8.6.5",
                 "dlUri": "https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-alpine-linux.tar.xz"
               }
@@ -943,13 +887,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "db13ff894faf431f9c64db21c090a1e4e42803794d56720a704c50166c7ca05d",
-                "dlSubdir": "ghc-8.6.5",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.5-musl/ghc-8.6.5-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "1cddb907393a669342b1a922dd16d505d9d93d50bd9433a54a8162f8701250dc",
@@ -993,13 +930,6 @@
       "8.4.2": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "3ebdb6e8001679e8722bd75a47805f1b3c1b25b37c4d237a7aaa4d66162f699f",
-                "dlSubdir": "ghc-8.4.2",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.2-musl/ghc-8.4.2-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "FreeBSD": {
               "unknown_versioning": {
                 "dlHash": "e9ed417fdf94c2ff2c6e344ed16f332bf6b591511f6442c0d9ea94854882b66c",
@@ -1066,13 +996,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "a43ac57214764717f0ffe515ef47b84e938f0a4fa8ff875773d6ba315b940835",
-                "dlSubdir": "ghc-8.4.2",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.2-musl/ghc-8.4.2-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "2d849c30b4c1eac25dc74333501920921e22fa483153f404993808bbda93df05",
@@ -1116,13 +1039,6 @@
       "8.8.1": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "029163c42a219983f4220d73c26b910c3ecf6eda45a3e5e27236e8a66b080890",
-                "dlSubdir": "ghc-8.8.1",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.1-musl/ghc-8.8.1-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "620fd560535b63cac5f8c97354ccddf93fa940cca78e2d19f6f98b7e67c6a723",
@@ -1203,13 +1119,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "3f5462341a455a5677fba5cb24da8938878261069da5ee4234b1c6ac2d2ef77e",
-                "dlSubdir": "ghc-8.8.1",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.1-musl/ghc-8.8.1-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "3d3bb75aff2dd79ec87ace10483368681fbc328ff00ebf15edad33420f00f7f5",
@@ -1255,7 +1164,7 @@
           "A_64": {
             "Linux_Alpine": {
               "unknown_versioning": {
-                "dlHash": "5b8dbe2f2430bd66ddc0572fa5a5b5201b9fb7c9a66e13fd5bfb377a5a891bac",
+                "dlHash": "90c6a1661de7f20c7d169cd6270125035b3332063e45103ce028df0beecf434e",
                 "dlSubdir": "ghc-8.8.4",
                 "dlUri": "https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-alpine-linux.tar.xz"
               }
@@ -1390,13 +1299,6 @@
       "8.4.3": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "0f05c67e3fd29a3f505abb77e9c39349d312cdc1a566263b8f4b227d085906bc",
-                "dlSubdir": "ghc-8.4.3",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.3-musl/ghc-8.4.3-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "2e4f53afb872ad9c640f31aea283b3ff4c5028b65808a1920739900aef7d15c9",
@@ -1456,13 +1358,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "3a9a1ceb8eef234023fc36600245a03772bcb46b2abac41f6394104feaec8c43",
-                "dlSubdir": "ghc-8.4.3",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.3-musl/ghc-8.4.3-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "f5763983a26dedd88b65a0b17267359a3981b83a642569b26334423f684f8b8c",
@@ -1506,13 +1401,6 @@
       "8.6.1": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "2668e12facfa9083150b01b1137693cb3de266a6f8ac8c6b44a2be3826c73177",
-                "dlSubdir": "ghc-8.6.1",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.1-musl/ghc-8.6.1-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "FreeBSD": {
               "unknown_versioning": {
                 "dlHash": "51403b054a3a649039ac988e1d1112561f96750bfced63df864091a3fab36f08",
@@ -1579,13 +1467,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "12b9b5b78be94b57d301b2a31eda145928110fd103fbbcc1e6e6966237a30ed2",
-                "dlSubdir": "ghc-8.6.1",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.1-musl/ghc-8.6.1-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "83573af96e3dec8f67c1a844512f92cbf7d51ae7ceca53d948fc2a3300abd05c",
@@ -1629,13 +1510,6 @@
       "8.8.2": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "09d49c75b5626606409c982b23f70dec241a944928243f32d1b59b2005de6dea",
-                "dlSubdir": "ghc-8.8.2",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.2-musl/ghc-8.8.2-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "7b2d66c2d5d8c15750da5833d3018634a5eb792a5662282e3abfeb112c2a1cc3",
@@ -1716,13 +1590,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "4ea4a81b6b5ba807c93b21b3cddf1f1b4b0fc1ce018cf6aa255a9ee40137b278",
-                "dlSubdir": "ghc-8.8.2",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.2-musl/ghc-8.8.2-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "ad1c628082c32635a436905a7ff83eaa4246347d869be5ef6b33c3bf85e8f00c",
@@ -1766,13 +1633,6 @@
       "7.10.3": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "8b83dfa8b85ba45e24768337254e6eb23c0855df1a5168671a3a8090b6d0964e",
-                "dlSubdir": "ghc-7.10.3",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-7.10.3-musl/ghc-7.10.3-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "FreeBSD": {
               "unknown_versioning": {
                 "dlHash": "2aa396edd2bb651f4bc7eef7a396913ea24923de5aafdc76df6295333e487e48",
@@ -1954,6 +1814,13 @@
             }
           },
           "A_32": {
+            "Linux_Alpine": {
+              "unknown_versioning": {
+                "dlHash": "467534c32552cfd318753112dbc70af003693aad4b0081f2a07e61f5b5ea2c22",
+                "dlSubdir": "ghc-8.2.2",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.2.2-i386-alpine-linux.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "7": {
                 "dlHash": "cd18766b1a9b74fc6c90003a719ecab158f281f9a755d8b1bd3fd764ba6947b5",
@@ -2002,13 +1869,6 @@
       "8.4.4": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "e15f1cf02adb2cfb77a202050300a92f61456c6e1e90b543fec82d99da893a69",
-                "dlSubdir": "ghc-8.4.4",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.4-musl/ghc-8.4.4-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "FreeBSD": {
               "unknown_versioning": {
                 "dlHash": "44fbd142d1c355d6110595c59c760e2c73866ff9259ec85ebf814edb244d1940",
@@ -2096,13 +1956,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "356f49b1acee0b0267fd8ca687aede14d43cee1f231d7f8a37525d50f07e1428",
-                "dlSubdir": "ghc-8.4.4",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.4-musl/ghc-8.4.4-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "678bafaabea6af70ba71ccf0210bb437f9f5591ec28ac1cbbbd5f7aa6894e450",
@@ -2146,13 +1999,6 @@
       "8.8.3": {
         "viArch": {
           "A_64": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "77a990d76dc10abe2ed19e5fcfef4095f0e9819d4ab84bec6d82f00dd85812a7",
-                "dlSubdir": "ghc-8.8.3",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.3-musl/ghc-8.8.3-x86_64-unknown-linux-musl.tar.xz"
-              }
-            },
             "FreeBSD": {
               "unknown_versioning": {
                 "dlHash": "569719075b4d14b3875a899df522090ae31e6fe085e6dffe518e875b09a2f0be",
@@ -2240,13 +2086,6 @@
             }
           },
           "A_32": {
-            "Linux_Alpine": {
-              "unknown_versioning": {
-                "dlHash": "7a5f41646d06777e75636291a1855d60a0984552bbdf33c3d107565d302f38a4",
-                "dlSubdir": "ghc-8.8.3",
-                "dlUri": "https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.3-musl/ghc-8.8.3-i386-unknown-linux-musl.tar.xz"
-              }
-            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "441e2c7a4fc83ebf179712bd939b555cda7c6633545b7c8ac38049f9d85003ae",
