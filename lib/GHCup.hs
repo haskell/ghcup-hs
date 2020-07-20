@@ -137,12 +137,17 @@ installGHCBin bDls ver pfreq@(PlatformRequest {..}) = do
     lift $ $(logInfo) "Installing GHC (this may take a while)"
     lEM $ execLogged "./configure"
                               False
-                              ["--prefix=" <> toFilePath inst]
+                              (["--prefix=" <> toFilePath inst] ++ alpineArgs)
                               [rel|ghc-configure|]
                               (Just path)
                               Nothing
     lEM $ make ["install"] (Just path)
     pure ()
+
+  alpineArgs
+    | ver >= [vver|8.2.2|]
+    , Linux Alpine <- _rPlatform = ["--disable-ld-override"]
+    | otherwise = []
 
 
 installCabalBin :: ( MonadMask m
