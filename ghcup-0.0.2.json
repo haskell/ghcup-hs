@@ -887,6 +887,13 @@
             }
           },
           "A_32": {
+            "Linux_Alpine": {
+              "unknown_versioning": {
+                "dlHash": "3737837550d9b177acfe150e3a3cd4545427ded020487c2ed5194d7b8f116349",
+                "dlSubdir": "ghc-8.6.5",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.6.5-i386-alpine-linux.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "1cddb907393a669342b1a922dd16d505d9d93d50bd9433a54a8162f8701250dc",
@@ -1956,6 +1963,13 @@
             }
           },
           "A_32": {
+            "Linux_Alpine": {
+              "unknown_versioning": {
+                "dlHash": "892888d388ef5c9cadf5cfba1146d62237c25b9b066fb62fee940b2b285fd308",
+                "dlSubdir": "ghc-8.4.4",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.4.4-i386-alpine-linux.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "678bafaabea6af70ba71ccf0210bb437f9f5591ec28ac1cbbbd5f7aa6894e450",

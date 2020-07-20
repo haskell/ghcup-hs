@@ -352,6 +352,11 @@ ghc_844_64_freebsd = DownloadInfo
   (Just [rel|ghc-8.4.4|])
   "44fbd142d1c355d6110595c59c760e2c73866ff9259ec85ebf814edb244d1940"
 
+ghc_844_32_alpine :: DownloadInfo
+ghc_844_32_alpine = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.4.4-i386-alpine-linux.tar.xz|]
+  (Just [rel|ghc-8.4.4|])
+  "892888d388ef5c9cadf5cfba1146d62237c25b9b066fb62fee940b2b285fd308"
 
 
 
@@ -568,6 +573,12 @@ ghc_865_64_alpine = DownloadInfo
   [uri|https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-alpine-linux.tar.xz|]
   (Just [rel|ghc-8.6.5|])
   "b9d3ed7f7aa24ef2d58bb579252289caa0b8877adee3685e3af2fb73d440afdc"
+
+ghc_865_32_alpine :: DownloadInfo
+ghc_865_32_alpine = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.6.5-i386-alpine-linux.tar.xz|]
+  (Just [rel|ghc-8.6.5|])
+  "3737837550d9b177acfe150e3a3cd4545427ded020487c2ed5194d7b8f116349"
 
 ghc_865_64_freebsd :: DownloadInfo
 ghc_865_64_freebsd = DownloadInfo
@@ -1331,6 +1342,7 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_844_32_deb8)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_844_32_deb8)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_844_32_deb8)])
+                  , (Linux Alpine, M.fromList [(Nothing, ghc_844_32_alpine)])
                   ]
                 )
               ]
@@ -1575,6 +1587,7 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_865_32_deb9)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_865_32_deb9)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_865_32_deb9)])
+                  , (Linux Alpine, M.fromList [(Nothing, ghc_865_32_alpine)])
                   ]
                 )
               ]
