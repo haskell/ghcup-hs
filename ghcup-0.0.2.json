@@ -1898,6 +1898,13 @@
       "8.4.4": {
         "viArch": {
           "A_64": {
+            "Linux_Alpine": {
+              "unknown_versioning": {
+                "dlHash": "336affff8314d3dc5e85d9c09015ae2ba8a7658b459c8c8ae77ecaa551a56ae7",
+                "dlSubdir": "ghc-8.4.4",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.4.4-x86_64-alpine-linux.tar.xz"
+              }
+            },
             "FreeBSD": {
               "unknown_versioning": {
                 "dlHash": "44fbd142d1c355d6110595c59c760e2c73866ff9259ec85ebf814edb244d1940",

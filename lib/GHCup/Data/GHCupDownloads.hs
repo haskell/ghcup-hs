@@ -365,6 +365,12 @@ ghc_844_32_alpine = DownloadInfo
   (Just [rel|ghc-8.4.4|])
   "892888d388ef5c9cadf5cfba1146d62237c25b9b066fb62fee940b2b285fd308"
 
+ghc_844_64_alpine :: DownloadInfo
+ghc_844_64_alpine = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.4.4-x86_64-alpine-linux.tar.xz|]
+  (Just [rel|ghc-8.4.4|])
+  "336affff8314d3dc5e85d9c09015ae2ba8a7658b459c8c8ae77ecaa551a56ae7"
+
 
 
     -----------------
@@ -1352,6 +1358,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_844_64_darwin)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_844_64_freebsd)])
+                  , (Linux Alpine, M.fromList [(Nothing, ghc_844_64_alpine)])
                   ]
                 )
               , ( A_32
