@@ -1314,6 +1314,7 @@
         },
         "viChangeLog": "https://downloads.haskell.org/~ghc/8.8.4/docs/html/users_guide/8.8.4-notes.html",
         "viTags": [
+          "Recommended",
           "base-4.13.0.0"
         ]
       },
@@ -2158,7 +2159,6 @@
         },
         "viChangeLog": "https://downloads.haskell.org/~ghc/8.8.3/docs/html/users_guide/8.8.3-notes.html",
         "viTags": [
-          "Recommended",
           "base-4.13.0.0"
         ]
       }
