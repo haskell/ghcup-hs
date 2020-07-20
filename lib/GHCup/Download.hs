@@ -270,7 +270,10 @@ getDownloadInfo :: Tool
 getDownloadInfo t v (PlatformRequest a p mv) dls = maybe
   (Left NoDownload)
   Right
-  (with_distro <|> without_distro_ver <|> without_distro)
+  (case p of
+    -- non-musl won't work on alpine
+    Linux Alpine -> with_distro <|> without_distro_ver
+    _ -> with_distro <|> without_distro_ver <|> without_distro)
 
  where
   with_distro        = distro_preview id id
