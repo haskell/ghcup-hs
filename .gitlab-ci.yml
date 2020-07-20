@@ -113,7 +113,7 @@ test:linux:latest:
 test:mac:recommended:
   extends: .test_ghcup_version:darwin
   variables:
-    GHC_VERSION: "8.8.3"
+    GHC_VERSION: "8.8.4"
     CABAL_VERSION: "3.2.0.0"
 
 test:mac:latest:
@@ -129,7 +129,7 @@ test:mac:latest:
 test:freebsd:recommended:
   extends: .test_ghcup_version:freebsd
   variables:
-    GHC_VERSION: "8.8.3"
+    GHC_VERSION: "8.8.4"
     CABAL_VERSION: "3.2.0.0"
 
 test:freebsd:latest:
@@ -162,7 +162,7 @@ release:linux:32bit:
     - ./.gitlab/before_script/linux/alpine/install_deps.sh
   variables:
     ARTIFACT: "i386-linux-ghcup"
-    GHC_VERSION: "8.6.5"
+    GHC_VERSION: "8.8.4"
     CABAL_VERSION: "3.2.0.0"
 
 
