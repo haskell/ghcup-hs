@@ -35,7 +35,15 @@ download_ghcup() {
         "linux"|"Linux")
 			case "${_arch}" in
 				x86_64|amd64)
-					_url=${_base_url}/${_ghver}/x86_64-linux-ghcup-${_ghver}
+					# we could be in a 32bit docker container, in which
+					# case uname doesn't give us what we want
+					if [ "$(getconf LONG_BIT)" = "32" ] ; then
+						_url=${_base_url}/${_ghver}/i386-linux-ghcup-${_ghver}
+					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
+						_url=${_base_url}/${_ghver}/x86_64-linux-ghcup-${_ghver}
+					else
+						die "Unknown long bit size: $(getconf LONG_BIT)"
+					fi
 					;;
 				i*86)
 					_url=${_base_url}/${_ghver}/i386-linux-ghcup-${_ghver}
