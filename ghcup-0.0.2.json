@@ -214,7 +214,7 @@
           "A_64": {
             "Linux_Alpine": {
               "unknown_versioning": {
-                "dlHash": "325b48b2ea199b4f62c16dc9c3ff99b42ea6bb1dde5a74fa640dfeb8d63894d0",
+                "dlHash": "517783b660a27ebf95b2568d47292fd633d5f9a4de4c80ad1ccf05e1b9d7313f",
                 "dlSubdir": "ghc-8.0.2",
                 "dlUri": "https://files.hasufell.de/ghc/ghc-8.0.2-x86_64-alpine-linux.tar.xz"
               }
@@ -744,6 +744,13 @@
             }
           },
           "A_32": {
+            "Linux_Alpine": {
+              "unknown_versioning": {
+                "dlHash": "7360cc6b29e9b4ab08f6ea5bc3bcca6f5c216933e81ef1620dcdd700f1fdb289",
+                "dlSubdir": "ghc-8.10.1",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.10.1-i386-alpine-linux.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "8b53eef2c827b5f634d72920a93c0c9dd66ea288691a2bfe28def45d3c686ee2",
@@ -1263,6 +1270,13 @@
             }
           },
           "A_32": {
+            "Linux_Alpine": {
+              "unknown_versioning": {
+                "dlHash": "1d18e89ee031197e55c48683e78a7ffc67601ac5fd9f73aac555eb064b3859a2",
+                "dlSubdir": "ghc-8.8.4",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.8.4-i386-alpine-linux.tar.xz"
+              }
+            },
             "Linux_Debian": {
               "unknown_versioning": {
                 "dlHash": "43dd954910c9027694312cef0aabc7774d102d0422b7172802cfb72f7d5da3a0",
@@ -1762,6 +1776,13 @@
       "8.2.2": {
         "viArch": {
           "A_64": {
+            "Linux_Alpine": {
+              "unknown_versioning": {
+                "dlHash": "adcf3a320a3c402aba07ae9586990dc3c0b550e96aeffb1b9e194313d3ba716d",
+                "dlSubdir": "ghc-8.2.2",
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.2.2-x86_64-alpine-linux.tar.xz"
+              }
+            },
             "FreeBSD": {
               "unknown_versioning": {
                 "dlHash": "cd351c704b92b9af23994024df07de8ca7090ea7675d5c8b14b2be857a46d804",
