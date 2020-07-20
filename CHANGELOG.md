@@ -1,5 +1,16 @@
 # Revision history for ghcup
 
+## 0.1.7 -- 2020-07-20
+
+* Fix a bug in libarchive not unpacking some uncleanly packed bindists
+* Improved fish support in bootstrap-haskell
+* Only check for upgrades when not upgrading
+* Fix platform detection for i386 docker images
+* Improve alpine support
+  - more/proper bindists
+  - don't fall back to glibc based bindists
+  - install bindists with `--disable-ld-override` to avoid ld.gold bugs
+
 ## 0.1.6 -- 2020-07-13
 
 * Create a new curses (brick) based TUI, accessible via `ghcup tui` #24
