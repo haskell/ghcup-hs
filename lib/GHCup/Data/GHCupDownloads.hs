@@ -62,12 +62,6 @@ ghc_7103_32_freebsd = DownloadInfo
   (Just [rel|ghc-7.10.3|])
   "3dde05577c6f94dcb0ba201ebd53ab88553bbc9a3aa8e72237162ed7a9d588a3"
 
-ghc_7103_64_musl :: DownloadInfo
-ghc_7103_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-7.10.3-musl/ghc-7.10.3-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-7.10.3|])
-  "8b83dfa8b85ba45e24768337254e6eb23c0855df1a5168671a3a8090b6d0964e"
-
 
 
 
@@ -112,17 +106,17 @@ ghc_802_64_darwin = DownloadInfo
   (Just [rel|ghc-8.0.2|])
   "ff50a2df9f002f33b9f09717ebf5ec5a47906b9b65cc57b1f9849f8b2e06788d"
 
-ghc_802_64_musl :: DownloadInfo
-ghc_802_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.0.2-musl/ghc-8.0.2-x86_64-unknown-linux-musl.tar.xz|]
+ghc_802_64_alpine :: DownloadInfo
+ghc_802_64_alpine = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.0.2-x86_64-alpine-linux.tar.xz|]
   (Just [rel|ghc-8.0.2|])
-  "7f9ef3e048ca6f2a2a589e6c168d8c7699fbe32b1b39a9d7c72eff9b26e90c67"
+  "325b48b2ea199b4f62c16dc9c3ff99b42ea6bb1dde5a74fa640dfeb8d63894d0"
 
-ghc_802_32_musl :: DownloadInfo
-ghc_802_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.0.2-musl/ghc-8.0.2-i386-unknown-linux-musl.tar.xz|]
+ghc_802_32_alpine :: DownloadInfo
+ghc_802_32_alpine = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.0.2-i386-alpine-linux.tar.xz|]
   (Just [rel|ghc-8.0.2|])
-  "815c68181013cd3f4dc748ddb5502a5e7a1a4011ba57d8eff6d66da411c72e84"
+  "b4cd12a1048b2fff2f23c9eec0dd3a1174d54d017f8d79ec79af4534118e6881"
 
 
 
@@ -180,6 +174,11 @@ ghc_822_64_freebsd11 = DownloadInfo
   (Just [rel|ghc-8.2.2|])
   "cd351c704b92b9af23994024df07de8ca7090ea7675d5c8b14b2be857a46d804"
 
+ghc_822_32_alpine :: DownloadInfo
+ghc_822_32_alpine = DownloadInfo
+  [uri|https://files.hasufell.de/ghc/ghc-8.2.2-i386-alpine-linux.tar.xz|]
+  (Just [rel|ghc-8.2.2|])
+  "467534c32552cfd318753112dbc70af003693aad4b0081f2a07e61f5b5ea2c22"
 
 
 
@@ -219,17 +218,6 @@ ghc_841_64_freebsd = DownloadInfo
   (Just [rel|ghc-8.4.1|])
   "e748daec098445c6190090fe32bb2817a1140553be5acd2188e1af05ad24e5aa"
 
-ghc_841_64_musl :: DownloadInfo
-ghc_841_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.1-musl/ghc-8.4.1-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.4.1|])
-  "82d4ea6247a91e7e76065c0cdf66eec813ab679c1f24de0fb92c89bba3ef27f2"
-
-ghc_841_32_musl :: DownloadInfo
-ghc_841_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.1-musl/ghc-8.4.1-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.4.1|])
-  "e5feee34b58c1a1cd6c270fbe696c178a4649675398f4e0d56a4bfad9641b736"
 
 
 
@@ -275,17 +263,6 @@ ghc_842_64_freebsd = DownloadInfo
   (Just [rel|ghc-8.4.2|])
   "e9ed417fdf94c2ff2c6e344ed16f332bf6b591511f6442c0d9ea94854882b66c"
 
-ghc_842_64_musl :: DownloadInfo
-ghc_842_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.2-musl/ghc-8.4.2-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.4.2|])
-  "3ebdb6e8001679e8722bd75a47805f1b3c1b25b37c4d237a7aaa4d66162f699f"
-
-ghc_842_32_musl :: DownloadInfo
-ghc_842_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.2-musl/ghc-8.4.2-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.4.2|])
-  "a43ac57214764717f0ffe515ef47b84e938f0a4fa8ff875773d6ba315b940835"
 
 
 
@@ -324,17 +301,6 @@ ghc_843_64_darwin = DownloadInfo
   (Just [rel|ghc-8.4.3|])
   "af0b455f6c46b9802b4b48dad996619cfa27cc6e2bf2ce5532387b4a8c00aa64"
 
-ghc_843_64_musl :: DownloadInfo
-ghc_843_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.3-musl/ghc-8.4.3-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.4.3|])
-  "0f05c67e3fd29a3f505abb77e9c39349d312cdc1a566263b8f4b227d085906bc"
-
-ghc_843_32_musl :: DownloadInfo
-ghc_843_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.3-musl/ghc-8.4.3-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.4.3|])
-  "3a9a1ceb8eef234023fc36600245a03772bcb46b2abac41f6394104feaec8c43"
 
 
 
@@ -386,17 +352,6 @@ ghc_844_64_freebsd = DownloadInfo
   (Just [rel|ghc-8.4.4|])
   "44fbd142d1c355d6110595c59c760e2c73866ff9259ec85ebf814edb244d1940"
 
-ghc_844_64_musl :: DownloadInfo
-ghc_844_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.4-musl/ghc-8.4.4-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.4.4|])
-  "e15f1cf02adb2cfb77a202050300a92f61456c6e1e90b543fec82d99da893a69"
-
-ghc_844_32_musl :: DownloadInfo
-ghc_844_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.4.4-musl/ghc-8.4.4-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.4.4|])
-  "356f49b1acee0b0267fd8ca687aede14d43cee1f231d7f8a37525d50f07e1428"
 
 
 
@@ -441,17 +396,6 @@ ghc_861_64_freebsd = DownloadInfo
   (Just [rel|ghc-8.6.1|])
   "51403b054a3a649039ac988e1d1112561f96750bfced63df864091a3fab36f08"
 
-ghc_861_64_musl :: DownloadInfo
-ghc_861_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.1-musl/ghc-8.6.1-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.6.1|])
-  "2668e12facfa9083150b01b1137693cb3de266a6f8ac8c6b44a2be3826c73177"
-
-ghc_861_32_musl :: DownloadInfo
-ghc_861_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.1-musl/ghc-8.6.1-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.6.1|])
-  "12b9b5b78be94b57d301b2a31eda145928110fd103fbbcc1e6e6966237a30ed2"
 
 
 
@@ -484,17 +428,6 @@ ghc_862_64_darwin = DownloadInfo
   (Just [rel|ghc-8.6.2|])
   "8ec46a25872226dd7e5cf7271e3f3450c05f32144b96e6b9cb44cc4079db50dc"
 
-ghc_862_64_musl :: DownloadInfo
-ghc_862_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.2-musl/ghc-8.6.2-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.6.2|])
-  "5be9f98c25c49dbfb65223e2642335d4a45220f0c4044c8af70bbcaebe688467"
-
-ghc_862_32_musl :: DownloadInfo
-ghc_862_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.2-musl/ghc-8.6.2-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.6.2|])
-  "a1add75822258fbb6e57ad049919ef5f757bac10d3c7a6eaeee50d2521ffeb4e"
 
 
 
@@ -546,17 +479,6 @@ ghc_863_64_freebsd = DownloadInfo
   (Just [rel|ghc-8.6.3|])
   "bc2419fa180f8a7808c49775987866435995df9bdd9ce08bcd38352d63ba6031"
 
-ghc_863_64_musl :: DownloadInfo
-ghc_863_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.3-musl/ghc-8.6.3-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.6.3|])
-  "274f7ea959e6f1c830b33efd462ab9d0ff32d1cb5be051a2a318464d05d674dd"
-
-ghc_863_32_musl :: DownloadInfo
-ghc_863_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.3-musl/ghc-8.6.3-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.6.3|])
-  "dc0b53a7f0e52232930abcfad427ccd0917c90797203fbc7b5d72f5335d85a7d"
 
 
 
@@ -596,17 +518,6 @@ ghc_864_64_darwin = DownloadInfo
   (Just [rel|ghc-8.6.4|])
   "cccb58f142fe41b601d73690809f6089f7715b6a50a09aa3d0104176ab4db09e"
 
-ghc_864_64_musl :: DownloadInfo
-ghc_864_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.4-musl/ghc-8.6.4-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.6.4|])
-  "ec73167bae1a173a9af07612df5fa1289e924f13ed9241339cb5617337cb2979"
-
-ghc_864_32_musl :: DownloadInfo
-ghc_864_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.4-musl/ghc-8.6.4-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.6.4|])
-  "21b39b89edadbb6ab5b98d46dfacc0fd0799f9b16465a05c64e48f41dcbb1f7a"
 
 
 
@@ -656,13 +567,7 @@ ghc_865_64_alpine :: DownloadInfo
 ghc_865_64_alpine = DownloadInfo
   [uri|https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-alpine-linux.tar.xz|]
   (Just [rel|ghc-8.6.5|])
-  "76cedc5a9ed9fe259bc7e279defa789f833c5d7144a83915ba8b67371aca481b"
-
-ghc_865_32_musl :: DownloadInfo
-ghc_865_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.6.5-musl/ghc-8.6.5-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.6.5|])
-  "db13ff894faf431f9c64db21c090a1e4e42803794d56720a704c50166c7ca05d"
+  "b9d3ed7f7aa24ef2d58bb579252289caa0b8877adee3685e3af2fb73d440afdc"
 
 ghc_865_64_freebsd :: DownloadInfo
 ghc_865_64_freebsd = DownloadInfo
@@ -714,17 +619,6 @@ ghc_881_64_darwin = DownloadInfo
   (Just [rel|ghc-8.8.1|])
   "38c8917b47c31bedf58c9305dfca3abe198d8d35570366f0773c4e2948bd8abe"
 
-ghc_881_64_musl :: DownloadInfo
-ghc_881_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.1-musl/ghc-8.8.1-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.8.1|])
-  "029163c42a219983f4220d73c26b910c3ecf6eda45a3e5e27236e8a66b080890"
-
-ghc_881_32_musl :: DownloadInfo
-ghc_881_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.1-musl/ghc-8.8.1-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.8.1|])
-  "3f5462341a455a5677fba5cb24da8938878261069da5ee4234b1c6ac2d2ef77e"
 
 
 
@@ -770,17 +664,6 @@ ghc_882_64_darwin = DownloadInfo
   (Just [rel|ghc-8.8.2|])
   "25c5c1a70036abf3f22b2b19c10d26adfdb08e8f8574f89d4b2042de5947f990"
 
-ghc_882_64_musl :: DownloadInfo
-ghc_882_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.2-musl/ghc-8.8.2-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.8.2|])
-  "09d49c75b5626606409c982b23f70dec241a944928243f32d1b59b2005de6dea"
-
-ghc_882_32_musl :: DownloadInfo
-ghc_882_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.2-musl/ghc-8.8.2-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.8.2|])
-  "4ea4a81b6b5ba807c93b21b3cddf1f1b4b0fc1ce018cf6aa255a9ee40137b278"
 
 
 
@@ -825,18 +708,6 @@ ghc_883_64_darwin = DownloadInfo
   [uri|https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-apple-darwin.tar.xz|]
   (Just [rel|ghc-8.8.3|])
   "7016de90dd226b06fc79d0759c5d4c83c2ab01d8c678905442c28bd948dbb782"
-
-ghc_883_64_musl :: DownloadInfo
-ghc_883_64_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.3-musl/ghc-8.8.3-x86_64-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.8.3|])
-  "77a990d76dc10abe2ed19e5fcfef4095f0e9819d4ab84bec6d82f00dd85812a7"
-
-ghc_883_32_musl :: DownloadInfo
-ghc_883_32_musl = DownloadInfo
-  [uri|https://github.com/redneb/ghc-alt-libc/releases/download/ghc-8.8.3-musl/ghc-8.8.3-i386-unknown-linux-musl.tar.xz|]
-  (Just [rel|ghc-8.8.3|])
-  "7a5f41646d06777e75636291a1855d60a0984552bbdf33c3d107565d302f38a4"
 
 ghc_883_64_freebsd :: DownloadInfo
 ghc_883_64_freebsd = DownloadInfo
@@ -898,7 +769,7 @@ ghc_884_64_alpine :: DownloadInfo
 ghc_884_64_alpine = DownloadInfo
   [uri|https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-alpine-linux.tar.xz|]
   (Just [rel|ghc-8.8.4|])
-  "5b8dbe2f2430bd66ddc0572fa5a5b5201b9fb7c9a66e13fd5bfb377a5a891bac"
+  "90c6a1661de7f20c7d169cd6270125035b3332063e45103ce028df0beecf434e"
 
 
 
@@ -1161,7 +1032,6 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_7103_64_darwin)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_7103_64_freebsd)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_7103_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1208,7 +1078,7 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_802_64_darwin)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_802_64_freebsd)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_802_64_musl)])
+                  , (Linux Alpine , M.fromList [(Nothing, ghc_802_64_alpine)])
                   ]
                 )
               , ( A_32
@@ -1222,7 +1092,7 @@ ghcupDownloads = M.fromList
                       , (Just [vers|7|], ghc_802_32_deb7)
                       ]
                     )
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_802_32_musl)])
+                  , (Linux Alpine , M.fromList [(Nothing, ghc_802_32_alpine)])
                   ]
                 )
               ]
@@ -1275,6 +1145,7 @@ ghcupDownloads = M.fromList
                       , (Just [vers|7|], ghc_822_32_deb7)
                       ]
                     )
+                  , (Linux Alpine , M.fromList [(Nothing, ghc_822_32_alpine)])
                   ]
                 )
               ]
@@ -1302,7 +1173,6 @@ ghcupDownloads = M.fromList
                   , (Linux Debian, M.fromList [(Nothing, ghc_841_64_deb8)])
                   , (Darwin      , M.fromList [(Nothing, ghc_841_64_darwin)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_841_64_freebsd)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_841_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1313,7 +1183,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_841_32_deb8)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_841_32_deb8)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_841_32_deb8)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_841_32_musl)])
                   ]
                 )
               ]
@@ -1352,7 +1221,6 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_842_64_darwin)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_842_64_freebsd)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_842_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1363,7 +1231,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_842_32_deb8)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_842_32_deb8)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_842_32_deb8)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_842_32_musl)])
                   ]
                 )
               ]
@@ -1401,7 +1268,6 @@ ghcupDownloads = M.fromList
                       ]
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_843_64_darwin)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_843_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1412,7 +1278,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_843_32_deb8)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_843_32_deb8)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_843_32_deb8)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_843_32_musl)])
                   ]
                 )
               ]
@@ -1456,7 +1321,6 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_844_64_darwin)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_844_64_freebsd)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_844_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1467,7 +1331,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_844_32_deb8)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_844_32_deb8)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_844_32_deb8)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_844_32_musl)])
                   ]
                 )
               ]
@@ -1506,7 +1369,6 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_861_64_darwin)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_861_64_freebsd)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_861_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1517,7 +1379,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_861_32_deb8)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_861_32_deb8)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_861_32_deb8)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_861_32_musl)])
                   ]
                 )
               ]
@@ -1550,7 +1411,6 @@ ghcupDownloads = M.fromList
                   , (Linux Mint  , M.fromList [(Nothing, ghc_862_64_deb8)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_862_64_deb8)])
                   , (Darwin      , M.fromList [(Nothing, ghc_862_64_darwin)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_862_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1561,7 +1421,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_862_32_deb8)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_862_32_deb8)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_862_32_deb8)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_862_32_musl)])
                   ]
                 )
               ]
@@ -1605,7 +1464,6 @@ ghcupDownloads = M.fromList
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_863_64_darwin)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_863_64_freebsd)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_863_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1616,7 +1474,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_863_32_deb8)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_863_32_deb8)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_863_32_deb8)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_863_32_musl)])
                   ]
                 )
               ]
@@ -1654,7 +1511,6 @@ ghcupDownloads = M.fromList
                       ]
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_864_64_darwin)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_864_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1665,7 +1521,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_864_32_deb9)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_864_32_deb9)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_864_32_deb9)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_864_32_musl)])
                   ]
                 )
               ]
@@ -1720,7 +1575,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_865_32_deb9)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_865_32_deb9)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_865_32_deb9)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_865_32_musl)])
                   ]
                 )
               ]
@@ -1763,7 +1617,6 @@ ghcupDownloads = M.fromList
                       ]
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_881_64_darwin)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_881_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1774,7 +1627,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_881_32_deb9)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_881_32_deb9)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_881_32_deb9)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_881_32_musl)])
                   ]
                 )
               ]
@@ -1817,7 +1669,6 @@ ghcupDownloads = M.fromList
                       ]
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_882_64_darwin)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_882_64_musl)])
                   ]
                 )
               , ( A_32
@@ -1828,7 +1679,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_882_32_deb9)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_882_32_deb9)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_882_32_deb9)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_882_32_musl)])
                   ]
                 )
               ]
@@ -1871,7 +1721,6 @@ ghcupDownloads = M.fromList
                       ]
                     )
                   , (Darwin      , M.fromList [(Nothing, ghc_883_64_darwin)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_883_64_musl)])
                   , (FreeBSD     , M.fromList [(Nothing, ghc_883_64_freebsd)])
                   ]
                 )
@@ -1883,7 +1732,6 @@ ghcupDownloads = M.fromList
                   , (Linux Ubuntu, M.fromList [(Nothing, ghc_883_32_deb9)])
                   , (Linux Mint  , M.fromList [(Nothing, ghc_883_32_deb9)])
                   , (Linux Debian, M.fromList [(Nothing, ghc_883_32_deb9)])
-                  , (Linux Alpine, M.fromList [(Nothing, ghc_883_32_musl)])
                   ]
                 )
               ]
