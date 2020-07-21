@@ -18,10 +18,14 @@ edo()
 }
 
 eghcup() {
+	edo _eghcup "$@"
+}
+
+_eghcup() {
     if [ -z "${BOOTSTRAP_HASKELL_VERBOSE}" ] ; then
-        edo ghcup "$@"
+        ghcup "$@"
     else
-        edo ghcup --verbose "$@"
+        ghcup --verbose "$@"
     fi
 }
 
@@ -81,6 +85,15 @@ download_ghcup() {
 
 	edo curl -Lf "${_url}" > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
 
+    edo chmod +x "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+
+	cat <<-EOF > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/env || die "Failed to create env file"
+		export PATH="\$HOME/.cabal/bin:\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/bin:\$PATH"
+		EOF
+	# shellcheck disable=SC1090
+    edo . "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/env
+    eghcup upgrade
+
 	unset _plat _arch _url _ghver _base_url
 }
 
@@ -110,18 +123,10 @@ edo mkdir -p "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin
 
 if command -V "ghcup" >/dev/null 2>&1 ; then
     if [ -z "${BOOTSTRAP_HASKELL_NO_UPGRADE}" ] ; then
-        eghcup upgrade
+        _eghcup upgrade || download_ghcup
     fi
 else
 	download_ghcup
-    edo chmod +x "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
-
-	cat <<-EOF > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/env || die "Failed to create env file"
-		export PATH="\$HOME/.cabal/bin:\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/bin:\$PATH"
-		EOF
-	# shellcheck disable=SC1090
-    edo . "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/env
-    eghcup upgrade
 fi
 
 echo
