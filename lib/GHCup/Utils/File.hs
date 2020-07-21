@@ -10,6 +10,7 @@ import           GHCup.Utils.Prelude
 import           GHCup.Types
 
 import           Control.Concurrent
+import           Control.Concurrent.Async
 import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
@@ -55,14 +56,6 @@ import qualified Data.ByteString               as BS
 import qualified "unix-bytestring" System.Posix.IO.ByteString
                                                as SPIB
 
-
-
-
--- | Bool signals whether the regions should be cleaned.
-data StopThread = StopThread Bool
-  deriving Show
-
-instance Exception StopThread
 
 
 data ProcessError = NonZeroExit Int ByteString [ByteString]
@@ -131,10 +124,9 @@ execLogged exe spath args lfile chdir env = do
       pState <- newEmptyMVar
       done   <- newEmptyMVar
       void
-        $ forkOS
-        $ EX.handle (\(_ :: StopThread) -> pure ())
+        $ forkIO
         $ EX.handle (\(_ :: IOException) -> pure ())
-        $ flip finally (putMVar done ())
+        $ flip EX.finally (putMVar done ())
         $ (if verbose
             then tee fd stdoutRead
             else printToRegion fd stdoutRead 6 pState
@@ -157,7 +149,7 @@ execLogged exe spath args lfile chdir env = do
       e <- toProcessError exe args <$!> SPPB.getProcessStatus True True pid
       putMVar pState (either (const False) (const True) e)
 
-      takeMVar done
+      void $ race (takeMVar done) (threadDelay (1000000 * 3))
       closeFd stdoutRead
 
       pure e
@@ -225,33 +217,41 @@ execLogged exe spath args lfile chdir env = do
       | BS.length bs > w && w > 5 -> BS.take (w - 4) bs <> "..."
       | otherwise                 -> bs
 
-  -- read an entire line from the file descriptor (removes the newline char)
-  readLine :: MonadIO m => Fd -> ByteString -> m (ByteString, ByteString)
-  readLine fd = go
+  -- Consecutively read from Fd in 512 chunks until we hit
+  -- newline or EOF.
+  readLine :: MonadIO m
+           => Fd          -- ^ input file descriptor
+           -> ByteString  -- ^ rest buffer (read across newline)
+           -> m (ByteString, ByteString, Bool) -- ^ (full line, rest, eof)
+  readLine fd = \inBs -> go inBs
    where
     go inBs = do
-      bs <-
-        liftIO
-        $ handleIO (\e -> if isEOFError e then pure "" else ioError e)
-        $ SPIB.fdRead fd 512
-      let nbs          = BS.append inBs bs
-          (line, rest) = BS.span (/= _lf) nbs
-      if
-        | BS.length rest /= 0 -> pure (line, BS.tail rest)
-        | BS.length line == 0 -> pure (mempty, mempty)
-        | otherwise           -> (\(l, r) -> (line <> l, r)) <$!> go mempty
+      -- if buffer is not empty, process it first
+      mbs <- if BS.length inBs == 0
+               -- otherwise attempt read
+               then liftIO
+                    $ handleIO (\e -> if isEOFError e then pure Nothing else ioError e)
+                    $ fmap Just
+                    $ SPIB.fdRead fd 512
+               else pure $ Just inBs
+      case mbs of
+        Nothing -> pure ("", "", True)
+        Just bs -> do
+          -- split on newline
+          let (line, rest) = BS.span (/= _lf) bs
+          if
+            | BS.length rest /= 0 -> pure (line, BS.tail rest, False)
+            -- if rest is empty, then there was no newline, process further
+            | otherwise           -> (\(l, r, b) -> (line <> l, r, b)) <$!> go mempty
 
   readTilEOF :: MonadIO m => (ByteString -> m a) -> Fd -> m ()
   readTilEOF ~action' fd' = go mempty
    where
     go bs' = do
-      (bs, rest) <- readLine fd' bs'
-      if
-        | BS.length bs == 0 -> liftIO
-        $ ioError (mkIOError eofErrorType "" Nothing Nothing)
-        | otherwise -> do
-          void $ action' bs
-          go rest
+      (bs, rest, eof) <- readLine fd' bs'
+      if eof
+         then liftIO $ ioError (mkIOError eofErrorType "" Nothing Nothing)
+         else (void $ action' bs) >> go rest
 
 
 -- | Capture the stdout and stderr of the given action, which
@@ -288,13 +288,12 @@ captureOutStreams action = do
       done   <- newEmptyMVar
       _      <-
         forkIO
-        $ EX.handle (\(_ :: StopThread) -> pure ())
         $ EX.handle (\(_ :: IOException) -> pure ())
-        $ flip finally (putMVar done ())
+        $ flip EX.finally (putMVar done ())
         $ writeStds parentStdoutRead parentStderrRead refOut refErr
 
       status <- SPPB.getProcessStatus True True pid
-      takeMVar done
+      void $ race (takeMVar done) (threadDelay (1000000 * 3))
 
       case status of
         -- readFd will take care of closing the fd
@@ -314,13 +313,13 @@ captureOutStreams action = do
     void
       $ forkIO
       $ hideError eofErrorType
-      $ flip finally (putMVar doneOut ())
+      $ flip EX.finally (putMVar doneOut ())
       $ readTilEOF (\x -> modifyIORef' rout (<> x)) pout
     doneErr <- newEmptyMVar
     void
       $ forkIO
       $ hideError eofErrorType
-      $ flip finally (putMVar doneErr ())
+      $ flip EX.finally (putMVar doneErr ())
       $ readTilEOF (\x -> modifyIORef' rerr (<> x)) perr
     takeMVar doneOut
     takeMVar doneErr
