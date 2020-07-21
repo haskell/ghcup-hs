@@ -77,7 +77,7 @@ import qualified Data.Text.Encoding            as E
 
 
 
-installGHCBin :: ( MonadFail m
+installGHCBindist :: ( MonadFail m
                  , MonadMask m
                  , MonadCatch m
                  , MonadReader Settings m
@@ -85,7 +85,7 @@ installGHCBin :: ( MonadFail m
                  , MonadResource m
                  , MonadIO m
                  )
-              => GHCupDownloads
+              => DownloadInfo
               -> Version
               -> PlatformRequest
               -> Excepts
@@ -102,14 +102,13 @@ installGHCBin :: ( MonadFail m
                     ]
                    m
                    ()
-installGHCBin bDls ver pfreq@(PlatformRequest {..}) = do
+installGHCBindist dlinfo ver (PlatformRequest {..}) = do
   let tver = (mkTVer ver)
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
   whenM (liftIO $ ghcInstalled tver)
     $ (throwE $ AlreadyInstalled GHC ver)
 
   -- download (or use cached version)
-  dlinfo                       <- lE $ getDownloadInfo GHC ver pfreq bDls
   dl                           <- liftE $ downloadCached dlinfo Nothing
 
   -- unpack
@@ -150,32 +149,62 @@ installGHCBin bDls ver pfreq@(PlatformRequest {..}) = do
     | otherwise = []
 
 
-installCabalBin :: ( MonadMask m
-                   , MonadCatch m
-                   , MonadReader Settings m
-                   , MonadLogger m
-                   , MonadResource m
-                   , MonadIO m
-                   , MonadFail m
-                   )
-                => GHCupDownloads
-                -> Version
-                -> PlatformRequest
-                -> Excepts
-                     '[ AlreadyInstalled
-                      , CopyError
-                      , DigestError
-                      , DownloadFailed
-                      , NoDownload
-                      , NotInstalled
-                      , UnknownArchive
+installGHCBin :: ( MonadFail m
+                 , MonadMask m
+                 , MonadCatch m
+                 , MonadReader Settings m
+                 , MonadLogger m
+                 , MonadResource m
+                 , MonadIO m
+                 )
+              => GHCupDownloads
+              -> Version
+              -> PlatformRequest
+              -> Excepts
+                   '[ AlreadyInstalled
+                    , BuildFailed
+                    , DigestError
+                    , DownloadFailed
+                    , NoDownload
+                    , NotInstalled
+                    , UnknownArchive
 #if !defined(TAR)
-                      , ArchiveResult
+                    , ArchiveResult
 #endif
-                      ]
-                     m
-                     ()
-installCabalBin bDls ver pfreq@(PlatformRequest {..}) = do
+                    ]
+                   m
+                   ()
+installGHCBin bDls ver pfreq = do
+  dlinfo <- lE $ getDownloadInfo GHC ver pfreq bDls
+  installGHCBindist dlinfo ver pfreq
+
+
+installCabalBindist :: ( MonadMask m
+                       , MonadCatch m
+                       , MonadReader Settings m
+                       , MonadLogger m
+                       , MonadResource m
+                       , MonadIO m
+                       , MonadFail m
+                       )
+                    => DownloadInfo
+                    -> Version
+                    -> PlatformRequest
+                    -> Excepts
+                         '[ AlreadyInstalled
+                          , CopyError
+                          , DigestError
+                          , DownloadFailed
+                          , NoDownload
+                          , NotInstalled
+                          , UnknownArchive
+#if !defined(TAR)
+                          , ArchiveResult
+#endif
+                          ]
+                         m
+                         ()
+installCabalBindist dlinfo ver (PlatformRequest {..}) = do
   lift $ $(logDebug) [i|Requested to install cabal version #{ver}|]
 
   bindir <- liftIO ghcupBinDir
@@ -190,7 +219,6 @@ installCabalBin bDls ver pfreq@(PlatformRequest {..}) = do
     $ (throwE $ AlreadyInstalled Cabal ver)
 
   -- download (or use cached version)
-  dlinfo                       <- lE $ getDownloadInfo Cabal ver pfreq bDls
   dl                           <- liftE $ downloadCached dlinfo Nothing
 
   -- unpack
@@ -225,6 +253,37 @@ installCabalBin bDls ver pfreq@(PlatformRequest {..}) = do
       (path </> cabalFile)
       (inst </> destFileName)
       Overwrite
+
+
+installCabalBin :: ( MonadMask m
+                   , MonadCatch m
+                   , MonadReader Settings m
+                   , MonadLogger m
+                   , MonadResource m
+                   , MonadIO m
+                   , MonadFail m
+                   )
+                => GHCupDownloads
+                -> Version
+                -> PlatformRequest
+                -> Excepts
+                     '[ AlreadyInstalled
+                      , CopyError
+                      , DigestError
+                      , DownloadFailed
+                      , NoDownload
+                      , NotInstalled
+                      , UnknownArchive
+#if !defined(TAR)
+                      , ArchiveResult
+#endif
+                      ]
+                     m
+                     ()
+installCabalBin bDls ver pfreq@(PlatformRequest {..}) = do
+  dlinfo <- lE $ getDownloadInfo GHC ver pfreq bDls
+  installCabalBindist dlinfo ver pfreq
+
 
 
 

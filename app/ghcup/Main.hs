@@ -38,6 +38,7 @@ import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
+import           Data.Aeson                     ( eitherDecode )
 import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
@@ -68,6 +69,7 @@ import           URI.ByteString
 
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.UTF8          as UTF8
+import qualified Data.ByteString.Lazy.UTF8     as BLU
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
@@ -119,6 +121,7 @@ data InstallCommand = InstallGHC InstallOptions
 data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
   , instPlatform :: Maybe PlatformRequest
+  , instBindist  :: Maybe DownloadInfo
   }
 
 data SetCommand = SetGHC SetOptions
@@ -405,7 +408,7 @@ installParser =
 
 installOpts :: Parser InstallOptions
 installOpts =
-  (flip InstallOptions)
+  (\p u v -> InstallOptions v p u)
     <$> (optional
           (option
             (eitherReader platformParser)
@@ -414,6 +417,17 @@ installOpts =
             <> metavar "PLATFORM"
             <> help
                  "Override for platform (triple matching ghc tarball names), e.g. x86_64-fedora27-linux"
+            )
+          )
+        )
+    <*> (optional
+          (option
+            (eitherReader bindistParser)
+            (  short 'u'
+            <> long "url"
+            <> metavar "BINDIST_URL"
+            <> help
+                 "Provide DownloadInfo as json string, e.g.: '{ \"dlHash\": \"<sha256 hash>\", \"dlSubdir\": \"ghc-<ver>\", \"dlUri\": \"<uri>\" }'"
             )
           )
         )
@@ -800,6 +814,8 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
         pure v
 
 
+bindistParser :: String -> Either String DownloadInfo
+bindistParser = eitherDecode . BLU.fromString
 
 
 toSettings :: Options -> Settings
@@ -1047,7 +1063,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let installGHC InstallOptions{..} =
                   (runInstTool $ do
                       v <- liftE $ fromVersion dls instVer GHC
-                      liftE $ installGHCBin dls (_tvVersion v) (fromMaybe pfreq instPlatform) -- FIXME: ugly sharing of tool version
+                      case instBindist of
+                        Nothing -> liftE $ installGHCBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                        Just uri -> liftE $ installGHCBindist uri (_tvVersion v) (fromMaybe pfreq instPlatform)
                     )
                     >>= \case
                           VRight _ -> do
@@ -1081,7 +1099,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let installCabal InstallOptions{..} =
                 (runInstTool $ do
                     v <- liftE $ fromVersion dls instVer Cabal
-                    liftE $ installCabalBin dls (_tvVersion v) (fromMaybe pfreq instPlatform) -- FIXME: ugly sharing of tool version
+                    case instBindist of
+                      Nothing -> liftE $ installCabalBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                      Just uri -> liftE $ installCabalBindist uri (_tvVersion v) (fromMaybe pfreq instPlatform)
                   )
                   >>= \case
                         VRight _ -> do

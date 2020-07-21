@@ -341,6 +341,7 @@ executable ghcup
   import:
     config
     , base
+    , aeson
     , bytestring
     , containers
     , haskus-utils-variant
