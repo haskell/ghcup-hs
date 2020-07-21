@@ -26,6 +26,8 @@ else
 	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 fi
 
+ecabal haddock
+
 cp "$(ecabal new-exec --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup')" .
 cp "$(ecabal new-exec --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" .
 
