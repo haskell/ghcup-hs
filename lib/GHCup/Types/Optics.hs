@@ -1,5 +1,14 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+{-|
+Module      : GHCup.Types.Optics
+Description : GHCup optics
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+-}
 module GHCup.Types.Optics where
 
 import           GHCup.Types

@@ -11,6 +11,21 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE ViewPatterns          #-}
 
+{-|
+Module      : GHCup
+Description : GHCup installation functions
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+
+This module contains the main functions that correspond
+to the command line interface, like installation, listing versions
+and so on.
+
+These are the entry points.
+-}
 module GHCup where
 
 
@@ -76,32 +91,33 @@ import qualified Data.Text.Encoding            as E
     -------------------------
 
 
-
+-- | Like 'installGHCBin', except takes the 'DownloadInfo' as
+-- argument instead of looking it up from 'GHCupDownloads'.
 installGHCBindist :: ( MonadFail m
-                 , MonadMask m
-                 , MonadCatch m
-                 , MonadReader Settings m
-                 , MonadLogger m
-                 , MonadResource m
-                 , MonadIO m
-                 )
-              => DownloadInfo
-              -> Version
-              -> PlatformRequest
-              -> Excepts
-                   '[ AlreadyInstalled
-                    , BuildFailed
-                    , DigestError
-                    , DownloadFailed
-                    , NoDownload
-                    , NotInstalled
-                    , UnknownArchive
+                     , MonadMask m
+                     , MonadCatch m
+                     , MonadReader Settings m
+                     , MonadLogger m
+                     , MonadResource m
+                     , MonadIO m
+                     )
+                  => DownloadInfo    -- ^ where/how to download
+                  -> Version         -- ^ the version to install
+                  -> PlatformRequest -- ^ the platform to install on
+                  -> Excepts
+                       '[ AlreadyInstalled
+                        , BuildFailed
+                        , DigestError
+                        , DownloadFailed
+                        , NoDownload
+                        , NotInstalled
+                        , UnknownArchive
 #if !defined(TAR)
-                    , ArchiveResult
+                        , ArchiveResult
 #endif
-                    ]
-                   m
-                   ()
+                        ]
+                       m
+                       ()
 installGHCBindist dlinfo ver (PlatformRequest {..}) = do
   let tver = (mkTVer ver)
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
@@ -149,6 +165,11 @@ installGHCBindist dlinfo ver (PlatformRequest {..}) = do
     | otherwise = []
 
 
+-- | Installs GHC into @~\/.ghcup\/ghc/\<ver\>@ and places the
+-- following symlinks in @~\/.ghcup\/bin@:
+--
+--   * @ghc-x.y.z -> ..\/ghc\/x.y.z\/bin/ghc@
+--   * @ghc-x.y   -> ..\/ghc\/x.y.z\/bin/ghc@ (if x.y.z is the latest x.y version)
 installGHCBin :: ( MonadFail m
                  , MonadMask m
                  , MonadCatch m
@@ -157,9 +178,9 @@ installGHCBin :: ( MonadFail m
                  , MonadResource m
                  , MonadIO m
                  )
-              => GHCupDownloads
-              -> Version
-              -> PlatformRequest
+              => GHCupDownloads  -- ^ the download info to look up the tarball from
+              -> Version         -- ^ the version to install
+              -> PlatformRequest -- ^ the platform to install on
               -> Excepts
                    '[ AlreadyInstalled
                     , BuildFailed
@@ -179,6 +200,8 @@ installGHCBin bDls ver pfreq = do
   installGHCBindist dlinfo ver pfreq
 
 
+-- | Like 'installCabalBin', except takes the 'DownloadInfo' as
+-- argument instead of looking it up from 'GHCupDownloads'.
 installCabalBindist :: ( MonadMask m
                        , MonadCatch m
                        , MonadReader Settings m
@@ -255,6 +278,9 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
       Overwrite
 
 
+-- | Installs cabal into @~\/.ghcup\/bin/cabal-\<ver\> and
+-- creates a default @cabal -> cabal-x.y.z.q@ symlink for
+-- the latest installed version.
 installCabalBin :: ( MonadMask m
                    , MonadCatch m
                    , MonadReader Settings m
@@ -293,15 +319,15 @@ installCabalBin bDls ver pfreq = do
 
 
 
--- | Set GHC symlinks in ~/.ghcup/bin for the requested GHC version. The behavior depends
+-- | Set GHC symlinks in @~\/.ghcup\/bin@ for the requested GHC version. The behavior depends
 -- on `SetGHC`:
 --
---   * SetGHCOnly: ~/.ghcup/bin/ghc -> ~/.ghcup/ghc/<ver>/bin/ghc
---   * SetGHC_XY: ~/.ghcup/bin/ghc-X.Y -> ~/.ghcup/ghc/<ver>/bin/ghc
---   * SetGHC_XYZ: ~/.ghcup/bin/ghc-<ver> -> ~/.ghcup/ghc/<ver>/bin/ghc
+--   * SetGHCOnly: @~\/.ghcup\/bin\/ghc -> ~\/.ghcup\/ghc\/\<ver\>\/bin\/ghc@
+--   * SetGHC_XY: @~\/.ghcup\/bin\/ghc-X.Y -> ~\/.ghcup\/ghc\/\<ver\>\/bin\/ghc@
+--   * SetGHC_XYZ: @~\/.ghcup\/bin\/ghc-\<ver\> -> ~\/.ghcup\/ghc\/\<ver\>\/bin\/ghc@
 --
--- Additionally creates a ~/.ghcup/share -> ~/.ghcup/ghc/<ver>/share symlink
--- for `SetGHCOnly` constructor.
+-- Additionally creates a @~\/.ghcup\/share -> ~\/.ghcup\/ghc\/\<ver\>\/share symlink@
+-- for 'SetGHCOnly' constructor.
 setGHC :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
        => GHCTargetVersion
        -> SetGHC
@@ -366,7 +392,7 @@ setGHC ver sghc = do
 
 
 
--- | Set the ~/.ghcup/bin/cabal symlink.
+-- | Set the @~\/.ghcup\/bin\/cabal@ symlink.
 setCabal :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
          => Version
          -> Excepts '[NotInstalled] m ()
@@ -406,10 +432,13 @@ setCabal ver = do
     ------------------
 
 
+-- | Filter data type for 'listVersions'.
 data ListCriteria = ListInstalled
                   | ListSet
                   deriving Show
 
+-- | A list result describes a single tool version
+-- and various of its properties.
 data ListResult = ListResult
   { lTool      :: Tool
   , lVer       :: Version
@@ -424,6 +453,7 @@ data ListResult = ListResult
   deriving (Eq, Ord, Show)
 
 
+-- | Extract all available tool versions and their tags.
 availableToolVersions :: GHCupDownloads -> Tool -> Map.Map Version [Tag]
 availableToolVersions av tool = view
   (at tool % non Map.empty % to (fmap (_viTags)))
@@ -552,7 +582,11 @@ listVersions av lt criteria pfreq = do
     --------------------
 
 
--- | This function may throw and crash in various ways.
+-- | Delete a ghc version and all its symlinks.
+--
+-- This may leave GHCup without a "set" version.
+-- Will try to fix the ghc-x.y symlink after removal (e.g. to an
+-- older version).
 rmGHCVer :: (MonadThrow m, MonadLogger m, MonadIO m, MonadFail m)
          => GHCTargetVersion
          -> Excepts '[NotInstalled] m ()
@@ -591,7 +625,8 @@ rmGHCVer ver = do
     else throwE (NotInstalled GHC (ver ^. tvVersion % to prettyVer))
 
 
--- | This function may throw and crash in various ways.
+-- | Delete a cabal version. Will try to fix the @cabal@ symlink
+-- after removal (e.g. setting it to an older version).
 rmCabalVer :: (MonadThrow m, MonadLogger m, MonadIO m, MonadFail m)
            => Version
            -> Excepts '[NotInstalled] m ()
@@ -640,6 +675,8 @@ getDebugInfo = do
     ---------------
 
 
+-- | Compile a GHC from sourc. This behaves wrt symlinks and installation
+-- the same as 'installGHCBin'.
 compileGHC :: ( MonadMask m
               , MonadReader Settings m
               , MonadThrow m
@@ -821,6 +858,8 @@ Stage1Only = YES|]
 
 
 
+-- | Compile a cabal from sourc. This behaves wrt symlinks and installation
+-- the same as 'installCabalBin'.
 compileCabal :: ( MonadReader Settings m
                 , MonadResource m
                 , MonadMask m
@@ -940,6 +979,8 @@ compileCabal dls tver bghc jobs patchdir PlatformRequest{..} = do
     ---------------------
 
 
+-- | Upgrade ghcup and place it in @~\/.ghcup\/bin\/ghcup@,
+-- if no path is provided.
 upgradeGHCup :: ( MonadMask m
                 , MonadReader Settings m
                 , MonadCatch m
@@ -991,7 +1032,7 @@ upgradeGHCup dls mtarget force pfreq = do
     -------------
 
 
--- | Creates ghc-x.y.z and ghc-x.y symlinks. This is used for
+-- | Creates @ghc-x.y.z@ and @ghc-x.y@ symlinks. This is used for
 -- both installing from source and bindist.
 postGHCInstall :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
                => GHCTargetVersion

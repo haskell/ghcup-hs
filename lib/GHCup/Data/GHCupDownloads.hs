@@ -2,6 +2,18 @@
 {-# LANGUAGE QuasiQuotes       #-}
 
 
+{-|
+Module      : GHCup.Data.GHCupDownloads
+Description : Download information
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+
+This is the module to add additional ghc/cabal etc. versions,
+fix URLs, add tags, etc.
+-}
 module GHCup.Data.GHCupDownloads
   ( ghcupDownloads
   )

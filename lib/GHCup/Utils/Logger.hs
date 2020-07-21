@@ -1,5 +1,16 @@
 {-# LANGUAGE QuasiQuotes           #-}
 
+{-|
+Module      : GHCup.Utils.Logger
+Description : logger definition
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+
+Here we define our main logger.
+-}
 module GHCup.Utils.Logger where
 
 import           GHCup.Utils

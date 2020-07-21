@@ -9,6 +9,23 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 
+{-|
+Module      : GHCup.Download
+Description : Downloading
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+
+Module for handling all download related functions.
+
+Generally we support downloading via:
+
+  - curl (default)
+  - wget
+  - internal downloader (only when compiled)
+-}
 module GHCup.Download where
 
 #if defined(INTERNAL_DOWNLOADER)

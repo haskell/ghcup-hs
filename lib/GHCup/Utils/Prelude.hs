@@ -8,6 +8,17 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
+{-|
+Module      : GHCup.Utils.Prelude
+Description : MegaParsec utilities
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+
+GHCup specific prelude. Lots of Excepts functionality.
+-}
 module GHCup.Utils.Prelude where
 
 import           Control.Applicative

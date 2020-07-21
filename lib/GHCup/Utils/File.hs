@@ -3,6 +3,18 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
+{-|
+Module      : GHCup.Utils.File
+Description : File and unix APIs
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+
+This module handles file and executable handling.
+Some of these functions use sophisticated logging.
+-}
 module GHCup.Utils.File where
 
 import           GHCup.Utils.Dirs

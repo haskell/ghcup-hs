@@ -2,6 +2,15 @@
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE ViewPatterns          #-}
 
+{-|
+Module      : GHCup.Utils.Dirs
+Description : Definition of GHCup directories
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+-}
 module GHCup.Utils.Dirs where
 
 

@@ -1,25 +1,35 @@
 {-# LANGUAGE TemplateHaskell #-}
 
--- | QuasiQuoter for non-interpolated strings, texts and bytestrings.
---
--- The "s" quoter contains a multi-line string with no interpolation at all,
--- except that the leading newline is trimmed and carriage returns stripped.
---
--- @
--- {-\# LANGUAGE QuasiQuotes #-}
--- import Data.Text (Text)
--- import Data.String.QQ
--- foo :: Text -- "String", "ByteString" etc also works
--- foo = [s|
--- Well here is a
---     multi-line string!
--- |]
--- @
---
--- Any instance of the IsString type is permitted.
---
--- (For GHC versions 6, write "[$s||]" instead of "[s||]".)
---
+{-|
+Module      : GHCup.Utils.String.QQ
+Description : String quasi quoters
+Copyright   : (c) Audrey Tang <audreyt@audreyt.org> 2019, Julian Ospald <hasufell@posteo.de> 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+
+QuasiQuoter for non-interpolated strings, texts and bytestrings.
+
+The "s" quoter contains a multi-line string with no interpolation at all,
+except that the leading newline is trimmed and carriage returns stripped.
+
+@
+{-\# LANGUAGE QuasiQuotes #-}
+import Data.Text (Text)
+import Data.String.QQ
+foo :: Text -- "String", "ByteString" etc also works
+foo = [s|
+Well here is a
+    multi-line string!
+|]
+@
+
+Any instance of the IsString type is permitted.
+
+(For GHC versions 6, write "[$s||]" instead of "[s||]".)
+
+-}
 module GHCup.Utils.String.QQ
   ( s
   )

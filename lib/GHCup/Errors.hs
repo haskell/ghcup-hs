@@ -3,6 +3,15 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
+{-|
+Module      : GHCup.Errors
+Description : GHCup error types
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+-}
 module GHCup.Errors where
 
 import           GHCup.Types

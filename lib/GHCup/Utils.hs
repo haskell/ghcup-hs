@@ -6,7 +6,18 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE ViewPatterns          #-}
 
+{-|
+Module      : GHCup.Utils
+Description : GHCup domain specific utilities
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
 
+This module contains GHCup helpers specific to
+installation and introspection of files/versions etc.
+-}
 module GHCup.Utils
   ( module GHCup.Utils.Dirs
   , module GHCup.Utils
@@ -93,7 +104,7 @@ ghcLinkDestination tool ver =
   "../ghc/" <> E.encodeUtf8 (prettyTVer ver) <> "/bin/" <> tool
 
 
--- e.g. ghc-8.6.5
+-- | Removes the minor GHC symlinks, e.g. ghc-8.6.5.
 rmMinorSymlinks :: (MonadIO m, MonadLogger m) => GHCTargetVersion -> m ()
 rmMinorSymlinks GHCTargetVersion {..} = do
   bindir <- liftIO $ ghcupBinDir
@@ -112,7 +123,7 @@ rmMinorSymlinks GHCTargetVersion {..} = do
     liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
 
 
--- Removes the set ghc version for the given target, if any.
+-- | Removes the set ghc version for the given target, if any.
 rmPlain :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
   => Maybe Text -- ^ target
         -> Excepts '[NotInstalled] m ()
@@ -131,7 +142,7 @@ rmPlain target = do
     liftIO $ hideError doesNotExistErrorType $ deleteFile hdc_file
 
 
--- e.g. ghc-8.6
+-- | Remove the major GHC symlink, e.g. ghc-8.6.
 rmMajorSymlinks :: (MonadThrow m, MonadLogger m, MonadIO m)
                 => GHCTargetVersion
                 -> m ()
@@ -162,18 +173,21 @@ rmMajorSymlinks GHCTargetVersion {..} = do
     -----------------------------------
 
 
+-- | Whethe the given GHC versin is installed.
 ghcInstalled :: GHCTargetVersion -> IO Bool
 ghcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
   doesDirectoryExist ghcdir
 
 
+-- | Whether the given GHC version is installed from source.
 ghcSrcInstalled :: GHCTargetVersion -> IO Bool
 ghcSrcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
   doesFileExist (ghcdir </> ghcUpSrcBuiltFile)
 
 
+-- | Whether the given GHC version is set as the current.
 ghcSet :: (MonadThrow m, MonadIO m)
        => Maybe Text   -- ^ the target of the GHC version, if any
                        --  (e.g. armv7-unknown-linux-gnueabihf)
@@ -219,6 +233,7 @@ getInstalledGHCs = do
     Left  _ -> pure $ Left f
 
 
+-- | Get all installed cabals, by matching on @~\/.ghcup\/bin/cabal-*@.
 getInstalledCabals :: IO [Either (Path Rel) Version]
 getInstalledCabals = do
   bindir <- liftIO $ ghcupBinDir
@@ -233,12 +248,14 @@ getInstalledCabals = do
   pure $ maybe vs (\x -> Right x:vs) cs
 
 
+-- | Whether the given cabal version is installed.
 cabalInstalled :: Version -> IO Bool
 cabalInstalled ver = do
   vers <- fmap rights $ getInstalledCabals
   pure $ elem ver $ vers
 
 
+-- Return the currently set cabal version, if any.
 cabalSet :: (MonadIO m, MonadThrow m) => m (Maybe Version)
 cabalSet = do
   cabalbin <- (</> [rel|cabal|]) <$> liftIO ghcupBinDir
@@ -257,11 +274,13 @@ cabalSet = do
 
 
 
+
     -----------------------------------------
     --[ Major version introspection (X.Y) ]--
     -----------------------------------------
 
 
+-- | Extract (major, minor) from any version.
 getMajorMinorV :: MonadThrow m => Version -> m (Int, Int)
 getMajorMinorV Version {..} = case _vChunks of
   ([Digits x] : [Digits y] : _) -> pure (fromIntegral x, fromIntegral y)
@@ -415,11 +434,12 @@ urlBaseName :: MonadThrow m
 urlBaseName = parseRel . snd . B.breakEnd (== _slash) . urlDecode False
 
 
--- Get tool files from '~/.ghcup/bin/ghc/<ver>/bin/*'
--- while ignoring *-<ver> symlinks and accounting for cross triple prefix.
+-- | Get tool files from @~\/.ghcup\/bin\/ghc\/\<ver\>\/bin\/\*@
+-- while ignoring @*-\<ver\>@ symlinks and accounting for cross triple prefix.
 --
 -- Returns unversioned relative files, e.g.:
---   ["hsc2hs","haddock","hpc","runhaskell","ghc","ghc-pkg","ghci","runghc","hp2ps"]
+--
+--   - @["hsc2hs","haddock","hpc","runhaskell","ghc","ghc-pkg","ghci","runghc","hp2ps"]@
 ghcToolFiles :: (MonadThrow m, MonadFail m, MonadIO m)
              => GHCTargetVersion
              -> Excepts '[NotInstalled] m [Path Rel]
@@ -466,7 +486,7 @@ ghcToolFiles ver = do
   isHadrian = fmap (/= SymbolicLink) . getFileType
 
 
--- | This file, when residing in ~/.ghcup/ghc/<ver>/ signals that
+-- | This file, when residing in @~\/.ghcup\/ghc\/\<ver\>\/@ signals that
 -- this GHC was built from source. It contains the build config.
 ghcUpSrcBuiltFile :: Path Rel
 ghcUpSrcBuiltFile = [rel|.ghcup_src_built|]
@@ -504,6 +524,7 @@ applyPatches pdir ddir = do
       !? PatchFailed
 
 
+-- | https://gitlab.haskell.org/ghc/ghc/-/issues/17353
 darwinNotarization :: Platform -> Path Abs -> IO (Either ProcessError ())
 darwinNotarization Darwin path = exec
   "xattr"

@@ -1,5 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+{-|
+Module      : GHCup.Requirements
+Description : Requirements utilities
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+-}
 module GHCup.Requirements where
 
 import           GHCup.Types

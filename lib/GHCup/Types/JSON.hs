@@ -10,6 +10,15 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 
+{-|
+Module      : GHCup.Types.JSON
+Description : GHCup JSON types/instances
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+-}
 module GHCup.Types.JSON where
 
 import           GHCup.Types

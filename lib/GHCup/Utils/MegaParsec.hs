@@ -1,6 +1,15 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE OverloadedStrings    #-}
 
+{-|
+Module      : GHCup.Utils.MegaParsec
+Description : MegaParsec utilities
+Copyright   : (c) Julian Ospald, 2020
+License     : GPL-3
+Maintainer  : hasufell@hasufell.de
+Stability   : experimental
+Portability : POSIX
+-}
 module GHCup.Utils.MegaParsec where
 
 import           GHCup.Types
