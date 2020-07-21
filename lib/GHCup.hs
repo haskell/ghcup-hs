@@ -281,7 +281,7 @@ installCabalBin :: ( MonadMask m
                      m
                      ()
 installCabalBin bDls ver pfreq = do
-  dlinfo <- lE $ getDownloadInfo GHC ver pfreq bDls
+  dlinfo <- lE $ getDownloadInfo Cabal ver pfreq bDls
   installCabalBindist dlinfo ver pfreq
 
 
