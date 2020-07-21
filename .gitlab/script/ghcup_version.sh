@@ -44,12 +44,6 @@ ghcup-gen check -f ghcup-${JSON_VERSION}.json
 
 eghcup --numeric-version
 
-# TODO: rm once we have tarballs
-if [ "${OS}"  = "FREEBSD" ] ; then
-	GHC_VERSION=8.6.3
-	CABAL_VERSION=2.4.1.0
-fi
-
 eghcup install ${GHC_VERSION}
 eghcup set ${GHC_VERSION}
 eghcup install-cabal ${CABAL_VERSION}
