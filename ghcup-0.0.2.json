@@ -644,9 +644,9 @@
             },
             "FreeBSD": {
               "unknown_versioning": {
-                "dlHash": "52d27dbf9de82005dde9bfc521bff612e381b5228af194259c2306d2b75825c2",
+                "dlHash": "e8646ec9b60fd40aa9505ee055f22f04601290ab7a1342c2cf37c34de9d3f142",
                 "dlSubdir": "ghc-8.10.1",
-                "dlUri": "https://downloads.haskell.org/ghc/8.10.1/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz"
+                "dlUri": "https://files.hasufell.de/ghc/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz"
               }
             },
             "Linux_Debian": {
