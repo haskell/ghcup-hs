@@ -2,12 +2,6 @@ packages: ./ghcup.cabal
 
 optional-packages: ./3rdparty/*/*.cabal
 
-source-repository-package
-    type: git
-    location: https://github.com/haskus/packages.git
-    tag: 80a1c5fc07f7226c424250ec17f674cd4d618f42
-    subdir: haskus-utils-types
-
 optimization: 2
 
 package streamly
