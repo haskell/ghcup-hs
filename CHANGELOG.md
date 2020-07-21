@@ -1,5 +1,10 @@
 # Revision history for ghcup
 
+## 0.1.8 -- 2020-07-21
+
+* Fix bug in logging thread dying on newlines
+* Allow to install from arbitrary bindists: `ghcup -n install ghc -u '{"dlHash": "", "dlSubdir": "ghc-8.10.1", "dlUri": "https://github.com/commercialhaskell/ghc/releases/download/ghc-8.10.1-release/ghc-8.10.1-x86_64-deb9-linux.tar.xz"}' 8.10.1`
+
 ## 0.1.7 -- 2020-07-20
 
 * Fix a bug in libarchive not unpacking some uncleanly packed bindists
