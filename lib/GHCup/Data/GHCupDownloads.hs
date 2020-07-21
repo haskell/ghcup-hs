@@ -866,9 +866,9 @@ ghc_8101_32_alpine = DownloadInfo
 
 ghc_8101_64_freebsd :: DownloadInfo
 ghc_8101_64_freebsd = DownloadInfo
-  [uri|https://downloads.haskell.org/ghc/8.10.1/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz|]
+  [uri|https://files.hasufell.de/ghc/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz|]
   (Just [rel|ghc-8.10.1|])
-  "52d27dbf9de82005dde9bfc521bff612e381b5228af194259c2306d2b75825c2"
+  "e8646ec9b60fd40aa9505ee055f22f04601290ab7a1342c2cf37c34de9d3f142"
 
 
 
