@@ -278,7 +278,7 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
       Overwrite
 
 
--- | Installs cabal into @~\/.ghcup\/bin/cabal-\<ver\> and
+-- | Installs cabal into @~\/.ghcup\/bin/cabal-\<ver\>@ and
 -- creates a default @cabal -> cabal-x.y.z.q@ symlink for
 -- the latest installed version.
 installCabalBin :: ( MonadMask m
@@ -675,7 +675,7 @@ getDebugInfo = do
     ---------------
 
 
--- | Compile a GHC from sourc. This behaves wrt symlinks and installation
+-- | Compile a GHC from source. This behaves wrt symlinks and installation
 -- the same as 'installGHCBin'.
 compileGHC :: ( MonadMask m
               , MonadReader Settings m
@@ -858,7 +858,7 @@ Stage1Only = YES|]
 
 
 
--- | Compile a cabal from sourc. This behaves wrt symlinks and installation
+-- | Compile a cabal from source. This behaves wrt symlinks and installation
 -- the same as 'installCabalBin'.
 compileCabal :: ( MonadReader Settings m
                 , MonadResource m
