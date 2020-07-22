@@ -1,6 +1,11 @@
 jobs:
   include:
     - os: osx
+      osx_image: xcode8
+      language: generic
+      env: ARTIFACT=x86_64-apple-darwin-10.11-ghcup
+
+    - os: osx
       osx_image: xcode10.1
       language: generic
       env: ARTIFACT=x86_64-apple-darwin-10.13-ghcup
@@ -9,6 +14,13 @@ jobs:
       osx_image: xcode11.3
       language: generic
       env: ARTIFACT=x86_64-apple-darwin-10.14-ghcup
+
+  allow_failures:
+    - os: osx
+      osx_image: xcode8
+      language: generic
+      env: ARTIFACT=x86_64-apple-darwin-10.11-ghcup
+
 
 script: ".travis/build.sh"
 
