@@ -175,19 +175,18 @@ withIOAction :: (AppState -> (Int, ListResult) -> IO (Either String a))
 withIOAction action as = case listSelectedElement (lr as) of
   Nothing      -> continue as
   Just (ix, e) -> suspendAndResume $ do
-    r <- action as (ix, e)
-    case r of
-      Left  err -> throwIO $ userError err
-      Right _   -> do
-        apps <- (fmap . fmap)
-          (\AppState {..} -> AppState { lr = listMoveTo ix lr, .. })
-          $ getAppState Nothing (pfreq as)
-        case apps of
-          Right nas -> do
-            putStrLn "Press enter to continue"
-            _ <- getLine
-            pure nas
-          Left err -> throwIO $ userError err
+    action as (ix, e) >>= \case
+      Left  err -> putStrLn $ ("Error: " <> err)
+      Right _   -> putStrLn "Success"
+    apps <- (fmap . fmap)
+      (\AppState {..} -> AppState { lr = listMoveTo ix lr, .. })
+      $ getAppState Nothing (pfreq as)
+    case apps of
+      Right nas -> do
+        putStrLn "Press enter to continue"
+        _ <- getLine
+        pure nas
+      Left err -> throwIO $ userError err
 
 
 install' :: AppState -> (Int, ListResult) -> IO (Either String ())
