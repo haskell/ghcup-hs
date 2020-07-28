@@ -259,18 +259,33 @@ cabalInstalled ver = do
 cabalSet :: (MonadIO m, MonadThrow m) => m (Maybe Version)
 cabalSet = do
   cabalbin <- (</> [rel|cabal|]) <$> liftIO ghcupBinDir
-  mc       <- liftIO $ handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
-    cabalbin
-    ["--numeric-version"]
-    Nothing
-  fmap join $ forM mc $ \c -> if
-             | not (B.null (_stdOut c))
-             , _exitCode c == ExitSuccess -> do
-                  let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ c
-                  case version $ decUTF8Safe reportedVer of
-                    Left  e -> throwM e
-                    Right r -> pure $ Just r
-             | otherwise -> pure Nothing
+  b        <- fmap (== SymbolicLink) $ liftIO $ getFileType cabalbin
+  if
+    | b -> do
+      liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
+        link <- readSymbolicLink $ toFilePath cabalbin
+        Just <$> linkVersion link
+    | otherwise -> do -- legacy behavior
+      mc <- liftIO $ handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
+        cabalbin
+        ["--numeric-version"]
+        Nothing
+      fmap join $ forM mc $ \c -> if
+        | not (B.null (_stdOut c)), _exitCode c == ExitSuccess -> do
+          let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ c
+          case version $ decUTF8Safe reportedVer of
+            Left  e -> throwM e
+            Right r -> pure $ Just r
+        | otherwise -> pure Nothing
+ where
+  linkVersion :: MonadThrow m => ByteString -> m Version
+  linkVersion bs = do
+    t <- throwEither $ E.decodeUtf8' bs
+    throwEither $ MP.parse parser "" t
+   where
+    parser =
+      MP.chunk "cabal-" *> version'
+
 
 
 
