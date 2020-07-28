@@ -65,7 +65,7 @@ initGHCupFileLogging :: Path Rel -> IO (Path Abs)
 initGHCupFileLogging context = do
   logs <- ghcupLogsDir
   let logfile = logs </> context
-  createDirIfMissing newDirPerms logs
+  createDirRecursive newDirPerms logs
   hideError doesNotExistErrorType $ deleteFile logfile
   createRegularFile newFilePerms logfile
   pure logfile

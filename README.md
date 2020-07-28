@@ -13,6 +13,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Manpages](#manpages)
      * [Shell-completion](#shell-completion)
      * [Cross support](#cross-support)
+     * [XDG support](#xdg-support)
    * [Design goals](#design-goals)
    * [How](#how)
    * [Known users](#known-users)
@@ -95,6 +96,16 @@ Consult the GHC documentation on the [prerequisites](https://gitlab.haskell.org/
 For distributions with non-standard locations of cross toolchain and
 libraries, this may need some tweaking of `build.mk` or configure args.
 See `ghcup compile ghc --help` for further information.
+
+### Cross support
+
+To enable XDG style directories, set the environment variable `GHCUP_USE_XDG_DIRS` to anything.
+
+Then you can control the locations via XDG environment variables as such:
+
+* `XDG_DATA_HOME`: GHCs will be unpacked in `ghcup/ghc` subdir
+* `XDG_CACHE_HOME`: logs and download files will be stored in `ghcup` subdir
+* `XDG_BIN_HOME`: binaries end up here (default: `~/.local/bin`)
 
 ## Design goals
 

@@ -270,7 +270,7 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
   installCabal' path inst = do
     lift $ $(logInfo) "Installing cabal"
     let cabalFile = [rel|cabal|]
-    liftIO $ createDirIfMissing newDirPerms inst
+    liftIO $ createDirRecursive newDirPerms inst
     destFileName <- lift $ parseRel (toFilePath cabalFile <> "-" <> verToBS ver)
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
       (path </> cabalFile)
@@ -360,7 +360,7 @@ setGHC ver sghc = do
 
     -- create symlink
     let fullF = bindir </> targetFile
-    let destL = ghcLinkDestination (toFilePath file) ver
+    destL <- ghcLinkDestination (toFilePath file) ver
     lift $ $(logDebug) [i|ln -s #{destL} #{toFilePath fullF}|]
     liftIO $ createSymlink fullF destL
 
@@ -631,7 +631,7 @@ rmCabalVer :: (MonadThrow m, MonadLogger m, MonadIO m, MonadFail m)
            => Version
            -> Excepts '[NotInstalled] m ()
 rmCabalVer ver = do
-  whenM (fmap not $ liftIO $ cabalInstalled ver) $ throwE (NotInstalled GHC (prettyVer ver))
+  whenM (fmap not $ liftIO $ cabalInstalled ver) $ throwE (NotInstalled Cabal (prettyVer ver))
 
   cSet      <- liftIO cabalSet
 

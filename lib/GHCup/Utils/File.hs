@@ -427,3 +427,12 @@ findFiles' path parser = do
                              Right p' -> isJust $ MP.parseMaybe parser p')
     $ dirContentsStream dirStream
   pure $ join $ fmap parseRel f
+
+
+isBrokenSymlink :: Path Abs -> IO Bool
+isBrokenSymlink p =
+  handleIO
+      (\e -> if ioeGetErrorType e == NoSuchThing then pure True else throwIO e)
+    $ do
+        _ <- canonicalizePath p
+        pure False

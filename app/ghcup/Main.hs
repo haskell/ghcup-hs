@@ -903,9 +903,11 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
     >>= \opt@Options {..} -> do
           let settings@Settings{..} = toSettings opt
 
+          logsDir <- toFilePath <$> ghcupLogsDir
+
           -- create ~/.ghcup dir
           ghcdir <- ghcupBaseDir
-          createDirIfMissing newDirPerms ghcdir
+          createDirRecursive newDirPerms ghcdir
 
           -- logger interpreter
           logfile <- initGHCupFileLogging [rel|ghcup.log|]
@@ -1079,7 +1081,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             case keepDirs of
                               Never -> runLogger ($(logError) [i|Build failed with #{e}|])
                               _ -> runLogger ($(logError) [i|Build failed with #{e}
-    Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
+    Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
     Make sure to clean up #{tmpdir} afterwards.|])
                             pure $ ExitFailure 3
                           VLeft (V NoDownload) -> do
@@ -1092,7 +1094,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           VLeft e -> do
                             runLogger $ do
                               $(logError) [i|#{e}|]
-                              $(logError) [i|Also check the logs in ~/.ghcup/logs|]
+                              $(logError) [i|Also check the logs in #{logsDir}|]
                             pure $ ExitFailure 3
 
 
@@ -1121,7 +1123,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         VLeft e -> do
                           runLogger $ do
                             $(logError) [i|#{e}|]
-                            $(logError) [i|Also check the logs in ~/.ghcup/logs|]
+                            $(logError) [i|Also check the logs in #{logsDir}|]
                           pure $ ExitFailure 4
 
           let setGHC' SetOptions{..} =
@@ -1237,9 +1239,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       VLeft (V (BuildFailed tmpdir e)) -> do
                         case keepDirs of
                           Never -> runLogger ($(logError) [i|Build failed with #{e}
-Check the logs at ~/.ghcup/logs|])
+Check the logs at #{logsDir}|])
                           _ -> runLogger ($(logError) [i|Build failed with #{e}
-Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
+Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
 Make sure to clean up #{tmpdir} afterwards.|])
                         pure $ ExitFailure 9
                       VLeft e -> do
@@ -1261,7 +1263,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                         case keepDirs of
                           Never -> runLogger ($(logError) [i|Build failed with #{e}|])
                           _ -> runLogger ($(logError) [i|Build failed with #{e}
-Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
+Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
 Make sure to clean up #{tmpdir} afterwards.|])
                         pure $ ExitFailure 10
                       VLeft e -> do

@@ -97,11 +97,15 @@ import qualified Text.Megaparsec               as MP
 
 
 -- | The symlink destination of a ghc tool.
-ghcLinkDestination :: ByteString -- ^ the tool, such as 'ghc', 'haddock' etc.
+ghcLinkDestination :: (MonadThrow m, MonadIO m)
+                   => ByteString -- ^ the tool, such as 'ghc', 'haddock' etc.
                    -> GHCTargetVersion
-                   -> ByteString
-ghcLinkDestination tool ver =
-  "../ghc/" <> E.encodeUtf8 (prettyTVer ver) <> "/bin/" <> tool
+                   -> m ByteString
+ghcLinkDestination tool ver = do
+  t <- parseRel tool
+  bin <- liftIO ghcupBinDir
+  ghcd <- liftIO $ ghcupGHCDir ver
+  pure (relativeSymlink bin (ghcd </> [rel|bin|] </> t))
 
 
 -- | Removes the minor GHC symlinks, e.g. ghc-8.6.5.
@@ -201,25 +205,26 @@ ghcSet mtarget = do
   liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
     link <- readSymbolicLink $ toFilePath ghcBin
     Just <$> ghcLinkVersion link
+
+ghcLinkVersion :: MonadThrow m => ByteString -> m GHCTargetVersion
+ghcLinkVersion bs = do
+  t <- throwEither $ E.decodeUtf8' bs
+  throwEither $ MP.parse parser "ghcLinkVersion" t
  where
-  ghcLinkVersion :: MonadThrow m => ByteString -> m GHCTargetVersion
-  ghcLinkVersion bs = do
-    t <- throwEither $ E.decodeUtf8' bs
-    throwEither $ MP.parse parser "" t
-   where
-    parser =
-      MP.chunk "../ghc/"
-        *> (do
-             r    <- parseUntil1 (MP.chunk "/")
-             rest <- MP.getInput
-             MP.setInput r
-             x <- ghcTargetVerP
-             MP.setInput rest
-             pure x
-           )
-        <* MP.chunk "/"
-        <* MP.takeRest
-        <* MP.eof
+  parser =
+      (do
+         _    <- parseUntil1 (MP.chunk "/ghc/")
+         _    <- MP.chunk "/ghc/"
+         r    <- parseUntil1 (MP.chunk "/")
+         rest <- MP.getInput
+         MP.setInput r
+         x <- ghcTargetVerP
+         MP.setInput rest
+         pure x
+       )
+      <* MP.chunk "/"
+      <* MP.takeRest
+      <* MP.eof
 
 
 -- | Get all installed GHCs by reading ~/.ghcup/ghc/<dir>.
@@ -256,15 +261,19 @@ cabalInstalled ver = do
 
 
 -- Return the currently set cabal version, if any.
-cabalSet :: (MonadIO m, MonadThrow m) => m (Maybe Version)
+cabalSet :: (MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
 cabalSet = do
   cabalbin <- (</> [rel|cabal|]) <$> liftIO ghcupBinDir
-  b        <- fmap (== SymbolicLink) $ liftIO $ getFileType cabalbin
+  b        <- handleIO (\_ -> pure False) $ fmap (== SymbolicLink) $ liftIO $ getFileType cabalbin
   if
     | b -> do
       liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
-        link <- readSymbolicLink $ toFilePath cabalbin
-        Just <$> linkVersion link
+        broken <- isBrokenSymlink cabalbin
+        if broken
+          then pure Nothing
+          else do
+            link <- readSymbolicLink $ toFilePath cabalbin
+            Just <$> linkVersion link
     | otherwise -> do -- legacy behavior
       mc <- liftIO $ handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
         cabalbin

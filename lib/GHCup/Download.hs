@@ -226,7 +226,7 @@ getDownloads urlSource = do
           else -- access in less than 5 minutes, re-use file
                liftIO $ readFile json_file
       else do
-        liftIO $ createDirIfMissing newDirPerms cacheDir
+        liftIO $ createDirRecursive newDirPerms cacheDir
         getModTime >>= \case
           Just modTime -> dlWithMod modTime json_file
           Nothing -> do
