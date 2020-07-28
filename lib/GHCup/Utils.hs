@@ -245,7 +245,7 @@ getInstalledCabals = do
     Just (Left  _) -> pure $ Left f
     Nothing        -> pure $ Left f
   cs <- cabalSet -- for legacy cabal
-  pure $ maybe vs (\x -> Right x:vs) cs
+  pure $ maybe vs (\x -> nub $ Right x:vs) cs
 
 
 -- | Whether the given cabal version is installed.
