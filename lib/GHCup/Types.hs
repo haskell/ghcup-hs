@@ -92,6 +92,7 @@ data VersionInfo = VersionInfo
 -- | A tag. These are currently attached to a version of a tool.
 data Tag = Latest
          | Recommended
+         | Prerelease
          | Base PVP
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, Show) -- FIXME: manual JSON instance

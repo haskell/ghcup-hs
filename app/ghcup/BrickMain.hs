@@ -112,6 +112,7 @@ ui AppState {..} =
 
   printTag Recommended        = withAttr "recommended" $ str "recommended"
   printTag Latest             = withAttr "latest" $ str "latest"
+  printTag Prerelease         = withAttr "prerelease" $ str "prerelease"
   printTag (Base       pvp'') = str ("base-" ++ T.unpack (prettyPVP pvp''))
   printTag (UnknownTag t    ) = str t
 
@@ -137,6 +138,7 @@ defaultAttributes = attrMap
   , ("installed"    , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("recommended"  , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("latest"       , Vty.defAttr `Vty.withForeColor` Vty.yellow)
+  , ("prerelease"   , Vty.defAttr `Vty.withForeColor` Vty.red)
   , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
   ]
 

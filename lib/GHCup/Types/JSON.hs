@@ -53,6 +53,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requir
 instance ToJSON Tag where
   toJSON Latest             = String "Latest"
   toJSON Recommended        = String "Recommended"
+  toJSON Prerelease         = String "Prerelease"
   toJSON (Base       pvp'') = String ("base-" <> prettyPVP pvp'')
   toJSON (UnknownTag x    ) = String (T.pack x)
 
@@ -60,6 +61,7 @@ instance FromJSON Tag where
   parseJSON = withText "Tag" $ \t -> case T.unpack t of
     "Latest"                             -> pure Latest
     "Recommended"                        -> pure Recommended
+    "Prerelease"                         -> pure Prerelease
     ('b' : 'a' : 's' : 'e' : '-' : ver') -> case pvp (T.pack ver') of
       Right x -> pure $ Base x
       Left  e -> fail . show $ e

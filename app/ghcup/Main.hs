@@ -1422,6 +1422,7 @@ printListResult raw lr = do
  where
   printTag Recommended        = color' Green "recommended"
   printTag Latest             = color' Yellow "latest"
+  printTag Prerelease         = color' Red "prerelease"
   printTag (Base pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
   printTag (UnknownTag t    ) = t
   color' = case raw of

@@ -111,6 +111,7 @@ validate dls = do
    where
     isUniqueTag Latest         = True
     isUniqueTag Recommended    = True
+    isUniqueTag Prerelease     = False
     isUniqueTag (Base       _) = False
     isUniqueTag (UnknownTag _) = False
 
