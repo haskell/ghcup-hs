@@ -376,17 +376,16 @@ unpackToDir dest av = do
 #if defined(TAR)
   let untar :: MonadIO m => BL.ByteString -> Excepts '[] m ()
       untar = liftIO . Tar.unpack (toFilePath dest) . Tar.read
+
+      rf :: MonadIO m => Path Abs -> Excepts '[] m BL.ByteString
+      rf = liftIO . readFile
 #else
   let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
       untar = lEM . liftIO . runArchiveM . unpackToDirLazy (T.unpack . decUTF8Safe . toFilePath $ dest)
-#endif
 
-#if defined(TAR)
-      rf :: MonadIO m => Path Abs -> Excepts '[] m BL.ByteString
-#else
       rf :: MonadIO m => Path Abs -> Excepts '[ArchiveResult] m BL.ByteString
-#endif
       rf = liftIO . readFile
+#endif
 
   -- extract, depending on file extension
   if
