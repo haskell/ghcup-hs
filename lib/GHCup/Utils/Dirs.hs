@@ -6,7 +6,7 @@
 Module      : GHCup.Utils.Dirs
 Description : Definition of GHCup directories
 Copyright   : (c) Julian Ospald, 2020
-License     : GPL-3
+License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
