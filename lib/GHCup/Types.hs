@@ -158,14 +158,25 @@ data URLSource = GHCupURL
 
 
 data Settings = Settings
-  { cache      :: Bool
+  { -- * set by user
+    cache      :: Bool
   , noVerify   :: Bool
   , keepDirs   :: KeepDirs
   , downloader :: Downloader
   , verbose    :: Bool
+
+    -- * set on app start
+  , dirs       :: Dirs
   }
   deriving Show
 
+data Dirs = Dirs
+  { baseDir  :: Path Abs
+  , binDir   :: Path Abs
+  , cacheDir :: Path Abs
+  , logsDir  :: Path Abs
+  }
+  deriving Show
 
 data KeepDirs = Always
               | Errors

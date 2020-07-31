@@ -576,24 +576,18 @@ runBuildAction :: (Show (V e), MonadReader Settings m, MonadIO m, MonadMask m)
                -> Excepts '[BuildFailed] m a
 runBuildAction bdir instdir action = do
   Settings {..} <- lift ask
-  v <- flip
-      onException
-      (do
+  let exAction = do
         forM_ instdir $ \dir ->
           liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive dir
         when (keepDirs == Never)
           $ liftIO
           $ hideError doesNotExistErrorType
           $ deleteDirRecursive bdir
-      )
+  v <-
+    flip onException exAction
     $ catchAllE
         (\es -> do
-          forM_ instdir $ \dir ->
-            liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive dir
-          when (keepDirs == Never)
-            $ liftIO
-            $ hideError doesNotExistErrorType
-            $ deleteDirRecursive bdir
+          exAction
           throwE (BuildFailed bdir es)
         )
     $ action

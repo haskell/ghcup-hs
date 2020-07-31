@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE ViewPatterns          #-}
 
@@ -11,7 +12,16 @@ Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
 -}
-module GHCup.Utils.Dirs where
+module GHCup.Utils.Dirs
+  ( getDirs
+  , ghcupGHCBaseDir
+  , ghcupGHCDir
+  , parseGHCupGHCDir
+  , mkGhcupTmpDir
+  , withGHCupTmpDir
+  , relativeSymlink
+  )
+where
 
 
 import           GHCup.Types
@@ -36,7 +46,7 @@ import           Prelude                 hiding ( abs
 import           System.Posix.Env.ByteString    ( getEnv
                                                 , getEnvDefault
                                                 )
-import           System.Posix.FilePath  hiding  ( (</>) )
+import           System.Posix.FilePath   hiding ( (</>) )
 import           System.Posix.Temp.ByteString   ( mkdtemp )
 
 import qualified Data.ByteString.UTF8          as UTF8
@@ -47,9 +57,9 @@ import qualified Text.Megaparsec               as MP
 
 
 
-    -------------------------
-    --[ GHCup directories ]--
-    -------------------------
+    ------------------------------
+    --[ GHCup base directories ]--
+    ------------------------------
 
 
 -- | ~/.ghcup by default
@@ -74,29 +84,6 @@ ghcupBaseDir = do
       pure (bdir </> [rel|.ghcup|])
 
 
--- | ~/.ghcup/ghc by default.
-ghcupGHCBaseDir :: IO (Path Abs)
-ghcupGHCBaseDir = ghcupBaseDir <&> (</> [rel|ghc|])
-
-
--- | Gets '~/.ghcup/ghc/<ghcupGHCDir>'.
--- The dir may be of the form
---   * armv7-unknown-linux-gnueabihf-8.8.3
---   * 8.8.4
-ghcupGHCDir :: GHCTargetVersion -> IO (Path Abs)
-ghcupGHCDir ver = do
-  ghcbasedir <- ghcupGHCBaseDir
-  verdir     <- parseRel $ E.encodeUtf8 (prettyTVer ver)
-  pure (ghcbasedir </> verdir)
-
-
--- | See 'ghcupToolParser'.
-parseGHCupGHCDir :: MonadThrow m => Path Rel -> m GHCTargetVersion
-parseGHCupGHCDir (toFilePath -> f) = do
-  fp <- throwEither $ E.decodeUtf8' f
-  throwEither $ MP.parse ghcTargetVerP "" fp
-
-
 -- | If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_BIN_HOME' env var or defaults to '~/.local/bin'
 -- (which, sadly is not strictly xdg spec).
@@ -111,6 +98,7 @@ ghcupBinDir = do
           home <- liftIO getHomeDirectory
           pure (home </> [rel|.local/bin|])
     else ghcupBaseDir <&> (</> [rel|bin|])
+
 
 -- | Defaults to '~/.ghcup/cache'.
 --
@@ -128,6 +116,7 @@ ghcupCacheDir = do
           pure (home </> [rel|.cache|])
       pure (bdir </> [rel|ghcup|])
     else ghcupBaseDir <&> (</> [rel|cache|])
+
 
 -- | Defaults to '~/.ghcup/logs'.
 --
@@ -147,6 +136,49 @@ ghcupLogsDir = do
     else ghcupBaseDir <&> (</> [rel|logs|])
 
 
+getDirs :: IO Dirs
+getDirs = do
+  baseDir  <- ghcupBaseDir
+  binDir   <- ghcupBinDir
+  cacheDir <- ghcupCacheDir
+  logsDir  <- ghcupLogsDir
+  pure Dirs { .. }
+
+
+
+    -------------------------
+    --[ GHCup directories ]--
+    -------------------------
+
+
+-- | ~/.ghcup/ghc by default.
+ghcupGHCBaseDir :: (MonadReader Settings m) => m (Path Abs)
+ghcupGHCBaseDir = do
+  Settings {..} <- ask
+  pure (baseDir dirs </> [rel|ghc|])
+
+
+-- | Gets '~/.ghcup/ghc/<ghcupGHCDir>'.
+-- The dir may be of the form
+--   * armv7-unknown-linux-gnueabihf-8.8.3
+--   * 8.8.4
+ghcupGHCDir :: (MonadReader Settings m, MonadThrow m)
+            => GHCTargetVersion
+            -> m (Path Abs)
+ghcupGHCDir ver = do
+  Settings {..} <- ask
+  ghcbasedir    <- ghcupGHCBaseDir
+  verdir        <- parseRel $ E.encodeUtf8 (prettyTVer ver)
+  pure (ghcbasedir </> verdir)
+
+
+-- | See 'ghcupToolParser'.
+parseGHCupGHCDir :: MonadThrow m => Path Rel -> m GHCTargetVersion
+parseGHCupGHCDir (toFilePath -> f) = do
+  fp <- throwEither $ E.decodeUtf8' f
+  throwEither $ MP.parse ghcTargetVerP "" fp
+
+
 mkGhcupTmpDir :: (MonadThrow m, MonadIO m) => m (Path Abs)
 mkGhcupTmpDir = do
   tmpdir <- liftIO $ getEnvDefault "TMPDIR" "/tmp"
@@ -156,6 +188,8 @@ mkGhcupTmpDir = do
 
 withGHCupTmpDir :: (MonadResource m, MonadThrow m, MonadIO m) => m (Path Abs)
 withGHCupTmpDir = snd <$> allocate mkGhcupTmpDir deleteDirRecursive
+
+
 
 
     --------------
@@ -181,13 +215,12 @@ relativeSymlink :: Path Abs  -- ^ the path in which to create the symlink
                 -> Path Abs  -- ^ the symlink destination
                 -> ByteString
 relativeSymlink (toFilePath -> p1) (toFilePath -> p2) =
-  let d1            = splitDirectories p1
-      d2            = splitDirectories p2
-      common        = takeWhile (\(x, y) -> x == y) $ zip d1 d2
-      cPrefix       = drop (length common) d1
+  let d1      = splitDirectories p1
+      d2      = splitDirectories p2
+      common  = takeWhile (\(x, y) -> x == y) $ zip d1 d2
+      cPrefix = drop (length common) d1
   in  joinPath (replicate (length cPrefix) "..")
         <> joinPath ("/" : (drop (length common) d2))
-
 
 
 
