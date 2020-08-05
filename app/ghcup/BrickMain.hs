@@ -297,14 +297,15 @@ uri' = unsafePerformIO (newIORef Nothing)
 
 settings' :: IORef Settings
 {-# NOINLINE settings' #-}
-settings' = unsafePerformIO
-  (newIORef Settings { cache      = True
+settings' = unsafePerformIO $ do
+  dirs <- getDirs
+  newIORef Settings { cache      = True
                      , noVerify   = False
                      , keepDirs   = Never
                      , downloader = Curl
                      , verbose    = False
+                     , ..
                      }
-  )
 
 
 logger' :: IORef LoggerConfig

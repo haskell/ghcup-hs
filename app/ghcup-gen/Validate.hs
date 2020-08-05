@@ -7,6 +7,7 @@ module Validate where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Types
+import           GHCup.Utils.Dirs
 import           GHCup.Utils.Logger
 
 import           Control.Exception.Safe
@@ -180,7 +181,8 @@ validateTarballs dls = do
 
  where
   downloadAll dli = do
-    let settings = Settings True False Never Curl False
+    dirs <- liftIO getDirs
+    let settings = Settings True False Never Curl False dirs
     let runLogger = myLoggerT LoggerConfig { lcPrintDebug = True
                                            , colorOutter  = B.hPut stderr
                                            , rawOutter    = (\_ -> pure ())

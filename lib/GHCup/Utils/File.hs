@@ -17,7 +17,6 @@ Some of these functions use sophisticated logging.
 -}
 module GHCup.Utils.File where
 
-import           GHCup.Utils.Dirs
 import           GHCup.Utils.Prelude
 import           GHCup.Types
 
@@ -123,9 +122,8 @@ execLogged :: (MonadReader Settings m, MonadIO m, MonadThrow m)
            -> Maybe [(ByteString, ByteString)] -- ^ optional environment
            -> m (Either ProcessError ())
 execLogged exe spath args lfile chdir env = do
-  Settings {..} <- ask
-  ldir          <- liftIO ghcupLogsDir
-  logfile       <- (ldir </>) <$> parseRel (toFilePath lfile <> ".log")
+  Settings {dirs = Dirs {..}, ..} <- ask
+  logfile       <- (logsDir </>) <$> parseRel (toFilePath lfile <> ".log")
   liftIO $ bracket (createFile (toFilePath logfile) newFilePerms)
                    closeFd
                    (action verbose)

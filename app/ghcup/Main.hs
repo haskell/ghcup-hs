@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
@@ -818,14 +819,15 @@ bindistParser :: String -> Either String DownloadInfo
 bindistParser = eitherDecode . BLU.fromString
 
 
-toSettings :: Options -> Settings
-toSettings Options {..} =
+toSettings :: Options -> IO Settings
+toSettings Options {..} = do
   let cache      = optCache
       noVerify   = optNoVerify
       keepDirs   = optKeepDirs
       downloader = optsDownloader
       verbose    = optVerbose
-  in  Settings { .. }
+  dirs <- getDirs
+  pure $ Settings { .. }
 
 
 upgradeOptsP :: Parser UpgradeOpts
@@ -901,16 +903,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             (footerDoc (Just $ text main_footer))
       )
     >>= \opt@Options {..} -> do
-          let settings@Settings{..} = toSettings opt
-
-          logsDir <- toFilePath <$> ghcupLogsDir
+          settings@Settings{dirs = Dirs{..}, ..} <- toSettings opt
 
           -- create ~/.ghcup dir
-          ghcdir <- ghcupBaseDir
-          createDirRecursive newDirPerms ghcdir
+          createDirRecursive newDirPerms baseDir
 
           -- logger interpreter
-          logfile <- initGHCupFileLogging [rel|ghcup.log|]
+          logfile <- flip runReaderT settings $ initGHCupFileLogging [rel|ghcup.log|]
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = optVerbose
                 , colorOutter  = B.hPut stderr
@@ -956,12 +955,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let
             runSetCabal =
               runLogger
+                . flip runReaderT settings
                 . runE
                   @'[ NotInstalled
                     , TagNotFound
                     ]
 
-          let runListGHC = runLogger
+          let runListGHC = runLogger . flip runReaderT settings
 
           let runRm =
                 runLogger . flip runReaderT settings . runE @'[NotInstalled]
@@ -1054,7 +1054,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           case optCommand of
             Upgrade _ _ -> pure ()
-            _ -> runLogger $ checkForUpdates dls pfreq
+            _ -> runLogger $ flip runReaderT settings $ checkForUpdates dls pfreq
 
 
 
@@ -1277,9 +1277,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   p   <- parseAbs . E.encodeUtf8 . T.pack $ efp
                   pure $ Just p
                 (UpgradeAt p)   -> pure $ Just p
-                UpgradeGHCupDir -> do
-                  bdir <- liftIO $ ghcupBinDir
-                  pure (Just (bdir </> [rel|ghcup|]))
+                UpgradeGHCupDir -> pure (Just (binDir </> [rel|ghcup|]))
 
               (runUpgrade $ (liftE $ upgradeGHCup dls target force pfreq)) >>= \case
                 VRight v' -> do
@@ -1431,7 +1429,7 @@ printListResult raw lr = do
     True  -> flip const
     False -> color
 
-checkForUpdates :: (MonadCatch m, MonadLogger m, MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
+checkForUpdates :: (MonadReader Settings m, MonadCatch m, MonadLogger m, MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
                 => GHCupDownloads
                 -> PlatformRequest
                 -> m ()

@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes           #-}
+{-# LANGUAGE FlexibleContexts      #-}
 
 {-|
 Module      : GHCup.Utils.Logger
@@ -13,9 +14,11 @@ Here we define our main logger.
 -}
 module GHCup.Utils.Logger where
 
-import           GHCup.Utils
+import           GHCup.Types
 
 import           Control.Monad
+import           Control.Monad.IO.Class
+import           Control.Monad.Reader
 import           Control.Monad.Logger
 import           HPath
 import           HPath.IO
@@ -61,11 +64,12 @@ myLoggerT LoggerConfig {..} loggingt = runLoggingT loggingt mylogger
     rawOutter outr
 
 
-initGHCupFileLogging :: Path Rel -> IO (Path Abs)
+initGHCupFileLogging :: (MonadIO m, MonadReader Settings m) => Path Rel -> m (Path Abs)
 initGHCupFileLogging context = do
-  logs <- ghcupLogsDir
-  let logfile = logs </> context
-  createDirRecursive newDirPerms logs
-  hideError doesNotExistErrorType $ deleteFile logfile
-  createRegularFile newFilePerms logfile
-  pure logfile
+  Settings {dirs = Dirs {..}} <- ask
+  let logfile = logsDir </> context
+  liftIO $ do
+    createDirRecursive newDirPerms logsDir
+    hideError doesNotExistErrorType $ deleteFile logfile
+    createRegularFile newFilePerms logfile
+    pure logfile
