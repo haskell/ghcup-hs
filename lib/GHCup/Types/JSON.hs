@@ -193,3 +193,7 @@ instance FromJSON (Path Rel) where
     case parseRel d of
       Right x -> pure x
       Left  e -> fail $ "Failure in HPath Rel (FromJSON)" <> show e
+
+
+deriveJSON defaultOptions{ sumEncoding = ObjectWithSingleField } ''TarDir
+

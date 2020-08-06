@@ -214,7 +214,9 @@ install' AppState {..} (_, ListResult {..}) = do
             , TagNotFound
             , DigestError
             , DownloadFailed
-            , NoUpdate]
+            , NoUpdate
+            , TarDirDoesNotExist
+            ]
 
   (run $ do
       case lTool of

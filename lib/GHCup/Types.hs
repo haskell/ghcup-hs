@@ -137,7 +137,7 @@ data LinuxDistro = Debian
 -- to download, extract and install a tool.
 data DownloadInfo = DownloadInfo
   { _dlUri    :: URI
-  , _dlSubdir :: Maybe (Path Rel)
+  , _dlSubdir :: Maybe TarDir
   , _dlHash   :: Text
   }
   deriving (Eq, Show)
@@ -148,6 +148,12 @@ data DownloadInfo = DownloadInfo
     --------------
     --[ Others ]--
     --------------
+
+
+-- | How to descend into a tar archive.
+data TarDir = RealDir (Path Rel)
+            | RegexDir String     -- ^ will be compiled to regex, the first match will "win"
+            deriving (Eq, Show)
 
 
 -- | Where to fetch GHCupDownloads from.

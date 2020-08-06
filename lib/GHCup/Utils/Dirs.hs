@@ -166,7 +166,6 @@ ghcupGHCDir :: (MonadReader Settings m, MonadThrow m)
             => GHCTargetVersion
             -> m (Path Abs)
 ghcupGHCDir ver = do
-  Settings {..} <- ask
   ghcbasedir    <- ghcupGHCBaseDir
   verdir        <- parseRel $ E.encodeUtf8 (prettyTVer ver)
   pure (ghcbasedir </> verdir)

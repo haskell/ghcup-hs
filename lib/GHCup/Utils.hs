@@ -48,7 +48,9 @@ import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
 import           Data.Either
+import           Data.Foldable
 import           Data.List
+import           Data.List.Split
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
@@ -401,6 +403,28 @@ unpackToDir dest av = do
       liftE (untar . BZip.decompress =<< rf av)
     | ".tar" `B.isSuffixOf` fn -> liftE (untar =<< rf av)
     | otherwise -> throwE $ UnknownArchive fn
+
+
+intoSubdir :: (MonadLogger m, MonadIO m, MonadThrow m, MonadCatch m)
+           => Path Abs       -- ^ unpacked tar dir
+           -> TarDir         -- ^ how to descend
+           -> Excepts '[TarDirDoesNotExist] m (Path Abs)
+intoSubdir bdir tardir = case tardir of
+  RealDir pr -> do
+    whenM (fmap not . liftIO . doesDirectoryExist $ (bdir </> pr))
+          (throwE $ TarDirDoesNotExist tardir)
+    pure (bdir </> pr)
+  RegexDir r -> do
+    let rs = splitOn "/" r
+    foldlM
+      (\y x ->
+        (fmap sort . handleIO (\_ -> pure []) . liftIO . findFiles y . regex $ x) >>= \case
+          []      -> throwE $ TarDirDoesNotExist tardir
+          (p : _) -> pure (y </> p)
+      )
+      bdir
+      rs
+    where regex = makeRegexOpts compIgnoreCase execBlank
 
 
 

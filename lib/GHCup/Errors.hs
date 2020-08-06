@@ -89,6 +89,9 @@ data JSONError = JSONDecodeError String
 data FileDoesNotExistError = FileDoesNotExistError ByteString
   deriving Show
 
+data TarDirDoesNotExist = TarDirDoesNotExist TarDir
+  deriving Show
+
 -- | File digest verification failed.
 data DigestError = DigestError Text Text
   deriving Show

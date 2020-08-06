@@ -404,7 +404,11 @@ installParser =
   installGHCFooter = [s|Discussion:
   Installs the specified GHC version (or a recommended default one) into
   a self-contained "~/.ghcup/ghc/<ghcver>" directory
-  and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".|]
+  and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".
+
+Examples:
+  # install GHC head
+  ghcup -n install ghc -u '{"dlHash": "", "dlSubdir": { "RegexDir": "ghc-.*"}, "dlUri": "https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27" }' head|]
 
 
 installOpts :: Parser InstallOptions
@@ -428,7 +432,7 @@ installOpts =
             <> long "url"
             <> metavar "BINDIST_URL"
             <> help
-                 "Provide DownloadInfo as json string, e.g.: '{ \"dlHash\": \"<sha256 hash>\", \"dlSubdir\": \"ghc-<ver>\", \"dlUri\": \"<uri>\" }'"
+                 "Provide DownloadInfo as json string, e.g.: '{ \"dlHash\": \"<sha256 hash>\", \"dlSubdir\": { \"RegexDir\": \"ghc-.*\"}, \"dlUri\": \"<uri>\" }'"
             )
           )
         )
@@ -940,6 +944,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , TagNotFound
                       , DigestError
                       , DownloadFailed
+                      , TarDirDoesNotExist
                       ]
 
           let
@@ -986,6 +991,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NotFoundInPATH
                       , PatchFailed
                       , UnknownArchive
+                      , TarDirDoesNotExist
 #if !defined(TAR)
                       , ArchiveResult
 #endif
@@ -1005,6 +1011,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NotInstalled
                       , PatchFailed
                       , UnknownArchive
+                      , TarDirDoesNotExist
 #if !defined(TAR)
                       , ArchiveResult
 #endif
