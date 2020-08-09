@@ -793,7 +793,6 @@
         },
         "viChangeLog": "https://downloads.haskell.org/~ghc/8.10.1/docs/html/users_guide/8.10.1-notes.html",
         "viTags": [
-          "Latest",
           "base-4.14.0.0"
         ]
       },
@@ -2167,6 +2166,164 @@
         "viChangeLog": "https://downloads.haskell.org/~ghc/8.8.3/docs/html/users_guide/8.8.3-notes.html",
         "viTags": [
           "base-4.13.0.0"
+        ]
+      },
+      "8.10.2": {
+        "viArch": {
+          "A_64": {
+            "Linux_Alpine": {
+              "unknown_versioning": {
+                "dlHash": "14d09a508f2a3a11875c140be8e6c5f6982ac5cd448f089ca10b7adc955fec76",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-alpine3.10-linux-integer-simple.tar.xz"
+              }
+            },
+            "FreeBSD": {
+              "unknown_versioning": {
+                "dlHash": "9e5957f3497f4b58ecd3699568d9caaa11a47a6d7e902032c261e450fa0f6686",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-unknown-freebsd.tar.xz"
+              }
+            },
+            "Linux_Debian": {
+              "unknown_versioning": {
+                "dlHash": "4dbe3b479e76767bfeb4cbb7a4db8b761c4720266193483ca370b2ace3f10f7c",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb9-linux.tar.xz"
+              },
+              "9": {
+                "dlHash": "4dbe3b479e76767bfeb4cbb7a4db8b761c4720266193483ca370b2ace3f10f7c",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb9-linux.tar.xz"
+              },
+              "10": {
+                "dlHash": "94513d82c38c848f489113a75fa5ef4e5a8e3ecfaa74ca90e2620d2193ff1632",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux.tar.xz"
+              }
+            },
+            "Linux_Ubuntu": {
+              "unknown_versioning": {
+                "dlHash": "8c675da83e9b3c2f64ebb407b5f9ebb2c1f21aa5d701020614fdce644a542e3b",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-fedora27-linux.tar.xz"
+              },
+              "16.04": {
+                "dlHash": "4dbe3b479e76767bfeb4cbb7a4db8b761c4720266193483ca370b2ace3f10f7c",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb9-linux.tar.xz"
+              },
+              "18.04": {
+                "dlHash": "4dbe3b479e76767bfeb4cbb7a4db8b761c4720266193483ca370b2ace3f10f7c",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb9-linux.tar.xz"
+              }
+            },
+            "Darwin": {
+              "unknown_versioning": {
+                "dlHash": "edb772b00c0d7f18bb56ad27765162ee09c508104d40f82128c9114a02f6cfc2",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-apple-darwin.tar.xz"
+              }
+            },
+            "Linux_RedHat": {
+              "unknown_versioning": {
+                "dlHash": "fd2dccd6f496915a5f962dab24e7eeb8bee49bcc38e74b17eac76159083538fa",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-centos7-linux.tar.xz"
+              }
+            },
+            "Linux_UnknownLinux": {
+              "unknown_versioning": {
+                "dlHash": "8c675da83e9b3c2f64ebb407b5f9ebb2c1f21aa5d701020614fdce644a542e3b",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-fedora27-linux.tar.xz"
+              }
+            },
+            "Linux_Mint": {
+              "unknown_versioning": {
+                "dlHash": "94513d82c38c848f489113a75fa5ef4e5a8e3ecfaa74ca90e2620d2193ff1632",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux.tar.xz"
+              }
+            },
+            "Linux_Fedora": {
+              "unknown_versioning": {
+                "dlHash": "8c675da83e9b3c2f64ebb407b5f9ebb2c1f21aa5d701020614fdce644a542e3b",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-fedora27-linux.tar.xz"
+              },
+              "27": {
+                "dlHash": "8c675da83e9b3c2f64ebb407b5f9ebb2c1f21aa5d701020614fdce644a542e3b",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-fedora27-linux.tar.xz"
+              }
+            },
+            "Linux_CentOS": {
+              "7": {
+                "dlHash": "fd2dccd6f496915a5f962dab24e7eeb8bee49bcc38e74b17eac76159083538fa",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-centos7-linux.tar.xz"
+              },
+              "unknown_versioning": {
+                "dlHash": "fd2dccd6f496915a5f962dab24e7eeb8bee49bcc38e74b17eac76159083538fa",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-centos7-linux.tar.xz"
+              }
+            },
+            "Linux_AmazonLinux": {
+              "unknown_versioning": {
+                "dlHash": "fd2dccd6f496915a5f962dab24e7eeb8bee49bcc38e74b17eac76159083538fa",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-centos7-linux.tar.xz"
+              }
+            }
+          },
+          "A_32": {
+            "Linux_Debian": {
+              "unknown_versioning": {
+                "dlHash": "9dae2a86ad43d08f72c783542c944d1556b075aa20a8063efae5034ea88e7c2f",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-i386-deb9-linux.tar.xz"
+              },
+              "9": {
+                "dlHash": "9dae2a86ad43d08f72c783542c944d1556b075aa20a8063efae5034ea88e7c2f",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-i386-deb9-linux.tar.xz"
+              }
+            },
+            "Linux_Ubuntu": {
+              "unknown_versioning": {
+                "dlHash": "9dae2a86ad43d08f72c783542c944d1556b075aa20a8063efae5034ea88e7c2f",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-i386-deb9-linux.tar.xz"
+              }
+            },
+            "Linux_UnknownLinux": {
+              "unknown_versioning": {
+                "dlHash": "9dae2a86ad43d08f72c783542c944d1556b075aa20a8063efae5034ea88e7c2f",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-i386-deb9-linux.tar.xz"
+              }
+            },
+            "Linux_Mint": {
+              "unknown_versioning": {
+                "dlHash": "9dae2a86ad43d08f72c783542c944d1556b075aa20a8063efae5034ea88e7c2f",
+                "dlSubdir": "ghc-8.10.2",
+                "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-i386-deb9-linux.tar.xz"
+              }
+            }
+          }
+        },
+        "viSourceDL": {
+          "dlHash": "9c573a4621a78723950617c223559bdc325ea6a3409264aedf68f05510b0880b",
+          "dlSubdir": "ghc-8.10.2",
+          "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-src.tar.xz"
+        },
+        "viChangeLog": "https://downloads.haskell.org/~ghc/8.10.2/docs/html/users_guide/8.10.2-notes.html",
+        "viTags": [
+          "Latest",
+          "base-4.14.1.0"
         ]
       }
     },
