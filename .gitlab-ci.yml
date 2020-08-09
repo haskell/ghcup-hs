@@ -66,6 +66,13 @@ variables:
   before_script:
     - ./.gitlab/before_script/linux/install_deps.sh
 
+.test_ghcup_version:linux32:
+  extends:
+    - .test_ghcup_version
+    - .alpine:32bit
+  before_script:
+    - ./.gitlab/before_script/linux/alpine/install_deps.sh
+
 .test_ghcup_version:darwin:
   extends:
     - .test_ghcup_version
@@ -107,6 +114,13 @@ test:linux:latest:
     CABAL_VERSION: "3.2.0.0"
   allow_failure: true
 
+######## linux 32bit test ########
+
+test:linux:recommended:32bit:
+  extends: .test_ghcup_version:linux32
+  variables:
+    GHC_VERSION: "8.8.4"
+    CABAL_VERSION: "3.2.0.0"
 
 ######## darwin test ########
 
