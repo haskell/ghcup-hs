@@ -884,6 +884,68 @@ ghc_8101_64_freebsd = DownloadInfo
 
 
 
+    -----------------
+    --[ GHC 8.10.2 ]--
+    -----------------
+
+
+
+ghc_8102_32_deb9 :: DownloadInfo
+ghc_8102_32_deb9 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-i386-deb9-linux.tar.xz|]
+  (Just [rel|ghc-8.10.2|])
+  "9dae2a86ad43d08f72c783542c944d1556b075aa20a8063efae5034ea88e7c2f"
+
+
+ghc_8102_64_deb9 :: DownloadInfo
+ghc_8102_64_deb9 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb9-linux.tar.xz|]
+  (Just [rel|ghc-8.10.2|])
+  "4dbe3b479e76767bfeb4cbb7a4db8b761c4720266193483ca370b2ace3f10f7c"
+
+
+ghc_8102_64_deb10 :: DownloadInfo
+ghc_8102_64_deb10 = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux.tar.xz|]
+  (Just [rel|ghc-8.10.2|])
+  "94513d82c38c848f489113a75fa5ef4e5a8e3ecfaa74ca90e2620d2193ff1632"
+
+
+ghc_8102_64_fedora :: DownloadInfo
+ghc_8102_64_fedora = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-fedora27-linux.tar.xz|]
+  (Just [rel|ghc-8.10.2|])
+  "8c675da83e9b3c2f64ebb407b5f9ebb2c1f21aa5d701020614fdce644a542e3b"
+
+
+ghc_8102_64_centos :: DownloadInfo
+ghc_8102_64_centos = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-centos7-linux.tar.xz|]
+  (Just [rel|ghc-8.10.2|])
+  "fd2dccd6f496915a5f962dab24e7eeb8bee49bcc38e74b17eac76159083538fa"
+
+
+ghc_8102_64_darwin :: DownloadInfo
+ghc_8102_64_darwin = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-apple-darwin.tar.xz|]
+  (Just [rel|ghc-8.10.2|])
+  "edb772b00c0d7f18bb56ad27765162ee09c508104d40f82128c9114a02f6cfc2"
+
+
+ghc_8102_64_alpine :: DownloadInfo
+ghc_8102_64_alpine = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-alpine3.10-linux-integer-simple.tar.xz|]
+  (Just [rel|ghc-8.10.2|])
+  "14d09a508f2a3a11875c140be8e6c5f6982ac5cd448f089ca10b7adc955fec76"
+
+ghc_8102_64_freebsd :: DownloadInfo
+ghc_8102_64_freebsd = DownloadInfo
+  [uri|https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-unknown-freebsd.tar.xz|]
+  (Just [rel|ghc-8.10.2|])
+  "9e5957f3497f4b58ecd3699568d9caaa11a47a6d7e902032c261e450fa0f6686"
+
+
+
     ---------------------
     --[ Cabal-2.4.1.0 ]--
     ---------------------
@@ -1845,7 +1907,7 @@ ghcupDownloads = M.fromList
         )
       , ( [vver|8.10.1|]
         , VersionInfo
-            [Latest, Base [pver|4.14.0.0|]]
+            [Base [pver|4.14.0.0|]]
             (Just
               [uri|https://downloads.haskell.org/~ghc/8.10.1/docs/html/users_guide/8.10.1-notes.html|]
             )
@@ -1910,6 +1972,76 @@ ghcupDownloads = M.fromList
                       ]
                     )
                   , (Linux Alpine, M.fromList [(Nothing, ghc_8101_32_alpine)])
+                  ]
+                )
+              ]
+        )
+      , ( [vver|8.10.2|]
+        , VersionInfo
+            [Latest, Base [pver|4.14.1.0|]]
+            (Just
+              [uri|https://downloads.haskell.org/~ghc/8.10.2/docs/html/users_guide/8.10.2-notes.html|]
+            )
+            (Just $ DownloadInfo
+              [uri|https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-src.tar.xz|]
+              (Just [rel|ghc-8.10.2|])
+              "9c573a4621a78723950617c223559bdc325ea6a3409264aedf68f05510b0880b"
+            )
+          $ M.fromList
+              [ ( A_64
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, ghc_8102_64_fedora)]
+                    )
+                  , ( Linux Fedora
+                    , M.fromList
+                      [ (Nothing        , ghc_8102_64_fedora)
+                      , (Just [vers|27|], ghc_8102_64_fedora)
+                      ]
+                    )
+                  , ( Linux CentOS
+                    , M.fromList
+                      [ (Nothing       , ghc_8102_64_centos)
+                      , (Just [vers|7|], ghc_8102_64_centos)
+                      ]
+                    )
+                  , (Linux RedHat, M.fromList [(Nothing, ghc_8102_64_centos)])
+                  , ( Linux AmazonLinux
+                    , M.fromList [(Nothing, ghc_8102_64_centos)]
+                    )
+                  , ( Linux Ubuntu
+                    , M.fromList
+                      [ (Nothing           , ghc_8102_64_fedora)
+                      , (Just [vers|16.04|], ghc_8102_64_deb9)
+                      , (Just [vers|18.04|], ghc_8102_64_deb9)
+                      ]
+                    )
+                  , (Linux Mint, M.fromList [(Nothing, ghc_8102_64_deb10)])
+                  , ( Linux Debian
+                    , M.fromList
+                      [ (Nothing        , ghc_8102_64_deb9)
+                      , (Just [vers|9|] , ghc_8102_64_deb9)
+                      , (Just [vers|10|], ghc_8102_64_deb10)
+                      ]
+                    )
+                  , (Darwin      , M.fromList [(Nothing, ghc_8102_64_darwin)])
+                  , (Linux Alpine, M.fromList [(Nothing, ghc_8102_64_alpine)])
+                  , (FreeBSD     , M.fromList [(Nothing, ghc_8102_64_freebsd)])
+                  ]
+                )
+              , ( A_32
+                , M.fromList
+                  [ ( Linux UnknownLinux
+                    , M.fromList [(Nothing, ghc_8102_32_deb9)]
+                    )
+                  , (Linux Ubuntu, M.fromList [(Nothing, ghc_8102_32_deb9)])
+                  , (Linux Mint  , M.fromList [(Nothing, ghc_8102_32_deb9)])
+                  , ( Linux Debian
+                    , M.fromList
+                      [ (Nothing       , ghc_8102_32_deb9)
+                      , (Just [vers|9|], ghc_8102_32_deb9)
+                      ]
+                    )
                   ]
                 )
               ]
