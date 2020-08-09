@@ -18,10 +18,6 @@ apk add --no-cache \
 	tar \
 	perl
 
-ln -sf libncurses.so /usr/lib/libtinfo.so
-ln -sf libncursesw.so.6 /usr/lib/libtinfow.so.6
-ln -sf libtinfow.so.6 /usr/lib/libtinfow.so
-
 if [ "${BIT}" = "32" ] ; then
 	curl -sSfL https://downloads.haskell.org/ghcup/i386-linux-ghcup > ./ghcup-bin
 else
@@ -48,6 +44,4 @@ apk add --no-cache \
 	xz \
 	xz-dev \
 	ncurses-static
-
-ln -sf libncursesw.a /usr/lib/libtinfow.a
 
