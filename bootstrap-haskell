@@ -232,11 +232,16 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 				case $MY_SHELL in
 					"") break ;;
 					fish)
-						echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME" >> "${GHCUP_PROFILE_FILE}"
-						echo "test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN/bin \$PATH" >> "${GHCUP_PROFILE_FILE}"
+						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
+							echo "# ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME" >> "${GHCUP_PROFILE_FILE}"
+							echo "test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN/bin \$PATH" >> "${GHCUP_PROFILE_FILE}"
+						fi
 						break ;;
 					*)
-						echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\"" >> "${GHCUP_PROFILE_FILE}"
+						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
+							echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+						fi
 						break ;;
 				esac
                 printf "\\033[0;35m%s\\033[0m\\n" "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
