@@ -52,6 +52,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.Aeson
+import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
 #if defined(INTERNAL_DOWNLOADER)
 import           Data.CaseInsensitive           ( CI )
@@ -88,6 +89,7 @@ import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 #endif
 import qualified Data.Text.Encoding            as E
+import qualified Data.Yaml                     as Y
 import qualified System.Posix.Files.ByteString as PF
 import qualified System.Posix.RawFilePath.Directory
                                                as RD
@@ -103,7 +105,7 @@ import qualified System.Posix.RawFilePath.Directory
 
 
 -- | Like 'getDownloads', but tries to fall back to
--- cached ~/.ghcup/cache/ghcup-<format-ver>.json
+-- cached ~/.ghcup/cache/ghcup-<format-ver>.yaml
 getDownloadsF :: ( FromJSONKey Tool
                  , FromJSONKey Version
                  , FromJSON VersionInfo
@@ -135,13 +137,13 @@ getDownloadsF urlSource = do
       [i|Could not get download info, trying cached version (this may not be recent!)|]
     let path = view pathL' ghcupURL
     cacheDir  <- liftIO $ ghcupCacheDir
-    json_file <- (cacheDir </>) <$> urlBaseName path
+    yaml_file <- (cacheDir </>) <$> urlBaseName path
     bs        <-
       handleIO' NoSuchThing
-                (\_ -> throwE $ FileDoesNotExistError (toFilePath json_file))
+                (\_ -> throwE $ FileDoesNotExistError (toFilePath yaml_file))
       $ liftIO
-      $ readFile json_file
-    lE' JSONDecodeError $ eitherDecode' bs
+      $ readFile yaml_file
+    lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
 
 
 -- | Downloads the download information! But only if we need to ;P
@@ -162,10 +164,10 @@ getDownloads urlSource = do
   case urlSource of
     GHCupURL -> do
       bs <- reThrowAll DownloadFailed $ smartDl ghcupURL
-      lE' JSONDecodeError $ eitherDecode' bs
+      lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
     (OwnSource url) -> do
       bs <- reThrowAll DownloadFailed $ downloadBS url
-      lE' JSONDecodeError $ eitherDecode' bs
+      lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
     (OwnSpec av) -> pure $ av
 
  where

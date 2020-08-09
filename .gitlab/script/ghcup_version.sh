@@ -11,7 +11,7 @@ ecabal() {
 }
 
 eghcup() {
-	ghcup -v -c -s file://$(pwd)/ghcup-${JSON_VERSION}.json "$@"
+	ghcup -v -c -s file://$(pwd)/ghcup-${JSON_VERSION}.yaml "$@"
 }
 
 git describe --always
@@ -42,7 +42,7 @@ rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
 ### manual cli based testing
 
 
-ghcup-gen check -f ghcup-${JSON_VERSION}.json
+ghcup-gen check -f ghcup-${JSON_VERSION}.yaml
 
 eghcup --numeric-version
 
