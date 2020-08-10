@@ -20,11 +20,11 @@ import           URI.ByteString.QQ
 
 import qualified Data.Text                     as T
 
--- | This reflects the API version of the JSON.
+-- | This reflects the API version of the YAML.
 ghcupURL :: URI
-ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.2.json|]
+ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.2.yaml|]
 
--- | The curren ghcup version.
+-- | The current ghcup version.
 ghcUpVer :: PVP
 ghcUpVer = [pver|0.1.8|]
 
