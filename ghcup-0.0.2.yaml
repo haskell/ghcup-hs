@@ -1,3 +1,4 @@
+# !!! if you use RegexDir, then the version must be bumped !!!
 ---
 toolRequirements:
   GHC:

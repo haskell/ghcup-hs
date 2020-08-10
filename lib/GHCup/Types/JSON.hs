@@ -24,6 +24,7 @@ module GHCup.Types.JSON where
 import           GHCup.Types
 import           GHCup.Utils.Prelude
 
+import           Control.Applicative            ( (<|>) )
 import           Data.Aeson
 import           Data.Aeson.TH
 import           Data.Aeson.Types
@@ -195,5 +196,16 @@ instance FromJSON (Path Rel) where
       Left  e -> fail $ "Failure in HPath Rel (FromJSON)" <> show e
 
 
-deriveJSON defaultOptions{ sumEncoding = ObjectWithSingleField } ''TarDir
+instance ToJSON TarDir where
+  toJSON (RealDir  p) = toJSON p
+  toJSON (RegexDir r) = object ["RegexDir" .= r]
 
+instance FromJSON TarDir where
+  parseJSON v = realDir v <|> regexDir v
+   where
+    realDir = withText "TarDir" $ \t -> do
+      fp <- parseJSON (String t)
+      pure (RealDir fp)
+    regexDir = withObject "TarDir" $ \o -> do
+      r <- o .: "RegexDir"
+      pure $ RegexDir r
