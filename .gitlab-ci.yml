@@ -57,7 +57,7 @@ variables:
   script:
     - ./.gitlab/script/ghcup_version.sh
   variables:
-    JSON_VERSION: "0.0.3"
+    JSON_VERSION: "0.0.2"
 
 .test_ghcup_version:linux:
   extends:
