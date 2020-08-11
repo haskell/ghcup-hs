@@ -4,7 +4,7 @@
 Module      : GHCup.Utils.String.QQ
 Description : String quasi quoters
 Copyright   : (c) Audrey Tang <audreyt@audreyt.org> 2019, Julian Ospald <hasufell@posteo.de> 2020
-License     : GPL-3
+License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX

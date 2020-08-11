@@ -10,7 +10,7 @@
 Module      : GHCup.Utils
 Description : GHCup domain specific utilities
 Copyright   : (c) Julian Ospald, 2020
-License     : GPL-3
+License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
@@ -48,7 +48,9 @@ import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
 import           Data.Either
+import           Data.Foldable
 import           Data.List
+import           Data.List.Split
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
@@ -97,20 +99,24 @@ import qualified Text.Megaparsec               as MP
 
 
 -- | The symlink destination of a ghc tool.
-ghcLinkDestination :: ByteString -- ^ the tool, such as 'ghc', 'haddock' etc.
+ghcLinkDestination :: (MonadReader Settings m, MonadThrow m, MonadIO m)
+                   => ByteString -- ^ the tool, such as 'ghc', 'haddock' etc.
                    -> GHCTargetVersion
-                   -> ByteString
-ghcLinkDestination tool ver =
-  "../ghc/" <> E.encodeUtf8 (prettyTVer ver) <> "/bin/" <> tool
+                   -> m ByteString
+ghcLinkDestination tool ver = do
+  Settings {dirs = Dirs {..}} <- ask
+  t <- parseRel tool
+  ghcd <- ghcupGHCDir ver
+  pure (relativeSymlink binDir (ghcd </> [rel|bin|] </> t))
 
 
 -- | Removes the minor GHC symlinks, e.g. ghc-8.6.5.
-rmMinorSymlinks :: (MonadIO m, MonadLogger m) => GHCTargetVersion -> m ()
+rmMinorSymlinks :: (MonadReader Settings m, MonadIO m, MonadLogger m) => GHCTargetVersion -> m ()
 rmMinorSymlinks GHCTargetVersion {..} = do
-  bindir <- liftIO $ ghcupBinDir
+  Settings {dirs = Dirs {..}} <- ask
 
   files  <- liftIO $ findFiles'
-    bindir
+    binDir
     (  maybe mempty (\x -> MP.chunk (x <> "-")) _tvTarget
     *> parseUntil1 (MP.chunk $ prettyVer _tvVersion)
     *> (MP.chunk $ prettyVer _tvVersion)
@@ -118,42 +124,41 @@ rmMinorSymlinks GHCTargetVersion {..} = do
     )
 
   forM_ files $ \f -> do
-    let fullF = (bindir </> f)
+    let fullF = (binDir </> f)
     $(logDebug) [i|rm -f #{toFilePath fullF}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
 
 
 -- | Removes the set ghc version for the given target, if any.
-rmPlain :: (MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
+rmPlain :: (MonadReader Settings m, MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
   => Maybe Text -- ^ target
         -> Excepts '[NotInstalled] m ()
 rmPlain target = do
-  mtv <- ghcSet target
+  Settings {dirs = Dirs {..}} <- lift ask
+  mtv <- lift $ ghcSet target
   forM_ mtv $ \tv -> do
     files  <- liftE $ ghcToolFiles tv
-    bindir <- liftIO $ ghcupBinDir
     forM_ files $ \f -> do
-      let fullF = (bindir </> f)
+      let fullF = (binDir </> f)
       lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
       liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
     -- old ghcup
-    let hdc_file = (bindir </> [rel|haddock-ghc|])
+    let hdc_file = (binDir </> [rel|haddock-ghc|])
     lift $ $(logDebug) [i|rm -f #{toFilePath hdc_file}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile hdc_file
 
 
 -- | Remove the major GHC symlink, e.g. ghc-8.6.
-rmMajorSymlinks :: (MonadThrow m, MonadLogger m, MonadIO m)
+rmMajorSymlinks :: (MonadReader Settings m, MonadThrow m, MonadLogger m, MonadIO m)
                 => GHCTargetVersion
                 -> m ()
 rmMajorSymlinks GHCTargetVersion {..} = do
+  Settings {dirs = Dirs {..}} <- ask
   (mj, mi) <- getMajorMinorV _tvVersion
   let v' = intToText mj <> "." <> intToText mi
 
-  bindir <- liftIO ghcupBinDir
-
   files  <- liftIO $ findFiles'
-    bindir
+    binDir
     (  maybe mempty (\x -> MP.chunk (x <> "-")) _tvTarget
     *> parseUntil1 (MP.chunk v')
     *> MP.chunk v'
@@ -161,7 +166,7 @@ rmMajorSymlinks GHCTargetVersion {..} = do
     )
 
   forM_ files $ \f -> do
-    let fullF = (bindir </> f)
+    let fullF = (binDir </> f)
     $(logDebug) [i|rm -f #{toFilePath fullF}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
 
@@ -174,59 +179,61 @@ rmMajorSymlinks GHCTargetVersion {..} = do
 
 
 -- | Whethe the given GHC versin is installed.
-ghcInstalled :: GHCTargetVersion -> IO Bool
+ghcInstalled :: (MonadIO m, MonadReader Settings m, MonadThrow m) => GHCTargetVersion -> m Bool
 ghcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
-  doesDirectoryExist ghcdir
+  liftIO $ doesDirectoryExist ghcdir
 
 
 -- | Whether the given GHC version is installed from source.
-ghcSrcInstalled :: GHCTargetVersion -> IO Bool
+ghcSrcInstalled :: (MonadIO m, MonadReader Settings m, MonadThrow m) => GHCTargetVersion -> m Bool
 ghcSrcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
-  doesFileExist (ghcdir </> ghcUpSrcBuiltFile)
+  liftIO $ doesFileExist (ghcdir </> ghcUpSrcBuiltFile)
 
 
 -- | Whether the given GHC version is set as the current.
-ghcSet :: (MonadThrow m, MonadIO m)
+ghcSet :: (MonadReader Settings m, MonadThrow m, MonadIO m)
        => Maybe Text   -- ^ the target of the GHC version, if any
                        --  (e.g. armv7-unknown-linux-gnueabihf)
        -> m (Maybe GHCTargetVersion)
 ghcSet mtarget = do
+  Settings {dirs = Dirs {..}} <- ask
   ghc    <- parseRel $ E.encodeUtf8 (maybe "ghc" (<> "-ghc") mtarget)
-  ghcBin <- (</> ghc) <$> liftIO ghcupBinDir
+  let ghcBin = binDir </> ghc
 
   -- link destination is of the form ../ghc/<ver>/bin/ghc
   -- for old ghcup, it is ../ghc/<ver>/bin/ghc-<ver>
   liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
     link <- readSymbolicLink $ toFilePath ghcBin
     Just <$> ghcLinkVersion link
+
+ghcLinkVersion :: MonadThrow m => ByteString -> m GHCTargetVersion
+ghcLinkVersion bs = do
+  t <- throwEither $ E.decodeUtf8' bs
+  throwEither $ MP.parse parser "ghcLinkVersion" t
  where
-  ghcLinkVersion :: MonadThrow m => ByteString -> m GHCTargetVersion
-  ghcLinkVersion bs = do
-    t <- throwEither $ E.decodeUtf8' bs
-    throwEither $ MP.parse parser "" t
-   where
-    parser =
-      MP.chunk "../ghc/"
-        *> (do
-             r    <- parseUntil1 (MP.chunk "/")
-             rest <- MP.getInput
-             MP.setInput r
-             x <- ghcTargetVerP
-             MP.setInput rest
-             pure x
-           )
-        <* MP.chunk "/"
-        <* MP.takeRest
-        <* MP.eof
+  parser =
+      (do
+         _    <- parseUntil1 (MP.chunk "/ghc/")
+         _    <- MP.chunk "/ghc/"
+         r    <- parseUntil1 (MP.chunk "/")
+         rest <- MP.getInput
+         MP.setInput r
+         x <- ghcTargetVerP
+         MP.setInput rest
+         pure x
+       )
+      <* MP.chunk "/"
+      <* MP.takeRest
+      <* MP.eof
 
 
 -- | Get all installed GHCs by reading ~/.ghcup/ghc/<dir>.
 -- If a dir cannot be parsed, returns left.
-getInstalledGHCs :: MonadIO m => m [Either (Path Rel) GHCTargetVersion]
+getInstalledGHCs :: (MonadReader Settings m, MonadIO m) => m [Either (Path Rel) GHCTargetVersion]
 getInstalledGHCs = do
-  ghcdir <- liftIO $ ghcupGHCBaseDir
+  ghcdir <- ghcupGHCBaseDir
   fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ getDirsFiles' ghcdir
   forM fs $ \f -> case parseGHCupGHCDir f of
     Right r -> pure $ Right r
@@ -234,43 +241,64 @@ getInstalledGHCs = do
 
 
 -- | Get all installed cabals, by matching on @~\/.ghcup\/bin/cabal-*@.
-getInstalledCabals :: IO [Either (Path Rel) Version]
+getInstalledCabals :: (MonadReader Settings m, MonadIO m, MonadCatch m)
+                   => m [Either (Path Rel) Version]
 getInstalledCabals = do
-  bindir <- liftIO $ ghcupBinDir
+  Settings {dirs = Dirs {..}} <- ask
   bins   <- liftIO $ handleIO (\_ -> pure []) $ findFiles
-    bindir
+    binDir
     (makeRegexOpts compExtended execBlank ([s|^cabal-.*$|] :: ByteString))
   vs <- forM bins $ \f -> case fmap version (fmap decUTF8Safe . B.stripPrefix "cabal-" . toFilePath $ f) of
     Just (Right r) -> pure $ Right r
     Just (Left  _) -> pure $ Left f
     Nothing        -> pure $ Left f
   cs <- cabalSet -- for legacy cabal
-  pure $ maybe vs (\x -> Right x:vs) cs
+  pure $ maybe vs (\x -> nub $ Right x:vs) cs
 
 
 -- | Whether the given cabal version is installed.
-cabalInstalled :: Version -> IO Bool
+cabalInstalled :: (MonadIO m, MonadReader Settings m, MonadCatch m) => Version -> m Bool
 cabalInstalled ver = do
   vers <- fmap rights $ getInstalledCabals
   pure $ elem ver $ vers
 
 
 -- Return the currently set cabal version, if any.
-cabalSet :: (MonadIO m, MonadThrow m) => m (Maybe Version)
+cabalSet :: (MonadReader Settings m, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
 cabalSet = do
-  cabalbin <- (</> [rel|cabal|]) <$> liftIO ghcupBinDir
-  mc       <- liftIO $ handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
-    cabalbin
-    ["--numeric-version"]
-    Nothing
-  fmap join $ forM mc $ \c -> if
-             | not (B.null (_stdOut c))
-             , _exitCode c == ExitSuccess -> do
-                  let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ c
-                  case version $ decUTF8Safe reportedVer of
-                    Left  e -> throwM e
-                    Right r -> pure $ Just r
-             | otherwise -> pure Nothing
+  Settings {dirs = Dirs {..}} <- ask
+  let cabalbin = binDir </> [rel|cabal|]
+  b        <- handleIO (\_ -> pure False) $ fmap (== SymbolicLink) $ liftIO $ getFileType cabalbin
+  if
+    | b -> do
+      liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
+        broken <- isBrokenSymlink cabalbin
+        if broken
+          then pure Nothing
+          else do
+            link <- readSymbolicLink $ toFilePath cabalbin
+            Just <$> linkVersion link
+    | otherwise -> do -- legacy behavior
+      mc <- liftIO $ handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
+        cabalbin
+        ["--numeric-version"]
+        Nothing
+      fmap join $ forM mc $ \c -> if
+        | not (B.null (_stdOut c)), _exitCode c == ExitSuccess -> do
+          let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ c
+          case version $ decUTF8Safe reportedVer of
+            Left  e -> throwM e
+            Right r -> pure $ Just r
+        | otherwise -> pure Nothing
+ where
+  linkVersion :: MonadThrow m => ByteString -> m Version
+  linkVersion bs = do
+    t <- throwEither $ E.decodeUtf8' bs
+    throwEither $ MP.parse parser "" t
+   where
+    parser =
+      MP.chunk "cabal-" *> version'
+
 
 
 
@@ -295,7 +323,7 @@ matchMajor v' major' minor' = case getMajorMinorV v' of
 
 -- | Get the latest installed full GHC version that satisfies X.Y.
 -- This reads `ghcupGHCBaseDir`.
-getGHCForMajor :: (MonadIO m, MonadThrow m)
+getGHCForMajor :: (MonadReader Settings m, MonadIO m, MonadThrow m)
                => Int        -- ^ major version component
                -> Int        -- ^ minor version component
                -> Maybe Text -- ^ the target triple
@@ -352,17 +380,16 @@ unpackToDir dest av = do
 #if defined(TAR)
   let untar :: MonadIO m => BL.ByteString -> Excepts '[] m ()
       untar = liftIO . Tar.unpack (toFilePath dest) . Tar.read
+
+      rf :: MonadIO m => Path Abs -> Excepts '[] m BL.ByteString
+      rf = liftIO . readFile
 #else
   let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
       untar = lEM . liftIO . runArchiveM . unpackToDirLazy (T.unpack . decUTF8Safe . toFilePath $ dest)
-#endif
 
-#if defined(TAR)
-      rf :: MonadIO m => Path Abs -> Excepts '[] m BL.ByteString
-#else
       rf :: MonadIO m => Path Abs -> Excepts '[ArchiveResult] m BL.ByteString
-#endif
       rf = liftIO . readFile
+#endif
 
   -- extract, depending on file extension
   if
@@ -376,6 +403,28 @@ unpackToDir dest av = do
       liftE (untar . BZip.decompress =<< rf av)
     | ".tar" `B.isSuffixOf` fn -> liftE (untar =<< rf av)
     | otherwise -> throwE $ UnknownArchive fn
+
+
+intoSubdir :: (MonadLogger m, MonadIO m, MonadThrow m, MonadCatch m)
+           => Path Abs       -- ^ unpacked tar dir
+           -> TarDir         -- ^ how to descend
+           -> Excepts '[TarDirDoesNotExist] m (Path Abs)
+intoSubdir bdir tardir = case tardir of
+  RealDir pr -> do
+    whenM (fmap not . liftIO . doesDirectoryExist $ (bdir </> pr))
+          (throwE $ TarDirDoesNotExist tardir)
+    pure (bdir </> pr)
+  RegexDir r -> do
+    let rs = splitOn "/" r
+    foldlM
+      (\y x ->
+        (fmap sort . handleIO (\_ -> pure []) . liftIO . findFiles y . regex $ x) >>= \case
+          []      -> throwE $ TarDirDoesNotExist tardir
+          (p : _) -> pure (y </> p)
+      )
+      bdir
+      rs
+    where regex = makeRegexOpts compIgnoreCase execBlank
 
 
 
@@ -440,11 +489,11 @@ urlBaseName = parseRel . snd . B.breakEnd (== _slash) . urlDecode False
 -- Returns unversioned relative files, e.g.:
 --
 --   - @["hsc2hs","haddock","hpc","runhaskell","ghc","ghc-pkg","ghci","runghc","hp2ps"]@
-ghcToolFiles :: (MonadThrow m, MonadFail m, MonadIO m)
+ghcToolFiles :: (MonadReader Settings m, MonadThrow m, MonadFail m, MonadIO m)
              => GHCTargetVersion
              -> Excepts '[NotInstalled] m [Path Rel]
 ghcToolFiles ver = do
-  ghcdir <- liftIO $ ghcupGHCDir ver
+  ghcdir <- lift $ ghcupGHCDir ver
   let bindir = ghcdir </> [rel|bin|]
 
   -- fail if ghc is not installed
@@ -553,24 +602,18 @@ runBuildAction :: (Show (V e), MonadReader Settings m, MonadIO m, MonadMask m)
                -> Excepts '[BuildFailed] m a
 runBuildAction bdir instdir action = do
   Settings {..} <- lift ask
-  v <- flip
-      onException
-      (do
+  let exAction = do
         forM_ instdir $ \dir ->
           liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive dir
         when (keepDirs == Never)
           $ liftIO
           $ hideError doesNotExistErrorType
           $ deleteDirRecursive bdir
-      )
+  v <-
+    flip onException exAction
     $ catchAllE
         (\es -> do
-          forM_ instdir $ \dir ->
-            liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive dir
-          when (keepDirs == Never)
-            $ liftIO
-            $ hideError doesNotExistErrorType
-            $ deleteDirRecursive bdir
+          exAction
           throwE (BuildFailed bdir es)
         )
     $ action

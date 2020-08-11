@@ -6,7 +6,7 @@
 Module      : GHCup.Types
 Description : GHCup types
 Copyright   : (c) Julian Ospald, 2020
-License     : GPL-3
+License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
@@ -92,6 +92,7 @@ data VersionInfo = VersionInfo
 -- | A tag. These are currently attached to a version of a tool.
 data Tag = Latest
          | Recommended
+         | Prerelease
          | Base PVP
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, Show) -- FIXME: manual JSON instance
@@ -136,7 +137,7 @@ data LinuxDistro = Debian
 -- to download, extract and install a tool.
 data DownloadInfo = DownloadInfo
   { _dlUri    :: URI
-  , _dlSubdir :: Maybe (Path Rel)
+  , _dlSubdir :: Maybe TarDir
   , _dlHash   :: Text
   }
   deriving (Eq, Show)
@@ -149,6 +150,12 @@ data DownloadInfo = DownloadInfo
     --------------
 
 
+-- | How to descend into a tar archive.
+data TarDir = RealDir (Path Rel)
+            | RegexDir String     -- ^ will be compiled to regex, the first match will "win"
+            deriving (Eq, Show)
+
+
 -- | Where to fetch GHCupDownloads from.
 data URLSource = GHCupURL
                | OwnSource URI
@@ -157,14 +164,25 @@ data URLSource = GHCupURL
 
 
 data Settings = Settings
-  { cache      :: Bool
+  { -- set by user
+    cache      :: Bool
   , noVerify   :: Bool
   , keepDirs   :: KeepDirs
   , downloader :: Downloader
   , verbose    :: Bool
+
+    -- set on app start
+  , dirs       :: Dirs
   }
   deriving Show
 
+data Dirs = Dirs
+  { baseDir  :: Path Abs
+  , binDir   :: Path Abs
+  , cacheDir :: Path Abs
+  , logsDir  :: Path Abs
+  }
+  deriving Show
 
 data KeepDirs = Always
               | Errors

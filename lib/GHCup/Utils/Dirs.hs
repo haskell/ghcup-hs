@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE ViewPatterns          #-}
 
@@ -6,12 +7,21 @@
 Module      : GHCup.Utils.Dirs
 Description : Definition of GHCup directories
 Copyright   : (c) Julian Ospald, 2020
-License     : GPL-3
+License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
 -}
-module GHCup.Utils.Dirs where
+module GHCup.Utils.Dirs
+  ( getDirs
+  , ghcupGHCBaseDir
+  , ghcupGHCDir
+  , parseGHCupGHCDir
+  , mkGhcupTmpDir
+  , withGHCupTmpDir
+  , relativeSymlink
+  )
+where
 
 
 import           GHCup.Types
@@ -24,6 +34,7 @@ import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
+import           Data.ByteString                ( ByteString )
 import           Data.Maybe
 import           HPath
 import           HPath.IO
@@ -35,6 +46,7 @@ import           Prelude                 hiding ( abs
 import           System.Posix.Env.ByteString    ( getEnv
                                                 , getEnvDefault
                                                 )
+import           System.Posix.FilePath   hiding ( (</>) )
 import           System.Posix.Temp.ByteString   ( mkdtemp )
 
 import qualified Data.ByteString.UTF8          as UTF8
@@ -45,33 +57,117 @@ import qualified Text.Megaparsec               as MP
 
 
 
+    ------------------------------
+    --[ GHCup base directories ]--
+    ------------------------------
+
+
+-- | ~/.ghcup by default
+--
+-- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_DATA_HOME/ghcup' as per xdg spec.
+ghcupBaseDir :: IO (Path Abs)
+ghcupBaseDir = do
+  xdg <- useXDG
+  if xdg
+    then do
+      bdir <- getEnv "XDG_DATA_HOME" >>= \case
+        Just r  -> parseAbs r
+        Nothing -> do
+          home <- liftIO getHomeDirectory
+          pure (home </> [rel|.local/share|])
+      pure (bdir </> [rel|ghcup|])
+    else do
+      bdir <- getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
+        Just r  -> parseAbs r
+        Nothing -> liftIO getHomeDirectory
+      pure (bdir </> [rel|.ghcup|])
+
+
+-- | If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_BIN_HOME' env var or defaults to '~/.local/bin'
+-- (which, sadly is not strictly xdg spec).
+ghcupBinDir :: IO (Path Abs)
+ghcupBinDir = do
+  xdg <- useXDG
+  if xdg
+    then do
+      getEnv "XDG_BIN_HOME" >>= \case
+        Just r  -> parseAbs r
+        Nothing -> do
+          home <- liftIO getHomeDirectory
+          pure (home </> [rel|.local/bin|])
+    else ghcupBaseDir <&> (</> [rel|bin|])
+
+
+-- | Defaults to '~/.ghcup/cache'.
+--
+-- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_CACHE_HOME/ghcup' as per xdg spec.
+ghcupCacheDir :: IO (Path Abs)
+ghcupCacheDir = do
+  xdg <- useXDG
+  if xdg
+    then do
+      bdir <- getEnv "XDG_CACHE_HOME" >>= \case
+        Just r  -> parseAbs r
+        Nothing -> do
+          home <- liftIO getHomeDirectory
+          pure (home </> [rel|.cache|])
+      pure (bdir </> [rel|ghcup|])
+    else ghcupBaseDir <&> (</> [rel|cache|])
+
+
+-- | Defaults to '~/.ghcup/logs'.
+--
+-- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_CACHE_HOME/ghcup/logs' as per xdg spec.
+ghcupLogsDir :: IO (Path Abs)
+ghcupLogsDir = do
+  xdg <- useXDG
+  if xdg
+    then do
+      bdir <- getEnv "XDG_CACHE_HOME" >>= \case
+        Just r  -> parseAbs r
+        Nothing -> do
+          home <- liftIO getHomeDirectory
+          pure (home </> [rel|.cache|])
+      pure (bdir </> [rel|ghcup/logs|])
+    else ghcupBaseDir <&> (</> [rel|logs|])
+
+
+getDirs :: IO Dirs
+getDirs = do
+  baseDir  <- ghcupBaseDir
+  binDir   <- ghcupBinDir
+  cacheDir <- ghcupCacheDir
+  logsDir  <- ghcupLogsDir
+  pure Dirs { .. }
+
+
+
     -------------------------
     --[ GHCup directories ]--
     -------------------------
 
 
--- | ~/.ghcup by default
-ghcupBaseDir :: IO (Path Abs)
-ghcupBaseDir = do
-  bdir <- getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
-    Just r  -> parseAbs r
-    Nothing -> liftIO getHomeDirectory
-  pure (bdir </> [rel|.ghcup|])
-
-
 -- | ~/.ghcup/ghc by default.
-ghcupGHCBaseDir :: IO (Path Abs)
-ghcupGHCBaseDir = ghcupBaseDir <&> (</> [rel|ghc|])
+ghcupGHCBaseDir :: (MonadReader Settings m) => m (Path Abs)
+ghcupGHCBaseDir = do
+  Settings {..} <- ask
+  pure (baseDir dirs </> [rel|ghc|])
 
 
 -- | Gets '~/.ghcup/ghc/<ghcupGHCDir>'.
 -- The dir may be of the form
 --   * armv7-unknown-linux-gnueabihf-8.8.3
 --   * 8.8.4
-ghcupGHCDir :: GHCTargetVersion -> IO (Path Abs)
+ghcupGHCDir :: (MonadReader Settings m, MonadThrow m)
+            => GHCTargetVersion
+            -> m (Path Abs)
 ghcupGHCDir ver = do
-  ghcbasedir <- ghcupGHCBaseDir
-  verdir     <- parseRel $ E.encodeUtf8 (prettyTVer ver)
+  ghcbasedir    <- ghcupGHCBaseDir
+  verdir        <- parseRel $ E.encodeUtf8 (prettyTVer ver)
   pure (ghcbasedir </> verdir)
 
 
@@ -80,16 +176,6 @@ parseGHCupGHCDir :: MonadThrow m => Path Rel -> m GHCTargetVersion
 parseGHCupGHCDir (toFilePath -> f) = do
   fp <- throwEither $ E.decodeUtf8' f
   throwEither $ MP.parse ghcTargetVerP "" fp
-
-
-ghcupBinDir :: IO (Path Abs)
-ghcupBinDir = ghcupBaseDir <&> (</> [rel|bin|])
-
-ghcupCacheDir :: IO (Path Abs)
-ghcupCacheDir = ghcupBaseDir <&> (</> [rel|cache|])
-
-ghcupLogsDir :: IO (Path Abs)
-ghcupLogsDir = ghcupBaseDir <&> (</> [rel|logs|])
 
 
 mkGhcupTmpDir :: (MonadThrow m, MonadIO m) => m (Path Abs)
@@ -101,6 +187,8 @@ mkGhcupTmpDir = do
 
 withGHCupTmpDir :: (MonadResource m, MonadThrow m, MonadIO m) => m (Path Abs)
 withGHCupTmpDir = snd <$> allocate mkGhcupTmpDir deleteDirRecursive
+
+
 
 
     --------------
@@ -116,3 +204,23 @@ getHomeDirectory = do
     Nothing -> do
       h <- PU.homeDirectory <$> (PU.getEffectiveUserID >>= PU.getUserEntryForID)
       parseAbs $ UTF8.fromString h -- this is a guess
+
+
+useXDG :: IO Bool
+useXDG = isJust <$> getEnv "GHCUP_USE_XDG_DIRS"
+
+
+relativeSymlink :: Path Abs  -- ^ the path in which to create the symlink
+                -> Path Abs  -- ^ the symlink destination
+                -> ByteString
+relativeSymlink (toFilePath -> p1) (toFilePath -> p2) =
+  let d1      = splitDirectories p1
+      d2      = splitDirectories p2
+      common  = takeWhile (\(x, y) -> x == y) $ zip d1 d2
+      cPrefix = drop (length common) d1
+  in  joinPath (replicate (length cPrefix) "..")
+        <> joinPath ("/" : (drop (length common) d2))
+
+
+
+

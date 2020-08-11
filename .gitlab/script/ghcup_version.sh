@@ -22,14 +22,20 @@ ecabal update
 
 if [ "${OS}" = "DARWIN" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} -ftui
+elif [ "${OS}" = "LINUX" ] ; then
+	if [ "${BIT}" = "32" ] ; then
+		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar
+	else
+		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
+	fi
 else
 	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 fi
 
-ecabal haddock
+ecabal haddock -w ghc-${GHC_VERSION} -ftar
 
-cp "$(ecabal new-exec --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup')" .
-cp "$(ecabal new-exec --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" .
+cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup')" .
+cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" .
 
 cp ./ghcup "$CI_PROJECT_DIR"/.local/bin/ghcup
 cp ./ghcup-gen "$CI_PROJECT_DIR"/.local/bin/ghcup-gen

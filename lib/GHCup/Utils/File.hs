@@ -7,7 +7,7 @@
 Module      : GHCup.Utils.File
 Description : File and unix APIs
 Copyright   : (c) Julian Ospald, 2020
-License     : GPL-3
+License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
@@ -17,7 +17,6 @@ Some of these functions use sophisticated logging.
 -}
 module GHCup.Utils.File where
 
-import           GHCup.Utils.Dirs
 import           GHCup.Utils.Prelude
 import           GHCup.Types
 
@@ -123,9 +122,8 @@ execLogged :: (MonadReader Settings m, MonadIO m, MonadThrow m)
            -> Maybe [(ByteString, ByteString)] -- ^ optional environment
            -> m (Either ProcessError ())
 execLogged exe spath args lfile chdir env = do
-  Settings {..} <- ask
-  ldir          <- liftIO ghcupLogsDir
-  logfile       <- (ldir </>) <$> parseRel (toFilePath lfile <> ".log")
+  Settings {dirs = Dirs {..}, ..} <- ask
+  logfile       <- (logsDir </>) <$> parseRel (toFilePath lfile <> ".log")
   liftIO $ bracket (createFile (toFilePath logfile) newFilePerms)
                    closeFd
                    (action verbose)
@@ -427,3 +425,12 @@ findFiles' path parser = do
                              Right p' -> isJust $ MP.parseMaybe parser p')
     $ dirContentsStream dirStream
   pure $ join $ fmap parseRel f
+
+
+isBrokenSymlink :: Path Abs -> IO Bool
+isBrokenSymlink p =
+  handleIO
+      (\e -> if ioeGetErrorType e == NoSuchThing then pure True else throwIO e)
+    $ do
+        _ <- canonicalizePath p
+        pure False

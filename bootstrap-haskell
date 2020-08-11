@@ -4,6 +4,17 @@
 (
 
 : "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}"
+
+export GHCUP_USE_XDG_DIRS
+
+if [ -n "${GHCUP_USE_XDG_DIRS}" ] ; then
+	GHCUP_DIR=${XDG_DATA_HOME:=$HOME/.local}/ghcup
+	GHCUP_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
+else
+	GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup
+	GHCUP_BIN=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/bin
+fi
+
 : "${BOOTSTRAP_HASKELL_GHC_VERSION:=recommended}"
 : "${BOOTSTRAP_HASKELL_CABAL_VERSION:=recommended}"
 
@@ -27,6 +38,22 @@ _eghcup() {
     else
         ghcup --verbose "$@"
     fi
+}
+
+_done() {
+	echo
+    echo "All done!"
+	echo
+	echo "To start a simple repl, run:"
+	echo "  ghci"
+	echo
+	echo "To start a new haskell project in the current directory, run:"
+	echo "  cabal init --interactive"
+	echo
+	echo "To install other GHC versions, run:"
+	echo "  ghcup tui"
+
+	exit 0
 }
 
 download_ghcup() {
@@ -83,15 +110,15 @@ download_ghcup() {
 			;;
     esac
 
-	edo curl -Lf "${_url}" > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+	edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup
 
-    edo chmod +x "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/ghcup
+    edo chmod +x "${GHCUP_BIN}"/ghcup
 
-	cat <<-EOF > "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/env || die "Failed to create env file"
-		export PATH="\$HOME/.cabal/bin:\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/bin:\$PATH"
+	cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
+		export PATH="\$HOME/.cabal/bin:${GHCUP_BIN}:\$PATH"
 		EOF
 	# shellcheck disable=SC1090
-    edo . "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/env
+    edo . "${GHCUP_DIR}"/env
     eghcup upgrade
 
 	unset _plat _arch _url _ghver _base_url
@@ -102,12 +129,19 @@ echo
 echo "Welcome to Haskell!"
 echo
 echo "This script will download and install the following binaries:"
-echo "  * ghcup - The Haskell toolchain installer (for managing GHC/cabal versions)"
+echo "  * ghcup - The Haskell toolchain installer"
+echo "            (for managing GHC/cabal versions)"
 echo "  * ghc   - The Glasgow Haskell Compiler"
 echo "  * cabal - The Cabal build tool"
 echo
-echo "ghcup installs only into the following directory, which can be removed anytime:"
-echo "  $GHCUP_INSTALL_BASE_PREFIX/.ghcup"
+if [ -z "${GHCUP_USE_XDG_DIRS}" ] ; then
+	echo "ghcup installs only into the following directory,"
+    echo "which can be removed anytime:"
+	echo "  $GHCUP_INSTALL_BASE_PREFIX/.ghcup"
+else
+	echo "ghcup installs into XDG directories as long as"
+    echo "'GHCUP_USE_XDG_DIRS' is set."
+fi
 echo
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
@@ -119,7 +153,7 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
     read -r answer </dev/tty
 fi
 
-edo mkdir -p "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin
+edo mkdir -p "${GHCUP_BIN}"
 
 if command -V "ghcup" >/dev/null 2>&1 ; then
     if [ -z "${BOOTSTRAP_HASKELL_NO_UPGRADE}" ] ; then
@@ -156,7 +190,7 @@ printf "\\033[0;35m%s\\033[0m\\n" ""
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
     echo "In order to run ghc and cabal, you need to adjust your PATH variable."
-    echo "You may want to source '$GHCUP_INSTALL_BASE_PREFIX/.ghcup/env' in your shell"
+    echo "You may want to source '$GHCUP_DIR/env' in your shell"
     echo "configuration to do so (e.g. ~/.bashrc)."
 
 	case $SHELL in
@@ -174,13 +208,13 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 				GHCUP_PROFILE_FILE="$HOME/.zshrc"
 				MY_SHELL="zsh"
 			else
-				exit 0
+			    _done
 			fi
 			;;
 		*/fish) # login shell is fish
 			GHCUP_PROFILE_FILE="$HOME/.config/fish/config.fish"
 			MY_SHELL="fish" ;;
-		*) exit 0 ;;
+		*) _done ;;
 	esac
 
 
@@ -198,18 +232,24 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 				case $MY_SHELL in
 					"") break ;;
 					fish)
-						echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME" >> "${GHCUP_PROFILE_FILE}"
-						echo "test -f \$GHCUP_INSTALL_BASE_PREFIX/.ghcup/env ; and set -gx PATH \$HOME/.cabal/bin \$GHCUP_INSTALL_BASE_PREFIX/.ghcup/bin \$PATH" >> "${GHCUP_PROFILE_FILE}"
+						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
+							echo "# ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME" >> "${GHCUP_PROFILE_FILE}"
+							echo "test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN/bin \$PATH" >> "${GHCUP_PROFILE_FILE}"
+						fi
 						break ;;
 					*)
-						echo "[ -f \"\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/env\" ] && source \"\${GHCUP_INSTALL_BASE_PREFIX:=\$HOME}/.ghcup/env\"" >> "${GHCUP_PROFILE_FILE}"
+						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
+							echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+						fi
 						break ;;
 				esac
                 printf "\\033[0;35m%s\\033[0m\\n" "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
-                printf "\\033[0;35m%s\\033[0m\\n" "or type \"source ${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/env\" to apply them in your current terminal session."
-                exit 0;;
+                printf "\\033[0;35m%s\\033[0m\\n" "or type \"source ${GHCUP_DIR}/env\" to apply them in your current terminal session."
+				_done
+                ;;
             [Nn]*)
-                exit 0;;
+                _done ;;
             *)
                 echo "Please type YES or NO and press enter.";;
         esac

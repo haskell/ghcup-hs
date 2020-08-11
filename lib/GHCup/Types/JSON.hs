@@ -14,7 +14,7 @@
 Module      : GHCup.Types.JSON
 Description : GHCup JSON types/instances
 Copyright   : (c) Julian Ospald, 2020
-License     : GPL-3
+License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
@@ -24,6 +24,7 @@ module GHCup.Types.JSON where
 import           GHCup.Types
 import           GHCup.Utils.Prelude
 
+import           Control.Applicative            ( (<|>) )
 import           Data.Aeson
 import           Data.Aeson.TH
 import           Data.Aeson.Types
@@ -53,6 +54,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requir
 instance ToJSON Tag where
   toJSON Latest             = String "Latest"
   toJSON Recommended        = String "Recommended"
+  toJSON Prerelease         = String "Prerelease"
   toJSON (Base       pvp'') = String ("base-" <> prettyPVP pvp'')
   toJSON (UnknownTag x    ) = String (T.pack x)
 
@@ -60,6 +62,7 @@ instance FromJSON Tag where
   parseJSON = withText "Tag" $ \t -> case T.unpack t of
     "Latest"                             -> pure Latest
     "Recommended"                        -> pure Recommended
+    "Prerelease"                         -> pure Prerelease
     ('b' : 'a' : 's' : 'e' : '-' : ver') -> case pvp (T.pack ver') of
       Right x -> pure $ Base x
       Left  e -> fail . show $ e
@@ -191,3 +194,18 @@ instance FromJSON (Path Rel) where
     case parseRel d of
       Right x -> pure x
       Left  e -> fail $ "Failure in HPath Rel (FromJSON)" <> show e
+
+
+instance ToJSON TarDir where
+  toJSON (RealDir  p) = toJSON p
+  toJSON (RegexDir r) = object ["RegexDir" .= r]
+
+instance FromJSON TarDir where
+  parseJSON v = realDir v <|> regexDir v
+   where
+    realDir = withText "TarDir" $ \t -> do
+      fp <- parseJSON (String t)
+      pure (RealDir fp)
+    regexDir = withObject "TarDir" $ \o -> do
+      r <- o .: "RegexDir"
+      pure $ RegexDir r

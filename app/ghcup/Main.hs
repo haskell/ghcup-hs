@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
@@ -403,7 +404,11 @@ installParser =
   installGHCFooter = [s|Discussion:
   Installs the specified GHC version (or a recommended default one) into
   a self-contained "~/.ghcup/ghc/<ghcver>" directory
-  and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".|]
+  and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".
+
+Examples:
+  # install GHC head
+  ghcup -n install ghc -u '{"dlHash": "", "dlSubdir": { "RegexDir": "ghc-.*"}, "dlUri": "https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27" }' head|]
 
 
 installOpts :: Parser InstallOptions
@@ -427,7 +432,7 @@ installOpts =
             <> long "url"
             <> metavar "BINDIST_URL"
             <> help
-                 "Provide DownloadInfo as json string, e.g.: '{ \"dlHash\": \"<sha256 hash>\", \"dlSubdir\": \"ghc-<ver>\", \"dlUri\": \"<uri>\" }'"
+                 "Provide DownloadInfo as json string, e.g.: '{ \"dlHash\": \"<sha256 hash>\", \"dlSubdir\": { \"RegexDir\": \"ghc-.*\"}, \"dlUri\": \"<uri>\" }'"
             )
           )
         )
@@ -818,14 +823,15 @@ bindistParser :: String -> Either String DownloadInfo
 bindistParser = eitherDecode . BLU.fromString
 
 
-toSettings :: Options -> Settings
-toSettings Options {..} =
+toSettings :: Options -> IO Settings
+toSettings Options {..} = do
   let cache      = optCache
       noVerify   = optNoVerify
       keepDirs   = optKeepDirs
       downloader = optsDownloader
       verbose    = optVerbose
-  in  Settings { .. }
+  dirs <- getDirs
+  pure $ Settings { .. }
 
 
 upgradeOptsP :: Parser UpgradeOpts
@@ -901,14 +907,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             (footerDoc (Just $ text main_footer))
       )
     >>= \opt@Options {..} -> do
-          let settings@Settings{..} = toSettings opt
+          settings@Settings{dirs = Dirs{..}, ..} <- toSettings opt
 
           -- create ~/.ghcup dir
-          ghcdir <- ghcupBaseDir
-          createDirIfMissing newDirPerms ghcdir
+          createDirRecursive newDirPerms baseDir
 
           -- logger interpreter
-          logfile <- initGHCupFileLogging [rel|ghcup.log|]
+          logfile <- flip runReaderT settings $ initGHCupFileLogging [rel|ghcup.log|]
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = optVerbose
                 , colorOutter  = B.hPut stderr
@@ -939,6 +944,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , TagNotFound
                       , DigestError
                       , DownloadFailed
+                      , TarDirDoesNotExist
                       ]
 
           let
@@ -954,12 +960,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let
             runSetCabal =
               runLogger
+                . flip runReaderT settings
                 . runE
                   @'[ NotInstalled
                     , TagNotFound
                     ]
 
-          let runListGHC = runLogger
+          let runListGHC = runLogger . flip runReaderT settings
 
           let runRm =
                 runLogger . flip runReaderT settings . runE @'[NotInstalled]
@@ -984,6 +991,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NotFoundInPATH
                       , PatchFailed
                       , UnknownArchive
+                      , TarDirDoesNotExist
 #if !defined(TAR)
                       , ArchiveResult
 #endif
@@ -1003,6 +1011,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NotInstalled
                       , PatchFailed
                       , UnknownArchive
+                      , TarDirDoesNotExist
 #if !defined(TAR)
                       , ArchiveResult
 #endif
@@ -1052,7 +1061,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           case optCommand of
             Upgrade _ _ -> pure ()
-            _ -> runLogger $ checkForUpdates dls pfreq
+            _ -> runLogger $ flip runReaderT settings $ checkForUpdates dls pfreq
 
 
 
@@ -1079,7 +1088,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             case keepDirs of
                               Never -> runLogger ($(logError) [i|Build failed with #{e}|])
                               _ -> runLogger ($(logError) [i|Build failed with #{e}
-    Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
+    Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
     Make sure to clean up #{tmpdir} afterwards.|])
                             pure $ ExitFailure 3
                           VLeft (V NoDownload) -> do
@@ -1092,7 +1101,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           VLeft e -> do
                             runLogger $ do
                               $(logError) [i|#{e}|]
-                              $(logError) [i|Also check the logs in ~/.ghcup/logs|]
+                              $(logError) [i|Also check the logs in #{logsDir}|]
                             pure $ ExitFailure 3
 
 
@@ -1121,7 +1130,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         VLeft e -> do
                           runLogger $ do
                             $(logError) [i|#{e}|]
-                            $(logError) [i|Also check the logs in ~/.ghcup/logs|]
+                            $(logError) [i|Also check the logs in #{logsDir}|]
                           pure $ ExitFailure 4
 
           let setGHC' SetOptions{..} =
@@ -1237,9 +1246,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       VLeft (V (BuildFailed tmpdir e)) -> do
                         case keepDirs of
                           Never -> runLogger ($(logError) [i|Build failed with #{e}
-Check the logs at ~/.ghcup/logs|])
+Check the logs at #{logsDir}|])
                           _ -> runLogger ($(logError) [i|Build failed with #{e}
-Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
+Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
 Make sure to clean up #{tmpdir} afterwards.|])
                         pure $ ExitFailure 9
                       VLeft e -> do
@@ -1261,7 +1270,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                         case keepDirs of
                           Never -> runLogger ($(logError) [i|Build failed with #{e}|])
                           _ -> runLogger ($(logError) [i|Build failed with #{e}
-Check the logs at ~/.ghcup/logs and the build directory #{tmpdir} for more clues.
+Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
 Make sure to clean up #{tmpdir} afterwards.|])
                         pure $ ExitFailure 10
                       VLeft e -> do
@@ -1275,9 +1284,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   p   <- parseAbs . E.encodeUtf8 . T.pack $ efp
                   pure $ Just p
                 (UpgradeAt p)   -> pure $ Just p
-                UpgradeGHCupDir -> do
-                  bdir <- liftIO $ ghcupBinDir
-                  pure (Just (bdir </> [rel|ghcup|]))
+                UpgradeGHCupDir -> pure (Just (binDir </> [rel|ghcup|]))
 
               (runUpgrade $ (liftE $ upgradeGHCup dls target force pfreq)) >>= \case
                 VRight v' -> do
@@ -1422,13 +1429,14 @@ printListResult raw lr = do
  where
   printTag Recommended        = color' Green "recommended"
   printTag Latest             = color' Yellow "latest"
+  printTag Prerelease         = color' Red "prerelease"
   printTag (Base pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
   printTag (UnknownTag t    ) = t
   color' = case raw of
     True  -> flip const
     False -> color
 
-checkForUpdates :: (MonadCatch m, MonadLogger m, MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
+checkForUpdates :: (MonadReader Settings m, MonadCatch m, MonadLogger m, MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
                 => GHCupDownloads
                 -> PlatformRequest
                 -> m ()

@@ -112,7 +112,7 @@ common io-streams
   build-depends: io-streams >=1.5
 
 common libarchive
-  build-depends: libarchive >= 2.2.5.2
+  build-depends: libarchive >= 2.2.5.0
 
 common lzma
   build-depends: lzma >=0.0.0.3
@@ -152,6 +152,9 @@ common safe
 
 common safe-exceptions
   build-depends: safe-exceptions >=0.1
+
+common split
+  build-depends: split >=0.2.3.4
 
 common streamly
   build-depends: streamly >=0.7.1
@@ -276,6 +279,7 @@ library
     , resourcet
     , safe
     , safe-exceptions
+    , split
     , streamly
     , streamly-posix
     , streamly-bytestring

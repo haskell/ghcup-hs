@@ -7,7 +7,7 @@
 Module      : GHCup.Errors
 Description : GHCup error types
 Copyright   : (c) Julian Ospald, 2020
-License     : GPL-3
+License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
@@ -87,6 +87,9 @@ data JSONError = JSONDecodeError String
 -- | A file that is supposed to exist does not exist
 -- (e.g. when we use file scheme to "download" something).
 data FileDoesNotExistError = FileDoesNotExistError ByteString
+  deriving Show
+
+data TarDirDoesNotExist = TarDirDoesNotExist TarDir
   deriving Show
 
 -- | File digest verification failed.

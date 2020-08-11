@@ -112,6 +112,7 @@ ui AppState {..} =
 
   printTag Recommended        = withAttr "recommended" $ str "recommended"
   printTag Latest             = withAttr "latest" $ str "latest"
+  printTag Prerelease         = withAttr "prerelease" $ str "prerelease"
   printTag (Base       pvp'') = str ("base-" ++ T.unpack (prettyPVP pvp''))
   printTag (UnknownTag t    ) = str t
 
@@ -137,6 +138,7 @@ defaultAttributes = attrMap
   , ("installed"    , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("recommended"  , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("latest"       , Vty.defAttr `Vty.withForeColor` Vty.yellow)
+  , ("prerelease"   , Vty.defAttr `Vty.withForeColor` Vty.red)
   , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
   ]
 
@@ -173,19 +175,18 @@ withIOAction :: (AppState -> (Int, ListResult) -> IO (Either String a))
 withIOAction action as = case listSelectedElement (lr as) of
   Nothing      -> continue as
   Just (ix, e) -> suspendAndResume $ do
-    r <- action as (ix, e)
-    case r of
-      Left  err -> throwIO $ userError err
-      Right _   -> do
-        apps <- (fmap . fmap)
-          (\AppState {..} -> AppState { lr = listMoveTo ix lr, .. })
-          $ getAppState Nothing (pfreq as)
-        case apps of
-          Right nas -> do
-            putStrLn "Press enter to continue"
-            _ <- getLine
-            pure nas
-          Left err -> throwIO $ userError err
+    action as (ix, e) >>= \case
+      Left  err -> putStrLn $ ("Error: " <> err)
+      Right _   -> putStrLn "Success"
+    apps <- (fmap . fmap)
+      (\AppState {..} -> AppState { lr = listMoveTo ix lr, .. })
+      $ getAppState Nothing (pfreq as)
+    case apps of
+      Right nas -> do
+        putStrLn "Press enter to continue"
+        _ <- getLine
+        pure nas
+      Left err -> throwIO $ userError err
 
 
 install' :: AppState -> (Int, ListResult) -> IO (Either String ())
@@ -213,7 +214,9 @@ install' AppState {..} (_, ListResult {..}) = do
             , TagNotFound
             , DigestError
             , DownloadFailed
-            , NoUpdate]
+            , NoUpdate
+            , TarDirDoesNotExist
+            ]
 
   (run $ do
       case lTool of
@@ -296,14 +299,15 @@ uri' = unsafePerformIO (newIORef Nothing)
 
 settings' :: IORef Settings
 {-# NOINLINE settings' #-}
-settings' = unsafePerformIO
-  (newIORef Settings { cache      = True
+settings' = unsafePerformIO $ do
+  dirs <- getDirs
+  newIORef Settings { cache      = True
                      , noVerify   = False
                      , keepDirs   = Never
                      , downloader = Curl
                      , verbose    = False
+                     , ..
                      }
-  )
 
 
 logger' :: IORef LoggerConfig

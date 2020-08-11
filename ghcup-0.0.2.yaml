@@ -1,3 +1,4 @@
+# !!! if you use RegexDir, then the version must be bumped !!!
 ---
 toolRequirements:
   GHC:
@@ -1304,7 +1305,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_UnknownLinux:
-            unknown_versioning:
+            unknown_versioning: &ghcup-64
               dlUri: https://downloads.haskell.org/~ghcup/0.1.8/x86_64-linux-ghcup-0.1.8
               dlHash: 7ffcd4c3de156e895b648c75a36c762be2a4932883f3cd598f7a483c97d4a8a9
           Darwin:
@@ -1315,8 +1316,12 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/0.1.8/x86_64-portbld-freebsd-ghcup-0.1.8
               dlHash: 442cdfe1b4525a327d9566e6270f909f7deba21c16dd4c7912537cf67e6cd521
+          Linux_Alpine:
+            unknown_versioning: *ghcup-64
         A_32:
           Linux_UnknownLinux:
-            unknown_versioning:
+            unknown_versioning: &ghcup-32
               dlUri: https://downloads.haskell.org/~ghcup/0.1.8/i386-linux-ghcup-0.1.8
               dlHash: 18ab162920cea662feae4b08f39d3879e9e416fde7b734afd8072c39d3c43cde
+          Linux_Alpine:
+            unknown_versioning: *ghcup-32

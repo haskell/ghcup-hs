@@ -13,7 +13,7 @@
 Module      : GHCup.Download
 Description : Downloading
 Copyright   : (c) Julian Ospald, 2020
-License     : GPL-3
+License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
@@ -133,10 +133,10 @@ getDownloadsF urlSource = do
     (OwnSpec   _) -> liftE $ getDownloads urlSource
  where
   readFromCache = do
+    Settings {dirs = Dirs {..}} <- lift ask
     lift $ $(logWarn)
       [i|Could not get download info, trying cached version (this may not be recent!)|]
     let path = view pathL' ghcupURL
-    cacheDir  <- liftIO $ ghcupCacheDir
     yaml_file <- (cacheDir </>) <$> urlBaseName path
     bs        <-
       handleIO' NoSuchThing
@@ -200,8 +200,8 @@ getDownloads urlSource = do
                m1
                L.ByteString
   smartDl uri' = do
+    Settings {dirs = Dirs {..}} <- lift ask
     let path = view pathL' uri'
-    cacheDir  <- liftIO $ ghcupCacheDir
     json_file <- (cacheDir </>) <$> urlBaseName path
     e         <- liftIO $ doesFileExist json_file
     if e
@@ -226,7 +226,7 @@ getDownloads urlSource = do
           else -- access in less than 5 minutes, re-use file
                liftIO $ readFile json_file
       else do
-        liftIO $ createDirIfMissing newDirPerms cacheDir
+        liftIO $ createDirRecursive newDirPerms cacheDir
         getModTime >>= \case
           Just modTime -> dlWithMod modTime json_file
           Nothing -> do
@@ -392,15 +392,15 @@ downloadCached dli mfn = do
   cache <- lift getCache
   case cache of
     True -> do
-      cachedir <- liftIO $ ghcupCacheDir
+      Settings {dirs = Dirs {..}} <- lift ask
       fn       <- maybe (urlBaseName $ view (dlUri % pathL') dli) pure mfn
-      let cachfile = cachedir </> fn
+      let cachfile = cacheDir </> fn
       fileExists <- liftIO $ doesFileExist cachfile
       if
         | fileExists -> do
           liftE $ checkDigest dli cachfile
           pure $ cachfile
-        | otherwise -> liftE $ download dli cachedir mfn
+        | otherwise -> liftE $ download dli cacheDir mfn
     False -> do
       tmp <- lift withGHCupTmpDir
       liftE $ download dli tmp mfn
