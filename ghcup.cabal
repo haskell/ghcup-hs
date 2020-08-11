@@ -112,7 +112,7 @@ common io-streams
   build-depends: io-streams >=1.5
 
 common libarchive
-  build-depends: libarchive >= 2.2.5.2
+  build-depends: libarchive >= 2.2.5.0
 
 common lzma
   build-depends: lzma >=0.0.0.3

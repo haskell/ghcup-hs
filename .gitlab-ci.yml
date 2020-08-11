@@ -14,6 +14,7 @@ variables:
     - x86_64-linux
   variables:
     OS: "LINUX"
+    BIT: "64"
 
 .alpine:64bit:
   image: "alpine:edge"
@@ -36,12 +37,14 @@ variables:
     - x86_64-darwin
   variables:
     OS: "DARWIN"
+    BIT: "64"
 
 .freebsd:
   tags:
     - x86_64-freebsd
   variables:
     OS: "FREEBSD"
+    BIT: "64"
 
 .root_cleanup:
   after_script:
