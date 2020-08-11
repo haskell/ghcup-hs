@@ -9,6 +9,7 @@ import           GHCup.Download
 import           GHCup.Types
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.Logger
+import           GHCup.Utils.Version.QQ
 
 import           Control.Exception.Safe
 import           Control.Monad
@@ -88,6 +89,15 @@ validate dls = do
       addError
     when ((not $ any (== FreeBSD) pspecs) && arch == A_64) $ lift $ $(logWarn)
       [i|FreeBSD missing for #{t} #{v'} #{arch}|]
+
+    -- alpine needs to be set explicitly, because
+    -- we cannot assume that "Linux UnknownLinux" runs on Alpine
+    -- (although it could be static)
+    when (not $ any (== Linux Alpine) pspecs) $
+      case t of
+        GHCup -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]) >> addError
+        Cabal | v > [vver|2.4.1.0|] -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]) >> addError
+        _     -> lift $ $(logWarn) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]
 
   checkUniqueTags tool = do
     let allTags = join $ M.elems $ availableToolVersions dls tool
