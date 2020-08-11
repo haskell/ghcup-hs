@@ -1,5 +1,15 @@
 # Revision history for ghcup
 
+## 0.1.9 -- yyyy-mm-dd
+
+* Use yaml instead of generated json for download info for ease of adding new GHC versions #44
+* Allow pre-release versions of GHC/cabal
+* Add XDG dirs support (set `GHCUP_USE_XDG_DIRS`) wrt #39
+* Allow to specify regex for tarball subdir (e.g. `ghc-.*`)
+* Allow installing arbitrary bindists more seamlessly:
+  - e.g. installing GHC HEAD: `ghcup -c -n install ghc -u '{"dlHash": "", "dlSubdir": { "RegexDir": "ghc-.*"}, "dlUri": "https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27" }' head`
+* Avoid duplicate edits to .bashrc/.zshrc wrt #43
+
 ## 0.1.8 -- 2020-07-21
 
 * Fix bug in logging thread dying on newlines
