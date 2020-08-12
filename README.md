@@ -97,7 +97,7 @@ For distributions with non-standard locations of cross toolchain and
 libraries, this may need some tweaking of `build.mk` or configure args.
 See `ghcup compile ghc --help` for further information.
 
-### Cross support
+### XDG support
 
 To enable XDG style directories, set the environment variable `GHCUP_USE_XDG_DIRS` to anything.
 
