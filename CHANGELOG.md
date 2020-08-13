@@ -2,6 +2,7 @@
 
 ## 0.1.9 -- yyyy-mm-dd
 
+* Fix bug when uninstalling all cabal versions
 * Use yaml instead of generated json for download info for ease of adding new GHC versions #44
 * Allow pre-release versions of GHC/cabal
 * Add XDG dirs support (set `GHCUP_USE_XDG_DIRS`) wrt #39
