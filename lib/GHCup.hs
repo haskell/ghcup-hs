@@ -346,6 +346,8 @@ setGHC ver sghc = do
   let verBS = verToBS (_tvVersion ver)
   ghcdir                        <- lift $ ghcupGHCDir ver
 
+  whenM (lift $ fmap not $ ghcInstalled ver) (throwE (NotInstalled GHC (ver ^. tvVersion % to prettyVer)))
+
   -- symlink destination
   Settings { dirs = Dirs {..} } <- lift ask
   liftIO $ hideError AlreadyExists $ createDirRecursive newDirPerms binDir
@@ -617,43 +619,39 @@ rmGHCVer :: ( MonadReader Settings m
          -> Excepts '[NotInstalled] m ()
 rmGHCVer ver = do
   isSetGHC <- lift $ fmap (maybe False (== ver)) $ ghcSet (_tvTarget ver)
-  dir      <- lift $ ghcupGHCDir ver
-  let d' = toFilePath dir
-  exists <- liftIO $ doesDirectoryExist dir
 
+  whenM (lift $ fmap not $ ghcInstalled ver) (throwE (NotInstalled GHC (ver ^. tvVersion % to prettyVer)))
+  dir <- lift $ ghcupGHCDir ver
 
-  if exists
-    then do
-      -- this isn't atomic, order matters
-      when isSetGHC $ do
-        lift $ $(logInfo) [i|Removing ghc symlinks|]
-        liftE $ rmPlain (_tvTarget ver)
+  -- this isn't atomic, order matters
+  when isSetGHC $ do
+    lift $ $(logInfo) [i|Removing ghc symlinks|]
+    liftE $ rmPlain (_tvTarget ver)
 
-      lift $ $(logInfo) [i|Removing directory recursively: #{d'}|]
-      liftIO $ deleteDirRecursive dir
+  lift $ $(logInfo) [i|Removing directory recursively: #{toFilePath dir}|]
+  liftIO $ deleteDirRecursive dir
 
-      lift $ $(logInfo) [i|Removing ghc-x.y.z symlinks|]
-      lift $ rmMinorSymlinks ver
+  lift $ $(logInfo) [i|Removing ghc-x.y.z symlinks|]
+  lift $ rmMinorSymlinks ver
 
-      lift $ $(logInfo) [i|Removing/rewiring ghc-x.y symlinks|]
-      -- first remove
-      handle (\(_ :: ParseError) -> pure ()) $ lift $ rmMajorSymlinks ver
-      -- then fix them (e.g. with an earlier version)
-      v' <-
-        handle
-          (\(e :: ParseError) -> lift $ $(logWarn) [i|#{e}|] >> pure Nothing)
-        $ fmap Just
-        $ getMajorMinorV (_tvVersion ver)
-      forM_ v' $ \(mj, mi) -> lift (getGHCForMajor mj mi (_tvTarget ver))
-        >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
+  lift $ $(logInfo) [i|Removing/rewiring ghc-x.y symlinks|]
+  -- first remove
+  handle (\(_ :: ParseError) -> pure ()) $ lift $ rmMajorSymlinks ver
+  -- then fix them (e.g. with an earlier version)
+  v' <-
+    handle
+      (\(e :: ParseError) -> lift $ $(logWarn) [i|#{e}|] >> pure Nothing)
+    $ fmap Just
+    $ getMajorMinorV (_tvVersion ver)
+  forM_ v' $ \(mj, mi) -> lift (getGHCForMajor mj mi (_tvTarget ver))
+    >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
 
-      Settings { dirs = Dirs {..} } <- lift ask
+  Settings { dirs = Dirs {..} } <- lift ask
 
-      liftIO
-        $ hideError doesNotExistErrorType
-        $ deleteFile
-        $ (baseDir </> [rel|share|])
-    else throwE (NotInstalled GHC (ver ^. tvVersion % to prettyVer))
+  liftIO
+    $ hideError doesNotExistErrorType
+    $ deleteFile
+    $ (baseDir </> [rel|share|])
 
 
 -- | Delete a cabal version. Will try to fix the @cabal@ symlink
