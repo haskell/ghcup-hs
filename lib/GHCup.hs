@@ -275,10 +275,20 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
     let cabalFile = [rel|cabal|]
     liftIO $ createDirRecursive newDirPerms inst
     destFileName <- lift $ parseRel (toFilePath cabalFile <> "-" <> verToBS ver)
+    let destPath = inst </> destFileName
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
       (path </> cabalFile)
-      (inst </> destFileName)
+      (destPath)
       Overwrite
+    liftIO $ setFileMode
+      (toFilePath destPath)
+      (                newFilePerms
+      `unionFileModes` ownerExecuteMode
+      `unionFileModes` groupExecuteMode
+      `unionFileModes` otherExecuteMode
+      )
+
+
 
 
 -- | Installs cabal into @~\/.ghcup\/bin/cabal-\<ver\>@ and
