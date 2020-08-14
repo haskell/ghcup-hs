@@ -1,8 +1,9 @@
 # Revision history for ghcup
 
-## 0.1.9 -- yyyy-mm-dd
+## 0.1.9 -- 2020-08-14
 
 * Fix bug when uninstalling all cabal versions
+* Fix bug when setting a non-installed ghc version as current default
 * Use yaml instead of generated json for download info for ease of adding new GHC versions #44
 * Allow pre-release versions of GHC/cabal
 * Add XDG dirs support (set `GHCUP_USE_XDG_DIRS`) wrt #39
