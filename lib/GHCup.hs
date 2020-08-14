@@ -506,6 +506,9 @@ listVersions av lt criteria pfreq = do
         GHC -> do
           slr <- strayGHCs avTools
           pure $ (sort (slr ++ lr))
+        Cabal -> do
+          slr <- strayCabals avTools
+          pure $ (sort (slr ++ lr))
         _ -> pure lr
     Nothing -> do
       ghcvers   <- listVersions av (Just GHC) criteria pfreq
@@ -549,6 +552,33 @@ listVersions av lt criteria pfreq = do
           , lNoBindist = False
           , ..
           }
+      Left e -> do
+        $(logWarn)
+          [i|Could not parse version of stray directory #{toFilePath e}|]
+        pure Nothing
+
+  strayCabals :: (MonadReader Settings m, MonadCatch m, MonadThrow m, MonadLogger m, MonadIO m)
+            => Map.Map Version [Tag]
+            -> m [ListResult]
+  strayCabals avTools = do
+    cabals <- getInstalledCabals
+    fmap catMaybes $ forM cabals $ \case
+      Right ver ->
+        case Map.lookup ver avTools of
+          Just _  -> pure Nothing
+          Nothing -> do
+            lSet    <- fmap (maybe False (== ver)) $ cabalSet
+            pure $ Just $ ListResult
+              { lTool      = Cabal
+              , lVer       = ver
+              , lCross     = Nothing
+              , lTag       = []
+              , lInstalled = True
+              , lStray     = maybe True (const False) (Map.lookup ver avTools)
+              , lNoBindist = False
+              , fromSrc    = False -- actually, we don't know :>
+              , ..
+              }
       Left e -> do
         $(logWarn)
           [i|Could not parse version of stray directory #{toFilePath e}|]
