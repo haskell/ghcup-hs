@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 {-|
 Module      : GHCup.Utils.File
@@ -25,6 +26,7 @@ import           Control.Concurrent.Async
 import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
+import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.State.Strict
 import           Data.ByteString                ( ByteString )
@@ -33,6 +35,7 @@ import           Data.Functor
 import           Data.IORef
 import           Data.Maybe
 import           Data.Sequence                  ( Seq, (|>) )
+import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Void
 import           Data.Word8
@@ -46,6 +49,7 @@ import           System.IO.Error
 import           System.Posix.Directory.ByteString
 import           System.Posix.FD               as FD
 import           System.Posix.FilePath   hiding ( (</>) )
+import           System.Posix.Files.ByteString
 import           System.Posix.Foreign           ( oExcl )
 import "unix"    System.Posix.IO.ByteString
                                          hiding ( openFd )
@@ -375,7 +379,7 @@ toProcessError :: ByteString
                -> Maybe ProcessStatus
                -> Either ProcessError ()
 toProcessError exe args mps = case mps of
-  Just (SPPB.Exited (ExitFailure i)) -> Left $ NonZeroExit i exe args
+  Just (SPPB.Exited (ExitFailure xi)) -> Left $ NonZeroExit xi exe args
   Just (SPPB.Exited ExitSuccess    ) -> Right ()
   Just (Terminated _ _             ) -> Left $ PTerminated exe args
   Just (Stopped _                  ) -> Left $ PStopped exe args
@@ -434,3 +438,15 @@ isBrokenSymlink p =
     $ do
         _ <- canonicalizePath p
         pure False
+
+
+chmod_777 :: (MonadLogger m, MonadIO m) => Path a -> m ()
+chmod_777 (toFilePath -> fp) = do
+  let exe_mode =
+          newFilePerms
+            `unionFileModes` ownerExecuteMode
+            `unionFileModes` groupExecuteMode
+            `unionFileModes` otherExecuteMode
+  $(logDebug) [i|chmod 777 #{fp}|]
+  liftIO $ setFileMode fp exe_mode
+

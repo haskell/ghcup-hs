@@ -280,15 +280,7 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
       (path </> cabalFile)
       (destPath)
       Overwrite
-    liftIO $ setFileMode
-      (toFilePath destPath)
-      (                newFilePerms
-      `unionFileModes` ownerExecuteMode
-      `unionFileModes` groupExecuteMode
-      `unionFileModes` otherExecuteMode
-      )
-
-
+    lift $ chmod_777 destPath
 
 
 -- | Installs cabal into @~\/.ghcup\/bin/cabal-\<ver\>@ and
@@ -1085,17 +1077,12 @@ upgradeGHCup dls mtarget force pfreq = do
   tmp   <- lift withGHCupTmpDir
   let fn = [rel|ghcup|]
   p <- liftE $ download dli tmp (Just fn)
-  let fileMode' =
-        newFilePerms
-          `unionFileModes` ownerExecuteMode
-          `unionFileModes` groupExecuteMode
-          `unionFileModes` otherExecuteMode
   let fullDest = fromMaybe (binDir </> fn) mtarget
   liftIO $ hideError NoSuchThing $ deleteFile fullDest
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                            fullDest
                                                            Overwrite
-  liftIO $ setFileMode (toFilePath fullDest) fileMode'
+  lift $ chmod_777 fullDest
   pure latestVer
 
 
