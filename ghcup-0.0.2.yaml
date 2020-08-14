@@ -1318,7 +1318,7 @@ ghcupDownloads:
               dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc1-bootstrapped/cabal-install-3.4.0.0-amd64-unknown-freebsd-bootstrapped.tar.xz
               dlHash: 8660f588366355ad4487f7a2e81f31ecb24e15d168d31e227d43d5618a2948d0
   GHCup:
-    0.1.9:
+    0.1.10:
       viTags:
       - Recommended
       - Latest
@@ -1328,22 +1328,22 @@ ghcupDownloads:
         A_64:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-64
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.9/x86_64-linux-ghcup-0.1.9
-              dlHash: d779ada6156b08da21e40c5bf218ec21d1308d5a9e48f7b9533f56b5d063a41c
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.10/x86_64-linux-ghcup-0.1.10
+              dlHash: 87661bd127f857b990174ac8d96ad4bd629865306b2058c8cc64d3b36ed317c9
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.9/x86_64-apple-darwin-ghcup-0.1.9
-              dlHash: 58ad3bbdb9cbbc7599364c39013bd25394b2cc123645c91fea9dd10c1198d035
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.10/x86_64-apple-darwin-ghcup-0.1.10
+              dlHash: e71666fde6a7700f307e1a55720859d3a042fe27c68ff32f3d1181f4436b7391
           FreeBSD:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.9/x86_64-portbld-freebsd-ghcup-0.1.9
-              dlHash: 5fca520307d9d888b4536c394fafea590104a1f4fb5d5fb5a9f738ee7b473dd9
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.10/x86_64-portbld-freebsd-ghcup-0.1.10
+              dlHash: b5ef1b0454f1a9c5a62b378c1e9c48c2b794d64a22086adf482b064dfb34e68d
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-32
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.9/i386-linux-ghcup-0.1.9
-              dlHash: ad7faf32665d19ced5dc636c0a0c1b14995c530fbd26ca88705a08498b572145
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.10/i386-linux-ghcup-0.1.10
+              dlHash: 50ac43199b64bc0724400b0a3db674bef3ec53cf6d41acc04a2c4ca8557e534f
           Linux_Alpine:
             unknown_versioning: *ghcup-32

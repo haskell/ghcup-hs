@@ -1,6 +1,6 @@
 # Revision history for ghcup
 
-## 0.1.10 -- yyyy-mm-dd
+## 0.1.10 -- 2020-08-14
 
 * Show stray Cabals (useful for pre-releases or compiled ones)
 
