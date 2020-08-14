@@ -1294,6 +1294,29 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-i386-unknown-linux.tar.xz
               dlHash: 2b3ac28549916de5f3379241797eaf60e84b6c001f2abbe73d9fadbbaf768e93
+    3.4.0.0-rc1:
+      viTags:
+      - Prerelease
+      viArch:
+        A_64:
+          Linux_Ubuntu:
+            unknown_versioning: &cabal-3400rc1-trusty
+              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc1-bootstrapped/cabal-install-3.4.0.0-x86_64-trusty-linux-bootstrapped.tar.xz
+              dlHash: 553ce7e6ab6e375d4a1e437a76eaab0bb418983804d2da13da1f634707e1015a
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc1-bootstrapped/cabal-install-3.4.0.0-x86_64-alpine-3.11.6-linux-bootstrapped.tar.xz
+              dlHash: 7e030563242036975b37be707e43d9ba53df6e41ccb68faf9bf879cbf41abb47
+          Linux_UnknownLinux:
+            unknown_versioning: *cabal-3400rc1-trusty
+          Darwin:
+            unknown_versioning:
+              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc1-bootstrapped/cabal-install-3.4.0.0-x86_64-sierra-darwin-bootstrapped.tar.xz
+              dlHash: 755d32757b91e00e535fc601208ecd11567dbc4d832ae3bf8ce24eaba795aa1d
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc1-bootstrapped/cabal-install-3.4.0.0-amd64-unknown-freebsd-bootstrapped.tar.xz
+              dlHash: 8660f588366355ad4487f7a2e81f31ecb24e15d168d31e227d43d5618a2948d0
   GHCup:
     0.1.9:
       viTags:
