@@ -26,7 +26,7 @@ ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.2.yaml|]
 
 -- | The current ghcup version.
 ghcUpVer :: PVP
-ghcUpVer = [pver|0.1.9|]
+ghcUpVer = [pver|0.1.10|]
 
 -- | ghcup version as numeric string.
 numericVer :: String

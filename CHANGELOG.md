@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## 0.1.10 -- yyyy-mm-dd
+
+* Show stray Cabals (useful for pre-releases or compiled ones)
+
 ## 0.1.9 -- 2020-08-14
 
 * Fix bug when uninstalling all cabal versions

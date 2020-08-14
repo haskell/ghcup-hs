@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               ghcup
-version:            0.1.9
+version:            0.1.10
 synopsis:           ghc toolchain installer as an exe/library
 description:
   A rewrite of the shell script ghcup, for providing
