@@ -113,7 +113,7 @@ test:linux:recommended:
 test:linux:latest:
   extends: .test_ghcup_version:linux
   variables:
-    GHC_VERSION: "8.10.1"
+    GHC_VERSION: "8.10.2"
     CABAL_VERSION: "3.2.0.0"
   allow_failure: true
 
@@ -136,7 +136,7 @@ test:mac:recommended:
 test:mac:latest:
   extends: .test_ghcup_version:darwin
   variables:
-    GHC_VERSION: "8.10.1"
+    GHC_VERSION: "8.10.2"
     CABAL_VERSION: "3.2.0.0"
   allow_failure: true
 
@@ -152,7 +152,7 @@ test:freebsd:recommended:
 test:freebsd:latest:
   extends: .test_ghcup_version:freebsd
   variables:
-    GHC_VERSION: "8.10.1"
+    GHC_VERSION: "8.10.2"
     CABAL_VERSION: "3.2.0.0"
   allow_failure: true
 
