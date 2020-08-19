@@ -14,7 +14,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Shell-completion](#shell-completion)
      * [Cross support](#cross-support)
      * [XDG support](#xdg-support)
-     * [Install custom bindists](#install-custom-bindists)
+     * [Installing custom bindists](#installing-custom-bindists)
    * [Design goals](#design-goals)
    * [How](#how)
    * [Known users](#known-users)
