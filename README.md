@@ -119,7 +119,7 @@ There are a couple of good use cases to install custom bindists:
 3. DWARF bindists
   - example: `ghcup -c -n install ghc -u '{"dlHash": "", "dlSubdir": { "RegexDir": "ghc-.*"}, "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux-dwarf.tar.xz" }' 8.10.2-dwarf`
 
-Since the version parser is pretty lax, `ghc-8.10.2-eff` and `head` are both valid versions.
+Since the version parser is pretty lax, `8.10.2-eff` and `head` are both valid versions.
 GHCup always needs to know which version the bindist corresponds to (this is not automatically
 detected).
 
