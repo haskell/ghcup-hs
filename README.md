@@ -14,6 +14,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Shell-completion](#shell-completion)
      * [Cross support](#cross-support)
      * [XDG support](#xdg-support)
+     * [Install custom bindists](#install-custom-bindists)
    * [Design goals](#design-goals)
    * [How](#how)
    * [Known users](#known-users)
@@ -106,6 +107,21 @@ Then you can control the locations via XDG environment variables as such:
 * `XDG_DATA_HOME`: GHCs will be unpacked in `ghcup/ghc` subdir
 * `XDG_CACHE_HOME`: logs and download files will be stored in `ghcup` subdir
 * `XDG_BIN_HOME`: binaries end up here (default: `~/.local/bin`)
+
+### Installing custom bindists
+
+There are a couple of good use cases to install custom bindists:
+
+1. manually built bindists (e.g. with patches)
+  - example: `ghcup -n install ghc -u '{"dlHash": "", "dlSubdir": { "RegexDir": "ghc-.*"}, "dlUri": "file:///home/mearwald/tmp/ghc-eff-patches/ghc-8.10.2-x86_64-deb10-linux.tar.xz" }' 8.10.2-eff`
+2. GHC head CI bindists
+  - example: `ghcup -n install ghc -u '{"dlHash": "", "dlSubdir": { "RegexDir": "ghc-.*"}, "dlUri": "https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27" }' head`
+3. DWARF bindists
+  - example: `ghcup -c -n install ghc -u '{"dlHash": "", "dlSubdir": { "RegexDir": "ghc-.*"}, "dlUri": "https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux-dwarf.tar.xz" }' 8.10.2-dwarf`
+
+Since the version parser is pretty lax, `ghc-8.10.2-eff` and `head` are both valid versions.
+GHCup always needs to know which version the bindist corresponds to (this is not automatically
+detected).
 
 ## Design goals
 
