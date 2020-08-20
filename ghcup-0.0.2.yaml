@@ -1159,7 +1159,7 @@ ghcupDownloads:
           Linux_Alpine:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-alpine3.10-linux-integer-simple.tar.xz
-              dlSubdir: ghc-8.10.2
+              dlSubdir: ghc-8.10.2-x86_64-unknown-linux
               dlHash: 14d09a508f2a3a11875c140be8e6c5f6982ac5cd448f089ca10b7adc955fec76
           Linux_AmazonLinux:
             unknown_versioning: *ghc-8102-64-centos
