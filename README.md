@@ -9,6 +9,9 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
 ## Table of Contents
 
    * [Installation](#installation)
+     * [Simple bootstrap](#simple-bootstrap)
+     * [Manual install](#manual-install)
+     * [Vim integration](#vim-integration)
    * [Usage](#usage)
      * [Manpages](#manpages)
      * [Shell-completion](#shell-completion)
@@ -37,6 +40,10 @@ Then adjust your `PATH` in `~/.bashrc` (or similar, depending on your shell) lik
 ```sh
 export PATH="$HOME/.cabal/bin:$HOME/.ghcup/bin:$PATH"
 ```
+
+### Vim integration
+
+See [ghcup.vim](https://github.com/hasufell/ghcup.vim).
 
 ## Usage
 
