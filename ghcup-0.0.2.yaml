@@ -1193,6 +1193,78 @@ ghcupDownloads:
               dlUri: https://files.hasufell.de/ghc/ghc-8.10.2-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.10.2
               dlHash: 9ee1cf1e85e9536088b3c9e80e975074e525ea378cd4eb156071bbc4b7b38327
+    9.0.1-alpha1:
+      viTags:
+      - Prerelease
+      - base-4.15.0.0
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/9.0.1-alpha1/ghc-9.0.0.20200821-src.tar.xz
+        dlSubdir: ghc-9.0.0.20200821
+        dlHash: 8a3a36a0d770dbe678dbc084c3cc9a426749ac9d695f34fa30dc4da1564be6cb
+      viArch:
+        A_64:
+          Linux_Debian:
+            '9': &ghc-901a1-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1-alpha1/ghc-9.0.0.20200821-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-9.0.0
+              dlHash: a58b508e5d9f85a5831c7e451766105c4b2188987b3110ac62c8182e3e6ed0f6
+            '10': &ghc-901a1-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1-alpha1/ghc-9.0.0.20200821-x86_64-deb10-linux-dwarf.tar.xz
+              dlSubdir: ghc-9.0.0
+              dlHash: 963d4cef71780f24d23cd947d33f61e9ee338f85e2aed06ec588fdb8be339a04
+            unknown_versioning: *ghc-901a1-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-901a1-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1-alpha1/ghc-9.0.0.20200821-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-9.0.0
+              dlHash: e6c241d7945fe84e03501c8a9b947a5f50ad489cdf2b6e286d5de76046a8a6f3
+            '16.04': *ghc-901a1-64-deb9
+            '18.04': *ghc-901a1-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-901a1-64-deb10
+          Linux_Fedora:
+            '27': *ghc-901a1-64-fedora
+            unknown_versioning: *ghc-901a1-64-fedora
+          Linux_CentOS:
+            '7': &ghc-901a1-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1-alpha1/ghc-9.0.0.20200821-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-9.0.0
+              dlHash: e9be471727d6753514667781335018be0fed91483bf80da3f24d21c2e49086e9
+            unknown_versioning: *ghc-901a1-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-901a1-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1-alpha1/ghc-9.0.0.20200821-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-9.0.0
+              dlHash: 8a73cbcebe8aac004dda4411873b6cd57169af9af74cbeb636d695852da1f10c
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-901a1-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-901a1-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1-alpha1/ghc-9.0.0.20200821-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-9.0.0
+              dlHash: 5bb43fe34997222ae092f3c255d0545dd8ff17409d00f56a356aece9042ace2a
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1-alpha1/ghc-9.0.0.20200821-x86_64-unknown-freebsd.tar.xz
+              dlSubdir: ghc-9.0.0
+              dlHash: 2cb2763fa59bff4c045b7012170132a7a49f09e4f0f894c5367f990b60c38830
+        A_32:
+          Linux_Debian:
+            '9': &ghc-901a1-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1-alpha1/ghc-9.0.0.20200821-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-9.0.0
+              dlHash: 8b025e0c66bb4e21c050755d4c77b7cea66d0269f00f5206c3cef51861aa360f
+            unknown_versioning: *ghc-901a1-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-901a1-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-901a1-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-901a1-32-deb9
   Cabal:
     2.4.1.0:
       viTags: []
