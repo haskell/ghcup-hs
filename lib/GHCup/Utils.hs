@@ -36,7 +36,7 @@ import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 
 #if !defined(TAR)
-import           Codec.Archive
+import           Codec.Archive           hiding ( Directory )
 #endif
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -621,3 +621,25 @@ runBuildAction bdir instdir action = do
   when (keepDirs == Never || keepDirs == Errors) $ liftIO $ deleteDirRecursive
     bdir
   pure v
+
+
+-- | More permissive version of 'createDirRecursive'. This doesn't
+-- error when the destination is a symlink to a directory.
+createDirRecursive' :: Path b -> IO ()
+createDirRecursive' p =
+  handleIO (\e -> if isAlreadyExistsError e then isSymlinkDir e else throwIO e)
+    . createDirRecursive newDirPerms
+    $ p
+
+ where
+  isSymlinkDir e = do
+    ft <- getFileType p
+    case ft of
+      SymbolicLink -> do
+        rp <- canonicalizePath p
+        rft <- getFileType rp
+        case rft of
+          Directory -> pure ()
+          _ -> throwIO e
+      _ -> throwIO e
+

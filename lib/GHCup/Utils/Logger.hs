@@ -15,6 +15,7 @@ Here we define our main logger.
 module GHCup.Utils.Logger where
 
 import           GHCup.Types
+import           GHCup.Utils
 
 import           Control.Monad
 import           Control.Monad.IO.Class
@@ -69,7 +70,7 @@ initGHCupFileLogging context = do
   Settings {dirs = Dirs {..}} <- ask
   let logfile = logsDir </> context
   liftIO $ do
-    createDirRecursive newDirPerms logsDir
+    createDirRecursive' logsDir
     hideError doesNotExistErrorType $ deleteFile logfile
     createRegularFile newFilePerms logfile
     pure logfile

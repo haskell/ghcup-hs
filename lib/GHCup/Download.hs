@@ -226,7 +226,7 @@ getDownloads urlSource = do
           else -- access in less than 5 minutes, re-use file
                liftIO $ readFile json_file
       else do
-        liftIO $ createDirRecursive newDirPerms cacheDir
+        liftIO $ createDirRecursive' cacheDir
         getModTime >>= \case
           Just modTime -> dlWithMod modTime json_file
           Nothing -> do
@@ -330,7 +330,7 @@ download dli dest mfn
   scheme = view (dlUri % uriSchemeL' % schemeBSL') dli
   cp     = do
     -- destination dir must exist
-    liftIO $ hideError AlreadyExists $ createDirRecursive newDirPerms dest
+    liftIO $ createDirRecursive' dest
     destFile <- getDestFile
     fromFile <- parseAbs path
     liftIO $ copyFile fromFile destFile Strict
@@ -340,7 +340,7 @@ download dli dest mfn
     lift $ $(logInfo) [i|downloading: #{uri'}|]
 
     -- destination dir must exist
-    liftIO $ hideError AlreadyExists $ createDirRecursive newDirPerms dest
+    liftIO $ createDirRecursive' dest
     destFile <- getDestFile
 
     -- download
