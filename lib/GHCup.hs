@@ -273,7 +273,7 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
   installCabal' path inst = do
     lift $ $(logInfo) "Installing cabal"
     let cabalFile = [rel|cabal|]
-    liftIO $ createDirRecursive newDirPerms inst
+    liftIO $ createDirRecursive' inst
     destFileName <- lift $ parseRel (toFilePath cabalFile <> "-" <> verToBS ver)
     let destPath = inst </> destFileName
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
@@ -352,7 +352,7 @@ setGHC ver sghc = do
 
   -- symlink destination
   Settings { dirs = Dirs {..} } <- lift ask
-  liftIO $ hideError AlreadyExists $ createDirRecursive newDirPerms binDir
+  liftIO $ createDirRecursive' binDir
 
   -- first delete the old symlinks (this fixes compatibility issues
   -- with old ghcup)
@@ -424,7 +424,7 @@ setCabal ver = do
 
   -- symlink destination
   Settings {dirs = Dirs {..}} <- lift ask
-  liftIO $ hideError AlreadyExists $ createDirRecursive newDirPerms binDir
+  liftIO $ createDirRecursive' binDir
 
   whenM (liftIO $ fmap not $ doesFileExist (binDir </> targetFile))
     $ throwE
@@ -1024,7 +1024,7 @@ compileCabal dls tver bghc jobs patchdir PlatformRequest{..} = do
           ]
 
     tmp <- lift withGHCupTmpDir
-    liftIO $ createDirRecursive newDirPerms (tmp </> [rel|bin|])
+    liftIO $ createDirRecursive' (tmp </> [rel|bin|])
     newEnv <- lift $ addToCurrentEnv (("PREFIX", toFilePath tmp) : ghcEnv)
     lift $ $(logDebug) [i|Environment: #{newEnv}|]
 

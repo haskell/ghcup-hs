@@ -910,7 +910,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           settings@Settings{dirs = Dirs{..}, ..} <- toSettings opt
 
           -- create ~/.ghcup dir
-          createDirRecursive newDirPerms baseDir
+          createDirRecursive' baseDir
 
           -- logger interpreter
           logfile <- flip runReaderT settings $ initGHCupFileLogging [rel|ghcup.log|]

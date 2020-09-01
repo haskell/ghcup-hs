@@ -19,6 +19,6 @@ package ghcup
 constraints: http-io-streams -brotli
 
 package libarchive
-  flags: +static
+  flags: -system-libarchive
 
 allow-newer: base, ghc-prim, template-haskell
