@@ -75,9 +75,12 @@ import           Prelude                 hiding ( abs
 import           Safe                    hiding ( at )
 import           System.IO.Error
 import           System.Posix.Env.ByteString    ( getEnvironment )
-import           System.Posix.FilePath          ( getSearchPath )
+import           System.Posix.FilePath          ( getSearchPath, takeExtension )
 import           System.Posix.Files.ByteString
+import           Text.Regex.Posix
 
+import qualified Crypto.Hash.SHA256            as SHA256
+import qualified Data.ByteString.Base16        as B16
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
@@ -119,7 +122,7 @@ installGHCBindist :: ( MonadFail m
                         ]
                        m
                        ()
-installGHCBindist dlinfo ver (PlatformRequest {..}) = do
+installGHCBindist dlinfo ver pfreq = do
   let tver = (mkTVer ver)
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
   whenM (lift $ ghcInstalled tver)
@@ -128,42 +131,79 @@ installGHCBindist dlinfo ver (PlatformRequest {..}) = do
   -- download (or use cached version)
   dl                           <- liftE $ downloadCached dlinfo Nothing
 
-  -- unpack
-  tmpUnpack                    <- lift mkGhcupTmpDir
-  liftE $ unpackToDir tmpUnpack dl
-  void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
-
   -- prepare paths
   ghcdir <- lift $ ghcupGHCDir tver
 
-  -- the subdir of the archive where we do the work
-  workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
-
-  liftE $ runBuildAction tmpUnpack (Just ghcdir) (installGHC' workdir ghcdir)
+  liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver pfreq
 
   liftE $ postGHCInstall tver
 
- where
-  -- | Install an unpacked GHC distribution. This only deals with the GHC build system and nothing else.
-  installGHC' :: (MonadReader Settings m, MonadThrow m, MonadLogger m, MonadIO m)
-              => Path Abs      -- ^ Path to the unpacked GHC bindist (where the configure script resides)
-              -> Path Abs      -- ^ Path to install to
-              -> Excepts '[ProcessError] m ()
-  installGHC' path inst = do
-    lift $ $(logInfo) "Installing GHC (this may take a while)"
-    lEM $ execLogged "./configure"
-                              False
-                              (["--prefix=" <> toFilePath inst] ++ alpineArgs)
-                              [rel|ghc-configure|]
-                              (Just path)
-                              Nothing
-    lEM $ make ["install"] (Just path)
-    pure ()
+-- | Install a packed GHC distribution. This only deals with unpacking and the GHC
+-- build system and nothing else.
+installPackedGHC :: ( MonadMask m
+                    , MonadCatch m
+                    , MonadReader Settings m
+                    , MonadThrow m
+                    , MonadLogger m
+                    , MonadIO m
+                    )
+                 => Path Abs          -- ^ Path to the packed GHC bindist
+                 -> Maybe TarDir      -- ^ Subdir of the archive
+                 -> Path Abs          -- ^ Path to install to
+                 -> Version           -- ^ The GHC version
+                 -> PlatformRequest
+                 -> Excepts
+                      '[ BuildFailed
+                       , UnknownArchive
+                       , TarDirDoesNotExist
+#if !defined(TAR)
+                       , ArchiveResult
+#endif
+                       ] m ()
+installPackedGHC dl msubdir inst ver pfreq@(PlatformRequest {..}) = do
+  -- unpack
+  tmpUnpack <- lift mkGhcupTmpDir
+  liftE $ unpackToDir tmpUnpack dl
+  void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
+  -- the subdir of the archive where we do the work
+  workdir <- maybe (pure tmpUnpack)
+                   (liftE . intoSubdir tmpUnpack)
+                   (msubdir)
+
+  liftE $ runBuildAction tmpUnpack
+                         (Just inst)
+                         (installUnpackedGHC workdir inst ver pfreq)
+
+
+-- | Install an unpacked GHC distribution. This only deals with the GHC
+-- build system and nothing else.
+installUnpackedGHC :: ( MonadReader Settings m
+                      , MonadThrow m
+                      , MonadLogger m
+                      , MonadIO m
+                      )
+                   => Path Abs      -- ^ Path to the unpacked GHC bindist (where the configure script resides)
+                   -> Path Abs      -- ^ Path to install to
+                   -> Version       -- ^ The GHC version
+                   -> PlatformRequest
+                   -> Excepts '[ProcessError] m ()
+installUnpackedGHC path inst ver (PlatformRequest {..}) = do
+  lift $ $(logInfo) "Installing GHC (this may take a while)"
+  lEM $ execLogged "./configure"
+                   False
+                   (["--prefix=" <> toFilePath inst] ++ alpineArgs)
+                   [rel|ghc-configure|]
+                   (Just path)
+                   Nothing
+  lEM $ make ["install"] (Just path)
+  pure ()
+ where
   alpineArgs
-    | ver >= [vver|8.2.2|]
-    , Linux Alpine <- _rPlatform = ["--disable-ld-override"]
-    | otherwise = []
+    | ver >= [vver|8.2.2|], Linux Alpine <- _rPlatform
+    = ["--disable-ld-override"]
+    | otherwise
+    = []
 
 
 -- | Installs GHC into @~\/.ghcup\/ghc/\<ver\>@ and places the
@@ -773,45 +813,60 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 ()
-compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs PlatformRequest {..} = do
-  lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
-  whenM (lift $ ghcInstalled tver)
-        (throwE $ AlreadyInstalled GHC (tver ^. tvVersion))
+compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@(PlatformRequest {..})
+  = do
+    lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
+    whenM (lift $ ghcInstalled tver)
+          (throwE $ AlreadyInstalled GHC (tver ^. tvVersion))
 
-  -- download source tarball
-  dlInfo <-
-    preview (ix GHC % ix (tver ^. tvVersion) % viSourceDL % _Just) dls
-      ?? NoDownload
-  dl        <- liftE $ downloadCached dlInfo Nothing
+    -- download source tarball
+    dlInfo <-
+      preview (ix GHC % ix (tver ^. tvVersion) % viSourceDL % _Just) dls
+        ?? NoDownload
+    dl        <- liftE $ downloadCached dlInfo Nothing
 
-  -- unpack
-  tmpUnpack <- lift mkGhcupTmpDir
-  liftE $ unpackToDir tmpUnpack dl
-  void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
+    -- unpack
+    tmpUnpack <- lift mkGhcupTmpDir
+    liftE $ unpackToDir tmpUnpack dl
+    void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
 
-  bghc <- case bstrap of
-    Right g    -> pure $ Right g
-    Left  bver -> Left <$> parseRel ("ghc-" <> verToBS bver)
-  workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlInfo)
-  ghcdir <- lift $ ghcupGHCDir tver
+    bghc <- case bstrap of
+      Right g    -> pure $ Right g
+      Left  bver -> Left <$> parseRel ("ghc-" <> verToBS bver)
+    workdir <- maybe (pure tmpUnpack)
+                     (liftE . intoSubdir tmpUnpack)
+                     (view dlSubdir dlInfo)
+    ghcdir         <- lift $ ghcupGHCDir tver
 
-  liftE $ runBuildAction
-    tmpUnpack
-    (Just ghcdir)
-    (compile bghc ghcdir workdir >> markSrcBuilt ghcdir workdir)
+    (bindist, bmk) <- liftE $ runBuildAction
+      tmpUnpack
+      (Just ghcdir)
+      (do
+        b   <- compileBindist bghc ghcdir workdir
+        bmk <- liftIO $ readFileStrict (build_mk workdir)
+        pure (b, bmk)
+      )
 
-  reThrowAll GHCupSetError $ postGHCInstall tver
-  pure ()
+    liftE $ installPackedGHC bindist
+                             (view dlSubdir dlInfo)
+                             ghcdir
+                             (tver ^. tvVersion)
+                             pfreq
+
+    liftIO $ writeFile (ghcdir </> ghcUpSrcBuiltFile) (Just newFilePerms) bmk
+
+    reThrowAll GHCupSetError $ postGHCInstall tver
+    pure ()
 
  where
   defaultConf = case _tvTarget tver of
-                  Nothing -> [s|
+    Nothing -> [s|
 V=0
 BUILD_MAN = NO
 BUILD_SPHINX_HTML = NO
 BUILD_SPHINX_PDF = NO
 HADDOCK_DOCS = YES|]
-                  Just _ -> [s|
+    Just _ -> [s|
 V=0
 BUILD_MAN = NO
 BUILD_SPHINX_HTML = NO
@@ -819,22 +874,25 @@ BUILD_SPHINX_PDF = NO
 HADDOCK_DOCS = NO
 Stage1Only = YES|]
 
-  compile :: (MonadReader Settings m, MonadThrow m, MonadCatch m, MonadLogger m, MonadIO m)
-          => Either (Path Rel) (Path Abs)
-          -> Path Abs
-          -> Path Abs
-          -> Excepts
-               '[ FileDoesNotExistError
-                , InvalidBuildConfig
-                , PatchFailed
-                , ProcessError
-                , NotFoundInPATH
-                ]
-               m
-               ()
-  compile bghc ghcdir workdir = do
+  compileBindist :: ( MonadReader Settings m
+                    , MonadThrow m
+                    , MonadCatch m
+                    , MonadLogger m
+                    , MonadIO m
+                    , MonadFail m
+                    )
+                 => Either (Path Rel) (Path Abs)
+                 -> Path Abs
+                 -> Path Abs
+                 -> Excepts
+                      '[FileDoesNotExistError, InvalidBuildConfig, PatchFailed, ProcessError, NotFoundInPATH, CopyError]
+                      m
+                      (Path Abs)  -- ^ output path of bindist
+  compileBindist bghc ghcdir workdir = do
     lift $ $(logInfo) [i|configuring build|]
     liftE $ checkBuildConfig
+
+    Settings { dirs = Dirs {..} } <- lift ask
 
     forM_ patchdir $ \dir -> liftE $ applyPatches dir workdir
 
@@ -886,29 +944,49 @@ Stage1Only = YES|]
         liftIO $ writeFile (build_mk workdir) (Just newFilePerms) defaultConf
 
     lift $ $(logInfo) [i|Building (this may take a while)...|]
-    lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs)
-                        (Just workdir)
+    lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs) (Just workdir)
 
-    lift $ $(logInfo) [i|Installing...|]
-    lEM $ make ["install"] (Just workdir)
-
-  markSrcBuilt ghcdir workdir = do
-    let dest = (ghcdir </> ghcUpSrcBuiltFile)
-    liftIO $ copyFile (build_mk workdir) dest Overwrite
+    lift $ $(logInfo) [i|Creating bindist...|]
+    lEM $ make ["binary-dist"] (Just workdir)
+    [tar] <- liftIO $ findFiles
+      workdir
+      (makeRegexOpts compExtended
+                     execBlank
+                     ([s|^ghc-.*\.tar\..*$|] :: ByteString)
+      )
+    c       <- liftIO $ readFile (workdir </> tar)
+    cDigest <-
+      fmap (T.take 8)
+      . lift
+      . throwEither
+      . E.decodeUtf8'
+      . B16.encode
+      . SHA256.hashlazy
+      $ c
+    tarName <-
+      parseRel
+        [i|ghc-#{prettyTVer tver}-#{prettyPfReq pfreq}-#{cDigest}.tar#{takeExtension (toFilePath tar)}|]
+    let tarPath = cacheDir </> tarName
+    handleIO (throwE . CopyError . show) $ liftIO $ copyFile (workdir </> tar)
+                                                             tarPath
+                                                             Strict
+    lift $ $(logInfo) [i|Copied bindist to #{tarPath}|]
+    pure tarPath
 
   build_mk workdir = workdir </> [rel|mk/build.mk|]
 
   checkBuildConfig :: (MonadCatch m, MonadIO m)
                    => Excepts
-                        '[FileDoesNotExistError , InvalidBuildConfig]
+                        '[FileDoesNotExistError, InvalidBuildConfig]
                         m
                         ()
   checkBuildConfig = do
     c <- case mbuildConfig of
       Just bc -> do
-        BL.toStrict <$> liftIOException doesNotExistErrorType
-                                        (FileDoesNotExistError $ toFilePath bc)
-                                        (liftIO $ readFile bc)
+        BL.toStrict <$> liftIOException
+          doesNotExistErrorType
+          (FileDoesNotExistError $ toFilePath bc)
+          (liftIO $ readFile bc)
       Nothing -> pure defaultConf
     let lines' = fmap T.strip . T.lines $ decUTF8Safe c
 

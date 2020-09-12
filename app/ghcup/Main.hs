@@ -207,8 +207,8 @@ opts =
           (  long "keep"
           <> metavar "<always|errors|never>"
           <> help
-               "Keep build directories? (default: never)"
-          <> value Never
+               "Keep build directories? (default: errors)"
+          <> value Errors
           <> hidden
           )
     <*> option
@@ -1476,20 +1476,4 @@ GHCup cache directory: #{toFilePath diCacheDir}
 Architecture: #{prettyArch diArch}
 Platform: #{prettyPlatform diPlatform}
 Version: #{describe_result}|]
- where
-  prettyArch :: Architecture -> String
-  prettyArch A_64 = "amd64"
-  prettyArch A_32 = "i386"
-  prettyArch A_PowerPC = "PowerPC"
-  prettyArch A_PowerPC64 = "PowerPC64"
-  prettyArch A_Sparc = "Sparc"
-  prettyArch A_Sparc64 = "Sparc64"
-  prettyArch A_ARM = "ARM"
-  prettyArch A_ARM64 = "ARM64"
-
-  prettyPlatform :: PlatformResult -> String
-  prettyPlatform PlatformResult { _platform = plat, _distroVersion = Just v' }
-    = show plat <> ", " <> show v'
-  prettyPlatform PlatformResult { _platform = plat, _distroVersion = Nothing }
-    = show plat
 

@@ -94,13 +94,13 @@ common hpath
   build-depends: hpath >=0.11
 
 common hpath-directory
-  build-depends: hpath-directory >=0.14
+  build-depends: hpath-directory >=0.14.1
 
 common hpath-filepath
   build-depends: hpath-filepath >=0.10.3
 
 common hpath-io
-  build-depends: hpath-io >=0.14
+  build-depends: hpath-io >=0.14.1
 
 common hpath-posix
   build-depends: hpath-posix >=0.13.2
