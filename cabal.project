@@ -8,6 +8,18 @@ source-repository-package
     tag: 80a1c5fc07f7226c424250ec17f674cd4d618f42
     subdir: haskus-utils-types
 
+source-repository-package
+    type: git
+    location: https://github.com/hasufell/hpath.git
+    tag: bf6d28cf989b70286e12fecc183d5bbf5454a1a2
+    subdir: hpath-io
+
+source-repository-package
+    type: git
+    location: https://github.com/hasufell/hpath.git
+    tag: bf6d28cf989b70286e12fecc183d5bbf5454a1a2
+    subdir: hpath-directory
+
 optimization: 2
 
 package streamly

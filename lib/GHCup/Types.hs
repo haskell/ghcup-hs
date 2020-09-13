@@ -19,6 +19,7 @@ import           Data.Versions
 import           HPath
 import           URI.ByteString
 
+import qualified Data.Text                     as T
 import qualified GHC.Generics                  as GHC
 
 
@@ -108,6 +109,15 @@ data Architecture = A_64
                   | A_ARM64
   deriving (Eq, GHC.Generic, Ord, Show)
 
+prettyArch :: Architecture -> String
+prettyArch A_64 = "x86_64"
+prettyArch A_32 = "i386"
+prettyArch A_PowerPC = "powerpc"
+prettyArch A_PowerPC64 = "powerpc64"
+prettyArch A_Sparc = "sparc"
+prettyArch A_Sparc64 = "sparc64"
+prettyArch A_ARM = "arm"
+prettyArch A_ARM64 = "aarch64"
 
 data Platform = Linux LinuxDistro
               -- ^ must exit
@@ -115,6 +125,11 @@ data Platform = Linux LinuxDistro
               -- ^ must exit
               | FreeBSD
   deriving (Eq, GHC.Generic, Ord, Show)
+
+prettyPlatfrom :: Platform -> String
+prettyPlatfrom (Linux distro) = "linux-" ++ prettyDistro distro
+prettyPlatfrom Darwin = "darwin"
+prettyPlatfrom FreeBSD = "freebsd"
 
 data LinuxDistro = Debian
                  | Ubuntu
@@ -131,6 +146,19 @@ data LinuxDistro = Debian
                  | UnknownLinux
                  -- ^ must exit
   deriving (Eq, GHC.Generic, Ord, Show)
+
+prettyDistro :: LinuxDistro -> String
+prettyDistro Debian = "debian"
+prettyDistro Ubuntu = "ubuntu"
+prettyDistro Mint= "mint"
+prettyDistro Fedora = "fedora"
+prettyDistro CentOS = "centos"
+prettyDistro RedHat = "redhat"
+prettyDistro Alpine = "alpine"
+prettyDistro AmazonLinux = "amazon"
+prettyDistro Gentoo = "gentoo"
+prettyDistro Exherbo = "exherbo"
+prettyDistro UnknownLinux = "unknown"
 
 
 -- | An encapsulation of a download. This can be used
@@ -219,6 +247,12 @@ data PlatformResult = PlatformResult
   }
   deriving (Eq, Show)
 
+prettyPlatform :: PlatformResult -> String
+prettyPlatform PlatformResult { _platform = plat, _distroVersion = Just v' }
+  = show plat <> ", " <> show v'
+prettyPlatform PlatformResult { _platform = plat, _distroVersion = Nothing }
+  = show plat
+
 data PlatformRequest = PlatformRequest
   { _rArch     :: Architecture
   , _rPlatform :: Platform
@@ -226,6 +260,13 @@ data PlatformRequest = PlatformRequest
   }
   deriving (Eq, Show)
 
+prettyPfReq :: PlatformRequest -> String
+prettyPfReq (PlatformRequest arch plat ver) =
+  prettyArch arch ++ "-" ++ prettyPlatfrom plat ++ pver
+ where
+  pver = case ver of
+           Just v' -> "-" ++ (T.unpack $ prettyV v')
+           Nothing -> ""
 
 -- | A GHC identified by the target platform triple
 -- and the version.
