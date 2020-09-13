@@ -87,7 +87,7 @@ data VersionInfo = VersionInfo
   , _viSourceDL  :: Maybe DownloadInfo -- ^ source tarball
   , _viArch      :: ArchitectureSpec   -- ^ descend for binary downloads per arch
   }
-  deriving (Eq, Show)
+  deriving (Eq, GHC.Generic, Show)
 
 
 -- | A tag. These are currently attached to a version of a tool.
@@ -96,7 +96,7 @@ data Tag = Latest
          | Prerelease
          | Base PVP
          | UnknownTag String  -- ^ used for upwardscompat
-         deriving (Ord, Eq, Show) -- FIXME: manual JSON instance
+         deriving (Ord, Eq, GHC.Generic, Show) -- FIXME: manual JSON instance
 
 
 data Architecture = A_64
@@ -168,7 +168,7 @@ data DownloadInfo = DownloadInfo
   , _dlSubdir :: Maybe TarDir
   , _dlHash   :: Text
   }
-  deriving (Eq, Show)
+  deriving (Eq, GHC.Generic, Show)
 
 
 
@@ -181,14 +181,14 @@ data DownloadInfo = DownloadInfo
 -- | How to descend into a tar archive.
 data TarDir = RealDir (Path Rel)
             | RegexDir String     -- ^ will be compiled to regex, the first match will "win"
-            deriving (Eq, Show)
+            deriving (Eq, GHC.Generic, Show)
 
 
 -- | Where to fetch GHCupDownloads from.
 data URLSource = GHCupURL
                | OwnSource URI
                | OwnSpec GHCupInfo
-               deriving Show
+               deriving (GHC.Generic, Show)
 
 
 data Settings = Settings

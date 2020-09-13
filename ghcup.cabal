@@ -81,6 +81,9 @@ common containers
 common cryptohash-sha256
   build-depends: cryptohash-sha256 >= 0.11.101.0
 
+common generic-arbitrary
+  build-depends: generic-arbitrary >=0.1.0
+
 common generics-sop
   build-depends: generics-sop >=0.5
 
@@ -107,6 +110,12 @@ common hpath-posix
 
 common http-io-streams
   build-depends: http-io-streams >=0.1.2.0
+
+common hspec
+  build-depends: hspec >=2.7.4
+
+common hspec-golden-aeson
+  build-depends: hspec-golden-aeson >=0.7
 
 common io-streams
   build-depends: io-streams >=1.5
@@ -195,6 +204,12 @@ common transformers
 common os-release
   build-depends: os-release >=1.0.0
 
+common QuickCheck
+  build-depends: QuickCheck >=2.14.1
+
+common quickcheck-arbitrary-adt
+  build-depends: quickcheck-arbitrary-adt >=0.3.1.0
+
 common unix
   build-depends: unix >=2.7
 
@@ -240,8 +255,6 @@ common config
     PackageImports
     RecordWildCards
     ScopedTypeVariables
-    Strict
-    StrictData
     TupleSections
 
 library
@@ -321,6 +334,10 @@ library
     GHCup.Utils.Version.QQ
     GHCup.Version
 
+  default-extensions:
+    Strict
+    StrictData
+
   -- other-modules:
   -- other-extensions:
   hs-source-dirs:  lib
@@ -377,6 +394,10 @@ executable ghcup
   hs-source-dirs:   app/ghcup
   default-language: Haskell2010
 
+  default-extensions:
+    Strict
+    StrictData
+
   if flag(internal-downloader)
     cpp-options:     -DINTERNAL_DOWNLOADER
 
@@ -431,8 +452,25 @@ executable ghcup-gen
   default-language: Haskell2010
 
 test-suite ghcup-test
-  default-language: Haskell2010
+  import:
+    config
+    , base
+    , bytestring
+    , containers
+    , QuickCheck
+    , generic-arbitrary
+    , hpath
+    , hspec
+    , hspec-golden-aeson
+    , quickcheck-arbitrary-adt
+    , text
+    , uri-bytestring
+    , versions
   type:             exitcode-stdio-1.0
+  build-depends:    ghcup
   hs-source-dirs:   test
-  main-is:          MyLibTest.hs
-  build-depends:    base >=4.12.0.0
+  main-is:          Main.hs
+  other-modules:
+                    GHCup.ArbitraryTypes
+                    GHCup.Types.JSONSpec
+                    Spec
