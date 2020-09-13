@@ -48,7 +48,7 @@ prettyRequirements :: Requirements -> T.Text
 prettyRequirements Requirements {..} =
   let d = if not . null $ _distroPKGs
         then
-          "\n  Install the following distro packages: "
+          "\n  Please install the following distro packages: "
             <> T.intercalate " " _distroPKGs
         else ""
       n = if not . T.null $ _notes then "\n  Note: " <> _notes else ""
