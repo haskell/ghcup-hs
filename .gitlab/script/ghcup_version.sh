@@ -22,14 +22,18 @@ ecabal update
 
 if [ "${OS}" = "DARWIN" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} -ftui
+	ecabal test -w ghc-${GHC_VERSION} -ftui ghcup-test
 elif [ "${OS}" = "LINUX" ] ; then
 	if [ "${BIT}" = "32" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar
+		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar ghcup-test
 	else
 		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
+		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui ghcup-test
 	fi
 else
 	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
+	ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui ghcup-test
 fi
 
 ecabal haddock -w ghc-${GHC_VERSION} -ftar
