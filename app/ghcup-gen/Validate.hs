@@ -55,7 +55,7 @@ validate :: (Monad m, MonadLogger m, MonadThrow m, MonadIO m, MonadUnliftIO m)
 validate dls = do
   ref <- liftIO $ newIORef 0
 
-  -- * verify binary downloads * --
+  -- verify binary downloads --
   flip runReaderT ref $ do
     -- unique tags
     forM_ (M.toList dls) $ \(t, _) -> checkUniqueTags t
