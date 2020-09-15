@@ -20,6 +20,8 @@ git describe --always
 
 ecabal update
 
+ecabal install -w ghc-${GHC_VERSION} --installdir="$CI_PROJECT_DIR"/.local/bin hspec-discover
+
 if [ "${OS}" = "DARWIN" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} -ftui
 	ecabal test -w ghc-${GHC_VERSION} -ftui ghcup-test
@@ -38,8 +40,8 @@ fi
 
 ecabal haddock -w ghc-${GHC_VERSION} -ftar
 
-cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup')" .
-cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --enable-tests --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" .
+cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup')" .
+cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" .
 
 cp ./ghcup "$CI_PROJECT_DIR"/.local/bin/ghcup
 cp ./ghcup-gen "$CI_PROJECT_DIR"/.local/bin/ghcup-gen
