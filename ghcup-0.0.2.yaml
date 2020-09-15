@@ -1374,6 +1374,7 @@ ghcupDownloads:
     3.4.0.0-rc3:
       viTags:
       - Prerelease
+      viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.4.0.0.md
       viArch:
         A_64:
           Linux_Ubuntu:
