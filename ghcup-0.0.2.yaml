@@ -1371,29 +1371,29 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-i386-unknown-linux.tar.xz
               dlHash: 2b3ac28549916de5f3379241797eaf60e84b6c001f2abbe73d9fadbbaf768e93
-    3.4.0.0-rc2:
+    3.4.0.0-rc3:
       viTags:
       - Prerelease
       viArch:
         A_64:
           Linux_Ubuntu:
-            unknown_versioning: &cabal-3400rc2-ubuntu
-              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc2/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz
-              dlHash: 2497cfc99fbec272af90074e914ac586228dc6f1b3990bb5be79d51faa41b547
+            unknown_versioning: &cabal-3400rc3-ubuntu
+              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc3/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz
+              dlHash: a97f0362b8cdc78ba4a7891f8b288082dc11e20c64b1b3c8e6c2bd3766446d10
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc2/cabal-install-3.4.0.0-x86_64-alpine-3.11.6-static-noofd.tar.xz
-              dlHash: c4e92deaffc88e36494b1c9de1f42b9a25bfed5472b116bd5d8cd4e049690f51
+              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc3/cabal-install-3.4.0.0-x86_64-alpine-3.11.6-static-noofd.tar.xz
+              dlHash: a82c7dc7e46da823f6a982465b9b29e0640a5ce2e5b573d3dd55a47e20740305
           Linux_UnknownLinux:
-            unknown_versioning: *cabal-3400rc2-ubuntu
+            unknown_versioning: *cabal-3400rc3-ubuntu
           Darwin:
             unknown_versioning:
-              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc2/cabal-install-3.4.0.0-x86_64-darwin-sierra.tar.xz
-              dlHash: 1342f0ada687d03836662eff9f4971b604701a36349939859c1a5b9fc276b62b
+              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc3/cabal-install-3.4.0.0-x86_64-darwin-sierra.tar.xz
+              dlHash: 4553eaea3031c09ab5156af8d4a62bf1ecbbea2c3b57a876f267cbf4b5a15658
           FreeBSD:
             unknown_versioning:
-              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc2/cabal-install-3.4.0.0-x86_64-freebsd-12.1-release.tar.xz
-              dlHash: 4d4234bc7f387a37a473155e0dd11e7f9334b0612e1151ea745f8022f4aa06e3
+              dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc3/cabal-install-3.4.0.0-x86_64-freebsd-12.1-release.tar.xz
+              dlHash: 44e25e0b0d15361acb369f4bf2206a39d2432a08fb922cc40a9b8a045d0a3a6f
   GHCup:
     0.1.10:
       viTags:
