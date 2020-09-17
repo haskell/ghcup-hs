@@ -840,7 +840,7 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@(PlatformReque
 
     (bindist, bmk) <- liftE $ runBuildAction
       tmpUnpack
-      (Just ghcdir)
+      Nothing
       (do
         b   <- compileBindist bghc ghcdir workdir
         bmk <- liftIO $ readFileStrict (build_mk workdir)
