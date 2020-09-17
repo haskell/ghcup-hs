@@ -992,6 +992,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , PatchFailed
                       , UnknownArchive
                       , TarDirDoesNotExist
+                      , NotInstalled
 #if !defined(TAR)
                       , ArchiveResult
 #endif

@@ -596,8 +596,8 @@ getChangeLog dls tool (Right tag) =
 --   1. the build directory, depending on the KeepDirs setting
 --   2. the install destination, depending on whether the build failed
 runBuildAction :: (Show (V e), MonadReader Settings m, MonadIO m, MonadMask m)
-               => Path Abs          -- ^ build directory
-               -> Maybe (Path Abs)  -- ^ install location (e.g. for GHC)
+               => Path Abs          -- ^ build directory (cleaned up depending on Settings)
+               -> Maybe (Path Abs)  -- ^ dir to *always* clean up on exception
                -> Excepts e m a
                -> Excepts '[BuildFailed] m a
 runBuildAction bdir instdir action = do
