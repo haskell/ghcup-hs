@@ -20,6 +20,12 @@ source-repository-package
     tag: bf6d28cf989b70286e12fecc183d5bbf5454a1a2
     subdir: hpath-directory
 
+-- https://github.com/cjdev/text-conversions/pull/10
+source-repository-package
+    type: git
+    location: https://github.com/hasufell/text-conversions.git
+    tag: 9abf0e5e5664a3178367597c32db19880477a53c
+
 optimization: 2
 
 package streamly
