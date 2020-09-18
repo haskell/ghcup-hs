@@ -807,6 +807,7 @@ compileGHC :: ( MonadMask m
                  , PatchFailed
                  , UnknownArchive
                  , TarDirDoesNotExist
+                 , NotInstalled
 #if !defined(TAR)
                  , ArchiveResult
 #endif
@@ -816,8 +817,9 @@ compileGHC :: ( MonadMask m
 compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@(PlatformRequest {..})
   = do
     lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
-    whenM (lift $ ghcInstalled tver)
-          (throwE $ AlreadyInstalled GHC (tver ^. tvVersion))
+
+    alreadyInstalled <- lift $ ghcInstalled tver
+    alreadySet <- fmap (maybe False (==tver)) $ lift $ ghcSet (_tvTarget tver)
 
     -- download source tarball
     dlInfo <-
@@ -840,13 +842,16 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@(PlatformReque
 
     (bindist, bmk) <- liftE $ runBuildAction
       tmpUnpack
-      (Just ghcdir)
+      Nothing
       (do
         b   <- compileBindist bghc ghcdir workdir
         bmk <- liftIO $ readFileStrict (build_mk workdir)
         pure (b, bmk)
       )
 
+    when alreadyInstalled $ do
+      lift $ $(logInfo) [i|Deleting existing installation|]
+      liftE $ rmGHCVer tver
     liftE $ installPackedGHC bindist
                              (view dlSubdir dlInfo)
                              ghcdir
@@ -856,6 +861,9 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@(PlatformReque
     liftIO $ writeFile (ghcdir </> ghcUpSrcBuiltFile) (Just newFilePerms) bmk
 
     reThrowAll GHCupSetError $ postGHCInstall tver
+
+    -- restore
+    when alreadySet $ liftE $ void $ setGHC tver SetGHCOnly
     pure ()
 
  where
