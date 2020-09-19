@@ -39,7 +39,6 @@ import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
-import           Data.Aeson                     ( eitherDecode )
 import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
@@ -70,7 +69,6 @@ import           URI.ByteString
 
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.UTF8          as UTF8
-import qualified Data.ByteString.Lazy.UTF8     as BLU
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
@@ -122,7 +120,7 @@ data InstallCommand = InstallGHC InstallOptions
 data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
   , instPlatform :: Maybe PlatformRequest
-  , instBindist  :: Maybe DownloadInfo
+  , instBindist  :: Maybe URI
   }
 
 data SetCommand = SetGHC SetOptions
@@ -407,13 +405,22 @@ installParser =
   and symlinks the ghc binaries to "~/.ghcup/bin/<binary>-<ghcver>".
 
 Examples:
-  # install GHC head
-  ghcup -n install ghc -u '{"dlHash": "", "dlSubdir": { "RegexDir": "ghc-.*"}, "dlUri": "https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27" }' head|]
+  # install recommended GHC
+  ghcup install ghc
+
+  # install latest GHC
+  ghcup install ghc latest
+
+  # install GHC 8.10.2
+  ghcup install ghc 8.10.2
+
+  # install GHC head fedora bindist
+  ghcup install ghc -u https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27 head|]
 
 
 installOpts :: Parser InstallOptions
 installOpts =
-  (\p u v -> InstallOptions v p u)
+  (\p (u, v) -> InstallOptions v p u)
     <$> (optional
           (option
             (eitherReader platformParser)
@@ -425,18 +432,19 @@ installOpts =
             )
           )
         )
-    <*> (optional
-          (option
-            (eitherReader bindistParser)
-            (  short 'u'
-            <> long "url"
-            <> metavar "BINDIST_URL"
-            <> help
-                 "Provide DownloadInfo as json string, e.g.: '{ \"dlHash\": \"<sha256 hash>\", \"dlSubdir\": { \"RegexDir\": \"ghc-.*\"}, \"dlUri\": \"<uri>\" }'"
+    <*> (   (   (,)
+            <$> (optional
+                  (option
+                    (eitherReader bindistParser)
+                    (short 'u' <> long "url" <> metavar "BINDIST_URL" <> help
+                      "Install the specified version from this bindist"
+                    )
+                  )
+                )
+            <*> (Just <$> toolVersionArgument)
             )
-          )
+        <|> ((,) <$> pure Nothing <*> optional toolVersionArgument)
         )
-    <*> optional toolVersionArgument
 
 
 setParser :: Parser (Either SetCommand SetOptions)
@@ -819,8 +827,8 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
         pure v
 
 
-bindistParser :: String -> Either String DownloadInfo
-bindistParser = eitherDecode . BLU.fromString
+bindistParser :: String -> Either String URI
+bindistParser = first show . parseURI strictURIParserOptions . UTF8.fromString
 
 
 toSettings :: Options -> IO Settings
@@ -926,9 +934,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -- Effect interpreters --
           -------------------------
 
-          let runInstTool =
+          let runInstTool' settings' =
                 runLogger
-                  . flip runReaderT settings
+                  . flip runReaderT settings'
                   . runResourceT
                   . runE
                     @'[ AlreadyInstalled
@@ -946,6 +954,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , DownloadFailed
                       , TarDirDoesNotExist
                       ]
+
+          let runInstTool = runInstTool' settings
 
           let
             runSetGHC =
@@ -1071,11 +1081,16 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -----------------------
 
           let installGHC InstallOptions{..} =
-                  (runInstTool $ do
-                      v <- liftE $ fromVersion dls instVer GHC
-                      case instBindist of
-                        Nothing -> liftE $ installGHCBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
-                        Just uri -> liftE $ installGHCBindist uri (_tvVersion v) (fromMaybe pfreq instPlatform)
+                  (case instBindist of
+                     Nothing -> runInstTool $ do
+                       v <- liftE $ fromVersion dls instVer GHC
+                       liftE $ installGHCBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                     Just uri -> runInstTool' settings{noVerify = True} $ do
+                       v <- liftE $ fromVersion dls instVer GHC
+                       liftE $ installGHCBindist
+                         (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
+                         (_tvVersion v)
+                         (fromMaybe pfreq instPlatform)
                     )
                     >>= \case
                           VRight _ -> do
@@ -1083,7 +1098,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             pure ExitSuccess
                           VLeft (V (AlreadyInstalled _ v)) -> do
                             runLogger $ $(logWarn)
-                              [i|GHC ver #{prettyVer v} already installed|]
+                              [i|GHC ver #{prettyVer v} already installed, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
                             pure ExitSuccess
                           VLeft (V (BuildFailed tmpdir e)) -> do
                             case keepDirs of
@@ -1107,11 +1122,16 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
 
           let installCabal InstallOptions{..} =
-                (runInstTool $ do
-                    v <- liftE $ fromVersion dls instVer Cabal
-                    case instBindist of
-                      Nothing -> liftE $ installCabalBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
-                      Just uri -> liftE $ installCabalBindist uri (_tvVersion v) (fromMaybe pfreq instPlatform)
+                (case instBindist of
+                   Nothing -> runInstTool $ do
+                     v <- liftE $ fromVersion dls instVer Cabal
+                     liftE $ installCabalBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                   Just uri -> runInstTool' settings{noVerify = True} $ do
+                     v <- liftE $ fromVersion dls instVer Cabal
+                     liftE $ installCabalBindist
+                         (DownloadInfo uri Nothing "")
+                         (_tvVersion v)
+                         (fromMaybe pfreq instPlatform)
                   )
                   >>= \case
                         VRight _ -> do
@@ -1119,7 +1139,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
                           runLogger $ $(logWarn)
-                            [i|Cabal ver #{prettyVer v} already installed|]
+                            [i|Cabal ver #{prettyVer v} already installed, you may want to run 'ghcup rm cabal #{prettyVer v}' first|]
                           pure ExitSuccess
                         VLeft (V NoDownload) -> do
 
@@ -1242,7 +1262,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         pure ExitSuccess
                       VLeft (V (AlreadyInstalled _ v)) -> do
                         runLogger $ $(logWarn)
-                          [i|GHC ver #{prettyVer v} already installed|]
+                          [i|GHC ver #{prettyVer v} already installed, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
                         case keepDirs of
