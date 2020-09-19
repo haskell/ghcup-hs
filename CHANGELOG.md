@@ -1,5 +1,13 @@
 # Revision history for ghcup
 
+## 0.1.11 -- ????-??-??
+
+* Allow to compile over existing version (`ghcup compile ghc -v 8.6.5 -b 8.6.5`) and replace it wrt #59
+* When compiling GHC from source create a bindist first, store that bindist in `~/.ghcup/cache` and install it, wrt #51
+* fix bug when cabal isn't marked executable in bindist
+* fix bug when `~/.ghcup` is a valid symlink wrt #49
+* Add JSON roundtrip tests
+
 ## 0.1.10 -- 2020-08-14
 
 * Show stray Cabals (useful for pre-releases or compiled ones)
