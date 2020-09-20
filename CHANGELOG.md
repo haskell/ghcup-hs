@@ -2,8 +2,9 @@
 
 ## 0.1.11 -- ????-??-??
 
-* Allow to compile over existing version (`ghcup compile ghc -v 8.6.5 -b 8.6.5`) and replace it wrt #59
+* Add support for installing haskell-language-server, wrt #65
 * When compiling GHC from source create a bindist first, store that bindist in `~/.ghcup/cache` and install it, wrt #51
+* Allow to compile over existing version (`ghcup compile ghc -v 8.6.5 -b 8.6.5`) and replace it wrt #59
 * simplify installing from custom bindist wrt #60
   - `ghcup install ghc -u <url> <version>`
 * fix bug when cabal isn't marked executable in bindist

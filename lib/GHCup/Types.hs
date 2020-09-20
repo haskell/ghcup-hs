@@ -76,6 +76,7 @@ type PlatformVersionSpec = Map (Maybe Versioning) DownloadInfo
 data Tool = GHC
           | Cabal
           | GHCup
+          | HLS
   deriving (Eq, GHC.Generic, Ord, Show)
 
 

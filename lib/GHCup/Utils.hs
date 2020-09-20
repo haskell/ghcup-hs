@@ -301,6 +301,150 @@ cabalSet = do
 
 
 
+-- | Get all installed hls, by matching on
+-- @~\/.ghcup\/bin/haskell-language-server-wrapper-<\hlsver\>@.
+getInstalledHLSs :: (MonadReader Settings m, MonadIO m, MonadCatch m)
+                 => m [Either (Path Rel) Version]
+getInstalledHLSs = do
+  Settings { dirs = Dirs {..} } <- ask
+  bins                          <- liftIO $ handleIO (\_ -> pure []) $ findFiles
+    binDir
+    (makeRegexOpts compExtended
+                   execBlank
+                   ([s|^haskell-language-server-wrapper-.*$|] :: ByteString)
+    )
+  vs <- forM bins $ \f ->
+    case
+        fmap
+          version
+          (fmap decUTF8Safe . B.stripPrefix "haskell-language-server-wrapper-" . toFilePath $ f)
+      of
+        Just (Right r) -> pure $ Right r
+        Just (Left  _) -> pure $ Left f
+        Nothing        -> pure $ Left f
+  pure $ vs
+
+
+-- | Whether the given HLS version is installed.
+hlsInstalled :: (MonadIO m, MonadReader Settings m, MonadCatch m) => Version -> m Bool
+hlsInstalled ver = do
+  vers <- fmap rights $ getInstalledHLSs
+  pure $ elem ver $ vers
+
+
+
+-- Return the currently set hls version, if any.
+hlsSet :: (MonadReader Settings m, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
+hlsSet = do
+  Settings {dirs = Dirs {..}} <- ask
+  let hlsBin = binDir </> [rel|haskell-language-server-wrapper|]
+
+  liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
+    broken <- isBrokenSymlink hlsBin
+    if broken
+      then pure Nothing
+      else do
+        link <- readSymbolicLink $ toFilePath hlsBin
+        Just <$> linkVersion link
+ where
+  linkVersion :: MonadThrow m => ByteString -> m Version
+  linkVersion bs = do
+    t <- throwEither $ E.decodeUtf8' bs
+    throwEither $ MP.parse parser "" t
+   where
+    parser =
+      MP.chunk "haskell-language-server-wrapper-" *> version'
+
+
+-- | Return the GHC versions the currently selected HLS supports.
+hlsGHCVersions :: ( MonadReader Settings m
+                  , MonadIO m
+                  , MonadThrow m
+                  , MonadCatch m
+                  )
+               => m [Version]
+hlsGHCVersions = do
+  h                             <- hlsSet
+  vers                          <- forM h $ \h' -> do
+    bins <- hlsServerBinaries h'
+    pure $ fmap
+      (\bin ->
+        version
+          . decUTF8Safe
+          . fromJust
+          . B.stripPrefix "haskell-language-server-"
+          . head
+          . B.split _tilde
+          . toFilePath
+          $ bin
+      )
+      bins
+  pure . rights . concat . maybeToList $ vers
+
+
+-- | Get all server binaries for an hls version, if any.
+hlsServerBinaries :: (MonadReader Settings m, MonadIO m)
+                  => Version
+                  -> m [Path Rel]
+hlsServerBinaries ver = do
+  Settings { dirs = Dirs {..} } <- ask
+  liftIO $ handleIO (\_ -> pure []) $ findFiles
+    binDir
+    (makeRegexOpts
+      compExtended
+      execBlank
+      ([s|^haskell-language-server-.*~|] <> escapeVerRex ver <> [s|$|] :: ByteString
+      )
+    )
+
+
+-- | Get the wrapper binary for an hls version, if any.
+hlsWrapperBinary :: (MonadReader Settings m, MonadThrow m, MonadIO m)
+                 => Version
+                 -> m (Maybe (Path Rel))
+hlsWrapperBinary ver = do
+  Settings { dirs = Dirs {..} } <- ask
+  wrapper                       <- liftIO $ handleIO (\_ -> pure []) $ findFiles
+    binDir
+    (makeRegexOpts
+      compExtended
+      execBlank
+      ([s|^haskell-language-server-wrapper-|] <> escapeVerRex ver <> [s|$|] :: ByteString
+      )
+    )
+  case wrapper of
+    []  -> pure $ Nothing
+    [x] -> pure $ Just x
+    _   -> throwM $ UnexpectedListLength
+      "There were multiple hls wrapper binaries for a single version"
+
+
+-- | Get all binaries for an hls version, if any.
+hlsAllBinaries :: (MonadReader Settings m, MonadIO m, MonadThrow m) => Version -> m [Path Rel]
+hlsAllBinaries ver = do
+  hls     <- hlsServerBinaries ver
+  wrapper <- hlsWrapperBinary ver
+  pure (maybeToList wrapper ++ hls)
+
+
+-- | Get the active symlinks for hls.
+hlsSymlinks :: (MonadReader Settings m, MonadIO m, MonadCatch m) => m [Path Rel]
+hlsSymlinks = do
+  Settings { dirs = Dirs {..} } <- ask
+  oldSyms                       <- liftIO $ handleIO (\_ -> pure []) $ findFiles
+    binDir
+    (makeRegexOpts compExtended
+                   execBlank
+                   ([s|^haskell-language-server-.*$|] :: ByteString)
+    )
+  filterM
+    ( fmap (== SymbolicLink)
+    . liftIO
+    . getFileType
+    . (binDir </>)
+    )
+    oldSyms
+
 
 
     -----------------------------------------

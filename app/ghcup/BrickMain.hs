@@ -83,7 +83,7 @@ ui AppState {..} =
         )
 
  where
-  renderItem b ListResult {..} =
+  renderItem b listResult@(ListResult {..}) =
     let marks = if
           | lSet       -> (withAttr "set" $ str "✔✔")
           | lInstalled -> (withAttr "installed" $ str "✓ ")
@@ -102,11 +102,17 @@ ui AppState {..} =
                   (str $ (fmap toLower . show $ lTool) <> " " <> ver)
                 )
               )
-          <+> (padLeft (Pad 1) $ if null lTag
+          <+> (padLeft (Pad 1) $ minHSize 20 $ if null lTag
                 then emptyWidget
                 else
                   foldr1 (\x y -> x <+> str "," <+> y)
                     $ (fmap printTag $ sort lTag)
+              )
+          <+> ( padLeft (Pad 5)
+              $ let notes = printNotes listResult
+                in  if null notes
+                      then emptyWidget
+                      else foldr1 (\x y -> x <+> str "," <+> y) $ notes
               )
           )
 
@@ -115,6 +121,12 @@ ui AppState {..} =
   printTag Prerelease         = withAttr "prerelease" $ str "prerelease"
   printTag (Base       pvp'') = str ("base-" ++ T.unpack (prettyPVP pvp''))
   printTag (UnknownTag t    ) = str t
+
+  printNotes ListResult{..} =
+     (if hlsPowered then [withAttr "hls-powered" $ str "hls-powered"] else mempty)
+     ++ (if fromSrc then [str "compiled"] else mempty)
+     ++ (if lStray then [str "stray"] else mempty)
+     ++ (if lNoBindist then [str "no-bindist"] else mempty)
 
 
 minHSize :: Int -> Widget n -> Widget n
@@ -137,6 +149,7 @@ defaultAttributes = attrMap
   , ("set"          , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("installed"    , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("recommended"  , Vty.defAttr `Vty.withForeColor` Vty.green)
+  , ("hls-powered"  , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("latest"       , Vty.defAttr `Vty.withForeColor` Vty.yellow)
   , ("prerelease"   , Vty.defAttr `Vty.withForeColor` Vty.red)
   , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
@@ -223,6 +236,7 @@ install' AppState {..} (_, ListResult {..}) = do
         GHC   -> liftE $ installGHCBin dls lVer pfreq
         Cabal -> liftE $ installCabalBin dls lVer pfreq
         GHCup -> liftE $ upgradeGHCup dls Nothing False pfreq $> ()
+        HLS   -> liftE $ installHLSBin dls lVer pfreq $> ()
     )
     >>= \case
           VRight _                          -> pure $ Right ()
@@ -251,6 +265,7 @@ set' _ (_, ListResult {..}) = do
       case lTool of
         GHC   -> liftE $ setGHC (GHCTargetVersion lCross lVer) SetGHCOnly $> ()
         Cabal -> liftE $ setCabal lVer $> ()
+        HLS   -> liftE $ setHLS lVer $> ()
         GHCup -> pure ()
     )
     >>= \case
@@ -270,6 +285,7 @@ del' _ (_, ListResult {..}) = do
       case lTool of
         GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> ()
         Cabal -> liftE $ rmCabalVer lVer $> ()
+        HLS   -> liftE $ rmHLSVer lVer $> ()
         GHCup -> pure ()
     )
     >>= \case

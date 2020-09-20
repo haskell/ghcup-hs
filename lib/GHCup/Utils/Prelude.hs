@@ -31,11 +31,13 @@ import           Data.ByteString                ( ByteString )
 import           Data.String
 import           Data.Text                      ( Text )
 import           Data.Versions
+import           Data.Word8
 import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
 import           System.IO.Error
 import           System.Posix.Env.ByteString    ( getEnvironment )
 
+import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.Strict.Maybe             as S
 import qualified Data.Text                     as T
@@ -275,3 +277,13 @@ decUTF8Safe = E.decodeUtf8With E.lenientDecode
 
 decUTF8Safe' :: L.ByteString -> Text
 decUTF8Safe' = TL.toStrict . TLE.decodeUtf8With E.lenientDecode
+
+
+-- | Escape a version for use in regex
+escapeVerRex :: Version -> ByteString
+escapeVerRex = B.pack . go . B.unpack . verToBS
+ where
+  go [] = []
+  go (x : xs) | x == _period = [_backslash, _period] ++ go xs
+              | otherwise    = x : go xs
+
