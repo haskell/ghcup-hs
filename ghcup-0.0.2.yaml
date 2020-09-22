@@ -1197,10 +1197,6 @@ ghcupDownloads:
     2.4.1.0:
       viTags: []
       viChangeLog: https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/changelog
-      viSourceDL:
-        dlUri: https://github.com/haskell/cabal/archive/cabal-install-v2.4.1.0.tar.gz
-        dlSubdir: cabal-cabal-install-v2.4.1.0/cabal-install
-        dlHash: 61eb64a5addafca026aff9277291f4643fe07e83886f76d059d42c734fed829c
       viArch:
         A_64:
           Linux_Alpine:
@@ -1232,10 +1228,6 @@ ghcupDownloads:
     3.0.0.0:
       viTags: []
       viChangeLog: https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/changelog
-      viSourceDL:
-        dlUri: https://github.com/haskell/cabal/archive/cabal-install-v3.0.0.0.tar.gz
-        dlSubdir: cabal-cabal-install-v3.0.0.0/cabal-install
-        dlHash: c0b26817a7b7c2907e45cb38235ce1157e732211880f62e92eaff4066202e674
       viArch:
         A_64:
           Linux_Alpine:
@@ -1268,10 +1260,6 @@ ghcupDownloads:
       - Recommended
       - Latest
       viChangeLog: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/changelog
-      viSourceDL:
-        dlUri: https://github.com/haskell/cabal/archive/cabal-install-v3.2.0.0.tar.gz
-        dlSubdir: cabal-cabal-install-v3.2.0.0/cabal-install
-        dlHash: 77202358bdf0b481c09326268ce18880df14194c5aaa840f99510bdd1a124b75
       viArch:
         A_64:
           Linux_Alpine:

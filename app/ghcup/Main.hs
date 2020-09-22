@@ -148,7 +148,6 @@ data RmOptions = RmOptions
 
 
 data CompileCommand = CompileGHC GHCCompileOptions
-                    | CompileCabal CabalCompileOptions
 
 
 data GHCCompileOptions = GHCCompileOptions
@@ -612,16 +611,6 @@ compileP = subparser
             )
           )
       )
-  <> command
-       "cabal"
-       (   CompileCabal
-       <$> (info
-             (cabalCompileOpts <**> helper)
-             (  progDesc "Compile Cabal from source"
-             <> footerDoc (Just $ text compileCabalFooter)
-             )
-           )
-       )
   )
  where
   compileFooter = [s|Discussion:
@@ -642,13 +631,6 @@ Examples:
   ghcup compile ghc -j 4 -v 8.4.2 -b /usr/bin/ghc-8.2.2
   # build cross compiler
   ghcup compile ghc -j 4 -v 8.4.2 -b 8.2.2 -x armv7-unknown-linux-gnueabihf --config $(pwd)/build.mk -- --enable-unregisterised|]
-  compileCabalFooter = [i|Discussion:
-  Compiles and installs the specified Cabal version
-  into "~/.ghcup/bin".
-
-Examples:
-  ghcup compile cabal -j 4 -v 3.2.0.0 -b 8.6.5
-  ghcup compile cabal -j 4 -v 3.2.0.0 -b /usr/bin/ghc-8.6.5|]
 
 
 ghcCompileOpts :: Parser GHCCompileOptions
@@ -1060,26 +1042,6 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 #endif
                       ]
 
-          let runCompileCabal =
-                runLogger
-                  . flip runReaderT settings
-                  . runResourceT
-                  . runE
-                    @'[ AlreadyInstalled
-                      , BuildFailed
-                      , CopyError
-                      , DigestError
-                      , DownloadFailed
-                      , NoDownload
-                      , NotInstalled
-                      , PatchFailed
-                      , UnknownArchive
-                      , TarDirDoesNotExist
-#if !defined(TAR)
-                      , ArchiveResult
-#endif
-                      ]
-
           let runUpgrade =
                 runLogger
                   . flip runReaderT settings
@@ -1384,28 +1346,6 @@ Make sure to clean up #{tmpdir} afterwards.|])
                       VLeft e -> do
                         runLogger ($(logError) [i|#{e}|])
                         pure $ ExitFailure 9
-
-            Compile (CompileCabal CabalCompileOptions {..}) ->
-              (runCompileCabal $ do
-                  liftE $ compileCabal dls targetVer bootstrapGhc jobs patchDir pfreq
-                )
-                >>= \case
-                      VRight _ -> do
-                        runLogger
-                          ($(logInfo)
-                            "Cabal successfully compiled and installed"
-                          )
-                        pure ExitSuccess
-                      VLeft (V (BuildFailed tmpdir e)) -> do
-                        case keepDirs of
-                          Never -> runLogger ($(logError) [i|Build failed with #{e}|])
-                          _ -> runLogger ($(logError) [i|Build failed with #{e}
-Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
-Make sure to clean up #{tmpdir} afterwards.|])
-                        pure $ ExitFailure 10
-                      VLeft e -> do
-                        runLogger ($(logError) [i|#{e}|])
-                        pure $ ExitFailure 10
 
             Upgrade (uOpts) force -> do
               target <- case uOpts of
