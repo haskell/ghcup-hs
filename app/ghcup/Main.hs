@@ -116,6 +116,7 @@ prettyToolVer (ToolTag t) = show t
 
 data InstallCommand = InstallGHC InstallOptions
                     | InstallCabal InstallOptions
+                    | InstallHLS InstallOptions
 
 data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
@@ -125,6 +126,7 @@ data InstallOptions = InstallOptions
 
 data SetCommand = SetGHC SetOptions
                 | SetCabal SetOptions
+                | SetHLS SetOptions
 
 data SetOptions = SetOptions
   { sToolVer :: Maybe ToolVersion
@@ -138,6 +140,7 @@ data ListOptions = ListOptions
 
 data RmCommand = RmGHC RmOptions
                | RmCabal Version
+               | RmHLS Version
 
 data RmOptions = RmOptions
   { ghcVer :: GHCTargetVersion
@@ -394,10 +397,29 @@ installParser =
                  )
                )
            )
+      <> command
+           "hls"
+           (   InstallHLS
+           <$> (info
+                 (installOpts <**> helper)
+                 (  progDesc "Install haskell-languge-server"
+                 <> footerDoc (Just $ text installHLSFooter)
+                 )
+               )
+           )
       )
     )
     <|> (Right <$> installOpts)
  where
+  installHLSFooter :: String
+  installHLSFooter = [s|Discussion:
+  Installs haskell-language-server binaries and wrapper
+  into "~/.ghcup/bin"
+
+Examples:
+  # install recommended GHC
+  ghcup install hls|]
+
   installGHCFooter :: String
   installGHCFooter = [s|Discussion:
   Installs the specified GHC version (or a recommended default one) into
@@ -470,6 +492,16 @@ setParser =
                  )
                )
            )
+      <> command
+           "hls"
+           (   SetHLS
+           <$> (info
+                 (setOpts <**> helper)
+                 (  progDesc "Set haskell-language-server version"
+                 <> footerDoc (Just $ text setHLSFooter)
+                 )
+               )
+           )
       )
     )
     <|> (Right <$> setOpts)
@@ -483,6 +515,10 @@ setParser =
   setCabalFooter :: String
   setCabalFooter = [s|Discussion:
     Sets the the current Cabal version.|]
+
+  setHLSFooter :: String
+  setHLSFooter = [s|Discussion:
+    Sets the the current haskell-language-server version.|]
 
 
 setOpts :: Parser SetOptions
@@ -524,6 +560,13 @@ rmParser =
            (   RmCabal
            <$> (info (versionParser' <**> helper)
                      (progDesc "Remove Cabal version")
+               )
+           )
+      <> command
+           "hls"
+           (   RmHLS
+           <$> (info (versionParser' <**> helper)
+                     (progDesc "Remove haskell-language-server version")
                )
            )
       )
@@ -976,6 +1019,15 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     , TagNotFound
                     ]
 
+          let
+            runSetHLS =
+              runLogger
+                . flip runReaderT settings
+                . runE
+                  @'[ NotInstalled
+                    , TagNotFound
+                    ]
+
           let runListGHC = runLogger . flip runReaderT settings
 
           let runRm =
@@ -1154,6 +1206,40 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             $(logError) [i|Also check the logs in #{logsDir}|]
                           pure $ ExitFailure 4
 
+          let installHLS InstallOptions{..} =
+                (case instBindist of
+                   Nothing -> runInstTool $ do
+                     v <- liftE $ fromVersion dls instVer HLS
+                     liftE $ installHLSBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                   Just uri -> runInstTool' settings{noVerify = True} $ do
+                     v <- liftE $ fromVersion dls instVer HLS
+                     liftE $ installHLSBindist
+                         (DownloadInfo uri Nothing "")
+                         (_tvVersion v)
+                         (fromMaybe pfreq instPlatform)
+                  )
+                  >>= \case
+                        VRight _ -> do
+                          runLogger $ $(logInfo) ("HLS installation successful")
+                          pure ExitSuccess
+                        VLeft (V (AlreadyInstalled _ v)) -> do
+                          runLogger $ $(logWarn)
+                            [i|HLS ver #{prettyVer v} already installed, you may want to run 'ghcup rm hls #{prettyVer v}' first|]
+                          pure ExitSuccess
+                        VLeft (V NoDownload) -> do
+
+                          runLogger $ do
+                            case instVer of
+                              Just iver -> $(logError) [i|No available HLS version for #{prettyToolVer iver}|]
+                              Nothing -> $(logError) [i|No available recommended HLS version|]
+                          pure $ ExitFailure 4
+                        VLeft e -> do
+                          runLogger $ do
+                            $(logError) [i|#{e}|]
+                            $(logError) [i|Also check the logs in #{logsDir}|]
+                          pure $ ExitFailure 4
+
+
           let setGHC' SetOptions{..} =
                 (runSetGHC $ do
                     v <- liftE $ fromVersion dls sToolVer GHC
@@ -1173,6 +1259,17 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 (runSetCabal $ do
                     v <- liftE $ fromVersion dls sToolVer Cabal
                     liftE $ setCabal (_tvVersion v)
+                  )
+                  >>= \case
+                        VRight _ -> pure ExitSuccess
+                        VLeft  e -> do
+                          runLogger ($(logError) [i|#{e}|])
+                          pure $ ExitFailure 14
+
+          let setHLS' SetOptions{..} =
+                (runSetHLS $ do
+                    v <- liftE $ fromVersion dls sToolVer HLS
+                    liftE $ setHLS (_tvVersion v)
                   )
                   >>= \case
                         VRight _ -> pure ExitSuccess
@@ -1200,6 +1297,15 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           runLogger ($(logError) [i|#{e}|])
                           pure $ ExitFailure 15
 
+          let rmHLS' tv =
+                (runRm $ do
+                    liftE $ rmHLSVer tv
+                  )
+                  >>= \case
+                        VRight _ -> pure ExitSuccess
+                        VLeft  e -> do
+                          runLogger ($(logError) [i|#{e}|])
+                          pure $ ExitFailure 15
 
 
           res <- case optCommand of
@@ -1211,6 +1317,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
               installGHC iopts
             Install (Left (InstallGHC iopts)) -> installGHC iopts
             Install (Left (InstallCabal iopts)) -> installCabal iopts
+            Install (Left (InstallHLS iopts)) -> installHLS iopts
             InstallCabalLegacy iopts -> do
               runLogger ($(logWarn) [i|This is an old-style command for installing cabal. Use 'ghcup install cabal' instead.|])
               installCabal iopts
@@ -1220,6 +1327,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
               setGHC' sopts
             Set (Left (SetGHC sopts)) -> setGHC' sopts
             Set (Left (SetCabal sopts)) -> setCabal' sopts
+            Set (Left (SetHLS sopts)) -> setHLS' sopts
 
             List (ListOptions {..}) ->
               (runListGHC $ do
@@ -1233,6 +1341,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
               rmGHC' rmopts
             Rm (Left (RmGHC rmopts)) -> rmGHC' rmopts
             Rm (Left (RmCabal rmopts)) -> rmCabal' rmopts
+            Rm (Left (RmHLS rmopts)) -> rmHLS' rmopts
 
             DInfo ->
               do
@@ -1440,7 +1549,8 @@ printListResult raw lr = do
                            Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
                        , intercalate "," $ (fmap printTag $ sort lTag)
                        , intercalate ","
-                       $  (if fromSrc then [color' Blue "compiled"] else mempty)
+                       $  (if hlsPowered then [color' Green "hls-powered"] else mempty)
+                       ++ (if fromSrc then [color' Blue "compiled"] else mempty)
                        ++ (if lStray then [color' Yellow "stray"] else mempty)
                        ++ (if lNoBindist then [color' Red "no-bindist"] else mempty)
                        ]
@@ -1481,6 +1591,13 @@ checkForUpdates dls pfreq = do
       when (l > cabal_ver)
         $ $(logWarn)
             [i|New Cabal version available: #{prettyVer l}. To upgrade, run 'ghcup install cabal #{prettyVer l}'|]
+
+  forM_ (getLatest dls HLS) $ \l -> do
+    mcabal_ver <- latestInstalled HLS
+    forM mcabal_ver $ \cabal_ver ->
+      when (l > cabal_ver)
+        $ $(logWarn)
+            [i|New HLS version available: #{prettyVer l}. To upgrade, run 'ghcup install hls #{prettyVer l}'|]
 
  where
   latestInstalled tool = (fmap lVer . lastMay)

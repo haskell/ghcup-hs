@@ -71,19 +71,26 @@ ui AppState {..} =
   ( padBottom Max
     $ ( withBorderStyle unicode
       $ borderWithLabel (str "GHCup")
-      $ (center $ renderList renderItem True lr)
+      $ (center $ (header <=> hBorder <=> renderList renderItem True lr))
       )
     )
-    <=> ( withAttr "help"
-        . txtWrap
-        . T.pack
-        . foldr1 (\x y -> x <> "  " <> y)
-        . (++ ["↑↓:Navigation"])
-        $ (fmap (\(c, s, _) -> (c : ':' : s)) keyHandlers)
-        )
+    <=> footer
 
  where
-  renderItem b ListResult {..} =
+  footer =
+    withAttr "help"
+      . txtWrap
+      . T.pack
+      . foldr1 (\x y -> x <> "  " <> y)
+      . (++ ["↑↓:Navigation"])
+      $ (fmap (\(c, s, _) -> (c : ':' : s)) keyHandlers)
+  header =
+    (minHSize 2 $ emptyWidget)
+      <+> (padLeft (Pad 2) $ minHSize 6 $ str "Tool")
+      <+> (minHSize 15 $ str "Version")
+      <+> (padLeft (Pad 1) $ minHSize 25 $ str "Tags")
+      <+> (padLeft (Pad 5) $ str "Notes")
+  renderItem b listResult@(ListResult {..}) =
     let marks = if
           | lSet       -> (withAttr "set" $ str "✔✔")
           | lInstalled -> (withAttr "installed" $ str "✓ ")
@@ -94,19 +101,27 @@ ui AppState {..} =
         dim = if lNoBindist
           then updateAttrMap (const dimAttributes) . withAttr "no-bindist"
           else id
+        active = if b then withAttr "active" else id
     in  dim
           (   marks
-          <+> ( padLeft (Pad 2)
-              $ minHSize 20
-              $ ((if b then withAttr "active" else id)
-                  (str $ (fmap toLower . show $ lTool) <> " " <> ver)
-                )
+          <+> (( padLeft (Pad 2)
+               $ active
+               $ minHSize 6
+               $ (str (fmap toLower . show $ lTool))
+               )
               )
-          <+> (padLeft (Pad 1) $ if null lTag
+          <+> (minHSize 15 $ active $ (str ver))
+          <+> (padLeft (Pad 1) $ minHSize 25 $ if null lTag
                 then emptyWidget
                 else
                   foldr1 (\x y -> x <+> str "," <+> y)
                     $ (fmap printTag $ sort lTag)
+              )
+          <+> ( padLeft (Pad 5)
+              $ let notes = printNotes listResult
+                in  if null notes
+                      then emptyWidget
+                      else foldr1 (\x y -> x <+> str "," <+> y) $ notes
               )
           )
 
@@ -115,6 +130,13 @@ ui AppState {..} =
   printTag Prerelease         = withAttr "prerelease" $ str "prerelease"
   printTag (Base       pvp'') = str ("base-" ++ T.unpack (prettyPVP pvp''))
   printTag (UnknownTag t    ) = str t
+
+  printNotes ListResult {..} =
+    (if hlsPowered then [withAttr "hls-powered" $ str "hls-powered"] else mempty
+      )
+      ++ (if fromSrc then [withAttr "compiled" $ str "compiled"] else mempty)
+      ++ (if lStray then [withAttr "stray" $ str "stray"] else mempty)
+
 
 
 minHSize :: Int -> Widget n -> Widget n
@@ -137,8 +159,11 @@ defaultAttributes = attrMap
   , ("set"          , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("installed"    , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("recommended"  , Vty.defAttr `Vty.withForeColor` Vty.green)
+  , ("hls-powered"  , Vty.defAttr `Vty.withForeColor` Vty.green)
   , ("latest"       , Vty.defAttr `Vty.withForeColor` Vty.yellow)
   , ("prerelease"   , Vty.defAttr `Vty.withForeColor` Vty.red)
+  , ("compiled"     , Vty.defAttr `Vty.withForeColor` Vty.blue)
+  , ("stray"        , Vty.defAttr `Vty.withForeColor` Vty.blue)
   , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
   ]
 
@@ -223,6 +248,7 @@ install' AppState {..} (_, ListResult {..}) = do
         GHC   -> liftE $ installGHCBin dls lVer pfreq
         Cabal -> liftE $ installCabalBin dls lVer pfreq
         GHCup -> liftE $ upgradeGHCup dls Nothing False pfreq $> ()
+        HLS   -> liftE $ installHLSBin dls lVer pfreq $> ()
     )
     >>= \case
           VRight _                          -> pure $ Right ()
@@ -251,6 +277,7 @@ set' _ (_, ListResult {..}) = do
       case lTool of
         GHC   -> liftE $ setGHC (GHCTargetVersion lCross lVer) SetGHCOnly $> ()
         Cabal -> liftE $ setCabal lVer $> ()
+        HLS   -> liftE $ setHLS lVer $> ()
         GHCup -> pure ()
     )
     >>= \case
@@ -270,6 +297,7 @@ del' _ (_, ListResult {..}) = do
       case lTool of
         GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> ()
         Cabal -> liftE $ rmCabalVer lVer $> ()
+        HLS   -> liftE $ rmHLSVer lVer $> ()
         GHCup -> pure ()
     )
     >>= \case

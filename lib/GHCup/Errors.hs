@@ -152,3 +152,10 @@ data ParseError = ParseError String
   deriving Show
 
 instance Exception ParseError
+
+
+data UnexpectedListLength = UnexpectedListLength String
+  deriving Show
+
+instance Exception UnexpectedListLength
+

@@ -2,3 +2,5 @@ cradle:
   cabal:
     - path: "."
       component: "ghcup:lib:ghcup"
+    - path: "."
+      component: "ghcup:exe:ghcup"

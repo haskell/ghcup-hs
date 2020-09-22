@@ -357,6 +357,130 @@ installCabalBin bDls ver pfreq = do
   installCabalBindist dlinfo ver pfreq
 
 
+-- | Like 'installHLSBin, except takes the 'DownloadInfo' as
+-- argument instead of looking it up from 'GHCupDownloads'.
+installHLSBindist :: ( MonadMask m
+                     , MonadCatch m
+                     , MonadReader Settings m
+                     , MonadLogger m
+                     , MonadResource m
+                     , MonadIO m
+                     , MonadFail m
+                     )
+                  => DownloadInfo
+                  -> Version
+                  -> PlatformRequest
+                  -> Excepts
+                       '[ AlreadyInstalled
+                        , CopyError
+                        , DigestError
+                        , DownloadFailed
+                        , NoDownload
+                        , NotInstalled
+                        , UnknownArchive
+                        , TarDirDoesNotExist
+#if !defined(TAR)
+                        , ArchiveResult
+#endif
+                        ]
+                       m
+                       ()
+installHLSBindist dlinfo ver (PlatformRequest {..}) = do
+  lift $ $(logDebug) [i|Requested to install hls version #{ver}|]
+
+  Settings {dirs = Dirs {..}} <- lift ask
+
+  whenM (lift (hlsInstalled ver))
+    $ (throwE $ AlreadyInstalled HLS ver)
+
+  -- download (or use cached version)
+  dl                           <- liftE $ downloadCached dlinfo Nothing
+
+  -- unpack
+  tmpUnpack                    <- lift withGHCupTmpDir
+  liftE $ unpackToDir tmpUnpack dl
+  void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
+
+  -- the subdir of the archive where we do the work
+  workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
+
+  liftE $ installHLS' workdir binDir
+
+  -- create symlink if this is the latest version
+  hlsVers <- lift $ fmap rights $ getInstalledHLSs
+  let lInstHLS = headMay . reverse . sort $ hlsVers
+  when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
+
+  pure ()
+
+ where
+  -- | Install an unpacked hls distribution.
+  installHLS' :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
+                => Path Abs      -- ^ Path to the unpacked hls bindist (where the executable resides)
+                -> Path Abs      -- ^ Path to install to
+                -> Excepts '[CopyError] m ()
+  installHLS' path inst = do
+    lift $ $(logInfo) "Installing HLS"
+    liftIO $ createDirRecursive' inst
+
+    -- install haskell-language-server-<ghcver>
+    bins@(_:_) <- liftIO $ findFiles
+      path
+      (makeRegexOpts compExtended
+                     execBlank
+                     ([s|^haskell-language-server-[0-9].*$|] :: ByteString)
+      )
+    forM_ bins $ \f -> do
+      toF <- parseRel (toFilePath f <> "~" <> verToBS ver)
+      handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+        (path </> f)
+        (inst </> toF)
+        Overwrite
+      lift $ chmod_777 (inst </> toF)
+
+    -- install haskell-language-server-wrapper
+    let wrapper = [rel|haskell-language-server-wrapper|]
+    toF <- parseRel (toFilePath wrapper <> "-" <> verToBS ver)
+    handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+      (path </> wrapper)
+      (inst </> toF)
+      Overwrite
+    lift $ chmod_777 (inst </> toF)
+
+
+-- | Installs hls binaries @haskell-language-server-\<ghcver\>@
+-- into @~\/.ghcup\/bin/@, as well as @haskell-languager-server-wrapper@.
+installHLSBin :: ( MonadMask m
+                 , MonadCatch m
+                 , MonadReader Settings m
+                 , MonadLogger m
+                 , MonadResource m
+                 , MonadIO m
+                 , MonadFail m
+                 )
+              => GHCupDownloads
+              -> Version
+              -> PlatformRequest
+              -> Excepts
+                   '[ AlreadyInstalled
+                    , CopyError
+                    , DigestError
+                    , DownloadFailed
+                    , NoDownload
+                    , NotInstalled
+                    , UnknownArchive
+                    , TarDirDoesNotExist
+#if !defined(TAR)
+                    , ArchiveResult
+#endif
+                    ]
+                   m
+                   ()
+installHLSBin bDls ver pfreq = do
+  dlinfo <- lE $ getDownloadInfo HLS ver pfreq bDls
+  installHLSBindist dlinfo ver pfreq
+
+
 
 
     ---------------------
@@ -487,6 +611,55 @@ setCabal ver = do
 
 
 
+-- | Set the haskell-language-server symlinks.
+setHLS :: ( MonadCatch m
+          , MonadReader Settings m
+          , MonadLogger m
+          , MonadThrow m
+          , MonadFail m
+          , MonadIO m
+          )
+       => Version
+       -> Excepts '[NotInstalled] m ()
+setHLS ver = do
+  Settings { dirs = Dirs {..} } <- lift ask
+  liftIO $ createDirRecursive' binDir
+
+  -- Delete old symlinks, since these might have different ghc versions than the
+  -- selected version, so we could end up with stray or incorrect symlinks.
+  oldSyms <- lift hlsSymlinks
+  forM_ oldSyms $ \f -> do
+    lift $ $(logDebug) [i|rm #{toFilePath (binDir </> f)}|]
+    liftIO $ deleteFile (binDir </> f)
+
+  -- set haskell-language-server-<ghcver> symlinks
+  bins <- lift $ hlsServerBinaries ver
+  when (bins == []) $ throwE $ NotInstalled HLS (prettyVer ver)
+
+  forM_ bins $ \f -> do
+    let destL = toFilePath f
+    target <- parseRel . head . B.split _tilde . toFilePath $ f
+
+    lift $ $(logDebug) [i|rm -f #{toFilePath (binDir </> target)}|]
+    liftIO $ hideError doesNotExistErrorType $ deleteFile (binDir </> target)
+
+    lift $ $(logDebug) [i|ln -s #{destL} #{toFilePath (binDir </> target)}|]
+    liftIO $ createSymlink (binDir </> target) destL
+
+  -- set haskell-language-server-wrapper symlink
+  let destL = "haskell-language-server-wrapper-" <> verToBS ver
+  let wrapper = binDir </> [rel|haskell-language-server-wrapper|]
+
+  lift $ $(logDebug) [i|rm -f #{toFilePath wrapper}|]
+  liftIO $ hideError doesNotExistErrorType $ deleteFile wrapper
+
+  lift $ $(logDebug) [i|ln -s #{destL} #{toFilePath wrapper}|]
+  liftIO $ createSymlink wrapper destL
+
+  pure ()
+
+
+
 
 
     ------------------
@@ -511,6 +684,7 @@ data ListResult = ListResult
   , fromSrc    :: Bool -- ^ compiled from source
   , lStray     :: Bool -- ^ not in download info
   , lNoBindist :: Bool -- ^ whether the version is available for this platform/arch
+  , hlsPowered :: Bool
   }
   deriving (Eq, Ord, Show)
 
@@ -544,22 +718,25 @@ listVersions av lt criteria pfreq = do
       lr <- filter' <$> forM (Map.toList avTools) (toListResult t)
 
       case t of
-        -- append stray GHCs
         GHC -> do
           slr <- strayGHCs avTools
           pure $ (sort (slr ++ lr))
         Cabal -> do
           slr <- strayCabals avTools
           pure $ (sort (slr ++ lr))
-        _ -> pure lr
+        HLS -> do
+          slr <- strayHLS avTools
+          pure $ (sort (slr ++ lr))
+        GHCup -> pure lr
     Nothing -> do
       ghcvers   <- listVersions av (Just GHC) criteria pfreq
       cabalvers <- listVersions av (Just Cabal) criteria pfreq
+      hlsvers   <- listVersions av (Just HLS) criteria pfreq
       ghcupvers <- listVersions av (Just GHCup) criteria pfreq
-      pure (ghcvers <> cabalvers <> ghcupvers)
+      pure (ghcvers <> cabalvers <> hlsvers <> ghcupvers)
 
  where
-  strayGHCs :: (MonadReader Settings m, MonadThrow m, MonadLogger m, MonadIO m)
+  strayGHCs :: (MonadCatch m, MonadReader Settings m, MonadThrow m, MonadLogger m, MonadIO m)
             => Map.Map Version [Tag]
             -> m [ListResult]
   strayGHCs avTools = do
@@ -571,6 +748,7 @@ listVersions av lt criteria pfreq = do
           Nothing -> do
             lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet Nothing
             fromSrc <- ghcSrcInstalled tver
+            hlsPowered <- fmap (elem _tvVersion) $ hlsGHCVersions
             pure $ Just $ ListResult
               { lTool      = GHC
               , lVer       = _tvVersion
@@ -584,6 +762,7 @@ listVersions av lt criteria pfreq = do
       Right tver@GHCTargetVersion{ .. } -> do
         lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet _tvTarget
         fromSrc <- ghcSrcInstalled tver
+        hlsPowered <- fmap (elem _tvVersion) $ hlsGHCVersions
         pure $ Just $ ListResult
           { lTool      = GHC
           , lVer       = _tvVersion
@@ -619,6 +798,35 @@ listVersions av lt criteria pfreq = do
               , lStray     = maybe True (const False) (Map.lookup ver avTools)
               , lNoBindist = False
               , fromSrc    = False -- actually, we don't know :>
+              , hlsPowered = False
+              , ..
+              }
+      Left e -> do
+        $(logWarn)
+          [i|Could not parse version of stray directory #{toFilePath e}|]
+        pure Nothing
+
+  strayHLS :: (MonadReader Settings m, MonadCatch m, MonadThrow m, MonadLogger m, MonadIO m)
+           => Map.Map Version [Tag]
+           -> m [ListResult]
+  strayHLS avTools = do
+    hlss <- getInstalledHLSs
+    fmap catMaybes $ forM hlss $ \case
+      Right ver ->
+        case Map.lookup ver avTools of
+          Just _  -> pure Nothing
+          Nothing -> do
+            lSet    <- fmap (maybe False (== ver)) $ hlsSet
+            pure $ Just $ ListResult
+              { lTool      = HLS
+              , lVer       = ver
+              , lCross     = Nothing
+              , lTag       = []
+              , lInstalled = True
+              , lStray     = maybe True (const False) (Map.lookup ver avTools)
+              , lNoBindist = False
+              , fromSrc    = False -- actually, we don't know :>
+              , hlsPowered = False
               , ..
               }
       Left e -> do
@@ -635,6 +843,7 @@ listVersions av lt criteria pfreq = do
       lSet       <- fmap (maybe False (\(GHCTargetVersion _ v') -> v' == v)) $ ghcSet Nothing
       lInstalled <- ghcInstalled tver
       fromSrc    <- ghcSrcInstalled tver
+      hlsPowered <- fmap (elem v) $ hlsGHCVersions
       pure ListResult { lVer = v, lCross = Nothing , lTag = tags, lTool = t, lStray = False, .. }
     Cabal -> do
       let lNoBindist = isLeft $ getDownloadInfo Cabal v pfreq av
@@ -646,6 +855,7 @@ listVersions av lt criteria pfreq = do
                       , lTool   = t
                       , fromSrc = False
                       , lStray  = False
+                      , hlsPowered = False
                       , ..
                       }
     GHCup -> do
@@ -658,6 +868,20 @@ listVersions av lt criteria pfreq = do
                       , fromSrc = False
                       , lStray  = False
                       , lNoBindist = False
+                      , hlsPowered = False
+                      , ..
+                      }
+    HLS -> do
+      let lNoBindist = isLeft $ getDownloadInfo HLS v pfreq av
+      lSet <- fmap (maybe False (== v)) $ hlsSet
+      lInstalled <- hlsInstalled v
+      pure ListResult { lVer    = v
+                      , lCross  = Nothing
+                      , lTag    = tags
+                      , lTool   = t
+                      , fromSrc = False
+                      , lStray  = False
+                      , hlsPowered = False
                       , ..
                       }
 
@@ -747,6 +971,35 @@ rmCabalVer ver = do
       Just latestver -> setCabal latestver
       Nothing        -> liftIO $ hideError doesNotExistErrorType $ deleteFile
         (binDir </> [rel|cabal|])
+
+
+-- | Delete a hls version. Will try to fix the hls symlinks
+-- after removal (e.g. setting it to an older version).
+rmHLSVer :: (MonadReader Settings m, MonadThrow m, MonadLogger m, MonadIO m, MonadFail m, MonadCatch m)
+         => Version
+         -> Excepts '[NotInstalled] m ()
+rmHLSVer ver = do
+  whenM (lift $ fmap not $ hlsInstalled ver) $ throwE (NotInstalled HLS (prettyVer ver))
+
+  isHlsSet      <- lift $ hlsSet
+
+  Settings {dirs = Dirs {..}} <- lift ask
+
+  bins <- lift $ hlsAllBinaries ver
+  forM_ bins $ \f -> liftIO $ deleteFile (binDir </> f)
+
+  when (maybe False (== ver) isHlsSet) $ do
+    -- delete all set symlinks
+    oldSyms <- lift hlsSymlinks
+    forM_ oldSyms $ \f -> do
+      lift $ $(logDebug) [i|rm #{toFilePath (binDir </> f)}|]
+      liftIO $ deleteFile (binDir </> f)
+    -- set latest hls
+    hlsVers <- lift $ fmap rights $ getInstalledHLSs
+    case headMay . reverse . sort $ hlsVers of
+      Just latestver -> setHLS latestver
+      Nothing        -> pure ()
+
 
 
 

@@ -17,7 +17,7 @@ variables:
     BIT: "64"
 
 .alpine:64bit:
-  image: "alpine:edge"
+  image: "alpine:3.12"
   tags:
     - x86_64-linux
   variables:
@@ -25,7 +25,7 @@ variables:
     BIT: "64"
 
 .alpine:32bit:
-  image: "i386/alpine:edge"
+  image: "i386/alpine:3.12"
   tags:
     - x86_64-linux
   variables:
