@@ -22,7 +22,7 @@ import qualified Data.Text                     as T
 
 -- | This reflects the API version of the YAML.
 ghcupURL :: URI
-ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.2.yaml|]
+ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.3.yaml|]
 
 -- | The current ghcup version.
 ghcUpVer :: PVP
