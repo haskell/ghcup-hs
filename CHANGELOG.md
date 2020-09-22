@@ -9,7 +9,7 @@
   - `ghcup install ghc -u <url> <version>`
 * fix bug when cabal isn't marked executable in bindist
 * fix bug when `~/.ghcup` is a valid symlink wrt #49
-* Add JSON roundtrip tests
+* Drop support for compiling cabal from source (the old bootstrap script is discontinued)
 
 ## 0.1.10 -- 2020-08-14
 
