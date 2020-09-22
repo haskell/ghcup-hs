@@ -180,9 +180,6 @@ common strict-base
 common string-interpolate
   build-depends: string-interpolate >=0.2.0.0
 
-common table-layout
-  build-depends: table-layout >=0.8
-
 common template-haskell
   build-depends: template-haskell >=2.7
 
@@ -378,7 +375,6 @@ executable ghcup
     , safe
     , safe-exceptions
     , string-interpolate
-    , table-layout
     , template-haskell
     , text
     , uri-bytestring
@@ -433,7 +429,6 @@ executable ghcup-gen
     , resourcet
     , safe-exceptions
     , string-interpolate
-    , table-layout
     , text
     , transformers
     , uri-bytestring
