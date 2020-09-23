@@ -1,6 +1,6 @@
 # Revision history for ghcup
 
-## 0.1.11 -- ????-??-??
+## 0.1.11 -- 2020-09-23
 
 * Add support for installing haskell-language-server, wrt #65
 * When compiling GHC from source create a bindist first, store that bindist in `~/.ghcup/cache` and install it, wrt #51
