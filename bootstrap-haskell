@@ -196,12 +196,12 @@ printf "\\033[0;35m%s\\033[0m\\n" "Answer with YES or NO and press ENTER."
 printf "\\033[0;35m%s\\033[0m\\n" ""
 
 while true; do
-	read -r next_answer </dev/tty
+	read -r hls_answer </dev/tty
 
-	case $next_answer in
+	case $hls_answer in
 		[Yy]*)
 			eghcup --cache install hls
-			;;
+			break ;;
 		[Nn]*)
 			break ;;
 		*)
