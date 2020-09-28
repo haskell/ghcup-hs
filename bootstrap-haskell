@@ -238,7 +238,20 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 							echo "test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH" >> "${GHCUP_PROFILE_FILE}"
 						fi
 						break ;;
-					*)
+					bash)
+						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
+							echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+						fi
+						case "$(uname -s)" in
+							"Darwin"|"darwin")
+								if ! grep -q "ghcup-env" "${HOME}/.bash_profile" ; then
+									echo "[[ -f ~/.bashrc ]] && source ~/.bashrc # ghcup-env" >> "${HOME}/.bash_profile"
+								fi
+								;;
+						esac
+						break ;;
+
+					zsh)
 						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
 							echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 						fi
