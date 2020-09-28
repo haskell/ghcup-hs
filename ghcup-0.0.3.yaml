@@ -406,7 +406,7 @@ ghcupDownloads:
             '16.04': *ghc-843-64-deb9
             '18.04': *ghc-843-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-843-64-deb9
+            unknown_versioning: *ghc-843-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-843-64-fedora
           Linux_UnknownLinux:
@@ -455,7 +455,7 @@ ghcupDownloads:
             '16.04': *ghc-844-64-deb9
             '18.04': *ghc-844-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-844-64-deb9
+            unknown_versioning: *ghc-844-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-844-64-fedora
           Linux_CentOS:
@@ -528,7 +528,7 @@ ghcupDownloads:
             '16.04': *ghc-861-64-deb9
             '18.04': *ghc-861-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-861-64-deb9
+            unknown_versioning: *ghc-861-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-861-64-fedora
           Linux_UnknownLinux:
@@ -578,7 +578,7 @@ ghcupDownloads:
             '16.04': *ghc-862-64-deb8
             '18.04': *ghc-862-64-deb8
           Linux_Mint:
-            unknown_versioning: *ghc-862-64-deb8
+            unknown_versioning: *ghc-862-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-862-64-fedora
           Linux_UnknownLinux:
@@ -627,7 +627,7 @@ ghcupDownloads:
             '16.04': *ghc-863-64-deb9
             '18.04': *ghc-863-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-863-64-deb9
+            unknown_versioning: *ghc-863-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-863-64-fedora
           Linux_CentOS:
@@ -690,7 +690,7 @@ ghcupDownloads:
             '16.04': *ghc-864-64-deb9
             '18.04': *ghc-864-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-864-64-deb9
+            unknown_versioning: *ghc-864-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-864-64-fedora
           Linux_UnknownLinux:
@@ -739,7 +739,7 @@ ghcupDownloads:
             '16.04': *ghc-865-64-deb9
             '18.04': *ghc-865-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-865-64-deb9
+            unknown_versioning: *ghc-865-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-865-64-fedora
           Linux_CentOS:
@@ -812,7 +812,7 @@ ghcupDownloads:
             '16.04': *ghc-881-64-deb9
             '18.04': *ghc-881-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-881-64-deb9
+            unknown_versioning: *ghc-881-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-881-64-fedora
           Linux_CentOS:
@@ -870,7 +870,7 @@ ghcupDownloads:
             '16.04': *ghc882-64-deb9
             '18.04': *ghc882-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc882-64-deb9
+            unknown_versioning: *ghc-882-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-882-64-fedora
           Linux_CentOS:
@@ -928,7 +928,7 @@ ghcupDownloads:
             '16.04': *ghc-883-64-deb9
             '18.04': *ghc-883-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-883-64-deb9
+            unknown_versioning: *ghc-883-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-883-64-fedora
           Linux_CentOS:
@@ -992,7 +992,7 @@ ghcupDownloads:
             '16.04': *ghc-884-64-deb9
             '18.04': *ghc-884-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-884-64-deb9
+            unknown_versioning: *ghc-884-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-884-64-fedora
           Linux_CentOS:
@@ -1066,7 +1066,7 @@ ghcupDownloads:
             '16.04': *ghc-8101-64-deb9
             '18.04': *ghc-8101-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-8101-64-deb10
+            unknown_versioning: *ghc-8101-64-fedora
           Linux_Fedora:
             '27': *ghc-8101-64-fedora
             unknown_versioning: *ghc-8101-64-fedora
@@ -1144,7 +1144,7 @@ ghcupDownloads:
             '16.04': *ghc-8102-64-deb9
             '18.04': *ghc-8102-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-8102-64-deb10
+            unknown_versioning: *ghc-8102-64-fedora
           Linux_Fedora:
             '27': *ghc-8102-64-fedora
             unknown_versioning: *ghc-8102-64-fedora
