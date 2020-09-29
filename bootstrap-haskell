@@ -195,21 +195,22 @@ printf "\\033[0;35m%s\\033[0m\\n" ""
 printf "\\033[0;35m%s\\033[0m\\n" "Answer with YES or NO and press ENTER."
 printf "\\033[0;35m%s\\033[0m\\n" ""
 
-while true; do
-	read -r hls_answer </dev/tty
-
-	case $hls_answer in
-		[Yy]*)
-			eghcup --cache install hls
-			break ;;
-		[Nn]*)
-			break ;;
-		*)
-			echo "Please type YES or NO and press enter.";;
-	esac
-done
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+	while true; do
+		read -r hls_answer </dev/tty
+
+		case $hls_answer in
+			[Yy]*)
+				eghcup --cache install hls
+				break ;;
+			[Nn]*)
+				break ;;
+			*)
+				echo "Please type YES or NO and press enter.";;
+		esac
+	done
+
     echo "In order to run ghc and cabal, you need to adjust your PATH variable."
     echo "You may want to source '$GHCUP_DIR/env' in your shell"
     echo "configuration to do so (e.g. ~/.bashrc)."
