@@ -187,16 +187,17 @@ edo cabal new-update
 printf "\\033[0;35m%s\\033[0m\\n" ""
 printf "\\033[0;35m%s\\033[0m\\n" "Installation done!"
 printf "\\033[0;35m%s\\033[0m\\n" ""
-printf "\\033[0;35m%s\\033[0m\\n" "Do you want to install haskell-language-server (HLS) now?"
-printf "\\033[0;35m%s\\033[0m\\n" "HLS is a language-server that provides IDE-like functionality"
-printf "\\033[0;35m%s\\033[0m\\n" "and can integrate with different editors, such as Vim, Emacs, VS Code, Atom, ..."
-printf "\\033[0;35m%s\\033[0m\\n" "Also see https://github.com/haskell/haskell-language-server/blob/master/README.md"
-printf "\\033[0;35m%s\\033[0m\\n" ""
-printf "\\033[0;35m%s\\033[0m\\n" "Answer with YES or NO and press ENTER."
-printf "\\033[0;35m%s\\033[0m\\n" ""
 
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+	printf "\\033[0;35m%s\\033[0m\\n" "Do you want to install haskell-language-server (HLS) now?"
+	printf "\\033[0;35m%s\\033[0m\\n" "HLS is a language-server that provides IDE-like functionality"
+	printf "\\033[0;35m%s\\033[0m\\n" "and can integrate with different editors, such as Vim, Emacs, VS Code, Atom, ..."
+	printf "\\033[0;35m%s\\033[0m\\n" "Also see https://github.com/haskell/haskell-language-server/blob/master/README.md"
+	printf "\\033[0;35m%s\\033[0m\\n" ""
+	printf "\\033[0;35m%s\\033[0m\\n" "Answer with YES or NO and press ENTER."
+	printf "\\033[0;35m%s\\033[0m\\n" ""
+
 	while true; do
 		read -r hls_answer </dev/tty
 
