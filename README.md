@@ -163,6 +163,17 @@ In addition this script can also install `cabal-install`.
 
 ## Known problems
 
+### Custom ghc version names
+
+When installing ghc bindists with custom version names as outlined in
+[installing custom bindists](#installing-custom-bindists), then cabal might
+be unable to find the correct `ghc-pkg` (also see [#73](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/73))
+if you use `cabal build --with-compiler=ghc-foo`. Instead, point it to the full path, such as:
+`cabal build --with-compiler=$HOME/.ghcup/ghc/<version-name>/bin/ghc` or set that GHC version
+as the current one via: `ghcup set ghc <version-name>`.
+
+This problem doesn't exist for regularly installed GHC versions.
+
 ### Limited distributions supported
 
 Currently only GNU/Linux distributions compatible with the [upstream GHC](https://www.haskell.org/ghc/download_ghc_8_6_1.html#binaries) binaries are supported.

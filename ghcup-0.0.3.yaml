@@ -1193,7 +1193,7 @@ ghcupDownloads:
               dlUri: https://files.hasufell.de/ghc/ghc-8.10.2-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.10.2
               dlHash: 9ee1cf1e85e9536088b3c9e80e975074e525ea378cd4eb156071bbc4b7b38327
-    9.0.1-alpha1:
+    9.0.0.20200925:
       viTags:
       - Prerelease
       - base-4.15.0.0
