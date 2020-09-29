@@ -102,6 +102,19 @@ variables:
   only:
     - tags
 
+######## bootstrap test ########
+
+test:linux:bootstrap_script:
+  before_script:
+    - ./.gitlab/before_script/linux/install_deps.sh
+  script:
+    - ./.gitlab/script/ghcup_bootstrap.sh
+  variables:
+    GHC_VERSION: "8.8.4"
+    CABAL_VERSION: "3.2.0.0"
+  extends:
+    - .debian
+
 ######## linux test ########
 
 test:linux:recommended:
