@@ -26,3 +26,5 @@ export BOOTSTRAP_HASKELL_CABAL_VERSION=$CABAL_VERSION
 
 ./bootstrap-haskell
 
+[ "$(ghc --numeric-version)" = "${GHC_VERSION}" ]
+
