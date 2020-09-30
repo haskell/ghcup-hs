@@ -102,6 +102,16 @@ variables:
   only:
     - tags
 
+######## stack test ########
+
+test:linux:stack:
+  before_script:
+    - ./.gitlab/before_script/linux/install_deps_minimal.sh
+  script:
+    - ./.gitlab/script/ghcup_stack.sh
+  extends:
+    - .debian
+
 ######## bootstrap test ########
 
 test:linux:bootstrap_script:
