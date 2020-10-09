@@ -45,6 +45,7 @@ import           URI.ByteString
 import qualified Data.Text                     as T
 import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
+import qualified Brick.Widgets.List            as L
 
 
 data AppState = AppState {
@@ -71,7 +72,7 @@ ui AppState {..} =
   ( padBottom Max
     $ ( withBorderStyle unicode
       $ borderWithLabel (str "GHCup")
-      $ (center $ (header <=> hBorder <=> renderList renderItem True lr))
+      $ (center $ (header <=> hBorder <=> renderList renderItem True (L.listReverse lr)))
       )
     )
     <=> footer
