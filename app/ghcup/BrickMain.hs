@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts  #-}
 
 module BrickMain where
 
@@ -48,31 +49,60 @@ import qualified Data.Vector                   as V
 import qualified Brick.Widgets.List            as L
 
 
-data AppState = AppState {
+data AppData = AppData {
     lr :: LR
   , dls :: GHCupDownloads
   , pfreq :: PlatformRequest
-}
+} deriving Show
+
+data AppSettings = AppSettings {
+    showAll :: Bool
+} deriving Show
+
+data AppState = AppState {
+    appData :: AppData
+  , appSettings :: AppSettings
+} deriving Show
 
 type LR = GenericList String Vector ListResult
 
 
-keyHandlers :: [(Char, String, AppState -> EventM n (Next AppState))]
+keyHandlers :: [ ( Char
+                 , AppSettings -> String
+                 , AppState -> EventM n (Next AppState)
+                 )
+               ]
 keyHandlers =
-  [ ('q', "Quit"     , halt)
-  , ('i', "Install"  , withIOAction install')
-  , ('u', "Uninstall", withIOAction del')
-  , ('s', "Set"      , withIOAction set')
-  , ('c', "ChangeLog", withIOAction changelog')
+  [ ('q', const "Quit"     , halt)
+  , ('i', const "Install"  , withIOAction install')
+  , ('u', const "Uninstall", withIOAction del')
+  , ('s', const "Set"      , withIOAction set')
+  , ('c', const "ChangeLog", withIOAction changelog')
+  , ( 'a'
+    , (\AppSettings {..} ->
+        if showAll then "Hide old versions" else "Show all versions"
+      )
+    , (\AppState {..} ->
+        let newAppSettings =
+                appSettings { showAll = not . showAll $ appSettings }
+        in  continue (AppState appData newAppSettings)
+      )
+    )
   ]
 
 
 ui :: AppState -> Widget String
-ui AppState {..} =
+ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}) } =
   ( padBottom Max
     $ ( withBorderStyle unicode
       $ borderWithLabel (str "GHCup")
-      $ (center $ (header <=> hBorder <=> renderList renderItem True (L.listReverse lr)))
+      $ ( center
+        $ (header <=> hBorder <=> renderList
+            renderItem
+            True
+            (L.listReverse lr)
+          )
+        )
       )
     )
     <=> footer
@@ -84,7 +114,7 @@ ui AppState {..} =
       . T.pack
       . foldr1 (\x y -> x <> "  " <> y)
       . (++ ["↑↓:Navigation"])
-      $ (fmap (\(c, s, _) -> (c : ':' : s)) keyHandlers)
+      $ (fmap (\(c, s, _) -> (c : ':' : s as)) keyHandlers)
   header =
     (minHSize 2 $ emptyWidget)
       <+> (padLeft (Pad 2) $ minHSize 6 $ str "Tool")
@@ -112,11 +142,11 @@ ui AppState {..} =
                )
               )
           <+> (minHSize 15 $ active $ (str ver))
-          <+> (padLeft (Pad 1) $ minHSize 25 $ if null lTag
-                then emptyWidget
-                else
-                  foldr1 (\x y -> x <+> str "," <+> y)
-                    $ (fmap printTag $ sort lTag)
+          <+> (let l = catMaybes . fmap printTag $ sort lTag
+               in padLeft (Pad 1) $ minHSize 25 $
+                  if null l
+                  then emptyWidget
+                  else foldr1 (\x y -> x <+> str "," <+> y) l
               )
           <+> ( padLeft (Pad 5)
               $ let notes = printNotes listResult
@@ -126,11 +156,12 @@ ui AppState {..} =
               )
           )
 
-  printTag Recommended        = withAttr "recommended" $ str "recommended"
-  printTag Latest             = withAttr "latest" $ str "latest"
-  printTag Prerelease         = withAttr "prerelease" $ str "prerelease"
-  printTag (Base       pvp'') = str ("base-" ++ T.unpack (prettyPVP pvp''))
-  printTag (UnknownTag t    ) = str t
+  printTag Recommended        = Just $ withAttr "recommended" $ str "recommended"
+  printTag Latest             = Just $ withAttr "latest" $ str "latest"
+  printTag Prerelease         = Just $ withAttr "prerelease" $ str "prerelease"
+  printTag (Base       pvp'') = Just $ str ("base-" ++ T.unpack (prettyPVP pvp''))
+  printTag Old                = Nothing
+  printTag (UnknownTag t    ) = Just $ str t
 
   printNotes ListResult {..} =
     (if hlsPowered then [withAttr "hls-powered" $ str "hls-powered"] else mempty
@@ -182,15 +213,43 @@ eventHandler :: AppState -> BrickEvent n e -> EventM n (Next AppState)
 eventHandler st (VtyEvent (Vty.EvResize _               _)) = continue st
 eventHandler st (VtyEvent (Vty.EvKey    (Vty.KChar 'q') _)) = halt st
 eventHandler st (VtyEvent (Vty.EvKey    Vty.KEsc        _)) = halt st
-eventHandler AppState {..} (VtyEvent (Vty.EvKey (Vty.KUp) _)) =
-  continue (AppState (listMoveUp lr) dls pfreq)
-eventHandler AppState {..} (VtyEvent (Vty.EvKey (Vty.KDown) _)) =
-  continue (AppState (listMoveDown lr) dls pfreq)
-eventHandler as (VtyEvent (Vty.EvKey (Vty.KChar c) _)) =
+eventHandler AppState { appData = AppData {..}, ..} (VtyEvent (Vty.EvKey (Vty.KUp) _))
+  = continue (AppState (AppData (listMoveUp lr) dls pfreq) appSettings)
+eventHandler AppState { appData = AppData {..}, ..} (VtyEvent (Vty.EvKey (Vty.KDown) _))
+  = continue (AppState (AppData (listMoveDown lr) dls pfreq) appSettings)
+eventHandler as@(AppState appD appS) (VtyEvent (Vty.EvKey (Vty.KChar c) _)) =
   case find (\(c', _, _) -> c' == c) keyHandlers of
     Nothing              -> continue as
+    Just ('a', _, handler) ->
+      if (not $ showAll appS) -- it's not swapped to `showAll` yet, but it will in the handler
+      then do
+        newAppData <- liftIO $ replaceLR (\_ -> True) appD
+        handler (AppState (selectLatest newAppData) appS)
+      else do -- hide old versions
+        newAppData <- liftIO $ replaceLR (filterVisible (not $ showAll appS)) appD
+        handler (AppState (selectLatest newAppData) appS)
     Just (_, _, handler) -> handler as
 eventHandler st _ = continue st
+
+
+replaceLR :: (ListResult -> Bool) -> AppData -> IO AppData
+replaceLR filterF (AppData {..}) = do
+  settings <- liftIO $ readIORef settings'
+  l        <- liftIO $ readIORef logger'
+  let runLogger = myLoggerT l
+  lV <- runLogger
+    . flip runReaderT settings
+    . fmap (V.fromList . filter filterF)
+    . listVersions dls Nothing Nothing
+    $ pfreq
+  pure $ AppData { lr = L.listReplace lV Nothing $ lr, .. }
+
+
+filterVisible :: Bool -> ListResult -> Bool
+filterVisible showAll e
+  | lInstalled e = True
+  | showAll      = True
+  | otherwise    = not (elem Old (lTag e))
 
 
 -- | Suspend the current UI and run an IO action in terminal. If the
@@ -198,15 +257,20 @@ eventHandler st _ = continue st
 withIOAction :: (AppState -> (Int, ListResult) -> IO (Either String a))
              -> AppState
              -> EventM n (Next AppState)
-withIOAction action as = case listSelectedElement (lr as) of
+withIOAction action as = case listSelectedElement (lr . appData $ as) of
   Nothing      -> continue as
   Just (ix, e) -> suspendAndResume $ do
     action as (ix, e) >>= \case
       Left  err -> putStrLn $ ("Error: " <> err)
       Right _   -> putStrLn "Success"
-    apps <- (fmap . fmap)
-      (\AppState {..} -> AppState { lr = listMoveTo ix lr, .. })
-      $ getAppState Nothing (pfreq as)
+    apps <-
+      (fmap . fmap)
+          (\AppData {..} -> AppState
+            { appData     = AppData { lr = listMoveTo ix lr, .. }
+            , appSettings = (appSettings as)
+            }
+          )
+        $ getAppData Nothing (pfreq . appData $ as)
     case apps of
       Right nas -> do
         putStrLn "Press enter to continue"
@@ -216,7 +280,7 @@ withIOAction action as = case listSelectedElement (lr as) of
 
 
 install' :: AppState -> (Int, ListResult) -> IO (Either String ())
-install' AppState {..} (_, ListResult {..}) = do
+install' AppState { appData = AppData {..}} (_, ListResult {..}) = do
   settings <- readIORef settings'
   l        <- readIORef logger'
   let runLogger = myLoggerT l
@@ -307,7 +371,7 @@ del' _ (_, ListResult {..}) = do
 
 
 changelog' :: AppState -> (Int, ListResult) -> IO (Either String ())
-changelog' AppState {..} (_, ListResult {..}) = do
+changelog' AppState { appData = AppData {..}} (_, ListResult {..}) = do
   case getChangeLog dls lTool (Left lVer) of
     Nothing -> pure $ Left
       [i|Could not find ChangeLog for #{lTool}, version #{prettyVer lVer}|]
@@ -357,23 +421,30 @@ brickMain s muri l av pfreq' = do
   writeIORef logger'   l
   let runLogger = myLoggerT l
 
-  eApps <- getAppState (Just av) pfreq'
-  case eApps of
-    Right as -> defaultMain app (selectLatest as) $> ()
+  eAppData <- getAppData (Just av) pfreq'
+  case eAppData of
+    Right ad -> defaultMain app (AppState (selectLatest ad) defaultAppSettings) $> ()
     Left  e  -> do
       runLogger ($(logError) [i|Error building app state: #{show e}|])
       exitWith $ ExitFailure 2
- where
-  selectLatest :: AppState -> AppState
-  selectLatest AppState {..} =
-    (\ix -> AppState { lr = listMoveTo ix lr, .. })
-      . fromJust
-      . V.findIndex (\ListResult {..} -> lTool == GHC && Latest `elem` lTag)
-      $ (listElements lr)
 
 
-getAppState :: Maybe GHCupDownloads -> PlatformRequest -> IO (Either String AppState)
-getAppState mg pfreq' = do
+selectLatest :: AppData -> AppData
+selectLatest (AppData {..}) =
+  (\ix -> AppData { lr = listMoveTo ix lr, .. } )
+    . fromJust
+    . V.findIndex (\ListResult {..} -> lTool == GHC && Latest `elem` lTag)
+    $ (listElements lr)
+
+
+defaultAppSettings :: AppSettings
+defaultAppSettings = AppSettings {
+    showAll = False
+  }
+
+
+getDownloads' :: IO (Either String GHCupDownloads)
+getDownloads' = do
   muri     <- readIORef uri'
   settings <- readIORef settings'
   l        <- readIORef logger'
@@ -384,12 +455,27 @@ getAppState mg pfreq' = do
     . flip runReaderT settings
     . runE
       @'[JSONError, DownloadFailed, FileDoesNotExistError]
-    $ do
-        dls <- maybe (fmap _ghcupDownloads $ liftE $ getDownloadsF (maybe GHCupURL OwnSource muri)) pure mg
-
-        lV <- lift $ listVersions dls Nothing Nothing pfreq'
-        pure $ (AppState (list "Tool versions" (V.fromList lV) 1) dls pfreq')
+    $ fmap _ghcupDownloads $ liftE $ getDownloadsF (maybe GHCupURL OwnSource muri)
 
   case r of
     VRight a -> pure $ Right a
     VLeft  e -> pure $ Left [i|#{e}|]
+
+
+getAppData :: Maybe GHCupDownloads -> PlatformRequest -> IO (Either String AppData)
+getAppData mg pfreq' = do
+  settings <- readIORef settings'
+  l        <- readIORef logger'
+  let runLogger = myLoggerT l
+
+  r <- maybe getDownloads' (pure . Right) mg
+
+  runLogger
+    . flip runReaderT settings
+    $ do
+      case r of
+        Right dls -> do
+          lV <- listVersions dls Nothing Nothing pfreq'
+          pure $ Right $ (AppData (list "Tool versions"
+                (V.fromList . filter (filterVisible (showAll defaultAppSettings)) $ lV) 1) dls pfreq')
+        Left  e -> pure $ Left [i|#{e}|]

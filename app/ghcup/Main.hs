@@ -1480,7 +1480,7 @@ printListResult raw lr = do
                      , case lCross of
                        Nothing -> T.unpack . prettyVer $ lVer
                        Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
-                     , intercalate "," $ (fmap printTag $ sort lTag)
+                     , intercalate "," $ (filter (/= "") . fmap printTag $ sort lTag)
                      , intercalate ","
                      $  (if hlsPowered
                           then [color' Green "hls-powered"]
@@ -1507,6 +1507,7 @@ printListResult raw lr = do
   printTag Prerelease         = color' Red "prerelease"
   printTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
   printTag (UnknownTag t    ) = t
+  printTag Old                = ""
 
   color' = case raw of
     True  -> flip const

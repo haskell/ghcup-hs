@@ -96,6 +96,7 @@ data Tag = Latest
          | Recommended
          | Prerelease
          | Base PVP
+         | Old                -- ^ old version are hidden by default in TUI
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, GHC.Generic, Show) -- FIXME: manual JSON instance
 
