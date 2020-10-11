@@ -53,8 +53,6 @@ import qualified Data.Text                     as T
 import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
 
-import           Lens.Micro                     ( (^.) )
-
 
 
 data AppData = AppData
@@ -200,71 +198,31 @@ ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}), ..}
                    -> Bool
                    -> AppInternalState
                    -> Widget String
-  drawListElements drawElem foc is@(AppInternalState clr ix) =
-    Widget Greedy Greedy $ do
-      c <- getContext
-
-      -- Take (numPerHeight * 2) elements, or whatever is left
+  drawListElements drawElem foc is@(AppInternalState clr _) =
+    Widget Greedy Greedy $
       let
-        es = slice start (numPerHeight * 2) clr
-
-        -- number of separators we insert between tools
-        seps =
-          let n = length . nub . fmap lTool . V.toList $ clr
-          in  if n < 0 then 0 else n - 1
-
-        start               = max 0 $ ix - numPerHeight + 1
-
-        listItemHeight      = 1
+        es = clr
         listSelected        = fmap fst $ listSelectedElement' is
 
-        -- The number of items to show is the available height
-        -- divided by the item height...
-        initialNumPerHeight = (c ^. availHeightL - seps) `div` listItemHeight
-        -- ... but if the available height leaves a remainder of
-        -- an item height then we need to ensure that we render an
-        -- extra item to show a partial item at the top or bottom to
-        -- give the expected result when an item is more than one
-        -- row high. (Example: 5 rows available with item height
-        -- of 3 yields two items: one fully rendered, the other
-        -- rendered with only its top 2 or bottom 2 rows visible,
-        -- depending on how the viewport state changes.)
-        numPerHeight =
-          initialNumPerHeight
-            + if initialNumPerHeight * listItemHeight == c ^. availHeightL
-                then 0
-                else 1
-
-        off           = start * listItemHeight
-
         drawnElements = flip V.imap es $ \i' e ->
-          let j = i' + start
-
-              -- a separator between tool sections
-              addSeparator w = case es !? (i' - 1) of
+          let addSeparator w = case es !? (i' - 1) of
                 Just e' | lTool e' /= lTool e ->
                   hBorder <=> w
                 _                             -> w
 
-              isSelected  = Just j == listSelected
-              elemWidget  = drawElem j isSelected e
+              isSelected  = Just i' == listSelected
+              elemWidget  = drawElem i' isSelected e
               selItemAttr = if foc
                 then withDefAttr listSelectedFocusedAttr
                 else withDefAttr listSelectedAttr
               makeVisible = if isSelected then visible . selItemAttr else id
           in  addSeparator $ makeVisible elemWidget
 
-      render
+      in render
         $ viewport "GHCup" Vertical
-        $ translateBy (Location (0, off))
         $ vBox
         $ V.toList drawnElements
 
-  slice :: Int {- ^ start index -}
-        -> Int {- ^ length -}
-        -> Vector a
-        -> Vector a
-  slice i' n = fst . V.splitAt n . snd . V.splitAt i'
 
 minHSize :: Int -> Widget n -> Widget n
 minHSize s' = hLimit s' . vLimit 1 . (<+> fill ' ')
