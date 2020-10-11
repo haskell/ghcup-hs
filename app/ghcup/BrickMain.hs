@@ -164,6 +164,7 @@ ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}), ..}
                       then emptyWidget
                       else foldr1 (\x y -> x <+> str "," <+> y) $ notes
               )
+          <+> (vLimit 1 $ fill ' ')
           )
 
   printTag Recommended    = Just $ withAttr "recommended" $ str "recommended"
