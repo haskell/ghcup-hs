@@ -1,6 +1,19 @@
 cradle:
   cabal:
-    - path: "."
-      component: "ghcup:lib:ghcup"
-    - path: "."
+    - path: "./lib"
+      component: "lib:ghcup"
+
+    - path: "./app/ghcup/Main.hs"
       component: "ghcup:exe:ghcup"
+
+    - path: "./app/ghcup/BrickMain.hs"
+      component: "ghcup:exe:ghcup"
+
+    - path: "./app/ghcup-gen/Main.hs"
+      component: "ghcup:exe:ghcup-gen"
+
+    - path: "./app/ghcup-gen/Validate.hs"
+      component: "ghcup:exe:ghcup-gen"
+
+    - path: "./test"
+      component: "ghcup:test:ghcup-test"
