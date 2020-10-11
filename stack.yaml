@@ -26,6 +26,7 @@ extra-deps:
   - QuickCheck-2.14.1@sha256:01e46d7b0a8d3148288ec977625f62d5516ebb5031a50c63f0453863301b4a79,7736
   - ascii-string-1.0.1.4@sha256:fa34f1d9ba57e8e89c0d4c9cef5e01ba32cb2d4373d13f92dcc0b531a6c6749b,2582
   - base64-bytestring-1.1.0.0@sha256:190264fef9e65d9085f00ccda419137096d1dc94777c58272bc96821dc7f37c3,2334
+  - brick-0.55@sha256:f98736eca0cd694837062e06da4655eed969d53b789dfd919716e9b6f5b4c5ce,15858
   - brotli-0.0.0.0@sha256:2bf383a4cd308745740986be0b18381c5a0784393fe69b91456aacb2d603de46,2964
   - brotli-streams-0.0.0.0@sha256:1af1e22f67b8bfd6ad0d05e61825e7a178d738f689ebbb21c1aab5f1bbcae176,2331
   - chs-cabal-0.1.1.0@sha256:20ec6a9fb5ab6991f1a4adf157c537bd5d3b98d08d3c09c387c954c7c50bd011,1153
@@ -46,8 +47,8 @@ extra-deps:
   - streamly-posix-0.1.0.1@sha256:5d89b806281035d34020387ed99dde1ddab282c7ed66df3b7cd010b38fd3517b,2138
   - strict-base-0.4.0.0@sha256:2ff4e43cb95eedf2995558d7fc34d19362846413dd39e6aa6a5b3ea8228fef9f,1248
   - tar-bytestring-0.6.3.2@sha256:88f29bed56b688c543a4cb3986402d64b360f76b3fd9b88ac618b8344f8da712,5715
+  - vty-5.30@sha256:4af3938d7b9e6096e222bf52d0ea5d39873bc6fe19febd34106906306af13730,20857
   - xor-0.0.1.0@sha256:f8362b4a68562b9afbcd727ff64c1a303970df3a032e0033d2f4c094c3501df3,2243
-
 
 flags:
   http-io-streams:
@@ -55,6 +56,13 @@ flags:
 
   libarchive:
     system-libarchive: false
+
+  ghcup:
+    tui: true
+
+system-ghc: true
+compiler: ghc-8.8.4
+compiler-check: match-exact
 
 ghc-options:
   "$locals": -O2
