@@ -144,8 +144,12 @@ ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}), ..}
         dim = if lNoBindist
           then updateAttrMap (const dimAttributes) . withAttr "no-bindist"
           else id
+        hooray
+          | elem Latest lTag && not lInstalled =
+              withAttr "hooray"
+          | otherwise = id
         active = if b then forceAttr "active" else id
-    in  active $ dim
+    in  hooray $ active $ dim
           (   marks
           <+> (( padLeft (Pad 2)
                $ minHSize 6
@@ -288,6 +292,7 @@ defaultAttributes = attrMap
   , ("compiled"     , Vty.defAttr `Vty.withForeColor` Vty.blue)
   , ("stray"        , Vty.defAttr `Vty.withForeColor` Vty.blue)
   , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
+  , ("hooray"       , Vty.defAttr `Vty.withForeColor` Vty.brightWhite)
   ]
 
 
@@ -297,8 +302,6 @@ dimAttributes = attrMap
   [ ("active"    , Vty.defAttr `Vty.withBackColor` Vty.blue)
   , ("no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
   ]
-
-
 
 eventHandler :: AppState -> BrickEvent n e -> EventM n (Next AppState)
 eventHandler st (VtyEvent (Vty.EvResize _               _)) = continue st
