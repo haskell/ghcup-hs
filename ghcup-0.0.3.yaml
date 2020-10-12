@@ -1430,20 +1430,20 @@ ghcupDownloads:
           Linux_Alpine:
             unknown_versioning: *ghcup-32
   HLS:
-    0.5.0:
+    0.5.1:
       viTags:
         - Recommended
         - Latest
-      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#050
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#051
       viArch:
         A_64:
           Linux_UnknownLinux:
             unknown_versioning: &hls-64
-              dlUri: https://github.com/haskell/haskell-language-server/releases/download/0.5.0/haskell-language-server-Linux-0.5.0.tar.gz
-              dlHash: 15fb0ef10f18aa95e875442d3dece84ab318317cbfcaa70efaf179ee1b224349
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/0.5.1/haskell-language-server-Linux-0.5.1.tar.gz
+              dlHash: 8f80a663823033b1d9322de6f86b329e6f7b3f93ba2faea4677989767cb844eb
           Darwin:
             unknown_versioning:
-              dlUri: https://github.com/haskell/haskell-language-server/releases/download/0.5.0/haskell-language-server-macOS-0.5.0.tar.gz
-              dlHash: 3e5aa0113104790f7d3db98cf21638bb469b5888317edfaf7e49bb602536e1fb
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/0.5.1/haskell-language-server-macOS-0.5.1.tar.gz
+              dlHash: a4e557a754df6d2e668714909554a15fea9803f3ff5883268bcf92bf009b45b2
           Linux_Alpine:
             unknown_versioning: *hls-64
