@@ -1,10 +1,11 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module BrickMain where
 
@@ -20,7 +21,10 @@ import           Brick
 import           Brick.Widgets.Border
 import           Brick.Widgets.Border.Style
 import           Brick.Widgets.Center
-import           Brick.Widgets.List
+import           Brick.Widgets.List             ( listSelectedFocusedAttr
+                                                , listSelectedAttr
+                                                , listAttr
+                                                )
 #if !defined(TAR)
 import           Codec.Archive
 #endif
@@ -35,7 +39,9 @@ import           Data.Maybe
 import           Data.Char
 import           Data.IORef
 import           Data.String.Interpolate
-import           Data.Vector                    ( Vector )
+import           Data.Vector                    ( Vector
+                                                , (!?)
+                                                )
 import           Data.Versions           hiding ( str )
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
@@ -46,25 +52,33 @@ import           URI.ByteString
 import qualified Data.Text                     as T
 import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
-import qualified Brick.Widgets.List            as L
 
 
-data AppData = AppData {
-    lr :: LR
-  , dls :: GHCupDownloads
+
+data AppData = AppData
+  { lr    :: [ListResult]
+  , dls   :: GHCupDownloads
   , pfreq :: PlatformRequest
-} deriving Show
+  }
+  deriving Show
 
-data AppSettings = AppSettings {
-    showAll :: Bool
-} deriving Show
+data AppSettings = AppSettings
+  { showAll :: Bool
+  }
+  deriving Show
 
-data AppState = AppState {
-    appData :: AppData
+data AppInternalState = AppInternalState
+  { clr :: Vector ListResult
+  , ix  :: Int
+  }
+  deriving Show
+
+data AppState = AppState
+  { appData     :: AppData
   , appSettings :: AppSettings
-} deriving Show
-
-type LR = GenericList String Vector ListResult
+  , appState    :: AppInternalState
+  }
+  deriving Show
 
 
 keyHandlers :: [ ( Char
@@ -82,27 +96,22 @@ keyHandlers =
     , (\AppSettings {..} ->
         if showAll then "Hide old versions" else "Show all versions"
       )
-    , (\AppState {..} ->
-        let newAppSettings =
-                appSettings { showAll = not . showAll $ appSettings }
-        in  continue (AppState appData newAppSettings)
-      )
+    , hideShowHandler
     )
   ]
+ where
+  hideShowHandler (AppState {..}) =
+    let newAppSettings   = appSettings { showAll = not . showAll $ appSettings }
+        newInternalState = constructList appData newAppSettings (Just appState)
+    in  continue (AppState appData newAppSettings newInternalState)
 
 
 ui :: AppState -> Widget String
-ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}) } =
-  ( padBottom Max
+ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}), ..}
+  = ( padBottom Max
     $ ( withBorderStyle unicode
       $ borderWithLabel (str "GHCup")
-      $ ( center
-        $ (header <=> hBorder <=> renderList
-            renderItem
-            True
-            (L.listReverse lr)
-          )
-        )
+      $ (center $ (header <=> hBorder <=> renderList' appState))
       )
     )
     <=> footer
@@ -121,7 +130,8 @@ ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}) } =
       <+> (minHSize 15 $ str "Version")
       <+> (padLeft (Pad 1) $ minHSize 25 $ str "Tags")
       <+> (padLeft (Pad 5) $ str "Notes")
-  renderItem b listResult@(ListResult {..}) =
+  renderList' = withDefAttr listAttr . drawListElements renderItem True
+  renderItem _ b listResult@(ListResult {..}) =
     let marks = if
           | lSet       -> (withAttr "set" $ str "✔✔")
           | lInstalled -> (withAttr "installed" $ str "✓ ")
@@ -132,21 +142,23 @@ ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}) } =
         dim = if lNoBindist
           then updateAttrMap (const dimAttributes) . withAttr "no-bindist"
           else id
-        active = if b then withAttr "active" else id
-    in  dim
+        hooray
+          | elem Latest lTag && not lInstalled =
+              withAttr "hooray"
+          | otherwise = id
+        active = if b then forceAttr "active" else id
+    in  hooray $ active $ dim
           (   marks
           <+> (( padLeft (Pad 2)
-               $ active
                $ minHSize 6
-               $ (str (fmap toLower . show $ lTool))
+               $ (printTool lTool)
                )
               )
-          <+> (minHSize 15 $ active $ (str ver))
+          <+> (minHSize 15 $ (str ver))
           <+> (let l = catMaybes . fmap printTag $ sort lTag
-               in padLeft (Pad 1) $ minHSize 25 $
-                  if null l
-                  then emptyWidget
-                  else foldr1 (\x y -> x <+> str "," <+> y) l
+               in  padLeft (Pad 1) $ minHSize 25 $ if null l
+                     then emptyWidget
+                     else foldr1 (\x y -> x <+> str "," <+> y) l
               )
           <+> ( padLeft (Pad 5)
               $ let notes = printNotes listResult
@@ -154,14 +166,20 @@ ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}) } =
                       then emptyWidget
                       else foldr1 (\x y -> x <+> str "," <+> y) $ notes
               )
+          <+> (vLimit 1 $ fill ' ')
           )
 
-  printTag Recommended        = Just $ withAttr "recommended" $ str "recommended"
-  printTag Latest             = Just $ withAttr "latest" $ str "latest"
-  printTag Prerelease         = Just $ withAttr "prerelease" $ str "prerelease"
-  printTag (Base       pvp'') = Just $ str ("base-" ++ T.unpack (prettyPVP pvp''))
-  printTag Old                = Nothing
-  printTag (UnknownTag t    ) = Just $ str t
+  printTag Recommended    = Just $ withAttr "recommended" $ str "recommended"
+  printTag Latest         = Just $ withAttr "latest" $ str "latest"
+  printTag Prerelease     = Just $ withAttr "prerelease" $ str "prerelease"
+  printTag (Base pvp'')   = Just $ str ("base-" ++ T.unpack (prettyPVP pvp''))
+  printTag Old            = Nothing
+  printTag (UnknownTag t) = Just $ str t
+
+  printTool Cabal = str "cabal"
+  printTool GHC = str "GHC"
+  printTool GHCup = str "GHCup"
+  printTool HLS = str "HLS"
 
   printNotes ListResult {..} =
     (if hlsPowered then [withAttr "hls-powered" $ str "hls-powered"] else mempty
@@ -169,6 +187,41 @@ ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}) } =
       ++ (if fromSrc then [withAttr "compiled" $ str "compiled"] else mempty)
       ++ (if lStray then [withAttr "stray" $ str "stray"] else mempty)
 
+  -- | Draws the list elements.
+  --
+  -- Evaluates the underlying container up to, and a bit beyond, the
+  -- selected element. The exact amount depends on available height
+  -- for drawing and 'listItemHeight'. At most, it will evaluate up to
+  -- element @(i + h + 1)@ where @i@ is the selected index and @h@ is the
+  -- available height.
+  drawListElements :: (Int -> Bool -> ListResult -> Widget String)
+                   -> Bool
+                   -> AppInternalState
+                   -> Widget String
+  drawListElements drawElem foc is@(AppInternalState clr _) =
+    Widget Greedy Greedy $
+      let
+        es = clr
+        listSelected        = fmap fst $ listSelectedElement' is
+
+        drawnElements = flip V.imap es $ \i' e ->
+          let addSeparator w = case es !? (i' - 1) of
+                Just e' | lTool e' /= lTool e ->
+                  hBorder <=> w
+                _                             -> w
+
+              isSelected  = Just i' == listSelected
+              elemWidget  = drawElem i' isSelected e
+              selItemAttr = if foc
+                then withDefAttr listSelectedFocusedAttr
+                else withDefAttr listSelectedAttr
+              makeVisible = if isSelected then visible . selItemAttr else id
+          in  addSeparator $ makeVisible elemWidget
+
+      in render
+        $ viewport "GHCup" Vertical
+        $ vBox
+        $ V.toList drawnElements
 
 
 minHSize :: Int -> Widget n -> Widget n
@@ -197,6 +250,7 @@ defaultAttributes = attrMap
   , ("compiled"     , Vty.defAttr `Vty.withForeColor` Vty.blue)
   , ("stray"        , Vty.defAttr `Vty.withForeColor` Vty.blue)
   , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
+  , ("hooray"       , Vty.defAttr `Vty.withForeColor` Vty.brightWhite)
   ]
 
 
@@ -207,49 +261,27 @@ dimAttributes = attrMap
   , ("no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
   ]
 
-
-
 eventHandler :: AppState -> BrickEvent n e -> EventM n (Next AppState)
 eventHandler st (VtyEvent (Vty.EvResize _               _)) = continue st
 eventHandler st (VtyEvent (Vty.EvKey    (Vty.KChar 'q') _)) = halt st
 eventHandler st (VtyEvent (Vty.EvKey    Vty.KEsc        _)) = halt st
-eventHandler AppState { appData = AppData {..}, ..} (VtyEvent (Vty.EvKey (Vty.KUp) _))
-  = continue (AppState (AppData (listMoveUp lr) dls pfreq) appSettings)
-eventHandler AppState { appData = AppData {..}, ..} (VtyEvent (Vty.EvKey (Vty.KDown) _))
-  = continue (AppState (AppData (listMoveDown lr) dls pfreq) appSettings)
-eventHandler as@(AppState appD appS) (VtyEvent (Vty.EvKey (Vty.KChar c) _)) =
+eventHandler AppState {..} (VtyEvent (Vty.EvKey (Vty.KUp) _)) =
+  continue (AppState { appState = (moveCursor appState Up), .. })
+eventHandler AppState {..} (VtyEvent (Vty.EvKey (Vty.KDown) _)) =
+  continue (AppState { appState = (moveCursor appState Down), .. })
+eventHandler as (VtyEvent (Vty.EvKey (Vty.KChar c) _)) =
   case find (\(c', _, _) -> c' == c) keyHandlers of
     Nothing              -> continue as
-    Just ('a', _, handler) ->
-      if (not $ showAll appS) -- it's not swapped to `showAll` yet, but it will in the handler
-      then do
-        newAppData <- liftIO $ replaceLR (\_ -> True) appD
-        handler (AppState (selectLatest newAppData) appS)
-      else do -- hide old versions
-        newAppData <- liftIO $ replaceLR (filterVisible (not $ showAll appS)) appD
-        handler (AppState (selectLatest newAppData) appS)
     Just (_, _, handler) -> handler as
 eventHandler st _ = continue st
 
 
-replaceLR :: (ListResult -> Bool) -> AppData -> IO AppData
-replaceLR filterF (AppData {..}) = do
-  settings <- liftIO $ readIORef settings'
-  l        <- liftIO $ readIORef logger'
-  let runLogger = myLoggerT l
-  lV <- runLogger
-    . flip runReaderT settings
-    . fmap (V.fromList . filter filterF)
-    . listVersions dls Nothing Nothing
-    $ pfreq
-  pure $ AppData { lr = L.listReplace lV Nothing $ lr, .. }
-
-
-filterVisible :: Bool -> ListResult -> Bool
-filterVisible showAll e
-  | lInstalled e = True
-  | showAll      = True
-  | otherwise    = not (elem Old (lTag e))
+moveCursor :: AppInternalState -> Direction -> AppInternalState
+moveCursor ais@(AppInternalState {..}) direction =
+  let newIx = if direction == Down then ix + 1 else ix - 1
+  in  case clr !? newIx of
+        Just _  -> AppInternalState { ix = newIx, .. }
+        Nothing -> ais
 
 
 -- | Suspend the current UI and run an IO action in terminal. If the
@@ -257,56 +289,103 @@ filterVisible showAll e
 withIOAction :: (AppState -> (Int, ListResult) -> IO (Either String a))
              -> AppState
              -> EventM n (Next AppState)
-withIOAction action as = case listSelectedElement (lr . appData $ as) of
+withIOAction action as = case listSelectedElement' (appState as) of
   Nothing      -> continue as
   Just (ix, e) -> suspendAndResume $ do
     action as (ix, e) >>= \case
       Left  err -> putStrLn $ ("Error: " <> err)
       Right _   -> putStrLn "Success"
-    apps <-
-      (fmap . fmap)
-          (\AppData {..} -> AppState
-            { appData     = AppData { lr = listMoveTo ix lr, .. }
-            , appSettings = (appSettings as)
-            }
-          )
-        $ getAppData Nothing (pfreq . appData $ as)
-    case apps of
-      Right nas -> do
+    getAppData Nothing (pfreq . appData $ as) >>= \case
+      Right data' -> do
         putStrLn "Press enter to continue"
         _ <- getLine
-        pure nas
+        pure (updateList data' as)
       Left err -> throwIO $ userError err
 
 
+-- | Update app data and list internal state based on new evidence.
+-- This synchronises @AppInternalState@ with @AppData@
+-- and @AppSettings@.
+updateList :: AppData -> AppState -> AppState
+updateList appD (AppState {..}) =
+  let newInternalState = constructList appD appSettings (Just appState)
+  in  AppState { appState    = newInternalState
+               , appData     = appD
+               , appSettings = appSettings
+               }
+
+
+constructList :: AppData
+              -> AppSettings
+              -> Maybe AppInternalState
+              -> AppInternalState
+constructList appD appSettings mapp =
+  replaceLR (filterVisible (showAll appSettings)) (lr appD) mapp
+
+listSelectedElement' :: AppInternalState -> Maybe (Int, ListResult)
+listSelectedElement' (AppInternalState {..}) = fmap (ix, ) $ clr !? ix
+
+
+selectLatest :: Vector ListResult -> Int
+selectLatest v =
+  case V.findIndex (\ListResult {..} -> lTool == GHC && Latest `elem` lTag) v of
+    Just ix -> ix
+    Nothing -> 0
+
+
+-- | Replace the @appState@ or construct it based on a filter function
+-- and a new @[ListResult]@ evidence.
+-- When passed an existing @appState@, tries to keep the selected element.
+replaceLR :: (ListResult -> Bool)
+          -> [ListResult]
+          -> Maybe AppInternalState
+          -> AppInternalState
+replaceLR filterF lr s =
+  let oldElem = s >>= listSelectedElement'
+      newVec  = V.fromList . filter filterF $ lr
+      newSelected =
+        case oldElem >>= \(_, oldE) -> V.findIndex (toolEqual oldE) newVec of
+          Just ix -> ix
+          Nothing -> selectLatest newVec
+  in  AppInternalState newVec newSelected
+ where
+  toolEqual e1 e2 =
+    lTool e1 == lTool e2 && lVer e1 == lVer e2 && lCross e1 == lCross e2
+
+
+filterVisible :: Bool -> ListResult -> Bool
+filterVisible showAll e | lInstalled e = True
+                        | showAll      = True
+                        | otherwise    = not (elem Old (lTag e))
+
+
 install' :: AppState -> (Int, ListResult) -> IO (Either String ())
-install' AppState { appData = AppData {..}} (_, ListResult {..}) = do
+install' AppState { appData = AppData {..} } (_, ListResult {..}) = do
   settings <- readIORef settings'
   l        <- readIORef logger'
   let runLogger = myLoggerT l
 
-  let
-    run =
-      runLogger
-        . flip runReaderT settings
-        . runResourceT
-        . runE
-          @'[AlreadyInstalled
-            , UnknownArchive
+  let run =
+        runLogger
+          . flip runReaderT settings
+          . runResourceT
+          . runE
+            @'[ AlreadyInstalled
 #if !defined(TAR)
-            , ArchiveResult
+              , ArchiveResult
 #endif
-            , FileDoesNotExistError
-            , CopyError
-            , NoDownload
-            , NotInstalled
-            , BuildFailed
-            , TagNotFound
-            , DigestError
-            , DownloadFailed
-            , NoUpdate
-            , TarDirDoesNotExist
-            ]
+              , UnknownArchive
+              , FileDoesNotExistError
+              , CopyError
+              , NoDownload
+              , NotInstalled
+              , BuildFailed
+              , TagNotFound
+              , DigestError
+              , DownloadFailed
+              , NoUpdate
+              , TarDirDoesNotExist
+              ]
 
   (run $ do
       case lTool of
@@ -336,7 +415,7 @@ set' _ (_, ListResult {..}) = do
   let run =
         runLogger
           . flip runReaderT settings
-          . runE @'[FileDoesNotExistError, NotInstalled, TagNotFound]
+          . runE @'[FileDoesNotExistError , NotInstalled , TagNotFound]
 
   (run $ do
       case lTool of
@@ -371,15 +450,15 @@ del' _ (_, ListResult {..}) = do
 
 
 changelog' :: AppState -> (Int, ListResult) -> IO (Either String ())
-changelog' AppState { appData = AppData {..}} (_, ListResult {..}) = do
+changelog' AppState { appData = AppData {..} } (_, ListResult {..}) = do
   case getChangeLog dls lTool (Left lVer) of
     Nothing -> pure $ Left
       [i|Could not find ChangeLog for #{lTool}, version #{prettyVer lVer}|]
     Just uri -> do
       let cmd = case _rPlatform pfreq of
-                  Darwin  -> "open"
-                  Linux _ -> "xdg-open"
-                  FreeBSD -> "xdg-open"
+            Darwin  -> "open"
+            Linux _ -> "xdg-open"
+            FreeBSD -> "xdg-open"
       exec cmd True [serializeURIRef' uri] Nothing Nothing >>= \case
         Right _ -> pure $ Right ()
         Left  e -> pure $ Left [i|#{e}|]
@@ -395,12 +474,12 @@ settings' :: IORef Settings
 settings' = unsafePerformIO $ do
   dirs <- getDirs
   newIORef Settings { cache      = True
-                     , noVerify   = False
-                     , keepDirs   = Never
-                     , downloader = Curl
-                     , verbose    = False
-                     , ..
-                     }
+                    , noVerify   = False
+                    , keepDirs   = Never
+                    , downloader = Curl
+                    , verbose    = False
+                    , ..
+                    }
 
 
 logger' :: IORef LoggerConfig
@@ -413,7 +492,12 @@ logger' = unsafePerformIO
   )
 
 
-brickMain :: Settings -> Maybe URI -> LoggerConfig -> GHCupDownloads -> PlatformRequest -> IO ()
+brickMain :: Settings
+          -> Maybe URI
+          -> LoggerConfig
+          -> GHCupDownloads
+          -> PlatformRequest
+          -> IO ()
 brickMain s muri l av pfreq' = do
   writeIORef uri'      muri
   writeIORef settings' s
@@ -423,24 +507,21 @@ brickMain s muri l av pfreq' = do
 
   eAppData <- getAppData (Just av) pfreq'
   case eAppData of
-    Right ad -> defaultMain app (AppState (selectLatest ad) defaultAppSettings) $> ()
-    Left  e  -> do
+    Right ad ->
+      defaultMain
+          app
+          (AppState ad
+                    defaultAppSettings
+                    (constructList ad defaultAppSettings Nothing)
+          )
+        $> ()
+    Left e -> do
       runLogger ($(logError) [i|Error building app state: #{show e}|])
       exitWith $ ExitFailure 2
 
 
-selectLatest :: AppData -> AppData
-selectLatest (AppData {..}) =
-  (\ix -> AppData { lr = listMoveTo ix lr, .. } )
-    . fromJust
-    . V.findIndex (\ListResult {..} -> lTool == GHC && Latest `elem` lTag)
-    $ (listElements lr)
-
-
 defaultAppSettings :: AppSettings
-defaultAppSettings = AppSettings {
-    showAll = False
-  }
+defaultAppSettings = AppSettings { showAll = False }
 
 
 getDownloads' :: IO (Either String GHCupDownloads)
@@ -453,16 +534,19 @@ getDownloads' = do
   r <-
     runLogger
     . flip runReaderT settings
-    . runE
-      @'[JSONError, DownloadFailed, FileDoesNotExistError]
-    $ fmap _ghcupDownloads $ liftE $ getDownloadsF (maybe GHCupURL OwnSource muri)
+    . runE @'[JSONError , DownloadFailed , FileDoesNotExistError]
+    $ fmap _ghcupDownloads
+    $ liftE
+    $ getDownloadsF (maybe GHCupURL OwnSource muri)
 
   case r of
     VRight a -> pure $ Right a
     VLeft  e -> pure $ Left [i|#{e}|]
 
 
-getAppData :: Maybe GHCupDownloads -> PlatformRequest -> IO (Either String AppData)
+getAppData :: Maybe GHCupDownloads
+           -> PlatformRequest
+           -> IO (Either String AppData)
 getAppData mg pfreq' = do
   settings <- readIORef settings'
   l        <- readIORef logger'
@@ -470,12 +554,10 @@ getAppData mg pfreq' = do
 
   r <- maybe getDownloads' (pure . Right) mg
 
-  runLogger
-    . flip runReaderT settings
-    $ do
-      case r of
-        Right dls -> do
-          lV <- listVersions dls Nothing Nothing pfreq'
-          pure $ Right $ (AppData (list "Tool versions"
-                (V.fromList . filter (filterVisible (showAll defaultAppSettings)) $ lV) 1) dls pfreq')
-        Left  e -> pure $ Left [i|#{e}|]
+  runLogger . flip runReaderT settings $ do
+    case r of
+      Right dls -> do
+        lV <- listVersions dls Nothing Nothing pfreq'
+        pure $ Right $ (AppData (reverse lV) dls pfreq')
+      Left e -> pure $ Left [i|#{e}|]
+

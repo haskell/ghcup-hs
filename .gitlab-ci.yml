@@ -61,6 +61,11 @@ variables:
     - ./.gitlab/script/ghcup_version.sh
   variables:
     JSON_VERSION: "0.0.3"
+  artifacts:
+    expire_in: 2 week
+    paths:
+      - golden
+    when: on_failure
 
 .test_ghcup_version:linux:
   extends:
