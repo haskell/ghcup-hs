@@ -1,5 +1,13 @@
 # Revision history for ghcup
 
+## 0.1.12 -- ????-??-??
+
+* improve TUI:
+  - separators between tools sections
+  - reverse list order so latest is on top
+  - expand the blues selected bar
+  - show new latest versions in bright white
+
 ## 0.1.11 -- 2020-09-23
 
 * Add support for installing haskell-language-server, wrt #65
