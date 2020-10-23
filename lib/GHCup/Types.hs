@@ -193,16 +193,17 @@ data URLSource = GHCupURL
                deriving (GHC.Generic, Show)
 
 
+data AppState = AppState
+  { settings :: Settings
+  , dirs :: Dirs
+  } deriving (Show)
+
 data Settings = Settings
-  { -- set by user
-    cache      :: Bool
+  { cache      :: Bool
   , noVerify   :: Bool
   , keepDirs   :: KeepDirs
   , downloader :: Downloader
   , verbose    :: Bool
-
-    -- set on app start
-  , dirs       :: Dirs
   }
   deriving Show
 

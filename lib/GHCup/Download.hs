@@ -114,7 +114,7 @@ getDownloadsF :: ( FromJSONKey Tool
                  , MonadLogger m
                  , MonadThrow m
                  , MonadFail m
-                 , MonadReader Settings m
+                 , MonadReader AppState m
                  )
               => URLSource
               -> Excepts
@@ -133,7 +133,7 @@ getDownloadsF urlSource = do
     (OwnSpec   _) -> liftE $ getDownloads urlSource
  where
   readFromCache = do
-    Settings {dirs = Dirs {..}} <- lift ask
+    AppState {dirs = Dirs {..}} <- lift ask
     lift $ $(logWarn)
       [i|Could not get download info, trying cached version (this may not be recent!)|]
     let path = view pathL' ghcupURL
@@ -155,7 +155,7 @@ getDownloads :: ( FromJSONKey Tool
                 , MonadLogger m
                 , MonadThrow m
                 , MonadFail m
-                , MonadReader Settings m
+                , MonadReader AppState m
                 )
              => URLSource
              -> Excepts '[JSONError , DownloadFailed] m GHCupInfo
@@ -185,7 +185,7 @@ getDownloads urlSource = do
              , MonadIO m1
              , MonadFail m1
              , MonadLogger m1
-             , MonadReader Settings m1
+             , MonadReader AppState m1
              )
           => URI
           -> Excepts
@@ -200,7 +200,7 @@ getDownloads urlSource = do
                m1
                L.ByteString
   smartDl uri' = do
-    Settings {dirs = Dirs {..}} <- lift ask
+    AppState {dirs = Dirs {..}} <- lift ask
     let path = view pathL' uri'
     json_file <- (cacheDir </>) <$> urlBaseName path
     e         <- liftIO $ doesFileExist json_file
@@ -311,7 +311,7 @@ getDownloadInfo t v (PlatformRequest a p mv) dls = maybe
 --
 -- The file must not exist.
 download :: ( MonadMask m
-            , MonadReader Settings m
+            , MonadReader AppState m
             , MonadThrow m
             , MonadLogger m
             , MonadIO m
@@ -383,7 +383,7 @@ downloadCached :: ( MonadMask m
                   , MonadThrow m
                   , MonadLogger m
                   , MonadIO m
-                  , MonadReader Settings m
+                  , MonadReader AppState m
                   )
                => DownloadInfo
                -> Maybe (Path Rel)  -- ^ optional filename
@@ -392,7 +392,7 @@ downloadCached dli mfn = do
   cache <- lift getCache
   case cache of
     True -> do
-      Settings {dirs = Dirs {..}} <- lift ask
+      AppState {dirs = Dirs {..}} <- lift ask
       fn       <- maybe (urlBaseName $ view (dlUri % pathL') dli) pure mfn
       let cachfile = cacheDir </> fn
       fileExists <- liftIO $ doesFileExist cachfile
@@ -416,7 +416,7 @@ downloadCached dli mfn = do
 
 
 -- | This is used for downloading the JSON.
-downloadBS :: (MonadReader Settings m, MonadCatch m, MonadIO m, MonadLogger m)
+downloadBS :: (MonadReader AppState m, MonadCatch m, MonadIO m, MonadLogger m)
            => URI
            -> Excepts
                 '[ FileDoesNotExistError
@@ -473,12 +473,12 @@ downloadBS uri'
 #endif
 
 
-checkDigest :: (MonadIO m, MonadThrow m, MonadLogger m, MonadReader Settings m)
+checkDigest :: (MonadIO m, MonadThrow m, MonadLogger m, MonadReader AppState m)
             => DownloadInfo
             -> Path Abs
             -> Excepts '[DigestError] m ()
 checkDigest dli file = do
-  verify <- lift ask <&> (not . noVerify)
+  verify <- lift ask <&> (not . noVerify . settings)
   when verify $ do
     p' <- toFilePath <$> basename file
     lift $ $(logInfo) [i|verifying digest of: #{p'}|]

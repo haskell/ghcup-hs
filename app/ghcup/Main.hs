@@ -856,7 +856,7 @@ bindistParser :: String -> Either String URI
 bindistParser = first show . parseURI strictURIParserOptions . UTF8.fromString
 
 
-toSettings :: Options -> IO Settings
+toSettings :: Options -> IO AppState
 toSettings Options {..} = do
   let cache      = optCache
       noVerify   = optNoVerify
@@ -864,7 +864,7 @@ toSettings Options {..} = do
       downloader = optsDownloader
       verbose    = optVerbose
   dirs <- getDirs
-  pure $ Settings { .. }
+  pure $ AppState (Settings { .. }) dirs
 
 
 upgradeOptsP :: Parser UpgradeOpts
@@ -940,13 +940,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             (footerDoc (Just $ text main_footer))
       )
     >>= \opt@Options {..} -> do
-          settings@Settings{dirs = Dirs{..}, ..} <- toSettings opt
+          appstate@AppState{dirs = Dirs{..}, ..} <- toSettings opt
 
           -- create ~/.ghcup dir
           createDirRecursive' baseDir
 
           -- logger interpreter
-          logfile <- flip runReaderT settings $ initGHCupFileLogging [rel|ghcup.log|]
+          logfile <- flip runReaderT appstate $ initGHCupFileLogging [rel|ghcup.log|]
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = optVerbose
                 , colorOutter  = B.hPut stderr
@@ -959,9 +959,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -- Effect interpreters --
           -------------------------
 
-          let runInstTool' settings' =
+          let runInstTool' appstate' =
                 runLogger
-                  . flip runReaderT settings'
+                  . flip runReaderT appstate'
                   . runResourceT
                   . runE
                     @'[ AlreadyInstalled
@@ -980,12 +980,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , TarDirDoesNotExist
                       ]
 
-          let runInstTool = runInstTool' settings
+          let runInstTool = runInstTool' appstate
 
           let
             runSetGHC =
               runLogger
-                . flip runReaderT settings
+                . flip runReaderT appstate
                 . runE
                   @'[ FileDoesNotExistError
                     , NotInstalled
@@ -995,7 +995,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let
             runSetCabal =
               runLogger
-                . flip runReaderT settings
+                . flip runReaderT appstate
                 . runE
                   @'[ NotInstalled
                     , TagNotFound
@@ -1004,26 +1004,26 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let
             runSetHLS =
               runLogger
-                . flip runReaderT settings
+                . flip runReaderT appstate
                 . runE
                   @'[ NotInstalled
                     , TagNotFound
                     ]
 
-          let runListGHC = runLogger . flip runReaderT settings
+          let runListGHC = runLogger . flip runReaderT appstate
 
           let runRm =
-                runLogger . flip runReaderT settings . runE @'[NotInstalled]
+                runLogger . flip runReaderT appstate . runE @'[NotInstalled]
 
           let runDebugInfo =
                 runLogger
-                  . flip runReaderT settings
+                  . flip runReaderT appstate
                   . runE
                     @'[NoCompatiblePlatform , NoCompatibleArch , DistroNotFound]
 
           let runCompileGHC =
                 runLogger
-                  . flip runReaderT settings
+                  . flip runReaderT appstate
                   . runResourceT
                   . runE
                     @'[ AlreadyInstalled
@@ -1044,7 +1044,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let runUpgrade =
                 runLogger
-                  . flip runReaderT settings
+                  . flip runReaderT appstate
                   . runResourceT
                   . runE
                     @'[ DigestError
@@ -1072,7 +1072,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           (GHCupInfo treq dls) <-
             ( runLogger
-              . flip runReaderT settings
+              . flip runReaderT appstate
               . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
               $ liftE
               $ getDownloadsF (maybe GHCupURL OwnSource optUrlSource)
@@ -1086,7 +1086,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           case optCommand of
             Upgrade _ _ -> pure ()
-            _ -> runLogger $ flip runReaderT settings $ checkForUpdates dls pfreq
+            _ -> runLogger $ flip runReaderT appstate $ checkForUpdates dls pfreq
 
 
 
@@ -1099,7 +1099,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                      Nothing -> runInstTool $ do
                        v <- liftE $ fromVersion dls instVer GHC
                        liftE $ installGHCBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
-                     Just uri -> runInstTool' settings{noVerify = True} $ do
+                     Just uri -> runInstTool' appstate{ settings = settings {noVerify = True}} $ do
                        v <- liftE $ fromVersion dls instVer GHC
                        liftE $ installGHCBindist
                          (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
@@ -1115,7 +1115,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                               [i|GHC ver #{prettyVer v} already installed, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
                             pure ExitSuccess
                           VLeft (V (BuildFailed tmpdir e)) -> do
-                            case keepDirs of
+                            case keepDirs settings of
                               Never -> runLogger ($(logError) [i|Build failed with #{e}|])
                               _ -> runLogger ($(logError) [i|Build failed with #{e}
     Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
@@ -1140,7 +1140,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                    Nothing -> runInstTool $ do
                      v <- liftE $ fromVersion dls instVer Cabal
                      liftE $ installCabalBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
-                   Just uri -> runInstTool' settings{noVerify = True} $ do
+                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} $ do
                      v <- liftE $ fromVersion dls instVer Cabal
                      liftE $ installCabalBindist
                          (DownloadInfo uri Nothing "")
@@ -1173,7 +1173,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                    Nothing -> runInstTool $ do
                      v <- liftE $ fromVersion dls instVer HLS
                      liftE $ installHLSBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
-                   Just uri -> runInstTool' settings{noVerify = True} $ do
+                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} $ do
                      v <- liftE $ fromVersion dls instVer HLS
                      liftE $ installHLSBindist
                          (DownloadInfo uri Nothing "")
@@ -1272,7 +1272,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           res <- case optCommand of
 #if defined(BRICK)
-            Interactive -> liftIO $ brickMain settings optUrlSource loggerConfig dls pfreq >> pure ExitSuccess
+            Interactive -> liftIO $ brickMain appstate optUrlSource loggerConfig dls pfreq >> pure ExitSuccess
 #endif
             Install (Right iopts) -> do
               runLogger ($(logWarn) [i|This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.|])
@@ -1336,7 +1336,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           [i|GHC ver #{prettyVer v} already installed, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
-                        case keepDirs of
+                        case keepDirs settings of
                           Never -> runLogger ($(logError) [i|Build failed with #{e}
 Check the logs at #{logsDir}|])
                           _ -> runLogger ($(logError) [i|Build failed with #{e}
@@ -1602,7 +1602,14 @@ printListResult raw lr = do
       | otherwise                        -> 1
 
 
-checkForUpdates :: (MonadReader Settings m, MonadCatch m, MonadLogger m, MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
+checkForUpdates :: ( MonadReader AppState m
+                   , MonadCatch m
+                   , MonadLogger m
+                   , MonadThrow m
+                   , MonadIO m
+                   , MonadFail m
+                   , MonadLogger m
+                   )
                 => GHCupDownloads
                 -> PlatformRequest
                 -> m ()

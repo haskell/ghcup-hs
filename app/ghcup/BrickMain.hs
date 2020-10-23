@@ -55,35 +55,35 @@ import qualified Data.Vector                   as V
 
 
 
-data AppData = AppData
+data BrickData = BrickData
   { lr    :: [ListResult]
   , dls   :: GHCupDownloads
   , pfreq :: PlatformRequest
   }
   deriving Show
 
-data AppSettings = AppSettings
+data BrickSettings = BrickSettings
   { showAll :: Bool
   }
   deriving Show
 
-data AppInternalState = AppInternalState
+data BrickInternalState = BrickInternalState
   { clr :: Vector ListResult
   , ix  :: Int
   }
   deriving Show
 
-data AppState = AppState
-  { appData     :: AppData
-  , appSettings :: AppSettings
-  , appState    :: AppInternalState
+data BrickState = BrickState
+  { appData     :: BrickData
+  , appSettings :: BrickSettings
+  , appState    :: BrickInternalState
   }
   deriving Show
 
 
 keyHandlers :: [ ( Char
-                 , AppSettings -> String
-                 , AppState -> EventM n (Next AppState)
+                 , BrickSettings -> String
+                 , BrickState -> EventM n (Next BrickState)
                  )
                ]
 keyHandlers =
@@ -93,21 +93,21 @@ keyHandlers =
   , ('s', const "Set"      , withIOAction set')
   , ('c', const "ChangeLog", withIOAction changelog')
   , ( 'a'
-    , (\AppSettings {..} ->
+    , (\BrickSettings {..} ->
         if showAll then "Hide old versions" else "Show all versions"
       )
     , hideShowHandler
     )
   ]
  where
-  hideShowHandler (AppState {..}) =
+  hideShowHandler (BrickState {..}) =
     let newAppSettings   = appSettings { showAll = not . showAll $ appSettings }
         newInternalState = constructList appData newAppSettings (Just appState)
-    in  continue (AppState appData newAppSettings newInternalState)
+    in  continue (BrickState appData newAppSettings newInternalState)
 
 
-ui :: AppState -> Widget String
-ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}), ..}
+ui :: BrickState -> Widget String
+ui BrickState { appSettings = as@(BrickSettings {}), ..}
   = ( padBottom Max
     $ ( withBorderStyle unicode
       $ borderWithLabel (str "GHCup")
@@ -196,9 +196,9 @@ ui AppState { appData = AppData {..}, appSettings = as@(AppSettings {..}), ..}
   -- available height.
   drawListElements :: (Int -> Bool -> ListResult -> Widget String)
                    -> Bool
-                   -> AppInternalState
+                   -> BrickInternalState
                    -> Widget String
-  drawListElements drawElem foc is@(AppInternalState clr _) =
+  drawListElements drawElem foc is@(BrickInternalState clr _) =
     Widget Greedy Greedy $
       let
         es = clr
@@ -228,7 +228,7 @@ minHSize :: Int -> Widget n -> Widget n
 minHSize s' = hLimit s' . vLimit 1 . (<+> fill ' ')
 
 
-app :: App AppState e String
+app :: App BrickState e String
 app = App { appDraw         = \st -> [ui st]
           , appHandleEvent  = eventHandler
           , appStartEvent   = return
@@ -261,14 +261,14 @@ dimAttributes = attrMap
   , ("no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
   ]
 
-eventHandler :: AppState -> BrickEvent n e -> EventM n (Next AppState)
+eventHandler :: BrickState -> BrickEvent n e -> EventM n (Next BrickState)
 eventHandler st (VtyEvent (Vty.EvResize _               _)) = continue st
 eventHandler st (VtyEvent (Vty.EvKey    (Vty.KChar 'q') _)) = halt st
 eventHandler st (VtyEvent (Vty.EvKey    Vty.KEsc        _)) = halt st
-eventHandler AppState {..} (VtyEvent (Vty.EvKey (Vty.KUp) _)) =
-  continue (AppState { appState = (moveCursor appState Up), .. })
-eventHandler AppState {..} (VtyEvent (Vty.EvKey (Vty.KDown) _)) =
-  continue (AppState { appState = (moveCursor appState Down), .. })
+eventHandler BrickState {..} (VtyEvent (Vty.EvKey (Vty.KUp) _)) =
+  continue (BrickState { appState = (moveCursor appState Up), .. })
+eventHandler BrickState {..} (VtyEvent (Vty.EvKey (Vty.KDown) _)) =
+  continue (BrickState { appState = (moveCursor appState Down), .. })
 eventHandler as (VtyEvent (Vty.EvKey (Vty.KChar c) _)) =
   case find (\(c', _, _) -> c' == c) keyHandlers of
     Nothing              -> continue as
@@ -276,19 +276,19 @@ eventHandler as (VtyEvent (Vty.EvKey (Vty.KChar c) _)) =
 eventHandler st _ = continue st
 
 
-moveCursor :: AppInternalState -> Direction -> AppInternalState
-moveCursor ais@(AppInternalState {..}) direction =
+moveCursor :: BrickInternalState -> Direction -> BrickInternalState
+moveCursor ais@(BrickInternalState {..}) direction =
   let newIx = if direction == Down then ix + 1 else ix - 1
   in  case clr !? newIx of
-        Just _  -> AppInternalState { ix = newIx, .. }
+        Just _  -> BrickInternalState { ix = newIx, .. }
         Nothing -> ais
 
 
 -- | Suspend the current UI and run an IO action in terminal. If the
 -- IO action returns a Left value, then it's thrown as userError.
-withIOAction :: (AppState -> (Int, ListResult) -> IO (Either String a))
-             -> AppState
-             -> EventM n (Next AppState)
+withIOAction :: (BrickState -> (Int, ListResult) -> IO (Either String a))
+             -> BrickState
+             -> EventM n (Next BrickState)
 withIOAction action as = case listSelectedElement' (appState as) of
   Nothing      -> continue as
   Just (ix, e) -> suspendAndResume $ do
@@ -304,26 +304,26 @@ withIOAction action as = case listSelectedElement' (appState as) of
 
 
 -- | Update app data and list internal state based on new evidence.
--- This synchronises @AppInternalState@ with @AppData@
--- and @AppSettings@.
-updateList :: AppData -> AppState -> AppState
-updateList appD (AppState {..}) =
+-- This synchronises @BrickInternalState@ with @BrickData@
+-- and @BrickSettings@.
+updateList :: BrickData -> BrickState -> BrickState
+updateList appD (BrickState {..}) =
   let newInternalState = constructList appD appSettings (Just appState)
-  in  AppState { appState    = newInternalState
+  in  BrickState { appState    = newInternalState
                , appData     = appD
                , appSettings = appSettings
                }
 
 
-constructList :: AppData
-              -> AppSettings
-              -> Maybe AppInternalState
-              -> AppInternalState
+constructList :: BrickData
+              -> BrickSettings
+              -> Maybe BrickInternalState
+              -> BrickInternalState
 constructList appD appSettings mapp =
   replaceLR (filterVisible (showAll appSettings)) (lr appD) mapp
 
-listSelectedElement' :: AppInternalState -> Maybe (Int, ListResult)
-listSelectedElement' (AppInternalState {..}) = fmap (ix, ) $ clr !? ix
+listSelectedElement' :: BrickInternalState -> Maybe (Int, ListResult)
+listSelectedElement' (BrickInternalState {..}) = fmap (ix, ) $ clr !? ix
 
 
 selectLatest :: Vector ListResult -> Int
@@ -338,8 +338,8 @@ selectLatest v =
 -- When passed an existing @appState@, tries to keep the selected element.
 replaceLR :: (ListResult -> Bool)
           -> [ListResult]
-          -> Maybe AppInternalState
-          -> AppInternalState
+          -> Maybe BrickInternalState
+          -> BrickInternalState
 replaceLR filterF lr s =
   let oldElem = s >>= listSelectedElement'
       newVec  = V.fromList . filter filterF $ lr
@@ -347,7 +347,7 @@ replaceLR filterF lr s =
         case oldElem >>= \(_, oldE) -> V.findIndex (toolEqual oldE) newVec of
           Just ix -> ix
           Nothing -> selectLatest newVec
-  in  AppInternalState newVec newSelected
+  in  BrickInternalState newVec newSelected
  where
   toolEqual e1 e2 =
     lTool e1 == lTool e2 && lVer e1 == lVer e2 && lCross e1 == lCross e2
@@ -359,8 +359,8 @@ filterVisible showAll e | lInstalled e = True
                         | otherwise    = not (elem Old (lTag e))
 
 
-install' :: AppState -> (Int, ListResult) -> IO (Either String ())
-install' AppState { appData = AppData {..} } (_, ListResult {..}) = do
+install' :: BrickState -> (Int, ListResult) -> IO (Either String ())
+install' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
   settings <- readIORef settings'
   l        <- readIORef logger'
   let runLogger = myLoggerT l
@@ -406,7 +406,7 @@ install' AppState { appData = AppData {..} } (_, ListResult {..}) = do
 Also check the logs in ~/.ghcup/logs|]
 
 
-set' :: AppState -> (Int, ListResult) -> IO (Either String ())
+set' :: BrickState -> (Int, ListResult) -> IO (Either String ())
 set' _ (_, ListResult {..}) = do
   settings <- readIORef settings'
   l        <- readIORef logger'
@@ -429,7 +429,7 @@ set' _ (_, ListResult {..}) = do
           VLeft  e -> pure $ Left [i|#{e}|]
 
 
-del' :: AppState -> (Int, ListResult) -> IO (Either String ())
+del' :: BrickState -> (Int, ListResult) -> IO (Either String ())
 del' _ (_, ListResult {..}) = do
   settings <- readIORef settings'
   l        <- readIORef logger'
@@ -449,8 +449,8 @@ del' _ (_, ListResult {..}) = do
           VLeft  e -> pure $ Left [i|#{e}|]
 
 
-changelog' :: AppState -> (Int, ListResult) -> IO (Either String ())
-changelog' AppState { appData = AppData {..} } (_, ListResult {..}) = do
+changelog' :: BrickState -> (Int, ListResult) -> IO (Either String ())
+changelog' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
   case getChangeLog dls lTool (Left lVer) of
     Nothing -> pure $ Left
       [i|Could not find ChangeLog for #{lTool}, version #{prettyVer lVer}|]
@@ -469,17 +469,19 @@ uri' :: IORef (Maybe URI)
 uri' = unsafePerformIO (newIORef Nothing)
 
 
-settings' :: IORef Settings
+settings' :: IORef AppState
 {-# NOINLINE settings' #-}
 settings' = unsafePerformIO $ do
   dirs <- getDirs
-  newIORef Settings { cache      = True
-                    , noVerify   = False
-                    , keepDirs   = Never
-                    , downloader = Curl
-                    , verbose    = False
-                    , ..
-                    }
+  newIORef $ AppState (Settings { cache      = True
+                                , noVerify   = False
+                                , keepDirs   = Never
+                                , downloader = Curl
+                                , verbose    = False
+                                , ..
+                                })
+                      dirs
+
 
 
 logger' :: IORef LoggerConfig
@@ -492,7 +494,7 @@ logger' = unsafePerformIO
   )
 
 
-brickMain :: Settings
+brickMain :: AppState
           -> Maybe URI
           -> LoggerConfig
           -> GHCupDownloads
@@ -510,7 +512,7 @@ brickMain s muri l av pfreq' = do
     Right ad ->
       defaultMain
           app
-          (AppState ad
+          (BrickState ad
                     defaultAppSettings
                     (constructList ad defaultAppSettings Nothing)
           )
@@ -520,8 +522,8 @@ brickMain s muri l av pfreq' = do
       exitWith $ ExitFailure 2
 
 
-defaultAppSettings :: AppSettings
-defaultAppSettings = AppSettings { showAll = False }
+defaultAppSettings :: BrickSettings
+defaultAppSettings = BrickSettings { showAll = False }
 
 
 getDownloads' :: IO (Either String GHCupDownloads)
@@ -546,7 +548,7 @@ getDownloads' = do
 
 getAppData :: Maybe GHCupDownloads
            -> PlatformRequest
-           -> IO (Either String AppData)
+           -> IO (Either String BrickData)
 getAppData mg pfreq' = do
   settings <- readIORef settings'
   l        <- readIORef logger'
@@ -558,6 +560,6 @@ getAppData mg pfreq' = do
     case r of
       Right dls -> do
         lV <- listVersions dls Nothing Nothing pfreq'
-        pure $ Right $ (AppData (reverse lV) dls pfreq')
+        pure $ Right $ (BrickData (reverse lV) dls pfreq')
       Left e -> pure $ Left [i|#{e}|]
 

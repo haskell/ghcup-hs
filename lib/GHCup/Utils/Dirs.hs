@@ -152,17 +152,17 @@ getDirs = do
 
 
 -- | ~/.ghcup/ghc by default.
-ghcupGHCBaseDir :: (MonadReader Settings m) => m (Path Abs)
+ghcupGHCBaseDir :: (MonadReader AppState m) => m (Path Abs)
 ghcupGHCBaseDir = do
-  Settings {..} <- ask
-  pure (baseDir dirs </> [rel|ghc|])
+  AppState { dirs = Dirs {..} } <- ask
+  pure (baseDir </> [rel|ghc|])
 
 
 -- | Gets '~/.ghcup/ghc/<ghcupGHCDir>'.
 -- The dir may be of the form
 --   * armv7-unknown-linux-gnueabihf-8.8.3
 --   * 8.8.4
-ghcupGHCDir :: (MonadReader Settings m, MonadThrow m)
+ghcupGHCDir :: (MonadReader AppState m, MonadThrow m)
             => GHCTargetVersion
             -> m (Path Abs)
 ghcupGHCDir ver = do
