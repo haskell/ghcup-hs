@@ -7,6 +7,7 @@
   - reverse list order so latest is on top
   - expand the blues selected bar
   - show new latest versions in bright white
+* allow configuration file and settings TUI hotkeys wrt #41
 
 ## 0.1.11 -- 2020-09-23
 

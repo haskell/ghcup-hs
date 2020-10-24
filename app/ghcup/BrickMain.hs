@@ -36,7 +36,6 @@ import           Data.Bool
 import           Data.Functor
 import           Data.List
 import           Data.Maybe
-import           Data.Char
 import           Data.IORef
 import           Data.String.Interpolate
 import           Data.Vector                    ( Vector
@@ -77,33 +76,44 @@ data BrickState = BrickState
   { appData     :: BrickData
   , appSettings :: BrickSettings
   , appState    :: BrickInternalState
+  , appKeys     :: KeyBindings
   }
   deriving Show
 
 
-keyHandlers :: [ ( Char
+keyHandlers :: KeyBindings
+            -> [ ( Vty.Key
                  , BrickSettings -> String
                  , BrickState -> EventM n (Next BrickState)
                  )
                ]
-keyHandlers =
-  [ ('q', const "Quit"     , halt)
-  , ('i', const "Install"  , withIOAction install')
-  , ('u', const "Uninstall", withIOAction del')
-  , ('s', const "Set"      , withIOAction set')
-  , ('c', const "ChangeLog", withIOAction changelog')
-  , ( 'a'
+keyHandlers KeyBindings {..} =
+  [ (bQuit, const "Quit"     , halt)
+  , (bInstall, const "Install"  , withIOAction install')
+  , (bUninstall, const "Uninstall", withIOAction del')
+  , (bSet, const "Set"      , withIOAction set')
+  , (bChangelog, const "ChangeLog", withIOAction changelog')
+  , ( bShowAll
     , (\BrickSettings {..} ->
         if showAll then "Hide old versions" else "Show all versions"
       )
     , hideShowHandler
     )
+  , (bUp, const "Up", \BrickState {..} -> continue (BrickState { appState = (moveCursor 1 appState Up), .. }))
+  , (bDown, const "Down", \BrickState {..} -> continue (BrickState { appState = (moveCursor 1 appState Down), .. }))
   ]
  where
   hideShowHandler (BrickState {..}) =
     let newAppSettings   = appSettings { showAll = not . showAll $ appSettings }
         newInternalState = constructList appData newAppSettings (Just appState)
-    in  continue (BrickState appData newAppSettings newInternalState)
+    in  continue (BrickState appData newAppSettings newInternalState appKeys)
+
+
+showKey :: Vty.Key -> String
+showKey (Vty.KChar c) = [c]
+showKey (Vty.KUp) = "↑"
+showKey (Vty.KDown) = "↓"
+showKey key = tail (show key)
 
 
 ui :: BrickState -> Widget String
@@ -122,8 +132,7 @@ ui BrickState { appSettings = as@(BrickSettings {}), ..}
       . txtWrap
       . T.pack
       . foldr1 (\x y -> x <> "  " <> y)
-      . (++ ["↑↓:Navigation"])
-      $ (fmap (\(c, s, _) -> (c : ':' : s as)) keyHandlers)
+      $ (fmap (\(key, s, _) -> (showKey key <> ":" <> s as)) $ keyHandlers appKeys)
   header =
     (minHSize 2 $ emptyWidget)
       <+> (padLeft (Pad 2) $ minHSize 6 $ str "Tool")
@@ -261,24 +270,30 @@ dimAttributes = attrMap
   , ("no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
   ]
 
+
 eventHandler :: BrickState -> BrickEvent n e -> EventM n (Next BrickState)
-eventHandler st (VtyEvent (Vty.EvResize _               _)) = continue st
-eventHandler st (VtyEvent (Vty.EvKey    (Vty.KChar 'q') _)) = halt st
-eventHandler st (VtyEvent (Vty.EvKey    Vty.KEsc        _)) = halt st
-eventHandler BrickState {..} (VtyEvent (Vty.EvKey (Vty.KUp) _)) =
-  continue (BrickState { appState = (moveCursor appState Up), .. })
-eventHandler BrickState {..} (VtyEvent (Vty.EvKey (Vty.KDown) _)) =
-  continue (BrickState { appState = (moveCursor appState Down), .. })
-eventHandler as (VtyEvent (Vty.EvKey (Vty.KChar c) _)) =
-  case find (\(c', _, _) -> c' == c) keyHandlers of
-    Nothing              -> continue as
-    Just (_, _, handler) -> handler as
-eventHandler st _ = continue st
+eventHandler st@(BrickState {..}) ev = do
+  AppState { keyBindings = kb } <- liftIO $ readIORef settings'
+  case ev of
+    (MouseDown _ Vty.BScrollUp _ _) ->
+      continue (BrickState { appState = moveCursor 1 appState Up, .. })
+    (MouseDown _ Vty.BScrollDown _ _) ->
+      continue (BrickState { appState = moveCursor 1 appState Down, .. })
+    (VtyEvent (Vty.EvResize _ _)) -> continue st
+    (VtyEvent (Vty.EvKey Vty.KUp _)) ->
+      continue (BrickState { appState = (moveCursor 1 appState Up), .. })
+    (VtyEvent (Vty.EvKey Vty.KDown _)) ->
+      continue (BrickState { appState = (moveCursor 1 appState Down), .. })
+    (VtyEvent (Vty.EvKey key _)) ->
+      case find (\(key', _, _) -> key' == key) (keyHandlers kb) of
+        Nothing -> continue st
+        Just (_, _, handler) -> handler st
+    _ -> continue st
 
 
-moveCursor :: BrickInternalState -> Direction -> BrickInternalState
-moveCursor ais@(BrickInternalState {..}) direction =
-  let newIx = if direction == Down then ix + 1 else ix - 1
+moveCursor :: Int -> BrickInternalState -> Direction -> BrickInternalState
+moveCursor steps ais@(BrickInternalState {..}) direction =
+  let newIx = if direction == Down then ix + steps else ix - steps
   in  case clr !? newIx of
         Just _  -> BrickInternalState { ix = newIx, .. }
         Nothing -> ais
@@ -310,9 +325,10 @@ updateList :: BrickData -> BrickState -> BrickState
 updateList appD (BrickState {..}) =
   let newInternalState = constructList appD appSettings (Just appState)
   in  BrickState { appState    = newInternalState
-               , appData     = appD
-               , appSettings = appSettings
-               }
+                 , appData     = appD
+                 , appSettings = appSettings
+                 , appKeys     = appKeys
+                 }
 
 
 constructList :: BrickData
@@ -481,6 +497,7 @@ settings' = unsafePerformIO $ do
                                 , ..
                                 })
                       dirs
+                      defaultKeyBindings
 
 
 
@@ -515,6 +532,8 @@ brickMain s muri l av pfreq' = do
           (BrickState ad
                     defaultAppSettings
                     (constructList ad defaultAppSettings Nothing)
+                    (keyBindings s)
+
           )
         $> ()
     Left e -> do

@@ -13,6 +13,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Manual install](#manual-install)
      * [Vim integration](#vim-integration)
    * [Usage](#usage)
+     * [Configuration](#configuration)
      * [Manpages](#manpages)
      * [Shell-completion](#shell-completion)
      * [Cross support](#cross-support)
@@ -79,6 +80,47 @@ ghcup upgrade
 
 Generally this is meant to be used with [`cabal-install`](https://hackage.haskell.org/package/cabal-install), which
 handles your haskell packages and can demand that [a specific version](https://cabal.readthedocs.io/en/latest/nix-local-build.html#cfg-flag---with-compiler)  of `ghc` is available, which `ghcup` can do.
+
+### Configuration
+
+A configuration file can be put in `~/.ghcup/config.yaml`. Here is the complete default
+configuration:
+
+```yaml
+# Cache downloads in ~/.ghcup/cache
+cache: False
+# Skip tarball checksum verification
+no-verify: False
+# enable verbosity
+verbose: False
+# When to keep build directories
+keep-dirs: Errors  # Always | Never | Errors
+# Which downloader to use
+downloader: Curl   # Curl | Wget | Internal
+
+# TUI key bindings,
+# see https://hackage.haskell.org/package/vty-5.31/docs/Graphics-Vty-Input-Events.html#t:Key
+# for possible values.
+key-bindings:
+  up:
+    KUp: []
+  down:
+    KDown: []
+  quit:
+    KChar: 'q'
+  install:
+    KChar: 'i'
+  uninstall:
+    KChar: 'u'
+  set:
+    KChar: 's'
+  changelog:
+    KChar: 'c'
+  show-all:
+    KChar: 'a'
+```
+
+Partial configuration is fine. Command line options always overwrite the config file settings.
 
 ### Manpages
 

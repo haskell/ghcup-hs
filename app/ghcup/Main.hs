@@ -81,12 +81,12 @@ import qualified Text.Megaparsec.Char          as MPC
 data Options = Options
   {
   -- global options
-    optVerbose   :: Bool
-  , optCache     :: Bool
+    optVerbose   :: Maybe Bool
+  , optCache     :: Maybe Bool
   , optUrlSource :: Maybe URI
-  , optNoVerify  :: Bool
-  , optKeepDirs  :: KeepDirs
-  , optsDownloader :: Downloader
+  , optNoVerify  :: Maybe Bool
+  , optKeepDirs  :: Maybe KeepDirs
+  , optsDownloader :: Maybe Downloader
   -- commands
   , optCommand   :: Command
   }
@@ -180,13 +180,48 @@ data ChangeLogOptions = ChangeLogOptions
   }
 
 
+-- https://github.com/pcapriotti/optparse-applicative/issues/148
+
+-- | A switch that can be enabled using --foo and disabled using --no-foo.
+--
+-- The option modifier is applied to only the option that is *not* enabled
+-- by default. For example:
+--
+-- > invertableSwitch "recursive" True (help "do not recurse into directories")
+-- 
+-- This example makes --recursive enabled by default, so 
+-- the help is shown only for --no-recursive.
+invertableSwitch 
+    :: String              -- ^ long option
+    -> Char                -- ^ short option for the non-default option
+    -> Bool                -- ^ is switch enabled by default?
+    -> Mod FlagFields Bool -- ^ option modifier
+    -> Parser (Maybe Bool)
+invertableSwitch longopt shortopt defv optmod = invertableSwitch' longopt shortopt defv
+    (if defv then mempty else optmod)
+    (if defv then optmod else mempty)
+
+-- | Allows providing option modifiers for both --foo and --no-foo.
+invertableSwitch'
+    :: String              -- ^ long option (eg "foo")
+    -> Char                -- ^ short option for the non-default option
+    -> Bool                -- ^ is switch enabled by default?
+    -> Mod FlagFields Bool -- ^ option modifier for --foo
+    -> Mod FlagFields Bool -- ^ option modifier for --no-foo
+    -> Parser (Maybe Bool)
+invertableSwitch' longopt shortopt defv enmod dismod = optional
+    ( flag' True (enmod <> long longopt <> if defv then mempty else short shortopt)
+    <|> flag' False (dismod <> long nolongopt <> if defv then short shortopt else mempty)
+    )
+  where
+    nolongopt = "no-" ++ longopt
+
+
 opts :: Parser Options
 opts =
   Options
-    <$> switch (short 'v' <> long "verbose" <> help "Enable verbosity")
-    <*> switch
-          (short 'c' <> long "cache" <> help "Cache downloads in ~/.ghcup/cache"
-          )
+    <$> invertableSwitch "verbose" 'v' False (help "Enable verbosity (default: disabled)")
+    <*> invertableSwitch "cache" 'c' False (help "Cache downloads in ~/.ghcup/cache (default: disabled)")
     <*> (optional
           (option
             (eitherReader parseUri)
@@ -198,35 +233,29 @@ opts =
             )
           )
         )
-    <*> switch
-          (short 'n' <> long "no-verify" <> help
-            "Skip tarball checksum verification"
-          )
-    <*> option
+    <*> (fmap . fmap) not (invertableSwitch "verify" 'n' True (help "Disable tarball checksum verification (default: enabled)"))
+    <*> optional (option
           (eitherReader keepOnParser)
           (  long "keep"
           <> metavar "<always|errors|never>"
           <> help
                "Keep build directories? (default: errors)"
-          <> value Errors
           <> hidden
-          )
-    <*> option
+          ))
+    <*> optional (option
           (eitherReader downloaderParser)
           (  long "downloader"
 #if defined(INTERNAL_DOWNLOADER)
           <> metavar "<internal|curl|wget>"
           <> help
           "Downloader to use (default: internal)"
-          <> value Internal
 #else
           <> metavar "<curl|wget>"
           <> help
           "Downloader to use (default: curl)"
-          <> value Curl
 #endif
           <> hidden
-          )
+          ))
     <*> com
  where
   parseUri s' =
@@ -857,14 +886,44 @@ bindistParser = first show . parseURI strictURIParserOptions . UTF8.fromString
 
 
 toSettings :: Options -> IO AppState
-toSettings Options {..} = do
-  let cache      = optCache
-      noVerify   = optNoVerify
-      keepDirs   = optKeepDirs
-      downloader = optsDownloader
-      verbose    = optVerbose
+toSettings options = do
   dirs <- getDirs
-  pure $ AppState (Settings { .. }) dirs
+  userConf <- runE @'[ JSONError ] ghcupConfigFile >>= \case
+    VRight r -> pure r
+    VLeft (V (JSONDecodeError e)) -> do
+      B.hPut stderr ("Error decoding config file: " <> (E.encodeUtf8 . T.pack . show $ e))
+      pure defaultUserSettings
+    _ -> do
+      die "Unexpected error!"
+  pure $ mergeConf options dirs userConf
+ where
+   mergeConf :: Options -> Dirs -> UserSettings -> AppState
+   mergeConf (Options {..}) dirs (UserSettings {..}) =
+     let cache      = fromMaybe (fromMaybe False uCache) optCache
+         noVerify   = fromMaybe (fromMaybe False uNoVerify) optNoVerify
+         verbose    = fromMaybe (fromMaybe False uVerbose) optVerbose
+         keepDirs   = fromMaybe (fromMaybe Errors uKeepDirs) optKeepDirs
+         downloader = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
+         keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
+     in AppState (Settings {..}) dirs keyBindings
+#if defined(INTERNAL_DOWNLOADER)
+   defaultDownloader = Internal
+#else
+   defaultDownloader = Curl
+#endif
+   mergeKeys :: UserKeyBindings -> KeyBindings
+   mergeKeys UserKeyBindings {..} =
+     let KeyBindings {..} = defaultKeyBindings
+     in KeyBindings {
+           bUp = fromMaybe bUp kUp
+         , bDown = fromMaybe bDown kDown
+         , bQuit = fromMaybe bQuit kQuit
+         , bInstall = fromMaybe bInstall kInstall
+         , bUninstall = fromMaybe bUninstall kUninstall
+         , bSet = fromMaybe bSet kSet
+         , bChangelog = fromMaybe bChangelog kChangelog
+         , bShowAll = fromMaybe bShowAll kShowAll
+         }
 
 
 upgradeOptsP :: Parser UpgradeOpts
@@ -948,7 +1007,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -- logger interpreter
           logfile <- flip runReaderT appstate $ initGHCupFileLogging [rel|ghcup.log|]
           let loggerConfig = LoggerConfig
-                { lcPrintDebug = optVerbose
+                { lcPrintDebug = verbose settings
                 , colorOutter  = B.hPut stderr
                 , rawOutter    = appendFile logfile
                 }
