@@ -226,7 +226,7 @@ common vector
   build-depends: vector >=0.12
 
 common versions
-  build-depends: versions >=3.5
+  build-depends: versions >=4.0.1
 
 common vty
   build-depends: vty >=5.28.2

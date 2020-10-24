@@ -25,6 +25,7 @@ import           Data.Text                      ( Text )
 import           Data.Versions
 import           Data.Void
 
+import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
 import qualified Text.Megaparsec               as MP
 
@@ -90,6 +91,8 @@ ghcTargetVerP =
                   (Digits _) -> True
                   (Str    _) -> False
                 )
+            . fmap NE.toList
+            . NE.toList
             $ (_vChunks v)
     if startsWithDigists && not (isJust (_vEpoch v))
       then pure $ prettyVer v

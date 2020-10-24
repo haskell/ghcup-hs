@@ -50,6 +50,7 @@ import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.Foldable
 import           Data.List
+import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
 import           Data.List.Split
 import           Data.Maybe
 import           Data.String.Interpolate
@@ -455,7 +456,7 @@ hlsSymlinks = do
 -- | Extract (major, minor) from any version.
 getMajorMinorV :: MonadThrow m => Version -> m (Int, Int)
 getMajorMinorV Version {..} = case _vChunks of
-  ([Digits x] : [Digits y] : _) -> pure (fromIntegral x, fromIntegral y)
+  ((Digits x :| []) :| ((Digits y :| []):_)) -> pure (fromIntegral x, fromIntegral y)
   _ -> throwM $ ParseError "Could not parse X.Y from version"
 
 

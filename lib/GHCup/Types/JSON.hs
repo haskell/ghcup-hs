@@ -41,6 +41,7 @@ import qualified Data.Text                     as T
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } { fieldLabelModifier = removeLensFieldLabel } ''Architecture
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''LinuxDistro
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Mess
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''MChunk
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Platform
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''SemVer
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Tool
