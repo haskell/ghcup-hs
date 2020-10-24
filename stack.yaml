@@ -59,6 +59,7 @@ flags:
 
   ghcup:
     tui: true
+    internal-downloader: true
 
 system-ghc: true
 compiler: ghc-8.8.4
