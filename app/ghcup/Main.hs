@@ -374,20 +374,20 @@ com =
   installToolFooter = [s|Discussion:
   Installs GHC or cabal. When no command is given, installs GHC
   with the specified version/tag.
-  It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
+  It is recommended to always specify a subcommand (ghc/cabal/hls).|]
 
   setFooter :: String
   setFooter = [s|Discussion:
   Sets the currently active GHC or cabal version. When no command is given,
   defaults to setting GHC with the specified version/tag (if no tag
   is given, sets GHC to 'recommended' version).
-  It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
+  It is recommended to always specify a subcommand (ghc/cabal/hls).|]
 
   rmFooter :: String
   rmFooter = [s|Discussion:
   Remove the given GHC or cabal version. When no command is given,
   defaults to removing GHC with the specified version.
-  It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
+  It is recommended to always specify a subcommand (ghc/cabal/hls).|]
 
   changeLogFooter :: String
   changeLogFooter = [s|Discussion:
@@ -1004,6 +1004,7 @@ main = do
 ENV variables:
   * TMPDIR: where ghcup does the work (unpacking, building, ...)
   * GHCUP_INSTALL_BASE_PREFIX: the base of ghcup (default: $HOME)
+  * GHCUP_USE_XDG_DIRS: set to anything to use XDG style directories
 
 Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
