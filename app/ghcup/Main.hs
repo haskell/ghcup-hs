@@ -122,6 +122,7 @@ data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
   , instPlatform :: Maybe PlatformRequest
   , instBindist  :: Maybe URI
+  , instSet      :: Bool
   }
 
 data SetCommand = SetGHC SetOptions
@@ -158,6 +159,7 @@ data GHCCompileOptions = GHCCompileOptions
   , patchDir     :: Maybe (Path Abs)
   , crossTarget  :: Maybe Text
   , addConfArgs  :: [Text]
+  , setCompile   :: Bool
   }
 
 data CabalCompileOptions = CabalCompileOptions
@@ -470,7 +472,7 @@ Examples:
 
 installOpts :: Parser InstallOptions
 installOpts =
-  (\p (u, v) -> InstallOptions v p u)
+  (\p (u, v) b -> InstallOptions v p u b)
     <$> (optional
           (option
             (eitherReader platformParser)
@@ -495,6 +497,12 @@ installOpts =
             )
         <|> ((,) <$> pure Nothing <*> optional toolVersionArgument)
         )
+    <*> flag
+          False
+          True
+          (long "set" <> help
+            "Set as active version after install"
+          )
 
 
 setParser :: Parser (Either SetCommand SetOptions)
@@ -664,7 +672,7 @@ Examples:
 
 ghcCompileOpts :: Parser GHCCompileOptions
 ghcCompileOpts =
-  (\CabalCompileOptions {..} crossTarget addConfArgs -> GHCCompileOptions { .. }
+  (\CabalCompileOptions {..} crossTarget addConfArgs setCompile -> GHCCompileOptions { .. }
     )
     <$> cabalCompileOpts
     <*> (optional
@@ -676,6 +684,12 @@ ghcCompileOpts =
           )
         )
     <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to configure, prefix with '-- ' (longopts)"))
+    <*> flag
+          False
+          True
+          (long "set" <> help
+            "Set as active version after install"
+          )
 
 cabalCompileOpts :: Parser CabalCompileOptions
 cabalCompileOpts =
@@ -1158,12 +1172,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                      Nothing -> runInstTool $ do
                        v <- liftE $ fromVersion dls instVer GHC
                        liftE $ installGHCBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                       when instSet $ void $ liftE $ setGHC v SetGHCOnly
                      Just uri -> runInstTool' appstate{ settings = settings {noVerify = True}} $ do
                        v <- liftE $ fromVersion dls instVer GHC
                        liftE $ installGHCBindist
                          (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
                          (_tvVersion v)
                          (fromMaybe pfreq instPlatform)
+                       when instSet $ void $ liftE $ setGHC v SetGHCOnly
                     )
                     >>= \case
                           VRight _ -> do
@@ -1376,14 +1392,17 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         pure $ ExitFailure 8
 
             Compile (CompileGHC GHCCompileOptions {..}) ->
-              (runCompileGHC $ liftE $ compileGHC dls
-                                                  (GHCTargetVersion crossTarget targetVer)
-                                                  bootstrapGhc
-                                                  jobs
-                                                  buildConfig
-                                                  patchDir
-                                                  addConfArgs
-                                                  pfreq
+              (runCompileGHC $ do
+                liftE $ compileGHC dls
+                            (GHCTargetVersion crossTarget targetVer)
+                            bootstrapGhc
+                            jobs
+                            buildConfig
+                            patchDir
+                            addConfArgs
+                            pfreq
+                when setCompile $ void $ liftE
+                  $ setGHC (GHCTargetVersion crossTarget targetVer) SetGHCOnly
                 )
                 >>= \case
                       VRight _ -> do
