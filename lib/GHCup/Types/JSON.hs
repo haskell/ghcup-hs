@@ -55,6 +55,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupI
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''KeepDirs
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downloader
+deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "u-") . T.pack . kebab $ str' } ''UserSettings
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Vty.Key

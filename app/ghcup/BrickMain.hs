@@ -494,6 +494,7 @@ settings' = unsafePerformIO $ do
                                 , keepDirs   = Never
                                 , downloader = Curl
                                 , verbose    = False
+                                , urlSource  = GHCupURL
                                 , ..
                                 })
                       dirs

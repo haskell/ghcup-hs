@@ -83,9 +83,9 @@ import qualified Crypto.Hash.SHA256            as SHA256
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Base16        as B16
 import qualified Data.ByteString.Lazy          as L
+import qualified Data.Map.Strict               as M
 #if defined(INTERNAL_DOWNLOADER)
 import qualified Data.CaseInsensitive          as CI
-import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 #endif
 import qualified Data.Text.Encoding            as E
@@ -104,8 +104,8 @@ import qualified System.Posix.RawFilePath.Directory
     ------------------
 
 
--- | Like 'getDownloads', but tries to fall back to
--- cached ~/.ghcup/cache/ghcup-<format-ver>.yaml
+
+-- | Downloads the download information! But only if we need to ;P
 getDownloadsF :: ( FromJSONKey Tool
                  , FromJSONKey Version
                  , FromJSON VersionInfo
@@ -123,15 +123,22 @@ getDownloadsF :: ( FromJSONKey Tool
                    GHCupInfo
 getDownloadsF urlSource = do
   case urlSource of
-    GHCupURL ->
-      liftE
-        $ handleIO (\_ -> readFromCache)
-        $ catchE @_ @'[JSONError , FileDoesNotExistError]
-            (\(DownloadFailed _) -> readFromCache)
-        $ getDownloads urlSource
-    (OwnSource _) -> liftE $ getDownloads urlSource
-    (OwnSpec   _) -> liftE $ getDownloads urlSource
+    GHCupURL -> liftE getBase
+    (OwnSource url) -> do
+      bs <- reThrowAll DownloadFailed $ downloadBS url
+      lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
+    (OwnSpec av) -> pure av
+    (AddSource (Left ext)) -> do
+      base <- liftE getBase
+      pure (mergeGhcupInfo base ext)
+    (AddSource (Right uri)) -> do
+      base <- liftE getBase
+      bsExt <- reThrowAll DownloadFailed $ downloadBS uri
+      ext <- lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bsExt)
+      pure (mergeGhcupInfo base ext)
  where
+  readFromCache :: (MonadIO m, MonadCatch m, MonadLogger m, MonadReader AppState m)
+                => Excepts '[JSONError, FileDoesNotExistError] m GHCupInfo
   readFromCache = do
     AppState {dirs = Dirs {..}} <- lift ask
     lift $ $(logWarn)
@@ -145,32 +152,25 @@ getDownloadsF urlSource = do
       $ readFile yaml_file
     lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
 
+  getBase :: (MonadFail m, MonadIO m, MonadCatch m, MonadLogger m, MonadReader AppState m)
+          => Excepts '[JSONError , FileDoesNotExistError] m GHCupInfo
+  getBase =
+    handleIO (\_ -> readFromCache)
+    $ catchE @_ @'[JSONError, FileDoesNotExistError]
+        (\(DownloadFailed _) -> readFromCache)
+    $ ((reThrowAll @_ @_ @'[JSONError, DownloadFailed] DownloadFailed $ smartDl ghcupURL)
+      >>= (liftE . lE' @_ @_ @'[JSONError] JSONDecodeError . bimap show id . Y.decodeEither' . L.toStrict))
 
--- | Downloads the download information! But only if we need to ;P
-getDownloads :: ( FromJSONKey Tool
-                , FromJSONKey Version
-                , FromJSON VersionInfo
-                , MonadIO m
-                , MonadCatch m
-                , MonadLogger m
-                , MonadThrow m
-                , MonadFail m
-                , MonadReader AppState m
-                )
-             => URLSource
-             -> Excepts '[JSONError , DownloadFailed] m GHCupInfo
-getDownloads urlSource = do
-  lift $ $(logDebug) [i|Receiving download info from: #{urlSource}|]
-  case urlSource of
-    GHCupURL -> do
-      bs <- reThrowAll DownloadFailed $ smartDl ghcupURL
-      lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
-    (OwnSource url) -> do
-      bs <- reThrowAll DownloadFailed $ downloadBS url
-      lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
-    (OwnSpec av) -> pure $ av
+  mergeGhcupInfo :: GHCupInfo -- ^ base to merge with
+                 -> GHCupInfo -- ^ extension overwriting the base
+                 -> GHCupInfo
+  mergeGhcupInfo (GHCupInfo tr base) (GHCupInfo _ ext) =
+    let new = M.mapWithKey (\k a -> case M.lookup k ext of
+                                        Just a' -> M.union a' a
+                                        Nothing -> a
+                           ) base
+    in GHCupInfo tr new
 
- where
   -- First check if the json file is in the ~/.ghcup/cache dir
   -- and check it's access time. If it has been accessed within the
   -- last 5 minutes, just reuse it.

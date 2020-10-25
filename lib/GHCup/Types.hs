@@ -191,6 +191,7 @@ data TarDir = RealDir (Path Rel)
 data URLSource = GHCupURL
                | OwnSource URI
                | OwnSpec GHCupInfo
+               | AddSource (Either GHCupInfo URI) -- ^ merge with GHCupURL
                deriving (GHC.Generic, Show)
 
 
@@ -201,11 +202,12 @@ data UserSettings = UserSettings
   , uKeepDirs    :: Maybe KeepDirs
   , uDownloader  :: Maybe Downloader
   , uKeyBindings :: Maybe UserKeyBindings
+  , uUrlSource   :: Maybe URLSource
   }
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 data UserKeyBindings = UserKeyBindings
   { kUp        :: Maybe Vty.Key
@@ -255,6 +257,7 @@ data Settings = Settings
   , keepDirs   :: KeepDirs
   , downloader :: Downloader
   , verbose    :: Bool
+  , urlSource  :: URLSource
   }
   deriving (Show, GHC.Generic)
 

@@ -913,12 +913,13 @@ toSettings options = do
  where
    mergeConf :: Options -> Dirs -> UserSettings -> AppState
    mergeConf (Options {..}) dirs (UserSettings {..}) =
-     let cache      = fromMaybe (fromMaybe False uCache) optCache
-         noVerify   = fromMaybe (fromMaybe False uNoVerify) optNoVerify
-         verbose    = fromMaybe (fromMaybe False uVerbose) optVerbose
-         keepDirs   = fromMaybe (fromMaybe Errors uKeepDirs) optKeepDirs
-         downloader = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
+     let cache       = fromMaybe (fromMaybe False uCache) optCache
+         noVerify    = fromMaybe (fromMaybe False uNoVerify) optNoVerify
+         verbose     = fromMaybe (fromMaybe False uVerbose) optVerbose
+         keepDirs    = fromMaybe (fromMaybe Errors uKeepDirs) optKeepDirs
+         downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
+         urlSource   = maybe (fromMaybe GHCupURL uUrlSource) OwnSource optUrlSource
      in AppState (Settings {..}) dirs keyBindings
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
@@ -1149,7 +1150,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
               . flip runReaderT appstate
               . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
               $ liftE
-              $ getDownloadsF (maybe GHCupURL OwnSource optUrlSource)
+              $ getDownloadsF (urlSource settings)
               )
               >>= \case
                     VRight r -> pure r

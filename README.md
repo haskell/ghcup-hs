@@ -83,42 +83,8 @@ handles your haskell packages and can demand that [a specific version](https://c
 
 ### Configuration
 
-A configuration file can be put in `~/.ghcup/config.yaml`. Here is the complete default
-configuration:
-
-```yaml
-# Cache downloads in ~/.ghcup/cache
-cache: False
-# Skip tarball checksum verification
-no-verify: False
-# enable verbosity
-verbose: False
-# When to keep build directories
-keep-dirs: Errors  # Always | Never | Errors
-# Which downloader to use
-downloader: Curl   # Curl | Wget | Internal
-
-# TUI key bindings,
-# see https://hackage.haskell.org/package/vty-5.31/docs/Graphics-Vty-Input-Events.html#t:Key
-# for possible values.
-key-bindings:
-  up:
-    KUp: []
-  down:
-    KDown: []
-  quit:
-    KChar: 'q'
-  install:
-    KChar: 'i'
-  uninstall:
-    KChar: 'u'
-  set:
-    KChar: 's'
-  changelog:
-    KChar: 'c'
-  show-all:
-    KChar: 'a'
-```
+A configuration file can be put in `~/.ghcup/config.yaml`. The default config file
+explaining all possible configurations can be found in this repo: [config.yaml](./config.yaml).
 
 Partial configuration is fine. Command line options always overwrite the config file settings.
 
