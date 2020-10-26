@@ -72,6 +72,9 @@ common bz2
 common case-insensitive
   build-depends: case-insensitive >=1.2.1.0
 
+common casing
+  build-depends: casing >=0.1.4.1
+
 common concurrent-output
   build-depends: concurrent-output >=1.10.11
 
@@ -226,7 +229,7 @@ common vector
   build-depends: vector >=0.12
 
 common versions
-  build-depends: versions >=3.5
+  build-depends: versions >=4.0.1
 
 common vty
   build-depends: vty >=5.28.2
@@ -266,6 +269,7 @@ library
     , bytestring
     , bz2
     , case-insensitive
+    , casing
     , concurrent-output
     , containers
     , cryptohash-sha256
@@ -307,6 +311,7 @@ library
     , utf8-string
     , vector
     , versions
+    , vty
     , word8
     , yaml
     , zlib

@@ -193,7 +193,7 @@ validateTarballs dls = do
  where
   downloadAll dli = do
     dirs <- liftIO getDirs
-    let settings = Settings True False Never Curl False dirs
+    let settings = AppState (Settings True False Never Curl False GHCupURL) dirs defaultKeyBindings
     let runLogger = myLoggerT LoggerConfig { lcPrintDebug = True
                                            , colorOutter  = B.hPut stderr
                                            , rawOutter    = (\_ -> pure ())

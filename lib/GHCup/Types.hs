@@ -21,6 +21,7 @@ import           URI.ByteString
 
 import qualified Data.Text                     as T
 import qualified GHC.Generics                  as GHC
+import qualified Graphics.Vty                  as Vty
 
 
 
@@ -190,27 +191,82 @@ data TarDir = RealDir (Path Rel)
 data URLSource = GHCupURL
                | OwnSource URI
                | OwnSpec GHCupInfo
+               | AddSource (Either GHCupInfo URI) -- ^ merge with GHCupURL
                deriving (GHC.Generic, Show)
 
 
+data UserSettings = UserSettings
+  { uCache       :: Maybe Bool
+  , uNoVerify    :: Maybe Bool
+  , uVerbose     :: Maybe Bool
+  , uKeepDirs    :: Maybe KeepDirs
+  , uDownloader  :: Maybe Downloader
+  , uKeyBindings :: Maybe UserKeyBindings
+  , uUrlSource   :: Maybe URLSource
+  }
+  deriving (Show, GHC.Generic)
+
+defaultUserSettings :: UserSettings
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+
+data UserKeyBindings = UserKeyBindings
+  { kUp        :: Maybe Vty.Key
+  , kDown      :: Maybe Vty.Key
+  , kQuit      :: Maybe Vty.Key
+  , kInstall   :: Maybe Vty.Key
+  , kUninstall :: Maybe Vty.Key
+  , kSet       :: Maybe Vty.Key
+  , kChangelog :: Maybe Vty.Key
+  , kShowAll   :: Maybe Vty.Key
+  }
+  deriving (Show, GHC.Generic)
+
+data KeyBindings = KeyBindings
+  { bUp        :: Vty.Key
+  , bDown      :: Vty.Key
+  , bQuit      :: Vty.Key
+  , bInstall   :: Vty.Key
+  , bUninstall :: Vty.Key
+  , bSet       :: Vty.Key
+  , bChangelog :: Vty.Key
+  , bShowAll   :: Vty.Key
+  }
+  deriving (Show, GHC.Generic)
+
+defaultKeyBindings :: KeyBindings
+defaultKeyBindings = KeyBindings
+  { bUp = Vty.KUp
+  , bDown = Vty.KDown
+  , bQuit = Vty.KChar 'q'
+  , bInstall = Vty.KChar 'i'
+  , bUninstall = Vty.KChar 'u'
+  , bSet = Vty.KChar 's'
+  , bChangelog = Vty.KChar 'c'
+  , bShowAll = Vty.KChar 'a'
+  }
+
+data AppState = AppState
+  { settings :: Settings
+  , dirs :: Dirs
+  , keyBindings :: KeyBindings
+  } deriving (Show)
+
 data Settings = Settings
-  { -- set by user
-    cache      :: Bool
+  { cache      :: Bool
   , noVerify   :: Bool
   , keepDirs   :: KeepDirs
   , downloader :: Downloader
   , verbose    :: Bool
-
-    -- set on app start
-  , dirs       :: Dirs
+  , urlSource  :: URLSource
   }
-  deriving Show
+  deriving (Show, GHC.Generic)
 
 data Dirs = Dirs
   { baseDir  :: Path Abs
   , binDir   :: Path Abs
   , cacheDir :: Path Abs
   , logsDir  :: Path Abs
+  , confDir  :: Path Abs
   }
   deriving Show
 

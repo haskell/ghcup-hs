@@ -81,12 +81,12 @@ import qualified Text.Megaparsec.Char          as MPC
 data Options = Options
   {
   -- global options
-    optVerbose   :: Bool
-  , optCache     :: Bool
+    optVerbose   :: Maybe Bool
+  , optCache     :: Maybe Bool
   , optUrlSource :: Maybe URI
-  , optNoVerify  :: Bool
-  , optKeepDirs  :: KeepDirs
-  , optsDownloader :: Downloader
+  , optNoVerify  :: Maybe Bool
+  , optKeepDirs  :: Maybe KeepDirs
+  , optsDownloader :: Maybe Downloader
   -- commands
   , optCommand   :: Command
   }
@@ -122,6 +122,7 @@ data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
   , instPlatform :: Maybe PlatformRequest
   , instBindist  :: Maybe URI
+  , instSet      :: Bool
   }
 
 data SetCommand = SetGHC SetOptions
@@ -158,6 +159,7 @@ data GHCCompileOptions = GHCCompileOptions
   , patchDir     :: Maybe (Path Abs)
   , crossTarget  :: Maybe Text
   , addConfArgs  :: [Text]
+  , setCompile   :: Bool
   }
 
 data CabalCompileOptions = CabalCompileOptions
@@ -180,13 +182,48 @@ data ChangeLogOptions = ChangeLogOptions
   }
 
 
+-- https://github.com/pcapriotti/optparse-applicative/issues/148
+
+-- | A switch that can be enabled using --foo and disabled using --no-foo.
+--
+-- The option modifier is applied to only the option that is *not* enabled
+-- by default. For example:
+--
+-- > invertableSwitch "recursive" True (help "do not recurse into directories")
+-- 
+-- This example makes --recursive enabled by default, so 
+-- the help is shown only for --no-recursive.
+invertableSwitch 
+    :: String              -- ^ long option
+    -> Char                -- ^ short option for the non-default option
+    -> Bool                -- ^ is switch enabled by default?
+    -> Mod FlagFields Bool -- ^ option modifier
+    -> Parser (Maybe Bool)
+invertableSwitch longopt shortopt defv optmod = invertableSwitch' longopt shortopt defv
+    (if defv then mempty else optmod)
+    (if defv then optmod else mempty)
+
+-- | Allows providing option modifiers for both --foo and --no-foo.
+invertableSwitch'
+    :: String              -- ^ long option (eg "foo")
+    -> Char                -- ^ short option for the non-default option
+    -> Bool                -- ^ is switch enabled by default?
+    -> Mod FlagFields Bool -- ^ option modifier for --foo
+    -> Mod FlagFields Bool -- ^ option modifier for --no-foo
+    -> Parser (Maybe Bool)
+invertableSwitch' longopt shortopt defv enmod dismod = optional
+    ( flag' True (enmod <> long longopt <> if defv then mempty else short shortopt)
+    <|> flag' False (dismod <> long nolongopt <> if defv then short shortopt else mempty)
+    )
+  where
+    nolongopt = "no-" ++ longopt
+
+
 opts :: Parser Options
 opts =
   Options
-    <$> switch (short 'v' <> long "verbose" <> help "Enable verbosity")
-    <*> switch
-          (short 'c' <> long "cache" <> help "Cache downloads in ~/.ghcup/cache"
-          )
+    <$> invertableSwitch "verbose" 'v' False (help "Enable verbosity (default: disabled)")
+    <*> invertableSwitch "cache" 'c' False (help "Cache downloads in ~/.ghcup/cache (default: disabled)")
     <*> (optional
           (option
             (eitherReader parseUri)
@@ -198,35 +235,29 @@ opts =
             )
           )
         )
-    <*> switch
-          (short 'n' <> long "no-verify" <> help
-            "Skip tarball checksum verification"
-          )
-    <*> option
+    <*> (fmap . fmap) not (invertableSwitch "verify" 'n' True (help "Disable tarball checksum verification (default: enabled)"))
+    <*> optional (option
           (eitherReader keepOnParser)
           (  long "keep"
           <> metavar "<always|errors|never>"
           <> help
                "Keep build directories? (default: errors)"
-          <> value Errors
           <> hidden
-          )
-    <*> option
+          ))
+    <*> optional (option
           (eitherReader downloaderParser)
           (  long "downloader"
 #if defined(INTERNAL_DOWNLOADER)
           <> metavar "<internal|curl|wget>"
           <> help
           "Downloader to use (default: internal)"
-          <> value Internal
 #else
           <> metavar "<curl|wget>"
           <> help
           "Downloader to use (default: curl)"
-          <> value Curl
 #endif
           <> hidden
-          )
+          ))
     <*> com
  where
   parseUri s' =
@@ -343,20 +374,20 @@ com =
   installToolFooter = [s|Discussion:
   Installs GHC or cabal. When no command is given, installs GHC
   with the specified version/tag.
-  It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
+  It is recommended to always specify a subcommand (ghc/cabal/hls).|]
 
   setFooter :: String
   setFooter = [s|Discussion:
   Sets the currently active GHC or cabal version. When no command is given,
   defaults to setting GHC with the specified version/tag (if no tag
   is given, sets GHC to 'recommended' version).
-  It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
+  It is recommended to always specify a subcommand (ghc/cabal/hls).|]
 
   rmFooter :: String
   rmFooter = [s|Discussion:
   Remove the given GHC or cabal version. When no command is given,
   defaults to removing GHC with the specified version.
-  It is recommended to always specify a subcommand ('ghc' or 'cabal').|]
+  It is recommended to always specify a subcommand (ghc/cabal/hls).|]
 
   changeLogFooter :: String
   changeLogFooter = [s|Discussion:
@@ -441,7 +472,7 @@ Examples:
 
 installOpts :: Parser InstallOptions
 installOpts =
-  (\p (u, v) -> InstallOptions v p u)
+  (\p (u, v) b -> InstallOptions v p u b)
     <$> (optional
           (option
             (eitherReader platformParser)
@@ -466,6 +497,12 @@ installOpts =
             )
         <|> ((,) <$> pure Nothing <*> optional toolVersionArgument)
         )
+    <*> flag
+          False
+          True
+          (long "set" <> help
+            "Set as active version after install"
+          )
 
 
 setParser :: Parser (Either SetCommand SetOptions)
@@ -635,7 +672,7 @@ Examples:
 
 ghcCompileOpts :: Parser GHCCompileOptions
 ghcCompileOpts =
-  (\CabalCompileOptions {..} crossTarget addConfArgs -> GHCCompileOptions { .. }
+  (\CabalCompileOptions {..} crossTarget addConfArgs setCompile -> GHCCompileOptions { .. }
     )
     <$> cabalCompileOpts
     <*> (optional
@@ -647,6 +684,12 @@ ghcCompileOpts =
           )
         )
     <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to configure, prefix with '-- ' (longopts)"))
+    <*> flag
+          False
+          True
+          (long "set" <> help
+            "Set as active version after install"
+          )
 
 cabalCompileOpts :: Parser CabalCompileOptions
 cabalCompileOpts =
@@ -856,15 +899,46 @@ bindistParser :: String -> Either String URI
 bindistParser = first show . parseURI strictURIParserOptions . UTF8.fromString
 
 
-toSettings :: Options -> IO Settings
-toSettings Options {..} = do
-  let cache      = optCache
-      noVerify   = optNoVerify
-      keepDirs   = optKeepDirs
-      downloader = optsDownloader
-      verbose    = optVerbose
+toSettings :: Options -> IO AppState
+toSettings options = do
   dirs <- getDirs
-  pure $ Settings { .. }
+  userConf <- runE @'[ JSONError ] ghcupConfigFile >>= \case
+    VRight r -> pure r
+    VLeft (V (JSONDecodeError e)) -> do
+      B.hPut stderr ("Error decoding config file: " <> (E.encodeUtf8 . T.pack . show $ e))
+      pure defaultUserSettings
+    _ -> do
+      die "Unexpected error!"
+  pure $ mergeConf options dirs userConf
+ where
+   mergeConf :: Options -> Dirs -> UserSettings -> AppState
+   mergeConf (Options {..}) dirs (UserSettings {..}) =
+     let cache       = fromMaybe (fromMaybe False uCache) optCache
+         noVerify    = fromMaybe (fromMaybe False uNoVerify) optNoVerify
+         verbose     = fromMaybe (fromMaybe False uVerbose) optVerbose
+         keepDirs    = fromMaybe (fromMaybe Errors uKeepDirs) optKeepDirs
+         downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
+         keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
+         urlSource   = maybe (fromMaybe GHCupURL uUrlSource) OwnSource optUrlSource
+     in AppState (Settings {..}) dirs keyBindings
+#if defined(INTERNAL_DOWNLOADER)
+   defaultDownloader = Internal
+#else
+   defaultDownloader = Curl
+#endif
+   mergeKeys :: UserKeyBindings -> KeyBindings
+   mergeKeys UserKeyBindings {..} =
+     let KeyBindings {..} = defaultKeyBindings
+     in KeyBindings {
+           bUp = fromMaybe bUp kUp
+         , bDown = fromMaybe bDown kDown
+         , bQuit = fromMaybe bQuit kQuit
+         , bInstall = fromMaybe bInstall kInstall
+         , bUninstall = fromMaybe bUninstall kUninstall
+         , bSet = fromMaybe bSet kSet
+         , bChangelog = fromMaybe bChangelog kChangelog
+         , bShowAll = fromMaybe bShowAll kShowAll
+         }
 
 
 upgradeOptsP :: Parser UpgradeOpts
@@ -931,6 +1005,7 @@ main = do
 ENV variables:
   * TMPDIR: where ghcup does the work (unpacking, building, ...)
   * GHCUP_INSTALL_BASE_PREFIX: the base of ghcup (default: $HOME)
+  * GHCUP_USE_XDG_DIRS: set to anything to use XDG style directories
 
 Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
@@ -940,15 +1015,15 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             (footerDoc (Just $ text main_footer))
       )
     >>= \opt@Options {..} -> do
-          settings@Settings{dirs = Dirs{..}, ..} <- toSettings opt
+          appstate@AppState{dirs = Dirs{..}, ..} <- toSettings opt
 
           -- create ~/.ghcup dir
           createDirRecursive' baseDir
 
           -- logger interpreter
-          logfile <- flip runReaderT settings $ initGHCupFileLogging [rel|ghcup.log|]
+          logfile <- flip runReaderT appstate $ initGHCupFileLogging [rel|ghcup.log|]
           let loggerConfig = LoggerConfig
-                { lcPrintDebug = optVerbose
+                { lcPrintDebug = verbose settings
                 , colorOutter  = B.hPut stderr
                 , rawOutter    = appendFile logfile
                 }
@@ -959,9 +1034,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -- Effect interpreters --
           -------------------------
 
-          let runInstTool' settings' =
+          let runInstTool' appstate' =
                 runLogger
-                  . flip runReaderT settings'
+                  . flip runReaderT appstate'
                   . runResourceT
                   . runE
                     @'[ AlreadyInstalled
@@ -980,12 +1055,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , TarDirDoesNotExist
                       ]
 
-          let runInstTool = runInstTool' settings
+          let runInstTool = runInstTool' appstate
 
           let
             runSetGHC =
               runLogger
-                . flip runReaderT settings
+                . flip runReaderT appstate
                 . runE
                   @'[ FileDoesNotExistError
                     , NotInstalled
@@ -995,7 +1070,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let
             runSetCabal =
               runLogger
-                . flip runReaderT settings
+                . flip runReaderT appstate
                 . runE
                   @'[ NotInstalled
                     , TagNotFound
@@ -1004,26 +1079,26 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let
             runSetHLS =
               runLogger
-                . flip runReaderT settings
+                . flip runReaderT appstate
                 . runE
                   @'[ NotInstalled
                     , TagNotFound
                     ]
 
-          let runListGHC = runLogger . flip runReaderT settings
+          let runListGHC = runLogger . flip runReaderT appstate
 
           let runRm =
-                runLogger . flip runReaderT settings . runE @'[NotInstalled]
+                runLogger . flip runReaderT appstate . runE @'[NotInstalled]
 
           let runDebugInfo =
                 runLogger
-                  . flip runReaderT settings
+                  . flip runReaderT appstate
                   . runE
                     @'[NoCompatiblePlatform , NoCompatibleArch , DistroNotFound]
 
           let runCompileGHC =
                 runLogger
-                  . flip runReaderT settings
+                  . flip runReaderT appstate
                   . runResourceT
                   . runE
                     @'[ AlreadyInstalled
@@ -1044,7 +1119,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let runUpgrade =
                 runLogger
-                  . flip runReaderT settings
+                  . flip runReaderT appstate
                   . runResourceT
                   . runE
                     @'[ DigestError
@@ -1072,10 +1147,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           (GHCupInfo treq dls) <-
             ( runLogger
-              . flip runReaderT settings
+              . flip runReaderT appstate
               . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
               $ liftE
-              $ getDownloadsF (maybe GHCupURL OwnSource optUrlSource)
+              $ getDownloadsF (urlSource settings)
               )
               >>= \case
                     VRight r -> pure r
@@ -1086,7 +1161,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           case optCommand of
             Upgrade _ _ -> pure ()
-            _ -> runLogger $ flip runReaderT settings $ checkForUpdates dls pfreq
+            _ -> runLogger $ flip runReaderT appstate $ checkForUpdates dls pfreq
 
 
 
@@ -1099,12 +1174,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                      Nothing -> runInstTool $ do
                        v <- liftE $ fromVersion dls instVer GHC
                        liftE $ installGHCBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
-                     Just uri -> runInstTool' settings{noVerify = True} $ do
+                       when instSet $ void $ liftE $ setGHC v SetGHCOnly
+                     Just uri -> runInstTool' appstate{ settings = settings {noVerify = True}} $ do
                        v <- liftE $ fromVersion dls instVer GHC
                        liftE $ installGHCBindist
                          (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
                          (_tvVersion v)
                          (fromMaybe pfreq instPlatform)
+                       when instSet $ void $ liftE $ setGHC v SetGHCOnly
                     )
                     >>= \case
                           VRight _ -> do
@@ -1115,7 +1192,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                               [i|GHC ver #{prettyVer v} already installed, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
                             pure ExitSuccess
                           VLeft (V (BuildFailed tmpdir e)) -> do
-                            case keepDirs of
+                            case keepDirs settings of
                               Never -> runLogger ($(logError) [i|Build failed with #{e}|])
                               _ -> runLogger ($(logError) [i|Build failed with #{e}
     Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
@@ -1140,7 +1217,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                    Nothing -> runInstTool $ do
                      v <- liftE $ fromVersion dls instVer Cabal
                      liftE $ installCabalBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
-                   Just uri -> runInstTool' settings{noVerify = True} $ do
+                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} $ do
                      v <- liftE $ fromVersion dls instVer Cabal
                      liftE $ installCabalBindist
                          (DownloadInfo uri Nothing "")
@@ -1173,7 +1250,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                    Nothing -> runInstTool $ do
                      v <- liftE $ fromVersion dls instVer HLS
                      liftE $ installHLSBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
-                   Just uri -> runInstTool' settings{noVerify = True} $ do
+                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} $ do
                      v <- liftE $ fromVersion dls instVer HLS
                      liftE $ installHLSBindist
                          (DownloadInfo uri Nothing "")
@@ -1272,7 +1349,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           res <- case optCommand of
 #if defined(BRICK)
-            Interactive -> liftIO $ brickMain settings optUrlSource loggerConfig dls pfreq >> pure ExitSuccess
+            Interactive -> liftIO $ brickMain appstate optUrlSource loggerConfig dls pfreq >> pure ExitSuccess
 #endif
             Install (Right iopts) -> do
               runLogger ($(logWarn) [i|This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.|])
@@ -1317,14 +1394,17 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         pure $ ExitFailure 8
 
             Compile (CompileGHC GHCCompileOptions {..}) ->
-              (runCompileGHC $ liftE $ compileGHC dls
-                                                  (GHCTargetVersion crossTarget targetVer)
-                                                  bootstrapGhc
-                                                  jobs
-                                                  buildConfig
-                                                  patchDir
-                                                  addConfArgs
-                                                  pfreq
+              (runCompileGHC $ do
+                liftE $ compileGHC dls
+                            (GHCTargetVersion crossTarget targetVer)
+                            bootstrapGhc
+                            jobs
+                            buildConfig
+                            patchDir
+                            addConfArgs
+                            pfreq
+                when setCompile $ void $ liftE
+                  $ setGHC (GHCTargetVersion crossTarget targetVer) SetGHCOnly
                 )
                 >>= \case
                       VRight _ -> do
@@ -1336,7 +1416,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           [i|GHC ver #{prettyVer v} already installed, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
-                        case keepDirs of
+                        case keepDirs settings of
                           Never -> runLogger ($(logError) [i|Build failed with #{e}
 Check the logs at #{logsDir}|])
                           _ -> runLogger ($(logError) [i|Build failed with #{e}
@@ -1602,7 +1682,14 @@ printListResult raw lr = do
       | otherwise                        -> 1
 
 
-checkForUpdates :: (MonadReader Settings m, MonadCatch m, MonadLogger m, MonadThrow m, MonadIO m, MonadFail m, MonadLogger m)
+checkForUpdates :: ( MonadReader AppState m
+                   , MonadCatch m
+                   , MonadLogger m
+                   , MonadThrow m
+                   , MonadIO m
+                   , MonadFail m
+                   , MonadLogger m
+                   )
                 => GHCupDownloads
                 -> PlatformRequest
                 -> m ()

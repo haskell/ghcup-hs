@@ -1,0 +1,61 @@
+# Cache downloads in ~/.ghcup/cache
+cache: False
+# Skip tarball checksum verification
+no-verify: False
+# enable verbosity
+verbose: False
+# When to keep build directories
+keep-dirs: Errors  # Always | Never | Errors
+# Which downloader to use
+downloader: Curl   # Curl | Wget | Internal
+
+# TUI key bindings,
+# see https://hackage.haskell.org/package/vty-5.31/docs/Graphics-Vty-Input-Events.html#t:Key
+# for possible values.
+key-bindings:
+  up:
+    KUp: []
+  down:
+    KDown: []
+  quit:
+    KChar: 'q'
+  install:
+    KChar: 'i'
+  uninstall:
+    KChar: 'u'
+  set:
+    KChar: 's'
+  changelog:
+    KChar: 'c'
+  show-all:
+    KChar: 'a'
+
+# Where to get GHC/cabal/hls download info/versions from. For more detailed explanation
+# check the 'URLSource' type in the code.
+url-source:
+  ## Use the internal download uri, this is the default
+  GHCupURL: []
+
+  ## Example 1: Read download info from this location instead
+  ## Accepts file/http/https scheme
+  # OwnSource: "file:///home/jule/git/ghcup-hs/ghcup-0.0.3.yaml"
+
+  ## Example 2: Add custom tarballs to the default downloads, overwriting duplicate versions
+  # AddSource:
+    # Left:
+      # toolRequirements: {} # this is ignored
+      # ghcupDownloads:
+        # GHC:
+          # 9.10.2:
+            # viTags: []
+            # viArch:
+              # A_64:
+                # Linux_UnknownLinux:
+                  # unknown_versioning:
+                    # dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-x86_64-deb8-linux.tar.bz2
+                    # dlSubdir: ghc-7.10.3
+                    # dlHash: 01cfbad8dff1e8b34a5fdca8caeaf843b56e36af919e29cd68870d2588563db5
+
+  ## Example 3: Add a custom download file to the default downloads, overwriting duplicate versions
+  # AddSource:
+    # Right: "file:///home/jule/git/ghcup-hs/ghcup-custom.yaml"

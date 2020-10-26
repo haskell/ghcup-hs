@@ -117,7 +117,7 @@ executeOut path args chdir = captureOutStreams $ do
   SPPB.executeFile (toFilePath path) True args Nothing
 
 
-execLogged :: (MonadReader Settings m, MonadIO m, MonadThrow m)
+execLogged :: (MonadReader AppState m, MonadIO m, MonadThrow m)
            => ByteString       -- ^ thing to execute
            -> Bool             -- ^ whether to search PATH for the thing
            -> [ByteString]     -- ^ args for the thing
@@ -126,7 +126,7 @@ execLogged :: (MonadReader Settings m, MonadIO m, MonadThrow m)
            -> Maybe [(ByteString, ByteString)] -- ^ optional environment
            -> m (Either ProcessError ())
 execLogged exe spath args lfile chdir env = do
-  Settings {dirs = Dirs {..}, ..} <- ask
+  AppState { settings = Settings {..}, dirs = Dirs {..} } <- ask
   logfile       <- (logsDir </>) <$> parseRel (toFilePath lfile <> ".log")
   liftIO $ bracket (createFile (toFilePath logfile) newFilePerms)
                    closeFd

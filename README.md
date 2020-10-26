@@ -13,6 +13,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Manual install](#manual-install)
      * [Vim integration](#vim-integration)
    * [Usage](#usage)
+     * [Configuration](#configuration)
      * [Manpages](#manpages)
      * [Shell-completion](#shell-completion)
      * [Cross support](#cross-support)
@@ -79,6 +80,13 @@ ghcup upgrade
 
 Generally this is meant to be used with [`cabal-install`](https://hackage.haskell.org/package/cabal-install), which
 handles your haskell packages and can demand that [a specific version](https://cabal.readthedocs.io/en/latest/nix-local-build.html#cfg-flag---with-compiler)  of `ghc` is available, which `ghcup` can do.
+
+### Configuration
+
+A configuration file can be put in `~/.ghcup/config.yaml`. The default config file
+explaining all possible configurations can be found in this repo: [config.yaml](./config.yaml).
+
+Partial configuration is fine. Command line options always overwrite the config file settings.
 
 ### Manpages
 

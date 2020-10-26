@@ -33,14 +33,17 @@ import           Data.Versions
 import           Data.Word8
 import           HPath
 import           URI.ByteString
+import           Text.Casing
 
 import qualified Data.ByteString               as BS
 import qualified Data.Text                     as T
+import qualified Graphics.Vty                  as Vty
 
 
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } { fieldLabelModifier = removeLensFieldLabel } ''Architecture
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''LinuxDistro
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Mess
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''MChunk
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Platform
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''SemVer
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Tool
@@ -50,6 +53,12 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Versio
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''KeepDirs
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downloader
+deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
+deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "u-") . T.pack . kebab $ str' } ''UserSettings
+deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
+deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Vty.Key
 
 instance ToJSON Tag where
   toJSON Latest             = String "Latest"

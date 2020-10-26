@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE QuasiQuotes           #-}
@@ -14,16 +15,18 @@ Portability : POSIX
 -}
 module GHCup.Utils.Dirs
   ( getDirs
+  , ghcupConfigFile
   , ghcupGHCBaseDir
   , ghcupGHCDir
-  , parseGHCupGHCDir
   , mkGhcupTmpDir
-  , withGHCupTmpDir
+  , parseGHCupGHCDir
   , relativeSymlink
+  , withGHCupTmpDir
   )
 where
 
 
+import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.MegaParsec
@@ -34,8 +37,11 @@ import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
+import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
 import           Data.Maybe
+import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
+import           Haskus.Utils.Variant.Excepts
 import           HPath
 import           HPath.IO
 import           Optics
@@ -49,8 +55,10 @@ import           System.Posix.Env.ByteString    ( getEnv
 import           System.Posix.FilePath   hiding ( (</>) )
 import           System.Posix.Temp.ByteString   ( mkdtemp )
 
+import qualified Data.ByteString.Lazy          as L
 import qualified Data.ByteString.UTF8          as UTF8
 import qualified Data.Text.Encoding            as E
+import qualified Data.Yaml                     as Y
 import qualified System.Posix.FilePath         as FP
 import qualified System.Posix.User             as PU
 import qualified Text.Megaparsec               as MP
@@ -76,6 +84,28 @@ ghcupBaseDir = do
         Nothing -> do
           home <- liftIO getHomeDirectory
           pure (home </> [rel|.local/share|])
+      pure (bdir </> [rel|ghcup|])
+    else do
+      bdir <- getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
+        Just r  -> parseAbs r
+        Nothing -> liftIO getHomeDirectory
+      pure (bdir </> [rel|.ghcup|])
+
+
+-- | ~/.ghcup by default
+--
+-- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_CONFIG_HOME/ghcup' as per xdg spec.
+ghcupConfigDir :: IO (Path Abs)
+ghcupConfigDir = do
+  xdg <- useXDG
+  if xdg
+    then do
+      bdir <- getEnv "XDG_CONFIG_HOME" >>= \case
+        Just r  -> parseAbs r
+        Nothing -> do
+          home <- liftIO getHomeDirectory
+          pure (home </> [rel|.config|])
       pure (bdir </> [rel|ghcup|])
     else do
       bdir <- getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
@@ -142,8 +172,25 @@ getDirs = do
   binDir   <- ghcupBinDir
   cacheDir <- ghcupCacheDir
   logsDir  <- ghcupLogsDir
+  confDir  <- ghcupConfigDir
   pure Dirs { .. }
 
+
+
+    -------------------
+    --[ GHCup files ]--
+    -------------------
+
+
+ghcupConfigFile :: (MonadIO m)
+                => Excepts '[JSONError] m UserSettings
+ghcupConfigFile = do
+  confDir <- liftIO $ ghcupConfigDir
+  let file = confDir </> [rel|config.yaml|]
+  bs <- liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ fmap Just $ readFile file 
+  case bs of
+      Nothing -> pure defaultUserSettings
+      Just bs' -> lE' JSONDecodeError . bimap show id . Y.decodeEither' . L.toStrict $ bs'
 
 
     -------------------------
@@ -152,17 +199,17 @@ getDirs = do
 
 
 -- | ~/.ghcup/ghc by default.
-ghcupGHCBaseDir :: (MonadReader Settings m) => m (Path Abs)
+ghcupGHCBaseDir :: (MonadReader AppState m) => m (Path Abs)
 ghcupGHCBaseDir = do
-  Settings {..} <- ask
-  pure (baseDir dirs </> [rel|ghc|])
+  AppState { dirs = Dirs {..} } <- ask
+  pure (baseDir </> [rel|ghc|])
 
 
 -- | Gets '~/.ghcup/ghc/<ghcupGHCDir>'.
 -- The dir may be of the form
 --   * armv7-unknown-linux-gnueabihf-8.8.3
 --   * 8.8.4
-ghcupGHCDir :: (MonadReader Settings m, MonadThrow m)
+ghcupGHCDir :: (MonadReader AppState m, MonadThrow m)
             => GHCTargetVersion
             -> m (Path Abs)
 ghcupGHCDir ver = do

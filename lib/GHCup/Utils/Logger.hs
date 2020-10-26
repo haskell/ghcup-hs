@@ -65,9 +65,9 @@ myLoggerT LoggerConfig {..} loggingt = runLoggingT loggingt mylogger
     rawOutter outr
 
 
-initGHCupFileLogging :: (MonadIO m, MonadReader Settings m) => Path Rel -> m (Path Abs)
+initGHCupFileLogging :: (MonadIO m, MonadReader AppState m) => Path Rel -> m (Path Abs)
 initGHCupFileLogging context = do
-  Settings {dirs = Dirs {..}} <- ask
+  AppState {dirs = Dirs {..}} <- ask
   let logfile = logsDir </> context
   liftIO $ do
     createDirRecursive' logsDir

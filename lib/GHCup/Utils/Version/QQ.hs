@@ -42,6 +42,8 @@ deriving instance Data SemVer
 deriving instance Lift SemVer
 deriving instance Data Mess
 deriving instance Lift Mess
+deriving instance Data MChunk
+deriving instance Lift MChunk
 deriving instance Data PVP
 deriving instance Lift PVP
 deriving instance Lift VSep
