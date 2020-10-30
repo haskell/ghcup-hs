@@ -7,7 +7,10 @@
   - reverse list order so latest is on top
   - expand the blues selected bar
   - show new latest versions in bright white
-* allow configuration file and settings TUI hotkeys wrt #41
+* allow configuration file and setting TUI hotkeys wrt #41
+  - see https://gitlab.haskell.org/haskell/ghcup-hs#configuration for a more in-depth explanation
+* add a `--set` switch to `ghcup install ghc` to automatically set as default after install
+* emit warnings when CC/LD is set wrt #82
 
 ## 0.1.11 -- 2020-09-23
 
