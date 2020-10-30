@@ -74,7 +74,7 @@ import           Prelude                 hiding ( abs
                                                 )
 import           Safe                    hiding ( at )
 import           System.IO.Error
-import           System.Posix.Env.ByteString    ( getEnvironment )
+import           System.Posix.Env.ByteString    ( getEnvironment, getEnv )
 import           System.Posix.FilePath          ( getSearchPath, takeExtension )
 import           System.Posix.Files.ByteString
 import           Text.Regex.Posix
@@ -134,9 +134,22 @@ installGHCBindist dlinfo ver pfreq = do
   -- prepare paths
   ghcdir <- lift $ ghcupGHCDir tver
 
+  toolchainSanityChecks
+  
   liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver pfreq
 
   liftE $ postGHCInstall tver
+
+ where
+  toolchainSanityChecks = do
+    r <- forM ["CC", "LD"] (liftIO . getEnv)
+    case catMaybes r of
+      [] -> pure ()
+      _ -> do
+        lift $ $(logWarn) "CC/LD environment variable is set. This will change the compiler/linker"
+        lift $ $(logWarn) "GHC uses internally and can cause defunct GHC in some cases (e.g. in Anaconda"
+        lift $ $(logWarn) "environments). If you encounter problems, unset CC and LD and reinstall."
+
 
 -- | Install a packed GHC distribution. This only deals with unpacking and the GHC
 -- build system and nothing else.
