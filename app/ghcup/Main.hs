@@ -1349,7 +1349,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           res <- case optCommand of
 #if defined(BRICK)
-            Interactive -> liftIO $ brickMain appstate optUrlSource loggerConfig dls pfreq >> pure ExitSuccess
+            Interactive -> liftIO $ brickMain appstate loggerConfig dls pfreq >> pure ExitSuccess
 #endif
             Install (Right iopts) -> do
               runLogger ($(logWarn) [i|This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.|])

@@ -48,6 +48,8 @@ import           System.Exit
 import           System.IO.Unsafe
 import           URI.ByteString
 
+import qualified GHCup.Types                   as GT
+
 import qualified Data.Text                     as T
 import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
@@ -480,11 +482,6 @@ changelog' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
         Left  e -> pure $ Left [i|#{e}|]
 
 
-uri' :: IORef (Maybe URI)
-{-# NOINLINE uri' #-}
-uri' = unsafePerformIO (newIORef Nothing)
-
-
 settings' :: IORef AppState
 {-# NOINLINE settings' #-}
 settings' = unsafePerformIO $ do
@@ -513,13 +510,11 @@ logger' = unsafePerformIO
 
 
 brickMain :: AppState
-          -> Maybe URI
           -> LoggerConfig
           -> GHCupDownloads
           -> PlatformRequest
           -> IO ()
-brickMain s muri l av pfreq' = do
-  writeIORef uri'      muri
+brickMain s l av pfreq' = do
   writeIORef settings' s
   -- logger interpreter
   writeIORef logger'   l
@@ -548,7 +543,6 @@ defaultAppSettings = BrickSettings { showAll = False }
 
 getDownloads' :: IO (Either String GHCupDownloads)
 getDownloads' = do
-  muri     <- readIORef uri'
   settings <- readIORef settings'
   l        <- readIORef logger'
   let runLogger = myLoggerT l
@@ -559,7 +553,7 @@ getDownloads' = do
     . runE @'[JSONError , DownloadFailed , FileDoesNotExistError]
     $ fmap _ghcupDownloads
     $ liftE
-    $ getDownloadsF (maybe GHCupURL OwnSource muri)
+    $ getDownloadsF (urlSource . GT.settings $ settings)
 
   case r of
     VRight a -> pure $ Right a
