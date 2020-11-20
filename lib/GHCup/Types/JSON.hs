@@ -111,10 +111,10 @@ instance ToJSONKey (Maybe Versioning) where
 
 instance FromJSONKey (Maybe Versioning) where
   fromJSONKey = FromJSONKeyTextParser $ \t ->
-    if t == T.pack "unknown_versioning" then pure Nothing else pure $ just t
+    if t == T.pack "unknown_versioning" then pure Nothing else just t
    where
     just t = case versioning t of
-      Right x -> pure x
+      Right x -> pure $ Just x
       Left  e -> fail $ "Failure in (Maybe Versioning) (FromJSONKey)" <> show e
 
 instance ToJSONKey Platform where
@@ -157,10 +157,10 @@ instance ToJSONKey (Maybe Version) where
 
 instance FromJSONKey (Maybe Version) where
   fromJSONKey = FromJSONKeyTextParser $ \t ->
-    if t == T.pack "unknown_version" then pure Nothing else pure $ just t
+    if t == T.pack "unknown_version" then pure Nothing else just t
    where
     just t = case version t of
-      Right x -> pure x
+      Right x -> pure $ Just x
       Left  e -> fail $ "Failure in (Maybe Version) (FromJSONKey)" <> show e
 
 instance ToJSON Version where
