@@ -15,7 +15,7 @@ maintainer:         hasufell@posteo.de
 copyright:          Julian Ospald 2020
 category:           System
 build-type:         Simple
-extra-source-files: CHANGELOG.md
+extra-doc-files:    CHANGELOG.md
 
 source-repository head
   type:     git
