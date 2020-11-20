@@ -535,8 +535,8 @@ setGHC ver sghc = do
   -- with old ghcup)
   case sghc of
     SetGHCOnly -> liftE $ rmPlain (_tvTarget ver)
-    SetGHC_XY  -> lift $ rmMajorSymlinks ver
-    SetGHC_XYZ -> lift $ rmMinorSymlinks ver
+    SetGHC_XY  -> liftE $ rmMajorSymlinks ver
+    SetGHC_XYZ -> liftE $ rmMinorSymlinks ver
 
   -- for ghc tools (ghc, ghci, haddock, ...)
   verfiles <- ghcToolFiles ver
@@ -937,16 +937,17 @@ rmGHCVer ver = do
     lift $ $(logInfo) [i|Removing ghc symlinks|]
     liftE $ rmPlain (_tvTarget ver)
 
-  lift $ $(logInfo) [i|Removing directory recursively: #{toFilePath dir}|]
-  liftIO $ deleteDirRecursive dir
-
   lift $ $(logInfo) [i|Removing ghc-x.y.z symlinks|]
-  lift $ rmMinorSymlinks ver
+  liftE $ rmMinorSymlinks ver
 
   lift $ $(logInfo) [i|Removing/rewiring ghc-x.y symlinks|]
   -- first remove
-  handle (\(_ :: ParseError) -> pure ()) $ lift $ rmMajorSymlinks ver
+  handle (\(_ :: ParseError) -> pure ()) $ liftE $ rmMajorSymlinks ver
   -- then fix them (e.g. with an earlier version)
+
+  lift $ $(logInfo) [i|Removing directory recursively: #{toFilePath dir}|]
+  liftIO $ deleteDirRecursive dir
+
   v' <-
     handle
       (\(e :: ParseError) -> lift $ $(logWarn) [i|#{e}|] >> pure Nothing)

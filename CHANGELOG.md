@@ -2,6 +2,7 @@
 
 ## 0.1.12 -- ????-??-??
 
+* Fix disappearing HLS symlinks wrt #91
 * improve TUI:
   - separators between tools sections
   - reverse list order so latest is on top

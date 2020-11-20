@@ -112,33 +112,40 @@ ghcLinkDestination tool ver = do
 
 
 -- | Removes the minor GHC symlinks, e.g. ghc-8.6.5.
-rmMinorSymlinks :: (MonadReader AppState m, MonadIO m, MonadLogger m) => GHCTargetVersion -> m ()
-rmMinorSymlinks GHCTargetVersion {..} = do
-  AppState { dirs = Dirs {..} } <- ask
+rmMinorSymlinks :: ( MonadReader AppState m
+                   , MonadIO m
+                   , MonadLogger m
+                   , MonadThrow m
+                   , MonadFail m
+                   , MonadReader AppState m
+                   )
+                => GHCTargetVersion
+                -> Excepts '[NotInstalled] m ()
+rmMinorSymlinks tv@(GHCTargetVersion {..}) = do
+  AppState { dirs = Dirs {..} } <- lift ask
 
-  files  <- liftIO $ findFiles'
-    binDir
-    (  maybe mempty (\x -> MP.chunk (x <> "-")) _tvTarget
-    *> parseUntil1 (MP.chunk $ prettyVer _tvVersion)
-    *> (MP.chunk $ prettyVer _tvVersion)
-    *> MP.eof
-    )
-
+  files                         <- liftE $ ghcToolFiles tv
   forM_ files $ \f -> do
-    let fullF = (binDir </> f)
-    $(logDebug) [i|rm -f #{toFilePath fullF}|]
+    f_xyz <- liftIO $ parseRel (toFilePath f <> B.singleton _hyphen <> verToBS _tvVersion)
+    let fullF = (binDir </> f_xyz)
+    lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
 
 
 -- | Removes the set ghc version for the given target, if any.
-rmPlain :: (MonadReader AppState m, MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
-  => Maybe Text -- ^ target
+rmPlain :: ( MonadReader AppState m
+           , MonadLogger m
+           , MonadThrow m
+           , MonadFail m
+           , MonadIO m
+           )
+        => Maybe Text -- ^ target
         -> Excepts '[NotInstalled] m ()
 rmPlain target = do
   AppState { dirs = Dirs {..} } <- lift ask
-  mtv <- lift $ ghcSet target
+  mtv                           <- lift $ ghcSet target
   forM_ mtv $ \tv -> do
-    files  <- liftE $ ghcToolFiles tv
+    files <- liftE $ ghcToolFiles tv
     forM_ files $ \f -> do
       let fullF = (binDir </> f)
       lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
@@ -150,25 +157,25 @@ rmPlain target = do
 
 
 -- | Remove the major GHC symlink, e.g. ghc-8.6.
-rmMajorSymlinks :: (MonadReader AppState m, MonadThrow m, MonadLogger m, MonadIO m)
+rmMajorSymlinks :: ( MonadReader AppState m
+                   , MonadIO m
+                   , MonadLogger m
+                   , MonadThrow m
+                   , MonadFail m
+                   , MonadReader AppState m
+                   )
                 => GHCTargetVersion
-                -> m ()
-rmMajorSymlinks GHCTargetVersion {..} = do
-  AppState { dirs = Dirs {..} } <- ask
+                -> Excepts '[NotInstalled] m ()
+rmMajorSymlinks tv@(GHCTargetVersion {..}) = do
+  AppState { dirs = Dirs {..} } <- lift ask
   (mj, mi) <- getMajorMinorV _tvVersion
   let v' = intToText mj <> "." <> intToText mi
 
-  files  <- liftIO $ findFiles'
-    binDir
-    (  maybe mempty (\x -> MP.chunk (x <> "-")) _tvTarget
-    *> parseUntil1 (MP.chunk v')
-    *> MP.chunk v'
-    *> MP.eof
-    )
-
+  files                         <- liftE $ ghcToolFiles tv
   forM_ files $ \f -> do
-    let fullF = (binDir </> f)
-    $(logDebug) [i|rm -f #{toFilePath fullF}|]
+    f_xyz <- liftIO $ parseRel (toFilePath f <> B.singleton _hyphen <> E.encodeUtf8 v')
+    let fullF = (binDir </> f_xyz)
+    lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
 
 
