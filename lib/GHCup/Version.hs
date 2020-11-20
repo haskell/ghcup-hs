@@ -3,7 +3,7 @@
 
 {-|
 Module      : GHCup.Version
-Description : Static version information
+Description : Version information and version handling.
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
@@ -13,6 +13,7 @@ Portability : POSIX
 module GHCup.Version where
 
 import           GHCup.Utils.Version.QQ
+import           GHCup.Types
 
 import           Data.Versions
 import           URI.ByteString
@@ -22,7 +23,7 @@ import qualified Data.Text                     as T
 
 -- | This reflects the API version of the YAML.
 ghcupURL :: URI
-ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.3.yaml|]
+ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.4.yaml|]
 
 -- | The current ghcup version.
 ghcUpVer :: PVP
@@ -31,3 +32,16 @@ ghcUpVer = [pver|0.1.12|]
 -- | ghcup version as numeric string.
 numericVer :: String
 numericVer = T.unpack . prettyPVP $ ghcUpVer
+
+versionCmp :: Versioning -> VersionCmp -> Bool
+versionCmp ver1 (VR_gt ver2)   = ver1 > ver2
+versionCmp ver1 (VR_gteq ver2) = ver1 >= ver2
+versionCmp ver1 (VR_lt ver2)   = ver1 < ver2
+versionCmp ver1 (VR_lteq ver2) = ver1 <= ver2
+versionCmp ver1 (VR_eq ver2)   = ver1 == ver2
+
+versionRange :: Versioning -> VersionRange -> Bool
+versionRange ver' (SimpleRange cmps) = and $ fmap (versionCmp ver') cmps
+versionRange ver' (OrRange cmps range) = 
+  versionRange ver' (SimpleRange cmps) || versionRange ver' range
+

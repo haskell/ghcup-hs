@@ -22,22 +22,28 @@ Portability : POSIX
 module GHCup.Types.JSON where
 
 import           GHCup.Types
+import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 
 import           Control.Applicative            ( (<|>) )
 import           Data.Aeson
 import           Data.Aeson.TH
 import           Data.Aeson.Types
+import           Data.List.NonEmpty             ( NonEmpty(..) )
 import           Data.Text.Encoding            as E
 import           Data.Versions
+import           Data.Void
 import           Data.Word8
 import           HPath
 import           URI.ByteString
 import           Text.Casing
 
 import qualified Data.ByteString               as BS
+import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
 import qualified Graphics.Vty                  as Vty
+import qualified Text.Megaparsec               as MP
+import qualified Text.Megaparsec.Char          as MPC
 
 
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } { fieldLabelModifier = removeLensFieldLabel } ''Architecture
@@ -220,3 +226,101 @@ instance FromJSON TarDir where
     regexDir = withObject "TarDir" $ \o -> do
       r <- o .: "RegexDir"
       pure $ RegexDir r
+
+
+instance ToJSON VersionCmp where
+  toJSON = String . versionCmpToText
+
+instance FromJSON VersionCmp where
+  parseJSON = withText "VersionCmp" $ \t -> do
+    case MP.parse versionCmpP "" t of
+      Right r -> pure r
+      Left  e -> fail (MP.errorBundlePretty e)
+
+versionCmpToText :: VersionCmp -> T.Text
+versionCmpToText (VR_gt   ver') = "> " <> prettyV ver'
+versionCmpToText (VR_gteq ver') = ">= " <> prettyV ver'
+versionCmpToText (VR_lt   ver') = "< " <> prettyV ver'
+versionCmpToText (VR_lteq ver') = "<= " <> prettyV ver'
+versionCmpToText (VR_eq   ver') = "== " <> prettyV ver'
+
+versionCmpP :: MP.Parsec Void T.Text VersionCmp
+versionCmpP =
+  fmap VR_gt (MP.try $ MPC.space *> MP.chunk ">" *> MPC.space *> versioningEnd)
+    <|> fmap
+          VR_gteq
+          (MP.try $ MPC.space *> MP.chunk ">=" *> MPC.space *> versioningEnd)
+    <|> fmap
+          VR_lt
+          (MP.try $ MPC.space *> MP.chunk "<" *> MPC.space *> versioningEnd)
+    <|> fmap
+          VR_lteq
+          (MP.try $ MPC.space *> MP.chunk "<=" *> MPC.space *> versioningEnd)
+    <|> fmap
+          VR_eq
+          (MP.try $ MPC.space *> MP.chunk "==" *> MPC.space *> versioningEnd)
+    <|> fmap
+          VR_eq
+          (MP.try $ MPC.space *> versioningEnd)
+
+instance ToJSON VersionRange where
+  toJSON = String . verRangeToText
+
+verRangeToText :: VersionRange -> T.Text
+verRangeToText  (SimpleRange cmps) =
+  let inner = foldr1 (\x y -> x <> " && " <> y)
+                     (versionCmpToText <$> NE.toList cmps)
+  in  "( " <> inner <> " )"
+verRangeToText (OrRange cmps range) =
+  let left  = verRangeToText $ (SimpleRange cmps)
+      right = verRangeToText range
+  in  left <> " || " <> right
+
+instance FromJSON VersionRange where
+  parseJSON = withText "VersionRange" $ \t -> do
+    case MP.parse versionRangeP "" t of
+      Right r -> pure r
+      Left  e -> fail (MP.errorBundlePretty e)
+
+versionRangeP :: MP.Parsec Void T.Text VersionRange
+versionRangeP = go <* MP.eof
+ where
+  go =
+    MP.try orParse
+      <|> MP.try (fmap SimpleRange andParse)
+      <|> (fmap (SimpleRange . pure) versionCmpP)
+
+  orParse :: MP.Parsec Void T.Text VersionRange
+  orParse =
+    (\a o -> OrRange a o)
+      <$> (MP.try andParse <|> fmap pure versionCmpP)
+      <*> (MPC.space *> MP.chunk "||" *> MPC.space *> go)
+
+  andParse :: MP.Parsec Void T.Text (NonEmpty VersionCmp)
+  andParse =
+    fmap (\h t -> h :| t)
+         (MPC.space *> MP.chunk "(" *> MPC.space *> versionCmpP)
+      <*> ( MP.try
+          $ MP.many (MPC.space *> MP.chunk "&&" *> MPC.space *> versionCmpP)
+          )
+      <*  MPC.space
+      <*  MP.chunk ")"
+      <*  MPC.space
+
+versioningEnd :: MP.Parsec Void T.Text Versioning
+versioningEnd =
+  MP.try (verP (MP.chunk " " <|> MP.chunk ")" <|> MP.chunk "&&") <* MPC.space)
+    <|> versioning'
+
+instance ToJSONKey (Maybe VersionRange) where
+  toJSONKey = toJSONKeyText $ \case
+    Just x -> verRangeToText x
+    Nothing -> "unknown_versioning"
+
+instance FromJSONKey (Maybe VersionRange)  where
+  fromJSONKey = FromJSONKeyTextParser $ \t ->
+    if t == T.pack "unknown_versioning" then pure Nothing else just t
+   where
+    just t = case MP.parse versionRangeP "" t of
+      Right x -> pure $ Just x
+      Left  e -> fail $ "Failure in (Maybe VersionRange) (FromJSONKey)" <> MP.errorBundlePretty e

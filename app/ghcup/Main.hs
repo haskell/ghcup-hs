@@ -752,9 +752,9 @@ cabalCompileOpts =
 
 
 toolVersionParser :: Parser ToolVersion
-toolVersionParser = verP <|> toolP
+toolVersionParser = verP' <|> toolP
  where
-  verP = ToolVersion <$> versionParser
+  verP' = ToolVersion <$> versionParser
   toolP =
     ToolTag
       <$> (option
@@ -882,17 +882,6 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
     , MP.chunk "exherbo" $> Exherbo
     , MP.chunk "unknown" $> UnknownLinux
     ]
-  verP :: MP.Parsec Void Text Text -> MP.Parsec Void Text Versioning
-  verP suffix = do
-    ver <- parseUntil suffix
-    if T.null ver
-      then fail "empty version"
-      else do
-        rest <- MP.getInput
-        MP.setInput ver
-        v <- versioning'
-        MP.setInput rest
-        pure v
 
 
 bindistParser :: String -> Either String URI

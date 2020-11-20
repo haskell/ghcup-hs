@@ -14,8 +14,10 @@ module GHCup.Requirements where
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
+import           GHCup.Version
 
 import           Control.Applicative
+import           Data.List                      ( find )
 import           Data.Maybe
 import           Optics
 import           Prelude                 hiding ( abs
@@ -23,6 +25,7 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 
+import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 
 
@@ -33,15 +36,25 @@ getCommonRequirements :: PlatformResult
                       -> ToolRequirements
                       -> Maybe Requirements
 getCommonRequirements pr tr =
-  preview (ix GHC % ix Nothing % ix (_platform pr) % ix (_distroVersion pr)) tr
-    <|> preview (ix GHC % ix Nothing % ix (_platform pr) % ix Nothing) tr
-    <|> preview
-          ( ix GHC
-          % ix Nothing
-          % ix (set _Linux UnknownLinux $ _platform pr)
-          % ix Nothing
-          )
-          tr
+  with_distro <|> without_distro_ver <|> without_distro
+ where
+  with_distro        = distro_preview _platform _distroVersion
+  without_distro_ver = distro_preview _platform (const Nothing)
+  without_distro     = distro_preview (set _Linux UnknownLinux . _platform) (const Nothing)
+
+  distro_preview f g =
+    let platformVersionSpec =
+          preview (ix GHC % ix Nothing % ix (f pr)) tr
+        mv' = g pr
+    in  fmap snd
+          .   find
+                (\(mverRange, _) -> maybe
+                  (mv' == Nothing)
+                  (\range -> maybe False (flip versionRange range) mv')
+                  mverRange
+                )
+          .   M.toList
+          =<< platformVersionSpec
 
 
 prettyRequirements :: Requirements -> T.Text

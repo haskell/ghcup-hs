@@ -14,6 +14,7 @@ Portability : POSIX
 module GHCup.Types where
 
 import           Data.Map.Strict                ( Map )
+import           Data.List.NonEmpty             ( NonEmpty (..) )
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           HPath
@@ -46,7 +47,7 @@ data GHCupInfo = GHCupInfo
 type ToolRequirements = Map Tool ToolReqVersionSpec
 type ToolReqVersionSpec = Map (Maybe Version) PlatformReqSpec
 type PlatformReqSpec = Map Platform PlatformReqVersionSpec
-type PlatformReqVersionSpec = Map (Maybe Versioning) Requirements
+type PlatformReqVersionSpec = Map (Maybe VersionRange) Requirements
 
 
 data Requirements = Requirements
@@ -70,7 +71,7 @@ type GHCupDownloads = Map Tool ToolVersionSpec
 type ToolVersionSpec = Map Version VersionInfo
 type ArchitectureSpec = Map Architecture PlatformSpec
 type PlatformSpec = Map Platform PlatformVersionSpec
-type PlatformVersionSpec = Map (Maybe Versioning) DownloadInfo
+type PlatformVersionSpec = Map (Maybe VersionRange) DownloadInfo
 
 
 -- | An installable tool.
@@ -307,7 +308,7 @@ data PlatformResult = PlatformResult
 
 prettyPlatform :: PlatformResult -> String
 prettyPlatform PlatformResult { _platform = plat, _distroVersion = Just v' }
-  = show plat <> ", " <> show v'
+  = show plat <> ", " <> T.unpack (prettyV v')
 prettyPlatform PlatformResult { _platform = plat, _distroVersion = Nothing }
   = show plat
 
@@ -343,4 +344,20 @@ mkTVer = GHCTargetVersion Nothing
 prettyTVer :: GHCTargetVersion -> Text
 prettyTVer (GHCTargetVersion (Just t) v') = t <> "-" <> prettyVer v'
 prettyTVer (GHCTargetVersion Nothing  v') = prettyVer v'
+
+
+-- | A comparator and a version.
+data VersionCmp = VR_gt Versioning
+                | VR_gteq Versioning
+                | VR_lt Versioning
+                | VR_lteq Versioning
+                | VR_eq Versioning
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+
+-- | A version range. Supports && and ||, but not  arbitrary
+-- combinations. This is a little simplified.
+data VersionRange = SimpleRange (NonEmpty VersionCmp) -- And
+                  | OrRange (NonEmpty VersionCmp) VersionRange
+  deriving (Eq, GHC.Generic, Ord, Show)
 

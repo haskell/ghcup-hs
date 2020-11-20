@@ -57,6 +57,7 @@ import           Data.ByteString                ( ByteString )
 #if defined(INTERNAL_DOWNLOADER)
 import           Data.CaseInsensitive           ( CI )
 #endif
+import           Data.List                      ( find )
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Time.Clock
@@ -292,7 +293,8 @@ getDownloadInfo t v (PlatformRequest a p mv) dls = maybe
   (case p of
     -- non-musl won't work on alpine
     Linux Alpine -> with_distro <|> without_distro_ver
-    _ -> with_distro <|> without_distro_ver <|> without_distro)
+    _            -> with_distro <|> without_distro_ver <|> without_distro
+  )
 
  where
   with_distro        = distro_preview id id
@@ -300,7 +302,18 @@ getDownloadInfo t v (PlatformRequest a p mv) dls = maybe
   without_distro     = distro_preview (set _Linux UnknownLinux) (const Nothing)
 
   distro_preview f g =
-    preview (ix t % ix v % viArch % ix a % ix (f p) % ix (g mv)) dls
+    let platformVersionSpec =
+          preview (ix t % ix v % viArch % ix a % ix (f p)) dls
+        mv' = g mv
+    in  fmap snd
+          .   find
+                (\(mverRange, _) -> maybe
+                  (mv' == Nothing)
+                  (\range -> maybe False (flip versionRange range) mv')
+                  mverRange
+                )
+          .   M.toList
+          =<< platformVersionSpec
 
 
 -- | Tries to download from the given http or https url

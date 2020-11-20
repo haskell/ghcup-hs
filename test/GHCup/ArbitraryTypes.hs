@@ -159,6 +159,18 @@ instance Arbitrary VersionInfo where
   arbitrary = genericArbitrary
   shrink    = genericShrink
 
+instance Arbitrary VersionRange where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary (NonEmpty VersionCmp) where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary VersionCmp where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
 instance Arbitrary (Path Rel) where
   arbitrary =
     (either (error . show) id . parseRel . E.encodeUtf8 . T.pack)

@@ -74,13 +74,13 @@ ghcTargetBinP t =
 ghcTargetVerP :: MP.Parsec Void Text GHCTargetVersion
 ghcTargetVerP =
   (\x y -> GHCTargetVersion x y)
-    <$> (MP.try (Just <$> (parseUntil1 (MP.chunk "-" *> verP)) <* MP.chunk "-")
+    <$> (MP.try (Just <$> (parseUntil1 (MP.chunk "-" *> verP')) <* MP.chunk "-")
         <|> (flip const Nothing <$> mempty)
         )
     <*> (version' <* MP.eof)
  where
-  verP :: MP.Parsec Void Text Text
-  verP = do
+  verP' :: MP.Parsec Void Text Text
+  verP' = do
     v <- version'
     let startsWithDigists =
           and
@@ -97,3 +97,16 @@ ghcTargetVerP =
     if startsWithDigists && not (isJust (_vEpoch v))
       then pure $ prettyVer v
       else fail "Oh"
+
+
+verP :: MP.Parsec Void Text Text -> MP.Parsec Void Text Versioning
+verP suffix = do
+  ver <- parseUntil suffix
+  if T.null ver
+    then fail "empty version"
+    else do
+      rest <- MP.getInput
+      MP.setInput ver
+      v <- versioning'
+      MP.setInput rest
+      pure v

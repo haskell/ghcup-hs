@@ -12,6 +12,8 @@
   - see https://gitlab.haskell.org/haskell/ghcup-hs#configuration for a more in-depth explanation
 * add a `--set` switch to `ghcup install ghc` to automatically set as default after install
 * emit warnings when CC/LD is set wrt #82
+* add support for version ranges in distro specifiers wrt #84
+  - e.g. `"(>= 19 && <= 20) || ==0.2.2"` is a valid version key for distro
 
 ## 0.1.11 -- 2020-09-23
 
