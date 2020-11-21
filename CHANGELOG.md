@@ -1,6 +1,6 @@
 # Revision history for ghcup
 
-## 0.1.12 -- ????-??-??
+## 0.1.12 -- 2020-11-21
 
 * Fix disappearing HLS symlinks wrt #91
 * improve TUI:
