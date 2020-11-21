@@ -119,8 +119,8 @@ To enable XDG style directories, set the environment variable `GHCUP_USE_XDG_DIR
 
 Then you can control the locations via XDG environment variables as such:
 
-* `XDG_DATA_HOME`: GHCs will be unpacked in `ghcup/ghc` subdir
-* `XDG_CACHE_HOME`: logs and download files will be stored in `ghcup` subdir
+* `XDG_DATA_HOME`: GHCs will be unpacked in `ghcup/ghc` subdir (default: `~/.local/share`)
+* `XDG_CACHE_HOME`: logs and download files will be stored in `ghcup` subdir (default: `~/.cache`)
 * `XDG_BIN_HOME`: binaries end up here (default: `~/.local/bin`)
 * `XDG_CONFIG_HOME`: the config file is stored in `ghcup` subdir as `config.yaml` (default: `~/.config`)
 
