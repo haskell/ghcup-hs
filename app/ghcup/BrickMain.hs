@@ -44,6 +44,7 @@ import           Data.Vector                    ( Vector
 import           Data.Versions           hiding ( str )
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
+import           System.Environment
 import           System.Exit
 import           System.IO.Unsafe
 import           URI.ByteString
@@ -239,31 +240,39 @@ minHSize :: Int -> Widget n -> Widget n
 minHSize s' = hLimit s' . vLimit 1 . (<+> fill ' ')
 
 
-app :: App BrickState e String
-app = App { appDraw         = \st -> [ui st]
-          , appHandleEvent  = eventHandler
-          , appStartEvent   = return
-          , appAttrMap      = const defaultAttributes
-          , appChooseCursor = neverShowCursor
-          }
+app :: AttrMap -> App BrickState e String
+app attributes =
+  App { appDraw         = \st -> [ui st]
+  , appHandleEvent  = eventHandler
+  , appStartEvent   = return
+  , appAttrMap      = const attributes
+  , appChooseCursor = neverShowCursor
+  }
 
-defaultAttributes :: AttrMap
-defaultAttributes = attrMap
+defaultAttributes :: Bool -> AttrMap
+defaultAttributes no_color = attrMap
   Vty.defAttr
-  [ ("active"       , Vty.defAttr `Vty.withBackColor` Vty.blue)
-  , ("not-installed", Vty.defAttr `Vty.withForeColor` Vty.red)
-  , ("set"          , Vty.defAttr `Vty.withForeColor` Vty.green)
-  , ("installed"    , Vty.defAttr `Vty.withForeColor` Vty.green)
-  , ("recommended"  , Vty.defAttr `Vty.withForeColor` Vty.green)
-  , ("hls-powered"  , Vty.defAttr `Vty.withForeColor` Vty.green)
-  , ("latest"       , Vty.defAttr `Vty.withForeColor` Vty.yellow)
-  , ("prerelease"   , Vty.defAttr `Vty.withForeColor` Vty.red)
-  , ("compiled"     , Vty.defAttr `Vty.withForeColor` Vty.blue)
-  , ("stray"        , Vty.defAttr `Vty.withForeColor` Vty.blue)
-  , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
-  , ("hooray"       , Vty.defAttr `Vty.withForeColor` Vty.brightWhite)
+  [ ("active"       , Vty.defAttr `withBackColor` Vty.blue)
+  , ("not-installed", Vty.defAttr `withForeColor` Vty.red)
+  , ("set"          , Vty.defAttr `withForeColor` Vty.green)
+  , ("installed"    , Vty.defAttr `withForeColor` Vty.green)
+  , ("recommended"  , Vty.defAttr `withForeColor` Vty.green)
+  , ("hls-powered"  , Vty.defAttr `withForeColor` Vty.green)
+  , ("latest"       , Vty.defAttr `withForeColor` Vty.yellow)
+  , ("prerelease"   , Vty.defAttr `withForeColor` Vty.red)
+  , ("compiled"     , Vty.defAttr `withForeColor` Vty.blue)
+  , ("stray"        , Vty.defAttr `withForeColor` Vty.blue)
+  , ("help"         , Vty.defAttr `withStyle`     Vty.italic)
+  , ("hooray"       , Vty.defAttr `withForeColor` Vty.brightWhite)
   ]
+  where
+    withForeColor | no_color  = const
+                  | otherwise = Vty.withForeColor
 
+    withBackColor | no_color  = \attr _ -> attr `Vty.withStyle` Vty.reverseVideo
+                  | otherwise = Vty.withBackColor
+
+    withStyle                 = Vty.withStyle
 
 dimAttributes :: AttrMap
 dimAttributes = attrMap
@@ -520,11 +529,13 @@ brickMain s l av pfreq' = do
   writeIORef logger'   l
   let runLogger = myLoggerT l
 
+  attributes <- defaultAttributes <$> isJust <$> lookupEnv "NO_COLOR"
+
   eAppData <- getAppData (Just av) pfreq'
   case eAppData of
     Right ad ->
       defaultMain
-          app
+          (app attributes)
           (BrickState ad
                     defaultAppSettings
                     (constructList ad defaultAppSettings Nothing)
