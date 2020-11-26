@@ -119,8 +119,8 @@ showKey (Vty.KDown) = "↓"
 showKey key = tail (show key)
 
 
-ui :: BrickState -> Widget String
-ui BrickState { appSettings = as@(BrickSettings {}), ..}
+ui :: AttrMap -> BrickState -> Widget String
+ui dimAttrs BrickState { appSettings = as@(BrickSettings {}), ..}
   = ( padBottom Max
     $ ( withBorderStyle unicode
       $ borderWithLabel (str "GHCup")
@@ -151,9 +151,9 @@ ui BrickState { appSettings = as@(BrickSettings {}), ..}
         ver = case lCross of
           Nothing -> T.unpack . prettyVer $ lVer
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
-        dim = if lNoBindist
-          then updateAttrMap (const dimAttributes) . withAttr "no-bindist"
-          else id
+        dim
+          | lNoBindist = updateAttrMap (const dimAttrs) . withAttr "no-bindist"
+          | otherwise  = id
         hooray
           | elem Latest lTag && not lInstalled =
               withAttr "hooray"
@@ -240,12 +240,12 @@ minHSize :: Int -> Widget n -> Widget n
 minHSize s' = hLimit s' . vLimit 1 . (<+> fill ' ')
 
 
-app :: AttrMap -> App BrickState e String
-app attributes =
-  App { appDraw         = \st -> [ui st]
+app :: AttrMap -> AttrMap -> App BrickState e String
+app attrs dimAttrs =
+  App { appDraw         = \st -> [ui dimAttrs st]
   , appHandleEvent  = eventHandler
   , appStartEvent   = return
-  , appAttrMap      = const attributes
+  , appAttrMap      = const attrs
   , appChooseCursor = neverShowCursor
   }
 
@@ -274,13 +274,15 @@ defaultAttributes no_color = attrMap
 
     withStyle                 = Vty.withStyle
 
-dimAttributes :: AttrMap
-dimAttributes = attrMap
+dimAttributes :: Bool -> AttrMap
+dimAttributes no_color = attrMap
   (Vty.defAttr `Vty.withStyle` Vty.dim)
-  [ ("active"    , Vty.defAttr `Vty.withBackColor` Vty.blue)
+  [ ("active"    , Vty.defAttr `withBackColor` Vty.blue)
   , ("no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
   ]
-
+  where
+    withBackColor | no_color  = \attr _ -> attr `Vty.withStyle` Vty.reverseVideo
+                  | otherwise = Vty.withBackColor
 
 eventHandler :: BrickState -> BrickEvent n e -> EventM n (Next BrickState)
 eventHandler st@(BrickState {..}) ev = do
@@ -529,13 +531,13 @@ brickMain s l av pfreq' = do
   writeIORef logger'   l
   let runLogger = myLoggerT l
 
-  attributes <- defaultAttributes <$> isJust <$> lookupEnv "NO_COLOR"
+  no_color <- isJust <$> lookupEnv "NO_COLOR"
 
   eAppData <- getAppData (Just av) pfreq'
   case eAppData of
     Right ad ->
       defaultMain
-          (app attributes)
+          (app (defaultAttributes no_color) (dimAttributes no_color))
           (BrickState ad
                     defaultAppSettings
                     (constructList ad defaultAppSettings Nothing)
