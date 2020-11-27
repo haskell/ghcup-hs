@@ -8,7 +8,7 @@
 export GHCUP_USE_XDG_DIRS
 
 if [ -n "${GHCUP_USE_XDG_DIRS}" ] ; then
-	GHCUP_DIR=${XDG_DATA_HOME:=$HOME/.local}/ghcup
+	GHCUP_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/ghcup
 	GHCUP_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
 else
 	GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup
