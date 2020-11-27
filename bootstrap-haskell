@@ -1,5 +1,16 @@
 #!/bin/sh
 
+# Main settings:
+#   * BOOTSTRAP_HASKELL_NONINTERACTIVE - any nonzero value for noninteractive installation
+#   * BOOTSTRAP_HASKELL_NO_UPGRADE - any nonzero value to not trigger the upgrade
+#   * GHCUP_USE_XDG_DIRS - any nonzero value to respect The XDG Base Directory Specification
+#   * BOOTSTRAP_HASKELL_VERBOSE - any nonzero value for more verbose installation
+#   * BOOTSTRAP_HASKELL_GHC_VERSION
+#   * BOOTSTRAP_HASKELL_CABAL_VERSION
+
+# License: LGPL-3.0
+
+
 # safety subshell to avoid executing anything in case this script is not downloaded properly
 (
 
