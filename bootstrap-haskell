@@ -23,8 +23,7 @@ die() {
     exit 2
 }
 
-edo()
-{
+edo() {
     "$@" || die "\"$*\" failed!"
 }
 
@@ -114,6 +113,7 @@ download_ghcup() {
 
     edo chmod +x "${GHCUP_BIN}"/ghcup
 
+  edo mkdir -p "${GHCUP_DIR}"
 	cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
 		export PATH="\$HOME/.cabal/bin:${GHCUP_BIN}:\$PATH"
 		EOF
