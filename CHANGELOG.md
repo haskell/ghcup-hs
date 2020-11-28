@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## WIP
+
+* Fix to `ghcup` directory creation and placement for the XDG install mode.
+
 ## 0.1.12 -- 2020-11-21
 
 * Fix disappearing HLS symlinks wrt #91

@@ -19,7 +19,7 @@
 export GHCUP_USE_XDG_DIRS
 
 if [ -n "${GHCUP_USE_XDG_DIRS}" ] ; then
-	GHCUP_DIR=${XDG_DATA_HOME:=$HOME/.local}/ghcup
+	GHCUP_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/ghcup
 	GHCUP_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
 else
 	GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup
@@ -34,8 +34,7 @@ die() {
     exit 2
 }
 
-edo()
-{
+edo() {
     "$@" || die "\"$*\" failed!"
 }
 
@@ -125,6 +124,7 @@ download_ghcup() {
 
     edo chmod +x "${GHCUP_BIN}"/ghcup
 
+  edo mkdir -p "${GHCUP_DIR}"
 	cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
 		export PATH="\$HOME/.cabal/bin:${GHCUP_BIN}:\$PATH"
 		EOF
