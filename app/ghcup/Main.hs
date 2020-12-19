@@ -59,7 +59,8 @@ import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           Safe
-import           System.Console.Pretty
+import           System.Console.Pretty   hiding ( color )
+import qualified System.Console.Pretty         as Pretty
 import           System.Environment
 import           System.Exit
 import           System.IO               hiding ( appendFile )
@@ -1531,6 +1532,20 @@ printListResult raw lr = do
   -- https://gitlab.haskell.org/ghc/ghc/issues/8118
   setLocaleEncoding utf8
 
+  no_color <- isJust <$> lookupEnv "NO_COLOR"
+
+  let
+    color | raw || no_color = flip const
+          | otherwise       = Pretty.color
+
+  let
+    printTag Recommended        = color Green "recommended"
+    printTag Latest             = color Yellow "latest"
+    printTag Prerelease         = color Red "prerelease"
+    printTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
+    printTag (UnknownTag t    ) = t
+    printTag Old                = ""
+
   let
     rows =
       (\x -> if raw
@@ -1552,13 +1567,13 @@ printListResult raw lr = do
                      , intercalate "," $ (filter (/= "") . fmap printTag $ sort lTag)
                      , intercalate ","
                      $  (if hlsPowered
-                          then [color' Green "hls-powered"]
+                          then [color Green "hls-powered"]
                           else mempty
                         )
-                     ++ (if fromSrc then [color' Blue "compiled"] else mempty)
-                     ++ (if lStray then [color' Yellow "stray"] else mempty)
+                     ++ (if fromSrc then [color Blue "compiled"] else mempty)
+                     ++ (if lStray then [color Yellow "stray"] else mempty)
                      ++ (if lNoBindist
-                          then [color' Red "no-bindist"]
+                          then [color Red "no-bindist"]
                           else mempty
                         )
                      ]
@@ -1571,16 +1586,6 @@ printListResult raw lr = do
 
   forM_ padded $ \row -> putStrLn $ intercalate " " row
  where
-  printTag Recommended        = color' Green "recommended"
-  printTag Latest             = color' Yellow "latest"
-  printTag Prerelease         = color' Red "prerelease"
-  printTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
-  printTag (UnknownTag t    ) = t
-  printTag Old                = ""
-
-  color' = case raw of
-    True  -> flip const
-    False -> color
 
   padTo str' x =
     let lstr = strWidth str'

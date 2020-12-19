@@ -44,6 +44,7 @@ import           Data.Vector                    ( Vector
 import           Data.Versions           hiding ( str )
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
+import           System.Environment
 import           System.Exit
 import           System.IO.Unsafe
 import           URI.ByteString
@@ -118,8 +119,8 @@ showKey (Vty.KDown) = "↓"
 showKey key = tail (show key)
 
 
-ui :: BrickState -> Widget String
-ui BrickState { appSettings = as@(BrickSettings {}), ..}
+ui :: AttrMap -> BrickState -> Widget String
+ui dimAttrs BrickState { appSettings = as@(BrickSettings {}), ..}
   = ( padBottom Max
     $ ( withBorderStyle unicode
       $ borderWithLabel (str "GHCup")
@@ -150,9 +151,9 @@ ui BrickState { appSettings = as@(BrickSettings {}), ..}
         ver = case lCross of
           Nothing -> T.unpack . prettyVer $ lVer
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
-        dim = if lNoBindist
-          then updateAttrMap (const dimAttributes) . withAttr "no-bindist"
-          else id
+        dim
+          | lNoBindist = updateAttrMap (const dimAttrs) . withAttr "no-bindist"
+          | otherwise  = id
         hooray
           | elem Latest lTag && not lInstalled =
               withAttr "hooray"
@@ -239,39 +240,49 @@ minHSize :: Int -> Widget n -> Widget n
 minHSize s' = hLimit s' . vLimit 1 . (<+> fill ' ')
 
 
-app :: App BrickState e String
-app = App { appDraw         = \st -> [ui st]
-          , appHandleEvent  = eventHandler
-          , appStartEvent   = return
-          , appAttrMap      = const defaultAttributes
-          , appChooseCursor = neverShowCursor
-          }
+app :: AttrMap -> AttrMap -> App BrickState e String
+app attrs dimAttrs =
+  App { appDraw         = \st -> [ui dimAttrs st]
+  , appHandleEvent  = eventHandler
+  , appStartEvent   = return
+  , appAttrMap      = const attrs
+  , appChooseCursor = neverShowCursor
+  }
 
-defaultAttributes :: AttrMap
-defaultAttributes = attrMap
+defaultAttributes :: Bool -> AttrMap
+defaultAttributes no_color = attrMap
   Vty.defAttr
-  [ ("active"       , Vty.defAttr `Vty.withBackColor` Vty.blue)
-  , ("not-installed", Vty.defAttr `Vty.withForeColor` Vty.red)
-  , ("set"          , Vty.defAttr `Vty.withForeColor` Vty.green)
-  , ("installed"    , Vty.defAttr `Vty.withForeColor` Vty.green)
-  , ("recommended"  , Vty.defAttr `Vty.withForeColor` Vty.green)
-  , ("hls-powered"  , Vty.defAttr `Vty.withForeColor` Vty.green)
-  , ("latest"       , Vty.defAttr `Vty.withForeColor` Vty.yellow)
-  , ("prerelease"   , Vty.defAttr `Vty.withForeColor` Vty.red)
-  , ("compiled"     , Vty.defAttr `Vty.withForeColor` Vty.blue)
-  , ("stray"        , Vty.defAttr `Vty.withForeColor` Vty.blue)
-  , ("help"         , Vty.defAttr `Vty.withStyle` Vty.italic)
-  , ("hooray"       , Vty.defAttr `Vty.withForeColor` Vty.brightWhite)
+  [ ("active"       , Vty.defAttr `withBackColor` Vty.blue)
+  , ("not-installed", Vty.defAttr `withForeColor` Vty.red)
+  , ("set"          , Vty.defAttr `withForeColor` Vty.green)
+  , ("installed"    , Vty.defAttr `withForeColor` Vty.green)
+  , ("recommended"  , Vty.defAttr `withForeColor` Vty.green)
+  , ("hls-powered"  , Vty.defAttr `withForeColor` Vty.green)
+  , ("latest"       , Vty.defAttr `withForeColor` Vty.yellow)
+  , ("prerelease"   , Vty.defAttr `withForeColor` Vty.red)
+  , ("compiled"     , Vty.defAttr `withForeColor` Vty.blue)
+  , ("stray"        , Vty.defAttr `withForeColor` Vty.blue)
+  , ("help"         , Vty.defAttr `withStyle`     Vty.italic)
+  , ("hooray"       , Vty.defAttr `withForeColor` Vty.brightWhite)
   ]
+  where
+    withForeColor | no_color  = const
+                  | otherwise = Vty.withForeColor
 
+    withBackColor | no_color  = \attr _ -> attr `Vty.withStyle` Vty.reverseVideo
+                  | otherwise = Vty.withBackColor
 
-dimAttributes :: AttrMap
-dimAttributes = attrMap
+    withStyle                 = Vty.withStyle
+
+dimAttributes :: Bool -> AttrMap
+dimAttributes no_color = attrMap
   (Vty.defAttr `Vty.withStyle` Vty.dim)
-  [ ("active"    , Vty.defAttr `Vty.withBackColor` Vty.blue)
+  [ ("active"    , Vty.defAttr `withBackColor` Vty.blue)
   , ("no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
   ]
-
+  where
+    withBackColor | no_color  = \attr _ -> attr `Vty.withStyle` Vty.reverseVideo
+                  | otherwise = Vty.withBackColor
 
 eventHandler :: BrickState -> BrickEvent n e -> EventM n (Next BrickState)
 eventHandler st@(BrickState {..}) ev = do
@@ -520,11 +531,13 @@ brickMain s l av pfreq' = do
   writeIORef logger'   l
   let runLogger = myLoggerT l
 
+  no_color <- isJust <$> lookupEnv "NO_COLOR"
+
   eAppData <- getAppData (Just av) pfreq'
   case eAppData of
     Right ad ->
       defaultMain
-          app
+          (app (defaultAttributes no_color) (dimAttributes no_color))
           (BrickState ad
                     defaultAppSettings
                     (constructList ad defaultAppSettings Nothing)
