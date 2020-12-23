@@ -32,7 +32,10 @@
 
       <div id="platform-instructions-mac" class="instructions" style="display: none;">
         <p>Run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
+		<p>On Intel:</p>
 		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
+        <p>On Apple Silicon:</p>
+		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | arch -x86_64 /bin/bash</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
         <p class="other-help">If you don't like curl | sh, see <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">other installation methods</a>.<br/>You appear to be running macOS. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
       </div>
 
