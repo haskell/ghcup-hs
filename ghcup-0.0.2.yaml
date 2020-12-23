@@ -1117,7 +1117,6 @@ ghcupDownloads:
             unknown_versioning: *ghc-8101-32-deb9
     8.10.2:
       viTags:
-      - Latest
       - base-4.14.1.0
       viChangeLog: https://downloads.haskell.org/~ghc/8.10.2/docs/html/users_guide/8.10.2-notes.html
       viSourceDL:
@@ -1193,6 +1192,79 @@ ghcupDownloads:
               dlUri: https://files.hasufell.de/ghc/ghc-8.10.2-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.10.2
               dlHash: 9ee1cf1e85e9536088b3c9e80e975074e525ea378cd4eb156071bbc4b7b38327
+    8.10.3:
+      viTags:
+      - Latest
+      - base-4.14.1.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.3/docs/html/users_guide/8.10.3-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-src.tar.xz
+        dlSubdir: ghc-8.10.3
+        dlHash: 9c573a4621a78723950617c223559bdc325ea6a3409264aedf68f05510b0880b
+      viArch:
+        A_64:
+          Linux_Debian:
+            '9': &ghc-8103-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: 95e4aadea30701fe5ab84d15f757926d843ded7115e11c4cd827809ca830718d
+            '10': &ghc-8103-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: c8f3d9f0e61a89eaba1d3ad8fb2eced1af0e81576811261b887993bee12538ac
+            unknown_versioning: *ghc-8103-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8103-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: f8739b12008712d6b6a9ffc6c39f9d05af77ef3bcb932c9aff20fa0893c8c159
+            '16.04': *ghc-8103-64-deb9
+            '18.04': *ghc-8103-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8103-64-deb10
+          Linux_Fedora:
+            '27': *ghc-8103-64-fedora
+            unknown_versioning: *ghc-8103-64-fedora
+          Linux_CentOS:
+            '7': &ghc-8103-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: f562ca61979ff1d21e34e69e59028cb742a8eff8d84e46bbd3a750f2ac7d8ed1
+            unknown_versioning: *ghc-8103-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8103-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.3-x86_64-unknown-linux
+              dlHash: 8506c478ebbfb5441c3c36c07c36fc8532cacb2b3e13c6733bd44cb17b3ce96c
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8103-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8103-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: 2635f35d76e44e69afdfd37cae89d211975cc20f71f784363b72003e59f22015
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: 749007e995104db05cf6e3ad5bc36238cab8afac8055145661e5730e8f8af040
+        A_32:
+          Linux_Debian:
+            '9': &ghc-8103-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: f0addd2a16b705f58ff9e8702c3ddf3e2d6bd0d3555707b5b5095e51bafee7b1
+            unknown_versioning: *ghc-8103-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8103-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8103-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8103-32-deb9
   Cabal:
     2.4.1.0:
       viTags: []
