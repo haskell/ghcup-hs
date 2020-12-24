@@ -333,7 +333,7 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
       (path </> cabalFile)
       (destPath)
       Overwrite
-    lift $ chmod_777 destPath
+    lift $ chmod_755 destPath
 
 
 -- | Installs cabal into @~\/.ghcup\/bin/cabal-\<ver\>@ and
@@ -449,7 +449,7 @@ installHLSBindist dlinfo ver (PlatformRequest {..}) = do
         (path </> f)
         (inst </> toF)
         Overwrite
-      lift $ chmod_777 (inst </> toF)
+      lift $ chmod_755 (inst </> toF)
 
     -- install haskell-language-server-wrapper
     let wrapper = [rel|haskell-language-server-wrapper|]
@@ -458,7 +458,7 @@ installHLSBindist dlinfo ver (PlatformRequest {..}) = do
       (path </> wrapper)
       (inst </> toF)
       Overwrite
-    lift $ chmod_777 (inst </> toF)
+    lift $ chmod_755 (inst </> toF)
 
 
 -- | Installs hls binaries @haskell-language-server-\<ghcver\>@
@@ -1319,7 +1319,7 @@ upgradeGHCup dls mtarget force pfreq = do
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                            fullDest
                                                            Overwrite
-  lift $ chmod_777 fullDest
+  lift $ chmod_755 fullDest
   pure latestVer
 
 

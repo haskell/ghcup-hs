@@ -440,13 +440,16 @@ isBrokenSymlink p =
         pure False
 
 
-chmod_777 :: (MonadLogger m, MonadIO m) => Path a -> m ()
-chmod_777 (toFilePath -> fp) = do
+chmod_755 :: (MonadLogger m, MonadIO m) => Path a -> m ()
+chmod_755 (toFilePath -> fp) = do
   let exe_mode =
-          newFilePerms
+          nullFileMode
             `unionFileModes` ownerExecuteMode
+            `unionFileModes` ownerReadMode
+            `unionFileModes` ownerWriteMode
             `unionFileModes` groupExecuteMode
+            `unionFileModes` groupReadMode
             `unionFileModes` otherExecuteMode
-  $(logDebug) [i|chmod 777 #{fp}|]
+            `unionFileModes` otherReadMode
+  $(logDebug) [i|chmod 755 #{fp}|]
   liftIO $ setFileMode fp exe_mode
-
