@@ -104,9 +104,11 @@
 
       <div id="platform-instructions-default" class="instructions">
         <div>
-          <p>To install Haskell, if you are running Linux, macOS, FreeBSD or Windows Subsystem for Linux, run the following
+          <p>To install Haskell, if you are running Linux, macOS (on Intel), FreeBSD or Windows Subsystem for Linux, run the following
           in your terminal (as a user other than root), then follow the onscreen instructions.</p>
 		  <div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
+          <p>For macOS on Apple Silicon, run this instead:</p>
+          <div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | arch -x86_64 /bin/bash</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
           <p class="other-help">If you don't like curl | sh, see <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">other installation methods</a>.</p>
         </div>
 
@@ -149,9 +151,11 @@
 
       <div id="platform-instructions-default" class="instructions">
         <div>
-          <p>To install Haskell, if you are running Linux, macOS, FreeBSD or Windows Subsystem for Linux, run the following
+          <p>To install Haskell, if you are running Linux, macOS (on Intel), FreeBSD or Windows Subsystem for Linux, run the following
           in your terminal (as a user other than root), then follow the onscreen instructions.</p>
 		  <pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre>
+          <p>For macOS on Apple Silicon, run this instead:</p>
+          <div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | arch -x86_64 /bin/bash</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
           <p class="other-help">If you don't like curl | sh, see <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">other installation methods</a>.</p>
         </div>
 
