@@ -1212,7 +1212,7 @@ ghcupDownloads:
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-src.tar.xz
         dlSubdir: ghc-8.10.3
-        dlHash: 9c573a4621a78723950617c223559bdc325ea6a3409264aedf68f05510b0880b
+        dlHash: ccdc8319549028a708d7163e2967382677b1a5a379ff94d948195b5cf46eb931
       viArch:
         A_64:
           Linux_Debian:
