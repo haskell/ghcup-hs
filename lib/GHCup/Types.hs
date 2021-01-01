@@ -172,7 +172,7 @@ data DownloadInfo = DownloadInfo
   , _dlSubdir :: Maybe TarDir
   , _dlHash   :: Text
   }
-  deriving (Eq, GHC.Generic, Show)
+  deriving (Eq, Ord, GHC.Generic, Show)
 
 
 
@@ -185,7 +185,7 @@ data DownloadInfo = DownloadInfo
 -- | How to descend into a tar archive.
 data TarDir = RealDir (Path Rel)
             | RegexDir String     -- ^ will be compiled to regex, the first match will "win"
-            deriving (Eq, GHC.Generic, Show)
+            deriving (Eq, Ord, GHC.Generic, Show)
 
 
 -- | Where to fetch GHCupDownloads from.

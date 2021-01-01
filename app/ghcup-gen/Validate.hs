@@ -7,6 +7,7 @@ module Validate where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Types
+import           GHCup.Types.Optics
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Version.QQ
@@ -21,6 +22,7 @@ import           Control.Monad.Trans.Reader     ( runReaderT )
 import           Control.Monad.Trans.Resource   ( runResourceT
                                                 , MonadUnliftIO
                                                 )
+import           Data.Containers.ListUtils      ( nubOrd )
 import           Data.IORef
 import           Data.List
 import           Data.String.Interpolate
@@ -30,10 +32,12 @@ import           Optics
 import           System.Exit
 import           System.IO
 import           Text.ParserCombinators.ReadP
+import           URI.ByteString
 
 import qualified Data.ByteString               as B
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as E
 import qualified Data.Version                  as V
 
 
@@ -164,23 +168,20 @@ validateTarballs :: ( Monad m
                     , MonadUnliftIO m
                     , MonadMask m
                     )
-                 => GHCupDownloads
+                 => Maybe T.Text
+                 -> GHCupDownloads
                  -> m ExitCode
-validateTarballs dls = do
+validateTarballs urlSubstr dls = do
   ref <- liftIO $ newIORef 0
 
   flip runReaderT ref $ do
-     -- download/verify all binary tarballs
-    let
-      dlbis = nub $ join $ (M.elems dls) <&> \versions ->
-        join $ (M.elems versions) <&> \vi ->
-          join $ (M.elems $ _viArch vi) <&> \pspecs ->
-            join $ (M.elems pspecs) <&> \pverspecs -> (M.elems pverspecs)
-    forM_ dlbis $ downloadAll
-
-    let dlsrc = nub $ join $ (M.elems dls) <&> \versions ->
-          join $ (M.elems versions) <&> maybe [] (: []) . _viSourceDL
-    forM_ dlsrc $ downloadAll
+     -- download/verify all tarballs
+    let dlis = nubOrd . filter matchingUrl $
+          dls ^.. each % each % (viSourceDL % _Just `summing` viArch % each % each % each)
+        matchingUrl dli = case urlSubstr of
+          Nothing -> True
+          Just sub -> E.encodeUtf8 sub `B.isInfixOf` serializeURIRef' (_dlUri dli)
+    forM_ dlis $ downloadAll
 
     -- exit
     e <- liftIO $ readIORef ref
