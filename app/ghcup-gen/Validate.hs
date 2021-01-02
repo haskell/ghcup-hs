@@ -7,6 +7,7 @@ module Validate where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Types
+import           GHCup.Types.Optics
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Version.QQ
@@ -21,6 +22,7 @@ import           Control.Monad.Trans.Reader     ( runReaderT )
 import           Control.Monad.Trans.Resource   ( runResourceT
                                                 , MonadUnliftIO
                                                 )
+import           Data.Containers.ListUtils      ( nubOrd )
 import           Data.IORef
 import           Data.List
 import           Data.String.Interpolate
@@ -30,6 +32,7 @@ import           Optics
 import           System.Exit
 import           System.IO
 import           Text.ParserCombinators.ReadP
+import           Text.Regex.Posix
 
 import qualified Data.ByteString               as B
 import qualified Data.Map.Strict               as M
@@ -157,6 +160,11 @@ validate dls = do
   isBase (Base _) = True
   isBase _        = False
 
+data TarballFilter = TarballFilter
+  { tfTool    :: Maybe Tool
+  , tfVersion :: Regex
+  }
+
 validateTarballs :: ( Monad m
                     , MonadLogger m
                     , MonadThrow m
@@ -164,23 +172,20 @@ validateTarballs :: ( Monad m
                     , MonadUnliftIO m
                     , MonadMask m
                     )
-                 => GHCupDownloads
+                 => TarballFilter
+                 -> GHCupDownloads
                  -> m ExitCode
-validateTarballs dls = do
+validateTarballs (TarballFilter tool versionRegex) dls = do
   ref <- liftIO $ newIORef 0
 
   flip runReaderT ref $ do
-     -- download/verify all binary tarballs
-    let
-      dlbis = nub $ join $ (M.elems dls) <&> \versions ->
-        join $ (M.elems versions) <&> \vi ->
-          join $ (M.elems $ _viArch vi) <&> \pspecs ->
-            join $ (M.elems pspecs) <&> \pverspecs -> (M.elems pverspecs)
-    forM_ dlbis $ downloadAll
-
-    let dlsrc = nub $ join $ (M.elems dls) <&> \versions ->
-          join $ (M.elems versions) <&> maybe [] (: []) . _viSourceDL
-    forM_ dlsrc $ downloadAll
+     -- download/verify all tarballs
+    let dlis = nubOrd $ dls ^.. each
+          %& indices (maybe (const True) (==) tool) %> each
+          %& indices (matchTest versionRegex . T.unpack . prettyVer)
+          % (viSourceDL % _Just `summing` viArch % each % each % each)
+    when (null dlis) $ $(logError) [i|no tarballs selected by filter|] *> addError
+    forM_ dlis $ downloadAll
 
     -- exit
     e <- liftIO $ readIORef ref
@@ -191,13 +196,13 @@ validateTarballs dls = do
         pure ExitSuccess
 
  where
+  runLogger = myLoggerT LoggerConfig { lcPrintDebug = True
+                                     , colorOutter  = B.hPut stderr
+                                     , rawOutter    = (\_ -> pure ())
+                                     }
   downloadAll dli = do
     dirs <- liftIO getDirs
     let settings = AppState (Settings True False Never Curl False GHCupURL) dirs defaultKeyBindings
-    let runLogger = myLoggerT LoggerConfig { lcPrintDebug = True
-                                           , colorOutter  = B.hPut stderr
-                                           , rawOutter    = (\_ -> pure ())
-                                           }
 
     r <-
       runLogger

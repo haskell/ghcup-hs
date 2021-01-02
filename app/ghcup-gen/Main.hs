@@ -14,6 +14,7 @@ import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Logger
 
+import           Data.Char                      ( toLower )
 #if !MIN_VERSION_base(4,13,0)
 import           Data.Semigroup                 ( (<>) )
 #endif
@@ -21,6 +22,7 @@ import           Options.Applicative     hiding ( style )
 import           System.Console.Pretty
 import           System.Exit
 import           System.IO                      ( stdout )
+import           Text.Regex.Posix
 import           Validate
 
 import qualified Data.ByteString               as B
@@ -32,7 +34,7 @@ data Options = Options
   }
 
 data Command = ValidateYAML ValidateYAMLOpts
-             | ValidateTarballs ValidateYAMLOpts
+             | ValidateTarballs ValidateYAMLOpts TarballFilter
 
 
 data Input
@@ -63,6 +65,22 @@ data ValidateYAMLOpts = ValidateYAMLOpts
 validateYAMLOpts :: Parser ValidateYAMLOpts
 validateYAMLOpts = ValidateYAMLOpts <$> optional inputP
 
+tarballFilterP :: Parser TarballFilter
+tarballFilterP = option readm $
+  long "tarball-filter" <> short 'u' <> metavar "<tool>-<version>" <> value def
+    <> help "Only check certain tarballs (format: <tool>-<version>)"
+  where
+    def = TarballFilter Nothing (makeRegex ("" :: String))
+    readm = do
+      s <- str
+      case span (/= '-') s of
+        (_, []) -> fail "invalid format, missing '-' after the tool name"
+        (t, v) | [tool] <- [ tool | tool <- [minBound..maxBound], low (show tool) == low t ] ->
+          TarballFilter <$> pure (Just tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
+        _ -> fail "invalid tool"
+    low = fmap toLower
+
+
 opts :: Parser Options
 opts = Options <$> com
 
@@ -78,11 +96,9 @@ com = subparser
      )
   <> (command
        "check-tarballs"
-       (   ValidateTarballs
-       <$> (info
-             (validateYAMLOpts <**> helper)
-             (progDesc "Validate all tarballs (download and checksum)")
-           )
+       (info
+         ((ValidateTarballs <$> validateYAMLOpts <*> tarballFilterP) <**> helper)
+         (progDesc "Validate all tarballs (download and checksum)")
        )
      )
   )
@@ -100,13 +116,13 @@ main = do
               B.getContents >>= valAndExit validate
             ValidateYAMLOpts { vInput = Just (FileInput file) } ->
               B.readFile file >>= valAndExit validate
-          ValidateTarballs vopts -> case vopts of
+          ValidateTarballs vopts tarballFilter -> case vopts of
             ValidateYAMLOpts { vInput = Nothing } ->
-              B.getContents >>= valAndExit validateTarballs
+              B.getContents >>= valAndExit (validateTarballs tarballFilter)
             ValidateYAMLOpts { vInput = Just StdInput } ->
-              B.getContents >>= valAndExit validateTarballs
+              B.getContents >>= valAndExit (validateTarballs tarballFilter)
             ValidateYAMLOpts { vInput = Just (FileInput file) } ->
-              B.readFile file >>= valAndExit validateTarballs
+              B.readFile file >>= valAndExit (validateTarballs tarballFilter)
   pure ()
 
  where
