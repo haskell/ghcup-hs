@@ -14,6 +14,7 @@ import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Logger
 
+import           Control.Monad
 #if !MIN_VERSION_base(4,13,0)
 import           Data.Semigroup                 ( (<>) )
 #endif
@@ -33,7 +34,7 @@ data Options = Options
   }
 
 data Command = ValidateYAML ValidateYAMLOpts
-             | ValidateTarballs ValidateYAMLOpts (Maybe Regex)
+             | ValidateTarballs ValidateYAMLOpts TarballFilter
 
 
 data Input
@@ -64,10 +65,18 @@ data ValidateYAMLOpts = ValidateYAMLOpts
 validateYAMLOpts :: Parser ValidateYAMLOpts
 validateYAMLOpts = ValidateYAMLOpts <$> optional inputP
 
-urlRegexP :: Parser (Maybe Regex)
-urlRegexP = optional . option (str @String >>= makeRegexM) $
-  long "url-regex" <> short 'u' <> metavar "URL_REGEX"
-    <> help "Only validate if URL matches the regex"
+tarballFilterP :: Parser TarballFilter
+tarballFilterP = option readm $
+  long "tarball-filter" <> short 'u' <> metavar "<tool>-<version>" <> value def
+    <> help "Only check certain tarballs (format: <tool>-<version>, where <tool> is GHC by default)"
+  where
+    def = join TarballFilter $ makeRegex ("" :: String)
+    readm = do
+      s <- str
+      (t, v) <- case span (/= '-') s of
+        (v, []) -> pure ("", v)
+        (t, v) -> pure (t, drop 1 v)
+      TarballFilter <$> makeRegexOptsM compIgnoreCase execBlank t <*> makeRegexM v
 
 opts :: Parser Options
 opts = Options <$> com
@@ -85,7 +94,7 @@ com = subparser
   <> (command
        "check-tarballs"
        (info
-         ((ValidateTarballs <$> validateYAMLOpts <*> urlRegexP) <**> helper)
+         ((ValidateTarballs <$> validateYAMLOpts <*> tarballFilterP) <**> helper)
          (progDesc "Validate all tarballs (download and checksum)")
        )
      )
@@ -104,13 +113,13 @@ main = do
               B.getContents >>= valAndExit validate
             ValidateYAMLOpts { vInput = Just (FileInput file) } ->
               B.readFile file >>= valAndExit validate
-          ValidateTarballs vopts urlRegex -> case vopts of
+          ValidateTarballs vopts tarballFilter -> case vopts of
             ValidateYAMLOpts { vInput = Nothing } ->
-              B.getContents >>= valAndExit (validateTarballs urlRegex)
+              B.getContents >>= valAndExit (validateTarballs tarballFilter)
             ValidateYAMLOpts { vInput = Just StdInput } ->
-              B.getContents >>= valAndExit (validateTarballs urlRegex)
+              B.getContents >>= valAndExit (validateTarballs tarballFilter)
             ValidateYAMLOpts { vInput = Just (FileInput file) } ->
-              B.readFile file >>= valAndExit (validateTarballs urlRegex)
+              B.readFile file >>= valAndExit (validateTarballs tarballFilter)
   pure ()
 
  where

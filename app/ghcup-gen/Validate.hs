@@ -33,7 +33,6 @@ import           System.Exit
 import           System.IO
 import           Text.ParserCombinators.ReadP
 import           Text.Regex.Posix
-import           URI.ByteString
 
 import qualified Data.ByteString               as B
 import qualified Data.Map.Strict               as M
@@ -161,6 +160,11 @@ validate dls = do
   isBase (Base _) = True
   isBase _        = False
 
+data TarballFilter = TarballFilter
+  { tfTool    :: Regex
+  , tfVersion :: Regex
+  }
+
 validateTarballs :: ( Monad m
                     , MonadLogger m
                     , MonadThrow m
@@ -168,19 +172,18 @@ validateTarballs :: ( Monad m
                     , MonadUnliftIO m
                     , MonadMask m
                     )
-                 => Maybe Regex
+                 => TarballFilter
                  -> GHCupDownloads
                  -> m ExitCode
-validateTarballs urlRegex dls = do
+validateTarballs (TarballFilter toolRegex versionRegex) dls = do
   ref <- liftIO $ newIORef 0
 
   flip runReaderT ref $ do
      -- download/verify all tarballs
-    let dlis = nubOrd . filter matchingUrl $
-          dls ^.. each % each % (viSourceDL % _Just `summing` viArch % each % each % each)
-        matchingUrl dli = case urlRegex of
-          Nothing -> True
-          Just r -> matchTest r $ serializeURIRef' (_dlUri dli)
+    let dlis = nubOrd $ dls ^.. each
+          %& indices (matchTest toolRegex . show) %> each
+          %& indices (matchTest versionRegex . T.unpack . prettyVer)
+          % (viSourceDL % _Just `summing` viArch % each % each % each)
     forM_ dlis $ downloadAll
 
     -- exit
