@@ -184,6 +184,7 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
           %& indices (maybe (const True) (==) tool) %> each
           %& indices (matchTest versionRegex . T.unpack . prettyVer)
           % (viSourceDL % _Just `summing` viArch % each % each % each)
+    when (null dlis) $ $(logError) [i|no tarballs selected by filter|] *> addError
     forM_ dlis $ downloadAll
 
     -- exit
@@ -195,13 +196,13 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
         pure ExitSuccess
 
  where
+  runLogger = myLoggerT LoggerConfig { lcPrintDebug = True
+                                     , colorOutter  = B.hPut stderr
+                                     , rawOutter    = (\_ -> pure ())
+                                     }
   downloadAll dli = do
     dirs <- liftIO getDirs
     let settings = AppState (Settings True False Never Curl False GHCupURL) dirs defaultKeyBindings
-    let runLogger = myLoggerT LoggerConfig { lcPrintDebug = True
-                                           , colorOutter  = B.hPut stderr
-                                           , rawOutter    = (\_ -> pure ())
-                                           }
 
     r <-
       runLogger
