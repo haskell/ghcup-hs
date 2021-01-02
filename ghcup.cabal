@@ -431,6 +431,7 @@ executable ghcup-gen
     , optics
     , optparse-applicative
     , pretty-terminal
+    , regex-posix
     , resourcet
     , safe-exceptions
     , string-interpolate

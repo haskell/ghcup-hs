@@ -21,10 +21,10 @@ import           Options.Applicative     hiding ( style )
 import           System.Console.Pretty
 import           System.Exit
 import           System.IO                      ( stdout )
+import           Text.Regex.Posix
 import           Validate
 
 import qualified Data.ByteString               as B
-import qualified Data.Text                     as T
 import qualified Data.Yaml                     as Y
 
 
@@ -33,7 +33,7 @@ data Options = Options
   }
 
 data Command = ValidateYAML ValidateYAMLOpts
-             | ValidateTarballs ValidateYAMLOpts (Maybe T.Text)
+             | ValidateTarballs ValidateYAMLOpts (Maybe Regex)
 
 
 data Input
@@ -64,10 +64,10 @@ data ValidateYAMLOpts = ValidateYAMLOpts
 validateYAMLOpts :: Parser ValidateYAMLOpts
 validateYAMLOpts = ValidateYAMLOpts <$> optional inputP
 
-urlSubstrP :: Parser (Maybe T.Text)
-urlSubstrP = optional . strOption $
-  long "url-substr" <> short 'u' <> metavar "URL_SUBSTRING"
-    <> help "Only validate if URL contains this substring"
+urlRegexP :: Parser (Maybe Regex)
+urlRegexP = optional . option (str @String >>= makeRegexM) $
+  long "url-regex" <> short 'u' <> metavar "URL_REGEX"
+    <> help "Only validate if URL matches the regex"
 
 opts :: Parser Options
 opts = Options <$> com
@@ -85,7 +85,7 @@ com = subparser
   <> (command
        "check-tarballs"
        (info
-         ((ValidateTarballs <$> validateYAMLOpts <*> urlSubstrP) <**> helper)
+         ((ValidateTarballs <$> validateYAMLOpts <*> urlRegexP) <**> helper)
          (progDesc "Validate all tarballs (download and checksum)")
        )
      )
@@ -104,13 +104,13 @@ main = do
               B.getContents >>= valAndExit validate
             ValidateYAMLOpts { vInput = Just (FileInput file) } ->
               B.readFile file >>= valAndExit validate
-          ValidateTarballs vopts urlSubstr -> case vopts of
+          ValidateTarballs vopts urlRegex -> case vopts of
             ValidateYAMLOpts { vInput = Nothing } ->
-              B.getContents >>= valAndExit (validateTarballs urlSubstr)
+              B.getContents >>= valAndExit (validateTarballs urlRegex)
             ValidateYAMLOpts { vInput = Just StdInput } ->
-              B.getContents >>= valAndExit (validateTarballs urlSubstr)
+              B.getContents >>= valAndExit (validateTarballs urlRegex)
             ValidateYAMLOpts { vInput = Just (FileInput file) } ->
-              B.readFile file >>= valAndExit (validateTarballs urlSubstr)
+              B.readFile file >>= valAndExit (validateTarballs urlRegex)
   pure ()
 
  where

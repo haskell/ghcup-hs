@@ -32,12 +32,12 @@ import           Optics
 import           System.Exit
 import           System.IO
 import           Text.ParserCombinators.ReadP
+import           Text.Regex.Posix
 import           URI.ByteString
 
 import qualified Data.ByteString               as B
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as E
 import qualified Data.Version                  as V
 
 
@@ -168,19 +168,19 @@ validateTarballs :: ( Monad m
                     , MonadUnliftIO m
                     , MonadMask m
                     )
-                 => Maybe T.Text
+                 => Maybe Regex
                  -> GHCupDownloads
                  -> m ExitCode
-validateTarballs urlSubstr dls = do
+validateTarballs urlRegex dls = do
   ref <- liftIO $ newIORef 0
 
   flip runReaderT ref $ do
      -- download/verify all tarballs
     let dlis = nubOrd . filter matchingUrl $
           dls ^.. each % each % (viSourceDL % _Just `summing` viArch % each % each % each)
-        matchingUrl dli = case urlSubstr of
+        matchingUrl dli = case urlRegex of
           Nothing -> True
-          Just sub -> E.encodeUtf8 sub `B.isInfixOf` serializeURIRef' (_dlUri dli)
+          Just r -> matchTest r $ serializeURIRef' (_dlUri dli)
     forM_ dlis $ downloadAll
 
     -- exit
