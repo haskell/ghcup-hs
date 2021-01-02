@@ -161,7 +161,7 @@ validate dls = do
   isBase _        = False
 
 data TarballFilter = TarballFilter
-  { tfTool    :: Regex
+  { tfTool    :: Maybe Tool
   , tfVersion :: Regex
   }
 
@@ -175,13 +175,13 @@ validateTarballs :: ( Monad m
                  => TarballFilter
                  -> GHCupDownloads
                  -> m ExitCode
-validateTarballs (TarballFilter toolRegex versionRegex) dls = do
+validateTarballs (TarballFilter tool versionRegex) dls = do
   ref <- liftIO $ newIORef 0
 
   flip runReaderT ref $ do
      -- download/verify all tarballs
     let dlis = nubOrd $ dls ^.. each
-          %& indices (matchTest toolRegex . show) %> each
+          %& indices (maybe (const True) (==) tool) %> each
           %& indices (matchTest versionRegex . T.unpack . prettyVer)
           % (viSourceDL % _Just `summing` viArch % each % each % each)
     forM_ dlis $ downloadAll

@@ -79,7 +79,7 @@ data Tool = GHC
           | Cabal
           | GHCup
           | HLS
-  deriving (Eq, GHC.Generic, Ord, Show)
+  deriving (Eq, GHC.Generic, Ord, Show, Enum, Bounded)
 
 
 -- | All necessary information of a tool version, including

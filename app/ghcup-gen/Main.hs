@@ -14,7 +14,7 @@ import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Logger
 
-import           Control.Monad
+import           Data.Char                      ( toLower )
 #if !MIN_VERSION_base(4,13,0)
 import           Data.Semigroup                 ( (<>) )
 #endif
@@ -68,15 +68,18 @@ validateYAMLOpts = ValidateYAMLOpts <$> optional inputP
 tarballFilterP :: Parser TarballFilter
 tarballFilterP = option readm $
   long "tarball-filter" <> short 'u' <> metavar "<tool>-<version>" <> value def
-    <> help "Only check certain tarballs (format: <tool>-<version>, where <tool> is GHC by default)"
+    <> help "Only check certain tarballs (format: <tool>-<version>)"
   where
-    def = join TarballFilter $ makeRegex ("" :: String)
+    def = TarballFilter Nothing (makeRegex ("" :: String))
     readm = do
       s <- str
-      (t, v) <- case span (/= '-') s of
-        (v, []) -> pure ("", v)
-        (t, v) -> pure (t, drop 1 v)
-      TarballFilter <$> makeRegexOptsM compIgnoreCase execBlank t <*> makeRegexM v
+      case span (/= '-') s of
+        (_, []) -> fail "invalid format, missing '-' after the tool name"
+        (t, v) | [tool] <- [ tool | tool <- [minBound..maxBound], low (show tool) == low t ] ->
+          TarballFilter <$> pure (Just tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
+        _ -> fail "invalid tool"
+    low = fmap toLower
+
 
 opts :: Parser Options
 opts = Options <$> com
