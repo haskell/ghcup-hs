@@ -1276,6 +1276,11 @@ ghcupDownloads:
             unknown_versioning: *ghc-8103-32-deb9
           Linux_UnknownLinux:
             unknown_versioning: *ghc-8103-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://files.hasufell.de/ghc/ghc-8.10.3-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: 309201cdefd2d13b8b3fd09c26c6137048c490d219a0a9c7407c3ce1d011f60c
     9.0.0.20201227:
       viTags:
       - Prerelease
