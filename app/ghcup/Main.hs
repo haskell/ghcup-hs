@@ -1179,7 +1179,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             pure ExitSuccess
                           VLeft (V (AlreadyInstalled _ v)) -> do
                             runLogger $ $(logWarn)
-                              [i|GHC ver #{prettyVer v} already installed, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
+                              [i|GHC ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
                             pure ExitSuccess
                           VLeft (V (BuildFailed tmpdir e)) -> do
                             case keepDirs settings of
@@ -1220,7 +1220,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
                           runLogger $ $(logWarn)
-                            [i|Cabal ver #{prettyVer v} already installed, you may want to run 'ghcup rm cabal #{prettyVer v}' first|]
+                            [i|Cabal ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm cabal #{prettyVer v}' first|]
                           pure ExitSuccess
                         VLeft (V NoDownload) -> do
 
@@ -1253,7 +1253,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
                           runLogger $ $(logWarn)
-                            [i|HLS ver #{prettyVer v} already installed, you may want to run 'ghcup rm hls #{prettyVer v}' first|]
+                            [i|HLS ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm hls #{prettyVer v}' first|]
                           pure ExitSuccess
                         VLeft (V NoDownload) -> do
 
@@ -1403,7 +1403,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         pure ExitSuccess
                       VLeft (V (AlreadyInstalled _ v)) -> do
                         runLogger $ $(logWarn)
-                          [i|GHC ver #{prettyVer v} already installed, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
+                          [i|GHC ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
                         pure ExitSuccess
                       VLeft (V (BuildFailed tmpdir e)) -> do
                         case keepDirs settings of
