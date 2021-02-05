@@ -1,0 +1,38 @@
+with-compiler: ghc-8.10.3
+
+packages: ./ghcup.cabal
+
+optional-packages: ./3rdparty/*/*.cabal
+
+source-repository-package
+    type: git
+    location: https://github.com/haskus/packages.git
+    tag: 80a1c5fc07f7226c424250ec17f674cd4d618f42
+    subdir: haskus-utils-types
+
+source-repository-package
+    type: git
+    location: https://github.com/hasufell/hpath.git
+    tag: bf6d28cf989b70286e12fecc183d5bbf5454a1a2
+    subdir: hpath-io
+
+source-repository-package
+    type: git
+    location: https://github.com/hasufell/hpath.git
+    tag: bf6d28cf989b70286e12fecc183d5bbf5454a1a2
+    subdir: hpath-directory
+
+optimization: 2
+
+package streamly
+    ghc-options: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16
+
+package ghcup
+    ghc-options: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16
+
+constraints: http-io-streams -brotli
+
+package libarchive
+  flags: -system-libarchive
+
+allow-newer: base, ghc-prim, template-haskell
