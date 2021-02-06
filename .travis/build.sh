@@ -8,9 +8,9 @@ chmod +x ~/.ghcup/bin/ghcup
 
 export PATH="$HOME/.ghcup/bin:$PATH"
 
-ghcup install 8.10.3
+ghcup install 8.10.4
 ghcup install-cabal 3.4.0.0-rc4
-ghcup set 8.10.3
+ghcup set 8.10.4
 
 
 ## install ghcup

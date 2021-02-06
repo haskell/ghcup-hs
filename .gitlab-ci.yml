@@ -125,7 +125,7 @@ test:linux:bootstrap_script:
   script:
     - ./.gitlab/script/ghcup_bootstrap.sh
   variables:
-    GHC_VERSION: "8.10.3"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0-rc4"
   extends:
     - .debian
@@ -135,7 +135,7 @@ test:linux:bootstrap_script:
 test:linux:recommended:
   extends: .test_ghcup_version:linux
   variables:
-    GHC_VERSION: "8.10.3"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.2.0.0"
 
 test:linux:latest:
@@ -158,7 +158,7 @@ test:linux:recommended:32bit:
 test:mac:recommended:
   extends: .test_ghcup_version:darwin
   variables:
-    GHC_VERSION: "8.10.3"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.2.0.0"
 
 test:mac:latest:
@@ -174,7 +174,7 @@ test:mac:latest:
 test:freebsd:recommended:
   extends: .test_ghcup_version:freebsd
   variables:
-    GHC_VERSION: "8.10.3"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.2.0.0"
 
 test:freebsd:latest:
@@ -195,7 +195,7 @@ release:linux:64bit:
     - ./.gitlab/before_script/linux/alpine/install_deps.sh
   variables:
     ARTIFACT: "x86_64-linux-ghcup"
-    GHC_VERSION: "8.10.3"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0-rc4"
 
 
@@ -222,7 +222,7 @@ release:darwin:
     - ./.gitlab/before_script/darwin/install_deps.sh
   variables:
     ARTIFACT: "x86_64-apple-darwin-ghcup"
-    GHC_VERSION: "8.10.3"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0-rc4"
     MACOSX_DEPLOYMENT_TARGET: "10.7"
 
@@ -238,6 +238,6 @@ release:freebsd:
     - ./.gitlab/before_script/freebsd/install_deps.sh
   variables:
     ARTIFACT: "x86_64-portbld-freebsd-ghcup"
-    GHC_VERSION: "8.10.3"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0-rc4"
 
