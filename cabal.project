@@ -20,6 +20,42 @@ source-repository-package
     tag: bf6d28cf989b70286e12fecc183d5bbf5454a1a2
     subdir: hpath-directory
 
+source-repository-package
+    type: git
+    location: https://github.com/well-typed/optics.git
+    tag: a21d34612bfe5a9552ff35df98d7dc6b87e57e28
+    subdir: optics-th
+
+source-repository-package
+    type: git
+    location: https://github.com/well-typed/optics.git
+    tag: a21d34612bfe5a9552ff35df98d7dc6b87e57e28
+    subdir: optics-extra
+
+source-repository-package
+    type: git
+    location: https://github.com/well-typed/optics.git
+    tag: a21d34612bfe5a9552ff35df98d7dc6b87e57e28
+    subdir: optics-core
+
+source-repository-package
+    type: git
+    location: https://github.com/well-typed/optics.git
+    tag: a21d34612bfe5a9552ff35df98d7dc6b87e57e28
+    subdir: optics
+
+source-repository-package
+    type: git
+    location: https://github.com/well-typed/generics-sop.git
+    tag: dcac01495c377bd29cf8f6dcf714f23a47edde9d
+    subdir: generics-sop
+
+source-repository-package
+    type: git
+    location: https://github.com/well-typed/generics-sop.git
+    tag: dcac01495c377bd29cf8f6dcf714f23a47edde9d
+    subdir: sop-core
+
 optimization: 2
 
 package streamly
@@ -33,4 +69,4 @@ constraints: http-io-streams -brotli
 package libarchive
   flags: -system-libarchive
 
-allow-newer: base, ghc-prim, template-haskell
+allow-newer: base, ghc-prim, template-haskell, Cabal
