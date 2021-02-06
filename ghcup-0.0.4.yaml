@@ -1129,6 +1129,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-8101-32-deb9
     8.10.2:
       viTags:
+      - old
       - base-4.14.1.0
       viChangeLog: https://downloads.haskell.org/~ghc/8.10.2/docs/html/users_guide/8.10.2-notes.html
       viSourceDL:
@@ -1205,7 +1206,6 @@ ghcupDownloads:
               dlHash: 9ee1cf1e85e9536088b3c9e80e975074e525ea378cd4eb156071bbc4b7b38327
     8.10.3:
       viTags:
-      - Recommended
       - base-4.14.1.0
       viChangeLog: https://downloads.haskell.org/~ghc/8.10.3/docs/html/users_guide/8.10.3-notes.html
       viSourceDL:
@@ -1280,6 +1280,78 @@ ghcupDownloads:
               dlUri: https://files.hasufell.de/ghc/ghc-8.10.3-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.10.3
               dlHash: 309201cdefd2d13b8b3fd09c26c6137048c490d219a0a9c7407c3ce1d011f60c
+    8.10.4:
+      viTags:
+      - Recommended
+      - base-4.14.1.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.4/docs/html/users_guide/8.10.4-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-src.tar.xz
+        dlSubdir: ghc-8.10.4
+        dlHash: 52af871b4e08550257d720c2944ac85727d0b948407cef1bebfe7508c224910e
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8104-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 5694200a5c38f22c142baf850b1d2f3784211d2ec9302e11693259a1ae8e38b7
+            '( >= 10 && < 11 )': &ghc-8104-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 816365565e9927459b035515a7db6a0db62f9796f327389b6f8a0035d12fbda0
+            unknown_versioning: *ghc-8104-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8104-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: a189eed900a8717d6d7906bafd10b9a9a9688ad942d1c75e19df480376dff9ea
+            '( >= 16 && < 19 )': *ghc-8104-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8104-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-8104-64-fedora
+            unknown_versioning: *ghc-8104-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-8104-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: fb8a91f0cf06594172aff46c2f6f7486179e1c3760855c79fbdd3012598cc2cd
+            unknown_versioning: *ghc-8104-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8104-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.4-x86_64-unknown-linux
+              dlHash: 74c2c07537832708502716ef4ec40019f8e552ddda13c8eadf8f7c4b03a79359
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8104-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8104-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 725ecf6543e63b81a3581fb8c97afd21a08ae11bc0fa4f8ee25d45f0362ef6d5
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: c9776a2ccf9629b03e967206a507fcdcb6c5189800a626e9461ababf6733c357
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8104-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 0022c5b9ac22825bb7b4745af3d92cef0ba1ecd01fab3ef387ddbd47146569ad
+            unknown_versioning: *ghc-8104-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8104-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8104-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8104-32-deb9
     9.0.1:
       viTags:
       - Latest
