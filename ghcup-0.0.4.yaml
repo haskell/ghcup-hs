@@ -28,12 +28,24 @@ toolRequirements:
           - libncurses5
           - libtinfo5
           notes: ''
-        ">= 20.04":
+        "( >= 20.04 && < 20.10 )":
           distroPKGs:
           - build-essential
           - curl
           - libffi-dev
           - libffi7
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+        "( >= 20.10 )":
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi8ubuntu1
           - libgmp-dev
           - libgmp10
           - libncurses-dev
