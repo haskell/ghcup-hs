@@ -1314,12 +1314,17 @@ upgradeGHCup dls mtarget force pfreq = do
   tmp   <- lift withGHCupTmpDir
   let fn = [rel|ghcup|]
   p <- liftE $ download dli tmp (Just fn)
-  let fullDest = fromMaybe (binDir </> fn) mtarget
-  liftIO $ hideError NoSuchThing $ deleteFile fullDest
+  let destDir = dirname destFile
+      destFile = fromMaybe (binDir </> fn) mtarget
+  lift $ $(logDebug) [i|mkdir -p #{toFilePath destDir}|]
+  liftIO $ createDirRecursive' destDir
+  lift $ $(logDebug) [i|rm -f #{toFilePath destFile}|]
+  liftIO $ hideError NoSuchThing $ deleteFile destFile
+  lift $ $(logDebug) [i|cp #{toFilePath p} #{toFilePath destFile}|]
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
-                                                           fullDest
+                                                           destFile
                                                            Overwrite
-  lift $ chmod_755 fullDest
+  lift $ chmod_755 destFile
   pure latestVer
 
 
