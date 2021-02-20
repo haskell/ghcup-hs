@@ -126,7 +126,7 @@ test:linux:bootstrap_script:
     - ./.gitlab/script/ghcup_bootstrap.sh
   variables:
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
   extends:
     - .debian
 
@@ -136,13 +136,13 @@ test:linux:recommended:
   extends: .test_ghcup_version:linux
   variables:
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
 
 test:linux:latest:
   extends: .test_ghcup_version:linux
   variables:
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
   allow_failure: true
 
 ######## linux 32bit test ########
@@ -159,13 +159,13 @@ test:mac:recommended:
   extends: .test_ghcup_version:darwin
   variables:
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
 
 test:mac:latest:
   extends: .test_ghcup_version:darwin
   variables:
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
   allow_failure: true
 
 
@@ -175,13 +175,13 @@ test:freebsd:recommended:
   extends: .test_ghcup_version:freebsd
   variables:
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
 
 test:freebsd:latest:
   extends: .test_ghcup_version:freebsd
   variables:
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
   allow_failure: true
 
 
@@ -196,7 +196,7 @@ release:linux:64bit:
   variables:
     ARTIFACT: "x86_64-linux-ghcup"
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
 
 
 release:linux:32bit:
@@ -223,7 +223,7 @@ release:darwin:
   variables:
     ARTIFACT: "x86_64-apple-darwin-ghcup"
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
     MACOSX_DEPLOYMENT_TARGET: "10.7"
 
 
@@ -239,5 +239,5 @@ release:freebsd:
   variables:
     ARTIFACT: "x86_64-portbld-freebsd-ghcup"
     GHC_VERSION: "8.10.3"
-    CABAL_VERSION: "3.4.0.0-rc4"
+    CABAL_VERSION: "3.4.0.0"
 
