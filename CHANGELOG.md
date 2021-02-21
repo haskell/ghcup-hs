@@ -2,6 +2,8 @@
 
 ## 0.1.13 -- ????-??-??
 
+
+* Alert user if upgraded ghcup is shadowed by old ghcup wrt [#111](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/111)
 * Fix to `ghcup` directory creation and placement for the XDG install mode ([MR #49](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/49))
 * Do 755 permissions on executables, wrt #97
 * Add [NO_COLOR](https://no-color.org/) support wrt [MR #47](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/47)
