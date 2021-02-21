@@ -205,7 +205,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-802-64-deb8
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.0.2-x86_64-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.0.2/ghc-8.0.2-x86_64-alpine-linux.tar.xz
               dlSubdir: ghc-8.0.2
               dlHash: 517783b660a27ebf95b2568d47292fd633d5f9a4de4c80ad1ccf05e1b9d7313f
           Linux_UnknownLinux:
@@ -232,7 +232,7 @@ ghcupDownloads:
               dlHash: 818621342a2161b8afcc995a0765816bb40aefbfa1db2c8a7d59c04d8b18228a
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.0.2-i386-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.0.2/ghc-8.0.2-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.0.2
               dlHash: b4cd12a1048b2fff2f23c9eec0dd3a1174d54d017f8d79ec79af4534118e6881
           Linux_UnknownLinux:
@@ -263,7 +263,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-822-64-deb8
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.2.2-x86_64-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.2.2/ghc-8.2.2-x86_64-alpine-linux.tar.xz
               dlSubdir: ghc-8.2.2
               dlHash: adcf3a320a3c402aba07ae9586990dc3c0b550e96aeffb1b9e194313d3ba716d
           Linux_UnknownLinux:
@@ -299,7 +299,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-822-32-deb8
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.2.2-i386-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.2.2/ghc-8.2.2-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.2.2
               dlHash: 467534c32552cfd318753112dbc70af003693aad4b0081f2a07e61f5b5ea2c22
           Linux_UnknownLinux:
@@ -494,7 +494,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-844-64-centos
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.4.4-x86_64-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.4.4/ghc-8.4.4-x86_64-alpine-linux.tar.xz
               dlSubdir: ghc-8.4.4
               dlHash: 336affff8314d3dc5e85d9c09015ae2ba8a7658b459c8c8ae77ecaa551a56ae7
           Linux_AmazonLinux:
@@ -523,7 +523,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-844-32-deb8
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.4.4-i386-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.4.4/ghc-8.4.4-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.4.4
               dlHash: 892888d388ef5c9cadf5cfba1146d62237c25b9b066fb62fee940b2b285fd308
           Linux_UnknownLinux:
@@ -777,7 +777,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-865-64-centos
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.6.5/ghc-8.6.5-x86_64-alpine-linux.tar.xz
               dlSubdir: ghc-8.6.5
               dlHash: b9d3ed7f7aa24ef2d58bb579252289caa0b8877adee3685e3af2fb73d440afdc
           Linux_AmazonLinux:
@@ -791,7 +791,7 @@ ghcupDownloads:
               dlHash: dfc1bdb1d303a87a8552aa17f5b080e61351f2823c2b99071ec23d0837422169
           FreeBSD:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.6.5-x86_64-portbld-freebsd.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.6.5/ghc-8.6.5-x86_64-portbld-freebsd.tar.xz
               dlSubdir: ghc-8.6.5
               dlHash: 83a3059a630d40a98e26cb5b520354e12094a96e36ba2f5ab002dad94cf2fb37
         A_32:
@@ -806,7 +806,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-865-32-deb9
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.6.5-i386-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.6.5/ghc-8.6.5-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.6.5
               dlHash: 3737837550d9b177acfe150e3a3cd4545427ded020487c2ed5194d7b8f116349
           Linux_UnknownLinux:
@@ -975,7 +975,7 @@ ghcupDownloads:
               dlHash: 7016de90dd226b06fc79d0759c5d4c83c2ab01d8c678905442c28bd948dbb782
           FreeBSD:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.8.3-x86_64-portbld-freebsd.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.8.3/ghc-8.8.3-x86_64-portbld-freebsd.tar.xz
               dlSubdir: ghc-8.8.3
               dlHash: 569719075b4d14b3875a899df522090ae31e6fe085e6dffe518e875b09a2f0be
         A_32:
@@ -1028,7 +1028,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-884-64-centos
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.8.4/ghc-8.8.4-x86_64-alpine-linux.tar.xz
               dlSubdir: ghc-8.8.4
               dlHash: 90c6a1661de7f20c7d169cd6270125035b3332063e45103ce028df0beecf434e
           Linux_AmazonLinux:
@@ -1042,7 +1042,7 @@ ghcupDownloads:
               dlHash: e80a789e9d8cfb41dd87f3284b75432427c4461c1731d220d04ead8733ccdb5e
           FreeBSD:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.8.4-x86_64-portbld-freebsd.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.8.4/ghc-8.8.4-x86_64-portbld-freebsd.tar.xz
               dlSubdir: ghc-8.8.4
               dlHash: 8cebe5ccf454e82acd1ff52ca57590d1ab0f3f44a981b46257ec12158c8c447e
         A_32:
@@ -1057,7 +1057,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-884-32-deb9
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.8.4-i386-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.8.4/ghc-8.8.4-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.8.4
               dlHash: 1d18e89ee031197e55c48683e78a7ffc67601ac5fd9f73aac555eb064b3859a2
           Linux_UnknownLinux:
@@ -1118,7 +1118,7 @@ ghcupDownloads:
               dlHash: 65b1ca361093de4804a7e40b3e68178e1ef720f84f743641ec8d95e56a45b3a8
           FreeBSD:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.1/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz
               dlSubdir: ghc-8.10.1
               dlHash: e8646ec9b60fd40aa9505ee055f22f04601290ab7a1342c2cf37c34de9d3f142
         A_32:
@@ -1134,7 +1134,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-8101-32-deb9
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.10.1-i386-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.1/ghc-8.10.1-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.10.1
               dlHash: 7360cc6b29e9b4ab08f6ea5bc3bcca6f5c216933e81ef1620dcdd700f1fdb289
           Linux_UnknownLinux:
@@ -1213,7 +1213,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-8102-32-deb9
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.10.2-i386-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.2/ghc-8.10.2-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.10.2
               dlHash: 9ee1cf1e85e9536088b3c9e80e975074e525ea378cd4eb156071bbc4b7b38327
     8.10.3:
@@ -1289,7 +1289,7 @@ ghcupDownloads:
             unknown_versioning: *ghc-8103-32-deb9
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://files.hasufell.de/ghc/ghc-8.10.3-i386-alpine-linux.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.3/ghc-8.10.3-i386-alpine-linux.tar.xz
               dlSubdir: ghc-8.10.3
               dlHash: 309201cdefd2d13b8b3fd09c26c6137048c490d219a0a9c7407c3ce1d011f60c
     8.10.4:
