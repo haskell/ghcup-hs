@@ -407,6 +407,32 @@ searchPath paths needle = go paths
       else pure False
 
 
+-- | Check wether a binary is shadowed by another one that comes before
+-- it in PATH. Returns the path to said binary, if any.
+isShadowed :: Path Abs -> IO (Maybe (Path Abs))
+isShadowed p = do
+  let dir = dirname p
+  fn <- basename p
+  spaths <- catMaybes . fmap parseAbs <$> (liftIO getSearchPath)
+  if dir `elem` spaths
+  then do
+    let shadowPaths = takeWhile (/= dir) spaths
+    searchPath shadowPaths fn
+  else pure Nothing
+
+
+-- | Check whether the binary is in PATH. This returns only `True`
+-- if the directory containing the binary is part of PATH.
+isInPath :: Path Abs -> IO Bool
+isInPath p = do
+  let dir = dirname p
+  fn <- basename p
+  spaths <- catMaybes . fmap parseAbs <$> (liftIO getSearchPath)
+  if dir `elem` spaths
+  then isJust <$> searchPath [dir] fn
+  else pure False
+
+
 findFiles :: Path Abs -> Regex -> IO [Path Rel]
 findFiles path regex = do
   dirStream <- openDirStream (toFilePath path)
