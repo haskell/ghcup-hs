@@ -1325,6 +1325,13 @@ upgradeGHCup dls mtarget force pfreq = do
                                                            destFile
                                                            Overwrite
   lift $ chmod_755 destFile
+
+  liftIO (isInPath destFile) >>= \b -> when (not b) $
+    lift $ $(logWarn) [i|"#{toFilePath (dirname destFile)}" is not in PATH! You have to add it in order to use ghcup.|]
+  liftIO (isShadowed destFile) >>= \case
+    Nothing -> pure ()
+    Just pa -> lift $ $(logWarn) [i|ghcup is shadowed by "#{toFilePath pa}". The upgrade will not be in effect, unless you remove "#{toFilePath pa}" or make sure "#{toFilePath destDir}" comes before "#{toFilePath (dirname pa)}" in PATH.|]
+
   pure latestVer
 
 
