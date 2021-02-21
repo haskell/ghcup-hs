@@ -1364,6 +1364,11 @@ ghcupDownloads:
             unknown_versioning: *ghc-8104-32-deb9
           Linux_UnknownLinux:
             unknown_versioning: *ghc-8104-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.4/ghc-8.10.4-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 9161a98bed763692101854d83af69c1316030cfe5ee6f6acde283d04ef139735
     9.0.1:
       viTags:
       - Latest
@@ -1436,6 +1441,11 @@ ghcupDownloads:
             unknown_versioning: *ghc-901-32-deb9
           Linux_UnknownLinux:
             unknown_versioning: *ghc-901-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.0.1/ghc-9.0.1-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: ebfeb3b91e6f2bb5a49fd3376746f7fd1b89e62e9838bf5b1530a8756ff1e6aa
   Cabal:
     2.4.1.0:
       viTags:
@@ -1561,6 +1571,10 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.0.0/cabal-install-3.4.0.0-i386-debian-9.tar.xz
               dlHash: ef3750644a53f7b1fad141b2ad02d4c7a3b239ec0cbfa7f0528fb02c1dfcebce
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-i386-alpine-linux-musl.tar.gz
+              dlHash: 95adb65f3a72aa8d9ce83685bc06e1eee5b801f56e204e27e957e8a35abd9cf8
   GHCup:
     0.1.12:
       viTags:
