@@ -67,7 +67,7 @@ validate dls = do
     forM_ (M.toList dls) $ \(t, versions) ->
       forM_ (M.toList versions) $ \(v, vi) ->
         forM_ (M.toList $ _viArch vi) $ \(arch, pspecs) -> do
-          checkHasRequiredPlatforms t v arch (M.keys pspecs)
+          checkHasRequiredPlatforms t v (_viTags vi) arch (M.keys pspecs)
 
     checkGHCVerIsValid
     forM_ (M.toList dls) $ \(t, _) -> checkMandatoryTags t
@@ -81,17 +81,18 @@ validate dls = do
         lift $ $(logInfo) [i|All good|]
         pure ExitSuccess
  where
-  checkHasRequiredPlatforms t v arch pspecs = do
+  checkHasRequiredPlatforms t v tags arch pspecs = do
     let v' = prettyVer v
+        arch' = prettyArch arch
     when (not $ any (== Linux UnknownLinux) pspecs) $ do
       lift $ $(logError)
-        [i|Linux UnknownLinux missing for for #{t} #{v'} #{arch}|]
+        [i|Linux UnknownLinux missing for for #{t} #{v'} #{arch'}|]
       addError
     when ((not $ any (== Darwin) pspecs) && arch == A_64) $ do
-      lift $ $(logError) [i|Darwin missing for #{t} #{v'} #{arch}|]
+      lift $ $(logError) [i|Darwin missing for #{t} #{v'} #{arch'}|]
       addError
     when ((not $ any (== FreeBSD) pspecs) && arch == A_64) $ lift $ $(logWarn)
-      [i|FreeBSD missing for #{t} #{v'} #{arch}|]
+      [i|FreeBSD missing for #{t} #{v'} #{arch'}|]
 
     -- alpine needs to be set explicitly, because
     -- we cannot assume that "Linux UnknownLinux" runs on Alpine
@@ -99,8 +100,9 @@ validate dls = do
     when (not $ any (== Linux Alpine) pspecs) $
       case t of
         GHCup -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]) >> addError
-        Cabal | v > [vver|2.4.1.0|] -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]) >> addError
-        _     -> lift $ $(logWarn) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]
+        Cabal | v > [vver|2.4.1.0|] -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]) >> addError
+        GHC | Latest `elem` tags || Recommended `elem` tags -> lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]
+        _ -> lift $ $(logWarn) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]
 
   checkUniqueTags tool = do
     let allTags = join $ M.elems $ availableToolVersions dls tool
