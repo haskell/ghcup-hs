@@ -497,11 +497,11 @@ getGHCForMajor major' minor' mt = do
 getLatestGHCFor :: Int -- ^ major version component
                 -> Int -- ^ minor version component
                 -> GHCupDownloads
-                -> Maybe Version
+                -> Maybe (Version, VersionInfo)
 getLatestGHCFor major' minor' dls = do
   join
-    . fmap (lastMay . filter (\v -> matchMajor v major' minor'))
-    . preview (ix GHC % to Map.keys)
+    . fmap (lastMay . filter (\(v, _) -> matchMajor v major' minor'))
+    . preview (ix GHC % to Map.toDescList)
     $ dls
 
 
@@ -596,17 +596,17 @@ getTagged tag =
   % _head
   )
 
-getLatest :: GHCupDownloads -> Tool -> Maybe Version
-getLatest av tool = headOf (ix tool % getTagged Latest % to fst) $ av
+getLatest :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
+getLatest av tool = headOf (ix tool % getTagged Latest) $ av
 
-getRecommended :: GHCupDownloads -> Tool -> Maybe Version
-getRecommended av tool = headOf (ix tool % getTagged Recommended % to fst) $ av
+getRecommended :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
+getRecommended av tool = headOf (ix tool % getTagged Recommended) $ av
 
 
 -- | Gets the latest GHC with a given base version.
-getLatestBaseVersion :: GHCupDownloads -> PVP -> Maybe Version
+getLatestBaseVersion :: GHCupDownloads -> PVP -> Maybe (Version, VersionInfo)
 getLatestBaseVersion av pvpVer =
-  headOf (ix GHC % getTagged (Base pvpVer) % to fst) av
+  headOf (ix GHC % getTagged (Base pvpVer)) av
 
 
 
@@ -795,3 +795,16 @@ createDirRecursive' p =
           _ -> throwIO e
       _ -> throwIO e
 
+
+getVersionInfo :: Version
+               -> Tool
+               -> GHCupDownloads
+               -> Maybe VersionInfo
+getVersionInfo v' tool dls =
+  headOf
+    ( ix tool
+    % to (Map.filterWithKey (\k _ -> k == v'))
+    % to Map.elems
+    % _head
+    )
+    dls

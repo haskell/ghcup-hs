@@ -1308,7 +1308,7 @@ upgradeGHCup :: ( MonadMask m
 upgradeGHCup dls mtarget force pfreq = do
   AppState {dirs = Dirs {..}} <- lift ask
   lift $ $(logInfo) [i|Upgrading GHCup...|]
-  let latestVer = fromJust $ getLatest dls GHCup
+  let latestVer = fromJust $ fst <$> getLatest dls GHCup
   when (not force && (latestVer <= pvpToVersion ghcUpVer)) $ throwE NoUpdate
   dli   <- lE $ getDownloadInfo GHCup latestVer pfreq dls
   tmp   <- lift withGHCupTmpDir
