@@ -153,7 +153,10 @@ ui dimAttrs BrickState { appSettings = as@(BrickSettings {}), ..}
           Nothing -> T.unpack . prettyVer $ lVer
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
         dim
-          | lNoBindist = updateAttrMap (const dimAttrs) . withAttr "no-bindist"
+          | lNoBindist && (not lInstalled)
+            && (not b) -- TODO: overloading dim and active ignores active
+                       --       so we hack around it here
+          = updateAttrMap (const dimAttrs) . withAttr "no-bindist"
           | otherwise  = id
         hooray
           | elem Latest lTag && not lInstalled =
@@ -278,7 +281,7 @@ defaultAttributes no_color = attrMap
 dimAttributes :: Bool -> AttrMap
 dimAttributes no_color = attrMap
   (Vty.defAttr `Vty.withStyle` Vty.dim)
-  [ ("active"    , Vty.defAttr `withBackColor` Vty.blue)
+  [ ("active"    , Vty.defAttr `withBackColor` Vty.blue) -- has no effect ??
   , ("no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
   ]
   where
