@@ -2,7 +2,8 @@
 
 ## 0.1.13 -- ????-??-??
 
-
+* Fix item selection with unavailable versions wrt [#107](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/107)
+* Allow for dynamic post-install, post-remove and pre-compile msgs wrt [MR #68](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/68)
 * Alert user if upgraded ghcup is shadowed by old ghcup wrt [#111](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/111)
 * Fix to `ghcup` directory creation and placement for the XDG install mode ([MR #49](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/49))
 * Do 755 permissions on executables, wrt #97
