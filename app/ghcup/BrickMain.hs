@@ -16,6 +16,7 @@ import           GHCup.Types
 import           GHCup.Utils
 import           GHCup.Utils.File
 import           GHCup.Utils.Logger
+import           GHCup.Utils.Prelude     hiding ((!?))
 
 import           Brick
 import           Brick.Widgets.Border
@@ -414,17 +415,32 @@ install' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
               , DownloadFailed
               , NoUpdate
               , TarDirDoesNotExist
+              , VerNotFound
               ]
 
   (run $ do
       case lTool of
-        GHC   -> liftE $ installGHCBin dls lVer pfreq
-        Cabal -> liftE $ installCabalBin dls lVer pfreq
-        GHCup -> liftE $ upgradeGHCup dls Nothing False pfreq $> ()
-        HLS   -> liftE $ installHLSBin dls lVer pfreq $> ()
+        GHC   -> do
+          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer GHC dls
+            ?? VerNotFound lVer GHC
+          liftE $ installGHCBin dls lVer pfreq $> vi
+        Cabal -> do
+          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer Cabal dls
+            ?? VerNotFound lVer Cabal
+          liftE $ installCabalBin dls lVer pfreq $> vi
+        GHCup -> do
+          let vi = fromJust $ snd <$> getLatest dls GHCup
+          liftE $ upgradeGHCup dls Nothing False pfreq $> vi
+        HLS   -> do
+          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer HLS dls
+            ?? VerNotFound lVer HLS
+          liftE $ installHLSBin dls lVer pfreq $> vi
     )
     >>= \case
-          VRight _                          -> pure $ Right ()
+          VRight vi                         -> do
+            forM_ (_viPostInstall vi) $ \msg ->
+              runLogger $ $(logInfo) msg
+            pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
           VLeft (V (BuildFailed _ e)) ->
             pure $ Left [i|Build failed with #{e}|]
@@ -459,21 +475,34 @@ set' _ (_, ListResult {..}) = do
 
 
 del' :: BrickState -> (Int, ListResult) -> IO (Either String ())
-del' _ (_, ListResult {..}) = do
+del' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
   settings <- readIORef settings'
   l        <- readIORef logger'
   let runLogger = myLoggerT l
 
-  let run = runLogger . flip runReaderT settings . runE @'[NotInstalled]
+  let run = runLogger . flip runReaderT settings . runE @'[NotInstalled, VerNotFound]
 
   (run $ do
       case lTool of
-        GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> ()
-        Cabal -> liftE $ rmCabalVer lVer $> ()
-        HLS   -> liftE $ rmHLSVer lVer $> ()
-        GHCup -> pure ()
+        GHC   -> do
+          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer Cabal dls
+            ?? VerNotFound lVer Cabal
+          liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> Just vi
+        Cabal -> do
+          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer Cabal dls
+            ?? VerNotFound lVer Cabal
+          liftE $ rmCabalVer lVer $> Just vi
+        HLS   -> do
+          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer Cabal dls
+            ?? VerNotFound lVer Cabal
+          liftE $ rmHLSVer lVer $> Just vi
+        GHCup -> pure Nothing
     )
     >>= \case
+          VRight (Just vi) -> do
+            forM_ (_viPostRemove vi) $ \msg ->
+              runLogger $ $(logInfo) msg
+            pure $ Right ()
           VRight _ -> pure $ Right ()
           VLeft  e -> pure $ Left [i|#{e}|]
 

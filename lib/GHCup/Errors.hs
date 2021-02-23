@@ -67,6 +67,10 @@ data CopyError = CopyError String
 data TagNotFound = TagNotFound Tag Tool
   deriving Show
 
+-- | Unable to find a version of a tool.
+data VerNotFound = VerNotFound Version Tool
+  deriving Show
+
 -- | The tool (such as GHC) is already installed with that version.
 data AlreadyInstalled = AlreadyInstalled Tool Version
   deriving Show
