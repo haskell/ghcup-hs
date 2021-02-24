@@ -100,8 +100,10 @@ validate dls = do
     when (not $ any (== Linux Alpine) pspecs) $
       case t of
         GHCup -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]) >> addError
-        Cabal | v > [vver|2.4.1.0|] -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]) >> addError
-        GHC | Latest `elem` tags || Recommended `elem` tags -> lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]
+        Cabal | v > [vver|2.4.1.0|]
+              , arch `elem` [A_64, A_32] -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]) >> addError
+        GHC | Latest `elem` tags || Recommended `elem` tags
+            , arch `elem` [A_64, A_32] -> lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]
         _ -> lift $ $(logWarn) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]
 
   checkUniqueTags tool = do

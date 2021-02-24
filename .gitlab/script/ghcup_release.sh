@@ -16,10 +16,12 @@ git describe
 ecabal update
 
 if [ "${OS}" = "LINUX" ] ; then
-	if [ "${BIT}" = "32" ] ; then
+	if [ "${ARCH}" = "32" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections -optl-static' -ftui -ftar
-	else
+	elif [ "${ARCH}" = "64" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections -optl-static' -ftui
+	else
+		ecabal build -w ghc-${GHC_VERSION} -ftui
 	fi
 elif [ "${OS}" = "FREEBSD" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections' --constraint="zlib +static" -ftui
