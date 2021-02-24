@@ -10,6 +10,9 @@ apk add --no-cache \
 	curl \
 	gcc \
 	g++ \
+	binutils \
+	binutils-gold \
+	bsd-compat-headers \
 	gmp-dev \
 	ncurses-dev \
 	libffi-dev \
@@ -18,7 +21,7 @@ apk add --no-cache \
 	tar \
 	perl
 
-if [ "${BIT}" = "32" ] ; then
+if [ "${ARCH}" = "32" ] ; then
 	curl -sSfL https://downloads.haskell.org/ghcup/i386-linux-ghcup > ./ghcup-bin
 else
 	curl -sSfL https://downloads.haskell.org/ghcup/x86_64-linux-ghcup > ./ghcup-bin
