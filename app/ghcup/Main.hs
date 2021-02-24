@@ -495,7 +495,7 @@ installOpts tool =
                     )
                   )
                 )
-            <*> (Just <$> toolVersionArgument Nothing tool)
+            <*> (Just <$> toolVersionArgument True Nothing tool)
             )
         <|> (pure (Nothing, Nothing))
         )
@@ -560,7 +560,7 @@ setParser =
 
 
 setOpts :: Maybe Tool -> Parser SetOptions
-setOpts tool = SetOptions <$> optional (toolVersionArgument (Just ListInstalled) tool)
+setOpts tool = SetOptions <$> optional (toolVersionArgument False (Just ListInstalled) tool)
 
 listOpts :: Parser ListOptions
 listOpts =
@@ -614,7 +614,7 @@ rmParser =
 
 
 rmOpts :: Maybe Tool -> Parser RmOptions
-rmOpts tool = RmOptions <$> versionArgument (Just ListInstalled) tool
+rmOpts tool = RmOptions <$> versionArgument False (Just ListInstalled) tool
 
 
 changelogP :: Parser ChangeLogOptions
@@ -636,7 +636,7 @@ changelogP =
             )
           )
         )
-    <*> optional (toolVersionArgument Nothing Nothing)
+    <*> optional (toolVersionArgument True Nothing Nothing)
 
 compileP :: Parser CompileCommand
 compileP = subparser
@@ -765,13 +765,13 @@ toolVersionParser = verP' <|> toolP
           )
 
 -- | same as toolVersionParser, except as an argument.
-toolVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
-toolVersionArgument criterial tool =
-  argument (eitherReader toolVersionEither) (metavar "VERSION|TAG" <> completer tagCompleter <> foldMap (completer . versionCompleter criterial) tool)
+toolVersionArgument :: Bool -> Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
+toolVersionArgument networkSensitive criteria tool =
+  argument (eitherReader toolVersionEither) (metavar "VERSION|TAG" <> completer tagCompleter <> foldMap (completer . versionCompleter networkSensitive criteria) tool)
 
 
-versionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
-versionArgument criterial tool = argument (eitherReader tVersionEither) (metavar "VERSION" <> foldMap (completer . versionCompleter criterial) tool)
+versionArgument :: Bool -> Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
+versionArgument networkSensitive criteria tool = argument (eitherReader tVersionEither) (metavar "VERSION" <> foldMap (completer . versionCompleter networkSensitive criteria) tool)
 
 
 tagCompleter :: Completer
@@ -781,8 +781,8 @@ tagCompleter =
   ]
 
 
-versionCompleter :: Maybe ListCriteria -> Tool -> Completer
-versionCompleter criteria tool =
+versionCompleter :: Bool -> Maybe ListCriteria -> Tool -> Completer
+versionCompleter networkSensitive criteria tool =
   listIOCompleter $ do
     let
       loggerConfig =
@@ -811,8 +811,12 @@ versionCompleter criteria tool =
 
       mGhcUpInfo <-
         runEnv . runE $
-          getDownloadsF $
-            urlSource simpleSettings
+          if networkSensitive then
+            getDownloadsF GHCupURL
+          else
+            catchE
+              (\(FileDoesNotExistError _) -> getDownloadsF GHCupURL)
+              readFromCache
 
       forFold mGhcUpInfo $ \(GHCupInfo _ dls) -> do
         installedVersions <-
@@ -831,7 +835,7 @@ versionParser = option
 
 versionParser' :: Parser Version
 versionParser' = argument
-  (eitherReader (bimap show id . version . T.pack))
+  (eitherReader (first show . version . T.pack))
   (metavar "VERSION")
 
 
@@ -842,7 +846,7 @@ tagEither s' = case fmap toLower s' of
   ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
                                   Right x -> Right (Base x)
                                   Left  _ -> Left [i|Invalid PVP version for base #{ver'}|]
-  other         -> Left ([i|Unknown tag #{other}|])
+  other         -> Left [i|Unknown tag #{other}|]
 
 
 tVersionEither :: String -> Either String GHCTargetVersion
