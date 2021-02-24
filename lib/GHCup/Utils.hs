@@ -808,3 +808,12 @@ getVersionInfo v' tool dls =
     % _head
     )
     dls
+
+
+-- Gathering monoidal values
+traverseFold :: (Foldable t, Applicative m, Monoid b) => (a -> m b) -> t a -> m b
+traverseFold f = foldl (\mb a -> (<>) <$> mb <*> f a) (pure mempty)
+
+-- | Gathering monoidal values
+forFold :: (Foldable t, Applicative m, Monoid b) => t a -> (a -> m b) -> m b
+forFold = flip traverseFold
