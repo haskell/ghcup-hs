@@ -486,19 +486,12 @@ del' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
   let run = runLogger . flip runReaderT settings . runE @'[NotInstalled, VerNotFound]
 
   (run $ do
+      vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer lTool dls
+        ?? VerNotFound lVer lTool
       case lTool of
-        GHC   -> do
-          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer Cabal dls
-            ?? VerNotFound lVer Cabal
-          liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> Just vi
-        Cabal -> do
-          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer Cabal dls
-            ?? VerNotFound lVer Cabal
-          liftE $ rmCabalVer lVer $> Just vi
-        HLS   -> do
-          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer Cabal dls
-            ?? VerNotFound lVer Cabal
-          liftE $ rmHLSVer lVer $> Just vi
+        GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> Just vi
+        Cabal -> liftE $ rmCabalVer lVer $> Just vi
+        HLS   -> liftE $ rmHLSVer lVer $> Just vi
         GHCup -> pure Nothing
     )
     >>= \case
