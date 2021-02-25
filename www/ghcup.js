@@ -149,7 +149,17 @@ function fill_in_bug_report_values() {
 }
 
 function copyToClipboard() {
-  const text = document.getElementsByClassName("ghcup-command").item(0).innerText;
+  const text = document.getElementById("ghcup-command-normal").innerText;
+  const el = document.createElement('textarea');
+  el.value = text;
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand('copy');
+  document.body.removeChild(el);
+}
+
+function copyToClipboardSilicon() {
+  const text = document.getElementById("ghcup-command-silicon").innerText;
   const el = document.createElement('textarea');
   el.value = text;
   document.body.appendChild(el);
