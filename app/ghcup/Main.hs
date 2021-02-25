@@ -782,43 +782,28 @@ tagCompleter =
 
 
 versionCompleter :: Maybe ListCriteria -> Tool -> Completer
-versionCompleter criteria tool =
-  listIOCompleter $ do
-    let
-      loggerConfig =
-        LoggerConfig
-          { lcPrintDebug = False
-          , colorOutter  = mempty
-          , rawOutter    = mempty
-          }
+versionCompleter criteria tool = listIOCompleter $ do
+  let loggerConfig = LoggerConfig
+        { lcPrintDebug = False
+        , colorOutter  = mempty
+        , rawOutter    = mempty
+        }
 
-      runLogger =
-        myLoggerT loggerConfig
+      runLogger = myLoggerT loggerConfig
 
-    mpFreq <-
-      runLogger . runE $
-        platformRequest
+  mpFreq <- runLogger . runE $ platformRequest
 
-    forFold mpFreq $ \pfreq -> do
-      dirs <- getDirs
-      let
-        simpleSettings =
-          Settings False False Never Curl False GHCupURL
-        simpleAppState =
-          AppState simpleSettings dirs defaultKeyBindings
-        runEnv =
-          runLogger . flip runReaderT simpleAppState
+  forFold mpFreq $ \pfreq -> do
+    dirs <- getDirs
+    let simpleSettings = Settings False False Never Curl False GHCupURL
+        simpleAppState = AppState simpleSettings dirs defaultKeyBindings
+        runEnv = runLogger . flip runReaderT simpleAppState
 
-      mGhcUpInfo <-
-        runEnv . runE $ readFromCache
+    mGhcUpInfo <- runEnv . runE $ readFromCache
 
-      forFold mGhcUpInfo $ \(GHCupInfo _ dls) -> do
-        installedVersions <-
-          runEnv $
-            listVersions dls (Just tool) criteria pfreq
-
-        return $
-          T.unpack . prettyVer . lVer <$> installedVersions
+    forFold mGhcUpInfo $ \(GHCupInfo _ dls) -> do
+      installedVersions <- runEnv $ listVersions dls (Just tool) criteria pfreq
+      return $ T.unpack . prettyVer . lVer <$> installedVersions
 
 
 versionParser :: Parser GHCTargetVersion
