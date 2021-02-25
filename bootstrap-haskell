@@ -69,7 +69,7 @@ _done() {
 download_ghcup() {
 	_plat="$(uname -s)"
 	_arch=$(uname -m)
-	_ghver="0.1.13"
+	_ghver="0.1.12"
 	_base_url="https://downloads.haskell.org/~ghcup"
 
     case "${_plat}" in
