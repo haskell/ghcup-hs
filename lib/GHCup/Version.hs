@@ -12,13 +12,15 @@ Portability : POSIX
 -}
 module GHCup.Version where
 
-import           GHCup.Utils.Version.QQ
 import           GHCup.Types
+import           Paths_ghcup (version)
 
-import           Data.Versions
+import           Data.Version (Version(versionBranch))
+import           Data.Versions hiding (version)
 import           URI.ByteString
 import           URI.ByteString.QQ
 
+import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
 
 -- | This reflects the API version of the YAML.
@@ -27,7 +29,7 @@ ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.4.yaml|]
 
 -- | The current ghcup version.
 ghcUpVer :: PVP
-ghcUpVer = [pver|0.1.12|]
+ghcUpVer = PVP . NE.fromList . fmap fromIntegral $ versionBranch version
 
 -- | ghcup version as numeric string.
 numericVer :: String
