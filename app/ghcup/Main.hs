@@ -44,7 +44,7 @@ import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
 import           Data.Functor
-import           Data.List                      ( intercalate, sort )
+import           Data.List                      ( intercalate, nub, sort )
 import           Data.List.NonEmpty             (NonEmpty ((:|)))
 import           Data.Maybe
 import           Data.String.Interpolate
@@ -70,6 +70,7 @@ import           URI.ByteString
 
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.UTF8          as UTF8
+import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
@@ -767,18 +768,41 @@ toolVersionParser = verP' <|> toolP
 -- | same as toolVersionParser, except as an argument.
 toolVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
 toolVersionArgument criteria tool =
-  argument (eitherReader toolVersionEither) (metavar "VERSION|TAG" <> completer tagCompleter <> foldMap (completer . versionCompleter criteria) tool)
+  argument (eitherReader toolVersionEither)
+    (metavar "VERSION|TAG"
+    <> completer (tagCompleter (fromMaybe GHC tool))
+    <> foldMap (completer . versionCompleter criteria) tool)
 
 
 versionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
 versionArgument criteria tool = argument (eitherReader tVersionEither) (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
 
 
-tagCompleter :: Completer
-tagCompleter =
-  listCompleter [
-    "recommended", "latest"
-  ]
+tagCompleter :: Tool -> Completer
+tagCompleter tool = listIOCompleter $ do
+  let loggerConfig = LoggerConfig
+        { lcPrintDebug = False
+        , colorOutter  = mempty
+        , rawOutter    = mempty
+        }
+
+      runLogger = myLoggerT loggerConfig
+
+  dirs <- getDirs
+  let simpleSettings = Settings False False Never Curl False GHCupURL
+      simpleAppState = AppState simpleSettings dirs defaultKeyBindings
+      runEnv = runLogger . flip runReaderT simpleAppState
+
+  mGhcUpInfo <- runEnv . runE $ readFromCache
+
+  case mGhcUpInfo of
+    VRight dls -> do
+      let allTags = filter (\t -> t /= Old)
+            $ join
+            $ M.elems
+            $ availableToolVersions (_ghcupDownloads dls) tool
+      pure $ nub $ fmap prettyTag allTags
+    VLeft _ -> pure  ["recommended", "latest"]
 
 
 versionCompleter :: Maybe ListCriteria -> Tool -> Completer

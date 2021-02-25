@@ -106,6 +106,13 @@ data Tag = Latest
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, GHC.Generic, Show) -- FIXME: manual JSON instance
 
+prettyTag :: Tag -> String
+prettyTag Recommended        = "recommended"
+prettyTag Latest             = "latest"
+prettyTag Prerelease         = "prerelease"
+prettyTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
+prettyTag (UnknownTag t    ) = t
+prettyTag Old                = ""
 
 data Architecture = A_64
                   | A_32
