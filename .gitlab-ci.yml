@@ -1,3 +1,7 @@
+stages:
+  - test
+  - release
+
 variables:
   GIT_SSL_NO_VERIFY: "1"
 
@@ -142,6 +146,7 @@ variables:
 ######## stack test ########
 
 test:linux:stack:
+  stage: test
   before_script:
     - ./.gitlab/before_script/linux/install_deps_minimal.sh
   script:
@@ -152,6 +157,7 @@ test:linux:stack:
 ######## bootstrap test ########
 
 test:linux:bootstrap_script:
+  stage: test
   before_script:
     - ./.gitlab/before_script/linux/install_deps_minimal.sh
   script:
@@ -165,21 +171,23 @@ test:linux:bootstrap_script:
 ######## linux test ########
 
 test:linux:recommended:
+  stage: test
   extends: .test_ghcup_version:linux
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
 
 test:linux:latest:
+  stage: test
   extends: .test_ghcup_version:linux
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
-  allow_failure: true
 
 ######## linux 32bit test ########
 
 test:linux:recommended:32bit:
+  stage: test
   extends: .test_ghcup_version:linux32
   variables:
     GHC_VERSION: "8.10.4"
@@ -193,7 +201,6 @@ test:linux:recommended:armv7:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
   when: manual
-  allow_failure: true
 
 test:linux:recommended:aarch64:
   extends: .test_ghcup_version:aarch64
@@ -201,43 +208,46 @@ test:linux:recommended:aarch64:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
   when: manual
-  allow_failure: true
 
 ######## darwin test ########
 
 test:mac:recommended:
+  stage: test
   extends: .test_ghcup_version:darwin
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
 
 test:mac:latest:
+  stage: test
   extends: .test_ghcup_version:darwin
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
-  allow_failure: true
 
 
 ######## freebsd test ########
 
 test:freebsd:recommended:
+  stage: test
   extends: .test_ghcup_version:freebsd
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
 
 test:freebsd:latest:
+  stage: test
   extends: .test_ghcup_version:freebsd
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
-  allow_failure: true
 
 
 ######## linux release ########
 
 release:linux:64bit:
+  stage: release
+  needs: ["test:linux:recommended", "test:linux:latest"]
   extends:
     - .alpine:64bit
     - .release_ghcup
@@ -250,6 +260,8 @@ release:linux:64bit:
 
 
 release:linux:32bit:
+  stage: release
+  needs: ["test:linux:recommended:32bit"]
   extends:
     - .alpine:32bit
     - .release_ghcup
@@ -261,6 +273,8 @@ release:linux:32bit:
     CABAL_VERSION: "3.2.0.0"
 
 release:linux:armv7:
+  stage: release
+  needs: ["test:linux:recommended:armv7"]
   extends:
     - .linux:armv7
     - .release_ghcup
@@ -272,6 +286,8 @@ release:linux:armv7:
     CABAL_VERSION: "3.4.0.0"
 
 release:linux:aarch64:
+  stage: release
+  needs: ["test:linux:recommended:aarch64"]
   extends:
     - .linux:aarch64
     - .release_ghcup
@@ -285,6 +301,8 @@ release:linux:aarch64:
 ######## darwin release ########
 
 release:darwin:
+  stage: release
+  needs: ["test:mac:recommended", "test:mac:latest"]
   extends:
     - .darwin
     - .release_ghcup
@@ -301,6 +319,8 @@ release:darwin:
 ######## freebsd release ########
 
 release:freebsd:
+  stage: release
+  needs: ["test:freebsd:recommended", "test:freebsd:latest"]
   extends:
     - .freebsd
     - .release_ghcup
