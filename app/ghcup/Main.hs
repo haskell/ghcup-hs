@@ -495,7 +495,7 @@ installOpts tool =
                     )
                   )
                 )
-            <*> (Just <$> toolVersionArgument True Nothing tool)
+            <*> (Just <$> toolVersionArgument Nothing tool)
             )
         <|> (pure (Nothing, Nothing))
         )
@@ -560,7 +560,7 @@ setParser =
 
 
 setOpts :: Maybe Tool -> Parser SetOptions
-setOpts tool = SetOptions <$> optional (toolVersionArgument False (Just ListInstalled) tool)
+setOpts tool = SetOptions <$> optional (toolVersionArgument (Just ListInstalled) tool)
 
 listOpts :: Parser ListOptions
 listOpts =
@@ -596,14 +596,14 @@ rmParser =
       <> command
            "cabal"
            (   RmCabal
-           <$> (info (versionParser' False (Just ListInstalled) (Just Cabal) <**> helper)
+           <$> (info (versionParser' (Just ListInstalled) (Just Cabal) <**> helper)
                      (progDesc "Remove Cabal version")
                )
            )
       <> command
            "hls"
            (   RmHLS
-           <$> (info (versionParser' False (Just ListInstalled) (Just HLS) <**> helper)
+           <$> (info (versionParser' (Just ListInstalled) (Just HLS) <**> helper)
                      (progDesc "Remove haskell-language-server version")
                )
            )
@@ -614,7 +614,7 @@ rmParser =
 
 
 rmOpts :: Maybe Tool -> Parser RmOptions
-rmOpts tool = RmOptions <$> versionArgument False (Just ListInstalled) tool
+rmOpts tool = RmOptions <$> versionArgument (Just ListInstalled) tool
 
 
 changelogP :: Parser ChangeLogOptions
@@ -636,7 +636,7 @@ changelogP =
             )
           )
         )
-    <*> optional (toolVersionArgument True Nothing Nothing)
+    <*> optional (toolVersionArgument Nothing Nothing)
 
 compileP :: Parser CompileCommand
 compileP = subparser
@@ -765,13 +765,13 @@ toolVersionParser = verP' <|> toolP
           )
 
 -- | same as toolVersionParser, except as an argument.
-toolVersionArgument :: Bool -> Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
-toolVersionArgument networkSensitive criteria tool =
-  argument (eitherReader toolVersionEither) (metavar "VERSION|TAG" <> completer tagCompleter <> foldMap (completer . versionCompleter networkSensitive criteria) tool)
+toolVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
+toolVersionArgument criteria tool =
+  argument (eitherReader toolVersionEither) (metavar "VERSION|TAG" <> completer tagCompleter <> foldMap (completer . versionCompleter criteria) tool)
 
 
-versionArgument :: Bool -> Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
-versionArgument networkSensitive criteria tool = argument (eitherReader tVersionEither) (metavar "VERSION" <> foldMap (completer . versionCompleter networkSensitive criteria) tool)
+versionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
+versionArgument criteria tool = argument (eitherReader tVersionEither) (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
 
 
 tagCompleter :: Completer
@@ -781,8 +781,8 @@ tagCompleter =
   ]
 
 
-versionCompleter :: Bool -> Maybe ListCriteria -> Tool -> Completer
-versionCompleter networkSensitive criteria tool =
+versionCompleter :: Maybe ListCriteria -> Tool -> Completer
+versionCompleter criteria tool =
   listIOCompleter $ do
     let
       loggerConfig =
@@ -794,11 +794,6 @@ versionCompleter networkSensitive criteria tool =
 
       runLogger =
         myLoggerT loggerConfig
-
-      downloadWithUserSource = do
-        userConf <- runE @'[ JSONError ] ghcupConfigFile
-        getDownloadsF $
-          veitherCont (const GHCupURL) (fromMaybe GHCupURL . uUrlSource) userConf
 
     mpFreq <-
       runLogger . runE $
@@ -815,13 +810,7 @@ versionCompleter networkSensitive criteria tool =
           runLogger . flip runReaderT simpleAppState
 
       mGhcUpInfo <-
-        runEnv . runE $
-          if networkSensitive then do
-            downloadWithUserSource
-          else
-            catchE
-              (\(FileDoesNotExistError _) -> downloadWithUserSource)
-              readFromCache
+        runEnv . runE $ readFromCache
 
       forFold mGhcUpInfo $ \(GHCupInfo _ dls) -> do
         installedVersions <-
@@ -838,10 +827,10 @@ versionParser = option
   (short 'v' <> long "version" <> metavar "VERSION" <> help "The target version"
   )
 
-versionParser' :: Bool -> Maybe ListCriteria -> Maybe Tool -> Parser Version
-versionParser' networkSensitive criteria tool = argument
+versionParser' :: Maybe ListCriteria -> Maybe Tool -> Parser Version
+versionParser' criteria tool = argument
   (eitherReader (first show . version . T.pack))
-  (metavar "VERSION"  <> foldMap (completer . versionCompleter networkSensitive criteria) tool)
+  (metavar "VERSION"  <> foldMap (completer . versionCompleter criteria) tool)
 
 
 tagEither :: String -> Either String Tag
