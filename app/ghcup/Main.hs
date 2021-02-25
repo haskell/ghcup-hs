@@ -44,7 +44,7 @@ import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
 import           Data.Functor
-import           Data.List                      ( intercalate, nub, sort )
+import           Data.List                      ( intercalate, nub, sort, sortBy )
 import           Data.List.NonEmpty             (NonEmpty ((:|)))
 import           Data.Maybe
 import           Data.String.Interpolate
@@ -116,6 +116,11 @@ prettyToolVer :: ToolVersion -> String
 prettyToolVer (ToolVersion v') = T.unpack $ prettyTVer v'
 prettyToolVer (ToolTag t) = show t
 
+toSetToolVer :: Maybe ToolVersion -> SetToolVersion
+toSetToolVer (Just (ToolVersion v')) = SetToolVersion v'
+toSetToolVer (Just (ToolTag t')) = SetToolTag t'
+toSetToolVer Nothing = SetRecommended
+
 
 data InstallCommand = InstallGHC InstallOptions
                     | InstallCabal InstallOptions
@@ -132,8 +137,14 @@ data SetCommand = SetGHC SetOptions
                 | SetCabal SetOptions
                 | SetHLS SetOptions
 
+-- a superset of ToolVersion
+data SetToolVersion = SetToolVersion GHCTargetVersion
+                    | SetToolTag Tag
+                    | SetRecommended
+                    | SetNext
+
 data SetOptions = SetOptions
-  { sToolVer :: Maybe ToolVersion
+  { sToolVer :: SetToolVersion
   }
 
 data ListOptions = ListOptions
@@ -561,7 +572,9 @@ setParser =
 
 
 setOpts :: Maybe Tool -> Parser SetOptions
-setOpts tool = SetOptions <$> optional (toolVersionArgument (Just ListInstalled) tool)
+setOpts tool = SetOptions <$>
+    (fromMaybe SetRecommended <$>
+      optional (setVersionArgument (Just ListInstalled) tool))
 
 listOpts :: Parser ListOptions
 listOpts =
@@ -770,16 +783,32 @@ toolVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
 toolVersionArgument criteria tool =
   argument (eitherReader toolVersionEither)
     (metavar "VERSION|TAG"
-    <> completer (tagCompleter (fromMaybe GHC tool))
+    <> completer (tagCompleter (fromMaybe GHC tool) [])
     <> foldMap (completer . versionCompleter criteria) tool)
+
+
+setVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser SetToolVersion
+setVersionArgument criteria tool =
+  argument (eitherReader setEither)
+    (metavar "VERSION|TAG|next"
+    <> completer (tagCompleter (fromMaybe GHC tool) ["next"])
+    <> foldMap (completer . versionCompleter criteria) tool)
+ where
+  setEither s' =
+        parseSet s'
+    <|> bimap id SetToolTag (tagEither s')
+    <|> bimap id SetToolVersion (tVersionEither s')
+  parseSet s' = case fmap toLower s' of
+                  "next" -> Right SetNext
+                  other  -> Left [i|Unknown tag/version #{other}|]
 
 
 versionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
 versionArgument criteria tool = argument (eitherReader tVersionEither) (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
 
 
-tagCompleter :: Tool -> Completer
-tagCompleter tool = listIOCompleter $ do
+tagCompleter :: Tool -> [String] -> Completer
+tagCompleter tool add = listIOCompleter $ do
   let loggerConfig = LoggerConfig
         { lcPrintDebug = False
         , colorOutter  = mempty
@@ -801,8 +830,8 @@ tagCompleter tool = listIOCompleter $ do
             $ join
             $ M.elems
             $ availableToolVersions (_ghcupDownloads dls) tool
-      pure $ nub $ fmap prettyTag allTags
-    VLeft _ -> pure  ["recommended", "latest"]
+      pure $ nub $ (add ++) $ fmap prettyTag allTags
+    VLeft _ -> pure  (nub $ ["recommended", "latest"] ++ add)
 
 
 versionCompleter :: Maybe ListCriteria -> Tool -> Completer
@@ -1102,6 +1131,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , DigestError
                       , DownloadFailed
                       , TarDirDoesNotExist
+                      , NextVerNotFound
+                      , NoToolVersionSet
                       ]
 
           let runInstTool = runInstTool' appstate
@@ -1115,6 +1146,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     , NotInstalled
                     , TagNotFound
                     , VerNotFound
+                    , NextVerNotFound
+                    , NoToolVersionSet
                     ]
 
           let
@@ -1125,6 +1158,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   @'[ NotInstalled
                     , TagNotFound
                     , VerNotFound
+                    , NextVerNotFound
+                    , NoToolVersionSet
                     ]
 
           let
@@ -1135,6 +1170,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   @'[ NotInstalled
                     , TagNotFound
                     , VerNotFound
+                    , NextVerNotFound
+                    , NoToolVersionSet
                     ]
 
           let runListGHC = runLogger . flip runReaderT appstate
@@ -1346,7 +1383,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let setGHC' SetOptions{..} =
                 (runSetGHC $ do
-                    v <- liftE $ fst <$> fromVersion dls sToolVer GHC
+                    v <- liftE $ fst <$> fromVersion' dls sToolVer GHC
                     liftE $ setGHC v SetGHCOnly
                   )
                   >>= \case
@@ -1361,22 +1398,32 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let setCabal' SetOptions{..} =
                 (runSetCabal $ do
-                    v <- liftE $ fst <$> fromVersion dls sToolVer Cabal
+                    v <- liftE $ fst <$> fromVersion' dls sToolVer Cabal
                     liftE $ setCabal (_tvVersion v)
+                    pure v
                   )
                   >>= \case
-                        VRight _ -> pure ExitSuccess
+                        VRight (GHCTargetVersion{..}) -> do
+                          runLogger
+                            $ $(logInfo)
+                                [i|Cabal #{prettyVer _tvVersion} successfully set as default version|]
+                          pure ExitSuccess
                         VLeft  e -> do
                           runLogger ($(logError) [i|#{e}|])
                           pure $ ExitFailure 14
 
           let setHLS' SetOptions{..} =
                 (runSetHLS $ do
-                    v <- liftE $ fst <$> fromVersion dls sToolVer HLS
+                    v <- liftE $ fst <$> fromVersion' dls sToolVer HLS
                     liftE $ setHLS (_tvVersion v)
+                    pure v
                   )
                   >>= \case
-                        VRight _ -> pure ExitSuccess
+                        VRight (GHCTargetVersion{..}) -> do
+                          runLogger
+                            $ $(logInfo)
+                                [i|HLS #{prettyVer _tvVersion} successfully set as default version|]
+                          pure ExitSuccess
                         VLeft  e -> do
                           runLogger ($(logError) [i|#{e}|])
                           pure $ ExitFailure 14
@@ -1610,16 +1657,22 @@ Make sure to clean up #{tmpdir} afterwards.|])
             ef@(ExitFailure _) -> exitWith ef
   pure ()
 
-
-fromVersion :: Monad m
+fromVersion :: (MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
             => GHCupDownloads
             -> Maybe ToolVersion
             -> Tool
-            -> Excepts '[TagNotFound, VerNotFound] m (GHCTargetVersion, VersionInfo)
-fromVersion av Nothing tool =
+            -> Excepts '[TagNotFound, VerNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, VersionInfo)
+fromVersion av tv tool = fromVersion' av (toSetToolVer tv) tool
+
+fromVersion' :: (MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
+             => GHCupDownloads
+             -> SetToolVersion
+             -> Tool
+             -> Excepts '[TagNotFound, VerNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, VersionInfo)
+fromVersion' av SetRecommended tool =
   (\(x, y) -> (mkTVer x, y)) <$> getRecommended av tool
     ?? TagNotFound Recommended tool
-fromVersion av (Just (ToolVersion v)) tool = do
+fromVersion' av (SetToolVersion v) tool = do
   vi <- getVersionInfo (_tvVersion v) tool av ?? VerNotFound (_tvVersion v) tool
   case pvp $ prettyVer (_tvVersion v) of
     Left _ -> pure (v, vi)
@@ -1628,13 +1681,48 @@ fromVersion av (Just (ToolVersion v)) tool = do
         Just (v', vi') -> pure (GHCTargetVersion (_tvTarget v) v', vi')
         Nothing -> pure (v, vi)
     Right _ -> pure (v, vi)
-fromVersion av (Just (ToolTag Latest)) tool =
+fromVersion' av  (SetToolTag Latest) tool =
   (\(x, y) -> (mkTVer x, y)) <$> getLatest av tool ?? TagNotFound Latest tool
-fromVersion av (Just (ToolTag Recommended)) tool =
+fromVersion' av (SetToolTag Recommended) tool =
   (\(x, y) -> (mkTVer x, y)) <$> getRecommended av tool ?? TagNotFound Recommended tool
-fromVersion av (Just (ToolTag (Base pvp''))) GHC =
+fromVersion' av (SetToolTag (Base pvp'')) GHC =
   (\(x, y) -> (mkTVer x, y)) <$> getLatestBaseVersion av pvp'' ?? TagNotFound (Base pvp'') GHC
-fromVersion _ (Just (ToolTag t')) tool =
+fromVersion' av SetNext tool = do
+  next <- case tool of
+    GHC -> do
+      set <- fmap _tvVersion $ ghcSet Nothing !? NoToolVersionSet tool
+      ghcs <- rights <$> lift getInstalledGHCs
+      (headMay
+        . tail
+        . dropWhile (\GHCTargetVersion {..} -> _tvVersion /= set)
+        . cycle
+        . sortBy (\x y -> compare (_tvVersion x) (_tvVersion y))
+        . filter (\GHCTargetVersion {..} -> _tvTarget == Nothing)
+        $ ghcs) ?? NoToolVersionSet tool
+    Cabal -> do
+      set <- cabalSet !? NoToolVersionSet tool
+      cabals <- rights <$> lift getInstalledCabals
+      (fmap (GHCTargetVersion Nothing)
+        . headMay
+        . tail
+        . dropWhile (/= set)
+        . cycle
+        . sort
+        $ cabals) ?? NoToolVersionSet tool
+    HLS -> do
+      set <- hlsSet !? NoToolVersionSet tool
+      hlses <- rights <$> lift getInstalledHLSs
+      (fmap (GHCTargetVersion Nothing)
+        . headMay
+        . tail
+        . dropWhile (/= set)
+        . cycle
+        . sort
+        $ hlses) ?? NoToolVersionSet tool
+    GHCup -> fail "GHCup cannot be set"
+  vi <- getVersionInfo (_tvVersion next) tool av ?? VerNotFound (_tvVersion next) tool
+  pure (next, vi)
+fromVersion' _ (SetToolTag t') tool =
   throwE $ TagNotFound t' tool
 
 
