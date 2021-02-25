@@ -71,6 +71,11 @@ data TagNotFound = TagNotFound Tag Tool
 data VerNotFound = VerNotFound Version Tool
   deriving Show
 
+-- | Unable to find the next version of a tool (the one after the currently
+-- set one).
+data NextVerNotFound = NextVerNotFound Tool
+  deriving Show
+
 -- | The tool (such as GHC) is already installed with that version.
 data AlreadyInstalled = AlreadyInstalled Tool Version
   deriving Show
@@ -121,6 +126,9 @@ data NoToolRequirements = NoToolRequirements
   deriving Show
 
 data InvalidBuildConfig = InvalidBuildConfig Text
+  deriving Show
+ 
+data NoToolVersionSet = NoToolVersionSet Tool
   deriving Show
 
 
