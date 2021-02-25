@@ -816,4 +816,4 @@ traverseFold f = foldl (\mb a -> (<>) <$> mb <*> f a) (pure mempty)
 
 -- | Gathering monoidal values
 forFold :: (Foldable t, Applicative m, Monoid b) => t a -> (a -> m b) -> m b
-forFold = flip traverseFold
+forFold = \t -> \f -> traverseFold f t
