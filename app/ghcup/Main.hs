@@ -192,10 +192,10 @@ data ChangeLogOptions = ChangeLogOptions
 -- by default. For example:
 --
 -- > invertableSwitch "recursive" True (help "do not recurse into directories")
--- 
--- This example makes --recursive enabled by default, so 
+--
+-- This example makes --recursive enabled by default, so
 -- the help is shown only for --no-recursive.
-invertableSwitch 
+invertableSwitch
     :: String              -- ^ long option
     -> Char                -- ^ short option for the non-default option
     -> Bool                -- ^ is switch enabled by default?
@@ -363,7 +363,7 @@ com =
           (  command
               "install-cabal"
               ((info
-                 ((InstallCabalLegacy <$> installOpts) <**> helper)
+                 ((InstallCabalLegacy <$> installOpts (Just Cabal)) <**> helper)
                  (  progDesc "Install or update cabal"
                  <> footerDoc (Just $ text installCabalFooter)
                  )
@@ -413,7 +413,7 @@ installParser =
           "ghc"
           (   InstallGHC
           <$> (info
-                (installOpts <**> helper)
+                (installOpts (Just GHC) <**> helper)
                 (  progDesc "Install GHC"
                 <> footerDoc (Just $ text installGHCFooter)
                 )
@@ -423,7 +423,7 @@ installParser =
            "cabal"
            (   InstallCabal
            <$> (info
-                 (installOpts <**> helper)
+                 (installOpts (Just Cabal) <**> helper)
                  (  progDesc "Install Cabal"
                  <> footerDoc (Just $ text installCabalFooter)
                  )
@@ -433,7 +433,7 @@ installParser =
            "hls"
            (   InstallHLS
            <$> (info
-                 (installOpts <**> helper)
+                 (installOpts (Just HLS) <**> helper)
                  (  progDesc "Install haskell-languge-server"
                  <> footerDoc (Just $ text installHLSFooter)
                  )
@@ -441,7 +441,7 @@ installParser =
            )
       )
     )
-    <|> (Right <$> installOpts)
+    <|> (Right <$> installOpts Nothing)
  where
   installHLSFooter :: String
   installHLSFooter = [s|Discussion:
@@ -472,8 +472,8 @@ Examples:
   ghcup install ghc -u https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27 head|]
 
 
-installOpts :: Parser InstallOptions
-installOpts =
+installOpts :: Maybe Tool -> Parser InstallOptions
+installOpts tool =
   (\p (u, v) b -> InstallOptions v p u b)
     <$> (optional
           (option
@@ -495,9 +495,9 @@ installOpts =
                     )
                   )
                 )
-            <*> (Just <$> toolVersionArgument)
+            <*> (Just <$> toolVersionArgument True Nothing tool)
             )
-        <|> ((,) <$> pure Nothing <*> optional toolVersionArgument)
+        <|> (pure (Nothing, Nothing))
         )
     <*> flag
           False
@@ -514,7 +514,7 @@ setParser =
           "ghc"
           (   SetGHC
           <$> (info
-                (setOpts <**> helper)
+                (setOpts (Just GHC) <**> helper)
                 (  progDesc "Set GHC version"
                 <> footerDoc (Just $ text setGHCFooter)
                 )
@@ -524,7 +524,7 @@ setParser =
            "cabal"
            (   SetCabal
            <$> (info
-                 (setOpts <**> helper)
+                 (setOpts (Just Cabal) <**> helper)
                  (  progDesc "Set Cabal version"
                  <> footerDoc (Just $ text setCabalFooter)
                  )
@@ -534,7 +534,7 @@ setParser =
            "hls"
            (   SetHLS
            <$> (info
-                 (setOpts <**> helper)
+                 (setOpts (Just HLS) <**> helper)
                  (  progDesc "Set haskell-language-server version"
                  <> footerDoc (Just $ text setHLSFooter)
                  )
@@ -542,7 +542,7 @@ setParser =
            )
       )
     )
-    <|> (Right <$> setOpts)
+    <|> (Right <$> setOpts Nothing)
  where
   setGHCFooter :: String
   setGHCFooter = [s|Discussion:
@@ -559,8 +559,8 @@ setParser =
     Sets the the current haskell-language-server version.|]
 
 
-setOpts :: Parser SetOptions
-setOpts = SetOptions <$> optional toolVersionArgument
+setOpts :: Maybe Tool -> Parser SetOptions
+setOpts tool = SetOptions <$> optional (toolVersionArgument False (Just ListInstalled) tool)
 
 listOpts :: Parser ListOptions
 listOpts =
@@ -592,29 +592,29 @@ rmParser =
   (Left <$> subparser
       (  command
           "ghc"
-          (RmGHC <$> (info (rmOpts <**> helper) (progDesc "Remove GHC version")))
+          (RmGHC <$> (info (rmOpts (Just GHC) <**> helper) (progDesc "Remove GHC version")))
       <> command
            "cabal"
            (   RmCabal
-           <$> (info (versionParser' <**> helper)
+           <$> (info (versionParser' False (Just ListInstalled) (Just Cabal) <**> helper)
                      (progDesc "Remove Cabal version")
                )
            )
       <> command
            "hls"
            (   RmHLS
-           <$> (info (versionParser' <**> helper)
+           <$> (info (versionParser' False (Just ListInstalled) (Just HLS) <**> helper)
                      (progDesc "Remove haskell-language-server version")
                )
            )
       )
     )
-    <|> (Right <$> rmOpts)
+    <|> (Right <$> rmOpts Nothing)
 
 
 
-rmOpts :: Parser RmOptions
-rmOpts = RmOptions <$> versionArgument
+rmOpts :: Maybe Tool -> Parser RmOptions
+rmOpts tool = RmOptions <$> versionArgument False (Just ListInstalled) tool
 
 
 changelogP :: Parser ChangeLogOptions
@@ -636,7 +636,7 @@ changelogP =
             )
           )
         )
-    <*> optional toolVersionArgument
+    <*> optional (toolVersionArgument True Nothing Nothing)
 
 compileP :: Parser CompileCommand
 compileP = subparser
@@ -765,13 +765,72 @@ toolVersionParser = verP' <|> toolP
           )
 
 -- | same as toolVersionParser, except as an argument.
-toolVersionArgument :: Parser ToolVersion
-toolVersionArgument =
-  argument (eitherReader toolVersionEither) (metavar "VERSION|TAG")
+toolVersionArgument :: Bool -> Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
+toolVersionArgument networkSensitive criteria tool =
+  argument (eitherReader toolVersionEither) (metavar "VERSION|TAG" <> completer tagCompleter <> foldMap (completer . versionCompleter networkSensitive criteria) tool)
 
 
-versionArgument :: Parser GHCTargetVersion
-versionArgument = argument (eitherReader tVersionEither) (metavar "VERSION")
+versionArgument :: Bool -> Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
+versionArgument networkSensitive criteria tool = argument (eitherReader tVersionEither) (metavar "VERSION" <> foldMap (completer . versionCompleter networkSensitive criteria) tool)
+
+
+tagCompleter :: Completer
+tagCompleter =
+  listCompleter [
+    "recommended", "latest"
+  ]
+
+
+versionCompleter :: Bool -> Maybe ListCriteria -> Tool -> Completer
+versionCompleter networkSensitive criteria tool =
+  listIOCompleter $ do
+    let
+      loggerConfig =
+        LoggerConfig
+          { lcPrintDebug = False
+          , colorOutter  = mempty
+          , rawOutter    = mempty
+          }
+
+      runLogger =
+        myLoggerT loggerConfig
+
+      downloadWithUserSource = do
+        userConf <- runE @'[ JSONError ] ghcupConfigFile
+        getDownloadsF $
+          veitherCont (const GHCupURL) (fromMaybe GHCupURL . uUrlSource) userConf
+
+    mpFreq <-
+      runLogger . runE $
+        platformRequest
+
+    forFold mpFreq $ \pfreq -> do
+      dirs <- getDirs
+      let
+        simpleSettings =
+          Settings False False Never Curl False GHCupURL
+        simpleAppState =
+          AppState simpleSettings dirs defaultKeyBindings
+        runEnv =
+          runLogger . flip runReaderT simpleAppState
+
+      mGhcUpInfo <-
+        runEnv . runE $
+          if networkSensitive then do
+            downloadWithUserSource
+          else
+            catchE
+              (\(FileDoesNotExistError _) -> downloadWithUserSource)
+              readFromCache
+
+      forFold mGhcUpInfo $ \(GHCupInfo _ dls) -> do
+        installedVersions <-
+          runEnv $
+            listVersions dls (Just tool) criteria pfreq
+
+        return $
+          T.unpack . prettyVer . lVer <$> installedVersions
+
 
 versionParser :: Parser GHCTargetVersion
 versionParser = option
@@ -779,10 +838,10 @@ versionParser = option
   (short 'v' <> long "version" <> metavar "VERSION" <> help "The target version"
   )
 
-versionParser' :: Parser Version
-versionParser' = argument
-  (eitherReader (bimap show id . version . T.pack))
-  (metavar "VERSION")
+versionParser' :: Bool -> Maybe ListCriteria -> Maybe Tool -> Parser Version
+versionParser' networkSensitive criteria tool = argument
+  (eitherReader (first show . version . T.pack))
+  (metavar "VERSION"  <> foldMap (completer . versionCompleter networkSensitive criteria) tool)
 
 
 tagEither :: String -> Either String Tag
@@ -792,7 +851,7 @@ tagEither s' = case fmap toLower s' of
   ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
                                   Right x -> Right (Base x)
                                   Left  _ -> Left [i|Invalid PVP version for base #{ver'}|]
-  other         -> Left ([i|Unknown tag #{other}|])
+  other         -> Left [i|Unknown tag #{other}|]
 
 
 tVersionEither :: String -> Either String GHCTargetVersion

@@ -137,30 +137,8 @@ getDownloadsF urlSource = do
       bsExt <- reThrowAll DownloadFailed $ downloadBS uri
       ext <- lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bsExt)
       pure (mergeGhcupInfo base ext)
- where
-  readFromCache :: (MonadIO m, MonadCatch m, MonadLogger m, MonadReader AppState m)
-                => Excepts '[JSONError, FileDoesNotExistError] m GHCupInfo
-  readFromCache = do
-    AppState {dirs = Dirs {..}} <- lift ask
-    lift $ $(logWarn)
-      [i|Could not get download info, trying cached version (this may not be recent!)|]
-    let path = view pathL' ghcupURL
-    yaml_file <- (cacheDir </>) <$> urlBaseName path
-    bs        <-
-      handleIO' NoSuchThing
-                (\_ -> throwE $ FileDoesNotExistError (toFilePath yaml_file))
-      $ liftIO
-      $ readFile yaml_file
-    lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
 
-  getBase :: (MonadFail m, MonadIO m, MonadCatch m, MonadLogger m, MonadReader AppState m)
-          => Excepts '[JSONError , FileDoesNotExistError] m GHCupInfo
-  getBase =
-    handleIO (\_ -> readFromCache)
-    $ catchE @_ @'[JSONError, FileDoesNotExistError]
-        (\(DownloadFailed _) -> readFromCache)
-    $ ((reThrowAll @_ @_ @'[JSONError, DownloadFailed] DownloadFailed $ smartDl ghcupURL)
-      >>= (liftE . lE' @_ @_ @'[JSONError] JSONDecodeError . bimap show id . Y.decodeEither' . L.toStrict))
+    where
 
   mergeGhcupInfo :: GHCupInfo -- ^ base to merge with
                  -> GHCupInfo -- ^ extension overwriting the base
@@ -172,6 +150,32 @@ getDownloadsF urlSource = do
                            ) base
     in GHCupInfo tr new
 
+
+readFromCache :: (MonadIO m, MonadCatch m, MonadLogger m, MonadReader AppState m)
+              => Excepts '[JSONError, FileDoesNotExistError] m GHCupInfo
+readFromCache = do
+  AppState {dirs = Dirs {..}} <- lift ask
+  lift $ $(logWarn)
+    [i|Could not get download info, trying cached version (this may not be recent!)|]
+  let path = view pathL' ghcupURL
+  yaml_file <- (cacheDir </>) <$> urlBaseName path
+  bs        <-
+    handleIO' NoSuchThing
+              (\_ -> throwE $ FileDoesNotExistError (toFilePath yaml_file))
+    $ liftIO
+    $ readFile yaml_file
+  lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
+
+
+getBase :: (MonadFail m, MonadIO m, MonadCatch m, MonadLogger m, MonadReader AppState m)
+        => Excepts '[JSONError , FileDoesNotExistError] m GHCupInfo
+getBase =
+  handleIO (\_ -> readFromCache)
+  $ catchE @_ @'[JSONError, FileDoesNotExistError]
+      (\(DownloadFailed _) -> readFromCache)
+  $ ((reThrowAll @_ @_ @'[JSONError, DownloadFailed] DownloadFailed $ smartDl ghcupURL)
+    >>= (liftE . lE' @_ @_ @'[JSONError] JSONDecodeError . bimap show id . Y.decodeEither' . L.toStrict))
+    where
   -- First check if the json file is in the ~/.ghcup/cache dir
   -- and check it's access time. If it has been accessed within the
   -- last 5 minutes, just reuse it.
@@ -209,8 +213,8 @@ getDownloadsF urlSource = do
       then do
         accessTime <-
           PF.accessTimeHiRes
-            <$> (liftIO $ PF.getFileStatus (toFilePath json_file))
-        currentTime <- liftIO $ getPOSIXTime
+            <$> liftIO (PF.getFileStatus (toFilePath json_file))
+        currentTime <- liftIO getPOSIXTime
 
         -- access time won't work on most linuxes, but we can try regardless
         if (currentTime - accessTime) > 300

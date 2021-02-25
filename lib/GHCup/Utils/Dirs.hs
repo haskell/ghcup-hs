@@ -185,9 +185,9 @@ getDirs = do
 ghcupConfigFile :: (MonadIO m)
                 => Excepts '[JSONError] m UserSettings
 ghcupConfigFile = do
-  confDir <- liftIO $ ghcupConfigDir
+  confDir <- liftIO ghcupConfigDir
   let file = confDir </> [rel|config.yaml|]
-  bs <- liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ fmap Just $ readFile file 
+  bs <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> readFile file
   case bs of
       Nothing -> pure defaultUserSettings
       Just bs' -> lE' JSONDecodeError . bimap show id . Y.decodeEither' . L.toStrict $ bs'
