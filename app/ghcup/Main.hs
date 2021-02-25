@@ -596,14 +596,14 @@ rmParser =
       <> command
            "cabal"
            (   RmCabal
-           <$> (info (versionParser' <**> helper)
+           <$> (info (versionParser' False (Just ListInstalled) (Just Cabal) <**> helper)
                      (progDesc "Remove Cabal version")
                )
            )
       <> command
            "hls"
            (   RmHLS
-           <$> (info (versionParser' <**> helper)
+           <$> (info (versionParser' False (Just ListInstalled) (Just HLS) <**> helper)
                      (progDesc "Remove haskell-language-server version")
                )
            )
@@ -795,6 +795,11 @@ versionCompleter networkSensitive criteria tool =
       runLogger =
         myLoggerT loggerConfig
 
+      downloadWithUserSource = do
+        userConf <- runE @'[ JSONError ] ghcupConfigFile
+        getDownloadsF $
+          veitherCont (const GHCupURL) (fromMaybe GHCupURL . uUrlSource) userConf
+
     mpFreq <-
       runLogger . runE $
         platformRequest
@@ -811,11 +816,11 @@ versionCompleter networkSensitive criteria tool =
 
       mGhcUpInfo <-
         runEnv . runE $
-          if networkSensitive then
-            getDownloadsF GHCupURL
+          if networkSensitive then do
+            downloadWithUserSource
           else
             catchE
-              (\(FileDoesNotExistError _) -> getDownloadsF GHCupURL)
+              (\(FileDoesNotExistError _) -> downloadWithUserSource)
               readFromCache
 
       forFold mGhcUpInfo $ \(GHCupInfo _ dls) -> do
@@ -833,10 +838,10 @@ versionParser = option
   (short 'v' <> long "version" <> metavar "VERSION" <> help "The target version"
   )
 
-versionParser' :: Parser Version
-versionParser' = argument
+versionParser' :: Bool -> Maybe ListCriteria -> Maybe Tool -> Parser Version
+versionParser' networkSensitive criteria tool = argument
   (eitherReader (first show . version . T.pack))
-  (metavar "VERSION")
+  (metavar "VERSION"  <> foldMap (completer . versionCompleter networkSensitive criteria) tool)
 
 
 tagEither :: String -> Either String Tag
