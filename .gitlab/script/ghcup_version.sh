@@ -26,7 +26,7 @@ if [ "${OS}" = "DARWIN" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} -ftui
 	ecabal test -w ghc-${GHC_VERSION} -ftui ghcup-test
 elif [ "${OS}" = "LINUX" ] ; then
-	if [ "${BIT}" = "32" ] ; then
+	if [ "${ARCH}" = "32" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar
 		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar ghcup-test
 	else
@@ -80,17 +80,17 @@ ghci-$(ghc --numeric-version) --version
 # test installing new ghc doesn't mess with currently set GHC
 # https://gitlab.haskell.org/haskell/ghcup-hs/issues/7
 if [ "${OS}" = "LINUX" ] ; then
-	eghcup --downloader=wget install 8.4.4
+	eghcup --downloader=wget install 8.10.3
 else # test wget a bit
-	eghcup install 8.4.4
+	eghcup install 8.10.3
 fi
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]
-eghcup set 8.4.4
-eghcup set 8.4.4
-[ "$(ghc --numeric-version)" = "8.4.4" ]
+eghcup set 8.10.3
+eghcup set 8.10.3
+[ "$(ghc --numeric-version)" = "8.10.3" ]
 eghcup set ${GHC_VERSION}
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]
-eghcup rm 8.4.4
+eghcup rm 8.10.3
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 
 # install hls
@@ -98,7 +98,7 @@ if [ "${OS}" = "DARWIN" ] ; then
 	eghcup install hls
 	haskell-language-server-wrapper --version
 elif [ "${OS}" = "LINUX" ] ; then
-	if [ "${BIT}" = "64" ] ; then
+	if [ "${ARCH}" = "64" ] ; then
 		eghcup install hls
 		haskell-language-server-wrapper --version
 	fi
