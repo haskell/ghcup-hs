@@ -1,7 +1,10 @@
 # Revision history for ghcup
 
-## 0.1.13 -- ????-??-??
+## 0.1.13 -- 2021-02-26
 
+* Support ARMv7/AARCH64
+* Add command line completions for installed and available versions wrt [MR #70](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/70)
+* Allow to cycle through set tools wrt [#114](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/114)
 * Fix item selection with unavailable versions wrt [#107](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/107)
 * Allow for dynamic post-install, post-remove and pre-compile msgs wrt [MR #68](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/68)
 * Alert user if upgraded ghcup is shadowed by old ghcup wrt [#111](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/111)
