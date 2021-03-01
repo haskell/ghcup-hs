@@ -650,7 +650,7 @@ ghcToolFiles ver = do
 
   -- fail if ghc is not installed
   whenM (fmap not $ liftIO $ doesDirectoryExist ghcdir)
-        (throwE (NotInstalled GHC (prettyTVer ver)))
+        (throwE (NotInstalled GHC ver))
 
   files    <- liftIO $ getDirsFiles' bindir
   -- figure out the <ver> suffix, because this might not be `Version` for

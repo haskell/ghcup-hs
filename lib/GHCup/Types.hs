@@ -1,6 +1,8 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes           #-}
 
 {-|
 Module      : GHCup.Types
@@ -15,12 +17,16 @@ module GHCup.Types where
 
 import           Data.Map.Strict                ( Map )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
+import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           HPath
+import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text)
 import           URI.ByteString
 
 import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as E
+import qualified Data.Text.Encoding.Error      as E
 import qualified GHC.Generics                  as GHC
 import qualified Graphics.Vty                  as Vty
 
@@ -106,13 +112,21 @@ data Tag = Latest
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, GHC.Generic, Show) -- FIXME: manual JSON instance
 
-prettyTag :: Tag -> String
-prettyTag Recommended        = "recommended"
-prettyTag Latest             = "latest"
-prettyTag Prerelease         = "prerelease"
-prettyTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
-prettyTag (UnknownTag t    ) = t
-prettyTag Old                = ""
+tagToString :: Tag -> String
+tagToString Recommended        = "recommended"
+tagToString Latest             = "latest"
+tagToString Prerelease         = "prerelease"
+tagToString (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
+tagToString (UnknownTag t    ) = t
+tagToString Old                = ""
+
+instance Pretty Tag where
+  pPrint Recommended        = text "recommended"
+  pPrint Latest             = text "latest"
+  pPrint Prerelease         = text "prerelease"
+  pPrint (Base       pvp'') = text ("base-" ++ T.unpack (prettyPVP pvp''))
+  pPrint (UnknownTag t    ) = text t
+  pPrint Old                = mempty
 
 data Architecture = A_64
                   | A_32
@@ -124,15 +138,18 @@ data Architecture = A_64
                   | A_ARM64
   deriving (Eq, GHC.Generic, Ord, Show)
 
-prettyArch :: Architecture -> String
-prettyArch A_64 = "x86_64"
-prettyArch A_32 = "i386"
-prettyArch A_PowerPC = "powerpc"
-prettyArch A_PowerPC64 = "powerpc64"
-prettyArch A_Sparc = "sparc"
-prettyArch A_Sparc64 = "sparc64"
-prettyArch A_ARM = "arm"
-prettyArch A_ARM64 = "aarch64"
+archToString :: Architecture -> String
+archToString A_64 = "x86_64"
+archToString A_32 = "i386"
+archToString A_PowerPC = "powerpc"
+archToString A_PowerPC64 = "powerpc64"
+archToString A_Sparc = "sparc"
+archToString A_Sparc64 = "sparc64"
+archToString A_ARM = "arm"
+archToString A_ARM64 = "aarch64"
+
+instance Pretty Architecture where
+  pPrint = text . archToString
 
 data Platform = Linux LinuxDistro
               -- ^ must exit
@@ -141,10 +158,13 @@ data Platform = Linux LinuxDistro
               | FreeBSD
   deriving (Eq, GHC.Generic, Ord, Show)
 
-prettyPlatfrom :: Platform -> String
-prettyPlatfrom (Linux distro) = "linux-" ++ prettyDistro distro
-prettyPlatfrom Darwin = "darwin"
-prettyPlatfrom FreeBSD = "freebsd"
+platformToString :: Platform -> String
+platformToString (Linux distro) = "linux-" ++ distroToString distro
+platformToString Darwin = "darwin"
+platformToString FreeBSD = "freebsd"
+
+instance Pretty Platform where
+  pPrint = text . platformToString
 
 data LinuxDistro = Debian
                  | Ubuntu
@@ -162,18 +182,21 @@ data LinuxDistro = Debian
                  -- ^ must exit
   deriving (Eq, GHC.Generic, Ord, Show)
 
-prettyDistro :: LinuxDistro -> String
-prettyDistro Debian = "debian"
-prettyDistro Ubuntu = "ubuntu"
-prettyDistro Mint= "mint"
-prettyDistro Fedora = "fedora"
-prettyDistro CentOS = "centos"
-prettyDistro RedHat = "redhat"
-prettyDistro Alpine = "alpine"
-prettyDistro AmazonLinux = "amazon"
-prettyDistro Gentoo = "gentoo"
-prettyDistro Exherbo = "exherbo"
-prettyDistro UnknownLinux = "unknown"
+distroToString :: LinuxDistro -> String
+distroToString Debian = "debian"
+distroToString Ubuntu = "ubuntu"
+distroToString Mint= "mint"
+distroToString Fedora = "fedora"
+distroToString CentOS = "centos"
+distroToString RedHat = "redhat"
+distroToString Alpine = "alpine"
+distroToString AmazonLinux = "amazon"
+distroToString Gentoo = "gentoo"
+distroToString Exherbo = "exherbo"
+distroToString UnknownLinux = "unknown"
+
+instance Pretty LinuxDistro where
+  pPrint = text . distroToString
 
 
 -- | An encapsulation of a download. This can be used
@@ -197,6 +220,10 @@ data DownloadInfo = DownloadInfo
 data TarDir = RealDir (Path Rel)
             | RegexDir String     -- ^ will be compiled to regex, the first match will "win"
             deriving (Eq, Ord, GHC.Generic, Show)
+
+instance Pretty TarDir where
+  pPrint (RealDir path) = text [i|#{E.decodeUtf8With E.lenientDecode . toFilePath $ path}|]
+  pPrint (RegexDir regex) = text regex
 
 
 -- | Where to fetch GHCupDownloads from.
@@ -317,11 +344,14 @@ data PlatformResult = PlatformResult
   }
   deriving (Eq, Show)
 
-prettyPlatform :: PlatformResult -> String
-prettyPlatform PlatformResult { _platform = plat, _distroVersion = Just v' }
+platResToString :: PlatformResult -> String
+platResToString PlatformResult { _platform = plat, _distroVersion = Just v' }
   = show plat <> ", " <> T.unpack (prettyV v')
-prettyPlatform PlatformResult { _platform = plat, _distroVersion = Nothing }
+platResToString PlatformResult { _platform = plat, _distroVersion = Nothing }
   = show plat
+
+instance Pretty PlatformResult where
+  pPrint = text . platResToString
 
 data PlatformRequest = PlatformRequest
   { _rArch     :: Architecture
@@ -330,13 +360,16 @@ data PlatformRequest = PlatformRequest
   }
   deriving (Eq, Show)
 
-prettyPfReq :: PlatformRequest -> String
-prettyPfReq (PlatformRequest arch plat ver) =
-  prettyArch arch ++ "-" ++ prettyPlatfrom plat ++ pver
+pfReqToString :: PlatformRequest -> String
+pfReqToString (PlatformRequest arch plat ver) =
+  archToString arch ++ "-" ++ platformToString plat ++ pver
  where
   pver = case ver of
            Just v' -> "-" ++ (T.unpack $ prettyV v')
            Nothing -> ""
+
+instance Pretty PlatformRequest where
+  pPrint = text . pfReqToString
 
 -- | A GHC identified by the target platform triple
 -- and the version.
@@ -350,11 +383,13 @@ data GHCTargetVersion = GHCTargetVersion
 mkTVer :: Version -> GHCTargetVersion
 mkTVer = GHCTargetVersion Nothing
 
+tVerToText :: GHCTargetVersion -> Text
+tVerToText (GHCTargetVersion (Just t) v') = t <> "-" <> prettyVer v'
+tVerToText (GHCTargetVersion Nothing  v') = prettyVer v'
 
 -- | Assembles a path of the form: <target-triple>-<version>
-prettyTVer :: GHCTargetVersion -> Text
-prettyTVer (GHCTargetVersion (Just t) v') = t <> "-" <> prettyVer v'
-prettyTVer (GHCTargetVersion Nothing  v') = prettyVer v'
+instance Pretty GHCTargetVersion where
+  pPrint = text . T.unpack . tVerToText
 
 
 -- | A comparator and a version.
@@ -372,3 +407,9 @@ data VersionRange = SimpleRange (NonEmpty VersionCmp) -- And
                   | OrRange (NonEmpty VersionCmp) VersionRange
   deriving (Eq, GHC.Generic, Ord, Show)
 
+
+instance Pretty Versioning where
+  pPrint = text . T.unpack . prettyV
+
+instance Pretty Version where
+  pPrint = text . T.unpack . prettyVer

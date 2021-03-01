@@ -43,7 +43,7 @@ import           GHC.IO.Exception
 import           HPath
 import           HPath.IO                hiding ( hideError )
 import           Optics                  hiding ((<|), (|>))
-import           System.Console.Pretty
+import           System.Console.Pretty   hiding ( Pretty )
 import           System.Console.Regions
 import           System.IO.Error
 import           System.Posix.Directory.ByteString
@@ -55,6 +55,7 @@ import "unix"    System.Posix.IO.ByteString
                                          hiding ( openFd )
 import           System.Posix.Process           ( ProcessStatus(..) )
 import           System.Posix.Types
+import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           Text.Regex.Posix
 
 
@@ -79,6 +80,15 @@ data ProcessError = NonZeroExit Int ByteString [ByteString]
                   | NoSuchPid ByteString [ByteString]
                   deriving Show
 
+instance Pretty ProcessError where
+  pPrint (NonZeroExit e exe args) =
+    text [i|Process "#{decUTF8Safe exe}" with arguments #{fmap decUTF8Safe args} failed with exit code #{e}.|]
+  pPrint (PTerminated exe args) =
+    text [i|Process "#{decUTF8Safe exe}" with arguments #{fmap decUTF8Safe args} terminated.|]
+  pPrint (PStopped exe args) =
+    text [i|Process "#{decUTF8Safe exe}" with arguments #{fmap decUTF8Safe args} stopped.|]
+  pPrint (NoSuchPid exe args) =
+    text [i|Could not find PID for process running "#{decUTF8Safe exe}" with arguments #{fmap decUTF8Safe args}.|]
 
 data CapturedProcess = CapturedProcess
   { _exitCode :: ExitCode

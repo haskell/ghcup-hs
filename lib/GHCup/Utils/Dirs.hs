@@ -214,7 +214,7 @@ ghcupGHCDir :: (MonadReader AppState m, MonadThrow m)
             -> m (Path Abs)
 ghcupGHCDir ver = do
   ghcbasedir    <- ghcupGHCBaseDir
-  verdir        <- parseRel $ E.encodeUtf8 (prettyTVer ver)
+  verdir        <- parseRel $ E.encodeUtf8 (tVerToText ver)
   pure (ghcbasedir </> verdir)
 
 

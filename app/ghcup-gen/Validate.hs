@@ -32,6 +32,7 @@ import           Optics
 import           System.Exit
 import           System.IO
 import           Text.ParserCombinators.ReadP
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 
 import qualified Data.ByteString               as B
@@ -83,7 +84,7 @@ validate dls = do
  where
   checkHasRequiredPlatforms t v tags arch pspecs = do
     let v' = prettyVer v
-        arch' = prettyArch arch
+        arch' = prettyShow arch
     when (not $ any (== Linux UnknownLinux) pspecs) $ do
       lift $ $(logError)
         [i|Linux UnknownLinux missing for for #{t} #{v'} #{arch'}|]
