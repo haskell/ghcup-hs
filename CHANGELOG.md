@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## 0.1.14 -- ????-??-??
+
+* Fix error messages and overhaul pretty printing wrt [#115](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/115)
+
 ## 0.1.13 -- 2021-02-26
 
 * Support ARMv7/AARCH64
