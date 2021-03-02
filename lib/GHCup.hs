@@ -525,7 +525,7 @@ setGHC ver sghc = do
   let verBS = verToBS (_tvVersion ver)
   ghcdir                        <- lift $ ghcupGHCDir ver
 
-  whenM (lift $ fmap not $ ghcInstalled ver) (throwE (NotInstalled GHC (ver ^. tvVersion % to prettyVer)))
+  whenM (lift $ fmap not $ ghcInstalled ver) (throwE (NotInstalled GHC ver))
 
   -- symlink destination
   AppState { dirs = Dirs {..} } <- lift ask
@@ -605,7 +605,7 @@ setCabal ver = do
 
   whenM (liftIO $ fmap not $ doesFileExist (binDir </> targetFile))
     $ throwE
-    $ NotInstalled Cabal (prettyVer ver)
+    $ NotInstalled Cabal (GHCTargetVersion Nothing ver)
 
   let cabalbin = binDir </> [rel|cabal|]
 
@@ -647,7 +647,7 @@ setHLS ver = do
 
   -- set haskell-language-server-<ghcver> symlinks
   bins <- lift $ hlsServerBinaries ver
-  when (bins == []) $ throwE $ NotInstalled HLS (prettyVer ver)
+  when (bins == []) $ throwE $ NotInstalled HLS (GHCTargetVersion Nothing ver)
 
   forM_ bins $ \f -> do
     let destL = toFilePath f
@@ -929,7 +929,7 @@ rmGHCVer :: ( MonadReader AppState m
 rmGHCVer ver = do
   isSetGHC <- lift $ fmap (maybe False (== ver)) $ ghcSet (_tvTarget ver)
 
-  whenM (lift $ fmap not $ ghcInstalled ver) (throwE (NotInstalled GHC (ver ^. tvVersion % to prettyVer)))
+  whenM (lift $ fmap not $ ghcInstalled ver) (throwE (NotInstalled GHC ver))
   dir <- lift $ ghcupGHCDir ver
 
   -- this isn't atomic, order matters
@@ -970,7 +970,7 @@ rmCabalVer :: (MonadReader AppState m, MonadThrow m, MonadLogger m, MonadIO m, M
            => Version
            -> Excepts '[NotInstalled] m ()
 rmCabalVer ver = do
-  whenM (lift $ fmap not $ cabalInstalled ver) $ throwE (NotInstalled Cabal (prettyVer ver))
+  whenM (lift $ fmap not $ cabalInstalled ver) $ throwE (NotInstalled Cabal (GHCTargetVersion Nothing ver))
 
   cSet      <- lift $ cabalSet
 
@@ -993,7 +993,7 @@ rmHLSVer :: (MonadReader AppState m, MonadThrow m, MonadLogger m, MonadIO m, Mon
          => Version
          -> Excepts '[NotInstalled] m ()
 rmHLSVer ver = do
-  whenM (lift $ fmap not $ hlsInstalled ver) $ throwE (NotInstalled HLS (prettyVer ver))
+  whenM (lift $ fmap not $ hlsInstalled ver) $ throwE (NotInstalled HLS (GHCTargetVersion Nothing ver))
 
   isHlsSet      <- lift $ hlsSet
 
@@ -1240,7 +1240,7 @@ Stage1Only = YES|]
       $ c
     tarName <-
       parseRel
-        [i|ghc-#{prettyTVer tver}-#{prettyPfReq pfreq}-#{cDigest}.tar#{takeExtension (toFilePath tar)}|]
+        [i|ghc-#{tVerToText tver}-#{pfReqToString pfreq}-#{cDigest}.tar#{takeExtension (toFilePath tar)}|]
     let tarPath = cacheDir </> tarName
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile (workdir </> tar)
                                                              tarPath

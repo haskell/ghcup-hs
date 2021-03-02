@@ -48,6 +48,7 @@ import           Prelude                 hiding ( appendFile )
 import           System.Environment
 import           System.Exit
 import           System.IO.Unsafe
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           URI.ByteString
 
 import qualified GHCup.Types                   as GT
@@ -445,12 +446,8 @@ install' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
               runLogger $ $(logInfo) msg
             pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
-          VLeft (V (BuildFailed _ e)) ->
-            pure $ Left [i|Build failed with #{e}|]
-          VLeft (V NoDownload) ->
-            pure $ Left [i|No available version for #{prettyVer lVer}|]
           VLeft (V NoUpdate) -> pure $ Right ()
-          VLeft e -> pure $ Left [i|#{e}
+          VLeft e -> pure $ Left [i|#{prettyShow e}
 Also check the logs in ~/.ghcup/logs|]
 
 
@@ -474,7 +471,7 @@ set' _ (_, ListResult {..}) = do
     )
     >>= \case
           VRight _ -> pure $ Right ()
-          VLeft  e -> pure $ Left [i|#{e}|]
+          VLeft  e -> pure $ Left (prettyShow e)
 
 
 del' :: BrickState -> (Int, ListResult) -> IO (Either String ())
@@ -500,7 +497,7 @@ del' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
               runLogger $ $(logInfo) msg
             pure $ Right ()
           VRight _ -> pure $ Right ()
-          VLeft  e -> pure $ Left [i|#{e}|]
+          VLeft  e -> pure $ Left (prettyShow e)
 
 
 changelog' :: BrickState -> (Int, ListResult) -> IO (Either String ())
@@ -515,7 +512,7 @@ changelog' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
             FreeBSD -> "xdg-open"
       exec cmd True [serializeURIRef' uri] Nothing Nothing >>= \case
         Right _ -> pure $ Right ()
-        Left  e -> pure $ Left [i|#{e}|]
+        Left  e -> pure $ Left $ prettyShow e
 
 
 settings' :: IORef AppState
@@ -595,7 +592,7 @@ getDownloads' = do
 
   case r of
     VRight a -> pure $ Right a
-    VLeft  e -> pure $ Left [i|#{e}|]
+    VLeft  e -> pure $ Left (prettyShow e)
 
 
 getAppData :: Maybe GHCupDownloads

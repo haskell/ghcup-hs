@@ -150,6 +150,9 @@ common optparse-applicative
 common parsec
   build-depends: parsec >=3.1
 
+common pretty
+  build-depends: pretty >=1.1.3.1
+
 common pretty-terminal
   build-depends: pretty-terminal >=0.1.0.0
 
@@ -288,6 +291,7 @@ library
     , optics
     , optics-vl
     , parsec
+    , pretty
     , pretty-terminal
     , regex-posix
     , resourcet
@@ -377,6 +381,7 @@ executable ghcup
     , monad-logger
     , mtl
     , optparse-applicative
+    , pretty
     , pretty-terminal
     , resourcet
     , safe
@@ -432,6 +437,7 @@ executable ghcup-gen
     , mtl
     , optics
     , optparse-applicative
+    , pretty
     , pretty-terminal
     , regex-posix
     , resourcet
