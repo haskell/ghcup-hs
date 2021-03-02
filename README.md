@@ -18,6 +18,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Shell-completion](#shell-completion)
      * [Cross support](#cross-support)
      * [XDG support](#xdg-support)
+     * [Env variables](#env-variables)
      * [Installing custom bindists](#installing-custom-bindists)
    * [Design goals](#design-goals)
    * [How](#how)
@@ -123,6 +124,17 @@ Then you can control the locations via XDG environment variables as such:
 * `XDG_CACHE_HOME`: logs and download files will be stored in `ghcup` subdir (default: `~/.cache`)
 * `XDG_BIN_HOME`: binaries end up here (default: `~/.local/bin`)
 * `XDG_CONFIG_HOME`: the config file is stored in `ghcup` subdir as `config.yaml` (default: `~/.config`)
+
+### Env variables
+
+This is the complete list of env variables that change GHCup behavior:
+
+* `GHCUP_USE_XDG_DIRS`: see [XDG support](#xdg-support) above
+* `TMPDIR`: where ghcup does the work (unpacking, building, ...)
+* `GHCUP_INSTALL_BASE_PREFIX`: the base of ghcup (default: `$HOME`)
+* `GHCUP_CURL_OPTS`: additional options that can be passed to curl
+* `GHCUP_WGET_OPTS`: additional options that can be passed to wget
+* `CC`/`LD` etc.: full environment is passed to the build system when compiling GHC via GHCup
 
 ### Installing custom bindists
 
