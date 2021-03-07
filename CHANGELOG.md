@@ -1,7 +1,8 @@
 # Revision history for ghcup
 
-## 0.1.14 -- ????-??-??
+## 0.1.14 -- 2021-03-07
 
+* Major bugfix: fix handling of stray versions wrt [#116](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/116)
 * Fix error messages and overhaul pretty printing wrt [#115](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/115)
 
 ## 0.1.13 -- 2021-02-26
