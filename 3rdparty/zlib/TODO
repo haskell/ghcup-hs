@@ -1,3 +1,0 @@
-* Currently will not support bytestring chunks bigger than 4Gb
-  because the in_avail is only a C int. So chunks bigger than that
-  need to be broken up into smaller ones.

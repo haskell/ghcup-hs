@@ -172,7 +172,7 @@ common split
   build-depends: split >=0.2.3.4
 
 common streamly
-  build-depends: streamly >=0.7.1
+  build-depends: streamly >=0.7.3
 
 common streamly-posix
   build-depends: streamly-posix >=0.1.0.0
@@ -244,7 +244,7 @@ common yaml
   build-depends: yaml >=0.11.4.0
 
 common zlib
-  build-depends: zlib >=0.6.2.1
+  build-depends: zlib >=0.6.2.2
 
 common config
   default-language:   Haskell2010
