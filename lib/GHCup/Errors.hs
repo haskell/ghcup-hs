@@ -115,14 +115,6 @@ instance Pretty TagNotFound where
   pPrint (TagNotFound tag tool) =
     text "Unable to find tag" <+> pPrint tag <+> text [i|of tool "#{tool}"|]
 
--- | Unable to find a version of a tool.
-data VerNotFound = VerNotFound Version Tool
-  deriving Show
-
-instance Pretty VerNotFound where
-  pPrint (VerNotFound ver' tool) =
-    text [i|Unable to find version "#{prettyShow ver'}" of tool "#{tool}"|]
-
 -- | Unable to find the next version of a tool (the one after the currently
 -- set one).
 data NextVerNotFound = NextVerNotFound Tool

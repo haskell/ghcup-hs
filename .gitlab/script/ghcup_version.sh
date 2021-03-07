@@ -107,6 +107,10 @@ fi
 
 eghcup rm $(ghc --numeric-version)
 
+# https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/116
+eghcup install cabal -u https://oleg.fi/cabal-install-3.4.0.0-rc4/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz 3.4.0.0-rc4
+eghcup rm cabal 3.4.0.0-rc4
+
 eghcup upgrade
 eghcup upgrade -f
 
