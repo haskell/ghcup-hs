@@ -16,7 +16,6 @@ import           GHCup.Types
 import           GHCup.Utils
 import           GHCup.Utils.File
 import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude     hiding ((!?))
 
 import           Brick
 import           Brick.Widgets.Border
@@ -419,30 +418,26 @@ install' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
               , DownloadFailed
               , NoUpdate
               , TarDirDoesNotExist
-              , VerNotFound
               ]
 
   (run $ do
       case lTool of
         GHC   -> do
-          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer GHC dls
-            ?? VerNotFound lVer GHC
+          let vi = getVersionInfo lVer GHC dls
           liftE $ installGHCBin dls lVer pfreq $> vi
         Cabal -> do
-          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer Cabal dls
-            ?? VerNotFound lVer Cabal
+          let vi = getVersionInfo lVer Cabal dls
           liftE $ installCabalBin dls lVer pfreq $> vi
         GHCup -> do
-          let vi = fromJust $ snd <$> getLatest dls GHCup
+          let vi = snd <$> getLatest dls GHCup
           liftE $ upgradeGHCup dls Nothing False pfreq $> vi
         HLS   -> do
-          vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer HLS dls
-            ?? VerNotFound lVer HLS
+          let vi = getVersionInfo lVer HLS dls
           liftE $ installHLSBin dls lVer pfreq $> vi
     )
     >>= \case
           VRight vi                         -> do
-            forM_ (_viPostInstall vi) $ \msg ->
+            forM_ (join $ fmap _viPostInstall vi) $ \msg ->
               runLogger $ $(logInfo) msg
             pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
@@ -480,23 +475,21 @@ del' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
   l        <- readIORef logger'
   let runLogger = myLoggerT l
 
-  let run = runLogger . flip runReaderT settings . runE @'[NotInstalled, VerNotFound]
+  let run = runLogger . flip runReaderT settings . runE @'[NotInstalled]
 
   (run $ do
-      vi <- liftE @_ @'[VerNotFound] $ getVersionInfo lVer lTool dls
-        ?? VerNotFound lVer lTool
+      let vi = getVersionInfo lVer lTool dls
       case lTool of
-        GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> Just vi
-        Cabal -> liftE $ rmCabalVer lVer $> Just vi
-        HLS   -> liftE $ rmHLSVer lVer $> Just vi
+        GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> vi
+        Cabal -> liftE $ rmCabalVer lVer $> vi
+        HLS   -> liftE $ rmHLSVer lVer $> vi
         GHCup -> pure Nothing
     )
     >>= \case
-          VRight (Just vi) -> do
-            forM_ (_viPostRemove vi) $ \msg ->
+          VRight vi -> do
+            forM_ (join $ fmap _viPostRemove vi) $ \msg ->
               runLogger $ $(logInfo) msg
             pure $ Right ()
-          VRight _ -> pure $ Right ()
           VLeft  e -> pure $ Left (prettyShow e)
 
 

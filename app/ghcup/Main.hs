@@ -1128,7 +1128,6 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NotInstalled
                       , BuildFailed
                       , TagNotFound
-                      , VerNotFound
                       , DigestError
                       , DownloadFailed
                       , TarDirDoesNotExist
@@ -1146,7 +1145,6 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   @'[ FileDoesNotExistError
                     , NotInstalled
                     , TagNotFound
-                    , VerNotFound
                     , NextVerNotFound
                     , NoToolVersionSet
                     ]
@@ -1158,7 +1156,6 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 . runE
                   @'[ NotInstalled
                     , TagNotFound
-                    , VerNotFound
                     , NextVerNotFound
                     , NoToolVersionSet
                     ]
@@ -1170,7 +1167,6 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 . runE
                   @'[ NotInstalled
                     , TagNotFound
-                    , VerNotFound
                     , NextVerNotFound
                     , NoToolVersionSet
                     ]
@@ -1178,7 +1174,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let runListGHC = runLogger . flip runReaderT appstate
 
           let runRm =
-                runLogger . flip runReaderT appstate . runE @'[NotInstalled, VerNotFound]
+                runLogger . flip runReaderT appstate . runE @'[NotInstalled]
 
           let runDebugInfo =
                 runLogger
@@ -1202,7 +1198,6 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , UnknownArchive
                       , TarDirDoesNotExist
                       , NotInstalled
-                      , VerNotFound
 #if !defined(TAR)
                       , ArchiveResult
 #endif
@@ -1279,7 +1274,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     >>= \case
                           VRight vi -> do
                             runLogger $ $(logInfo) ("GHC installation successful")
-                            forM_ (_viPostInstall vi) $ \msg ->
+                            forM_ (join $ fmap _viPostInstall vi) $ \msg ->
                               runLogger $ $(logInfo) msg
                             pure ExitSuccess
                           VLeft (V (AlreadyInstalled _ v)) -> do
@@ -1317,7 +1312,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   >>= \case
                         VRight vi -> do
                           runLogger $ $(logInfo) ("Cabal installation successful")
-                          forM_ (_viPostInstall vi) $ \msg ->
+                          forM_ (join $ fmap _viPostInstall vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
@@ -1347,7 +1342,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   >>= \case
                         VRight vi -> do
                           runLogger $ $(logInfo) ("HLS installation successful")
-                          forM_ (_viPostInstall vi) $ \msg ->
+                          forM_ (join $ fmap _viPostInstall vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
@@ -1412,13 +1407,11 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 (runRm $ do
                     liftE $
                       rmGHCVer ghcVer
-                    vi <- liftE @_ @'[VerNotFound] $ getVersionInfo (_tvVersion ghcVer) GHC dls
-                      ?? VerNotFound (_tvVersion ghcVer) GHC
-                    pure vi
+                    pure (getVersionInfo (_tvVersion ghcVer) GHC dls)
                   )
                   >>= \case
                         VRight vi -> do
-                          forM_ (_viPostRemove vi) $ \msg ->
+                          forM_ (join $ fmap _viPostRemove vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft  e -> do
@@ -1429,13 +1422,11 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 (runRm $ do
                     liftE $
                       rmCabalVer tv
-                    vi <- liftE @_ @'[VerNotFound] $ getVersionInfo tv Cabal dls
-                      ?? VerNotFound tv Cabal
-                    pure vi
+                    pure (getVersionInfo tv Cabal dls)
                   )
                   >>= \case
                         VRight vi -> do
-                          forM_ (_viPostRemove vi) $ \msg ->
+                          forM_ (join $ fmap _viPostRemove vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft  e -> do
@@ -1446,13 +1437,11 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 (runRm $ do
                     liftE $
                       rmHLSVer tv
-                    vi <- liftE @_ @'[VerNotFound] $ getVersionInfo tv HLS dls
-                      ?? VerNotFound tv HLS
-                    pure vi
+                    pure (getVersionInfo tv HLS dls)
                   )
                   >>= \case
                         VRight vi -> do
-                          forM_ (_viPostRemove vi) $ \msg ->
+                          forM_ (join $ fmap _viPostRemove vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft  e -> do
@@ -1508,9 +1497,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
             Compile (CompileGHC GHCCompileOptions {..}) ->
               (runCompileGHC $ do
-                vi <- liftE @_ @'[VerNotFound] $ getVersionInfo targetVer GHC dls
-                  ?? VerNotFound targetVer GHC
-                forM_ (_viPreCompile vi) $ \msg -> do
+                let vi = getVersionInfo targetVer GHC dls
+                forM_ (join $ fmap _viPreCompile vi) $ \msg -> do
                   lift $ $(logInfo) msg
                   lift $ $(logInfo)
                     ("...waiting for 5 seconds, you can still abort...")
@@ -1531,7 +1519,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       VRight vi -> do
                         runLogger $ $(logInfo)
                           ("GHC successfully compiled and installed")
-                        forM_ (_viPostInstall vi) $ \msg ->
+                        forM_ (join $ fmap _viPostInstall vi) $ \msg ->
                           runLogger $ $(logInfo) msg
                         pure ExitSuccess
                       VLeft (V (AlreadyInstalled _ v)) -> do
@@ -1637,32 +1625,32 @@ fromVersion :: (MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, Mo
             => GHCupDownloads
             -> Maybe ToolVersion
             -> Tool
-            -> Excepts '[TagNotFound, VerNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, VersionInfo)
+            -> Excepts '[TagNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, Maybe VersionInfo)
 fromVersion av tv tool = fromVersion' av (toSetToolVer tv) tool
 
 fromVersion' :: (MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
              => GHCupDownloads
              -> SetToolVersion
              -> Tool
-             -> Excepts '[TagNotFound, VerNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, VersionInfo)
+             -> Excepts '[TagNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, Maybe VersionInfo)
 fromVersion' av SetRecommended tool =
-  (\(x, y) -> (mkTVer x, y)) <$> getRecommended av tool
+  (\(x, y) -> (mkTVer x, Just y)) <$> getRecommended av tool
     ?? TagNotFound Recommended tool
 fromVersion' av (SetToolVersion v) tool = do
-  vi <- getVersionInfo (_tvVersion v) tool av ?? VerNotFound (_tvVersion v) tool
+  let vi = getVersionInfo (_tvVersion v) tool av
   case pvp $ prettyVer (_tvVersion v) of
     Left _ -> pure (v, vi)
     Right (PVP (major' :|[minor'])) ->
       case getLatestGHCFor (fromIntegral major') (fromIntegral minor') av of
-        Just (v', vi') -> pure (GHCTargetVersion (_tvTarget v) v', vi')
+        Just (v', vi') -> pure (GHCTargetVersion (_tvTarget v) v', Just vi')
         Nothing -> pure (v, vi)
     Right _ -> pure (v, vi)
 fromVersion' av  (SetToolTag Latest) tool =
-  (\(x, y) -> (mkTVer x, y)) <$> getLatest av tool ?? TagNotFound Latest tool
+  (\(x, y) -> (mkTVer x, Just y)) <$> getLatest av tool ?? TagNotFound Latest tool
 fromVersion' av (SetToolTag Recommended) tool =
-  (\(x, y) -> (mkTVer x, y)) <$> getRecommended av tool ?? TagNotFound Recommended tool
+  (\(x, y) -> (mkTVer x, Just y)) <$> getRecommended av tool ?? TagNotFound Recommended tool
 fromVersion' av (SetToolTag (Base pvp'')) GHC =
-  (\(x, y) -> (mkTVer x, y)) <$> getLatestBaseVersion av pvp'' ?? TagNotFound (Base pvp'') GHC
+  (\(x, y) -> (mkTVer x, Just y)) <$> getLatestBaseVersion av pvp'' ?? TagNotFound (Base pvp'') GHC
 fromVersion' av SetNext tool = do
   next <- case tool of
     GHC -> do
@@ -1696,7 +1684,7 @@ fromVersion' av SetNext tool = do
         . sort
         $ hlses) ?? NoToolVersionSet tool
     GHCup -> fail "GHCup cannot be set"
-  vi <- getVersionInfo (_tvVersion next) tool av ?? VerNotFound (_tvVersion next) tool
+  let vi = getVersionInfo (_tvVersion next) tool av
   pure (next, vi)
 fromVersion' _ (SetToolTag t') tool =
   throwE $ TagNotFound t' tool
