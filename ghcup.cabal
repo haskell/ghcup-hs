@@ -172,7 +172,7 @@ common split
   build-depends: split >=0.2.3.4
 
 common streamly
-  build-depends: streamly >=0.7.1
+  build-depends: streamly >=0.7.3
 
 common streamly-posix
   build-depends: streamly-posix >=0.1.0.0
