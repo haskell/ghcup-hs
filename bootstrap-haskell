@@ -273,6 +273,7 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 					"") break ;;
 					fish)
 						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
+							mkdir -p "${GHCUP_PROFILE_FILE%/*}"
 							echo "# ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME" >> "${GHCUP_PROFILE_FILE}"
 							echo "test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH" >> "${GHCUP_PROFILE_FILE}"
