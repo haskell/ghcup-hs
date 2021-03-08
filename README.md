@@ -180,6 +180,7 @@ In addition this script can also install `cabal-install`.
 
 ## Known users
 
+* Github action [haskell/actions/setup](https://github.com/haskell/actions/tree/main/setup)
 * [vabal](https://github.com/Franciman/vabal)
 
 ## Known problems
