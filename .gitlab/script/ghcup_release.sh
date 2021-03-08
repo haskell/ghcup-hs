@@ -24,9 +24,9 @@ if [ "${OS}" = "LINUX" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} -ftui
 	fi
 elif [ "${OS}" = "FREEBSD" ] ; then
-	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections' --constraint="zlib +static" -ftui
+	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections' --constraint="zlib +bundled-c-zlib" -ftui
 else
-	ecabal build -w ghc-${GHC_VERSION} --constraint="zlib +static" --constraint="lzma +static" -ftui
+	ecabal build -w ghc-${GHC_VERSION} --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" -ftui
 fi
 
 mkdir out
