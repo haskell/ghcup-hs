@@ -1,10 +1,6 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE QuasiQuotes           #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 
@@ -72,7 +68,7 @@ downloadBS' :: MonadIO m
                   , TooManyRedirs
                   ]
                  m
-                 (L.ByteString)
+                 L.ByteString
 downloadBS' https host path port = do
   bref <- liftIO $ newIORef (mempty :: Builder)
   let stepper bs = modifyIORef bref (<> byteString bs)
@@ -132,7 +128,7 @@ downloadInternal = go (5 :: Int)
           if
             | scode >= 200 && scode < 300 -> downloadStream r i' >> pure Nothing
             | scode >= 300 && scode < 400 -> case getHeader r "Location" of
-              Just r' -> pure $ Just $ r'
+              Just r' -> pure $ Just r'
               Nothing -> throwE NoLocationHeader
             | otherwise -> throwE $ HTTPStatusError scode
         )
@@ -151,7 +147,7 @@ downloadInternal = go (5 :: Int)
             Nothing -> 0
 
       mpb <- if progressBar
-        then Just <$> (liftIO $ newProgressBar defStyle 10 (Progress 0 size ()))
+        then Just <$> liftIO (newProgressBar defStyle 10 (Progress 0 size ()))
         else pure Nothing
 
       outStream <- liftIO $ Streams.makeOutputStream
@@ -224,9 +220,9 @@ headInternal = go (5 :: Int)
           if
             | scode >= 200 && scode < 300 -> do
               let headers = getHeaderMap r
-              pure $ Right $ headers
+              pure $ Right headers
             | scode >= 300 && scode < 400 -> case getHeader r "Location" of
-              Just r' -> pure $ Left $ r'
+              Just r' -> pure $ Left r'
               Nothing -> throwE NoLocationHeader
             | otherwise -> throwE $ HTTPStatusError scode
         )
@@ -243,7 +239,7 @@ withConnection' :: Bool
                 -> Maybe Int
                 -> (Connection -> IO a)
                 -> IO a
-withConnection' https host port action = bracket acquire closeConnection action
+withConnection' https host port = bracket acquire closeConnection
 
  where
   acquire = case https of

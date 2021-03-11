@@ -121,13 +121,13 @@ rmMinorSymlinks :: ( MonadReader AppState m
                    )
                 => GHCTargetVersion
                 -> Excepts '[NotInstalled] m ()
-rmMinorSymlinks tv@(GHCTargetVersion {..}) = do
+rmMinorSymlinks tv@GHCTargetVersion{..} = do
   AppState { dirs = Dirs {..} } <- lift ask
 
   files                         <- liftE $ ghcToolFiles tv
   forM_ files $ \f -> do
     f_xyz <- liftIO $ parseRel (toFilePath f <> B.singleton _hyphen <> verToBS _tvVersion)
-    let fullF = (binDir </> f_xyz)
+    let fullF = binDir </> f_xyz
     lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
 
@@ -147,11 +147,11 @@ rmPlain target = do
   forM_ mtv $ \tv -> do
     files <- liftE $ ghcToolFiles tv
     forM_ files $ \f -> do
-      let fullF = (binDir </> f)
+      let fullF = binDir </> f
       lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
       liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
     -- old ghcup
-    let hdc_file = (binDir </> [rel|haddock-ghc|])
+    let hdc_file = binDir </> [rel|haddock-ghc|]
     lift $ $(logDebug) [i|rm -f #{toFilePath hdc_file}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile hdc_file
 
@@ -166,7 +166,7 @@ rmMajorSymlinks :: ( MonadReader AppState m
                    )
                 => GHCTargetVersion
                 -> Excepts '[NotInstalled] m ()
-rmMajorSymlinks tv@(GHCTargetVersion {..}) = do
+rmMajorSymlinks tv@GHCTargetVersion{..} = do
   AppState { dirs = Dirs {..} } <- lift ask
   (mj, mi) <- getMajorMinorV _tvVersion
   let v' = intToText mj <> "." <> intToText mi
@@ -174,7 +174,7 @@ rmMajorSymlinks tv@(GHCTargetVersion {..}) = do
   files                         <- liftE $ ghcToolFiles tv
   forM_ files $ \f -> do
     f_xyz <- liftIO $ parseRel (toFilePath f <> B.singleton _hyphen <> E.encodeUtf8 v')
-    let fullF = (binDir </> f_xyz)
+    let fullF = binDir </> f_xyz
     lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
     liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
 
@@ -212,7 +212,7 @@ ghcSet mtarget = do
 
   -- link destination is of the form ../ghc/<ver>/bin/ghc
   -- for old ghcup, it is ../ghc/<ver>/bin/ghc-<ver>
-  liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
+  liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
     link <- readSymbolicLink $ toFilePath ghcBin
     Just <$> ghcLinkVersion link
 
@@ -256,7 +256,7 @@ getInstalledCabals = do
   bins   <- liftIO $ handleIO (\_ -> pure []) $ findFiles
     binDir
     (makeRegexOpts compExtended execBlank ([s|^cabal-.*$|] :: ByteString))
-  vs <- forM bins $ \f -> case fmap version (fmap decUTF8Safe . B.stripPrefix "cabal-" . toFilePath $ f) of
+  vs <- forM bins $ \f -> case fmap (version . decUTF8Safe) . B.stripPrefix "cabal-" . toFilePath $ f of
     Just (Right r) -> pure $ Right r
     Just (Left  _) -> pure $ Left f
     Nothing        -> pure $ Left f
@@ -267,8 +267,8 @@ getInstalledCabals = do
 -- | Whether the given cabal version is installed.
 cabalInstalled :: (MonadIO m, MonadReader AppState m, MonadCatch m) => Version -> m Bool
 cabalInstalled ver = do
-  vers <- fmap rights $ getInstalledCabals
-  pure $ elem ver $ vers
+  vers <- fmap rights getInstalledCabals
+  pure $ elem ver vers
 
 
 -- Return the currently set cabal version, if any.
@@ -279,7 +279,7 @@ cabalSet = do
   b        <- handleIO (\_ -> pure False) $ fmap (== SymbolicLink) $ liftIO $ getFileType cabalbin
   if
     | b -> do
-      liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
+      liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
         broken <- isBrokenSymlink cabalbin
         if broken
           then pure Nothing
@@ -321,23 +321,20 @@ getInstalledHLSs = do
                    execBlank
                    ([s|^haskell-language-server-wrapper-.*$|] :: ByteString)
     )
-  vs <- forM bins $ \f ->
+  forM bins $ \f ->
     case
-        fmap
-          version
-          (fmap decUTF8Safe . B.stripPrefix "haskell-language-server-wrapper-" . toFilePath $ f)
+          fmap (version . decUTF8Safe) . B.stripPrefix "haskell-language-server-wrapper-" . toFilePath $ f
       of
         Just (Right r) -> pure $ Right r
         Just (Left  _) -> pure $ Left f
         Nothing        -> pure $ Left f
-  pure $ vs
 
 
 -- | Whether the given HLS version is installed.
 hlsInstalled :: (MonadIO m, MonadReader AppState m, MonadCatch m) => Version -> m Bool
 hlsInstalled ver = do
-  vers <- fmap rights $ getInstalledHLSs
-  pure $ elem ver $ vers
+  vers <- fmap rights getInstalledHLSs
+  pure $ elem ver vers
 
 
 
@@ -347,7 +344,7 @@ hlsSet = do
   AppState {dirs = Dirs {..}} <- ask
   let hlsBin = binDir </> [rel|haskell-language-server-wrapper|]
 
-  liftIO $ handleIO' NoSuchThing (\_ -> pure $ Nothing) $ do
+  liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
     broken <- isBrokenSymlink hlsBin
     if broken
       then pure Nothing
@@ -376,15 +373,13 @@ hlsGHCVersions = do
   vers                          <- forM h $ \h' -> do
     bins <- hlsServerBinaries h'
     pure $ fmap
-      (\bin ->
-        version
-          . decUTF8Safe
-          . fromJust
-          . B.stripPrefix "haskell-language-server-"
-          . head
-          . B.split _tilde
-          . toFilePath
-          $ bin
+      (version
+        . decUTF8Safe
+        . fromJust
+        . B.stripPrefix "haskell-language-server-"
+        . head
+        . B.split _tilde
+        . toFilePath
       )
       bins
   pure . rights . concat . maybeToList $ vers
@@ -421,7 +416,7 @@ hlsWrapperBinary ver = do
       )
     )
   case wrapper of
-    []  -> pure $ Nothing
+    []  -> pure Nothing
     [x] -> pure $ Just x
     _   -> throwM $ UnexpectedListLength
       "There were multiple hls wrapper binaries for a single version"
@@ -498,12 +493,8 @@ getLatestGHCFor :: Int -- ^ major version component
                 -> Int -- ^ minor version component
                 -> GHCupDownloads
                 -> Maybe (Version, VersionInfo)
-getLatestGHCFor major' minor' dls = do
-  join
-    . fmap (lastMay . filter (\(v, _) -> matchMajor v major' minor'))
-    . preview (ix GHC % to Map.toDescList)
-    $ dls
-
+getLatestGHCFor major' minor' dls =
+  preview (ix GHC % to Map.toDescList) dls >>= lastMay . filter (\(v, _) -> matchMajor v major' minor')
 
 
 
@@ -524,7 +515,7 @@ unpackToDir :: (MonadLogger m, MonadIO m, MonadThrow m)
 #endif
                         ] m ()
 unpackToDir dest av = do
-  fp <- (decUTF8Safe . toFilePath) <$> basename av
+  fp <- decUTF8Safe . toFilePath <$> basename av
   let dfp = decUTF8Safe . toFilePath $ dest
   lift $ $(logInfo) [i|Unpacking: #{fp} to #{dfp}|]
   fn <- toFilePath <$> basename av
@@ -570,9 +561,9 @@ intoSubdir bdir tardir = case tardir of
     let rs = splitOn "/" r
     foldlM
       (\y x ->
-        (fmap sort . handleIO (\_ -> pure []) . liftIO . findFiles y . regex $ x) >>= \case
+        (handleIO (\_ -> pure []) . liftIO . findFiles y . regex $ x) >>= (\case
           []      -> throwE $ TarDirDoesNotExist tardir
-          (p : _) -> pure (y </> p)
+          (p : _) -> pure (y </> p)) . sort
       )
       bdir
       rs
@@ -591,16 +582,15 @@ intoSubdir bdir tardir = case tardir of
 getTagged :: Tag
           -> AffineFold (Map.Map Version VersionInfo) (Version, VersionInfo)
 getTagged tag =
-  ( to (Map.filter (\VersionInfo {..} -> elem tag _viTags))
+  to (Map.filter (\VersionInfo {..} -> tag `elem` _viTags))
   % to Map.toDescList
   % _head
-  )
 
 getLatest :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
-getLatest av tool = headOf (ix tool % getTagged Latest) $ av
+getLatest av tool = headOf (ix tool % getTagged Latest) av
 
 getRecommended :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
-getRecommended av tool = headOf (ix tool % getTagged Recommended) $ av
+getRecommended av tool = headOf (ix tool % getTagged Recommended) av
 
 
 -- | Gets the latest GHC with a given base version.
@@ -671,10 +661,10 @@ ghcToolFiles ver = do
     then pure id
     else do
       (Just symver) <-
-        (B.stripPrefix (toFilePath ghcbin <> "-") . takeFileName)
-          <$> (liftIO $ readSymbolicLink $ toFilePath ghcbinPath)
+        B.stripPrefix (toFilePath ghcbin <> "-") . takeFileName
+          <$> liftIO (readSymbolicLink $ toFilePath ghcbinPath)
       when (B.null symver)
-           (throwIO $ userError $ "Fatal: ghc symlink target is broken")
+           (throwIO $ userError "Fatal: ghc symlink target is broken")
       pure $ filter (\x -> not $ symver `B.isSuffixOf` toFilePath x)
 
   pure $ onlyUnversioned files
@@ -699,8 +689,8 @@ make :: (MonadThrow m, MonadIO m, MonadReader AppState m)
      -> Maybe (Path Abs)
      -> m (Either ProcessError ())
 make args workdir = do
-  spaths    <- catMaybes . fmap parseAbs <$> (liftIO getSearchPath)
-  has_gmake <- isJust <$> (liftIO $ searchPath spaths [rel|gmake|])
+  spaths    <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
+  has_gmake <- isJust <$> liftIO (searchPath spaths [rel|gmake|])
   let mymake = if has_gmake then "gmake" else "make"
   execLogged mymake True args [rel|ghc-make|] workdir Nothing
 
@@ -715,13 +705,13 @@ applyPatches pdir ddir = do
   patches <- liftIO $ getDirsFiles pdir
   forM_ (sort patches) $ \patch' -> do
     lift $ $(logInfo) [i|Applying patch #{patch'}|]
-    (fmap (either (const Nothing) Just) $ liftIO $ exec
-        "patch"
-        True
-        ["-p1", "-i", toFilePath patch']
-        (Just ddir)
-        Nothing
-      )
+    fmap (either (const Nothing) Just)
+         (liftIO $ exec
+           "patch"
+           True
+           ["-p1", "-i", toFilePath patch']
+           (Just ddir)
+           Nothing)
       !? PatchFailed
 
 
@@ -767,8 +757,7 @@ runBuildAction bdir instdir action = do
         (\es -> do
           exAction
           throwE (BuildFailed bdir es)
-        )
-    $ action
+        ) action
 
   when (keepDirs == Never || keepDirs == Errors) $ liftIO $ deleteDirRecursive
     bdir
@@ -800,14 +789,13 @@ getVersionInfo :: Version
                -> Tool
                -> GHCupDownloads
                -> Maybe VersionInfo
-getVersionInfo v' tool dls =
+getVersionInfo v' tool =
   headOf
     ( ix tool
     % to (Map.filterWithKey (\k _ -> k == v'))
     % to Map.elems
     % _head
     )
-    dls
 
 
 -- Gathering monoidal values
@@ -816,4 +804,4 @@ traverseFold f = foldl (\mb a -> (<>) <$> mb <*> f a) (pure mempty)
 
 -- | Gathering monoidal values
 forFold :: (Foldable t, Applicative m, Monoid b) => t a -> (a -> m b) -> m b
-forFold = \t -> \f -> traverseFold f t
+forFold = \t -> (`traverseFold` t)

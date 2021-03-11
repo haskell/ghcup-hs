@@ -9,6 +9,8 @@ package streamly
 
 package ghcup
     ghc-options: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16
+    tests: True
+    flags: +tui
 
 constraints: http-io-streams -brotli
 

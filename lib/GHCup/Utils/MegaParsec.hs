@@ -15,7 +15,6 @@ module GHCup.Utils.MegaParsec where
 import           GHCup.Types
 
 import           Control.Applicative
-import           Control.Monad
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
@@ -61,9 +60,9 @@ ghcTargetBinP :: Text -> MP.Parsec Void Text (Maybe Text, Text)
 ghcTargetBinP t =
   (,)
     <$> (   MP.try
-            (Just <$> (parseUntil1 (MP.chunk "-" *> MP.chunk t)) <* MP.chunk "-"
+            (Just <$> parseUntil1 (MP.chunk "-" *> MP.chunk t) <* MP.chunk "-"
             )
-        <|> (flip const Nothing <$> mempty)
+        <|> ((\ _ x -> x) Nothing <$> mempty)
         )
     <*> (MP.chunk t <* MP.eof)
 
@@ -74,8 +73,8 @@ ghcTargetBinP t =
 ghcTargetVerP :: MP.Parsec Void Text GHCTargetVersion
 ghcTargetVerP =
   (\x y -> GHCTargetVersion x y)
-    <$> (MP.try (Just <$> (parseUntil1 (MP.chunk "-" *> verP')) <* MP.chunk "-")
-        <|> (flip const Nothing <$> mempty)
+    <$> (MP.try (Just <$> parseUntil1 (MP.chunk "-" *> verP') <* MP.chunk "-")
+        <|> ((\ _ x -> x) Nothing <$> mempty)
         )
     <*> (version' <* MP.eof)
  where
@@ -85,16 +84,15 @@ ghcTargetVerP =
     let startsWithDigists =
           and
             . take 3
-            . join
-            . (fmap . fmap)
+            . concatMap
+              (map
                 (\case
                   (Digits _) -> True
                   (Str    _) -> False
-                )
-            . fmap NE.toList
+                ) . NE.toList)
             . NE.toList
-            $ (_vChunks v)
-    if startsWithDigists && not (isJust (_vEpoch v))
+            $ _vChunks v
+    if startsWithDigists && isNothing (_vEpoch v)
       then pure $ prettyVer v
       else fail "Oh"
 

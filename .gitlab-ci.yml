@@ -1,4 +1,5 @@
 stages:
+  - hlint
   - test
   - release
 
@@ -153,6 +154,7 @@ test:linux:stack:
     - ./.gitlab/script/ghcup_stack.sh
   extends:
     - .debian
+  needs: []
 
 ######## bootstrap test ########
 
@@ -167,6 +169,7 @@ test:linux:bootstrap_script:
     CABAL_VERSION: "3.4.0.0"
   extends:
     - .debian
+  needs: []
 
 ######## linux test ########
 
@@ -176,6 +179,7 @@ test:linux:recommended:
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+  needs: []
 
 test:linux:latest:
   stage: test
@@ -183,6 +187,7 @@ test:linux:latest:
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+  needs: []
 
 ######## linux 32bit test ########
 
@@ -192,22 +197,27 @@ test:linux:recommended:32bit:
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.2.0.0"
+  needs: []
 
 ######## arm tests ########
 
 test:linux:recommended:armv7:
+  stage: test
   extends: .test_ghcup_version:armv7
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
   when: manual
+  needs: []
 
 test:linux:recommended:aarch64:
+  stage: test
   extends: .test_ghcup_version:aarch64
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
   when: manual
+  needs: []
 
 ######## darwin test ########
 
@@ -217,6 +227,7 @@ test:mac:recommended:
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+  needs: []
 
 test:mac:latest:
   stage: test
@@ -224,6 +235,7 @@ test:mac:latest:
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+  needs: []
 
 
 ######## freebsd test ########
@@ -234,6 +246,9 @@ test:freebsd:recommended:
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+  allow_failure: true # freebsd runners are unreliable
+  when: manual
+  needs: []
 
 test:freebsd:latest:
   stage: test
@@ -241,6 +256,9 @@ test:freebsd:latest:
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+  allow_failure: true # freebsd runners are unreliable
+  when: manual
+  needs: []
 
 
 ######## linux release ########
@@ -332,3 +350,24 @@ release:freebsd:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
 
+
+######## hlint ########
+
+hlint:
+  stage: hlint
+  extends:
+    - .alpine:64bit
+  before_script:
+    - ./.gitlab/before_script/linux/alpine/install_deps.sh
+  script:
+    - ./.gitlab/script/hlint.sh
+  variables:
+    GHC_VERSION: "8.10.4"
+    CABAL_VERSION: "3.4.0.0"
+    JSON_VERSION: "0.0.4"
+  allow_failure: true
+  artifacts:
+    expire_in: 2 week
+    paths:
+      - report.html
+    when: on_failure

@@ -44,11 +44,10 @@ data Input
 fileInput :: Parser Input
 fileInput =
   FileInput
-    <$> (strOption
+    <$> strOption
           (long "file" <> short 'f' <> metavar "FILENAME" <> help
             "Input file to validate"
           )
-        )
 
 stdInput :: Parser Input
 stdInput = flag'
@@ -76,7 +75,7 @@ tarballFilterP = option readm $
       case span (/= '-') s of
         (_, []) -> fail "invalid format, missing '-' after the tool name"
         (t, v) | [tool] <- [ tool | tool <- [minBound..maxBound], low (show tool) == low t ] ->
-          TarballFilter <$> pure (Just tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
+          pure (TarballFilter $ Just tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
         _ -> fail "invalid tool"
     low = fmap toLower
 
@@ -86,21 +85,18 @@ opts = Options <$> com
 
 com :: Parser Command
 com = subparser
-  (  (command
+  (  command
        "check"
        (   ValidateYAML
-       <$> (info (validateYAMLOpts <**> helper)
-                 (progDesc "Validate the YAML")
-           )
+       <$> info (validateYAMLOpts <**> helper)
+                (progDesc "Validate the YAML")
        )
-     )
-  <> (command
+  <> command
        "check-tarballs"
        (info
          ((ValidateTarballs <$> validateYAMLOpts <*> tarballFilterP) <**> helper)
          (progDesc "Validate all tarballs (download and checksum)")
        )
-     )
   )
 
 

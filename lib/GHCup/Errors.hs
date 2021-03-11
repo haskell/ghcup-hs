@@ -1,12 +1,11 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE CPP               #-}
+{-# LANGUAGE DataKinds               #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TypeOperators           #-}
-{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleInstances           #-}
 
 {-|

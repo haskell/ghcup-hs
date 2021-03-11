@@ -92,17 +92,16 @@ getPlatform = do
       pure $ PlatformResult { _platform = Linux distro, _distroVersion = ver }
     "darwin" -> do
       ver <-
-        ( either (const Nothing) Just
+        either (const Nothing) Just
           . versioning
           -- TODO: maybe do this somewhere else
           . getMajorVersion
           . decUTF8Safe
-          )
-          <$> getDarwinVersion
+        <$> getDarwinVersion
       pure $ PlatformResult { _platform = Darwin, _distroVersion = ver }
     "freebsd" -> do
       ver <-
-        (either (const Nothing) Just . versioning . decUTF8Safe)
+        either (const Nothing) Just . versioning . decUTF8Safe
           <$> getFreeBSDVersion
       pure $ PlatformResult { _platform = FreeBSD, _distroVersion = ver }
     what -> throwE $ NoCompatiblePlatform what
@@ -157,7 +156,7 @@ getLinuxDistro = do
 
   try_os_release :: IO (Text, Maybe Text)
   try_os_release = do
-    Just (OsRelease { name = name, version_id = version_id }) <-
+    Just OsRelease{ name = name, version_id = version_id } <-
       fmap osRelease <$> parseOsRelease
     pure (T.pack name, fmap T.pack version_id)
 
@@ -174,7 +173,7 @@ getLinuxDistro = do
     let nameRegex n =
           makeRegexOpts compIgnoreCase
                         execBlank
-                        (([s|\<|] <> fS n <> [s|\>|] :: ByteString)) :: Regex
+                        ([s|\<|] <> fS n <> [s|\>|] :: ByteString) :: Regex
     let verRegex =
           makeRegexOpts compIgnoreCase
                         execBlank

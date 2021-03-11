@@ -148,7 +148,7 @@ instance FromJSONKey Platform where
                   $  "Unexpected failure in decoding LinuxDistro: "
                   <> show dstr
         Nothing -> fail "Unexpected failure in Platform stripPrefix"
-    | otherwise -> fail $ "Failure in Platform (FromJSONKey)"
+    | otherwise -> fail "Failure in Platform (FromJSONKey)"
 
 instance ToJSONKey Architecture where
   toJSONKey = genericToJSONKey defaultJSONKeyOptions
@@ -272,7 +272,7 @@ verRangeToText  (SimpleRange cmps) =
                      (versionCmpToText <$> NE.toList cmps)
   in  "( " <> inner <> " )"
 verRangeToText (OrRange cmps range) =
-  let left  = verRangeToText $ (SimpleRange cmps)
+  let left  = verRangeToText (SimpleRange cmps)
       right = verRangeToText range
   in  left <> " || " <> right
 
@@ -288,7 +288,7 @@ versionRangeP = go <* MP.eof
   go =
     MP.try orParse
       <|> MP.try (fmap SimpleRange andParse)
-      <|> (fmap (SimpleRange . pure) versionCmpP)
+      <|> fmap (SimpleRange . pure) versionCmpP
 
   orParse :: MP.Parsec Void T.Text VersionRange
   orParse =
@@ -300,9 +300,7 @@ versionRangeP = go <* MP.eof
   andParse =
     fmap (\h t -> h :| t)
          (MPC.space *> MP.chunk "(" *> MPC.space *> versionCmpP)
-      <*> ( MP.try
-          $ MP.many (MPC.space *> MP.chunk "&&" *> MPC.space *> versionCmpP)
-          )
+      <*> MP.try (MP.many (MPC.space *> MP.chunk "&&" *> MPC.space *> versionCmpP))
       <*  MPC.space
       <*  MP.chunk ")"
       <*  MPC.space

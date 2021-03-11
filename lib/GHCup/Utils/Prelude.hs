@@ -1,10 +1,7 @@
 {-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DeriveLift          #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
@@ -131,7 +128,7 @@ lE' :: forall e' e es a m
     => (e' -> e)
     -> Either e' a
     -> Excepts es m a
-lE' f = liftE . veitherToExcepts . fromEither . bimap f id
+lE' f = liftE . veitherToExcepts . fromEither . first f
 
 lEM :: forall e es a m . (Monad m, e :< es) => m (Either e a) -> Excepts es m a
 lEM em = lift em >>= lE
@@ -141,7 +138,7 @@ lEM' :: forall e' e es a m
      => (e' -> e)
      -> m (Either e' a)
      -> Excepts es m a
-lEM' f em = lift em >>= lE . bimap f id
+lEM' f em = lift em >>= lE . first f
 
 fromEither :: Either a b -> VEither '[a] b
 fromEither = either (VLeft . V) VRight
@@ -200,8 +197,8 @@ hideExcept :: forall e es es' a m
            -> a
            -> Excepts es m a
            -> Excepts es' m a
-hideExcept _ a action =
-  catchLiftLeft ((\_ -> pure a) :: (e -> Excepts es' m a)) action
+hideExcept _ a =
+  catchLiftLeft ((\_ -> pure a) :: (e -> Excepts es' m a))
 
 
 hideExcept' :: forall e es es' m
@@ -209,8 +206,8 @@ hideExcept' :: forall e es es' m
             => e
             -> Excepts es m ()
             -> Excepts es' m ()
-hideExcept' _ action =
-  catchLiftLeft ((\_ -> pure ()) :: (e -> Excepts es' m ())) action
+hideExcept' _ =
+  catchLiftLeft ((\_ -> pure ()) :: (e -> Excepts es' m ()))
 
 
 reThrowAll :: forall e es es' a m
@@ -259,7 +256,7 @@ addToCurrentEnv :: MonadIO m
                 => [(ByteString, ByteString)]
                 -> m [(ByteString, ByteString)]
 addToCurrentEnv adds = do
-  cEnv <- liftIO $ getEnvironment
+  cEnv <- liftIO getEnvironment
   pure (adds ++ cEnv)
 
 

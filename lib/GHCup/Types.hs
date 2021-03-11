@@ -365,7 +365,7 @@ pfReqToString (PlatformRequest arch plat ver) =
   archToString arch ++ "-" ++ platformToString plat ++ pver
  where
   pver = case ver of
-           Just v' -> "-" ++ (T.unpack $ prettyV v')
+           Just v' -> "-" ++ T.unpack (prettyV v')
            Nothing -> ""
 
 instance Pretty PlatformRequest where

@@ -127,7 +127,7 @@ getDownloadsF urlSource = do
     GHCupURL -> liftE getBase
     (OwnSource url) -> do
       bs <- reThrowAll DownloadFailed $ downloadBS url
-      lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
+      lE' JSONDecodeError $ first show $ Y.decodeEither' (L.toStrict bs)
     (OwnSpec av) -> pure av
     (AddSource (Left ext)) -> do
       base <- liftE getBase
@@ -135,7 +135,7 @@ getDownloadsF urlSource = do
     (AddSource (Right uri)) -> do
       base <- liftE getBase
       bsExt <- reThrowAll DownloadFailed $ downloadBS uri
-      ext <- lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bsExt)
+      ext <- lE' JSONDecodeError $ first show $ Y.decodeEither' (L.toStrict bsExt)
       pure (mergeGhcupInfo base ext)
 
     where
@@ -164,7 +164,7 @@ readFromCache = do
               (\_ -> throwE $ FileDoesNotExistError (toFilePath yaml_file))
     $ liftIO
     $ readFile yaml_file
-  lE' JSONDecodeError $ bimap show id $ Y.decodeEither' (L.toStrict bs)
+  lE' JSONDecodeError $ first show $ Y.decodeEither' (L.toStrict bs)
 
 
 getBase :: (MonadFail m, MonadIO m, MonadCatch m, MonadLogger m, MonadReader AppState m)
@@ -173,8 +173,8 @@ getBase =
   handleIO (\_ -> readFromCache)
   $ catchE @_ @'[JSONError, FileDoesNotExistError]
       (\(DownloadFailed _) -> readFromCache)
-  $ ((reThrowAll @_ @_ @'[JSONError, DownloadFailed] DownloadFailed $ smartDl ghcupURL)
-    >>= (liftE . lE' @_ @_ @'[JSONError] JSONDecodeError . bimap show id . Y.decodeEither' . L.toStrict))
+  (reThrowAll @_ @_ @'[JSONError, DownloadFailed] DownloadFailed (smartDl ghcupURL)
+    >>= (liftE . lE' @_ @_ @'[JSONError] JSONDecodeError . first show . Y.decodeEither' . L.toStrict))
     where
   -- First check if the json file is in the ~/.ghcup/cache dir
   -- and check it's access time. If it has been accessed within the
@@ -312,8 +312,8 @@ getDownloadInfo t v (PlatformRequest a p mv) dls = maybe
     in  fmap snd
           .   find
                 (\(mverRange, _) -> maybe
-                  (mv' == Nothing)
-                  (\range -> maybe False (flip versionRange range) mv')
+                  (isNothing mv')
+                  (\range -> maybe False (`versionRange` range) mv')
                   mverRange
                 )
           .   M.toList
@@ -365,7 +365,7 @@ download dli dest mfn
          (liftIO $ hideError doesNotExistErrorType $ deleteFile destFile)
      $ catchAllE @_ @'[ProcessError, DownloadFailed, UnsupportedScheme]
           (\e ->
-            (liftIO $ hideError doesNotExistErrorType $ deleteFile destFile)
+            liftIO (hideError doesNotExistErrorType $ deleteFile destFile)
               >> (throwE . DownloadFailed $ e)
           ) $ do
               lift getDownloader >>= \case
@@ -416,7 +416,7 @@ downloadCached dli mfn = do
       if
         | fileExists -> do
           liftE $ checkDigest dli cachfile
-          pure $ cachfile
+          pure cachfile
         | otherwise -> liftE $ download dli cacheDir mfn
     False -> do
       tmp <- lift withGHCupTmpDir
@@ -453,7 +453,7 @@ downloadBS uri'
   = dl False
   | scheme == "file"
   = liftIOException doesNotExistErrorType (FileDoesNotExistError path)
-    $ (liftIO $ RD.readFile path)
+    (liftIO $ RD.readFile path)
   | otherwise
   = throwE UnsupportedScheme
 

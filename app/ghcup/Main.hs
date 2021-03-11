@@ -276,7 +276,7 @@ opts =
     <*> com
  where
   parseUri s' =
-    bimap show id $ parseURI strictURIParserOptions (UTF8.fromString s')
+    first show $ parseURI strictURIParserOptions (UTF8.fromString s')
 
 
 com :: Parser Command
@@ -298,37 +298,33 @@ com =
 #endif
           "install"
           (   Install
-          <$> (info
+          <$> info
                 (installParser <**> helper)
                 (  progDesc "Install or update GHC/cabal"
                 <> footerDoc (Just $ text installToolFooter)
                 )
-              )
           )
       <> command
            "set"
-           ((info
-              (Set <$> setParser <**> helper)
-              (  progDesc "Set currently active GHC/cabal version"
-              <> footerDoc (Just $ text setFooter)
-              )
-            )
+           (info
+             (Set <$> setParser <**> helper)
+             (  progDesc "Set currently active GHC/cabal version"
+             <> footerDoc (Just $ text setFooter)
+             )
            )
       <> command
            "rm"
-           ((info
-              (Rm <$> rmParser <**> helper)
-              (  progDesc "Remove a GHC/cabal version"
-              <> footerDoc (Just $ text rmFooter)
-              )
-            )
+           (info
+             (Rm <$> rmParser <**> helper)
+             (  progDesc "Remove a GHC/cabal version"
+             <> footerDoc (Just $ text rmFooter)
+             )
            )
 
       <> command
            "list"
-           ((info (List <$> listOpts <**> helper)
-                  (progDesc "Show available GHCs and other tools")
-            )
+           (info (List <$> listOpts <**> helper)
+                 (progDesc "Show available GHCs and other tools")
            )
       <> command
            "upgrade"
@@ -343,31 +339,28 @@ com =
       <> command
            "compile"
            (   Compile
-           <$> (info (compileP <**> helper)
-                     (progDesc "Compile a tool from source")
-               )
+           <$> info (compileP <**> helper)
+                    (progDesc "Compile a tool from source")
            )
       <> commandGroup "Main commands:"
       )
     <|> subparser
           (  command
               "debug-info"
-              ((\_ -> DInfo) <$> (info (helper) (progDesc "Show debug info")))
+              ((\_ -> DInfo) <$> info helper (progDesc "Show debug info"))
           <> command
                "tool-requirements"
                (   (\_ -> ToolRequirements)
-               <$> (info (helper)
-                         (progDesc "Show the requirements for ghc/cabal")
-                   )
+               <$> info helper
+                        (progDesc "Show the requirements for ghc/cabal")
                )
           <> command
                "changelog"
-               ((info
+               (info
                   (fmap ChangeLog changelogP <**> helper)
                   (  progDesc "Find/show changelog"
                   <> footerDoc (Just $ text changeLogFooter)
                   )
-                )
                )
           <> commandGroup "Other commands:"
           <> hidden
@@ -375,12 +368,11 @@ com =
     <|> subparser
           (  command
               "install-cabal"
-              ((info
+              (info
                  ((InstallCabalLegacy <$> installOpts (Just Cabal)) <**> helper)
                  (  progDesc "Install or update cabal"
                  <> footerDoc (Just $ text installCabalFooter)
                  )
-               )
               )
           <> internal
           )
@@ -425,32 +417,29 @@ installParser =
       (  command
           "ghc"
           (   InstallGHC
-          <$> (info
+          <$> info
                 (installOpts (Just GHC) <**> helper)
                 (  progDesc "Install GHC"
                 <> footerDoc (Just $ text installGHCFooter)
                 )
-              )
           )
       <> command
            "cabal"
            (   InstallCabal
-           <$> (info
+           <$> info
                  (installOpts (Just Cabal) <**> helper)
                  (  progDesc "Install Cabal"
                  <> footerDoc (Just $ text installCabalFooter)
                  )
-               )
            )
       <> command
            "hls"
            (   InstallHLS
-           <$> (info
+           <$> info
                  (installOpts (Just HLS) <**> helper)
                  (  progDesc "Install haskell-languge-server"
                  <> footerDoc (Just $ text installHLSFooter)
                  )
-               )
            )
       )
     )
@@ -488,7 +477,7 @@ Examples:
 installOpts :: Maybe Tool -> Parser InstallOptions
 installOpts tool =
   (\p (u, v) b -> InstallOptions v p u b)
-    <$> (optional
+    <$> optional
           (option
             (eitherReader platformParser)
             (  short 'p'
@@ -498,19 +487,17 @@ installOpts tool =
                  "Override for platform (triple matching ghc tarball names), e.g. x86_64-fedora27-linux"
             )
           )
-        )
     <*> (   (   (,)
-            <$> (optional
+            <$> optional
                   (option
                     (eitherReader bindistParser)
                     (short 'u' <> long "url" <> metavar "BINDIST_URL" <> help
                       "Install the specified version from this bindist"
                     )
                   )
-                )
             <*> (Just <$> toolVersionArgument Nothing tool)
             )
-        <|> (pure (Nothing, Nothing))
+        <|> pure (Nothing, Nothing)
         )
     <*> flag
           False
@@ -526,32 +513,29 @@ setParser =
       (  command
           "ghc"
           (   SetGHC
-          <$> (info
+          <$> info
                 (setOpts (Just GHC) <**> helper)
                 (  progDesc "Set GHC version"
                 <> footerDoc (Just $ text setGHCFooter)
                 )
-              )
           )
       <> command
            "cabal"
            (   SetCabal
-           <$> (info
+           <$> info
                  (setOpts (Just Cabal) <**> helper)
                  (  progDesc "Set Cabal version"
                  <> footerDoc (Just $ text setCabalFooter)
                  )
-               )
            )
       <> command
            "hls"
            (   SetHLS
-           <$> (info
+           <$> info
                  (setOpts (Just HLS) <**> helper)
                  (  progDesc "Set haskell-language-server version"
                  <> footerDoc (Just $ text setHLSFooter)
                  )
-               )
            )
       )
     )
@@ -587,7 +571,7 @@ listOpts =
               "Tool to list versions for. Default is all"
             )
           )
-    <*> (optional
+    <*> optional
           (option
             (eitherReader criteriaParser)
             (  short 'c'
@@ -596,7 +580,6 @@ listOpts =
             <> help "Show only installed or set tool versions"
             )
           )
-        )
     <*> switch
           (short 'r' <> long "raw-format" <> help "More machine-parsable format"
           )
@@ -607,20 +590,18 @@ rmParser =
   (Left <$> subparser
       (  command
           "ghc"
-          (RmGHC <$> (info (rmOpts (Just GHC) <**> helper) (progDesc "Remove GHC version")))
+          (RmGHC <$> info (rmOpts (Just GHC) <**> helper) (progDesc "Remove GHC version"))
       <> command
            "cabal"
            (   RmCabal
-           <$> (info (versionParser' (Just ListInstalled) (Just Cabal) <**> helper)
-                     (progDesc "Remove Cabal version")
-               )
+           <$> info (versionParser' (Just ListInstalled) (Just Cabal) <**> helper)
+                    (progDesc "Remove Cabal version")
            )
       <> command
            "hls"
            (   RmHLS
-           <$> (info (versionParser' (Just ListInstalled) (Just HLS) <**> helper)
-                     (progDesc "Remove haskell-language-server version")
-               )
+           <$> info (versionParser' (Just ListInstalled) (Just HLS) <**> helper)
+                    (progDesc "Remove haskell-language-server version")
            )
       )
     )
@@ -636,21 +617,20 @@ changelogP :: Parser ChangeLogOptions
 changelogP =
   (\x y -> ChangeLogOptions x y)
     <$> switch (short 'o' <> long "open" <> help "xdg-open the changelog url")
-    <*> (optional
+    <*> optional
           (option
             (eitherReader
               (\s' -> case fmap toLower s' of
                 "ghc"   -> Right GHC
                 "cabal" -> Right Cabal
                 "ghcup" -> Right GHCup
-                e       -> Left $ e
+                e       -> Left e
               )
             )
             (short 't' <> long "tool" <> metavar "<ghc|cabal|ghcup>" <> help
               "Open changelog for given tool (default: ghc)"
             )
           )
-        )
     <*> optional (toolVersionArgument Nothing Nothing)
 
 compileP :: Parser CompileCommand
@@ -658,12 +638,11 @@ compileP = subparser
   (  command
       "ghc"
       (   CompileGHC
-      <$> (info
+      <$> info
             (ghcCompileOpts <**> helper)
             (  progDesc "Compile GHC from source"
             <> footerDoc (Just $ text compileFooter)
             )
-          )
       )
   )
  where
@@ -692,14 +671,13 @@ ghcCompileOpts =
   (\CabalCompileOptions {..} crossTarget addConfArgs setCompile -> GHCCompileOptions { .. }
     )
     <$> cabalCompileOpts
-    <*> (optional
+    <*> optional
           (option
             str
             (short 'x' <> long "cross-target" <> metavar "CROSS_TARGET" <> help
               "Build cross-compiler for this platform"
             )
           )
-        )
     <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to configure, prefix with '-- ' (longopts)"))
     <*> flag
           False
@@ -711,15 +689,14 @@ ghcCompileOpts =
 cabalCompileOpts :: Parser CabalCompileOptions
 cabalCompileOpts =
   CabalCompileOptions
-    <$> (option
+    <$> option
           (eitherReader
-            (bimap (const "Not a valid version") id . version . T.pack)
+            (first (const "Not a valid version") . version . T.pack)
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
             "The tool version to compile"
           )
-        )
-    <*> (option
+    <*> option
           (eitherReader
             (\x ->
               (bimap (const "Not a valid version") Left . version . T.pack $ x)
@@ -732,7 +709,6 @@ cabalCompileOpts =
           <> help
                "The GHC version (or full path) to bootstrap with (must be installed)"
           )
-        )
     <*> optional
           (option
             (eitherReader (readEither @Int))
@@ -744,7 +720,7 @@ cabalCompileOpts =
           (option
             (eitherReader
               (\x ->
-                bimap show id . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
+                first show . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
                     String
                     (Path Abs)
               )
@@ -757,7 +733,7 @@ cabalCompileOpts =
           (option
             (eitherReader
               (\x ->
-                bimap show id . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
+                first show . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
                     String
                     (Path Abs)
               )
@@ -774,10 +750,9 @@ toolVersionParser = verP' <|> toolP
   verP' = ToolVersion <$> versionParser
   toolP =
     ToolTag
-      <$> (option
+      <$> option
             (eitherReader tagEither)
             (short 't' <> long "tag" <> metavar "TAG" <> help "The target tag")
-          )
 
 -- | same as toolVersionParser, except as an argument.
 toolVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
@@ -797,8 +772,8 @@ setVersionArgument criteria tool =
  where
   setEither s' =
         parseSet s'
-    <|> bimap id SetToolTag (tagEither s')
-    <|> bimap id SetToolVersion (tVersionEither s')
+    <|> second SetToolTag (tagEither s')
+    <|> second SetToolVersion (tVersionEither s')
   parseSet s' = case fmap toLower s' of
                   "next" -> Right SetNext
                   other  -> Left [i|Unknown tag/version #{other}|]
@@ -884,12 +859,12 @@ tagEither s' = case fmap toLower s' of
 
 tVersionEither :: String -> Either String GHCTargetVersion
 tVersionEither =
-  bimap (const "Not a valid version") id . MP.parse ghcTargetVerP "" . T.pack
+  first (const "Not a valid version") . MP.parse ghcTargetVerP "" . T.pack
 
 
 toolVersionEither :: String -> Either String ToolVersion
 toolVersionEither s' =
-  bimap id ToolTag (tagEither s') <|> bimap id ToolVersion (tVersionEither s')
+  second ToolTag (tagEither s') <|> second ToolVersion (tVersionEither s')
 
 
 toolParser :: String -> Either String Tool
@@ -930,7 +905,7 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
   Left  e -> Left $ errorBundlePretty e
  where
   archP :: MP.Parsec Void Text Architecture
-  archP = (MP.try (MP.chunk "x86_64" $> A_64)) <|> (MP.chunk "i386" $> A_32)
+  archP = MP.try (MP.chunk "x86_64" $> A_64) <|> (MP.chunk "i386" $> A_32)
   platformP :: MP.Parsec Void Text PlatformRequest
   platformP = choice'
     [ (\a mv -> PlatformRequest a FreeBSD mv)
@@ -990,7 +965,7 @@ toSettings options = do
   pure $ mergeConf options dirs userConf
  where
    mergeConf :: Options -> Dirs -> UserSettings -> AppState
-   mergeConf (Options {..}) dirs (UserSettings {..}) =
+   mergeConf Options{..} dirs UserSettings{..} =
      let cache       = fromMaybe (fromMaybe False uCache) optCache
          noVerify    = fromMaybe (fromMaybe False uNoVerify) optNoVerify
          verbose     = fromMaybe (fromMaybe False uVerbose) optVerbose
@@ -1027,10 +1002,10 @@ upgradeOptsP =
         "Upgrade ghcup in-place (wherever it's at)"
       )
     <|> (   UpgradeAt
-        <$> (option
+        <$> option
               (eitherReader
                 (\x ->
-                  bimap show id . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
+                  first show . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
                       String
                       (Path Abs)
                 )
@@ -1038,14 +1013,13 @@ upgradeOptsP =
               (short 't' <> long "target" <> metavar "TARGET_DIR" <> help
                 "Absolute filepath to write ghcup into"
               )
-            )
         )
-    <|> (pure UpgradeGHCupDir)
+    <|> pure UpgradeGHCupDir
 
 
 
 describe_result :: String
-describe_result = $( (LitE . StringL) <$>
+describe_result = $( LitE . StringL <$>
                      runIO (do
                              CapturedProcess{..} <- executeOut [rel|git|] ["describe"] Nothing
                              case _exitCode of
@@ -1059,7 +1033,7 @@ main :: IO ()
 main = do
   let versionHelp = infoOption
         ( ("The GHCup Haskell installer, version " <>)
-        $ (head . lines $ describe_result)
+          (head . lines $ describe_result)
         )
         (long "version" <> help "Show version" <> hidden)
   let numericVersionHelp = infoOption
@@ -1273,8 +1247,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     )
                     >>= \case
                           VRight vi -> do
-                            runLogger $ $(logInfo) ("GHC installation successful")
-                            forM_ (join $ fmap _viPostInstall vi) $ \msg ->
+                            runLogger $ $(logInfo) "GHC installation successful"
+                            forM_ (_viPostInstall =<< vi) $ \msg ->
                               runLogger $ $(logInfo) msg
                             pure ExitSuccess
                           VLeft (V (AlreadyInstalled _ v)) -> do
@@ -1311,8 +1285,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   )
                   >>= \case
                         VRight vi -> do
-                          runLogger $ $(logInfo) ("Cabal installation successful")
-                          forM_ (join $ fmap _viPostInstall vi) $ \msg ->
+                          runLogger $ $(logInfo) "Cabal installation successful"
+                          forM_ (_viPostInstall =<< vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
@@ -1341,8 +1315,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   )
                   >>= \case
                         VRight vi -> do
-                          runLogger $ $(logInfo) ("HLS installation successful")
-                          forM_ (join $ fmap _viPostInstall vi) $ \msg ->
+                          runLogger $ $(logInfo) "HLS installation successful"
+                          forM_ (_viPostInstall =<< vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
@@ -1357,12 +1331,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
 
           let setGHC' SetOptions{..} =
-                (runSetGHC $ do
+                runSetGHC (do
                     v <- liftE $ fst <$> fromVersion' dls sToolVer GHC
                     liftE $ setGHC v SetGHCOnly
                   )
                   >>= \case
-                        VRight (GHCTargetVersion{..}) -> do
+                        VRight GHCTargetVersion{..} -> do
                           runLogger
                             $ $(logInfo)
                                 [i|GHC #{prettyVer _tvVersion} successfully set as default version#{maybe "" (" for cross target " <>) _tvTarget}|]
@@ -1372,13 +1346,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 5
 
           let setCabal' SetOptions{..} =
-                (runSetCabal $ do
+                runSetCabal (do
                     v <- liftE $ fst <$> fromVersion' dls sToolVer Cabal
                     liftE $ setCabal (_tvVersion v)
                     pure v
                   )
                   >>= \case
-                        VRight (GHCTargetVersion{..}) -> do
+                        VRight GHCTargetVersion{..} -> do
                           runLogger
                             $ $(logInfo)
                                 [i|Cabal #{prettyVer _tvVersion} successfully set as default version|]
@@ -1388,13 +1362,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 14
 
           let setHLS' SetOptions{..} =
-                (runSetHLS $ do
+                runSetHLS (do
                     v <- liftE $ fst <$> fromVersion' dls sToolVer HLS
                     liftE $ setHLS (_tvVersion v)
                     pure v
                   )
                   >>= \case
-                        VRight (GHCTargetVersion{..}) -> do
+                        VRight GHCTargetVersion{..} -> do
                           runLogger
                             $ $(logInfo)
                                 [i|HLS #{prettyVer _tvVersion} successfully set as default version|]
@@ -1404,14 +1378,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 14
 
           let rmGHC' RmOptions{..} =
-                (runRm $ do
+                runRm (do
                     liftE $
                       rmGHCVer ghcVer
                     pure (getVersionInfo (_tvVersion ghcVer) GHC dls)
                   )
                   >>= \case
                         VRight vi -> do
-                          forM_ (join $ fmap _viPostRemove vi) $ \msg ->
+                          forM_ (_viPostRemove =<< vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft  e -> do
@@ -1419,14 +1393,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 7
 
           let rmCabal' tv =
-                (runRm $ do
+                runRm (do
                     liftE $
                       rmCabalVer tv
                     pure (getVersionInfo tv Cabal dls)
                   )
                   >>= \case
                         VRight vi -> do
-                          forM_ (join $ fmap _viPostRemove vi) $ \msg ->
+                          forM_ (_viPostRemove =<< vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft  e -> do
@@ -1434,14 +1408,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 15
 
           let rmHLS' tv =
-                (runRm $ do
+                runRm (do
                     liftE $
                       rmHLSVer tv
                     pure (getVersionInfo tv HLS dls)
                   )
                   >>= \case
                         VRight vi -> do
-                          forM_ (join $ fmap _viPostRemove vi) $ \msg ->
+                          forM_ (_viPostRemove =<< vi) $ \msg ->
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft  e -> do
@@ -1470,8 +1444,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Set (Left (SetCabal sopts)) -> setCabal' sopts
             Set (Left (SetHLS sopts)) -> setHLS' sopts
 
-            List (ListOptions {..}) ->
-              (runListGHC $ do
+            List ListOptions {..} ->
+              runListGHC (do
                   l <- listVersions dls lTool lCriteria pfreq
                   liftIO $ printListResult lRawFormat l
                   pure ExitSuccess
@@ -1485,8 +1459,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Rm (Left (RmHLS rmopts)) -> rmHLS' rmopts
 
             DInfo ->
-              do
-                  (runDebugInfo $ liftE $ getDebugInfo)
+              do runDebugInfo $ liftE getDebugInfo
                 >>= \case
                       VRight dinfo -> do
                         putStrLn $ prettyDebugInfo dinfo
@@ -1496,12 +1469,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         pure $ ExitFailure 8
 
             Compile (CompileGHC GHCCompileOptions {..}) ->
-              (runCompileGHC $ do
+              runCompileGHC (do
                 let vi = getVersionInfo targetVer GHC dls
-                forM_ (join $ fmap _viPreCompile vi) $ \msg -> do
+                forM_ (_viPreCompile =<< vi) $ \msg -> do
                   lift $ $(logInfo) msg
                   lift $ $(logInfo)
-                    ("...waiting for 5 seconds, you can still abort...")
+                    "...waiting for 5 seconds, you can still abort..."
                   liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
                 liftE $ compileGHC dls
                             (GHCTargetVersion crossTarget targetVer)
@@ -1518,8 +1491,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 >>= \case
                       VRight vi -> do
                         runLogger $ $(logInfo)
-                          ("GHC successfully compiled and installed")
-                        forM_ (join $ fmap _viPostInstall vi) $ \msg ->
+                          "GHC successfully compiled and installed"
+                        forM_ (_viPostInstall =<< vi) $ \msg ->
                           runLogger $ $(logInfo) msg
                         pure ExitSuccess
                       VLeft (V (AlreadyInstalled _ v)) -> do
@@ -1537,16 +1510,16 @@ Make sure to clean up #{tmpdir} afterwards.|])
                         runLogger $ $(logError) $ T.pack $ prettyShow e
                         pure $ ExitFailure 9
 
-            Upgrade (uOpts) force -> do
+            Upgrade uOpts force -> do
               target <- case uOpts of
                 UpgradeInplace -> do
-                  efp <- liftIO $ getExecutablePath
+                  efp <- liftIO getExecutablePath
                   p   <- parseAbs . E.encodeUtf8 . T.pack $ efp
                   pure $ Just p
                 (UpgradeAt p)   -> pure $ Just p
                 UpgradeGHCupDir -> pure (Just (binDir </> [rel|ghcup|]))
 
-              (runUpgrade $ (liftE $ upgradeGHCup dls target force pfreq)) >>= \case
+              runUpgrade (liftE $ upgradeGHCup dls target force pfreq) >>= \case
                 VRight v' -> do
                   let pretty_v = prettyVer v'
                   let vi = fromJust $ snd <$> getLatest dls GHCup
@@ -1563,14 +1536,12 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   pure $ ExitFailure 11
 
             ToolRequirements ->
-              ( runLogger
-                $ runE
+              runLogger
+                (runE
                   @'[NoCompatiblePlatform , DistroNotFound , NoToolRequirements]
                 $ do
-                    platform <- liftE $ getPlatform
-                    req      <-
-                      (getCommonRequirements platform $ treq)
-                        ?? NoToolRequirements
+                    platform <- liftE getPlatform
+                    req      <- getCommonRequirements platform treq ?? NoToolRequirements
                     liftIO $ T.hPutStr stdout (prettyRequirements req)
                 )
                 >>= \case
@@ -1579,7 +1550,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                         runLogger $ $(logError) $ T.pack $ prettyShow e
                         pure $ ExitFailure 12
 
-            ChangeLog (ChangeLogOptions {..}) -> do
+            ChangeLog ChangeLogOptions{..} -> do
               let tool = fromMaybe GHC clTool
                   ver' = maybe
                     (Right Latest)
@@ -1626,7 +1597,7 @@ fromVersion :: (MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, Mo
             -> Maybe ToolVersion
             -> Tool
             -> Excepts '[TagNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, Maybe VersionInfo)
-fromVersion av tv tool = fromVersion' av (toSetToolVer tv) tool
+fromVersion av tv = fromVersion' av (toSetToolVer tv)
 
 fromVersion' :: (MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
              => GHCupDownloads
@@ -1880,7 +1851,7 @@ checkForUpdates dls pfreq = do
 
  where
   latestInstalled tool = (fmap lVer . lastMay)
-    <$> (listVersions dls (Just tool) (Just ListInstalled) pfreq)
+    <$> listVersions dls (Just tool) (Just ListInstalled) pfreq
 
 
 prettyDebugInfo :: DebugInfo -> String

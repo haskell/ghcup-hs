@@ -190,7 +190,7 @@ ghcupConfigFile = do
   bs <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> readFile file
   case bs of
       Nothing -> pure defaultUserSettings
-      Just bs' -> lE' JSONDecodeError . bimap show id . Y.decodeEither' . L.toStrict $ bs'
+      Just bs' -> lE' JSONDecodeError . first show . Y.decodeEither' . L.toStrict $ bs'
 
 
     -------------------------
@@ -228,7 +228,7 @@ parseGHCupGHCDir (toFilePath -> f) = do
 mkGhcupTmpDir :: (MonadThrow m, MonadIO m) => m (Path Abs)
 mkGhcupTmpDir = do
   tmpdir <- liftIO $ getEnvDefault "TMPDIR" "/tmp"
-  tmp    <- liftIO $ mkdtemp $ (tmpdir FP.</> "ghcup-")
+  tmp    <- liftIO $ mkdtemp (tmpdir FP.</> "ghcup-")
   parseAbs tmp
 
 
@@ -266,7 +266,7 @@ relativeSymlink (toFilePath -> p1) (toFilePath -> p2) =
       common  = takeWhile (\(x, y) -> x == y) $ zip d1 d2
       cPrefix = drop (length common) d1
   in  joinPath (replicate (length cPrefix) "..")
-        <> joinPath ("/" : (drop (length common) d2))
+        <> joinPath ("/" : drop (length common) d2)
 
 
 

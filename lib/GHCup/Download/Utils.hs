@@ -1,10 +1,6 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE QuasiQuotes           #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 
@@ -55,7 +51,7 @@ uriToQuadruple URI {..} = do
   let queryBS =
         BS.intercalate "&"
           . fmap (\(x, y) -> encodeQuery x <> "=" <> encodeQuery y)
-          $ (queryPairs uriQuery)
+          $ queryPairs uriQuery
       port =
         preview (_Just % authorityPortL' % _Just % portNumberL') uriAuthority
       fullpath = if BS.null queryBS then uriPath else uriPath <> "?" <> queryBS

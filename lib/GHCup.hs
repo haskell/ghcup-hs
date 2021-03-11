@@ -123,10 +123,9 @@ installGHCBindist :: ( MonadFail m
                        m
                        ()
 installGHCBindist dlinfo ver pfreq = do
-  let tver = (mkTVer ver)
+  let tver = mkTVer ver
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
-  whenM (lift $ ghcInstalled tver)
-    $ (throwE $ AlreadyInstalled GHC ver)
+  whenM (lift $ ghcInstalled tver) (throwE $ AlreadyInstalled GHC ver)
 
   -- download (or use cached version)
   dl                           <- liftE $ downloadCached dlinfo Nothing
@@ -173,7 +172,7 @@ installPackedGHC :: ( MonadMask m
                        , ArchiveResult
 #endif
                        ] m ()
-installPackedGHC dl msubdir inst ver pfreq@(PlatformRequest {..}) = do
+installPackedGHC dl msubdir inst ver pfreq@PlatformRequest{..} = do
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
@@ -182,7 +181,7 @@ installPackedGHC dl msubdir inst ver pfreq@(PlatformRequest {..}) = do
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack)
                    (liftE . intoSubdir tmpUnpack)
-                   (msubdir)
+                   msubdir
 
   liftE $ runBuildAction tmpUnpack
                          (Just inst)
@@ -201,11 +200,11 @@ installUnpackedGHC :: ( MonadReader AppState m
                    -> Version       -- ^ The GHC version
                    -> PlatformRequest
                    -> Excepts '[ProcessError] m ()
-installUnpackedGHC path inst ver (PlatformRequest {..}) = do
+installUnpackedGHC path inst ver PlatformRequest{..} = do
   lift $ $(logInfo) "Installing GHC (this may take a while)"
   lEM $ execLogged "./configure"
                    False
-                   (["--prefix=" <> toFilePath inst] ++ alpineArgs)
+                   (("--prefix=" <> toFilePath inst) : alpineArgs)
                    [rel|ghc-configure|]
                    (Just path)
                    Nothing
@@ -283,7 +282,7 @@ installCabalBindist :: ( MonadMask m
                           ]
                          m
                          ()
-installCabalBindist dlinfo ver (PlatformRequest {..}) = do
+installCabalBindist dlinfo ver PlatformRequest {..} = do
   lift $ $(logDebug) [i|Requested to install cabal version #{ver}|]
 
   AppState {dirs = Dirs {..}} <- lift ask
@@ -295,7 +294,7 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
           -- ignore when the installation is a legacy cabal (binary, not symlink)
           $ getSymbolicLinkStatus (toFilePath (binDir </> [rel|cabal|]))
       )
-    $ (throwE $ AlreadyInstalled Cabal ver)
+      (throwE $ AlreadyInstalled Cabal ver)
 
   -- download (or use cached version)
   dl                           <- liftE $ downloadCached dlinfo Nothing
@@ -311,11 +310,9 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
   liftE $ installCabal' workdir binDir
 
   -- create symlink if this is the latest version
-  cVers <- lift $ fmap rights $ getInstalledCabals
+  cVers <- lift $ fmap rights getInstalledCabals
   let lInstCabal = headMay . reverse . sort $ cVers
   when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
-
-  pure ()
 
  where
   -- | Install an unpacked cabal distribution.
@@ -331,7 +328,7 @@ installCabalBindist dlinfo ver (PlatformRequest {..}) = do
     let destPath = inst </> destFileName
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
       (path </> cabalFile)
-      (destPath)
+      destPath
       Overwrite
     lift $ chmod_755 destPath
 
@@ -398,13 +395,13 @@ installHLSBindist :: ( MonadMask m
                         ]
                        m
                        ()
-installHLSBindist dlinfo ver (PlatformRequest {..}) = do
+installHLSBindist dlinfo ver PlatformRequest{..} = do
   lift $ $(logDebug) [i|Requested to install hls version #{ver}|]
 
   AppState {dirs = Dirs {..}} <- lift ask
 
   whenM (lift (hlsInstalled ver))
-    $ (throwE $ AlreadyInstalled HLS ver)
+    (throwE $ AlreadyInstalled HLS ver)
 
   -- download (or use cached version)
   dl                           <- liftE $ downloadCached dlinfo Nothing
@@ -420,11 +417,9 @@ installHLSBindist dlinfo ver (PlatformRequest {..}) = do
   liftE $ installHLS' workdir binDir
 
   -- create symlink if this is the latest version
-  hlsVers <- lift $ fmap rights $ getInstalledHLSs
+  hlsVers <- lift $ fmap rights getInstalledHLSs
   let lInstHLS = headMay . reverse . sort $ hlsVers
   when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
-
-  pure ()
 
  where
   -- | Install an unpacked hls distribution.
@@ -525,7 +520,7 @@ setGHC ver sghc = do
   let verBS = verToBS (_tvVersion ver)
   ghcdir                        <- lift $ ghcupGHCDir ver
 
-  whenM (lift $ fmap not $ ghcInstalled ver) (throwE (NotInstalled GHC ver))
+  whenM (lift $ not <$> ghcInstalled ver) (throwE (NotInstalled GHC ver))
 
   -- symlink destination
   AppState { dirs = Dirs {..} } <- lift ask
@@ -603,7 +598,7 @@ setCabal ver = do
   AppState {dirs = Dirs {..}} <- lift ask
   liftIO $ createDirRecursive' binDir
 
-  whenM (liftIO $ fmap not $ doesFileExist (binDir </> targetFile))
+  whenM (liftIO $ not <$> doesFileExist (binDir </> targetFile))
     $ throwE
     $ NotInstalled Cabal (GHCTargetVersion Nothing ver)
 
@@ -647,7 +642,7 @@ setHLS ver = do
 
   -- set haskell-language-server-<ghcver> symlinks
   bins <- lift $ hlsServerBinaries ver
-  when (bins == []) $ throwE $ NotInstalled HLS (GHCTargetVersion Nothing ver)
+  when (null bins) $ throwE $ NotInstalled HLS (GHCTargetVersion Nothing ver)
 
   forM_ bins $ \f -> do
     let destL = toFilePath f
@@ -705,7 +700,7 @@ data ListResult = ListResult
 -- | Extract all available tool versions and their tags.
 availableToolVersions :: GHCupDownloads -> Tool -> Map.Map Version [Tag]
 availableToolVersions av tool = view
-  (at tool % non Map.empty % to (fmap (_viTags)))
+  (at tool % non Map.empty % to (fmap _viTags))
   av
 
 
@@ -733,13 +728,13 @@ listVersions av lt criteria pfreq = do
       case t of
         GHC -> do
           slr <- strayGHCs avTools
-          pure $ (sort (slr ++ lr))
+          pure (sort (slr ++ lr))
         Cabal -> do
           slr <- strayCabals avTools
-          pure $ (sort (slr ++ lr))
+          pure (sort (slr ++ lr))
         HLS -> do
           slr <- strayHLS avTools
-          pure $ (sort (slr ++ lr))
+          pure (sort (slr ++ lr))
         GHCup -> pure lr
     Nothing -> do
       ghcvers   <- listVersions av (Just GHC) criteria pfreq
@@ -761,21 +756,21 @@ listVersions av lt criteria pfreq = do
           Nothing -> do
             lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet Nothing
             fromSrc <- ghcSrcInstalled tver
-            hlsPowered <- fmap (elem _tvVersion) $ hlsGHCVersions
+            hlsPowered <- fmap (elem _tvVersion) hlsGHCVersions
             pure $ Just $ ListResult
               { lTool      = GHC
               , lVer       = _tvVersion
               , lCross     = Nothing
               , lTag       = []
               , lInstalled = True
-              , lStray     = maybe True (const False) (Map.lookup _tvVersion avTools)
+              , lStray     = isNothing (Map.lookup _tvVersion avTools)
               , lNoBindist = False
               , ..
               }
       Right tver@GHCTargetVersion{ .. } -> do
         lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet _tvTarget
         fromSrc <- ghcSrcInstalled tver
-        hlsPowered <- fmap (elem _tvVersion) $ hlsGHCVersions
+        hlsPowered <- fmap (elem _tvVersion) hlsGHCVersions
         pure $ Just $ ListResult
           { lTool      = GHC
           , lVer       = _tvVersion
@@ -801,14 +796,14 @@ listVersions av lt criteria pfreq = do
         case Map.lookup ver avTools of
           Just _  -> pure Nothing
           Nothing -> do
-            lSet    <- fmap (maybe False (== ver)) $ cabalSet
+            lSet    <- fmap (== Just ver) cabalSet
             pure $ Just $ ListResult
               { lTool      = Cabal
               , lVer       = ver
               , lCross     = Nothing
               , lTag       = []
               , lInstalled = True
-              , lStray     = maybe True (const False) (Map.lookup ver avTools)
+              , lStray     = isNothing (Map.lookup ver avTools)
               , lNoBindist = False
               , fromSrc    = False -- actually, we don't know :>
               , hlsPowered = False
@@ -829,14 +824,14 @@ listVersions av lt criteria pfreq = do
         case Map.lookup ver avTools of
           Just _  -> pure Nothing
           Nothing -> do
-            lSet    <- fmap (maybe False (== ver)) $ hlsSet
+            lSet    <- fmap (== Just ver) hlsSet
             pure $ Just $ ListResult
               { lTool      = HLS
               , lVer       = ver
               , lCross     = Nothing
               , lTag       = []
               , lInstalled = True
-              , lStray     = maybe True (const False) (Map.lookup ver avTools)
+              , lStray     = isNothing (Map.lookup ver avTools)
               , lNoBindist = False
               , fromSrc    = False -- actually, we don't know :>
               , hlsPowered = False
@@ -856,11 +851,11 @@ listVersions av lt criteria pfreq = do
       lSet       <- fmap (maybe False (\(GHCTargetVersion _ v') -> v' == v)) $ ghcSet Nothing
       lInstalled <- ghcInstalled tver
       fromSrc    <- ghcSrcInstalled tver
-      hlsPowered <- fmap (elem v) $ hlsGHCVersions
+      hlsPowered <- fmap (elem v) hlsGHCVersions
       pure ListResult { lVer = v, lCross = Nothing , lTag = tags, lTool = t, lStray = False, .. }
     Cabal -> do
       let lNoBindist = isLeft $ getDownloadInfo Cabal v pfreq av
-      lSet <- fmap (maybe False (== v)) $ cabalSet
+      lSet <- fmap (== Just v) cabalSet
       lInstalled <- cabalInstalled v
       pure ListResult { lVer    = v
                       , lCross  = Nothing
@@ -886,7 +881,7 @@ listVersions av lt criteria pfreq = do
                       }
     HLS -> do
       let lNoBindist = isLeft $ getDownloadInfo HLS v pfreq av
-      lSet <- fmap (maybe False (== v)) $ hlsSet
+      lSet <- fmap (== Just v) hlsSet
       lInstalled <- hlsInstalled v
       pure ListResult { lVer    = v
                       , lCross  = Nothing
@@ -927,7 +922,7 @@ rmGHCVer :: ( MonadReader AppState m
          => GHCTargetVersion
          -> Excepts '[NotInstalled] m ()
 rmGHCVer ver = do
-  isSetGHC <- lift $ fmap (maybe False (== ver)) $ ghcSet (_tvTarget ver)
+  isSetGHC <- lift $ fmap (== Just ver) $ ghcSet (_tvTarget ver)
 
   whenM (lift $ fmap not $ ghcInstalled ver) (throwE (NotInstalled GHC ver))
   dir <- lift $ ghcupGHCDir ver
@@ -960,8 +955,7 @@ rmGHCVer ver = do
 
   liftIO
     $ hideError doesNotExistErrorType
-    $ deleteFile
-    $ (baseDir </> [rel|share|])
+    $ deleteFile (baseDir </> [rel|share|])
 
 
 -- | Delete a cabal version. Will try to fix the @cabal@ symlink
@@ -972,15 +966,15 @@ rmCabalVer :: (MonadReader AppState m, MonadThrow m, MonadLogger m, MonadIO m, M
 rmCabalVer ver = do
   whenM (lift $ fmap not $ cabalInstalled ver) $ throwE (NotInstalled Cabal (GHCTargetVersion Nothing ver))
 
-  cSet      <- lift $ cabalSet
+  cSet      <- lift cabalSet
 
   AppState {dirs = Dirs {..}} <- lift ask
 
   cabalFile <- lift $ parseRel ("cabal-" <> verToBS ver)
   liftIO $ hideError doesNotExistErrorType $ deleteFile (binDir </> cabalFile)
 
-  when (maybe False (== ver) cSet) $ do
-    cVers <- lift $ fmap rights $ getInstalledCabals
+  when (Just ver == cSet) $ do
+    cVers <- lift $ fmap rights getInstalledCabals
     case headMay . reverse . sort $ cVers of
       Just latestver -> setCabal latestver
       Nothing        -> liftIO $ hideError doesNotExistErrorType $ deleteFile
@@ -995,21 +989,21 @@ rmHLSVer :: (MonadReader AppState m, MonadThrow m, MonadLogger m, MonadIO m, Mon
 rmHLSVer ver = do
   whenM (lift $ fmap not $ hlsInstalled ver) $ throwE (NotInstalled HLS (GHCTargetVersion Nothing ver))
 
-  isHlsSet      <- lift $ hlsSet
+  isHlsSet      <- lift hlsSet
 
   AppState {dirs = Dirs {..}} <- lift ask
 
   bins <- lift $ hlsAllBinaries ver
   forM_ bins $ \f -> liftIO $ deleteFile (binDir </> f)
 
-  when (maybe False (== ver) isHlsSet) $ do
+  when (Just ver == isHlsSet) $ do
     -- delete all set symlinks
     oldSyms <- lift hlsSymlinks
     forM_ oldSyms $ \f -> do
       lift $ $(logDebug) [i|rm #{toFilePath (binDir </> f)}|]
       liftIO $ deleteFile (binDir </> f)
     -- set latest hls
-    hlsVers <- lift $ fmap rights $ getInstalledHLSs
+    hlsVers <- lift $ fmap rights getInstalledHLSs
     case headMay . reverse . sort $ hlsVers of
       Just latestver -> setHLS latestver
       Nothing        -> pure ()
@@ -1034,7 +1028,7 @@ getDebugInfo = do
   diGHCDir       <- lift ghcupGHCBaseDir
   let diCacheDir = cacheDir
   diArch         <- lE getArchitecture
-  diPlatform     <- liftE $ getPlatform
+  diPlatform     <- liftE getPlatform
   pure $ DebugInfo { .. }
 
 
@@ -1081,12 +1075,12 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 ()
-compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@(PlatformRequest {..})
+compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@PlatformRequest{..}
   = do
     lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
 
     alreadyInstalled <- lift $ ghcInstalled tver
-    alreadySet <- fmap (maybe False (==tver)) $ lift $ ghcSet (_tvTarget tver)
+    alreadySet <- fmap (== Just tver) $ lift $ ghcSet (_tvTarget tver)
 
     -- download source tarball
     dlInfo <-
@@ -1131,7 +1125,6 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@(PlatformReque
 
     -- restore
     when alreadySet $ liftE $ void $ setGHC tver SetGHCOnly
-    pure ()
 
  where
   defaultConf = case _tvTarget tver of
@@ -1165,29 +1158,28 @@ Stage1Only = YES|]
                       (Path Abs)  -- ^ output path of bindist
   compileBindist bghc ghcdir workdir = do
     lift $ $(logInfo) [i|configuring build|]
-    liftE $ checkBuildConfig
+    liftE checkBuildConfig
 
     AppState { dirs = Dirs {..} } <- lift ask
 
     forM_ patchdir $ \dir -> liftE $ applyPatches dir workdir
 
-    cEnv <- liftIO $ getEnvironment
+    cEnv <- liftIO getEnvironment
 
     if
-      | (_tvVersion tver) >= [vver|8.8.0|] -> do
+      | _tvVersion tver >= [vver|8.8.0|] -> do
         bghcPath <- case bghc of
           Right ghc' -> pure ghc'
           Left  bver -> do
             spaths <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
-            (liftIO $ searchPath spaths bver) !? NotFoundInPATH bver
+            liftIO (searchPath spaths bver) !? NotFoundInPATH bver
         lEM $ execLogged
           "./configure"
           False
           (  ["--prefix=" <> toFilePath ghcdir]
-          ++ (maybe mempty
+          ++ maybe mempty
                     (\x -> ["--target=" <> E.encodeUtf8 x])
                     (_tvTarget tver)
-             )
           ++ fmap E.encodeUtf8 aargs
           )
           [rel|ghc-conf|]
@@ -1200,10 +1192,9 @@ Stage1Only = YES|]
           (  [ "--prefix=" <> toFilePath ghcdir
              , "--with-ghc=" <> either toFilePath toFilePath bghc
              ]
-          ++ (maybe mempty
-                    (\x -> ["--target=" <> E.encodeUtf8 x])
-                    (_tvTarget tver)
-             )
+          ++ maybe mempty
+                   (\x -> ["--target=" <> E.encodeUtf8 x])
+                   (_tvTarget tver)
           ++ fmap E.encodeUtf8 aargs
           )
           [rel|ghc-conf|]
@@ -1267,7 +1258,7 @@ Stage1Only = YES|]
 
    -- for cross, we need Stage1Only
     case _tvTarget tver of
-      Just _ -> when (not $ elem "Stage1Only = YES" lines') $ throwE
+      Just _ -> when ("Stage1Only = YES" `notElem` lines') $ throwE
         (InvalidBuildConfig
           [s|Cross compiling needs to be a Stage1 build, add "Stage1Only = YES" to your config!|]
         )
@@ -1326,7 +1317,7 @@ upgradeGHCup dls mtarget force pfreq = do
                                                            Overwrite
   lift $ chmod_755 destFile
 
-  liftIO (isInPath destFile) >>= \b -> when (not b) $
+  liftIO (isInPath destFile) >>= \b -> unless b $
     lift $ $(logWarn) [i|"#{toFilePath (dirname destFile)}" is not in PATH! You have to add it in order to use ghcup.|]
   liftIO (isShadowed destFile) >>= \case
     Nothing -> pure ()
