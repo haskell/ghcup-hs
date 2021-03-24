@@ -85,26 +85,26 @@ validate dls = do
   checkHasRequiredPlatforms t v tags arch pspecs = do
     let v' = prettyVer v
         arch' = prettyShow arch
-    when (not $ any (== Linux UnknownLinux) pspecs) $ do
+    when (notElem (Linux UnknownLinux) pspecs) $ do
       lift $ $(logError)
         [i|Linux UnknownLinux missing for for #{t} #{v'} #{arch'}|]
       addError
-    when ((not $ any (== Darwin) pspecs) && arch == A_64) $ do
+    when ((notElem Darwin pspecs) && arch == A_64) $ do
       lift $ $(logError) [i|Darwin missing for #{t} #{v'} #{arch'}|]
       addError
-    when ((not $ any (== FreeBSD) pspecs) && arch == A_64) $ lift $ $(logWarn)
+    when ((notElem FreeBSD pspecs) && arch == A_64) $ lift $ $(logWarn)
       [i|FreeBSD missing for #{t} #{v'} #{arch'}|]
 
     -- alpine needs to be set explicitly, because
     -- we cannot assume that "Linux UnknownLinux" runs on Alpine
     -- (although it could be static)
-    when (not $ any (== Linux Alpine) pspecs) $
+    when (notElem (Linux Alpine) pspecs) $
       case t of
-        GHCup | arch `elem` [A_64, A_32] -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]) >> addError
+        GHCup | arch `elem` [A_64, A_32] -> lift ($(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]) >> addError
         Cabal | v > [vver|2.4.1.0|]
-              , arch `elem` [A_64, A_32] -> (lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]) >> addError
+              , arch `elem` [A_64, A_32] -> lift ($(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]) >> addError
         GHC | Latest `elem` tags || Recommended `elem` tags
-            , arch `elem` [A_64, A_32] -> lift $ $(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]
+            , arch `elem` [A_64, A_32] -> lift ($(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|])
         _ -> lift $ $(logWarn) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]
 
   checkUniqueTags tool = do
@@ -116,7 +116,7 @@ validate dls = do
                     (\case
                       [] -> throwM $ InternalError "empty inner list"
                       (t : ts) ->
-                        pure $ (t, ) $ if isUniqueTag t then ts == [] else True
+                        pure $ (t, ) (not (isUniqueTag t) || null ts)
                     )
                 . group
                 . sort
@@ -190,7 +190,7 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
           %& indices (matchTest versionRegex . T.unpack . prettyVer)
           % (viSourceDL % _Just `summing` viArch % each % each % each)
     when (null dlis) $ $(logError) [i|no tarballs selected by filter|] *> addError
-    forM_ dlis $ downloadAll
+    forM_ dlis downloadAll
 
     -- exit
     e <- liftIO $ readIORef ref
@@ -203,7 +203,7 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
  where
   runLogger = myLoggerT LoggerConfig { lcPrintDebug = True
                                      , colorOutter  = B.hPut stderr
-                                     , rawOutter    = (\_ -> pure ())
+                                     , rawOutter    = \_ -> pure ()
                                      }
   downloadAll dli = do
     dirs <- liftIO getDirs

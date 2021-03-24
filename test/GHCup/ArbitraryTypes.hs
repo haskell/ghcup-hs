@@ -1,10 +1,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 
 module GHCup.ArbitraryTypes where
 
@@ -57,7 +54,7 @@ instance Arbitrary T.Text where
   shrink xs = T.pack <$> shrink (T.unpack xs)
 
 instance Arbitrary (NonEmpty Word) where
-  arbitrary = fmap fromList $ listOf1 $ arbitrary
+  arbitrary = fmap fromList $ listOf1 arbitrary
 
 -- utf8 encoded bytestring
 instance Arbitrary ByteString where
@@ -70,7 +67,7 @@ instance Arbitrary ByteString where
     ---------------------
 
 instance Arbitrary Scheme where
-  arbitrary = oneof [ Scheme <$> pure "http", Scheme <$> pure "https" ]
+  arbitrary = oneof [ pure (Scheme "http"), pure (Scheme "https") ]
 
 instance Arbitrary Host where
   arbitrary = genericArbitrary
@@ -82,7 +79,7 @@ instance Arbitrary Port where
 
 instance Arbitrary (URIRef Absolute) where
   arbitrary =
-    URI <$> arbitrary <*> pure Nothing <*> arbitrary <*> (Query <$> pure []) <*> pure Nothing
+    URI <$> arbitrary <*> pure Nothing <*> arbitrary <*> pure (Query []) <*> pure Nothing
 
 
 
@@ -95,32 +92,28 @@ instance Arbitrary Mess where
     (x, y, z) <- genVer
     pure
       $ either (error . show) id
-      $ mess
-      $ (intToText x <> "." <> intToText y <> "." <> intToText z)
+      $ mess (intToText x <> "." <> intToText y <> "." <> intToText z)
 
 instance Arbitrary Version where
   arbitrary = do
     (x, y, z) <- genVer
     pure
       $ either (error . show) id
-      $ version
-      $ (intToText x <> "." <> intToText y <> "." <> intToText z)
+      $ version (intToText x <> "." <> intToText y <> "." <> intToText z)
 
 instance Arbitrary SemVer where
   arbitrary = do
     (x, y, z) <- genVer
     pure
       $ either (error . show) id
-      $ semver
-      $ (intToText x <> "." <> intToText y <> "." <> intToText z)
+      $ semver (intToText x <> "." <> intToText y <> "." <> intToText z)
 
 instance Arbitrary PVP where
   arbitrary = do
     (x, y, z) <- genVer
     pure
       $ either (error . show) id
-      $ pvp
-      $ (intToText x <> "." <> intToText y <> "." <> intToText z)
+      $ pvp (intToText x <> "." <> intToText y <> "." <> intToText z)
 
 instance Arbitrary Versioning where
   arbitrary = Ideal <$> arbitrary
@@ -173,8 +166,8 @@ instance Arbitrary VersionCmp where
 
 instance Arbitrary (Path Rel) where
   arbitrary =
-    (either (error . show) id . parseRel . E.encodeUtf8 . T.pack)
-      <$> (listOf1 $ elements ['a' .. 'z'])
+    either (error . show) id . parseRel . E.encodeUtf8 . T.pack
+      <$> listOf1 (elements ['a' .. 'z'])
 
 instance Arbitrary TarDir where
   arbitrary = genericArbitrary

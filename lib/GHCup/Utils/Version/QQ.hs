@@ -57,7 +57,7 @@ deriving instance Lift (NonEmpty Word)
 
 qq :: (Text -> Q Exp) -> QuasiQuoter
 qq quoteExp' = QuasiQuoter
-  { quoteExp  = (\s -> quoteExp' . T.pack $ s)
+  { quoteExp  = \s -> quoteExp' . T.pack $ s
   , quotePat  = \_ ->
     fail "illegal QuasiQuote (allowed as expression only, used as a pattern)"
   , quoteType = \_ ->
@@ -101,4 +101,4 @@ liftText :: T.Text -> Q Exp
 liftText txt = AppE (VarE 'T.pack) <$> TH.lift (T.unpack txt)
 
 liftDataWithText :: Data a => a -> Q Exp
-liftDataWithText = dataToExpQ (\a -> liftText <$> cast a)
+liftDataWithText = dataToExpQ (fmap liftText . cast)

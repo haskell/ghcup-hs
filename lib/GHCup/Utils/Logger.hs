@@ -1,4 +1,3 @@
-{-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE FlexibleContexts      #-}
 
 {-|
@@ -51,7 +50,7 @@ myLoggerT LoggerConfig {..} loggingt = runLoggingT loggingt mylogger
           LevelOther t -> toLogStr "[ " <> toLogStr t <> toLogStr " ]"
     let out = fromLogStr (l <> toLogStr " " <> str' <> toLogStr "\n")
 
-    when (lcPrintDebug || (lcPrintDebug == False && not (level == LevelDebug)))
+    when (lcPrintDebug || (not lcPrintDebug && (level /= LevelDebug)))
       $ colorOutter out
 
     -- raw output

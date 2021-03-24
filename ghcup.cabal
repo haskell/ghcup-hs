@@ -52,7 +52,7 @@ common async
   build-depends: async >=0.8
 
 common base
-  build-depends: base >=4.12 && <5
+  build-depends: base >=4.13 && <5
 
 common base16-bytestring
   build-depends: base16-bytestring >= 0.1.1.6

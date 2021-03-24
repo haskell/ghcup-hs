@@ -107,12 +107,14 @@ makeLenses ''CapturedProcess
 -- PATH does.
 findExecutable :: Path Rel -> IO (Maybe (Path Abs))
 findExecutable ex = do
-  sPaths <- fmap catMaybes . (fmap . fmap) parseAbs $ getSearchPath
+  sPaths <- fmap (catMaybes . fmap parseAbs) getSearchPath
   -- We don't want exceptions to mess up our result. If we can't
   -- figure out if a file exists, then treat it as a negative result.
-  asum $ fmap (handleIO (\_ -> pure Nothing)) $ fmap
-    -- asum for short-circuiting behavior
-    (\s' -> (isExecutable (s' </> ex) >>= guard) $> (Just (s' </> ex)))
+  asum $ fmap
+    (handleIO (\_ -> pure Nothing)
+      -- asum for short-circuiting behavior
+      . (\s' -> (isExecutable (s' </> ex) >>= guard) $> Just (s' </> ex))
+    )
     sPaths
 
 
@@ -150,11 +152,12 @@ execLogged exe spath args lfile chdir env = do
       void
         $ forkIO
         $ EX.handle (\(_ :: IOException) -> pure ())
-        $ flip EX.finally (putMVar done ())
-        $ (if verbose
-            then tee fd stdoutRead
-            else printToRegion fd stdoutRead 6 pState
-          )
+        $ EX.finally
+            (if verbose
+              then tee fd stdoutRead
+              else printToRegion fd stdoutRead 6 pState
+            )
+            (putMVar done ())
 
       -- fork the subprocess
       pid <- SPPB.forkProcess $ do
@@ -203,7 +206,7 @@ execLogged exe spath args lfile chdir env = do
         $ handle
             (\(ex :: SomeException) -> do
               ps <- liftIO $ takeMVar pState
-              when (ps == True) (forM_ rs (liftIO . closeConsoleRegion))
+              when ps (forM_ rs (liftIO . closeConsoleRegion))
               throw ex
             )
         $ readTilEOF (lineAction rs) fdIn
@@ -247,7 +250,7 @@ execLogged exe spath args lfile chdir env = do
            => Fd          -- ^ input file descriptor
            -> ByteString  -- ^ rest buffer (read across newline)
            -> m (ByteString, ByteString, Bool) -- ^ (full line, rest, eof)
-  readLine fd = \inBs -> go inBs
+  readLine fd = go
    where
     go inBs = do
       -- if buffer is not empty, process it first
@@ -275,7 +278,7 @@ execLogged exe spath args lfile chdir env = do
       (bs, rest, eof) <- readLine fd' bs'
       if eof
          then liftIO $ ioError (mkIOError eofErrorType "" Nothing Nothing)
-         else (void $ action' bs) >> go rest
+         else void (action' bs) >> go rest
 
 
 -- | Capture the stdout and stderr of the given action, which
@@ -329,7 +332,7 @@ captureOutStreams action = do
                                  , _stdErr   = stderr'
                                  }
 
-        _ -> throwIO $ userError $ ("No such PID " ++ show pid)
+        _ -> throwIO $ userError ("No such PID " ++ show pid)
 
  where
   writeStds pout perr rout rerr = do
@@ -356,7 +359,7 @@ captureOutStreams action = do
 
 actionWithPipes :: ((Fd, Fd) -> IO b) -> IO b
 actionWithPipes a =
-  createPipe >>= \(p1, p2) -> (flip finally) (cleanup [p1, p2]) $ a (p1, p2)
+  createPipe >>= \(p1, p2) -> flip finally (cleanup [p1, p2]) $ a (p1, p2)
 
 cleanup :: [Fd] -> IO ()
 cleanup fds = for_ fds $ \fd -> handleIO (\_ -> pure ()) $ closeFd fd
@@ -423,7 +426,7 @@ isShadowed :: Path Abs -> IO (Maybe (Path Abs))
 isShadowed p = do
   let dir = dirname p
   fn <- basename p
-  spaths <- catMaybes . fmap parseAbs <$> (liftIO getSearchPath)
+  spaths <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
   if dir `elem` spaths
   then do
     let shadowPaths = takeWhile (/= dir) spaths
@@ -437,7 +440,7 @@ isInPath :: Path Abs -> IO Bool
 isInPath p = do
   let dir = dirname p
   fn <- basename p
-  spaths <- catMaybes . fmap parseAbs <$> (liftIO getSearchPath)
+  spaths <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
   if dir `elem` spaths
   then isJust <$> searchPath [dir] fn
   else pure False
@@ -451,7 +454,7 @@ findFiles path regex = do
     . S.toList
     . S.filter (\(_, p) -> match regex p)
     $ dirContentsStream dirStream
-  pure $ join $ fmap parseRel f
+  pure $ parseRel =<< f
 
 
 findFiles' :: Path Abs -> MP.Parsec Void Text () -> IO [Path Rel]
@@ -464,7 +467,7 @@ findFiles' path parser = do
                              Left _ -> False
                              Right p' -> isJust $ MP.parseMaybe parser p')
     $ dirContentsStream dirStream
-  pure $ join $ fmap parseRel f
+  pure $ parseRel =<< f
 
 
 isBrokenSymlink :: Path Abs -> IO Bool

@@ -49,8 +49,8 @@ getCommonRequirements pr tr =
     in  fmap snd
           .   find
                 (\(mverRange, _) -> maybe
-                  (mv' == Nothing)
-                  (\range -> maybe False (flip versionRange range) mv')
+                  (isNothing mv')
+                  (\range -> maybe False (`versionRange` range) mv')
                   mverRange
                 )
           .   M.toList

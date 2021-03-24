@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeApplications #-}
 
 module GHCup.Types.JSONSpec where

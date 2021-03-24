@@ -98,16 +98,15 @@ keyHandlers KeyBindings {..} =
   , (bSet, const "Set"      , withIOAction set')
   , (bChangelog, const "ChangeLog", withIOAction changelog')
   , ( bShowAll
-    , (\BrickSettings {..} ->
-        if showAll then "Hide old versions" else "Show all versions"
-      )
+    , \BrickSettings {..} ->
+       if showAll then "Hide old versions" else "Show all versions"
     , hideShowHandler
     )
-  , (bUp, const "Up", \BrickState {..} -> continue (BrickState { appState = (moveCursor 1 appState Up), .. }))
-  , (bDown, const "Down", \BrickState {..} -> continue (BrickState { appState = (moveCursor 1 appState Down), .. }))
+  , (bUp, const "Up", \BrickState {..} -> continue BrickState{ appState = moveCursor 1 appState Up, .. })
+  , (bDown, const "Down", \BrickState {..} -> continue BrickState{ appState = moveCursor 1 appState Down, .. })
   ]
  where
-  hideShowHandler (BrickState {..}) =
+  hideShowHandler BrickState{..} =
     let newAppSettings   = appSettings { showAll = not . showAll $ appSettings }
         newInternalState = constructList appData newAppSettings (Just appState)
     in  continue (BrickState appData newAppSettings newInternalState appKeys)
@@ -115,19 +114,18 @@ keyHandlers KeyBindings {..} =
 
 showKey :: Vty.Key -> String
 showKey (Vty.KChar c) = [c]
-showKey (Vty.KUp) = "↑"
-showKey (Vty.KDown) = "↓"
+showKey Vty.KUp = "↑"
+showKey Vty.KDown = "↓"
 showKey key = tail (show key)
 
 
 ui :: AttrMap -> BrickState -> Widget String
-ui dimAttrs BrickState { appSettings = as@(BrickSettings {}), ..}
-  = ( padBottom Max
-    $ ( withBorderStyle unicode
-      $ borderWithLabel (str "GHCup")
-      $ (center $ (header <=> hBorder <=> renderList' appState))
+ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
+  = padBottom Max
+      ( withBorderStyle unicode
+        $ borderWithLabel (str "GHCup")
+          (center (header <=> hBorder <=> renderList' appState))
       )
-    )
     <=> footer
 
  where
@@ -136,15 +134,16 @@ ui dimAttrs BrickState { appSettings = as@(BrickSettings {}), ..}
       . txtWrap
       . T.pack
       . foldr1 (\x y -> x <> "  " <> y)
-      $ (fmap (\(key, s, _) -> (showKey key <> ":" <> s as)) $ keyHandlers appKeys)
+      . fmap (\(key, s, _) -> showKey key <> ":" <> s as)
+      $ keyHandlers appKeys
   header =
-    (minHSize 2 $ emptyWidget)
-      <+> (padLeft (Pad 2) $ minHSize 6 $ str "Tool")
-      <+> (minHSize 15 $ str "Version")
-      <+> (padLeft (Pad 1) $ minHSize 25 $ str "Tags")
-      <+> (padLeft (Pad 5) $ str "Notes")
+    minHSize 2 emptyWidget
+      <+> padLeft (Pad 2) (minHSize 6 $ str "Tool")
+      <+> minHSize 15 (str "Version")
+      <+> padLeft (Pad 1) (minHSize 25 $ str "Tags")
+      <+> padLeft (Pad 5) (str "Notes")
   renderList' = withDefAttr listAttr . drawListElements renderItem True
-  renderItem _ b listResult@(ListResult {..}) =
+  renderItem _ b listResult@ListResult{..} =
     let marks = if
           | lSet       -> (withAttr "set" $ str "✔✔")
           | lInstalled -> (withAttr "installed" $ str "✓ ")
@@ -153,8 +152,8 @@ ui dimAttrs BrickState { appSettings = as@(BrickSettings {}), ..}
           Nothing -> T.unpack . prettyVer $ lVer
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
         dim
-          | lNoBindist && (not lInstalled)
-            && (not b) -- TODO: overloading dim and active ignores active
+          | lNoBindist && not lInstalled
+            && not b -- TODO: overloading dim and active ignores active
                        --       so we hack around it here
           = updateAttrMap (const dimAttrs) . withAttr "no-bindist"
           | otherwise  = id
@@ -165,24 +164,23 @@ ui dimAttrs BrickState { appSettings = as@(BrickSettings {}), ..}
         active = if b then forceAttr "active" else id
     in  hooray $ active $ dim
           (   marks
-          <+> (( padLeft (Pad 2)
-               $ minHSize 6
-               $ (printTool lTool)
+          <+> padLeft (Pad 2)
+               ( minHSize 6
+                 (printTool lTool)
                )
-              )
-          <+> (minHSize 15 $ (str ver))
+          <+> minHSize 15 (str ver)
           <+> (let l = catMaybes . fmap printTag $ sort lTag
                in  padLeft (Pad 1) $ minHSize 25 $ if null l
                      then emptyWidget
                      else foldr1 (\x y -> x <+> str "," <+> y) l
               )
-          <+> ( padLeft (Pad 5)
-              $ let notes = printNotes listResult
+          <+> padLeft (Pad 5)
+              ( let notes = printNotes listResult
                 in  if null notes
                       then emptyWidget
-                      else foldr1 (\x y -> x <+> str "," <+> y) $ notes
+                      else foldr1 (\x y -> x <+> str "," <+> y) notes
               )
-          <+> (vLimit 1 $ fill ' ')
+          <+> vLimit 1 (fill ' ')
           )
 
   printTag Recommended    = Just $ withAttr "recommended" $ str "recommended"
@@ -289,7 +287,7 @@ dimAttributes no_color = attrMap
                   | otherwise = Vty.withBackColor
 
 eventHandler :: BrickState -> BrickEvent n e -> EventM n (Next BrickState)
-eventHandler st@(BrickState {..}) ev = do
+eventHandler st@BrickState{..} ev = do
   AppState { keyBindings = kb } <- liftIO $ readIORef settings'
   case ev of
     (MouseDown _ Vty.BScrollUp _ _) ->
@@ -298,9 +296,9 @@ eventHandler st@(BrickState {..}) ev = do
       continue (BrickState { appState = moveCursor 1 appState Down, .. })
     (VtyEvent (Vty.EvResize _ _)) -> continue st
     (VtyEvent (Vty.EvKey Vty.KUp _)) ->
-      continue (BrickState { appState = (moveCursor 1 appState Up), .. })
+      continue BrickState{ appState = moveCursor 1 appState Up, .. }
     (VtyEvent (Vty.EvKey Vty.KDown _)) ->
-      continue (BrickState { appState = (moveCursor 1 appState Down), .. })
+      continue BrickState{ appState = moveCursor 1 appState Down, .. }
     (VtyEvent (Vty.EvKey key _)) ->
       case find (\(key', _, _) -> key' == key) (keyHandlers kb) of
         Nothing -> continue st
@@ -309,7 +307,7 @@ eventHandler st@(BrickState {..}) ev = do
 
 
 moveCursor :: Int -> BrickInternalState -> Direction -> BrickInternalState
-moveCursor steps ais@(BrickInternalState {..}) direction =
+moveCursor steps ais@BrickInternalState{..} direction =
   let newIx = if direction == Down then ix + steps else ix - steps
   in  case clr !? newIx of
         Just _  -> BrickInternalState { ix = newIx, .. }
@@ -325,7 +323,7 @@ withIOAction action as = case listSelectedElement' (appState as) of
   Nothing      -> continue as
   Just (ix, e) -> suspendAndResume $ do
     action as (ix, e) >>= \case
-      Left  err -> putStrLn $ ("Error: " <> err)
+      Left  err -> putStrLn ("Error: " <> err)
       Right _   -> putStrLn "Success"
     getAppData Nothing (pfreq . appData $ as) >>= \case
       Right data' -> do
@@ -339,7 +337,7 @@ withIOAction action as = case listSelectedElement' (appState as) of
 -- This synchronises @BrickInternalState@ with @BrickData@
 -- and @BrickSettings@.
 updateList :: BrickData -> BrickState -> BrickState
-updateList appD (BrickState {..}) =
+updateList appD BrickState{..} =
   let newInternalState = constructList appD appSettings (Just appState)
   in  BrickState { appState    = newInternalState
                  , appData     = appD
@@ -352,11 +350,11 @@ constructList :: BrickData
               -> BrickSettings
               -> Maybe BrickInternalState
               -> BrickInternalState
-constructList appD appSettings mapp =
-  replaceLR (filterVisible (showAll appSettings)) (lr appD) mapp
+constructList appD appSettings =
+  replaceLR (filterVisible (showAll appSettings)) (lr appD)
 
 listSelectedElement' :: BrickInternalState -> Maybe (Int, ListResult)
-listSelectedElement' (BrickInternalState {..}) = fmap (ix, ) $ clr !? ix
+listSelectedElement' BrickInternalState{..} = fmap (ix, ) $ clr !? ix
 
 
 selectLatest :: Vector ListResult -> Int
@@ -420,7 +418,7 @@ install' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
               , TarDirDoesNotExist
               ]
 
-  (run $ do
+  run (do
       case lTool of
         GHC   -> do
           let vi = getVersionInfo lVer GHC dls
@@ -437,7 +435,7 @@ install' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
     )
     >>= \case
           VRight vi                         -> do
-            forM_ (join $ fmap _viPostInstall vi) $ \msg ->
+            forM_ (_viPostInstall =<< vi) $ \msg ->
               runLogger $ $(logInfo) msg
             pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
@@ -457,7 +455,7 @@ set' _ (_, ListResult {..}) = do
           . flip runReaderT settings
           . runE @'[FileDoesNotExistError , NotInstalled , TagNotFound]
 
-  (run $ do
+  run (do
       case lTool of
         GHC   -> liftE $ setGHC (GHCTargetVersion lCross lVer) SetGHCOnly $> ()
         Cabal -> liftE $ setCabal lVer $> ()
@@ -477,7 +475,7 @@ del' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
 
   let run = runLogger . flip runReaderT settings . runE @'[NotInstalled]
 
-  (run $ do
+  run (do
       let vi = getVersionInfo lVer lTool dls
       case lTool of
         GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> vi
@@ -602,6 +600,6 @@ getAppData mg pfreq' = do
     case r of
       Right dls -> do
         lV <- listVersions dls Nothing Nothing pfreq'
-        pure $ Right $ (BrickData (reverse lV) dls pfreq')
+        pure $ Right $ BrickData (reverse lV) dls pfreq'
       Left e -> pure $ Left [i|#{e}|]
 
