@@ -718,32 +718,39 @@ listVersions :: ( MonadCatch m
              -> Maybe ListCriteria
              -> PlatformRequest
              -> m [ListResult]
-listVersions av lt criteria pfreq = do
-  case lt of
-    Just t -> do
-      -- get versions from GHCupDownloads
-      let avTools = availableToolVersions av t
-      lr <- filter' <$> forM (Map.toList avTools) (toListResult t)
+listVersions av lt' criteria pfreq = do
+  -- some annoying work to avoid too much repeated IO
+  cSet <- cabalSet
+  cabals <- getInstalledCabals' cSet
+  hlsSet' <- hlsSet
+  hlses <- getInstalledHLSs
 
-      case t of
-        GHC -> do
-          slr <- strayGHCs avTools
-          pure (sort (slr ++ lr))
-        Cabal -> do
-          slr <- strayCabals avTools
-          pure (sort (slr ++ lr))
-        HLS -> do
-          slr <- strayHLS avTools
-          pure (sort (slr ++ lr))
-        GHCup -> pure lr
-    Nothing -> do
-      ghcvers   <- listVersions av (Just GHC) criteria pfreq
-      cabalvers <- listVersions av (Just Cabal) criteria pfreq
-      hlsvers   <- listVersions av (Just HLS) criteria pfreq
-      ghcupvers <- listVersions av (Just GHCup) criteria pfreq
-      pure (ghcvers <> cabalvers <> hlsvers <> ghcupvers)
-
+  go lt' cSet cabals hlsSet' hlses
  where
+  go lt cSet cabals hlsSet' hlses = do
+    case lt of
+      Just t -> do
+        -- get versions from GHCupDownloads
+        let avTools = availableToolVersions av t
+        lr <- filter' <$> forM (Map.toList avTools) (toListResult t cSet cabals hlsSet' hlses)
+
+        case t of
+          GHC -> do
+            slr <- strayGHCs avTools
+            pure (sort (slr ++ lr))
+          Cabal -> do
+            slr <- strayCabals avTools cSet cabals
+            pure (sort (slr ++ lr))
+          HLS -> do
+            slr <- strayHLS avTools
+            pure (sort (slr ++ lr))
+          GHCup -> pure lr
+      Nothing -> do
+        ghcvers   <- go (Just GHC) cSet cabals hlsSet' hlses
+        cabalvers <- go (Just Cabal) cSet cabals hlsSet' hlses
+        hlsvers   <- go (Just HLS) cSet cabals hlsSet' hlses
+        ghcupvers <- go (Just GHCup) cSet cabals hlsSet' hlses
+        pure (ghcvers <> cabalvers <> hlsvers <> ghcupvers)
   strayGHCs :: (MonadCatch m, MonadReader AppState m, MonadThrow m, MonadLogger m, MonadIO m)
             => Map.Map Version [Tag]
             -> m [ListResult]
@@ -788,15 +795,16 @@ listVersions av lt criteria pfreq = do
 
   strayCabals :: (MonadReader AppState m, MonadCatch m, MonadThrow m, MonadLogger m, MonadIO m)
             => Map.Map Version [Tag]
+            -> Maybe Version
+            -> [Either (Path Rel) Version]
             -> m [ListResult]
-  strayCabals avTools = do
-    cabals <- getInstalledCabals
+  strayCabals avTools cSet cabals = do
     fmap catMaybes $ forM cabals $ \case
       Right ver ->
         case Map.lookup ver avTools of
           Just _  -> pure Nothing
           Nothing -> do
-            lSet    <- fmap (== Just ver) cabalSet
+            let lSet = cSet == Just ver
             pure $ Just $ ListResult
               { lTool      = Cabal
               , lVer       = ver
@@ -843,8 +851,15 @@ listVersions av lt criteria pfreq = do
         pure Nothing
 
   -- NOTE: this are not cross ones, because no bindists
-  toListResult :: (MonadReader AppState m, MonadIO m, MonadCatch m) => Tool -> (Version, [Tag]) -> m ListResult
-  toListResult t (v, tags) = case t of
+  toListResult :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadCatch m)
+               => Tool
+               -> Maybe Version
+               -> [Either (Path Rel) Version]
+               -> Maybe Version
+               -> [Either (Path Rel) Version]
+               -> (Version, [Tag])
+               -> m ListResult
+  toListResult t cSet cabals hlsSet' hlses (v, tags) = case t of
     GHC -> do
       let lNoBindist = isLeft $ getDownloadInfo GHC v pfreq av
       let tver = mkTVer v
@@ -855,8 +870,8 @@ listVersions av lt criteria pfreq = do
       pure ListResult { lVer = v, lCross = Nothing , lTag = tags, lTool = t, lStray = False, .. }
     Cabal -> do
       let lNoBindist = isLeft $ getDownloadInfo Cabal v pfreq av
-      lSet <- fmap (== Just v) cabalSet
-      lInstalled <- cabalInstalled v
+      let lSet = cSet == Just v
+      let lInstalled = elem v $ rights cabals
       pure ListResult { lVer    = v
                       , lCross  = Nothing
                       , lTag    = tags
@@ -881,8 +896,8 @@ listVersions av lt criteria pfreq = do
                       }
     HLS -> do
       let lNoBindist = isLeft $ getDownloadInfo HLS v pfreq av
-      lSet <- fmap (== Just v) hlsSet
-      lInstalled <- hlsInstalled v
+      let lSet = hlsSet' == Just v
+      let lInstalled = elem v $ rights hlses
       pure ListResult { lVer    = v
                       , lCross  = Nothing
                       , lTag    = tags
