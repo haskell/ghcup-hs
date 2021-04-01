@@ -249,9 +249,17 @@ getInstalledGHCs = do
 
 
 -- | Get all installed cabals, by matching on @~\/.ghcup\/bin/cabal-*@.
-getInstalledCabals :: (MonadReader AppState m, MonadIO m, MonadCatch m)
+getInstalledCabals :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadCatch m)
                    => m [Either (Path Rel) Version]
 getInstalledCabals = do
+  cs <- cabalSet -- for legacy cabal
+  getInstalledCabals' cs
+
+
+getInstalledCabals' :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadCatch m)
+                   => Maybe Version
+                   -> m [Either (Path Rel) Version]
+getInstalledCabals' cs = do
   AppState {dirs = Dirs {..}} <- ask
   bins   <- liftIO $ handleIO (\_ -> pure []) $ findFiles
     binDir
@@ -260,32 +268,37 @@ getInstalledCabals = do
     Just (Right r) -> pure $ Right r
     Just (Left  _) -> pure $ Left f
     Nothing        -> pure $ Left f
-  cs <- cabalSet -- for legacy cabal
   pure $ maybe vs (\x -> nub $ Right x:vs) cs
 
 
 -- | Whether the given cabal version is installed.
-cabalInstalled :: (MonadIO m, MonadReader AppState m, MonadCatch m) => Version -> m Bool
+cabalInstalled :: (MonadLogger m, MonadIO m, MonadReader AppState m, MonadCatch m) => Version -> m Bool
 cabalInstalled ver = do
   vers <- fmap rights getInstalledCabals
   pure $ elem ver vers
 
 
 -- Return the currently set cabal version, if any.
-cabalSet :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
+cabalSet :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
 cabalSet = do
   AppState {dirs = Dirs {..}} <- ask
   let cabalbin = binDir </> [rel|cabal|]
   b        <- handleIO (\_ -> pure False) $ fmap (== SymbolicLink) $ liftIO $ getFileType cabalbin
   if
     | b -> do
-      liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
-        broken <- isBrokenSymlink cabalbin
+      handleIO' NoSuchThing (\_ -> pure Nothing) $ do
+        broken <- liftIO $ isBrokenSymlink cabalbin
         if broken
-          then pure Nothing
+          then do
+            $(logWarn) [i|Symlink #{cabalbin} is broken.|]
+            pure Nothing
           else do
-            link <- readSymbolicLink $ toFilePath cabalbin
-            Just <$> linkVersion link
+            link <- liftIO $ readSymbolicLink $ toFilePath cabalbin
+            case linkVersion link of
+              Right v -> pure $ Just v
+              Left err -> do
+                $(logWarn) [i|Failed to parse cabal symlink target with: "#{err}". The symlink #{toFilePath cabalbin} needs to point to valid cabal binary, such as 'cabal-3.4.0.0'.|]
+                pure Nothing
     | otherwise -> do -- legacy behavior
       mc <- liftIO $ handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
         cabalbin
@@ -299,13 +312,29 @@ cabalSet = do
             Right r -> pure $ Just r
         | otherwise -> pure Nothing
  where
+  -- We try to be extra permissive with link destination parsing,
+  -- because of:
+  --   https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/119
   linkVersion :: MonadThrow m => ByteString -> m Version
   linkVersion bs = do
     t <- throwEither $ E.decodeUtf8' bs
     throwEither $ MP.parse parser "" t
-   where
-    parser =
-      MP.chunk "cabal-" *> version'
+
+  parser
+    =   MP.try (stripAbsolutePath *> cabalParse)
+    <|> MP.try (stripRelativePath *> cabalParse)
+    <|> cabalParse
+  -- parses the version of "cabal-3.2.0.0" -> "3.2.0.0"
+  cabalParse = MP.chunk "cabal-" *> version'
+  -- parses any path component ending with path separator,
+  -- e.g. "foo/"
+  stripPathComponet = parseUntil1 "/" *> MP.chunk "/"
+  -- parses an absolute path up until the last path separator,
+  -- e.g. "/bar/baz/foo" -> "/bar/baz/", leaving "foo"
+  stripAbsolutePath = MP.chunk "/" *> MP.many (MP.try stripPathComponet)
+  -- parses a relative path up until the last path separator,
+  -- e.g. "bar/baz/foo" -> "bar/baz/", leaving "foo"
+  stripRelativePath = MP.many (MP.try stripPathComponet)
 
 
 

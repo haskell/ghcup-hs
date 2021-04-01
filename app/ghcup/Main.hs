@@ -149,7 +149,7 @@ data SetOptions = SetOptions
   }
 
 data ListOptions = ListOptions
-  { lTool      :: Maybe Tool
+  { loTool     :: Maybe Tool
   , lCriteria  :: Maybe ListCriteria
   , lRawFormat :: Bool
   }
@@ -1446,7 +1446,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
             List ListOptions {..} ->
               runListGHC (do
-                  l <- listVersions dls lTool lCriteria pfreq
+                  l <- listVersions dls loTool lCriteria pfreq
                   liftIO $ printListResult lRawFormat l
                   pure ExitSuccess
                 )
@@ -1592,14 +1592,14 @@ Make sure to clean up #{tmpdir} afterwards.|])
             ef@(ExitFailure _) -> exitWith ef
   pure ()
 
-fromVersion :: (MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
+fromVersion :: (MonadLogger m, MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
             => GHCupDownloads
             -> Maybe ToolVersion
             -> Tool
             -> Excepts '[TagNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, Maybe VersionInfo)
 fromVersion av tv = fromVersion' av (toSetToolVer tv)
 
-fromVersion' :: (MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
+fromVersion' :: (MonadLogger m, MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
              => GHCupDownloads
              -> SetToolVersion
              -> Tool
@@ -1822,6 +1822,9 @@ checkForUpdates :: ( MonadReader AppState m
                 -> PlatformRequest
                 -> m ()
 checkForUpdates dls pfreq = do
+  lInstalled <- listVersions dls Nothing (Just ListInstalled) pfreq
+  let latestInstalled tool = (fmap lVer . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
+
   forM_ (getLatest dls GHCup) $ \(l, _) -> do
     (Right ghc_ver) <- pure $ version $ prettyPVP ghcUpVer
     when (l > ghc_ver)
@@ -1829,29 +1832,25 @@ checkForUpdates dls pfreq = do
           [i|New GHCup version available: #{prettyVer l}. To upgrade, run 'ghcup upgrade'|]
 
   forM_ (getLatest dls GHC) $ \(l, _) -> do
-    mghc_ver <- latestInstalled GHC
+    let mghc_ver = latestInstalled GHC
     forM mghc_ver $ \ghc_ver ->
       when (l > ghc_ver)
         $ $(logWarn)
             [i|New GHC version available: #{prettyVer l}. To upgrade, run 'ghcup install ghc #{prettyVer l}'|]
 
   forM_ (getLatest dls Cabal) $ \(l, _) -> do
-    mcabal_ver <- latestInstalled Cabal
+    let mcabal_ver = latestInstalled Cabal
     forM mcabal_ver $ \cabal_ver ->
       when (l > cabal_ver)
         $ $(logWarn)
             [i|New Cabal version available: #{prettyVer l}. To upgrade, run 'ghcup install cabal #{prettyVer l}'|]
 
   forM_ (getLatest dls HLS) $ \(l, _) -> do
-    mcabal_ver <- latestInstalled HLS
-    forM mcabal_ver $ \cabal_ver ->
-      when (l > cabal_ver)
+    let mhls_ver = latestInstalled HLS
+    forM mhls_ver $ \hls_ver ->
+      when (l > hls_ver)
         $ $(logWarn)
             [i|New HLS version available: #{prettyVer l}. To upgrade, run 'ghcup install hls #{prettyVer l}'|]
-
- where
-  latestInstalled tool = (fmap lVer . lastMay)
-    <$> listVersions dls (Just tool) (Just ListInstalled) pfreq
 
 
 prettyDebugInfo :: DebugInfo -> String
