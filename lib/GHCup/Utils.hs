@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE ViewPatterns          #-}
 
 {-|
@@ -574,6 +575,52 @@ unpackToDir dest av = do
     | ".tar.bz2" `B.isSuffixOf` fn ->
       liftE (untar . BZip.decompress =<< rf av)
     | ".tar" `B.isSuffixOf` fn -> liftE (untar =<< rf av)
+    | otherwise -> throwE $ UnknownArchive fn
+
+
+getArchiveFiles :: (MonadLogger m, MonadIO m, MonadThrow m)
+                => Path Abs       -- ^ archive path
+                -> Excepts '[UnknownArchive
+#if defined(TAR)
+                            , Tar.FormatError
+#else
+                            , ArchiveResult
+#endif
+                            ] m [ByteString]
+getArchiveFiles av = do
+  fn <- toFilePath <$> basename av
+
+#if defined(TAR)
+  let entries :: Monad m => BL.ByteString -> Excepts '[Tar.FormatError] m [ByteString]
+      entries =
+          lE @Tar.FormatError
+          . Tar.foldEntries
+            (\e x -> fmap (Tar.entryPath e :) x)
+            (Right [])
+            (\e -> Left e)
+          . Tar.read
+
+      rf :: MonadIO m => Path Abs -> Excepts '[Tar.FormatError] m BL.ByteString
+      rf = liftIO . readFile
+#else
+  let entries :: Monad m => BL.ByteString -> Excepts '[ArchiveResult] m [ByteString]
+      entries = (fmap . fmap) (E.encodeUtf8 . T.pack . filepath) . lE . readArchiveBSL
+
+      rf :: MonadIO m => Path Abs -> Excepts '[ArchiveResult] m BL.ByteString
+      rf = liftIO . readFile
+#endif
+
+  -- extract, depending on file extension
+  if
+    | ".tar.gz" `B.isSuffixOf` fn -> liftE
+      (entries . GZip.decompress =<< rf av)
+    | ".tar.xz" `B.isSuffixOf` fn -> do
+      filecontents <- liftE $ rf av
+      let decompressed = Lzma.decompress filecontents
+      liftE $ entries decompressed
+    | ".tar.bz2" `B.isSuffixOf` fn ->
+      liftE (entries . BZip.decompress =<< rf av)
+    | ".tar" `B.isSuffixOf` fn -> liftE (entries =<< rf av)
     | otherwise -> throwE $ UnknownArchive fn
 
 

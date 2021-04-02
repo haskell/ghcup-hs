@@ -1,17 +1,27 @@
-{-# LANGUAGE TemplateHaskell  #-}
+{-# LANGUAGE CPP              #-}
+{-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes      #-}
+{-# LANGUAGE TemplateHaskell  #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ViewPatterns     #-}
 
 module Validate where
 
 import           GHCup
 import           GHCup.Download
+import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
-import           GHCup.Utils.Dirs
+import           GHCup.Utils
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Version.QQ
 
+#if defined(TAR)
+import qualified Codec.Archive.Tar             as Tar
+#else
+import           Codec.Archive
+#endif
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Class
@@ -27,10 +37,12 @@ import           Data.IORef
 import           Data.List
 import           Data.String.Interpolate
 import           Data.Versions
+import           HPath                          ( toFilePath )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
 import           System.Exit
 import           System.IO
+import           System.Posix.FilePath
 import           Text.ParserCombinators.ReadP
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
@@ -213,10 +225,43 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
       runLogger
       . flip runReaderT settings
       . runResourceT
-      . runE
-      $ downloadCached dli Nothing
+      . runE @'[DigestError
+               , DownloadFailed
+               , UnknownArchive
+#if defined(TAR)
+               , Tar.FormatError
+#else
+               , ArchiveResult
+#endif
+               ]
+      $ do
+        p <- liftE $ downloadCached dli Nothing
+        fmap (head . splitDirectories . head)
+          . liftE
+          . getArchiveFiles
+          $ p
     case r of
-      VRight _ -> pure ()
+      VRight basePath -> do
+        case _dlSubdir dli of
+          Just (RealDir (toFilePath -> prel)) -> do
+            lift $ $(logInfo)
+              [i|verifying subdir: #{prel}|]
+            when (basePath /= prel) $ do
+              lift $ $(logError)
+                [i|Subdir doesn't match: expected "#{prel}", got "#{basePath}"|]
+              addError
+          Just (RegexDir regexString) -> do
+            lift $ $(logInfo)
+              [i|verifying subdir (regex): #{regexString}|]
+            let regex = makeRegexOpts
+                  compIgnoreCase
+                  execBlank
+                  regexString
+            when (not (match regex basePath)) $ do
+              lift $ $(logError)
+                [i|Subdir doesn't match: expected regex "#{regexString}", got "#{basePath}"|]
+              addError
+          Nothing -> pure ()
       VLeft  e -> do
         lift $ $(logError)
           [i|Could not download (or verify hash) of #{dli}, Error was: #{e}|]

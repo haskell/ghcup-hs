@@ -433,6 +433,8 @@ executable ghcup-gen
     , containers
     , haskus-utils-variant
     , hpath
+    , hpath-filepath
+    , libarchive
     , monad-logger
     , mtl
     , optics
@@ -459,6 +461,11 @@ executable ghcup-gen
   build-depends:    ghcup
   hs-source-dirs:   app/ghcup-gen
   default-language: Haskell2010
+
+  if flag(tar)
+    import:
+        tar-bytestring
+    cpp-options:     -DTAR
 
 test-suite ghcup-test
   import:
