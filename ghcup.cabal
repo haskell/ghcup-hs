@@ -250,7 +250,7 @@ common config
   default-language:   Haskell2010
   ghc-options:
     -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates -threaded
+    -fwarn-incomplete-record-updates
 
   default-extensions:
     LambdaCase
@@ -343,6 +343,9 @@ library
   other-modules:
     Paths_ghcup
 
+  autogen-modules:
+    Paths_ghcup
+
   default-extensions:
     Strict
     StrictData
@@ -423,6 +426,9 @@ executable ghcup
     import:
         libarchive
 
+  ghc-options:
+    -threaded
+
 executable ghcup-gen
   import:
     config
@@ -466,6 +472,9 @@ executable ghcup-gen
     import:
         tar-bytestring
     cpp-options:     -DTAR
+
+  ghc-options:
+    -threaded
 
 test-suite ghcup-test
   import:
