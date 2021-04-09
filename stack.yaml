@@ -4,9 +4,6 @@ packages:
   - .
 
 extra-deps:
-  - 3rdparty/lzma
-  - 3rdparty/lzma-clib
-
   - git: https://github.com/hasufell/text-conversions.git
     commit: 9abf0e5e5664a3178367597c32db19880477a53c
 
@@ -27,6 +24,7 @@ extra-deps:
   - hpath-posix-0.13.2@sha256:eec4ff2b00dc86be847aca0f409fc8f6212ffd2170ec36a17dc9a52b46562392,1615
   - http-io-streams-0.1.6.0@sha256:53f5bab177efb52cd65ec396fd04ed59b93e5f919fb3700cd7dacd6cfce6f06d,3582
   - libarchive-3.0.2.1@sha256:40ebf2a278e585802427bc58826867208bb33822f63d56107a1fcc3ca04d691d,10990
+  - lzma-static-5.2.5@sha256:67962a1fff9c1353d06708e217ecaf382225e5447cf10c416381e71c6ff8d3f0,6718
   - os-release-1.0.1@sha256:1281c62081f438fc3f0874d3bae6a4887d5964ac25261ba06e29d368ab173467,2716
   - primitive-0.7.0.1@sha256:a381571c36edc7dca28b77fe8159b43c14c640087ec5946adacf949feec64231,3433
   - streamly-0.7.3@sha256:ad2a488fe802692ed47cab9fd0416c2904aac9e51cf2d8aafd1c3a40064c42f5,27421
