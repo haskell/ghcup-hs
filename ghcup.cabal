@@ -99,7 +99,7 @@ library
     , hpath-filepath        ^>=0.10.3
     , hpath-io              ^>=0.14.1
     , hpath-posix           ^>=0.13.2
-    , lzma-static           >=5.2.5
+    , lzma-static           ^>=5.2.5
     , megaparsec            >=8.0.0      && <9.1
     , monad-logger          ^>=0.3.31
     , mtl                   ^>=2.2
@@ -146,7 +146,7 @@ library
 
   if flag(tar)
     cpp-options:   -DTAR
-    build-depends: tar-bytestring >=0.6.3.1
+    build-depends: tar-bytestring ^>=0.6.3.1
 
   else
     build-depends: libarchive ^>=3.0.0.0
@@ -201,9 +201,9 @@ executable ghcup
     cpp-options:   -DBRICK
     other-modules: BrickMain
     build-depends:
-      , brick   >=0.54
-      , vector  >=0.12
-      , vty     >=5.28.2
+      , brick   >=0.5    && <0.62
+      , vector  ^>=0.12
+      , vty     >=5.28.2 && <5.34
 
   if flag(tar)
     cpp-options: -DTAR
@@ -238,7 +238,6 @@ executable ghcup-gen
     , haskus-utils-variant  >=3.0      && <3.2
     , hpath                 >=0.11     && <0.13
     , hpath-filepath        ^>=0.10.3
-    , libarchive            ^>=3.0.0.0
     , monad-logger          ^>=0.3.31
     , mtl                   ^>=2.2
     , optics                >=0.2      && <0.5
@@ -258,7 +257,10 @@ executable ghcup-gen
 
   if flag(tar)
     cpp-options:   -DTAR
-    build-depends: tar-bytestring >=0.6.3.1
+    build-depends: tar-bytestring ^>=0.6.3.1
+
+  else
+    build-depends: libarchive ^>=3.0.0.0
 
 test-suite ghcup-test
   type:               exitcode-stdio-1.0
