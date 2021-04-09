@@ -126,8 +126,8 @@ common io-streams
 common libarchive
   build-depends: libarchive >= 3.0.0.0
 
-common lzma
-  build-depends: lzma >=0.0.0.3
+common lzma-static
+  build-depends: lzma-static >=5.2.5
 
 common megaparsec
   build-depends: megaparsec >=8.0.0
@@ -284,7 +284,7 @@ library
     , hpath-filepath
     , hpath-io
     , hpath-posix
-    , lzma
+    , lzma-static
     , megaparsec
     , monad-logger
     , mtl

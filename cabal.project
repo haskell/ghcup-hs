@@ -1,7 +1,5 @@
 packages: ./ghcup.cabal
 
-optional-packages: ./3rdparty/*/*.cabal
-
 optimization: 2
 
 package streamly
