@@ -15,6 +15,11 @@ git describe
 # build
 ecabal update
 
+(
+	cd /tmp
+	ecabal install -w ghc-${GHC_VERSION} --installdir="$CI_PROJECT_DIR"/.local/bin hspec-discover
+)
+
 if [ "${OS}" = "LINUX" ] ; then
 	if [ "${ARCH}" = "32" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections -optl-static' -ftui -ftar
