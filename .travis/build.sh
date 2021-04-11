@@ -16,6 +16,12 @@ ghcup set 8.10.4
 ## install ghcup
 
 cabal update
+
+(
+	cd /tmp
+	cabal install --installdir="$HOME"/.ghcup/bin hspec-discover
+)
+
 cabal build --constraint="zlib +static" --constraint="lzma +static" -ftui
 cp "$(cabal new-exec --verbose=0 --offline sh -- -c 'command -v ghcup')" .
 strip ./ghcup
