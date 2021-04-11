@@ -16,6 +16,11 @@ description:
 category:        System
 build-type:      Simple
 extra-doc-files: CHANGELOG.md
+                 README.md
+                 HACKING.md
+                 RELEASING.md
+                 config.yaml
+                 ghcup-0.0.4.yaml
 
 source-repository head
   type:     git
