@@ -37,7 +37,7 @@ import           Data.IORef
 import           Data.List
 import           Data.String.Interpolate
 import           Data.Versions
-import           HPath                          ( toFilePath )
+import           HPath                          ( toFilePath, rel )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
 import           System.Exit
@@ -202,6 +202,7 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
           %& indices (matchTest versionRegex . T.unpack . prettyVer)
           % (viSourceDL % _Just `summing` viArch % each % each % each)
     when (null dlis) $ $(logError) [i|no tarballs selected by filter|] *> addError
+
     forM_ dlis downloadAll
 
     -- exit
@@ -235,13 +236,21 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
 #endif
                ]
       $ do
-        p <- liftE $ downloadCached dli Nothing
-        fmap (head . splitDirectories . head)
-          . liftE
-          . getArchiveFiles
-          $ p
+        case tool of
+          Just GHCup -> do
+            let fn = [rel|ghcup|]
+            dir <- liftIO ghcupCacheDir
+            p <- liftE $ download dli dir (Just fn)
+            liftE $ checkDigest dli p
+            pure Nothing
+          _ -> do
+            p <- liftE $ downloadCached dli Nothing
+            fmap (Just . head . splitDirectories . head)
+              . liftE
+              . getArchiveFiles
+              $ p
     case r of
-      VRight basePath -> do
+      VRight (Just basePath) -> do
         case _dlSubdir dli of
           Just (RealDir (toFilePath -> prel)) -> do
             lift $ $(logInfo)
@@ -262,6 +271,7 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
                 [i|Subdir doesn't match: expected regex "#{regexString}", got "#{basePath}"|]
               addError
           Nothing -> pure ()
+      VRight Nothing -> pure ()
       VLeft  e -> do
         lift $ $(logError)
           [i|Could not download (or verify hash) of #{dli}, Error was: #{e}|]

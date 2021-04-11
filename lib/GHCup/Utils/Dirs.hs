@@ -16,6 +16,7 @@ Portability : POSIX
 module GHCup.Utils.Dirs
   ( getDirs
   , ghcupConfigFile
+  , ghcupCacheDir
   , ghcupGHCBaseDir
   , ghcupGHCDir
   , mkGhcupTmpDir
