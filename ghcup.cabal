@@ -99,7 +99,7 @@ library
     , hpath-filepath        ^>=0.10.3
     , hpath-io              ^>=0.14.1
     , hpath-posix           ^>=0.13.2
-    , lzma-static           ^>=5.2.5.1
+    , lzma-static           ^>=5.2.5.2
     , megaparsec            >=8.0.0      && <9.1
     , monad-logger          ^>=0.3.31
     , mtl                   ^>=2.2
