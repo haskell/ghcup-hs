@@ -1,5 +1,10 @@
 # Revision history for ghcup
 
+## 0.1.14.1 -- 2021-04-11
+
+* Make internal symlink target parser more lax, fixes [#119](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/119)
+* Prepare for hackage release
+
 ## 0.1.14 -- 2021-03-07
 
 * Major bugfix: fix handling of stray versions wrt [#116](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/116)
