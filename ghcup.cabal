@@ -8,7 +8,7 @@ maintainer:      hasufell@posteo.de
 author:          Julian Ospald
 homepage:        https://gitlab.haskell.org/haskell/ghcup-hs
 bug-reports:     https://gitlab.haskell.org/haskell/ghcup-hs/issues
-synopsis:        ghc toolchain installer as an exe/library
+synopsis:        ghc toolchain installer
 description:
   A rewrite of the shell script ghcup, for providing
   a more stable user experience and exposing an API.
