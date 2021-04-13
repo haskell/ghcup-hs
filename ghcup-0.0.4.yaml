@@ -1813,21 +1813,21 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/0.1.14.1/armv7-linux-ghcup-0.1.14.1
               dlHash: 646832030efbc0a848df24c08b5eb7507bd15d1c2eb95fea6d9d03890f3662be
   HLS:
-    1.0.0:
+    1.1.0:
       viTags:
         - Recommended
         - Latest
-      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#100
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#110
       viPostInstall: "This is just the server part of your LSP configuration. Consult the README on how to configure HLS, your project and your LSP client in your editor: https://github.com/haskell/haskell-language-server/blob/master/README.md"
       viArch:
         A_64:
           Linux_UnknownLinux:
             unknown_versioning: &hls-64
-              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.0.0/haskell-language-server-Linux-1.0.0.tar.gz
-              dlHash: 4fab18998c5f67118a26b75b059f3b3e2ad345b6325515a552d1a24cdf87ed3f
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.1.0/haskell-language-server-Linux-1.1.0.tar.gz
+              dlHash: 0f0dadb0e9a08273658f565fd71c636801959b954be2737f38f2a1aac522208f
           Darwin:
             unknown_versioning:
-              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.0.0/haskell-language-server-macOS-1.0.0.tar.gz
-              dlHash: 74e7624c889c0235f0b02d7e7f164d5eb95b611d584fc8602f0b3a099b73f8be
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.0.0/haskell-language-server-macOS-1.1.0.tar.gz
+              dlHash: 4e89b192e2f49637d772e974f2c17b16da067ecd5912575eaa542551de97681b
           Linux_Alpine:
             unknown_versioning: *hls-64
