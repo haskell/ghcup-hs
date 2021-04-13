@@ -1827,7 +1827,7 @@ ghcupDownloads:
               dlHash: 0f0dadb0e9a08273658f565fd71c636801959b954be2737f38f2a1aac522208f
           Darwin:
             unknown_versioning:
-              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.0.0/haskell-language-server-macOS-1.1.0.tar.gz
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.1.0/haskell-language-server-macOS-1.1.0.tar.gz
               dlHash: 4e89b192e2f49637d772e974f2c17b16da067ecd5912575eaa542551de97681b
           Linux_Alpine:
             unknown_versioning: *hls-64
