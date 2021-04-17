@@ -139,6 +139,7 @@ ghcupDownloads:
         dlSubdir: ghc-7.10.3
         dlHash: cf90cedce1c28fd0e2b9e72fe8a938756668d18ea1fcc884a19f698658ac4fef
       viPostRemove: &ghc-post-remove "After removing GHC you might also want to clean up your cabal store at: ~/.cabal/store/ghc-<ghcver>"
+      viPostInstall: "GHC-7.10.3 may give linking errors on most modern distros. You may have to pass '--ghc-option=-optc-no-pie --ghc-option=-optl-no-pie' to cabal build/install. Also see https://gitlab.haskell.org/ghc/ghc/-/issues/18763"
       viArch:
         A_64:
           Linux_Debian:
