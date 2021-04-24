@@ -274,5 +274,5 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
       VRight Nothing -> pure ()
       VLeft  e -> do
         lift $ $(logError)
-          [i|Could not download (or verify hash) of #{dli}, Error was: #{e}|]
+          [i|Could not download (or verify hash) of #{dli}, Error was: #{prettyShow e}|]
         addError
