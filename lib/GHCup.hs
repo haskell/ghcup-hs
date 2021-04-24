@@ -61,6 +61,8 @@ import           Data.List
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
+import           Data.Time.Clock
+import           Data.Time.Format.ISO8601
 import           Data.Versions
 import           Data.Word8
 import           GHC.IO.Exception
@@ -1244,9 +1246,10 @@ Stage1Only = YES|]
       . B16.encode
       . SHA256.hashlazy
       $ c
+    cTime <- liftIO getCurrentTime
     tarName <-
       parseRel
-        [i|ghc-#{tVerToText tver}-#{pfReqToString pfreq}-#{cDigest}.tar#{takeExtension (toFilePath tar)}|]
+        [i|ghc-#{tVerToText tver}-#{pfReqToString pfreq}-#{iso8601Show cTime}-#{cDigest}.tar#{takeExtension (toFilePath tar)}|]
     let tarPath = cacheDir </> tarName
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile (workdir </> tar)
                                                              tarPath
