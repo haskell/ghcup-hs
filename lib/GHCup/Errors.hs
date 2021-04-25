@@ -24,6 +24,8 @@ import           GHCup.Utils.Prelude
 
 #if !defined(TAR)
 import           Codec.Archive
+#else
+import qualified Codec.Archive.Tar             as Tar
 #endif
 import           Control.Exception.Safe
 import           Data.ByteString                ( ByteString )
@@ -339,4 +341,14 @@ instance Pretty ArchiveResult where
   pPrint ArchiveRetry = text "Archive result: retry"
   pPrint ArchiveOk = text "Archive result: Ok"
   pPrint ArchiveEOF = text "Archive result: EOF"
+#else
+instance Pretty Tar.FormatError where
+  pPrint Tar.TruncatedArchive = text "Truncated archive"
+  pPrint Tar.ShortTrailer = text "Short trailer"
+  pPrint Tar.BadTrailer = text "Bad trailer"
+  pPrint Tar.TrailingJunk = text "Trailing junk"
+  pPrint Tar.ChecksumIncorrect = text "Checksum incorrect"
+  pPrint Tar.NotTarFormat = text "Not a tar format"
+  pPrint Tar.UnrecognisedTarFormat = text "Unrecognised tar format"
+  pPrint Tar.HeaderBadNumericEncoding = text "Header has bad numeric encoding"
 #endif
