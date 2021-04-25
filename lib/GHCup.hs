@@ -105,6 +105,7 @@ installGHCBindist :: ( MonadFail m
                      , MonadLogger m
                      , MonadResource m
                      , MonadIO m
+                     , MonadUnliftIO m
                      )
                   => DownloadInfo    -- ^ where/how to download
                   -> Version         -- ^ the version to install
@@ -160,6 +161,7 @@ installPackedGHC :: ( MonadMask m
                     , MonadThrow m
                     , MonadLogger m
                     , MonadIO m
+                    , MonadUnliftIO m
                     )
                  => Path Abs          -- ^ Path to the packed GHC bindist
                  -> Maybe TarDir      -- ^ Subdir of the archive
@@ -232,6 +234,7 @@ installGHCBin :: ( MonadFail m
                  , MonadLogger m
                  , MonadResource m
                  , MonadIO m
+                 , MonadUnliftIO m
                  )
               => GHCupDownloads  -- ^ the download info to look up the tarball from
               -> Version         -- ^ the version to install
@@ -264,6 +267,7 @@ installCabalBindist :: ( MonadMask m
                        , MonadLogger m
                        , MonadResource m
                        , MonadIO m
+                       , MonadUnliftIO m
                        , MonadFail m
                        )
                     => DownloadInfo
@@ -344,6 +348,7 @@ installCabalBin :: ( MonadMask m
                    , MonadLogger m
                    , MonadResource m
                    , MonadIO m
+                   , MonadUnliftIO m
                    , MonadFail m
                    )
                 => GHCupDownloads
@@ -377,6 +382,7 @@ installHLSBindist :: ( MonadMask m
                      , MonadLogger m
                      , MonadResource m
                      , MonadIO m
+                     , MonadUnliftIO m
                      , MonadFail m
                      )
                   => DownloadInfo
@@ -466,6 +472,7 @@ installHLSBin :: ( MonadMask m
                  , MonadLogger m
                  , MonadResource m
                  , MonadIO m
+                 , MonadUnliftIO m
                  , MonadFail m
                  )
               => GHCupDownloads
@@ -1064,6 +1071,7 @@ compileGHC :: ( MonadMask m
               , MonadResource m
               , MonadLogger m
               , MonadIO m
+              , MonadUnliftIO m
               , MonadFail m
               )
            => GHCupDownloads
@@ -1299,6 +1307,7 @@ upgradeGHCup :: ( MonadMask m
                 , MonadThrow m
                 , MonadResource m
                 , MonadIO m
+                , MonadUnliftIO m
                 )
              => GHCupDownloads
              -> Maybe (Path Abs)  -- ^ full file destination to write ghcup into

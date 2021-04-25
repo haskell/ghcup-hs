@@ -400,6 +400,7 @@ downloadCached :: ( MonadMask m
                   , MonadThrow m
                   , MonadLogger m
                   , MonadIO m
+                  , MonadUnliftIO m
                   , MonadReader AppState m
                   )
                => DownloadInfo

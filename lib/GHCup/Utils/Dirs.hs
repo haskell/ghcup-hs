@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE ViewPatterns          #-}
+{-# LANGUAGE TemplateHaskell       #-}
 
 {-|
 Module      : GHCup.Utils.Dirs
@@ -36,11 +37,14 @@ import           GHCup.Utils.Prelude
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
+import           Control.Monad.IO.Unlift
+import           Control.Monad.Logger
 import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
+import           Control.Monad.Trans.Resource hiding (throwM)
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
 import           Data.Maybe
+import           Data.String.Interpolate
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
 import           HPath
@@ -50,6 +54,7 @@ import           Prelude                 hiding ( abs
                                                 , readFile
                                                 , writeFile
                                                 )
+import           System.DiskSpace                                                
 import           System.Posix.Env.ByteString    ( getEnv
                                                 , getEnvDefault
                                                 )
@@ -58,11 +63,13 @@ import           System.Posix.Temp.ByteString   ( mkdtemp )
 
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.ByteString.UTF8          as UTF8
+import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Data.Yaml                     as Y
 import qualified System.Posix.FilePath         as FP
 import qualified System.Posix.User             as PU
 import qualified Text.Megaparsec               as MP
+import Control.Concurrent (threadDelay)
 
 
 
@@ -226,15 +233,31 @@ parseGHCupGHCDir (toFilePath -> f) = do
   throwEither $ MP.parse ghcTargetVerP "" fp
 
 
-mkGhcupTmpDir :: (MonadThrow m, MonadIO m) => m (Path Abs)
+mkGhcupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadThrow m, MonadIO m) => m (Path Abs)
 mkGhcupTmpDir = do
   tmpdir <- liftIO $ getEnvDefault "TMPDIR" "/tmp"
-  tmp    <- liftIO $ mkdtemp (tmpdir FP.</> "ghcup-")
+  let fp = T.unpack $ decUTF8Safe tmpdir
+
+  let minSpace = 2500 -- a rough guess, aight?
+  space <- handleIO (\_ -> pure Nothing) $ fmap Just $ liftIO $ getAvailSpace fp
+  when (maybe False (toBytes minSpace >) space) $ do
+    $(logWarn) [i|Insufficient disk space on #{fp}. Need at least #{minSpace} MB, but only #{toMB (fromJust space)} are free. Consider freeing up disk space or setting TMPDIR env variable.|]
+    $(logWarn)
+      "...waiting for 10 seconds before continuing anyway, you can still abort..."
+    liftIO $ threadDelay 10000000 -- give the user a sec to intervene
+
+  tmp <- liftIO $ mkdtemp (tmpdir FP.</> "ghcup-")
   parseAbs tmp
+ where
+  toBytes mb = mb * 1024 * 1024
+  toMB b = show (truncate' (fromIntegral b / (1024 * 1024) :: Double) 2)
+  truncate' :: Double -> Int -> Double
+  truncate' x n = (fromIntegral (floor (x * t) :: Integer)) / t
+      where t = 10^n
 
 
-withGHCupTmpDir :: (MonadResource m, MonadThrow m, MonadIO m) => m (Path Abs)
-withGHCupTmpDir = snd <$> allocate mkGhcupTmpDir deleteDirRecursive
+withGHCupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadResource m, MonadThrow m, MonadIO m) => m (Path Abs)
+withGHCupTmpDir = snd <$> (withRunInIO $ \run -> run $ allocate (run mkGhcupTmpDir) deleteDirRecursive)
 
 
 
@@ -268,7 +291,5 @@ relativeSymlink (toFilePath -> p1) (toFilePath -> p2) =
       cPrefix = drop (length common) d1
   in  joinPath (replicate (length cPrefix) "..")
         <> joinPath ("/" : drop (length common) d2)
-
-
 
 

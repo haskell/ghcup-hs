@@ -15,12 +15,13 @@ description:
 
 category:        System
 build-type:      Simple
-extra-doc-files: CHANGELOG.md
-                 README.md
-                 HACKING.md
-                 RELEASING.md
-                 config.yaml
-                 ghcup-0.0.4.yaml
+extra-doc-files:
+  CHANGELOG.md
+  config.yaml
+  ghcup-0.0.4.yaml
+  HACKING.md
+  README.md
+  RELEASING.md
 
 source-repository head
   type:     git
@@ -96,6 +97,7 @@ library
     , concurrent-output     ^>=1.10.11
     , containers            ^>=0.6
     , cryptohash-sha256     ^>=0.11.101.0
+    , disk-free-space       ^>=0.1.0.1
     , generics-sop          ^>=0.5
     , haskus-utils-types    ^>=1.5
     , haskus-utils-variant  >=3.0        && <3.2
@@ -130,6 +132,7 @@ library
     , transformers          ^>=0.5
     , unix                  ^>=2.7
     , unix-bytestring       ^>=0.3
+    , unliftio-core         ^>=0.2.0.1
     , unordered-containers  ^>=0.2.10.0
     , uri-bytestring        ^>=0.3.2.2
     , utf8-string           ^>=1.0
