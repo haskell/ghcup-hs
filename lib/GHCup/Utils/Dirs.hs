@@ -238,10 +238,10 @@ mkGhcupTmpDir = do
   tmpdir <- liftIO $ getEnvDefault "TMPDIR" "/tmp"
   let fp = T.unpack $ decUTF8Safe tmpdir
 
-  let minSpace = 2500 -- a rough guess, aight?
+  let minSpace = 5000 -- a rough guess, aight?
   space <- handleIO (\_ -> pure Nothing) $ fmap Just $ liftIO $ getAvailSpace fp
   when (maybe False (toBytes minSpace >) space) $ do
-    $(logWarn) [i|Insufficient disk space on #{fp}. Need at least #{minSpace} MB, but only #{toMB (fromJust space)} are free. Consider freeing up disk space or setting TMPDIR env variable.|]
+    $(logWarn) [i|Possibly insufficient disk space on #{fp}. At least #{minSpace} MB are recommended, but only #{toMB (fromJust space)} are free. Consider freeing up disk space or setting TMPDIR env variable.|]
     $(logWarn)
       "...waiting for 10 seconds before continuing anyway, you can still abort..."
     liftIO $ threadDelay 10000000 -- give the user a sec to intervene
