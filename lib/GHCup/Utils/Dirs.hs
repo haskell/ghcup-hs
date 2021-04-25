@@ -252,12 +252,12 @@ mkGhcupTmpDir = do
   toBytes mb = mb * 1024 * 1024
   toMB b = show (truncate' (fromIntegral b / (1024 * 1024) :: Double) 2)
   truncate' :: Double -> Int -> Double
-  truncate' x n = (fromIntegral (floor (x * t) :: Integer)) / t
+  truncate' x n = fromIntegral (floor (x * t) :: Integer) / t
       where t = 10^n
 
 
 withGHCupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadResource m, MonadThrow m, MonadIO m) => m (Path Abs)
-withGHCupTmpDir = snd <$> (withRunInIO $ \run -> run $ allocate (run mkGhcupTmpDir) deleteDirRecursive)
+withGHCupTmpDir = snd <$> withRunInIO (\run -> run $ allocate (run mkGhcupTmpDir) deleteDirRecursive)
 
 
 
