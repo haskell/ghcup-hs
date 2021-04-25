@@ -1761,13 +1761,11 @@ ghcupDownloads:
               dlHash: a1e2db664ec00e42a1e071a4181f6476f6e0bad321f1ddc0cf27831119f4c6d4
         A_32:
           Linux_UnknownLinux:
-            unknown_versioning:
-              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.0.0/cabal-install-3.4.0.0-i386-debian-9.tar.xz
-              dlHash: ef3750644a53f7b1fad141b2ad02d4c7a3b239ec0cbfa7f0528fb02c1dfcebce
+            unknown_versioning: &cabal-3400-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-i386-unknown-linux.tar.xz
+              dlHash: cc62a471e9e68a6a9933e54f75bf0cffae67a1d2220df1152ab887c38eb6bc8a
           Linux_Alpine:
-            unknown_versioning:
-              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-i386-alpine-linux-musl.tar.gz
-              dlHash: 95adb65f3a72aa8d9ce83685bc06e1eee5b801f56e204e27e957e8a35abd9cf8
+            unknown_versioning: *cabal-3400-32
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
