@@ -59,6 +59,7 @@ import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.List
 import           Data.Maybe
+import           Data.String                    ( fromString )
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Time.Clock
@@ -88,6 +89,8 @@ import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
+import qualified Text.Megaparsec               as MP
+import GHCup.Utils.MegaParsec
 
 
 
@@ -1075,7 +1078,7 @@ compileGHC :: ( MonadMask m
               , MonadFail m
               )
            => GHCupDownloads
-           -> GHCTargetVersion           -- ^ version to install
+           -> Either GHCTargetVersion GitBranch          -- ^ version to install
            -> Either Version (Path Abs)  -- ^ version to bootstrap with
            -> Maybe Int                  -- ^ jobs
            -> Maybe (Path Abs)           -- ^ build config
@@ -1099,38 +1102,81 @@ compileGHC :: ( MonadMask m
 #endif
                  ]
                 m
-                ()
-compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@PlatformRequest{..}
+                GHCTargetVersion
+compileGHC dls targetGhc bstrap jobs mbuildConfig patchdir aargs pfreq@PlatformRequest{..}
   = do
-    lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
+    (workdir, tmpUnpack, tver) <- case targetGhc of
+      -- unpack from version tarball
+      Left tver -> do
+        lift $ $(logDebug) [i|Requested to compile: #{tver} with #{bstrap}|]
+
+        -- download source tarball
+        dlInfo <-
+          preview (ix GHC % ix (tver ^. tvVersion) % viSourceDL % _Just) dls
+            ?? NoDownload
+        dl        <- liftE $ downloadCached dlInfo Nothing
+
+        -- unpack
+        tmpUnpack <- lift mkGhcupTmpDir
+        liftE $ unpackToDir tmpUnpack dl
+        void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
+
+        workdir <- maybe (pure tmpUnpack)
+                         (liftE . intoSubdir tmpUnpack)
+                         (view dlSubdir dlInfo)
+
+        pure (workdir, tmpUnpack, tver)
+
+      -- clone from git
+      Right GitBranch{..} -> do
+        tmpUnpack <- lift mkGhcupTmpDir
+        let git args = execLogged [s|git|] True ("--no-pager":args) [rel|git|] (Just tmpUnpack) Nothing
+        tver <- reThrowAll @_ @'[ProcessError] DownloadFailed $ do
+          let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
+          lift $ $(logInfo) [i|Fetching git repo #{rep} at ref #{ref} (this may take a while)|]
+          lEM $ git [ "init" ]
+          lEM $ git [ "remote"
+                    , "add"
+                    , "origin"
+                    , fromString rep ]
+
+          let fetch_args = 
+                    [ "fetch"
+                    , "--depth"
+                    , "1"
+                    , "--quiet"
+                    , "origin"
+                    , fromString ref ]
+          lEM $ git fetch_args
+
+          lEM $ git [ "checkout", "FETCH_HEAD" ]
+          lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
+          lEM $ execLogged "./boot" False [] [rel|ghc-bootstrap|] (Just tmpUnpack) Nothing
+          lEM $ execLogged "./configure" False [] [rel|ghc-bootstrap|] (Just tmpUnpack) Nothing
+          CapturedProcess {..} <- liftIO $ makeOut
+            ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just tmpUnpack)
+          case _exitCode of
+            ExitSuccess -> throwEither . MP.parse ghcProjectVersion "" . decUTF8Safe $ _stdOut
+            ExitFailure c -> fail ("Could not figure out GHC project version. Exit code was: " <> show c <> ". Error was: " <> T.unpack (decUTF8Safe _stdErr))
+
+        void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
+
+        pure (tmpUnpack, tmpUnpack, GHCTargetVersion Nothing tver)
 
     alreadyInstalled <- lift $ ghcInstalled tver
     alreadySet <- fmap (== Just tver) $ lift $ ghcSet (_tvTarget tver)
 
-    -- download source tarball
-    dlInfo <-
-      preview (ix GHC % ix (tver ^. tvVersion) % viSourceDL % _Just) dls
-        ?? NoDownload
-    dl        <- liftE $ downloadCached dlInfo Nothing
-
-    -- unpack
-    tmpUnpack <- lift mkGhcupTmpDir
-    liftE $ unpackToDir tmpUnpack dl
-    void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
+    ghcdir         <- lift $ ghcupGHCDir tver
 
     bghc <- case bstrap of
       Right g    -> pure $ Right g
       Left  bver -> Left <$> parseRel ("ghc-" <> verToBS bver)
-    workdir <- maybe (pure tmpUnpack)
-                     (liftE . intoSubdir tmpUnpack)
-                     (view dlSubdir dlInfo)
-    ghcdir         <- lift $ ghcupGHCDir tver
 
     (bindist, bmk) <- liftE $ runBuildAction
       tmpUnpack
       Nothing
       (do
-        b   <- compileBindist bghc ghcdir workdir
+        b <- compileBindist bghc tver workdir
         bmk <- liftIO $ readFileStrict (build_mk workdir)
         pure (b, bmk)
       )
@@ -1139,7 +1185,7 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@PlatformReques
       lift $ $(logInfo) [i|Deleting existing installation|]
       liftE $ rmGHCVer tver
     liftE $ installPackedGHC bindist
-                             (view dlSubdir dlInfo)
+                             (Just $ RegexDir "ghc-.*")
                              ghcdir
                              (tver ^. tvVersion)
                              pfreq
@@ -1151,21 +1197,23 @@ compileGHC dls tver bstrap jobs mbuildConfig patchdir aargs pfreq@PlatformReques
     -- restore
     when alreadySet $ liftE $ void $ setGHC tver SetGHCOnly
 
+    pure tver
+
  where
-  defaultConf = case _tvTarget tver of
-    Nothing -> [s|
-V=0
-BUILD_MAN = NO
-BUILD_SPHINX_HTML = NO
-BUILD_SPHINX_PDF = NO
-HADDOCK_DOCS = YES|]
-    Just _ -> [s|
+  defaultConf = case targetGhc of
+    Left (GHCTargetVersion (Just _) _) -> [s|
 V=0
 BUILD_MAN = NO
 BUILD_SPHINX_HTML = NO
 BUILD_SPHINX_PDF = NO
 HADDOCK_DOCS = NO
 Stage1Only = YES|]
+    _ -> [s|
+V=0
+BUILD_MAN = NO
+BUILD_SPHINX_HTML = NO
+BUILD_SPHINX_PDF = NO
+HADDOCK_DOCS = YES|]
 
   compileBindist :: ( MonadReader AppState m
                     , MonadThrow m
@@ -1175,13 +1223,13 @@ Stage1Only = YES|]
                     , MonadFail m
                     )
                  => Either (Path Rel) (Path Abs)
-                 -> Path Abs
+                 -> GHCTargetVersion
                  -> Path Abs
                  -> Excepts
                       '[FileDoesNotExistError, InvalidBuildConfig, PatchFailed, ProcessError, NotFoundInPATH, CopyError]
                       m
                       (Path Abs)  -- ^ output path of bindist
-  compileBindist bghc ghcdir workdir = do
+  compileBindist bghc tver workdir = do
     lift $ $(logInfo) [i|configuring build|]
     liftE checkBuildConfig
 
@@ -1191,31 +1239,28 @@ Stage1Only = YES|]
 
     cEnv <- liftIO getEnvironment
 
-    if
-      | _tvVersion tver >= [vver|8.8.0|] -> do
-        bghcPath <- case bghc of
-          Right ghc' -> pure ghc'
-          Left  bver -> do
-            spaths <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
-            liftIO (searchPath spaths bver) !? NotFoundInPATH bver
+    if | _tvVersion tver >= [vver|8.8.0|] -> do
+          bghcPath <- case bghc of
+            Right ghc' -> pure ghc'
+            Left  bver -> do
+              spaths <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
+              liftIO (searchPath spaths bver) !? NotFoundInPATH bver
+          lEM $ execLogged
+            "./configure"
+            False
+            (  maybe mempty
+                      (\x -> ["--target=" <> E.encodeUtf8 x])
+                      (_tvTarget tver)
+            ++ fmap E.encodeUtf8 aargs
+            )
+            [rel|ghc-conf|]
+            (Just workdir)
+            (Just (("GHC", toFilePath bghcPath) : cEnv))
+       | otherwise -> do
         lEM $ execLogged
           "./configure"
           False
-          (  ["--prefix=" <> toFilePath ghcdir]
-          ++ maybe mempty
-                    (\x -> ["--target=" <> E.encodeUtf8 x])
-                    (_tvTarget tver)
-          ++ fmap E.encodeUtf8 aargs
-          )
-          [rel|ghc-conf|]
-          (Just workdir)
-          (Just (("GHC", toFilePath bghcPath) : cEnv))
-      | otherwise -> do
-        lEM $ execLogged
-          "./configure"
-          False
-          (  [ "--prefix=" <> toFilePath ghcdir
-             , "--with-ghc=" <> either toFilePath toFilePath bghc
+          (  [ "--with-ghc=" <> either toFilePath toFilePath bghc
              ]
           ++ maybe mempty
                    (\x -> ["--target=" <> E.encodeUtf8 x])
@@ -1283,12 +1328,12 @@ Stage1Only = YES|]
     let lines' = fmap T.strip . T.lines $ decUTF8Safe c
 
    -- for cross, we need Stage1Only
-    case _tvTarget tver of
-      Just _ -> when ("Stage1Only = YES" `notElem` lines') $ throwE
+    case targetGhc of
+      Left (GHCTargetVersion (Just _) _) -> when ("Stage1Only = YES" `notElem` lines') $ throwE
         (InvalidBuildConfig
           [s|Cross compiling needs to be a Stage1 build, add "Stage1Only = YES" to your config!|]
         )
-      Nothing -> pure ()
+      _ -> pure ()
 
 
 
@@ -1381,4 +1426,3 @@ postGHCInstall ver@GHCTargetVersion {..} = do
     $ getMajorMinorV _tvVersion
   forM_ v' $ \(mj, mi) -> lift (getGHCForMajor mj mi _tvTarget)
     >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
-

@@ -1,5 +1,11 @@
 # Revision history for ghcup
 
+## 0.1.15 -- ????-??-??
+
+* Add date to GHC bindist names created by ghcup
+* Warn when /tmp doesn't have 5GB or more of disk space
+* Allow to compile GHC from git repo wrt [#126](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/126)
+
 ## 0.1.14.1 -- 2021-04-11
 
 * Make internal symlink target parser more lax, fixes [#119](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/119)
