@@ -80,6 +80,7 @@ import           System.IO.Error
 import           System.Posix.Env.ByteString    ( getEnvironment, getEnv )
 import           System.Posix.FilePath          ( getSearchPath, takeExtension )
 import           System.Posix.Files.ByteString
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 
 import qualified Crypto.Hash.SHA256            as SHA256
@@ -91,6 +92,7 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 import GHCup.Utils.MegaParsec
+import Control.Concurrent (threadDelay)
 
 
 
@@ -1160,11 +1162,17 @@ compileGHC dls targetGhc bstrap jobs mbuildConfig patchdir aargs pfreq@PlatformR
             ExitFailure c -> fail ("Could not figure out GHC project version. Exit code was: " <> show c <> ". Error was: " <> T.unpack (decUTF8Safe _stdErr))
 
         void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
+        lift $ $(logInfo) [i|Git version #{ref} corresponds to GHC version #{prettyVer tver}|]
 
         pure (tmpUnpack, tmpUnpack, GHCTargetVersion Nothing tver)
 
     alreadyInstalled <- lift $ ghcInstalled tver
     alreadySet <- fmap (== Just tver) $ lift $ ghcSet (_tvTarget tver)
+    when alreadyInstalled $ do
+      lift $ $(logWarn) [i|GHC #{prettyShow tver} already installed. Will overwrite existing version.|]
+      lift $ $(logWarn)
+        "...waiting for 10 seconds before continuing, you can still abort..."
+      liftIO $ threadDelay 10000000 -- give the user a sec to intervene
 
     ghcdir         <- lift $ ghcupGHCDir tver
 
