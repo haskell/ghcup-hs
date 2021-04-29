@@ -187,7 +187,7 @@ rmMajorSymlinks tv@GHCTargetVersion{..} = do
     -----------------------------------
 
 
--- | Whethe the given GHC versin is installed.
+-- | Whether the given GHC versin is installed.
 ghcInstalled :: (MonadIO m, MonadReader AppState m, MonadThrow m) => GHCTargetVersion -> m Bool
 ghcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
