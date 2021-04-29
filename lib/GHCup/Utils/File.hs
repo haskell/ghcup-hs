@@ -50,7 +50,7 @@ import           System.Posix.Directory.ByteString
 import           System.Posix.FD               as FD
 import           System.Posix.FilePath   hiding ( (</>) )
 import           System.Posix.Files.ByteString
-import           System.Posix.Foreign           ( oExcl )
+import           System.Posix.Foreign           ( oExcl, oAppend )
 import "unix"    System.Posix.IO.ByteString
                                          hiding ( openFd )
 import           System.Posix.Process           ( ProcessStatus(..) )
@@ -133,14 +133,14 @@ execLogged :: (MonadReader AppState m, MonadIO m, MonadThrow m)
            => ByteString       -- ^ thing to execute
            -> Bool             -- ^ whether to search PATH for the thing
            -> [ByteString]     -- ^ args for the thing
-           -> Path Rel         -- ^ log filename
+           -> Path Rel         -- ^ log filename (opened in append mode)
            -> Maybe (Path Abs) -- ^ optionally chdir into this
            -> Maybe [(ByteString, ByteString)] -- ^ optional environment
            -> m (Either ProcessError ())
 execLogged exe spath args lfile chdir env = do
   AppState { settings = Settings {..}, dirs = Dirs {..} } <- ask
   logfile       <- (logsDir </>) <$> parseRel (toFilePath lfile <> ".log")
-  liftIO $ bracket (createFile (toFilePath logfile) newFilePerms)
+  liftIO $ bracket (openFd (toFilePath logfile) WriteOnly [oAppend] (Just newFilePerms))
                    closeFd
                    (action verbose)
  where

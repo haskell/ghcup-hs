@@ -1069,7 +1069,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           createDirRecursive' baseDir
 
           -- logger interpreter
-          logfile <- flip runReaderT appstate $ initGHCupFileLogging [rel|ghcup.log|]
+          logfile <- flip runReaderT appstate $ initGHCupFileLogging
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = verbose settings
                 , colorOutter  = B.hPut stderr
