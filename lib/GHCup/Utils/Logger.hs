@@ -84,3 +84,4 @@ initGHCupFileLogging = do
 
     createRegularFile newFilePerms logfile
     pure logfile
+

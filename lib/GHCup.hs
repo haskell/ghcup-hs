@@ -203,6 +203,7 @@ installUnpackedGHC :: ( MonadReader AppState m
                       , MonadThrow m
                       , MonadLogger m
                       , MonadIO m
+                      , MonadMask m
                       )
                    => Path Abs      -- ^ Path to the unpacked GHC bindist (where the configure script resides)
                    -> Path Abs      -- ^ Path to install to
@@ -211,13 +212,13 @@ installUnpackedGHC :: ( MonadReader AppState m
                    -> Excepts '[ProcessError] m ()
 installUnpackedGHC path inst ver PlatformRequest{..} = do
   lift $ $(logInfo) "Installing GHC (this may take a while)"
-  lEM $ execLogged "./configure"
+  lEM $ withConsoleRegions $ execLogged "./configure"
                    False
                    (("--prefix=" <> toFilePath inst) : alpineArgs)
                    [rel|ghc-configure|]
                    (Just path)
                    Nothing
-  lEM $ make ["install"] (Just path)
+  lEM $ withConsoleRegions $ make ["install"] (Just path)
   pure ()
  where
   alpineArgs
@@ -1130,9 +1131,10 @@ compileGHC dls targetGhc bstrap jobs mbuildConfig patchdir aargs pfreq@PlatformR
         pure (workdir, tmpUnpack, tver)
 
       -- clone from git
-      Right GitBranch{..} -> do
+      Right GitBranch{..} -> withConsoleRegions $ \pState rs -> do
         tmpUnpack <- lift mkGhcupTmpDir
-        let git args = execLogged [s|git|] True ("--no-pager":args) [rel|git|] (Just tmpUnpack) Nothing
+        let git args = execLogged [s|git|] True ("--no-pager":args) [rel|git|] (Just tmpUnpack) Nothing pState rs
+            git_fetch = execLogged [s|sh|] True ["-c", [i|git --no-pager fetch --depth 1 origin #{ref} 2>&1 | cat|]] [rel|git|] (Just tmpUnpack) Nothing pState rs
         tver <- reThrowAll @_ @'[ProcessError] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
           lift $ $(logInfo) [i|Fetching git repo #{rep} at ref #{ref} (this may take a while)|]
@@ -1142,19 +1144,12 @@ compileGHC dls targetGhc bstrap jobs mbuildConfig patchdir aargs pfreq@PlatformR
                     , "origin"
                     , fromString rep ]
 
-          let fetch_args = 
-                    [ "fetch"
-                    , "--depth"
-                    , "1"
-                    , "--quiet"
-                    , "origin"
-                    , fromString ref ]
-          lEM $ git fetch_args
+          lEM $ git_fetch
 
           lEM $ git [ "checkout", "FETCH_HEAD" ]
           lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
-          lEM $ execLogged "./boot" False [] [rel|ghc-bootstrap|] (Just tmpUnpack) Nothing
-          lEM $ execLogged "./configure" False [] [rel|ghc-bootstrap|] (Just tmpUnpack) Nothing
+          lEM $ execLogged "./boot" False [] [rel|ghc-bootstrap|] (Just tmpUnpack) Nothing pState rs
+          lEM $ execLogged "./configure" False [] [rel|ghc-bootstrap|] (Just tmpUnpack) Nothing pState rs
           CapturedProcess {..} <- liftIO $ makeOut
             ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just tmpUnpack)
           case _exitCode of
@@ -1229,6 +1224,7 @@ HADDOCK_DOCS = YES|]
                     , MonadLogger m
                     , MonadIO m
                     , MonadFail m
+                    , MonadMask m
                     )
                  => Either (Path Rel) (Path Abs)
                  -> GHCTargetVersion
@@ -1237,7 +1233,7 @@ HADDOCK_DOCS = YES|]
                       '[FileDoesNotExistError, InvalidBuildConfig, PatchFailed, ProcessError, NotFoundInPATH, CopyError]
                       m
                       (Path Abs)  -- ^ output path of bindist
-  compileBindist bghc tver workdir = do
+  compileBindist bghc tver workdir = withConsoleRegions $ \pState rs -> do
     lift $ $(logInfo) [i|configuring build|]
     liftE checkBuildConfig
 
@@ -1264,6 +1260,8 @@ HADDOCK_DOCS = YES|]
             [rel|ghc-conf|]
             (Just workdir)
             (Just (("GHC", toFilePath bghcPath) : cEnv))
+            pState
+            rs
        | otherwise -> do
         lEM $ execLogged
           "./configure"
@@ -1278,6 +1276,8 @@ HADDOCK_DOCS = YES|]
           [rel|ghc-conf|]
           (Just workdir)
           (Just cEnv)
+          pState
+          rs
 
     case mbuildConfig of
       Just bc -> liftIOException
@@ -1288,10 +1288,10 @@ HADDOCK_DOCS = YES|]
         liftIO $ writeFile (build_mk workdir) (Just newFilePerms) defaultConf
 
     lift $ $(logInfo) [i|Building (this may take a while)...|]
-    lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs) (Just workdir)
+    lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs) (Just workdir) pState rs
 
     lift $ $(logInfo) [i|Creating bindist...|]
-    lEM $ make ["binary-dist"] (Just workdir)
+    lEM $ make ["binary-dist"] (Just workdir) pState rs
     [tar] <- liftIO $ findFiles
       workdir
       (makeRegexOpts compExtended

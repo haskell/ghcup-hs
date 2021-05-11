@@ -3,6 +3,9 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes           #-}
+{-# LANGUAGE FlexibleInstances           #-}
+{-# LANGUAGE MultiParamTypeClasses           #-}
+{-# LANGUAGE UndecidableInstances           #-}
 
 {-|
 Module      : GHCup.Types
@@ -29,6 +32,8 @@ import qualified Data.Text.Encoding            as E
 import qualified Data.Text.Encoding.Error      as E
 import qualified GHC.Generics                  as GHC
 import qualified Graphics.Vty                  as Vty
+import Haskus.Utils.Variant.Excepts
+import Control.Monad.Reader
 
 
 
@@ -418,3 +423,13 @@ instance Pretty Versioning where
 
 instance Pretty Version where
   pPrint = text . T.unpack . prettyVer
+
+
+    -----------------
+    --[ Instances ]--
+    -----------------
+
+instance MonadReader r' m => MonadReader r' (Excepts es m) where
+    ask   = lift ask
+    local = mapExcepts . local
+    reader = lift . reader

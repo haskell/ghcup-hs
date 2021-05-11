@@ -136,8 +136,10 @@ execLogged :: (MonadReader AppState m, MonadIO m, MonadThrow m)
            -> Path Rel         -- ^ log filename (opened in append mode)
            -> Maybe (Path Abs) -- ^ optionally chdir into this
            -> Maybe [(ByteString, ByteString)] -- ^ optional environment
+           -> MVar Bool
+           -> Seq ConsoleRegion
            -> m (Either ProcessError ())
-execLogged exe spath args lfile chdir env = do
+execLogged exe spath args lfile chdir env pState rs = do
   AppState { settings = Settings {..}, dirs = Dirs {..} } <- ask
   logfile       <- (logsDir </>) <$> parseRel (toFilePath lfile <> ".log")
   liftIO $ bracket (openFd (toFilePath logfile) WriteOnly [oAppend] (Just newFilePerms))
@@ -147,7 +149,7 @@ execLogged exe spath args lfile chdir env = do
   action verbose fd = do
     actionWithPipes $ \(stdoutRead, stdoutWrite) -> do
       -- start the thread that logs to stdout
-      pState <- newEmptyMVar
+      void $ tryTakeMVar pState
       done   <- newEmptyMVar
       void
         $ forkIO
@@ -155,7 +157,7 @@ execLogged exe spath args lfile chdir env = do
         $ EX.finally
             (if verbose
               then tee fd stdoutRead
-              else printToRegion fd stdoutRead 6 pState
+              else printToRegion fd stdoutRead 6
             )
             (putMVar done ())
 
@@ -192,24 +194,10 @@ execLogged exe spath args lfile chdir env = do
 
   -- Reads fdIn and logs the output in a continous scrolling area
   -- of 'size' terminal lines. Also writes to a log file.
-  printToRegion :: Fd -> Fd -> Int -> MVar Bool -> IO ()
-  printToRegion fileFd fdIn size pState = do
-    void $ displayConsoleRegions $ do
-      rs <-
-        liftIO
-        . fmap Sq.fromList
-        . sequence
-        . replicate size
-        . openConsoleRegion
-        $ Linear
-      flip runStateT mempty
-        $ handle
-            (\(ex :: SomeException) -> do
-              ps <- liftIO $ takeMVar pState
-              when ps (forM_ rs (liftIO . closeConsoleRegion))
-              throw ex
-            )
-        $ readTilEOF (lineAction rs) fdIn
+  printToRegion :: Fd -> Fd -> Int -> IO ()
+  printToRegion fileFd fdIn size = do
+    void $
+      flip runStateT mempty $ readTilEOF (lineAction rs) fdIn
 
    where
     -- action to perform line by line
@@ -218,11 +206,11 @@ execLogged exe spath args lfile chdir env = do
                => Seq ConsoleRegion
                -> ByteString
                -> StateT (Seq ByteString) m ()
-    lineAction rs = \bs' -> do
+    lineAction rs' = \bs' -> do
       void $ liftIO $ SPIB.fdWrite fileFd (bs' <> "\n")
       modify (swapRegs bs')
       regs <- get
-      liftIO $ forM_ (Sq.zip regs rs) $ \(bs, r) -> setConsoleRegion r $ do
+      liftIO $ forM_ (Sq.zip regs rs') $ \(bs, r) -> setConsoleRegion r $ do
         w <- consoleWidth
         return
           . T.pack

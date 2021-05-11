@@ -90,6 +90,10 @@ import qualified Data.Text                     as T
 #endif
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
+import System.Console.Regions
+import Data.Sequence (Seq)
+import qualified Data.Sequence as Sq
+import Control.Concurrent
 
 
 
@@ -760,15 +764,17 @@ ghcUpSrcBuiltFile = [rel|.ghcup_src_built|]
 
 
 -- | Calls gmake if it exists in PATH, otherwise make.
-make :: (MonadThrow m, MonadIO m, MonadReader AppState m)
+make :: (MonadThrow m, MonadIO m, MonadReader AppState m, MonadMask m)
      => [ByteString]
      -> Maybe (Path Abs)
+     -> MVar Bool
+     -> Seq ConsoleRegion
      -> m (Either ProcessError ())
-make args workdir = do
+make args workdir pState rs = do
   spaths    <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
   has_gmake <- isJust <$> liftIO (searchPath spaths [rel|gmake|])
   let mymake = if has_gmake then "gmake" else "make"
-  execLogged mymake True args [rel|ghc-make|] workdir Nothing
+  execLogged mymake True args [rel|ghc-make|] workdir Nothing pState rs
 
 makeOut :: [ByteString]
         -> Maybe (Path Abs)
@@ -890,3 +896,27 @@ traverseFold f = foldl (\mb a -> (<>) <$> mb <*> f a) (pure mempty)
 -- | Gathering monoidal values
 forFold :: (Foldable t, Applicative m, Monoid b) => t a -> (a -> m b) -> m b
 forFold = \t -> (`traverseFold` t)
+
+
+withConsoleRegions :: (MonadReader AppState m, MonadIO m, MonadMask m) => (MVar Bool -> Seq ConsoleRegion -> m a) -> m a
+withConsoleRegions = withConsoleRegions' Linear 6
+
+
+withConsoleRegions' :: (MonadReader AppState m, MonadIO m, MonadMask m) => RegionLayout -> Int -> (MVar Bool -> Seq ConsoleRegion -> m a) -> m a
+withConsoleRegions' ly size action = do
+  AppState { settings = Settings {..} } <- ask
+  pState <- liftIO newEmptyMVar
+  if (not verbose)
+  then displayConsoleRegions $
+          bracketIO
+                (fmap Sq.fromList . sequence . replicate size . openConsoleRegion $ ly)
+                (\rs -> uninterruptibleMask_ $ do
+                  ps <- takeMVar pState
+                  when ps (forM_ rs closeConsoleRegion))
+                (action pState)
+  else
+    action pState mempty
+  
+ where
+  bracketIO :: (MonadMask m, MonadIO m) => IO v -> (v -> IO b) -> (v -> m a) -> m a
+  bracketIO setup cleanup' = bracket (liftIO setup) (liftIO . cleanup')
