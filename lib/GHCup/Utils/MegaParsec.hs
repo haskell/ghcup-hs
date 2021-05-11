@@ -67,6 +67,15 @@ ghcTargetBinP t =
     <*> (MP.chunk t <* MP.eof)
 
 
+-- | Extracts the version from @ProjectVersion="8.10.5"@.
+ghcProjectVersion :: MP.Parsec Void Text Version
+ghcProjectVersion = do
+  _ <- MP.chunk "ProjectVersion=\""
+  ver <- parseUntil1 $ MP.chunk "\""
+  MP.setInput ver
+  version'
+
+
 -- | Extracts target triple and version from e.g.
 --   * armv7-unknown-linux-gnueabihf-8.8.3
 --   * armv7-unknown-linux-gnueabihf-8.8.3

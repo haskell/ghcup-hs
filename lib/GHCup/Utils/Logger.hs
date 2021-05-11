@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE QuasiQuotes      #-}
 
 {-|
 Module      : GHCup.Utils.Logger
@@ -15,6 +16,8 @@ module GHCup.Utils.Logger where
 
 import           GHCup.Types
 import           GHCup.Utils
+import           GHCup.Utils.File
+import           GHCup.Utils.String.QQ
 
 import           Control.Monad
 import           Control.Monad.IO.Class
@@ -25,6 +28,7 @@ import           HPath.IO
 import           Prelude                 hiding ( appendFile )
 import           System.Console.Pretty
 import           System.IO.Error
+import           Text.Regex.Posix
 
 import qualified Data.ByteString               as B
 
@@ -64,12 +68,19 @@ myLoggerT LoggerConfig {..} loggingt = runLoggingT loggingt mylogger
     rawOutter outr
 
 
-initGHCupFileLogging :: (MonadIO m, MonadReader AppState m) => Path Rel -> m (Path Abs)
-initGHCupFileLogging context = do
+initGHCupFileLogging :: (MonadIO m, MonadReader AppState m) => m (Path Abs)
+initGHCupFileLogging = do
   AppState {dirs = Dirs {..}} <- ask
-  let logfile = logsDir </> context
+  let logfile = logsDir </> [rel|ghcup.log|]
   liftIO $ do
     createDirRecursive' logsDir
-    hideError doesNotExistErrorType $ deleteFile logfile
+    logFiles <- findFiles
+      logsDir
+      (makeRegexOpts compExtended
+                     execBlank
+                     ([s|^.*\.log$|] :: B.ByteString)
+      )
+    forM_ logFiles $ hideError doesNotExistErrorType . deleteFile . (logsDir </>)
+
     createRegularFile newFilePerms logfile
     pure logfile

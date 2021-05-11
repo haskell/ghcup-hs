@@ -187,7 +187,7 @@ rmMajorSymlinks tv@GHCTargetVersion{..} = do
     -----------------------------------
 
 
--- | Whethe the given GHC versin is installed.
+-- | Whether the given GHC versin is installed.
 ghcInstalled :: (MonadIO m, MonadReader AppState m, MonadThrow m) => GHCTargetVersion -> m Bool
 ghcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
@@ -769,6 +769,15 @@ make args workdir = do
   has_gmake <- isJust <$> liftIO (searchPath spaths [rel|gmake|])
   let mymake = if has_gmake then "gmake" else "make"
   execLogged mymake True args [rel|ghc-make|] workdir Nothing
+
+makeOut :: [ByteString]
+        -> Maybe (Path Abs)
+        -> IO CapturedProcess
+makeOut args workdir = do
+  spaths    <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
+  has_gmake <- isJust <$> liftIO (searchPath spaths [rel|gmake|])
+  let mymake = if has_gmake then [rel|gmake|] else [rel|make|]
+  liftIO $ executeOut mymake args workdir
 
 
 -- | Try to apply patches in order. Fails with 'PatchFailed'

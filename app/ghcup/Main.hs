@@ -165,9 +165,8 @@ data RmOptions = RmOptions
 
 data CompileCommand = CompileGHC GHCCompileOptions
 
-
 data GHCCompileOptions = GHCCompileOptions
-  { targetVer    :: Version
+  { targetGhc    :: Either Version GitBranch
   , bootstrapGhc :: Either Version (Path Abs)
   , jobs         :: Maybe Int
   , buildConfig  :: Maybe (Path Abs)
@@ -175,14 +174,6 @@ data GHCCompileOptions = GHCCompileOptions
   , crossTarget  :: Maybe Text
   , addConfArgs  :: [Text]
   , setCompile   :: Bool
-  }
-
-data CabalCompileOptions = CabalCompileOptions
-  { targetVer    :: Version
-  , bootstrapGhc :: Either Version (Path Abs)
-  , jobs         :: Maybe Int
-  , buildConfig  :: Maybe (Path Abs)
-  , patchDir     :: Maybe (Path Abs)
   }
 
 data UpgradeOpts = UpgradeInplace
@@ -659,7 +650,10 @@ ENV variables:
   such as: CC, LD, OBJDUMP, NM, AR, RANLIB.
 
 Examples:
+  # compile from known version
   ghcup compile ghc -j 4 -v 8.4.2 -b 8.2.2
+  # compile from git commit/reference
+  ghcup compile ghc -j 4 -g master -b 8.2.2
   # specify path to bootstrap ghc
   ghcup compile ghc -j 4 -v 8.4.2 -b /usr/bin/ghc-8.2.2
   # build cross compiler
@@ -668,34 +662,22 @@ Examples:
 
 ghcCompileOpts :: Parser GHCCompileOptions
 ghcCompileOpts =
-  (\CabalCompileOptions {..} crossTarget addConfArgs setCompile -> GHCCompileOptions { .. }
-    )
-    <$> cabalCompileOpts
-    <*> optional
-          (option
-            str
-            (short 'x' <> long "cross-target" <> metavar "CROSS_TARGET" <> help
-              "Build cross-compiler for this platform"
-            )
-          )
-    <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to configure, prefix with '-- ' (longopts)"))
-    <*> flag
-          False
-          True
-          (long "set" <> help
-            "Set as active version after install"
-          )
-
-cabalCompileOpts :: Parser CabalCompileOptions
-cabalCompileOpts =
-  CabalCompileOptions
-    <$> option
+  GHCCompileOptions
+    <$> ((Left <$> option
           (eitherReader
             (first (const "Not a valid version") . version . T.pack)
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
             "The tool version to compile"
           )
+          ) <|>
+          (Right <$> (GitBranch <$> option
+          str
+          (short 'g' <> long "git-ref" <> metavar "GIT_REFERENCE" <> help
+            "The git commit/branch/ref to build from"
+          ) <*>
+          optional (option str (short 'r' <> long "repository" <> metavar "GIT_REPOSITORY" <> help "The git repository to build from (defaults to GHC upstream)"))
+          )))
     <*> option
           (eitherReader
             (\x ->
@@ -741,6 +723,20 @@ cabalCompileOpts =
             (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
               "Absolute path to patch directory (applied in order, uses -p1)"
             )
+          )
+    <*> optional
+          (option
+            str
+            (short 'x' <> long "cross-target" <> metavar "CROSS_TARGET" <> help
+              "Build cross-compiler for this platform"
+            )
+          )
+    <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to configure, prefix with '-- ' (longopts)"))
+    <*> flag
+          False
+          True
+          (long "set" <> help
+            "Set as active version after install"
           )
 
 
@@ -1073,7 +1069,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           createDirRecursive' baseDir
 
           -- logger interpreter
-          logfile <- flip runReaderT appstate $ initGHCupFileLogging [rel|ghcup.log|]
+          logfile <- flip runReaderT appstate $ initGHCupFileLogging
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = verbose settings
                 , colorOutter  = B.hPut stderr
@@ -1470,22 +1466,26 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
             Compile (CompileGHC GHCCompileOptions {..}) ->
               runCompileGHC (do
-                let vi = getVersionInfo targetVer GHC dls
-                forM_ (_viPreCompile =<< vi) $ \msg -> do
-                  lift $ $(logInfo) msg
-                  lift $ $(logInfo)
-                    "...waiting for 5 seconds, you can still abort..."
-                  liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
-                liftE $ compileGHC dls
-                            (GHCTargetVersion crossTarget targetVer)
+                case targetGhc of
+                  Left targetVer -> do
+                    let vi = getVersionInfo targetVer GHC dls
+                    forM_ (_viPreCompile =<< vi) $ \msg -> do
+                      lift $ $(logInfo) msg
+                      lift $ $(logInfo)
+                        "...waiting for 5 seconds, you can still abort..."
+                      liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
+                  Right _ -> pure ()
+                targetVer <- liftE $ compileGHC dls
+                            (first (GHCTargetVersion crossTarget) targetGhc)
                             bootstrapGhc
                             jobs
                             buildConfig
                             patchDir
                             addConfArgs
                             pfreq
+                let vi = getVersionInfo (_tvVersion targetVer) GHC dls
                 when setCompile $ void $ liftE $
-                  setGHC (GHCTargetVersion crossTarget targetVer) SetGHCOnly
+                  setGHC targetVer SetGHCOnly
                 pure vi
                 )
                 >>= \case

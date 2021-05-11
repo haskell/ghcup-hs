@@ -379,6 +379,11 @@ data GHCTargetVersion = GHCTargetVersion
   }
   deriving (Ord, Eq, Show)
 
+data GitBranch = GitBranch
+  { ref  :: String
+  , repo :: Maybe String
+  }
+  deriving (Ord, Eq, Show)
 
 mkTVer :: Version -> GHCTargetVersion
 mkTVer = GHCTargetVersion Nothing
