@@ -1,6 +1,6 @@
 cabal-version:   3.0
 name:            ghcup
-version:         0.1.14.1
+version:         0.1.14.2
 license:         LGPL-3.0-only
 license-file:    LICENSE
 copyright:       Julian Ospald 2020
@@ -85,7 +85,6 @@ library
 
   build-depends:
     , aeson                 >=1.4        && <1.6
-    , ascii-string          ^>=1.0
     , async                 >=0.8        && <2.3
     , base                  >=4.13       && <5
     , base16-bytestring     >=0.1.1.6    && <1.1
