@@ -8,7 +8,7 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 -}
 module GHCup.Utils.MegaParsec where
 
@@ -23,6 +23,7 @@ import           Data.Maybe
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           Data.Void
+import           System.FilePath
 
 import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
@@ -117,3 +118,7 @@ verP suffix = do
       v <- versioning'
       MP.setInput rest
       pure v
+
+
+pathSep :: MP.Parsec Void Text Char
+pathSep = MP.oneOf pathSeparators

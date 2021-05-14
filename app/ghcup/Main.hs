@@ -53,8 +53,6 @@ import           Data.Versions           hiding ( str )
 import           Data.Void
 import           GHC.IO.Encoding
 import           Haskus.Utils.Variant.Excepts
-import           HPath
-import           HPath.IO
 import           Language.Haskell.TH
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
@@ -64,6 +62,7 @@ import           System.Console.Pretty   hiding ( color )
 import qualified System.Console.Pretty         as Pretty
 import           System.Environment
 import           System.Exit
+import           System.FilePath
 import           System.IO               hiding ( appendFile )
 import           Text.Read               hiding ( lift )
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
@@ -77,8 +76,6 @@ import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
-
-
 
 
 
@@ -170,17 +167,17 @@ data CompileCommand = CompileGHC GHCCompileOptions
 
 data GHCCompileOptions = GHCCompileOptions
   { targetGhc    :: Either Version GitBranch
-  , bootstrapGhc :: Either Version (Path Abs)
+  , bootstrapGhc :: Either Version FilePath
   , jobs         :: Maybe Int
-  , buildConfig  :: Maybe (Path Abs)
-  , patchDir     :: Maybe (Path Abs)
+  , buildConfig  :: Maybe FilePath
+  , patchDir     :: Maybe FilePath
   , crossTarget  :: Maybe Text
   , addConfArgs  :: [Text]
   , setCompile   :: Bool
   }
 
 data UpgradeOpts = UpgradeInplace
-                 | UpgradeAt (Path Abs)
+                 | UpgradeAt FilePath
                  | UpgradeGHCupDir
                  deriving Show
 
@@ -721,8 +718,7 @@ ghcCompileOpts =
     <*> option
           (eitherReader
             (\x ->
-              (bimap (const "Not a valid version") Left . version . T.pack $ x)
-                <|> (bimap show Right . parseAbs . E.encodeUtf8 . T.pack $ x)
+              (bimap (const "Not a valid version") Left . version . T.pack $ x) <|> (if isPathSeparator (head x) then pure $ Right x else Left "Not an absolute Path")
             )
           )
           (  short 'b'
@@ -740,26 +736,14 @@ ghcCompileOpts =
           )
     <*> optional
           (option
-            (eitherReader
-              (\x ->
-                first show . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
-                    String
-                    (Path Abs)
-              )
-            )
+            str
             (short 'c' <> long "config" <> metavar "CONFIG" <> help
               "Absolute path to build config file"
             )
           )
     <*> optional
           (option
-            (eitherReader
-              (\x ->
-                first show . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
-                    String
-                    (Path Abs)
-              )
-            )
+            str
             (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
               "Absolute path to patch directory (applied in order, uses -p1)"
             )
@@ -821,53 +805,47 @@ versionArgument criteria tool = argument (eitherReader tVersionEither) (metavar 
 
 tagCompleter :: Tool -> [String] -> Completer
 tagCompleter tool add = listIOCompleter $ do
+  dirs' <- liftIO getDirs
   let loggerConfig = LoggerConfig
         { lcPrintDebug = False
         , colorOutter  = mempty
         , rawOutter    = mempty
         }
-
-      runLogger = myLoggerT loggerConfig
-
-  dirs <- getDirs
-  let simpleSettings = Settings False False Never Curl False GHCupURL
-      simpleAppState = AppState simpleSettings dirs defaultKeyBindings
-      runEnv = runLogger . flip runReaderT simpleAppState
-
-  mGhcUpInfo <- runEnv . runE $ readFromCache
-
+  let runLogger = myLoggerT loggerConfig
+  mGhcUpInfo <- runLogger . runE $ readFromCache dirs'
   case mGhcUpInfo of
-    VRight dls -> do
+    VRight ghcupInfo -> do
       let allTags = filter (\t -> t /= Old)
             $ join
             $ M.elems
-            $ availableToolVersions (_ghcupDownloads dls) tool
+            $ availableToolVersions (_ghcupDownloads ghcupInfo) tool
       pure $ nub $ (add ++) $ fmap tagToString allTags
     VLeft _ -> pure  (nub $ ["recommended", "latest"] ++ add)
 
 
 versionCompleter :: Maybe ListCriteria -> Tool -> Completer
 versionCompleter criteria tool = listIOCompleter $ do
+  dirs' <- liftIO getDirs
   let loggerConfig = LoggerConfig
         { lcPrintDebug = False
         , colorOutter  = mempty
         , rawOutter    = mempty
         }
-
-      runLogger = myLoggerT loggerConfig
-
+  let runLogger = myLoggerT loggerConfig
+  mGhcUpInfo <- runLogger . runE $ readFromCache dirs'
   mpFreq <- runLogger . runE $ platformRequest
+  forFold mpFreq $ \pfreq ->
+    forFold mGhcUpInfo $ \ghcupInfo -> do
+      let appState = AppState
+            (Settings True False Never Curl False GHCupURL)
+            dirs'
+            defaultKeyBindings
+            ghcupInfo
+            pfreq
 
-  forFold mpFreq $ \pfreq -> do
-    dirs <- getDirs
-    let simpleSettings = Settings False False Never Curl False GHCupURL
-        simpleAppState = AppState simpleSettings dirs defaultKeyBindings
-        runEnv = runLogger . flip runReaderT simpleAppState
+          runEnv = runLogger . flip runReaderT appState
 
-    mGhcUpInfo <- runEnv . runE $ readFromCache
-
-    forFold mGhcUpInfo $ \(GHCupInfo _ dls) -> do
-      installedVersions <- runEnv $ listVersions dls (Just tool) criteria pfreq
+      installedVersions <- runEnv $ listVersions (Just tool) criteria
       return $ T.unpack . prettyVer . lVer <$> installedVersions
 
 
@@ -988,9 +966,8 @@ bindistParser :: String -> Either String URI
 bindistParser = first show . parseURI strictURIParserOptions . UTF8.fromString
 
 
-toSettings :: Options -> IO AppState
+toSettings :: Options -> IO (Settings, KeyBindings)
 toSettings options = do
-  dirs <- getDirs
   userConf <- runE @'[ JSONError ] ghcupConfigFile >>= \case
     VRight r -> pure r
     VLeft (V (JSONDecodeError e)) -> do
@@ -998,10 +975,10 @@ toSettings options = do
       pure defaultUserSettings
     _ -> do
       die "Unexpected error!"
-  pure $ mergeConf options dirs userConf
+  pure $ mergeConf options userConf
  where
-   mergeConf :: Options -> Dirs -> UserSettings -> AppState
-   mergeConf Options{..} dirs UserSettings{..} =
+   mergeConf :: Options -> UserSettings -> (Settings, KeyBindings)
+   mergeConf Options{..} UserSettings{..} =
      let cache       = fromMaybe (fromMaybe False uCache) optCache
          noVerify    = fromMaybe (fromMaybe False uNoVerify) optNoVerify
          verbose     = fromMaybe (fromMaybe False uVerbose) optVerbose
@@ -1009,7 +986,7 @@ toSettings options = do
          downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
          urlSource   = maybe (fromMaybe GHCupURL uUrlSource) OwnSource optUrlSource
-     in AppState (Settings {..}) dirs keyBindings
+     in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
 #else
@@ -1040,13 +1017,7 @@ upgradeOptsP =
       )
     <|> (   UpgradeAt
         <$> option
-              (eitherReader
-                (\x ->
-                  first show . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
-                      String
-                      (Path Abs)
-                )
-              )
+              str
               (short 't' <> long "target" <> metavar "TARGET_DIR" <> help
                 "Absolute filepath to write ghcup into"
               )
@@ -1058,9 +1029,12 @@ upgradeOptsP =
 describe_result :: String
 describe_result = $( LitE . StringL <$>
                      runIO (do
-                             CapturedProcess{..} <- executeOut [rel|git|] ["describe"] Nothing
+                             CapturedProcess{..} <-  do
+                              dirs <- liftIO getDirs
+                              let settings = AppState (Settings True False Never Curl False GHCupURL) dirs defaultKeyBindings
+                              flip runReaderT settings $ executeOut "git" ["describe"] Nothing
                              case _exitCode of
-                               ExitSuccess   -> pure . T.unpack . decUTF8Safe $ _stdOut
+                               ExitSuccess   -> pure . T.unpack . decUTF8Safe' $ _stdOut
                                ExitFailure _ -> pure numericVer
                      )
                    )
@@ -1068,6 +1042,11 @@ describe_result = $( LitE . StringL <$>
 
 main :: IO ()
 main = do
+  -- https://gitlab.haskell.org/ghc/ghc/issues/8118
+  setLocaleEncoding utf8
+
+  void enableAnsiSupport
+
   let versionHelp = infoOption
         ( ("The GHCup Haskell installer, version " <>)
           (head . lines $ describe_result)
@@ -1104,28 +1083,76 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             (footerDoc (Just $ text main_footer))
       )
     >>= \opt@Options {..} -> do
-          appstate@AppState{dirs = Dirs{..}, ..} <- toSettings opt
+          dirs <- getDirs
+
+          (settings, keybindings) <- toSettings opt
 
           -- create ~/.ghcup dir
-          createDirRecursive' baseDir
+          createDirRecursive' (baseDir dirs)
 
           -- logger interpreter
-          logfile <- flip runReaderT appstate $ initGHCupFileLogging
+          logfile <- initGHCupFileLogging (logsDir dirs)
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = verbose settings
                 , colorOutter  = B.hPut stderr
-                , rawOutter    = appendFile logfile
+                , rawOutter    = B.appendFile logfile
                 }
           let runLogger = myLoggerT loggerConfig
+          let siletRunLogger = myLoggerT loggerConfig { colorOutter = \_ -> pure () }
+
+          pfreq <- (
+            runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest
+            ) >>= \case
+                    VRight r -> pure r
+                    VLeft e -> do
+                      runLogger
+                        ($(logError) $ T.pack $ prettyShow e)
+                      exitWith (ExitFailure 2)
+
+
+
+          ----------------------------------------
+          -- Getting download and platform info --
+          ----------------------------------------
+          
+          ghcupInfo <-
+            ( runLogger
+              . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
+              $ liftE
+              $ getDownloadsF settings dirs
+              )
+              >>= \case
+                    VRight r -> pure r
+                    VLeft  e -> do
+                      runLogger
+                        ($(logError) $ T.pack $ prettyShow e)
+                      exitWith (ExitFailure 2)
+
+          let appstate@AppState{dirs = Dirs{..}
+                               , ghcupInfo = GHCupInfo { _ghcupDownloads = dls, .. }
+                               } = AppState settings dirs keybindings ghcupInfo pfreq
+
+          case optCommand of
+            Upgrade _ _ -> pure ()
+            _ -> runLogger $ flip runReaderT appstate $ checkForUpdates
+
+
+          -- ensure global tools
+          (siletRunLogger $ flip runReaderT appstate $ runE ensureGlobalTools) >>= \case
+            VRight _ -> pure ()
+            VLeft e -> do
+              runLogger
+                ($(logError) $ T.pack $ prettyShow e)
+              exitWith (ExitFailure 30)
 
 
           -------------------------
           -- Effect interpreters --
           -------------------------
 
-          let runInstTool' appstate' =
+          let runInstTool' appstate' mInstPlatform =
                 runLogger
-                  . flip runReaderT appstate'
+                  . flip runReaderT (maybe appstate' (\x -> appstate'{ pfreq = x }) mInstPlatform)
                   . runResourceT
                   . runE
                     @'[ AlreadyInstalled
@@ -1228,57 +1255,22 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       ]
 
 
-          ----------------------------------------
-          -- Getting download and platform info --
-          ----------------------------------------
-
-          pfreq <- (
-            runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest
-            ) >>= \case
-                    VRight r -> pure r
-                    VLeft e -> do
-                      runLogger
-                        ($(logError) $ T.pack $ prettyShow e)
-                      exitWith (ExitFailure 2)
-
-
-          (GHCupInfo treq dls) <-
-            ( runLogger
-              . flip runReaderT appstate
-              . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
-              $ liftE
-              $ getDownloadsF (urlSource settings)
-              )
-              >>= \case
-                    VRight r -> pure r
-                    VLeft  e -> do
-                      runLogger
-                        ($(logError) $ T.pack $ prettyShow e)
-                      exitWith (ExitFailure 2)
-
-          case optCommand of
-            Upgrade _ _ -> pure ()
-            _ -> runLogger $ flip runReaderT appstate $ checkForUpdates dls pfreq
-
-
-
           -----------------------
           -- Command functions --
           -----------------------
 
           let installGHC InstallOptions{..} =
                   (case instBindist of
-                     Nothing -> runInstTool $ do
-                       (v, vi) <- liftE $ fromVersion dls instVer GHC
-                       liftE $ installGHCBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                     Nothing -> runInstTool instPlatform $ do
+                       (v, vi) <- liftE $ fromVersion instVer GHC
+                       liftE $ installGHCBin (_tvVersion v)
                        when instSet $ void $ liftE $ setGHC v SetGHCOnly
                        pure vi
-                     Just uri -> runInstTool' appstate{ settings = settings {noVerify = True}} $ do
-                       (v, vi) <- liftE $ fromVersion dls instVer GHC
+                     Just uri -> runInstTool' appstate{ settings = settings {noVerify = True}} instPlatform $ do
+                       (v, vi) <- liftE $ fromVersion instVer GHC
                        liftE $ installGHCBindist
                          (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
                          (_tvVersion v)
-                         (fromMaybe pfreq instPlatform)
                        when instSet $ void $ liftE $ setGHC v SetGHCOnly
                        pure vi
                     )
@@ -1294,8 +1286,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             pure ExitSuccess
                           VLeft err@(V (BuildFailed tmpdir _)) -> do
                             case keepDirs settings of
-                              Never -> runLogger ($(logError) $ T.pack $ prettyShow err)
-                              _ -> runLogger ($(logError) [i|#{prettyShow err}
+                              Never -> myLoggerT loggerConfig $ ($(logError) $ T.pack $ prettyShow err)
+                              _ -> myLoggerT loggerConfig $ ($(logError) [i|#{prettyShow err}
     Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
     Make sure to clean up #{tmpdir} afterwards.|])
                             pure $ ExitFailure 3
@@ -1308,16 +1300,15 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let installCabal InstallOptions{..} =
                 (case instBindist of
-                   Nothing -> runInstTool $ do
-                     (v, vi) <- liftE $ fromVersion dls instVer Cabal
-                     liftE $ installCabalBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                   Nothing -> runInstTool instPlatform $ do
+                     (v, vi) <- liftE $ fromVersion instVer Cabal
+                     liftE $ installCabalBin (_tvVersion v)
                      pure vi
-                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} $ do
-                     (v, vi) <- liftE $ fromVersion dls instVer Cabal
+                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} instPlatform $ do
+                     (v, vi) <- liftE $ fromVersion instVer Cabal
                      liftE $ installCabalBindist
                          (DownloadInfo uri Nothing "")
                          (_tvVersion v)
-                         (fromMaybe pfreq instPlatform)
                      pure vi
                   )
                   >>= \case
@@ -1338,16 +1329,15 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let installHLS InstallOptions{..} =
                 (case instBindist of
-                   Nothing -> runInstTool $ do
-                     (v, vi) <- liftE $ fromVersion dls instVer HLS
-                     liftE $ installHLSBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                   Nothing -> runInstTool instPlatform $ do
+                     (v, vi) <- liftE $ fromVersion instVer HLS
+                     liftE $ installHLSBin (_tvVersion v)
                      pure vi
-                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} $ do
-                     (v, vi) <- liftE $ fromVersion dls instVer HLS
+                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} instPlatform $ do
+                     (v, vi) <- liftE $ fromVersion instVer HLS
                      liftE $ installHLSBindist
                          (DownloadInfo uri Nothing "")
                          (_tvVersion v)
-                         (fromMaybe pfreq instPlatform)
                      pure vi
                   )
                   >>= \case
@@ -1368,16 +1358,15 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let installStack InstallOptions{..} =
                 (case instBindist of
-                   Nothing -> runInstTool $ do
-                     (v, vi) <- liftE $ fromVersion dls instVer Stack
-                     liftE $ installStackBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                   Nothing -> runInstTool instPlatform $ do
+                     (v, vi) <- liftE $ fromVersion instVer Stack
+                     liftE $ installStackBin (_tvVersion v)
                      pure vi
-                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} $ do
-                     (v, vi) <- liftE $ fromVersion dls instVer Stack
+                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} instPlatform $ do
+                     (v, vi) <- liftE $ fromVersion instVer Stack
                      liftE $ installStackBindist
                          (DownloadInfo uri Nothing "")
                          (_tvVersion v)
-                         (fromMaybe pfreq instPlatform)
                      pure vi
                   )
                   >>= \case
@@ -1399,7 +1388,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let setGHC' SetOptions{..} =
                 runSetGHC (do
-                    v <- liftE $ fst <$> fromVersion' dls sToolVer GHC
+                    v <- liftE $ fst <$> fromVersion' sToolVer GHC
                     liftE $ setGHC v SetGHCOnly
                   )
                   >>= \case
@@ -1414,7 +1403,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let setCabal' SetOptions{..} =
                 runSetCabal (do
-                    v <- liftE $ fst <$> fromVersion' dls sToolVer Cabal
+                    v <- liftE $ fst <$> fromVersion' sToolVer Cabal
                     liftE $ setCabal (_tvVersion v)
                     pure v
                   )
@@ -1430,7 +1419,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let setHLS' SetOptions{..} =
                 runSetHLS (do
-                    v <- liftE $ fst <$> fromVersion' dls sToolVer HLS
+                    v <- liftE $ fst <$> fromVersion' sToolVer HLS
                     liftE $ setHLS (_tvVersion v)
                     pure v
                   )
@@ -1446,7 +1435,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let setStack' SetOptions{..} =
                 runSetCabal (do
-                    v <- liftE $ fst <$> fromVersion' dls sToolVer Stack
+                    v <- liftE $ fst <$> fromVersion' sToolVer Stack
                     liftE $ setStack (_tvVersion v)
                     pure v
                   )
@@ -1522,7 +1511,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           res <- case optCommand of
 #if defined(BRICK)
-            Interactive -> liftIO $ brickMain appstate loggerConfig dls pfreq >> pure ExitSuccess
+            Interactive -> do
+              liftIO $ brickMain appstate loggerConfig ghcupInfo >> pure ExitSuccess
 #endif
             Install (Right iopts) -> do
               runLogger ($(logWarn) [i|This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.|])
@@ -1545,7 +1535,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
             List ListOptions {..} ->
               runListGHC (do
-                  l <- listVersions dls loTool lCriteria pfreq
+                  l <- listVersions loTool lCriteria
                   liftIO $ printListResult lRawFormat l
                   pure ExitSuccess
                 )
@@ -1579,14 +1569,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         "...waiting for 5 seconds, you can still abort..."
                       liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
                   Right _ -> pure ()
-                targetVer <- liftE $ compileGHC dls
+                targetVer <- liftE $ compileGHC
                             (first (GHCTargetVersion crossTarget) targetGhc)
                             bootstrapGhc
                             jobs
                             buildConfig
                             patchDir
                             addConfArgs
-                            pfreq
                 let vi = getVersionInfo (_tvVersion targetVer) GHC dls
                 when setCompile $ void $ liftE $
                   setGHC targetVer SetGHCOnly
@@ -1605,8 +1594,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         pure ExitSuccess
                       VLeft err@(V (BuildFailed tmpdir _)) -> do
                         case keepDirs settings of
-                          Never -> runLogger $ $(logError) $ T.pack $ prettyShow err
-                          _ -> runLogger ($(logError) [i|#{prettyShow err}
+                          Never -> myLoggerT loggerConfig $ $(logError) $ T.pack $ prettyShow err
+                          _ -> myLoggerT loggerConfig $ ($(logError) [i|#{prettyShow err}
 Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
 Make sure to clean up #{tmpdir} afterwards.|])
                         pure $ ExitFailure 9
@@ -1616,14 +1605,11 @@ Make sure to clean up #{tmpdir} afterwards.|])
 
             Upgrade uOpts force -> do
               target <- case uOpts of
-                UpgradeInplace -> do
-                  efp <- liftIO getExecutablePath
-                  p   <- parseAbs . E.encodeUtf8 . T.pack $ efp
-                  pure $ Just p
+                UpgradeInplace  -> Just <$> liftIO getExecutablePath
                 (UpgradeAt p)   -> pure $ Just p
-                UpgradeGHCupDir -> pure (Just (binDir </> [rel|ghcup|]))
+                UpgradeGHCupDir -> pure (Just (binDir </> "ghcup"))
 
-              runUpgrade (liftE $ upgradeGHCup dls target force pfreq) >>= \case
+              runUpgrade (liftE $ upgradeGHCup target force) >>= \case
                 VRight v' -> do
                   let pretty_v = prettyVer v'
                   let vi = fromJust $ snd <$> getLatest dls GHCup
@@ -1640,12 +1626,13 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   pure $ ExitFailure 11
 
             ToolRequirements ->
-              runLogger
+              flip runReaderT appstate
+              $ runLogger
                 (runE
                   @'[NoCompatiblePlatform , DistroNotFound , NoToolRequirements]
                 $ do
                     platform <- liftE getPlatform
-                    req      <- getCommonRequirements platform treq ?? NoToolRequirements
+                    req      <- getCommonRequirements platform _toolRequirements ?? NoToolRequirements
                     liftIO $ T.hPutStr stdout (prettyRequirements req)
                 )
                 >>= \case
@@ -1677,12 +1664,13 @@ Make sure to clean up #{tmpdir} afterwards.|])
                               Darwin  -> "open"
                               Linux _ -> "xdg-open"
                               FreeBSD -> "xdg-open"
+                              Windows -> "start"
 
                   if clOpen
                     then
+                      flip runReaderT appstate $
                       exec cmd
-                           True
-                           [serializeURIRef' uri]
+                           [T.unpack $ decUTF8Safe $ serializeURIRef' uri]
                            Nothing
                            Nothing
                         >>= \case
@@ -1697,36 +1685,40 @@ Make sure to clean up #{tmpdir} afterwards.|])
   pure ()
 
 fromVersion :: (MonadLogger m, MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
-            => GHCupDownloads
-            -> Maybe ToolVersion
+            => Maybe ToolVersion
             -> Tool
             -> Excepts '[TagNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, Maybe VersionInfo)
-fromVersion av tv = fromVersion' av (toSetToolVer tv)
+fromVersion tv = fromVersion' (toSetToolVer tv)
 
 fromVersion' :: (MonadLogger m, MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
-             => GHCupDownloads
-             -> SetToolVersion
+             => SetToolVersion
              -> Tool
              -> Excepts '[TagNotFound, NextVerNotFound, NoToolVersionSet] m (GHCTargetVersion, Maybe VersionInfo)
-fromVersion' av SetRecommended tool =
-  (\(x, y) -> (mkTVer x, Just y)) <$> getRecommended av tool
+fromVersion' SetRecommended tool = do
+  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  (\(x, y) -> (mkTVer x, Just y)) <$> getRecommended dls tool
     ?? TagNotFound Recommended tool
-fromVersion' av (SetToolVersion v) tool = do
-  let vi = getVersionInfo (_tvVersion v) tool av
+fromVersion' (SetToolVersion v) tool = do
+  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  let vi = getVersionInfo (_tvVersion v) tool dls
   case pvp $ prettyVer (_tvVersion v) of
     Left _ -> pure (v, vi)
     Right (PVP (major' :|[minor'])) ->
-      case getLatestGHCFor (fromIntegral major') (fromIntegral minor') av of
+      case getLatestGHCFor (fromIntegral major') (fromIntegral minor') dls of
         Just (v', vi') -> pure (GHCTargetVersion (_tvTarget v) v', Just vi')
         Nothing -> pure (v, vi)
     Right _ -> pure (v, vi)
-fromVersion' av  (SetToolTag Latest) tool =
-  (\(x, y) -> (mkTVer x, Just y)) <$> getLatest av tool ?? TagNotFound Latest tool
-fromVersion' av (SetToolTag Recommended) tool =
-  (\(x, y) -> (mkTVer x, Just y)) <$> getRecommended av tool ?? TagNotFound Recommended tool
-fromVersion' av (SetToolTag (Base pvp'')) GHC =
-  (\(x, y) -> (mkTVer x, Just y)) <$> getLatestBaseVersion av pvp'' ?? TagNotFound (Base pvp'') GHC
-fromVersion' av SetNext tool = do
+fromVersion' (SetToolTag Latest) tool = do
+  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  (\(x, y) -> (mkTVer x, Just y)) <$> getLatest dls tool ?? TagNotFound Latest tool
+fromVersion' (SetToolTag Recommended) tool = do
+  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  (\(x, y) -> (mkTVer x, Just y)) <$> getRecommended dls tool ?? TagNotFound Recommended tool
+fromVersion' (SetToolTag (Base pvp'')) GHC = do
+  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  (\(x, y) -> (mkTVer x, Just y)) <$> getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') GHC
+fromVersion' SetNext tool = do
+  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
   next <- case tool of
     GHC -> do
       set <- fmap _tvVersion $ ghcSet Nothing !? NoToolVersionSet tool
@@ -1769,17 +1761,14 @@ fromVersion' av SetNext tool = do
         . sort
         $ stacks) ?? NoToolVersionSet tool
     GHCup -> fail "GHCup cannot be set"
-  let vi = getVersionInfo (_tvVersion next) tool av
+  let vi = getVersionInfo (_tvVersion next) tool dls
   pure (next, vi)
-fromVersion' _ (SetToolTag t') tool =
+fromVersion' (SetToolTag t') tool =
   throwE $ TagNotFound t' tool
 
 
 printListResult :: Bool -> [ListResult] -> IO ()
 printListResult raw lr = do
-  -- https://gitlab.haskell.org/ghc/ghc/issues/8118
-  setLocaleEncoding utf8
-
   no_color <- isJust <$> lookupEnv "NO_COLOR"
 
   let
@@ -1803,9 +1792,15 @@ printListResult raw lr = do
         . fmap
             (\ListResult {..} ->
               let marks = if
+#if defined(IS_WINDOWS)
+                    | lSet       -> (color Green "IS")
+                    | lInstalled -> (color Green "I ")
+                    | otherwise  -> (color Red "X ")
+#else
                     | lSet       -> (color Green "✔✔")
                     | lInstalled -> (color Green "✓ ")
                     | otherwise  -> (color Red "✗ ")
+#endif
               in
                 (if raw then [] else [marks])
                   ++ [ fmap toLower . show $ lTool
@@ -1932,11 +1927,10 @@ checkForUpdates :: ( MonadReader AppState m
                    , MonadFail m
                    , MonadLogger m
                    )
-                => GHCupDownloads
-                -> PlatformRequest
-                -> m ()
-checkForUpdates dls pfreq = do
-  lInstalled <- listVersions dls Nothing (Just ListInstalled) pfreq
+                => m ()
+checkForUpdates = do
+  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
+  lInstalled <- listVersions Nothing (Just ListInstalled)
   let latestInstalled tool = (fmap lVer . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
 
   forM_ (getLatest dls GHCup) $ \(l, _) -> do
@@ -1977,10 +1971,10 @@ checkForUpdates dls pfreq = do
 prettyDebugInfo :: DebugInfo -> String
 prettyDebugInfo DebugInfo {..} = [i|Debug Info
 ==========
-GHCup base dir: #{toFilePath diBaseDir}
-GHCup bin dir: #{toFilePath diBinDir}
-GHCup GHC directory: #{toFilePath diGHCDir}
-GHCup cache directory: #{toFilePath diCacheDir}
+GHCup base dir: #{diBaseDir}
+GHCup bin dir: #{diBinDir}
+GHCup GHC directory: #{diGHCDir}
+GHCup cache directory: #{diCacheDir}
 Architecture: #{prettyShow diArch}
 Platform: #{prettyShow diPlatform}
 Version: #{describe_result}|]

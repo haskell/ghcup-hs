@@ -14,7 +14,7 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 
 This module contains GHCup helpers specific to
 installation and introspection of files/versions etc.
@@ -26,6 +26,9 @@ module GHCup.Utils
 where
 
 
+#if defined(IS_WINDOWS)
+import           GHCup.Download
+#endif
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
@@ -39,6 +42,7 @@ import           GHCup.Utils.String.QQ
 #if !defined(TAR)
 import           Codec.Archive           hiding ( Directory )
 #endif
+import           Codec.Archive.Zip
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
@@ -47,32 +51,33 @@ import           Control.Monad.Fail             ( MonadFail )
 #endif
 import           Control.Monad.Logger
 import           Control.Monad.Reader
+import           Control.Monad.Trans.Resource
+                                         hiding ( throwM )
+#if defined(IS_WINDOWS)
+import           Data.Bits
+#endif
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.Foldable
 import           Data.List
+import           Data.List.Extra
 import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
-import           Data.List.Split
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           Data.Word8
 import           GHC.IO.Exception
-import           HPath
-import           HPath.IO                hiding ( hideError )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
-import           Prelude                 hiding ( abs
-                                                , readFile
-                                                , writeFile
-                                                )
 import           Safe
+import           System.Directory      hiding   ( findFiles )
+import           System.FilePath
 import           System.IO.Error
-import           System.Posix.FilePath          ( getSearchPath
-                                                , takeFileName
-                                                )
-import           System.Posix.Files.ByteString  ( readSymbolicLink )
+#if defined(IS_WINDOWS)
+import           System.Win32.Console
+import           System.Win32.File     hiding ( copyFile )
+import           System.Win32.Types
+#endif
 import           Text.Regex.Posix
 import           URI.ByteString
 
@@ -85,9 +90,7 @@ import qualified Codec.Compression.Lzma        as Lzma
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
-#if !defined(TAR)
 import qualified Data.Text                     as T
-#endif
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 
@@ -102,14 +105,13 @@ import qualified Text.Megaparsec               as MP
 
 -- | The symlink destination of a ghc tool.
 ghcLinkDestination :: (MonadReader AppState m, MonadThrow m, MonadIO m)
-                   => ByteString -- ^ the tool, such as 'ghc', 'haddock' etc.
+                   => FilePath -- ^ the tool, such as 'ghc', 'haddock' etc.
                    -> GHCTargetVersion
-                   -> m ByteString
+                   -> m FilePath
 ghcLinkDestination tool ver = do
   AppState { dirs = Dirs {..} } <- ask
-  t <- parseRel tool
   ghcd <- ghcupGHCDir ver
-  pure (relativeSymlink binDir (ghcd </> [rel|bin|] </> t))
+  pure (relativeSymlink binDir (ghcd </> "bin" </> tool))
 
 
 -- | Removes the minor GHC symlinks, e.g. ghc-8.6.5.
@@ -127,10 +129,10 @@ rmMinorSymlinks tv@GHCTargetVersion{..} = do
 
   files                         <- liftE $ ghcToolFiles tv
   forM_ files $ \f -> do
-    f_xyz <- liftIO $ parseRel (toFilePath f <> B.singleton _hyphen <> verToBS _tvVersion)
+    let f_xyz = f <> "-" <> T.unpack (prettyVer _tvVersion) <> exeExt
     let fullF = binDir </> f_xyz
-    lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
-    liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
+    lift $ $(logDebug) [i|rm -f #{fullF}|]
+    liftIO $ hideError doesNotExistErrorType $ rmLink fullF
 
 
 -- | Removes the set ghc version for the given target, if any.
@@ -148,13 +150,13 @@ rmPlain target = do
   forM_ mtv $ \tv -> do
     files <- liftE $ ghcToolFiles tv
     forM_ files $ \f -> do
-      let fullF = binDir </> f
-      lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
-      liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
+      let fullF = binDir </> f <> exeExt
+      lift $ $(logDebug) [i|rm -f #{fullF}|]
+      liftIO $ hideError doesNotExistErrorType $ rmLink fullF
     -- old ghcup
-    let hdc_file = binDir </> [rel|haddock-ghc|]
-    lift $ $(logDebug) [i|rm -f #{toFilePath hdc_file}|]
-    liftIO $ hideError doesNotExistErrorType $ deleteFile hdc_file
+    let hdc_file = binDir </> "haddock-ghc" <> exeExt
+    lift $ $(logDebug) [i|rm -f #{hdc_file}|]
+    liftIO $ hideError doesNotExistErrorType $ rmLink hdc_file
 
 
 -- | Remove the major GHC symlink, e.g. ghc-8.6.
@@ -174,10 +176,10 @@ rmMajorSymlinks tv@GHCTargetVersion{..} = do
 
   files                         <- liftE $ ghcToolFiles tv
   forM_ files $ \f -> do
-    f_xyz <- liftIO $ parseRel (toFilePath f <> B.singleton _hyphen <> E.encodeUtf8 v')
-    let fullF = binDir </> f_xyz
-    lift $ $(logDebug) [i|rm -f #{toFilePath fullF}|]
-    liftIO $ hideError doesNotExistErrorType $ deleteFile fullF
+    let f_xy = f <> "-" <> T.unpack v' <> exeExt
+    let fullF = binDir </> f_xy
+    lift $ $(logDebug) [i|rm -f #{fullF}|]
+    liftIO $ hideError doesNotExistErrorType $ rmLink fullF
 
 
 
@@ -208,42 +210,40 @@ ghcSet :: (MonadReader AppState m, MonadThrow m, MonadIO m)
        -> m (Maybe GHCTargetVersion)
 ghcSet mtarget = do
   AppState {dirs = Dirs {..}} <- ask
-  ghc    <- parseRel $ E.encodeUtf8 (maybe "ghc" (<> "-ghc") mtarget)
-  let ghcBin = binDir </> ghc
+  let ghc = maybe "ghc" (\t -> T.unpack t <> "-ghc") mtarget
+  let ghcBin = binDir </> ghc <> exeExt
 
   -- link destination is of the form ../ghc/<ver>/bin/ghc
   -- for old ghcup, it is ../ghc/<ver>/bin/ghc-<ver>
   liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
-    link <- readSymbolicLink $ toFilePath ghcBin
+    link <- liftIO $ getLinkTarget ghcBin
     Just <$> ghcLinkVersion link
-
-ghcLinkVersion :: MonadThrow m => ByteString -> m GHCTargetVersion
-ghcLinkVersion bs = do
-  t <- throwEither $ E.decodeUtf8' bs
-  throwEither $ MP.parse parser "ghcLinkVersion" t
  where
-  parser =
-      (do
-         _    <- parseUntil1 (MP.chunk "/ghc/")
-         _    <- MP.chunk "/ghc/"
-         r    <- parseUntil1 (MP.chunk "/")
-         rest <- MP.getInput
-         MP.setInput r
-         x <- ghcTargetVerP
-         MP.setInput rest
-         pure x
-       )
-      <* MP.chunk "/"
-      <* MP.takeRest
-      <* MP.eof
-
+  ghcLinkVersion :: MonadThrow m => FilePath -> m GHCTargetVersion
+  ghcLinkVersion (T.pack . dropSuffix exeExt -> t) = throwEither $ MP.parse parser "ghcLinkVersion" t
+   where
+    parser =
+        (do
+           _    <- parseUntil1 ghcSubPath
+           _    <- ghcSubPath
+           r    <- parseUntil1 pathSep
+           rest <- MP.getInput
+           MP.setInput r
+           x <- ghcTargetVerP
+           MP.setInput rest
+           pure x
+         )
+        <* pathSep
+        <* MP.takeRest
+        <* MP.eof
+    ghcSubPath = pathSep <* MP.chunk "ghc" *> pathSep
 
 -- | Get all installed GHCs by reading ~/.ghcup/ghc/<dir>.
 -- If a dir cannot be parsed, returns left.
-getInstalledGHCs :: (MonadReader AppState m, MonadIO m) => m [Either (Path Rel) GHCTargetVersion]
+getInstalledGHCs :: (MonadReader AppState m, MonadIO m) => m [Either FilePath GHCTargetVersion]
 getInstalledGHCs = do
   ghcdir <- ghcupGHCBaseDir
-  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ getDirsFiles' ghcdir
+  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectory ghcdir
   forM fs $ \f -> case parseGHCupGHCDir f of
     Right r -> pure $ Right r
     Left  _ -> pure $ Left f
@@ -251,7 +251,7 @@ getInstalledGHCs = do
 
 -- | Get all installed cabals, by matching on @~\/.ghcup\/bin/cabal-*@.
 getInstalledCabals :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadCatch m)
-                   => m [Either (Path Rel) Version]
+                   => m [Either FilePath Version]
 getInstalledCabals = do
   cs <- cabalSet -- for legacy cabal
   getInstalledCabals' cs
@@ -259,13 +259,13 @@ getInstalledCabals = do
 
 getInstalledCabals' :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadCatch m)
                    => Maybe Version
-                   -> m [Either (Path Rel) Version]
+                   -> m [Either FilePath Version]
 getInstalledCabals' cs = do
   AppState {dirs = Dirs {..}} <- ask
   bins   <- liftIO $ handleIO (\_ -> pure []) $ findFiles
     binDir
     (makeRegexOpts compExtended execBlank ([s|^cabal-.*$|] :: ByteString))
-  vs <- forM bins $ \f -> case fmap (version . decUTF8Safe) . B.stripPrefix "cabal-" . toFilePath $ f of
+  vs <- forM bins $ \f -> case version . T.pack <$> (stripSuffix exeExt =<< stripPrefix "cabal-" f) of
     Just (Right r) -> pure $ Right r
     Just (Left  _) -> pure $ Left f
     Nothing        -> pure $ Left f
@@ -283,31 +283,29 @@ cabalInstalled ver = do
 cabalSet :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
 cabalSet = do
   AppState {dirs = Dirs {..}} <- ask
-  let cabalbin = binDir </> [rel|cabal|]
-  b        <- handleIO (\_ -> pure False) $ fmap (== SymbolicLink) $ liftIO $ getFileType cabalbin
+  let cabalbin = binDir </> "cabal" <> exeExt
+  b        <- handleIO (\_ -> pure False) $ liftIO $ pathIsLink cabalbin
   if
     | b -> do
       handleIO' NoSuchThing (\_ -> pure Nothing) $ do
         broken <- liftIO $ isBrokenSymlink cabalbin
         if broken
-          then do
-            $(logWarn) [i|Symlink #{cabalbin} is broken.|]
-            pure Nothing
+          then pure Nothing
           else do
-            link <- liftIO $ readSymbolicLink $ toFilePath cabalbin
+            link <- liftIO $ getLinkTarget cabalbin
             case linkVersion link of
               Right v -> pure $ Just v
               Left err -> do
-                $(logWarn) [i|Failed to parse cabal symlink target with: "#{err}". The symlink #{toFilePath cabalbin} needs to point to valid cabal binary, such as 'cabal-3.4.0.0'.|]
+                $(logWarn) [i|Failed to parse cabal symlink target with: "#{err}". The symlink #{cabalbin} needs to point to valid cabal binary, such as 'cabal-3.4.0.0'.|]
                 pure Nothing
     | otherwise -> do -- legacy behavior
-      mc <- liftIO $ handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
+      mc <- handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
         cabalbin
         ["--numeric-version"]
         Nothing
       fmap join $ forM mc $ \c -> if
-        | not (B.null (_stdOut c)), _exitCode c == ExitSuccess -> do
-          let reportedVer = fst . B.spanEnd (== _lf) . _stdOut $ c
+        | not (BL.null (_stdOut c)), _exitCode c == ExitSuccess -> do
+          let reportedVer = fst . B.spanEnd isNewLine . BL.toStrict . _stdOut $ c
           case version $ decUTF8Safe reportedVer of
             Left  e -> throwM e
             Right r -> pure $ Just r
@@ -316,10 +314,8 @@ cabalSet = do
   -- We try to be extra permissive with link destination parsing,
   -- because of:
   --   https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/119
-  linkVersion :: MonadThrow m => ByteString -> m Version
-  linkVersion bs = do
-    t <- throwEither $ E.decodeUtf8' bs
-    throwEither $ MP.parse parser "" t
+  linkVersion :: MonadThrow m => FilePath -> m Version
+  linkVersion = throwEither . MP.parse parser "linkVersion" . T.pack . dropSuffix exeExt
 
   parser
     =   MP.try (stripAbsolutePath *> cabalParse)
@@ -329,10 +325,10 @@ cabalSet = do
   cabalParse = MP.chunk "cabal-" *> version'
   -- parses any path component ending with path separator,
   -- e.g. "foo/"
-  stripPathComponet = parseUntil1 "/" *> MP.chunk "/"
+  stripPathComponet = parseUntil1 pathSep *> pathSep
   -- parses an absolute path up until the last path separator,
   -- e.g. "/bar/baz/foo" -> "/bar/baz/", leaving "foo"
-  stripAbsolutePath = MP.chunk "/" *> MP.many (MP.try stripPathComponet)
+  stripAbsolutePath = pathSep *> MP.many (MP.try stripPathComponet)
   -- parses a relative path up until the last path separator,
   -- e.g. "bar/baz/foo" -> "bar/baz/", leaving "foo"
   stripRelativePath = MP.many (MP.try stripPathComponet)
@@ -342,7 +338,7 @@ cabalSet = do
 -- | Get all installed hls, by matching on
 -- @~\/.ghcup\/bin/haskell-language-server-wrapper-<\hlsver\>@.
 getInstalledHLSs :: (MonadReader AppState m, MonadIO m, MonadCatch m)
-                 => m [Either (Path Rel) Version]
+                 => m [Either FilePath Version]
 getInstalledHLSs = do
   AppState { dirs = Dirs {..} } <- ask
   bins                          <- liftIO $ handleIO (\_ -> pure []) $ findFiles
@@ -353,7 +349,7 @@ getInstalledHLSs = do
     )
   forM bins $ \f ->
     case
-          fmap (version . decUTF8Safe) . B.stripPrefix "haskell-language-server-wrapper-" . toFilePath $ f
+          version . T.pack <$> (stripSuffix exeExt =<< stripPrefix "haskell-language-server-wrapper-" f)
       of
         Just (Right r) -> pure $ Right r
         Just (Left  _) -> pure $ Left f
@@ -362,7 +358,7 @@ getInstalledHLSs = do
 -- | Get all installed stacks, by matching on
 -- @~\/.ghcup\/bin/stack-<\stackver\>@.
 getInstalledStacks :: (MonadReader AppState m, MonadIO m, MonadCatch m)
-                   => m [Either (Path Rel) Version]
+                   => m [Either FilePath Version]
 getInstalledStacks = do
   AppState { dirs = Dirs {..} } <- ask
   bins                          <- liftIO $ handleIO (\_ -> pure []) $ findFiles
@@ -372,9 +368,7 @@ getInstalledStacks = do
                    ([s|^stack-.*$|] :: ByteString)
     )
   forM bins $ \f ->
-    case
-          fmap (version . decUTF8Safe) . B.stripPrefix "stack-" . toFilePath $ f
-      of
+    case version . T.pack <$> (stripSuffix exeExt =<< stripPrefix "stack-" f) of
         Just (Right r) -> pure $ Right r
         Just (Left  _) -> pure $ Left f
         Nothing        -> pure $ Left f
@@ -384,23 +378,34 @@ getInstalledStacks = do
 stackSet :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
 stackSet = do
   AppState {dirs = Dirs {..}} <- ask
-  let stackBin = binDir </> [rel|stack|]
+  let stackBin = binDir </> "stack" <> exeExt
 
   liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
     broken <- isBrokenSymlink stackBin
     if broken
       then pure Nothing
       else do
-        link <- readSymbolicLink $ toFilePath stackBin
+        link <- liftIO $ getLinkTarget stackBin
         Just <$> linkVersion link
  where
-  linkVersion :: MonadThrow m => ByteString -> m Version
-  linkVersion bs = do
-    t <- throwEither $ E.decodeUtf8' bs
-    throwEither $ MP.parse parser "" t
+  linkVersion :: MonadThrow m => FilePath -> m Version
+  linkVersion = throwEither . MP.parse parser "" . T.pack . dropSuffix exeExt
    where
-    parser =
-      MP.chunk "stack-" *> version'
+    parser
+      =   MP.try (stripAbsolutePath *> cabalParse)
+      <|> MP.try (stripRelativePath *> cabalParse)
+      <|> cabalParse
+    -- parses the version of "stack-2.7.1" -> "2.7.1"
+    cabalParse = MP.chunk "stack-" *> version'
+    -- parses any path component ending with path separator,
+    -- e.g. "foo/"
+    stripPathComponet = parseUntil1 pathSep *> pathSep
+    -- parses an absolute path up until the last path separator,
+    -- e.g. "/bar/baz/foo" -> "/bar/baz/", leaving "foo"
+    stripAbsolutePath = pathSep *> MP.many (MP.try stripPathComponet)
+    -- parses a relative path up until the last path separator,
+    -- e.g. "bar/baz/foo" -> "bar/baz/", leaving "foo"
+    stripRelativePath = MP.many (MP.try stripPathComponet)
 
 -- | Whether the given Stack version is installed.
 stackInstalled :: (MonadIO m, MonadReader AppState m, MonadCatch m) => Version -> m Bool
@@ -420,23 +425,34 @@ hlsInstalled ver = do
 hlsSet :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
 hlsSet = do
   AppState {dirs = Dirs {..}} <- ask
-  let hlsBin = binDir </> [rel|haskell-language-server-wrapper|]
+  let hlsBin = binDir </> "haskell-language-server-wrapper" <> exeExt
 
   liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
     broken <- isBrokenSymlink hlsBin
     if broken
       then pure Nothing
       else do
-        link <- readSymbolicLink $ toFilePath hlsBin
+        link <- liftIO $ getLinkTarget hlsBin
         Just <$> linkVersion link
  where
-  linkVersion :: MonadThrow m => ByteString -> m Version
-  linkVersion bs = do
-    t <- throwEither $ E.decodeUtf8' bs
-    throwEither $ MP.parse parser "" t
+  linkVersion :: MonadThrow m => FilePath -> m Version
+  linkVersion = throwEither . MP.parse parser "" . T.pack . dropSuffix exeExt
    where
-    parser =
-      MP.chunk "haskell-language-server-wrapper-" *> version'
+    parser
+      =   MP.try (stripAbsolutePath *> cabalParse)
+      <|> MP.try (stripRelativePath *> cabalParse)
+      <|> cabalParse
+    -- parses the version of "haskell-language-server-wrapper-1.1.0" -> "1.1.0"
+    cabalParse = MP.chunk "haskell-language-server-wrapper-" *> version'
+    -- parses any path component ending with path separator,
+    -- e.g. "foo/"
+    stripPathComponet = parseUntil1 pathSep *> pathSep
+    -- parses an absolute path up until the last path separator,
+    -- e.g. "/bar/baz/foo" -> "/bar/baz/", leaving "foo"
+    stripAbsolutePath = pathSep *> MP.many (MP.try stripPathComponet)
+    -- parses a relative path up until the last path separator,
+    -- e.g. "bar/baz/foo" -> "bar/baz/", leaving "foo"
+    stripRelativePath = MP.many (MP.try stripPathComponet)
 
 
 -- | Return the GHC versions the currently selected HLS supports.
@@ -452,13 +468,12 @@ hlsGHCVersions = do
     bins <- hlsServerBinaries h'
     pure $ fmap
       (version
-        . decUTF8Safe
+        . T.pack
         . fromJust
-        . B.stripPrefix "haskell-language-server-"
+        . stripPrefix "haskell-language-server-"
         . head
-        . B.split _tilde
-        . toFilePath
-      )
+        . splitOn "~"
+        )
       bins
   pure . rights . concat . maybeToList $ vers
 
@@ -466,7 +481,7 @@ hlsGHCVersions = do
 -- | Get all server binaries for an hls version, if any.
 hlsServerBinaries :: (MonadReader AppState m, MonadIO m)
                   => Version
-                  -> m [Path Rel]
+                  -> m [FilePath]
 hlsServerBinaries ver = do
   AppState { dirs = Dirs {..} } <- ask
   liftIO $ handleIO (\_ -> pure []) $ findFiles
@@ -474,7 +489,7 @@ hlsServerBinaries ver = do
     (makeRegexOpts
       compExtended
       execBlank
-      ([s|^haskell-language-server-.*~|] <> escapeVerRex ver <> [s|$|] :: ByteString
+      ([s|^haskell-language-server-.*~|] <> escapeVerRex ver <> E.encodeUtf8 (T.pack exeExt) <> [s|$|] :: ByteString
       )
     )
 
@@ -482,7 +497,7 @@ hlsServerBinaries ver = do
 -- | Get the wrapper binary for an hls version, if any.
 hlsWrapperBinary :: (MonadReader AppState m, MonadThrow m, MonadIO m)
                  => Version
-                 -> m (Maybe (Path Rel))
+                 -> m (Maybe FilePath)
 hlsWrapperBinary ver = do
   AppState { dirs = Dirs {..} } <- ask
   wrapper                       <- liftIO $ handleIO (\_ -> pure []) $ findFiles
@@ -490,7 +505,7 @@ hlsWrapperBinary ver = do
     (makeRegexOpts
       compExtended
       execBlank
-      ([s|^haskell-language-server-wrapper-|] <> escapeVerRex ver <> [s|$|] :: ByteString
+      ([s|^haskell-language-server-wrapper-|] <> escapeVerRex ver <> E.encodeUtf8 (T.pack exeExt) <> [s|$|] :: ByteString
       )
     )
   case wrapper of
@@ -501,7 +516,7 @@ hlsWrapperBinary ver = do
 
 
 -- | Get all binaries for an hls version, if any.
-hlsAllBinaries :: (MonadReader AppState m, MonadIO m, MonadThrow m) => Version -> m [Path Rel]
+hlsAllBinaries :: (MonadReader AppState m, MonadIO m, MonadThrow m) => Version -> m [FilePath]
 hlsAllBinaries ver = do
   hls     <- hlsServerBinaries ver
   wrapper <- hlsWrapperBinary ver
@@ -509,7 +524,7 @@ hlsAllBinaries ver = do
 
 
 -- | Get the active symlinks for hls.
-hlsSymlinks :: (MonadReader AppState m, MonadIO m, MonadCatch m) => m [Path Rel]
+hlsSymlinks :: (MonadReader AppState m, MonadIO m, MonadCatch m) => m [FilePath]
 hlsSymlinks = do
   AppState { dirs = Dirs {..} } <- ask
   oldSyms                       <- liftIO $ handleIO (\_ -> pure []) $ findFiles
@@ -519,9 +534,8 @@ hlsSymlinks = do
                    ([s|^haskell-language-server-.*$|] :: ByteString)
     )
   filterM
-    ( fmap (== SymbolicLink)
-    . liftIO
-    . getFileType
+    ( liftIO
+    . pathIsLink
     . (binDir </>)
     )
     oldSyms
@@ -585,61 +599,61 @@ getLatestGHCFor major' minor' dls =
 
 -- | Unpack an archive to a temporary directory and return that path.
 unpackToDir :: (MonadLogger m, MonadIO m, MonadThrow m)
-            => Path Abs       -- ^ destination dir
-            -> Path Abs       -- ^ archive path
+            => FilePath       -- ^ destination dir
+            -> FilePath       -- ^ archive path
             -> Excepts '[UnknownArchive
 #if !defined(TAR)
                         , ArchiveResult
 #endif
                         ] m ()
-unpackToDir dest av = do
-  fp <- decUTF8Safe . toFilePath <$> basename av
-  let dfp = decUTF8Safe . toFilePath $ dest
-  lift $ $(logInfo) [i|Unpacking: #{fp} to #{dfp}|]
-  fn <- toFilePath <$> basename av
+unpackToDir dfp av = do
+  let fn = takeFileName av
+  lift $ $(logInfo) [i|Unpacking: #{fn} to #{dfp}|]
 
 #if defined(TAR)
   let untar :: MonadIO m => BL.ByteString -> Excepts '[] m ()
-      untar = liftIO . Tar.unpack (toFilePath dest) . Tar.read
+      untar = liftIO . Tar.unpack dfp . Tar.read
 
-      rf :: MonadIO m => Path Abs -> Excepts '[] m BL.ByteString
-      rf = liftIO . readFile
+      rf :: MonadIO m => FilePath -> Excepts '[] m BL.ByteString
+      rf = liftIO . BL.readFile
 #else
   let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
-      untar = lEM . liftIO . runArchiveM . unpackToDirLazy (T.unpack . decUTF8Safe . toFilePath $ dest)
+      untar = lEM . liftIO . runArchiveM . unpackToDirLazy dfp
 
-      rf :: MonadIO m => Path Abs -> Excepts '[ArchiveResult] m BL.ByteString
-      rf = liftIO . readFile
+      rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
+      rf = liftIO . BL.readFile
 #endif
 
   -- extract, depending on file extension
   if
-    | ".tar.gz" `B.isSuffixOf` fn -> liftE
+    | ".tar.gz" `isSuffixOf` fn -> liftE
       (untar . GZip.decompress =<< rf av)
-    | ".tar.xz" `B.isSuffixOf` fn -> do
+    | ".tar.xz" `isSuffixOf` fn -> do
       filecontents <- liftE $ rf av
       let decompressed = Lzma.decompress filecontents
       liftE $ untar decompressed
-    | ".tar.bz2" `B.isSuffixOf` fn ->
+    | ".tar.bz2" `isSuffixOf` fn ->
       liftE (untar . BZip.decompress =<< rf av)
-    | ".tar" `B.isSuffixOf` fn -> liftE (untar =<< rf av)
+    | ".tar" `isSuffixOf` fn -> liftE (untar =<< rf av)
+    | ".zip" `isSuffixOf` fn ->
+      withArchive av (unpackInto dfp)
     | otherwise -> throwE $ UnknownArchive fn
 
 
 getArchiveFiles :: (MonadLogger m, MonadIO m, MonadThrow m)
-                => Path Abs       -- ^ archive path
+                => FilePath       -- ^ archive path
                 -> Excepts '[UnknownArchive
 #if defined(TAR)
                             , Tar.FormatError
 #else
                             , ArchiveResult
 #endif
-                            ] m [ByteString]
+                            ] m [FilePath]
 getArchiveFiles av = do
-  fn <- toFilePath <$> basename av
+  let fn = takeFileName av
 
 #if defined(TAR)
-  let entries :: Monad m => BL.ByteString -> Excepts '[Tar.FormatError] m [ByteString]
+  let entries :: Monad m => BL.ByteString -> Excepts '[Tar.FormatError] m [FilePath]
       entries =
           lE @Tar.FormatError
           . Tar.foldEntries
@@ -648,41 +662,45 @@ getArchiveFiles av = do
             (\e -> Left e)
           . Tar.read
 
-      rf :: MonadIO m => Path Abs -> Excepts '[Tar.FormatError] m BL.ByteString
-      rf = liftIO . readFile
+      rf :: MonadIO m => FilePath -> Excepts '[Tar.FormatError] m BL.ByteString
+      rf = liftIO . BL.readFile
 #else
-  let entries :: Monad m => BL.ByteString -> Excepts '[ArchiveResult] m [ByteString]
-      entries = (fmap . fmap) (E.encodeUtf8 . T.pack . filepath) . lE . readArchiveBSL
+  let entries :: Monad m => BL.ByteString -> Excepts '[ArchiveResult] m [FilePath]
+      entries = (fmap . fmap) filepath . lE . readArchiveBSL
 
-      rf :: MonadIO m => Path Abs -> Excepts '[ArchiveResult] m BL.ByteString
-      rf = liftIO . readFile
+      rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
+      rf = liftIO . BL.readFile
 #endif
 
   -- extract, depending on file extension
   if
-    | ".tar.gz" `B.isSuffixOf` fn -> liftE
+    | ".tar.gz" `isSuffixOf` fn -> liftE
       (entries . GZip.decompress =<< rf av)
-    | ".tar.xz" `B.isSuffixOf` fn -> do
+    | ".tar.xz" `isSuffixOf` fn -> do
       filecontents <- liftE $ rf av
       let decompressed = Lzma.decompress filecontents
       liftE $ entries decompressed
-    | ".tar.bz2" `B.isSuffixOf` fn ->
+    | ".tar.bz2" `isSuffixOf` fn ->
       liftE (entries . BZip.decompress =<< rf av)
-    | ".tar" `B.isSuffixOf` fn -> liftE (entries =<< rf av)
+    | ".tar" `isSuffixOf` fn -> liftE (entries =<< rf av)
+    | ".zip" `isSuffixOf` fn ->
+      withArchive av $ do
+        entries' <- getEntries
+        pure $ fmap unEntrySelector $ Map.keys entries'
     | otherwise -> throwE $ UnknownArchive fn
 
 
 intoSubdir :: (MonadLogger m, MonadIO m, MonadThrow m, MonadCatch m)
-           => Path Abs       -- ^ unpacked tar dir
+           => FilePath       -- ^ unpacked tar dir
            -> TarDir         -- ^ how to descend
-           -> Excepts '[TarDirDoesNotExist] m (Path Abs)
+           -> Excepts '[TarDirDoesNotExist] m FilePath
 intoSubdir bdir tardir = case tardir of
   RealDir pr -> do
     whenM (fmap not . liftIO . doesDirectoryExist $ (bdir </> pr))
           (throwE $ TarDirDoesNotExist tardir)
     pure (bdir </> pr)
   RegexDir r -> do
-    let rs = splitOn "/" r
+    let rs = split (`elem` pathSeparators) r
     foldlM
       (\y x ->
         (handleIO (\_ -> pure []) . liftIO . findFiles y . regex $ x) >>= (\case
@@ -743,117 +761,123 @@ getDownloader = ask <&> downloader . settings
     -------------
 
 
-urlBaseName :: MonadThrow m
-            => ByteString  -- ^ the url path (without scheme and host)
-            -> m (Path Rel)
-urlBaseName = parseRel . snd . B.breakEnd (== _slash) . urlDecode False
-
-
 -- | Get tool files from @~\/.ghcup\/bin\/ghc\/\<ver\>\/bin\/\*@
 -- while ignoring @*-\<ver\>@ symlinks and accounting for cross triple prefix.
 --
--- Returns unversioned relative files, e.g.:
+-- Returns unversioned relative files without extension, e.g.:
 --
 --   - @["hsc2hs","haddock","hpc","runhaskell","ghc","ghc-pkg","ghci","runghc","hp2ps"]@
 ghcToolFiles :: (MonadReader AppState m, MonadThrow m, MonadFail m, MonadIO m)
              => GHCTargetVersion
-             -> Excepts '[NotInstalled] m [Path Rel]
+             -> Excepts '[NotInstalled] m [FilePath]
 ghcToolFiles ver = do
   ghcdir <- lift $ ghcupGHCDir ver
-  let bindir = ghcdir </> [rel|bin|]
+  let bindir = ghcdir </> "bin"
 
   -- fail if ghc is not installed
   whenM (fmap not $ liftIO $ doesDirectoryExist ghcdir)
         (throwE (NotInstalled GHC ver))
 
-  files    <- liftIO $ getDirsFiles' bindir
+  files    <- liftIO $ listDirectory bindir
   -- figure out the <ver> suffix, because this might not be `Version` for
   -- alpha/rc releases, but x.y.a.somedate.
 
-  -- for cross, this won't be "ghc", but e.g.
-  -- "armv7-unknown-linux-gnueabihf-ghc"
-  [ghcbin] <- liftIO $ findFiles
-    bindir
-    (makeRegexOpts compExtended
-                   execBlank
-                   ([s|^([a-zA-Z0-9_-]*[a-zA-Z0-9_]-)?ghc$|] :: ByteString)
-    )
+  ghcIsHadrian    <- liftIO $ isHadrian bindir
+  onlyUnversioned <- case ghcIsHadrian of
+    Right () -> pure id
+    Left (fmap (dropSuffix exeExt) -> [ghc, ghc_ver])
+      | (Just symver) <- stripPrefix (ghc <> "-") ghc_ver
+      , not (null symver) -> pure $ filter (\x -> not $ symver `isInfixOf` x)
+    _ -> fail "Fatal: Could not find internal GHC version"
 
-  let ghcbinPath = bindir </> ghcbin
-  ghcIsHadrian    <- liftIO $ isHadrian ghcbinPath
-  onlyUnversioned <- if ghcIsHadrian
-    then pure id
-    else do
-      (Just symver) <-
-        B.stripPrefix (toFilePath ghcbin <> "-") . takeFileName
-          <$> liftIO (readSymbolicLink $ toFilePath ghcbinPath)
-      when (B.null symver)
-           (throwIO $ userError "Fatal: ghc symlink target is broken")
-      pure $ filter (\x -> not $ symver `B.isSuffixOf` toFilePath x)
-
-  pure $ onlyUnversioned files
+  pure $ onlyUnversioned $ fmap (dropSuffix exeExt) files
  where
+  isNotAnyInfix xs t = foldr (\a b -> not (a `isInfixOf` t) && b) True xs
     -- GHC is moving some builds to Hadrian for bindists,
     -- which doesn't create versioned binaries.
     -- https://gitlab.haskell.org/haskell/ghcup-hs/issues/31
-  isHadrian :: Path Abs -- ^ ghcbin path
-            -> IO Bool
-  isHadrian = fmap (/= SymbolicLink) . getFileType
+  isHadrian :: FilePath -- ^ ghcbin path
+            -> IO (Either [String] ()) -- ^ Right for Hadrian
+  isHadrian dir = do
+    -- Non-hadrian has e.g. ["ghc", "ghc-8.10.4"]
+    -- which also requires us to discover the internal version
+    -- to filter the correct tool files.
+    -- We can't use the symlink on windows, so we fall back to some
+    -- more complicated logic.
+    fs <- fmap
+         -- regex over-matches
+         (filter (isNotAnyInfix ["haddock", "ghc-pkg", "ghci"]))
+       $ liftIO $ findFiles
+      dir
+      (makeRegexOpts compExtended
+                     execBlank
+                     -- for cross, this won't be "ghc", but e.g.
+                     -- "armv7-unknown-linux-gnueabihf-ghc"
+                     ([s|^([a-zA-Z0-9_-]*[a-zA-Z0-9_]-)?ghc.*$|] :: ByteString)
+      )
+    if | length fs == 1 -> pure $ Right ()        -- hadrian
+       | length fs == 2 -> pure $ Left
+                              (sortOn length fs)  -- legacy make, result should
+                                                  -- be ["ghc", "ghc-8.10.4"]
+       | otherwise      -> fail "isHadrian failed!"
+
 
 
 -- | This file, when residing in @~\/.ghcup\/ghc\/\<ver\>\/@ signals that
 -- this GHC was built from source. It contains the build config.
-ghcUpSrcBuiltFile :: Path Rel
-ghcUpSrcBuiltFile = [rel|.ghcup_src_built|]
+ghcUpSrcBuiltFile :: FilePath
+ghcUpSrcBuiltFile = ".ghcup_src_built"
 
 
 -- | Calls gmake if it exists in PATH, otherwise make.
 make :: (MonadThrow m, MonadIO m, MonadReader AppState m)
-     => [ByteString]
-     -> Maybe (Path Abs)
+     => [String]
+     -> Maybe FilePath
      -> m (Either ProcessError ())
 make args workdir = do
-  spaths    <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
-  has_gmake <- isJust <$> liftIO (searchPath spaths [rel|gmake|])
+  spaths    <- liftIO getSearchPath
+  has_gmake <- isJust <$> liftIO (searchPath spaths "gmake")
   let mymake = if has_gmake then "gmake" else "make"
-  execLogged mymake True args [rel|ghc-make|] workdir Nothing
+  execLogged mymake args workdir "ghc-make" Nothing
 
-makeOut :: [ByteString]
-        -> Maybe (Path Abs)
-        -> IO CapturedProcess
+makeOut :: (MonadReader AppState m, MonadIO m)
+        => [String]
+        -> Maybe FilePath
+        -> m CapturedProcess
 makeOut args workdir = do
-  spaths    <- catMaybes . fmap parseAbs <$> liftIO getSearchPath
-  has_gmake <- isJust <$> liftIO (searchPath spaths [rel|gmake|])
-  let mymake = if has_gmake then [rel|gmake|] else [rel|make|]
-  liftIO $ executeOut mymake args workdir
+  spaths    <- liftIO getSearchPath
+  has_gmake <- isJust <$> liftIO (searchPath spaths "gmake")
+  let mymake = if has_gmake then "gmake" else "make"
+  executeOut mymake args workdir
 
 
 -- | Try to apply patches in order. Fails with 'PatchFailed'
 -- on first failure.
-applyPatches :: (MonadLogger m, MonadIO m)
-             => Path Abs   -- ^ dir containing patches
-             -> Path Abs   -- ^ dir to apply patches in
+applyPatches :: (MonadReader AppState m, MonadLogger m, MonadIO m)
+             => FilePath   -- ^ dir containing patches
+             -> FilePath   -- ^ dir to apply patches in
              -> Excepts '[PatchFailed] m ()
 applyPatches pdir ddir = do
-  patches <- liftIO $ getDirsFiles pdir
+  patches <- (fmap . fmap) (pdir </>) $ liftIO $ listDirectory pdir
   forM_ (sort patches) $ \patch' -> do
     lift $ $(logInfo) [i|Applying patch #{patch'}|]
     fmap (either (const Nothing) Just)
-         (liftIO $ exec
+         (exec
            "patch"
-           True
-           ["-p1", "-i", toFilePath patch']
+           ["-p1", "-i", patch']
            (Just ddir)
            Nothing)
       !? PatchFailed
 
 
 -- | https://gitlab.haskell.org/ghc/ghc/-/issues/17353
-darwinNotarization :: Platform -> Path Abs -> IO (Either ProcessError ())
+darwinNotarization :: (MonadReader AppState m, MonadIO m)
+                   => Platform
+                   -> FilePath
+                   -> m (Either ProcessError ())
 darwinNotarization Darwin path = exec
   "xattr"
-  True
-  ["-r", "-d", "com.apple.quarantine", toFilePath path]
+  ["-r", "-d", "com.apple.quarantine", path]
   Nothing
   Nothing
 darwinNotarization _ _ = pure $ Right ()
@@ -871,19 +895,19 @@ getChangeLog dls tool (Right tag) =
 --   1. the build directory, depending on the KeepDirs setting
 --   2. the install destination, depending on whether the build failed
 runBuildAction :: (Show (V e), MonadReader AppState m, MonadIO m, MonadMask m)
-               => Path Abs          -- ^ build directory (cleaned up depending on Settings)
-               -> Maybe (Path Abs)  -- ^ dir to *always* clean up on exception
+               => FilePath          -- ^ build directory (cleaned up depending on Settings)
+               -> Maybe FilePath  -- ^ dir to *always* clean up on exception
                -> Excepts e m a
                -> Excepts '[BuildFailed] m a
 runBuildAction bdir instdir action = do
   AppState { settings = Settings {..} } <- lift ask
   let exAction = do
         forM_ instdir $ \dir ->
-          liftIO $ hideError doesNotExistErrorType $ deleteDirRecursive dir
+          liftIO $ hideError doesNotExistErrorType $ rmPath dir
         when (keepDirs == Never)
           $ liftIO
           $ hideError doesNotExistErrorType
-          $ deleteDirRecursive bdir
+          $ rmPath bdir
   v <-
     flip onException exAction
     $ catchAllE
@@ -892,30 +916,8 @@ runBuildAction bdir instdir action = do
           throwE (BuildFailed bdir es)
         ) action
 
-  when (keepDirs == Never || keepDirs == Errors) $ liftIO $ deleteDirRecursive
-    bdir
+  when (keepDirs == Never || keepDirs == Errors) $ liftIO $ rmPath bdir
   pure v
-
-
--- | More permissive version of 'createDirRecursive'. This doesn't
--- error when the destination is a symlink to a directory.
-createDirRecursive' :: Path b -> IO ()
-createDirRecursive' p =
-  handleIO (\e -> if isAlreadyExistsError e then isSymlinkDir e else throwIO e)
-    . createDirRecursive newDirPerms
-    $ p
-
- where
-  isSymlinkDir e = do
-    ft <- getFileType p
-    case ft of
-      SymbolicLink -> do
-        rp <- canonicalizePath p
-        rft <- getFileType rp
-        case rft of
-          Directory -> pure ()
-          _ -> throwIO e
-      _ -> throwIO e
 
 
 getVersionInfo :: Version
@@ -931,10 +933,158 @@ getVersionInfo v' tool =
     )
 
 
--- Gathering monoidal values
-traverseFold :: (Foldable t, Applicative m, Monoid b) => (a -> m b) -> t a -> m b
-traverseFold f = foldl (\mb a -> (<>) <$> mb <*> f a) (pure mempty)
+-- | The file extension for executables.
+exeExt :: String
+#if defined(IS_WINDOWS)
+exeExt = ".exe"
+#else
+exeExt = ""
+#endif
 
--- | Gathering monoidal values
-forFold :: (Foldable t, Applicative m, Monoid b) => t a -> (a -> m b) -> m b
-forFold = \t -> (`traverseFold` t)
+-- | The file extension for executables.
+exeExt' :: ByteString
+#if defined(IS_WINDOWS)
+exeExt' = ".exe"
+#else
+exeExt' = ""
+#endif
+
+
+-- | Enables ANSI support on windows, does nothing on unix.
+--
+-- Returns 'Left str' on errors and 'Right bool' on success, where
+-- 'bool' markes whether ansi support was already enabled.
+--
+-- This function never crashes.
+--
+-- Rip-off of https://docs.rs/ansi_term/0.12.1/x86_64-pc-windows-msvc/src/ansi_term/windows.rs.html#10-61
+enableAnsiSupport :: IO (Either String Bool)
+#if defined(IS_WINDOWS)
+enableAnsiSupport = handleIO (pure . Left . displayException) $ do
+  -- ref: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+  -- Using `CreateFileW("CONOUT$", ...)` to retrieve the console handle works correctly even if STDOUT and/or STDERR are redirected
+  h <- createFile "CONOUT$" (gENERIC_WRITE .|. gENERIC_READ)
+    fILE_SHARE_WRITE Nothing oPEN_EXISTING 0 Nothing
+  when (h == iNVALID_HANDLE_VALUE ) $ fail "invalid handle value"
+
+  -- ref: https://docs.microsoft.com/en-us/windows/console/getconsolemode
+  m <- getConsoleMode h
+
+  -- VT processing not already enabled?
+  if ((m .&. eNABLE_VIRTUAL_TERMINAL_PROCESSING) == 0)
+  -- https://docs.microsoft.com/en-us/windows/console/setconsolemode
+  then setConsoleMode h (m .|. eNABLE_VIRTUAL_TERMINAL_PROCESSING)
+    >> pure (Right False)
+  else pure (Right True)
+#else
+enableAnsiSupport = pure (Right True)
+#endif
+
+
+-- | On unix, we can use symlinks, so we just get the
+-- symbolic link target.
+--
+-- On windows, we have to emulate symlinks via shims,
+-- see 'createLink'.
+getLinkTarget :: FilePath -> IO FilePath
+getLinkTarget fp = do
+#if defined(IS_WINDOWS)
+  content <- readFile (dropExtension fp <.> "shim")
+  [p] <- pure . filter ("path = " `isPrefixOf`) . lines $ content
+  pure $ stripNewline $ dropPrefix "path = " p
+#else
+  getSymbolicLinkTarget fp
+#endif
+
+
+-- | Checks whether the path is a link.
+pathIsLink :: FilePath -> IO Bool
+#if defined(IS_WINDOWS)
+pathIsLink fp = doesPathExist (dropExtension fp <.> "shim")
+#else
+pathIsLink = pathIsSymbolicLink
+#endif
+
+
+rmLink :: FilePath -> IO ()
+#if defined(IS_WINDOWS)
+rmLink fp = do
+  hideError doesNotExistErrorType . liftIO . rmFile $ fp
+  hideError doesNotExistErrorType . liftIO . rmFile $ (dropExtension fp <.> "shim")
+#else
+rmLink = hideError doesNotExistErrorType . liftIO . rmFile
+#endif
+
+
+-- | Creates a symbolic link on unix and a fake symlink on windows for
+-- executables, which:
+--     1. is a shim exe
+--     2. has a corresponding .shim file in the same directory that
+--        contains the target
+--
+-- This overwrites previously existing files.
+--
+-- On windows, this requires that 'ensureGlobalTools' was run beforehand.
+createLink :: ( MonadMask m
+              , MonadThrow m
+              , MonadLogger m
+              , MonadIO m
+              , MonadReader AppState m
+              , MonadUnliftIO m
+              , MonadFail m
+              )
+           => FilePath      -- ^ path to the target executable
+           -> FilePath      -- ^ path to be created
+           -> m ()
+createLink link exe = do
+#if defined(IS_WINDOWS)
+  AppState { dirs } <- ask
+  let shimGen = cacheDir dirs </> "gs.exe"
+
+  let shim = dropExtension exe <.> "shim"
+      -- For hardlinks, link needs to be absolute.
+      -- If link is relative, it's relative to the target exe.
+      -- Note that (</>) drops lhs when rhs is absolute.
+      fullLink = takeDirectory exe </> link
+      shimContents = "path = " <> fullLink
+
+  $(logDebug) [i|rm -f #{exe}|]
+  liftIO $ rmLink exe
+
+  $(logDebug) [i|ln -s #{fullLink} #{exe}|]
+  liftIO $ copyFile shimGen exe
+  liftIO $ writeFile shim shimContents
+#else
+  $(logDebug) [i|rm -f #{exe}|]
+  liftIO $ hideError doesNotExistErrorType $ rmFile exe
+
+  $(logDebug) [i|ln -s #{link} #{exe}|]
+  liftIO $ createFileLink link exe
+#endif
+
+
+ensureGlobalTools :: ( MonadMask m
+                     , MonadThrow m
+                     , MonadLogger m
+                     , MonadIO m
+                     , MonadReader AppState m
+                     , MonadUnliftIO m
+                     , MonadFail m
+                     )
+                  => Excepts '[DigestError , DownloadFailed, NoDownload] m ()
+ensureGlobalTools = do
+#if defined(IS_WINDOWS)
+  AppState { ghcupInfo = GHCupInfo _ _ gTools, settings, dirs } <- lift ask
+  shimDownload <- liftE $ lE @_ @'[NoDownload]
+    $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
+  let dl = downloadCached' settings dirs shimDownload (Just "gs.exe")
+  void $ (\(DigestError _ _) -> do
+      lift $ $(logWarn) [i|Digest doesn't match, redownloading gs.exe...|]
+      lift $ $(logDebug) [i|rm -f #{shimDownload}|]
+      liftIO $ hideError doesNotExistErrorType $ rmFile (cacheDir dirs </> "gs.exe")
+      liftE @'[DigestError , DownloadFailed] $ dl
+    ) `catchE` (liftE @'[DigestError , DownloadFailed] dl)
+  pure ()
+#else
+  pure ()
+#endif

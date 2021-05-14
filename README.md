@@ -234,7 +234,7 @@ ghcup is not a reimplementation of stack. The only common part is automatic inst
 
 2. Why not support windows?
 
-Windows support is [WIP](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/130).
+We do.
 
 3. Why the haskell reimplementation?
 

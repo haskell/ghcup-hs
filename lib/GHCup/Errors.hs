@@ -15,12 +15,11 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 -}
 module GHCup.Errors where
 
 import           GHCup.Types
-import           GHCup.Utils.Prelude
 
 #if !defined(TAR)
 import           Codec.Archive
@@ -28,11 +27,9 @@ import           Codec.Archive
 import qualified Codec.Archive.Tar             as Tar
 #endif
 import           Control.Exception.Safe
-import           Data.ByteString                ( ByteString )
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           HPath
 import           Haskus.Utils.Variant
 import           Text.PrettyPrint
 import           Text.PrettyPrint.HughesPJClass
@@ -86,12 +83,12 @@ instance Pretty DistroNotFound where
     text "Unable to figure out the distribution of the host."
 
 -- | The archive format is unknown. We don't know how to extract it.
-data UnknownArchive = UnknownArchive ByteString
+data UnknownArchive = UnknownArchive FilePath
   deriving Show
 
 instance Pretty UnknownArchive where
   pPrint (UnknownArchive file) =
-    text [i|The archive format is unknown. We don't know how to extract the file "#{decUTF8Safe file}"|]
+    text [i|The archive format is unknown. We don't know how to extract the file "#{file}"|]
 
 -- | The scheme is not supported (such as ftp).
 data UnsupportedScheme = UnsupportedScheme
@@ -143,12 +140,12 @@ instance Pretty NotInstalled where
     text [i|The version "#{prettyShow ver}" of the tool "#{tool}" is not installed.|]
 
 -- | An executable was expected to be in PATH, but was not found.
-data NotFoundInPATH = NotFoundInPATH (Path Rel)
+data NotFoundInPATH = NotFoundInPATH FilePath
   deriving Show
 
 instance Pretty NotFoundInPATH where
   pPrint (NotFoundInPATH exe) =
-    text [i|The exe "#{decUTF8Safe . toFilePath $ exe}" was not found in PATH.|]
+    text [i|The exe "#{exe}" was not found in PATH.|]
 
 -- | JSON decoding failed.
 data JSONError = JSONDecodeError String
@@ -160,12 +157,12 @@ instance Pretty JSONError where
 
 -- | A file that is supposed to exist does not exist
 -- (e.g. when we use file scheme to "download" something).
-data FileDoesNotExistError = FileDoesNotExistError ByteString
+data FileDoesNotExistError = FileDoesNotExistError FilePath
   deriving Show
 
 instance Pretty FileDoesNotExistError where
   pPrint (FileDoesNotExistError file) =
-    text [i|File "#{decUTF8Safe file}" does not exist.|]
+    text [i|File "#{file}" does not exist.|]
 
 data TarDirDoesNotExist = TarDirDoesNotExist TarDir
   deriving Show
@@ -252,11 +249,11 @@ deriving instance Show DownloadFailed
 
 
 -- | A build failed.
-data BuildFailed = forall es . Show (V es) => BuildFailed (Path Abs) (V es)
+data BuildFailed = forall es . Show (V es) => BuildFailed FilePath (V es)
 
 instance Pretty BuildFailed where
   pPrint (BuildFailed path reason) =
-    text [i|BuildFailed failed in dir "#{decUTF8Safe . toFilePath $ path}": #{reason}|]
+    text [i|BuildFailed failed in dir "#{path}": #{reason}|]
 
 deriving instance Show BuildFailed
 

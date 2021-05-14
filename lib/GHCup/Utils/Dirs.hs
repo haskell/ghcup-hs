@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -12,10 +13,11 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 -}
 module GHCup.Utils.Dirs
   ( getDirs
+  , ghcupBaseDir
   , ghcupConfigFile
   , ghcupCacheDir
   , ghcupGHCBaseDir
@@ -34,7 +36,6 @@ import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 
-import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Unlift
@@ -42,32 +43,24 @@ import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource hiding (throwM)
 import           Data.Bifunctor
-import           Data.ByteString                ( ByteString )
 import           Data.Maybe
 import           Data.String.Interpolate
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
-import           HPath
-import           HPath.IO
+#if !defined(IS_WINDOWS)
 import           Optics
-import           Prelude                 hiding ( abs
-                                                , readFile
-                                                , writeFile
-                                                )
+import           System.Directory                                                
+#endif
 import           System.DiskSpace                                                
-import           System.Posix.Env.ByteString    ( getEnv
-                                                , getEnvDefault
-                                                )
-import           System.Posix.FilePath   hiding ( (</>) )
-import           System.Posix.Temp.ByteString   ( mkdtemp )
+#if !defined(IS_WINDOWS)
+import           System.Environment
+#endif
+import           System.FilePath
+import           System.IO.Temp
 
-import qualified Data.ByteString.Lazy          as L
-import qualified Data.ByteString.UTF8          as UTF8
+import qualified Data.ByteString               as BS
 import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as E
 import qualified Data.Yaml                     as Y
-import qualified System.Posix.FilePath         as FP
-import qualified System.Posix.User             as PU
 import qualified Text.Megaparsec               as MP
 import Control.Concurrent (threadDelay)
 
@@ -82,96 +75,116 @@ import Control.Concurrent (threadDelay)
 --
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_DATA_HOME/ghcup' as per xdg spec.
-ghcupBaseDir :: IO (Path Abs)
+ghcupBaseDir :: IO FilePath
 ghcupBaseDir = do
+#if defined(IS_WINDOWS)
+  pure ("C:\\" </> "ghcup")
+#else
   xdg <- useXDG
   if xdg
     then do
-      bdir <- getEnv "XDG_DATA_HOME" >>= \case
-        Just r  -> parseAbs r
+      bdir <- lookupEnv "XDG_DATA_HOME" >>= \case
+        Just r  -> pure r
         Nothing -> do
           home <- liftIO getHomeDirectory
-          pure (home </> [rel|.local/share|])
-      pure (bdir </> [rel|ghcup|])
+          pure (home </> ".local" </> "share")
+      pure (bdir </> "ghcup")
     else do
-      bdir <- getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
-        Just r  -> parseAbs r
+      bdir <- lookupEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
+        Just r  -> pure r
         Nothing -> liftIO getHomeDirectory
-      pure (bdir </> [rel|.ghcup|])
+      pure (bdir </> ".ghcup")
+#endif
 
 
 -- | ~/.ghcup by default
 --
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CONFIG_HOME/ghcup' as per xdg spec.
-ghcupConfigDir :: IO (Path Abs)
+ghcupConfigDir :: IO FilePath
 ghcupConfigDir = do
+#if defined(IS_WINDOWS)
+  pure ("C:\\" </> "ghcup")
+#else
   xdg <- useXDG
   if xdg
     then do
-      bdir <- getEnv "XDG_CONFIG_HOME" >>= \case
-        Just r  -> parseAbs r
+      bdir <- lookupEnv "XDG_CONFIG_HOME" >>= \case
+        Just r  -> pure r
         Nothing -> do
           home <- liftIO getHomeDirectory
-          pure (home </> [rel|.config|])
-      pure (bdir </> [rel|ghcup|])
+          pure (home </> ".config")
+      pure (bdir </> "ghcup")
     else do
-      bdir <- getEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
-        Just r  -> parseAbs r
+      bdir <- lookupEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
+        Just r  -> pure r
         Nothing -> liftIO getHomeDirectory
-      pure (bdir </> [rel|.ghcup|])
+      pure (bdir </> ".ghcup")
+#endif
 
 
 -- | If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_BIN_HOME' env var or defaults to '~/.local/bin'
 -- (which, sadly is not strictly xdg spec).
-ghcupBinDir :: IO (Path Abs)
+ghcupBinDir :: IO FilePath
 ghcupBinDir = do
+#if defined(IS_WINDOWS)
+  pure ("C:\\" </> "ghcup" </> "bin")
+#else
   xdg <- useXDG
   if xdg
     then do
-      getEnv "XDG_BIN_HOME" >>= \case
-        Just r  -> parseAbs r
+      lookupEnv "XDG_BIN_HOME" >>= \case
+        Just r  -> pure r
         Nothing -> do
           home <- liftIO getHomeDirectory
-          pure (home </> [rel|.local/bin|])
-    else ghcupBaseDir <&> (</> [rel|bin|])
+          pure (home </> ".local" </> "bin")
+    else ghcupBaseDir <&> (</> "bin")
+#endif
 
 
 -- | Defaults to '~/.ghcup/cache'.
 --
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CACHE_HOME/ghcup' as per xdg spec.
-ghcupCacheDir :: IO (Path Abs)
+ghcupCacheDir :: IO FilePath
 ghcupCacheDir = do
+#if defined(IS_WINDOWS)
+  pure ("C:\\" </> "ghcup" </> "cache")
+#else
   xdg <- useXDG
   if xdg
     then do
-      bdir <- getEnv "XDG_CACHE_HOME" >>= \case
-        Just r  -> parseAbs r
+      bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
+        Just r  -> pure r
         Nothing -> do
           home <- liftIO getHomeDirectory
-          pure (home </> [rel|.cache|])
-      pure (bdir </> [rel|ghcup|])
-    else ghcupBaseDir <&> (</> [rel|cache|])
+          pure (home </> ".cache")
+      pure (bdir </> "ghcup")
+    else ghcupBaseDir <&> (</> "cache")
+#endif
 
 
 -- | Defaults to '~/.ghcup/logs'.
 --
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CACHE_HOME/ghcup/logs' as per xdg spec.
-ghcupLogsDir :: IO (Path Abs)
+ghcupLogsDir :: IO FilePath
 ghcupLogsDir = do
+#if defined(IS_WINDOWS)
+  pure ("C:\\" </> "ghcup" </> "logs")
+#else
   xdg <- useXDG
   if xdg
     then do
-      bdir <- getEnv "XDG_CACHE_HOME" >>= \case
-        Just r  -> parseAbs r
+      bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
+        Just r  -> pure r
         Nothing -> do
           home <- liftIO getHomeDirectory
-          pure (home </> [rel|.cache|])
-      pure (bdir </> [rel|ghcup/logs|])
-    else ghcupBaseDir <&> (</> [rel|logs|])
+          pure (home </> ".cache")
+      pure (bdir </> "ghcup" </> "logs")
+    else ghcupBaseDir <&> (</> "logs")
+#endif
 
 
 getDirs :: IO Dirs
@@ -194,11 +207,11 @@ ghcupConfigFile :: (MonadIO m)
                 => Excepts '[JSONError] m UserSettings
 ghcupConfigFile = do
   confDir <- liftIO ghcupConfigDir
-  let file = confDir </> [rel|config.yaml|]
-  bs <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> readFile file
-  case bs of
+  let file = confDir </> "config.yaml"
+  contents <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> BS.readFile file
+  case contents of
       Nothing -> pure defaultUserSettings
-      Just bs' -> lE' JSONDecodeError . first show . Y.decodeEither' . L.toStrict $ bs'
+      Just contents' -> lE' JSONDecodeError . first show . Y.decodeEither' $ contents'
 
 
     -------------------------
@@ -207,10 +220,10 @@ ghcupConfigFile = do
 
 
 -- | ~/.ghcup/ghc by default.
-ghcupGHCBaseDir :: (MonadReader AppState m) => m (Path Abs)
+ghcupGHCBaseDir :: (MonadReader AppState m) => m FilePath
 ghcupGHCBaseDir = do
   AppState { dirs = Dirs {..} } <- ask
-  pure (baseDir </> [rel|ghc|])
+  pure (baseDir </> "ghc")
 
 
 -- | Gets '~/.ghcup/ghc/<ghcupGHCDir>'.
@@ -219,35 +232,32 @@ ghcupGHCBaseDir = do
 --   * 8.8.4
 ghcupGHCDir :: (MonadReader AppState m, MonadThrow m)
             => GHCTargetVersion
-            -> m (Path Abs)
+            -> m FilePath
 ghcupGHCDir ver = do
-  ghcbasedir    <- ghcupGHCBaseDir
-  verdir        <- parseRel $ E.encodeUtf8 (tVerToText ver)
+  ghcbasedir <- ghcupGHCBaseDir
+  let verdir = T.unpack $ tVerToText ver
   pure (ghcbasedir </> verdir)
 
 
 -- | See 'ghcupToolParser'.
-parseGHCupGHCDir :: MonadThrow m => Path Rel -> m GHCTargetVersion
-parseGHCupGHCDir (toFilePath -> f) = do
-  fp <- throwEither $ E.decodeUtf8' f
+parseGHCupGHCDir :: MonadThrow m => FilePath -> m GHCTargetVersion
+parseGHCupGHCDir (T.pack -> fp) =
   throwEither $ MP.parse ghcTargetVerP "" fp
 
 
-mkGhcupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadThrow m, MonadIO m) => m (Path Abs)
+mkGhcupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadThrow m, MonadIO m) => m FilePath
 mkGhcupTmpDir = do
-  tmpdir <- liftIO $ getEnvDefault "TMPDIR" "/tmp"
-  let fp = T.unpack $ decUTF8Safe tmpdir
+  tmpdir <- liftIO getCanonicalTemporaryDirectory
 
   let minSpace = 5000 -- a rough guess, aight?
-  space <- handleIO (\_ -> pure Nothing) $ fmap Just $ liftIO $ getAvailSpace fp
+  space <- handleIO (\_ -> pure Nothing) $ fmap Just $ liftIO $ getAvailSpace tmpdir
   when (maybe False (toBytes minSpace >) space) $ do
-    $(logWarn) [i|Possibly insufficient disk space on #{fp}. At least #{minSpace} MB are recommended, but only #{toMB (fromJust space)} are free. Consider freeing up disk space or setting TMPDIR env variable.|]
+    $(logWarn) [i|Possibly insufficient disk space on #{tmpdir}. At least #{minSpace} MB are recommended, but only #{toMB (fromJust space)} are free. Consider freeing up disk space or setting TMPDIR env variable.|]
     $(logWarn)
       "...waiting for 10 seconds before continuing anyway, you can still abort..."
     liftIO $ threadDelay 10000000 -- give the user a sec to intervene
 
-  tmp <- liftIO $ mkdtemp (tmpdir FP.</> "ghcup-")
-  parseAbs tmp
+  liftIO $ createTempDirectory tmpdir "ghcup"
  where
   toBytes mb = mb * 1024 * 1024
   toMB b = show (truncate' (fromIntegral b / (1024 * 1024) :: Double) 2)
@@ -256,8 +266,8 @@ mkGhcupTmpDir = do
       where t = 10^n
 
 
-withGHCupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadResource m, MonadThrow m, MonadIO m) => m (Path Abs)
-withGHCupTmpDir = snd <$> withRunInIO (\run -> run $ allocate (run mkGhcupTmpDir) deleteDirRecursive)
+withGHCupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadResource m, MonadThrow m, MonadIO m) => m FilePath
+withGHCupTmpDir = snd <$> withRunInIO (\run -> run $ allocate (run mkGhcupTmpDir) rmPath)
 
 
 
@@ -267,29 +277,21 @@ withGHCupTmpDir = snd <$> withRunInIO (\run -> run $ allocate (run mkGhcupTmpDir
     --------------
 
 
-getHomeDirectory :: IO (Path Abs)
-getHomeDirectory = do
-  e <- getEnv "HOME"
-  case e of
-    Just fp -> parseAbs fp
-    Nothing -> do
-      h <- PU.homeDirectory <$> (PU.getEffectiveUserID >>= PU.getUserEntryForID)
-      parseAbs $ UTF8.fromString h -- this is a guess
-
-
+#if !defined(IS_WINDOWS)
 useXDG :: IO Bool
-useXDG = isJust <$> getEnv "GHCUP_USE_XDG_DIRS"
+useXDG = isJust <$> lookupEnv "GHCUP_USE_XDG_DIRS"
+#endif
 
 
-relativeSymlink :: Path Abs  -- ^ the path in which to create the symlink
-                -> Path Abs  -- ^ the symlink destination
-                -> ByteString
-relativeSymlink (toFilePath -> p1) (toFilePath -> p2) =
+relativeSymlink :: FilePath  -- ^ the path in which to create the symlink
+                -> FilePath  -- ^ the symlink destination
+                -> FilePath
+relativeSymlink p1 p2 =
   let d1      = splitDirectories p1
       d2      = splitDirectories p2
       common  = takeWhile (\(x, y) -> x == y) $ zip d1 d2
       cPrefix = drop (length common) d1
   in  joinPath (replicate (length cPrefix) "..")
-        <> joinPath ("/" : drop (length common) d2)
+        <> joinPath ([pathSeparator] : drop (length common) d2)
 
 

@@ -16,7 +16,7 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 
 Module for handling all download related functions.
 
@@ -36,7 +36,7 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
-import           GHCup.Utils
+import           GHCup.Utils.Dirs
 import           GHCup.Utils.File
 import           GHCup.Utils.Prelude
 import           GHCup.Version
@@ -57,7 +57,7 @@ import           Data.ByteString                ( ByteString )
 #if defined(INTERNAL_DOWNLOADER)
 import           Data.CaseInsensitive           ( CI )
 #endif
-import           Data.List                      ( find )
+import           Data.List.Extra
 import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Time.Clock
@@ -68,32 +68,29 @@ import           Data.Time.Format
 import           Data.Versions
 import           Data.Word8
 import           GHC.IO.Exception
-import           HPath
-import           HPath.IO                     as HIO hiding ( hideError )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
 import           Prelude                 hiding ( abs
                                                 , readFile
                                                 , writeFile
                                                 )
+import           System.Directory
+import           System.Environment
+import           System.FilePath
 import           System.IO.Error
-import           System.Posix.Env.ByteString    ( getEnv )
 import           URI.ByteString
 
 import qualified Crypto.Hash.SHA256            as SHA256
-import qualified Data.ByteString               as BS
+import qualified Data.ByteString               as B
 import qualified Data.ByteString.Base16        as B16
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.Map.Strict               as M
 #if defined(INTERNAL_DOWNLOADER)
 import qualified Data.CaseInsensitive          as CI
-import qualified Data.Text                     as T
 #endif
+import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Data.Yaml                     as Y
-import qualified System.Posix.Files.ByteString as PF
-import qualified System.Posix.RawFilePath.Directory
-                                               as RD
 
 
 
@@ -115,26 +112,26 @@ getDownloadsF :: ( FromJSONKey Tool
                  , MonadLogger m
                  , MonadThrow m
                  , MonadFail m
-                 , MonadReader AppState m
                  )
-              => URLSource
+              => Settings
+              -> Dirs
               -> Excepts
                    '[JSONError , DownloadFailed , FileDoesNotExistError]
                    m
                    GHCupInfo
-getDownloadsF urlSource = do
+getDownloadsF settings@Settings{ urlSource } dirs = do
   case urlSource of
-    GHCupURL -> liftE getBase
+    GHCupURL -> liftE $ getBase dirs settings
     (OwnSource url) -> do
-      bs <- reThrowAll DownloadFailed $ downloadBS url
+      bs <- reThrowAll DownloadFailed $ downloadBS (downloader settings) url
       lE' JSONDecodeError $ first show $ Y.decodeEither' (L.toStrict bs)
     (OwnSpec av) -> pure av
     (AddSource (Left ext)) -> do
-      base <- liftE getBase
+      base <- liftE $ getBase dirs settings
       pure (mergeGhcupInfo base ext)
     (AddSource (Right uri)) -> do
-      base <- liftE getBase
-      bsExt <- reThrowAll DownloadFailed $ downloadBS uri
+      base <- liftE $ getBase dirs settings
+      bsExt <- reThrowAll DownloadFailed $ downloadBS (downloader settings) uri
       ext <- lE' JSONDecodeError $ first show $ Y.decodeEither' (L.toStrict bsExt)
       pure (mergeGhcupInfo base ext)
 
@@ -143,36 +140,39 @@ getDownloadsF urlSource = do
   mergeGhcupInfo :: GHCupInfo -- ^ base to merge with
                  -> GHCupInfo -- ^ extension overwriting the base
                  -> GHCupInfo
-  mergeGhcupInfo (GHCupInfo tr base) (GHCupInfo _ ext) =
-    let new = M.mapWithKey (\k a -> case M.lookup k ext of
+  mergeGhcupInfo (GHCupInfo tr base base2) (GHCupInfo _ ext ext2) =
+    let newDownloads = M.mapWithKey (\k a -> case M.lookup k ext of
                                         Just a' -> M.union a' a
                                         Nothing -> a
-                           ) base
-    in GHCupInfo tr new
+                                    ) base
+        newGlobalTools = M.union base2 ext2
+    in GHCupInfo tr newDownloads newGlobalTools
 
 
-readFromCache :: (MonadIO m, MonadCatch m, MonadLogger m, MonadReader AppState m)
-              => Excepts '[JSONError, FileDoesNotExistError] m GHCupInfo
-readFromCache = do
-  AppState {dirs = Dirs {..}} <- lift ask
+readFromCache :: (MonadIO m, MonadCatch m, MonadLogger m)
+              => Dirs
+              -> Excepts '[JSONError, FileDoesNotExistError] m GHCupInfo
+readFromCache Dirs {..} = do
   lift $ $(logWarn)
     [i|Could not get download info, trying cached version (this may not be recent!)|]
   let path = view pathL' ghcupURL
-  yaml_file <- (cacheDir </>) <$> urlBaseName path
+  let yaml_file = cacheDir </> (T.unpack . decUTF8Safe . urlBaseName $ path)
   bs        <-
     handleIO' NoSuchThing
-              (\_ -> throwE $ FileDoesNotExistError (toFilePath yaml_file))
+              (\_ -> throwE $ FileDoesNotExistError yaml_file)
     $ liftIO
-    $ readFile yaml_file
+    $ L.readFile yaml_file
   lE' JSONDecodeError $ first show $ Y.decodeEither' (L.toStrict bs)
 
 
-getBase :: (MonadFail m, MonadIO m, MonadCatch m, MonadLogger m, MonadReader AppState m)
-        => Excepts '[JSONError , FileDoesNotExistError] m GHCupInfo
-getBase =
-  handleIO (\_ -> readFromCache)
+getBase :: (MonadFail m, MonadIO m, MonadCatch m, MonadLogger m)
+        => Dirs
+        -> Settings
+        -> Excepts '[JSONError , FileDoesNotExistError] m GHCupInfo
+getBase dirs@Dirs{..} Settings{ downloader }  =
+  handleIO (\_ -> readFromCache dirs)
   $ catchE @_ @'[JSONError, FileDoesNotExistError]
-      (\(DownloadFailed _) -> readFromCache)
+      (\(DownloadFailed _) -> readFromCache dirs)
   (reThrowAll @_ @_ @'[JSONError, DownloadFailed] DownloadFailed (smartDl ghcupURL)
     >>= (liftE . lE' @_ @_ @'[JSONError] JSONDecodeError . first show . Y.decodeEither' . L.toStrict))
     where
@@ -190,7 +190,6 @@ getBase =
              , MonadIO m1
              , MonadFail m1
              , MonadLogger m1
-             , MonadReader AppState m1
              )
           => URI
           -> Excepts
@@ -205,31 +204,28 @@ getBase =
                m1
                L.ByteString
   smartDl uri' = do
-    AppState {dirs = Dirs {..}} <- lift ask
     let path = view pathL' uri'
-    json_file <- (cacheDir </>) <$> urlBaseName path
+    let json_file = cacheDir </> (T.unpack . decUTF8Safe . urlBaseName $ path)
     e         <- liftIO $ doesFileExist json_file
     if e
       then do
-        accessTime <-
-          PF.accessTimeHiRes
-            <$> liftIO (PF.getFileStatus (toFilePath json_file))
-        currentTime <- liftIO getPOSIXTime
+        accessTime <- liftIO $ getAccessTime json_file
+        currentTime <- liftIO getCurrentTime
 
         -- access time won't work on most linuxes, but we can try regardless
-        if (currentTime - accessTime) > 300
+        if (utcTimeToPOSIXSeconds currentTime - utcTimeToPOSIXSeconds accessTime) > 300
           then do -- no access in last 5 minutes, re-check upstream mod time
             getModTime >>= \case
               Just modTime -> do
                 fileMod <- liftIO $ getModificationTime json_file
                 if modTime > fileMod
                   then dlWithMod modTime json_file
-                  else liftIO $ readFile json_file
+                  else liftIO $ L.readFile json_file
               Nothing -> do
                 lift $ $(logDebug) [i|Unable to get/parse Last-Modified header|]
                 dlWithoutMod json_file
           else -- access in less than 5 minutes, re-use file
-               liftIO $ readFile json_file
+               liftIO $ L.readFile json_file
       else do
         liftIO $ createDirRecursive' cacheDir
         getModTime >>= \case
@@ -242,14 +238,14 @@ getBase =
 
    where
     dlWithMod modTime json_file = do
-      bs <- liftE $ downloadBS uri'
+      bs <- liftE $ downloadBS downloader uri'
       liftIO $ writeFileWithModTime modTime json_file bs
       pure bs
     dlWithoutMod json_file = do
-      bs <- liftE $ downloadBS uri'
-      liftIO $ hideError doesNotExistErrorType $ deleteFile json_file
-      liftIO $ writeFileL json_file (Just newFilePerms) bs
-      liftIO $ setModificationTime json_file (fromIntegral @Int 0)
+      bs <- liftE $ downloadBS downloader uri'
+      liftIO $ hideError doesNotExistErrorType $ rmFile json_file
+      liftIO $ L.writeFile json_file bs
+      liftIO $ setModificationTime json_file (posixSecondsToUTCTime (fromIntegral @Int 0))
       pure bs
 
 
@@ -278,11 +274,10 @@ getBase =
 
 #endif
 
-  writeFileWithModTime :: UTCTime -> Path Abs -> L.ByteString -> IO ()
+  writeFileWithModTime :: UTCTime -> FilePath -> L.ByteString -> IO ()
   writeFileWithModTime utctime path content = do
-    let mod_time = utcTimeToPOSIXSeconds utctime
-    writeFileL path (Just newFilePerms) content
-    setModificationTimeHiRes path mod_time
+    L.writeFile path content
+    setModificationTime path utctime
 
 
 getDownloadInfo :: Tool
@@ -328,16 +323,16 @@ getDownloadInfo t v (PlatformRequest a p mv) dls = maybe
 --
 -- The file must not exist.
 download :: ( MonadMask m
-            , MonadReader AppState m
             , MonadThrow m
             , MonadLogger m
             , MonadIO m
             )
-         => DownloadInfo
-         -> Path Abs          -- ^ destination dir
-         -> Maybe (Path Rel)  -- ^ optional filename
-         -> Excepts '[DigestError , DownloadFailed] m (Path Abs)
-download dli dest mfn
+         => Settings
+         -> DownloadInfo
+         -> FilePath          -- ^ destination dir
+         -> Maybe FilePath    -- ^ optional filename
+         -> Excepts '[DigestError , DownloadFailed] m FilePath
+download settings@Settings{ downloader } dli dest mfn
   | scheme == "https" = dl
   | scheme == "http"  = dl
   | scheme == "file"  = cp
@@ -348,9 +343,9 @@ download dli dest mfn
   cp     = do
     -- destination dir must exist
     liftIO $ createDirRecursive' dest
-    destFile <- getDestFile
-    fromFile <- parseAbs path
-    liftIO $ copyFile fromFile destFile Strict
+    let destFile = getDestFile
+    let fromFile = T.unpack . decUTF8Safe $ path
+    liftIO $ copyFile fromFile destFile
     pure destFile
   dl = do
     let uri' = decUTF8Safe (serializeURIRef' (view dlUri dli))
@@ -358,37 +353,37 @@ download dli dest mfn
 
     -- destination dir must exist
     liftIO $ createDirRecursive' dest
-    destFile <- getDestFile
+    let destFile = getDestFile
 
     -- download
     flip onException
-         (liftIO $ hideError doesNotExistErrorType $ deleteFile destFile)
+         (liftIO $ hideError doesNotExistErrorType $ rmFile destFile)
      $ catchAllE @_ @'[ProcessError, DownloadFailed, UnsupportedScheme]
           (\e ->
-            liftIO (hideError doesNotExistErrorType $ deleteFile destFile)
+            liftIO (hideError doesNotExistErrorType $ rmFile destFile)
               >> (throwE . DownloadFailed $ e)
           ) $ do
-              lift getDownloader >>= \case
+              case downloader of
                 Curl -> do
                   o' <- liftIO getCurlOpts
-                  liftE $ lEM @_ @'[ProcessError] $ liftIO $ exec "curl" True
-                    (o' ++ ["-fL", "-o", toFilePath destFile, serializeURIRef' $ view dlUri dli]) Nothing Nothing
+                  liftE $ lEM @_ @'[ProcessError] $ exec "curl" 
+                    (o' ++ ["-fL", "-o", destFile, (T.unpack . decUTF8Safe) $ serializeURIRef' $ view dlUri dli]) Nothing Nothing
                 Wget -> do
                   o' <- liftIO getWgetOpts
-                  liftE $ lEM @_ @'[ProcessError] $ liftIO $ exec "wget" True
-                    (o' ++ ["-O", toFilePath destFile , serializeURIRef' $ view dlUri dli]) Nothing Nothing
+                  liftE $ lEM @_ @'[ProcessError] $ exec "wget" 
+                    (o' ++ ["-O", destFile , (T.unpack . decUTF8Safe) $ serializeURIRef' $ view dlUri dli]) Nothing Nothing
 #if defined(INTERNAL_DOWNLOADER)
                 Internal -> do
                   (https, host, fullPath, port) <- liftE $ uriToQuadruple (view dlUri dli)
                   liftE $ downloadToFile https host fullPath port destFile
 #endif
 
-    liftE $ checkDigest dli destFile
+    liftE $ checkDigest settings dli destFile
     pure destFile
 
   -- Manage to find a file we can write the body into.
-  getDestFile :: MonadThrow m => m (Path Abs)
-  getDestFile = maybe (urlBaseName path <&> (dest </>)) (pure . (dest </>)) mfn
+  getDestFile :: FilePath
+  getDestFile = maybe (dest </> T.unpack (decUTF8Safe (urlBaseName path))) (dest </>) mfn
 
   path        = view (dlUri % pathL') dli
 
@@ -401,27 +396,40 @@ downloadCached :: ( MonadMask m
                   , MonadLogger m
                   , MonadIO m
                   , MonadUnliftIO m
-                  , MonadReader AppState m
                   )
-               => DownloadInfo
-               -> Maybe (Path Rel)  -- ^ optional filename
-               -> Excepts '[DigestError , DownloadFailed] m (Path Abs)
-downloadCached dli mfn = do
-  cache <- lift getCache
+               => Settings
+               -> Dirs
+               -> DownloadInfo
+               -> Maybe FilePath  -- ^ optional filename
+               -> Excepts '[DigestError , DownloadFailed] m FilePath
+downloadCached settings@Settings{ cache } dirs dli mfn = do
   case cache of
-    True -> do
-      AppState {dirs = Dirs {..}} <- lift ask
-      fn       <- maybe (urlBaseName $ view (dlUri % pathL') dli) pure mfn
-      let cachfile = cacheDir </> fn
-      fileExists <- liftIO $ doesFileExist cachfile
-      if
-        | fileExists -> do
-          liftE $ checkDigest dli cachfile
-          pure cachfile
-        | otherwise -> liftE $ download dli cacheDir mfn
+    True -> downloadCached' settings dirs dli mfn
     False -> do
       tmp <- lift withGHCupTmpDir
-      liftE $ download dli tmp mfn
+      liftE $ download settings dli tmp mfn
+
+
+downloadCached' :: ( MonadMask m
+                   , MonadThrow m
+                   , MonadLogger m
+                   , MonadIO m
+                   , MonadUnliftIO m
+                   )
+                => Settings
+                -> Dirs
+                -> DownloadInfo
+                -> Maybe FilePath  -- ^ optional filename
+                -> Excepts '[DigestError , DownloadFailed] m FilePath
+downloadCached' settings Dirs{..} dli mfn = do
+  let fn = fromMaybe ((T.unpack . decUTF8Safe) $ urlBaseName $ view (dlUri % pathL') dli) mfn
+  let cachfile = cacheDir </> fn
+  fileExists <- liftIO $ doesFileExist cachfile
+  if
+    | fileExists -> do
+      liftE $ checkDigest settings dli cachfile
+      pure cachfile
+    | otherwise -> liftE $ download settings dli cacheDir mfn
 
 
 
@@ -434,8 +442,9 @@ downloadCached dli mfn = do
 
 
 -- | This is used for downloading the JSON.
-downloadBS :: (MonadReader AppState m, MonadCatch m, MonadIO m, MonadLogger m)
-           => URI
+downloadBS :: (MonadCatch m, MonadIO m, MonadLogger m)
+           => Downloader
+           -> URI
            -> Excepts
                 '[ FileDoesNotExistError
                  , HTTPStatusError
@@ -447,14 +456,14 @@ downloadBS :: (MonadReader AppState m, MonadCatch m, MonadIO m, MonadLogger m)
                  ]
                 m
                 L.ByteString
-downloadBS uri'
+downloadBS downloader uri'
   | scheme == "https"
   = dl True
   | scheme == "http"
   = dl False
   | scheme == "file"
-  = liftIOException doesNotExistErrorType (FileDoesNotExistError path)
-    (liftIO $ RD.readFile path)
+  = liftIOException doesNotExistErrorType (FileDoesNotExistError $ T.unpack $ decUTF8Safe path)
+    (liftIO $ L.readFile (T.unpack $ decUTF8Safe path))
   | otherwise
   = throwE UnsupportedScheme
 
@@ -467,23 +476,23 @@ downloadBS uri'
   dl _ = do
 #endif
     lift $ $(logDebug) [i|downloading: #{serializeURIRef' uri'}|]
-    lift getDownloader >>= \case
+    case downloader of
       Curl -> do
         o' <- liftIO getCurlOpts
-        let exe = [rel|curl|]
-            args = o' ++ ["-sSfL", serializeURIRef' uri']
-        liftIO (executeOut exe args Nothing) >>= \case
+        let exe = "curl"
+            args = o' ++ ["-sSfL", T.unpack $ decUTF8Safe $ serializeURIRef' uri']
+        lift (executeOut exe args Nothing) >>= \case
           CapturedProcess ExitSuccess stdout _ -> do
-            pure $ L.fromStrict stdout
-          CapturedProcess (ExitFailure i') _ _ -> throwE $ NonZeroExit i' (toFilePath exe) args
+            pure stdout
+          CapturedProcess (ExitFailure i') _ _ -> throwE $ NonZeroExit i' exe args
       Wget -> do
         o' <- liftIO getWgetOpts
-        let exe = [rel|wget|]
-            args = o' ++ ["-qO-", serializeURIRef' uri']
-        liftIO (executeOut exe args Nothing) >>= \case
+        let exe = "wget"
+            args = o' ++ ["-qO-", T.unpack $ decUTF8Safe $ serializeURIRef' uri']
+        lift (executeOut exe args Nothing) >>= \case
           CapturedProcess ExitSuccess stdout _ -> do
-            pure $ L.fromStrict stdout
-          CapturedProcess (ExitFailure i') _ _ -> throwE $ NonZeroExit i' (toFilePath exe) args
+            pure stdout
+          CapturedProcess (ExitFailure i') _ _ -> throwE $ NonZeroExit i' exe args
 #if defined(INTERNAL_DOWNLOADER)
       Internal -> do
         (_, host', fullPath', port') <- liftE $ uriToQuadruple uri'
@@ -491,33 +500,39 @@ downloadBS uri'
 #endif
 
 
-checkDigest :: (MonadIO m, MonadThrow m, MonadLogger m, MonadReader AppState m)
-            => DownloadInfo
-            -> Path Abs
+checkDigest :: (MonadIO m, MonadThrow m, MonadLogger m)
+            => Settings
+            -> DownloadInfo
+            -> FilePath
             -> Excepts '[DigestError] m ()
-checkDigest dli file = do
-  verify <- lift ask <&> (not . noVerify . settings)
+checkDigest Settings{ noVerify } dli file = do
+  let verify = not noVerify
   when verify $ do
-    p' <- toFilePath <$> basename file
+    let p' = takeFileName file
     lift $ $(logInfo) [i|verifying digest of: #{p'}|]
-    c <- liftIO $ readFile file
+    c <- liftIO $ L.readFile file
     cDigest <- throwEither . E.decodeUtf8' . B16.encode . SHA256.hashlazy $ c
     let eDigest = view dlHash dli
     when ((cDigest /= eDigest) && verify) $ throwE (DigestError cDigest eDigest)
 
 
 -- | Get additional curl args from env. This is an undocumented option.
-getCurlOpts :: IO [ByteString]
+getCurlOpts :: IO [String]
 getCurlOpts =
-  getEnv "GHCUP_CURL_OPTS" >>= \case
-    Just r  -> pure $ BS.split _space r
+  lookupEnv "GHCUP_CURL_OPTS" >>= \case
+    Just r  -> pure $ splitOn " " r
     Nothing -> pure []
 
 
 -- | Get additional wget args from env. This is an undocumented option.
-getWgetOpts :: IO [ByteString]
+getWgetOpts :: IO [String]
 getWgetOpts =
-  getEnv "GHCUP_WGET_OPTS" >>= \case
-    Just r  -> pure $ BS.split _space r
+  lookupEnv "GHCUP_WGET_OPTS" >>= \case
+    Just r  -> pure $ splitOn " " r
     Nothing -> pure []
+
+
+urlBaseName :: ByteString  -- ^ the url path (without scheme and host)
+            -> ByteString
+urlBaseName = snd . B.breakEnd (== _slash) . urlDecode False
 

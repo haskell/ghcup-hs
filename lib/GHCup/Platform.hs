@@ -13,7 +13,7 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 -}
 module GHCup.Platform where
 
@@ -36,18 +36,20 @@ import           Data.Maybe
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           HPath
-import           HPath.IO
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( abs
                                                 , readFile
                                                 , writeFile
                                                 )
 import           System.Info
+import           System.Directory
 import           System.OsRelease
 import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
+import qualified Data.Text.IO                  as T
+
+
 
     --------------------------
     --[ Platform detection ]--
@@ -55,7 +57,7 @@ import qualified Data.Text                     as T
 
 
 -- | Get the full platform request, consisting of architecture, distro, ...
-platformRequest :: (MonadLogger m, MonadCatch m, MonadIO m)
+platformRequest :: (Alternative m, MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
                 => Excepts
                      '[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound]
                      m
@@ -80,7 +82,7 @@ getArchitecture = case arch of
   what          -> Left (NoCompatibleArch what)
 
 
-getPlatform :: (MonadLogger m, MonadCatch m, MonadIO m)
+getPlatform :: (Alternative m, MonadLogger m, MonadCatch m, MonadIO m, MonadFail m)
             => Excepts
                  '[NoCompatiblePlatform, DistroNotFound]
                  m
@@ -96,35 +98,35 @@ getPlatform = do
           . versioning
           -- TODO: maybe do this somewhere else
           . getMajorVersion
-          . decUTF8Safe
+          . decUTF8Safe'
         <$> getDarwinVersion
       pure $ PlatformResult { _platform = Darwin, _distroVersion = ver }
     "freebsd" -> do
       ver <-
-        either (const Nothing) Just . versioning . decUTF8Safe
+        either (const Nothing) Just . versioning . decUTF8Safe'
           <$> getFreeBSDVersion
       pure $ PlatformResult { _platform = FreeBSD, _distroVersion = ver }
+    "mingw32" -> pure PlatformResult { _platform = Windows, _distroVersion = Nothing }
     what -> throwE $ NoCompatiblePlatform what
   lift $ $(logDebug) [i|Identified Platform as: #{pfr}|]
   pure pfr
  where
   getMajorVersion = T.intercalate "." . take 2 . T.split (== '.')
-  getFreeBSDVersion =
-    liftIO $ fmap _stdOut $ executeOut [rel|freebsd-version|] [] Nothing
-  getDarwinVersion = liftIO $ fmap _stdOut $ executeOut [rel|sw_vers|]
+  getFreeBSDVersion = lift $ fmap _stdOut $ executeOut "freebsd-version" [] Nothing
+  getDarwinVersion = lift $ fmap _stdOut $ executeOut "sw_vers"
                                                         ["-productVersion"]
                                                         Nothing
 
 
-getLinuxDistro :: (MonadCatch m, MonadIO m)
+getLinuxDistro :: (Alternative m, MonadCatch m, MonadIO m, MonadFail m)
                => Excepts '[DistroNotFound] m (LinuxDistro, Maybe Versioning)
 getLinuxDistro = do
   -- TODO: don't do alternative on IO, because it hides bugs
-  (name, ver) <- handleIO (\_ -> throwE DistroNotFound) $ liftIO $ asum
-    [ try_os_release
+  (name, ver) <- handleIO (\_ -> throwE DistroNotFound) $ lift $ asum
+    [ liftIO try_os_release
     , try_lsb_release_cmd
-    , try_redhat_release
-    , try_debian_version
+    , liftIO try_redhat_release
+    , liftIO try_debian_version
     ]
   let parsedVer = ver >>= either (const Nothing) Just . versioning
       distro    = if
@@ -147,12 +149,12 @@ getLinuxDistro = do
    where
     regex x = makeRegexOpts compIgnoreCase execBlank ([s|\<|] ++ x ++ [s|\>|])
 
-  lsb_release_cmd :: Path Rel
-  lsb_release_cmd = [rel|lsb-release|]
-  redhat_release :: Path Abs
-  redhat_release = [abs|/etc/redhat-release|]
-  debian_version :: Path Abs
-  debian_version = [abs|/etc/debian_version|]
+  lsb_release_cmd :: FilePath
+  lsb_release_cmd = "lsb-release"
+  redhat_release :: FilePath
+  redhat_release = "/etc/redhat-release"
+  debian_version :: FilePath
+  debian_version = "/etc/debian_version"
 
   try_os_release :: IO (Text, Maybe Text)
   try_os_release = do
@@ -160,16 +162,17 @@ getLinuxDistro = do
       fmap osRelease <$> parseOsRelease
     pure (T.pack name, fmap T.pack version_id)
 
-  try_lsb_release_cmd :: IO (Text, Maybe Text)
+  try_lsb_release_cmd :: (MonadFail m, MonadIO m)
+                      => m (Text, Maybe Text)
   try_lsb_release_cmd = do
-    (Just _) <- findExecutable lsb_release_cmd
+    (Just _) <- liftIO $ findExecutable lsb_release_cmd
     name     <- fmap _stdOut $ executeOut lsb_release_cmd ["-si"] Nothing
     ver      <- fmap _stdOut $ executeOut lsb_release_cmd ["-sr"] Nothing
-    pure (decUTF8Safe name, Just $ decUTF8Safe ver)
+    pure (decUTF8Safe' name, Just $ decUTF8Safe' ver)
 
   try_redhat_release :: IO (Text, Maybe Text)
   try_redhat_release = do
-    t <- fmap decUTF8Safe' $ readFile redhat_release
+    t <- T.readFile redhat_release
     let nameRegex n =
           makeRegexOpts compIgnoreCase
                         execBlank
@@ -191,5 +194,5 @@ getLinuxDistro = do
 
   try_debian_version :: IO (Text, Maybe Text)
   try_debian_version = do
-    ver <- readFile debian_version
-    pure (T.pack "debian", Just . decUTF8Safe' $ ver)
+    ver <- T.readFile debian_version
+    pure (T.pack "debian", Just ver)

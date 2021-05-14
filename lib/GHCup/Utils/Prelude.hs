@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
@@ -12,7 +13,7 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 
 GHCup specific prelude. Lots of Excepts functionality.
 -}
@@ -25,6 +26,8 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Class      ( lift )
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
+import           Data.List                      ( nub )
+import           Data.Foldable
 import           Data.String
 import           Data.Text                      ( Text )
 import           Data.Versions
@@ -32,7 +35,14 @@ import           Data.Word8
 import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
 import           System.IO.Error
-import           System.Posix.Env.ByteString    ( getEnvironment )
+import           System.IO.Unsafe
+import           System.Directory
+import           System.FilePath
+
+#if defined(IS_WINDOWS)
+import           Control.Retry
+import           GHC.IO.Exception
+#endif
 
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as L
@@ -242,6 +252,8 @@ throwEither' e eth = case eth of
 verToBS :: Version -> ByteString
 verToBS = E.encodeUtf8 . prettyVer
 
+verToS :: Version -> String
+verToS = T.unpack . prettyVer
 
 intToText :: Integral a => a -> T.Text
 intToText = TL.toStrict . B.toLazyText . B.decimal
@@ -250,14 +262,6 @@ intToText = TL.toStrict . B.toLazyText . B.decimal
 removeLensFieldLabel :: String -> String
 removeLensFieldLabel str' =
   maybe str' T.unpack . T.stripPrefix (T.pack "_") . T.pack $ str'
-
-
-addToCurrentEnv :: MonadIO m
-                => [(ByteString, ByteString)]
-                -> m [(ByteString, ByteString)]
-addToCurrentEnv adds = do
-  cEnv <- liftIO getEnvironment
-  pure (adds ++ cEnv)
 
 
 pvpToVersion :: PVP -> Version
@@ -284,3 +288,139 @@ escapeVerRex = B.pack . go . B.unpack . verToBS
   go (x : xs) | x == _period = [_backslash, _period] ++ go xs
               | otherwise    = x : go xs
 
+-- | More permissive version of 'createDirRecursive'. This doesn't
+-- error when the destination is a symlink to a directory.
+createDirRecursive' :: FilePath -> IO ()
+createDirRecursive' p =
+  handleIO (\e -> if isAlreadyExistsError e then isSymlinkDir e else throwIO e)
+    . createDirectoryIfMissing True
+    $ p
+
+ where
+  isSymlinkDir e = do
+    ft <- pathIsSymbolicLink p
+    case ft of
+      True -> do
+        rp <- canonicalizePath p
+        rft <- doesDirectoryExist rp
+        case rft of
+          True -> pure ()
+          _ -> throwIO e
+      _ -> throwIO e
+
+
+-- | Recursively copy the contents of one directory to another path.
+--
+-- This is a rip-off of Cabal library.
+copyDirectoryRecursive :: FilePath -> FilePath -> IO ()
+copyDirectoryRecursive srcDir destDir = do
+  srcFiles <- getDirectoryContentsRecursive srcDir
+  copyFilesWith copyFile destDir [ (srcDir, f)
+                                   | f <- srcFiles ]
+  where
+    -- | Common implementation of 'copyFiles', 'installOrdinaryFiles',
+    -- 'installExecutableFiles' and 'installMaybeExecutableFiles'.
+    copyFilesWith :: (FilePath -> FilePath -> IO ())
+                  -> FilePath -> [(FilePath, FilePath)] -> IO ()
+    copyFilesWith doCopy targetDir srcFiles = do
+
+      -- Create parent directories for everything
+      let dirs = map (targetDir </>) . nub . map (takeDirectory . snd) $ srcFiles
+      traverse_ (createDirectoryIfMissing True) dirs
+
+      -- Copy all the files
+      sequence_ [ let src  = srcBase   </> srcFile
+                      dest = targetDir </> srcFile
+                   in doCopy src dest
+                | (srcBase, srcFile) <- srcFiles ]
+
+    -- | List all the files in a directory and all subdirectories.
+    --
+    -- The order places files in sub-directories after all the files in their
+    -- parent directories. The list is generated lazily so is not well defined if
+    -- the source directory structure changes before the list is used.
+    --
+    getDirectoryContentsRecursive :: FilePath -> IO [FilePath]
+    getDirectoryContentsRecursive topdir = recurseDirectories [""]
+      where
+        recurseDirectories :: [FilePath] -> IO [FilePath]
+        recurseDirectories []         = return []
+        recurseDirectories (dir:dirs) = unsafeInterleaveIO $ do
+          (files, dirs') <- collect [] [] =<< getDirectoryContents (topdir </> dir)
+          files' <- recurseDirectories (dirs' ++ dirs)
+          return (files ++ files')
+
+          where
+            collect files dirs' []              = return (reverse files
+                                                         ,reverse dirs')
+            collect files dirs' (entry:entries) | ignore entry
+                                                = collect files dirs' entries
+            collect files dirs' (entry:entries) = do
+              let dirEntry = dir </> entry
+              isDirectory <- doesDirectoryExist (topdir </> dirEntry)
+              if isDirectory
+                then collect files (dirEntry:dirs') entries
+                else collect (dirEntry:files) dirs' entries
+
+            ignore ['.']      = True
+            ignore ['.', '.'] = True
+            ignore _          = False
+
+-- https://github.com/haskell/directory/issues/110
+-- https://github.com/haskell/directory/issues/96
+-- https://www.sqlite.org/src/info/89f1848d7f
+rmPath :: (MonadIO m, MonadMask m)
+      => FilePath
+      -> m ()
+rmPath fp =
+#if defined(IS_WINDOWS)
+  recovering (fullJitterBackoff 25000 <> limitRetries 10)
+    [\_ -> Handler (\e -> pure $ isPermissionError e)
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
+    ]
+    (\_ -> liftIO $ removePathForcibly fp)
+#else
+  liftIO $ removeDirectoryRecursive fp
+#endif
+
+
+-- https://www.sqlite.org/src/info/89f1848d7f
+-- https://github.com/haskell/directory/issues/96
+rmFile :: (MonadIO m, MonadMask m)
+      => FilePath
+      -> m ()
+rmFile fp =
+#if defined(IS_WINDOWS)
+  recovering (fullJitterBackoff 25000 <> limitRetries 10)
+    [\_ -> Handler (\e -> pure $ isPermissionError e)
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
+    ]
+    (\_ -> liftIO $ removeFile fp)
+#else
+  liftIO $ removeFile fp
+#endif
+
+
+-- Gathering monoidal values
+traverseFold :: (Foldable t, Applicative m, Monoid b) => (a -> m b) -> t a -> m b
+traverseFold f = foldl (\mb a -> (<>) <$> mb <*> f a) (pure mempty)
+
+-- | Gathering monoidal values
+forFold :: (Foldable t, Applicative m, Monoid b) => t a -> (a -> m b) -> m b
+forFold = \t -> (`traverseFold` t)
+
+
+-- | Strip @\\r@ and @\\n@ from 'ByteString's
+stripNewline :: String -> String
+stripNewline s
+  | null s               = []
+  | head s `elem` "\n\r" = stripNewline (tail s)
+  | otherwise            = head s : stripNewline (tail s)
+
+
+isNewLine :: Word8 -> Bool
+isNewLine w
+  | w == _lf = True
+  | w == _cr = True
+  | otherwise = False

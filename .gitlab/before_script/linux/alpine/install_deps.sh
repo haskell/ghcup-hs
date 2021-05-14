@@ -41,6 +41,9 @@ apk add --no-cache \
 	zlib \
 	zlib-dev \
 	zlib-static \
+	bzip2 \
+	bzip2-dev \
+	bzip2-static \
 	gmp \
 	gmp-dev \
 	openssl-dev \
