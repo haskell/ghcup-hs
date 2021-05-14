@@ -53,8 +53,6 @@ import           Data.Versions           hiding ( str )
 import           Data.Void
 import           GHC.IO.Encoding
 import           Haskus.Utils.Variant.Excepts
-import           HPath
-import           HPath.IO
 import           Language.Haskell.TH
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
@@ -64,6 +62,7 @@ import           System.Console.Pretty   hiding ( color )
 import qualified System.Console.Pretty         as Pretty
 import           System.Environment
 import           System.Exit
+import           System.FilePath
 import           System.IO               hiding ( appendFile )
 import           Text.Read               hiding ( lift )
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
@@ -170,17 +169,17 @@ data CompileCommand = CompileGHC GHCCompileOptions
 
 data GHCCompileOptions = GHCCompileOptions
   { targetGhc    :: Either Version GitBranch
-  , bootstrapGhc :: Either Version (Path Abs)
+  , bootstrapGhc :: Either Version FilePath
   , jobs         :: Maybe Int
-  , buildConfig  :: Maybe (Path Abs)
-  , patchDir     :: Maybe (Path Abs)
+  , buildConfig  :: Maybe FilePath
+  , patchDir     :: Maybe FilePath
   , crossTarget  :: Maybe Text
   , addConfArgs  :: [Text]
   , setCompile   :: Bool
   }
 
 data UpgradeOpts = UpgradeInplace
-                 | UpgradeAt (Path Abs)
+                 | UpgradeAt FilePath
                  | UpgradeGHCupDir
                  deriving Show
 
@@ -721,8 +720,7 @@ ghcCompileOpts =
     <*> option
           (eitherReader
             (\x ->
-              (bimap (const "Not a valid version") Left . version . T.pack $ x)
-                <|> (bimap show Right . parseAbs . E.encodeUtf8 . T.pack $ x)
+              (bimap (const "Not a valid version") Left . version . T.pack $ x) <|> (if isPathSeparator (head x) then pure $ Right x else Left "Not an absolute Path")
             )
           )
           (  short 'b'
@@ -740,26 +738,14 @@ ghcCompileOpts =
           )
     <*> optional
           (option
-            (eitherReader
-              (\x ->
-                first show . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
-                    String
-                    (Path Abs)
-              )
-            )
+            str
             (short 'c' <> long "config" <> metavar "CONFIG" <> help
               "Absolute path to build config file"
             )
           )
     <*> optional
           (option
-            (eitherReader
-              (\x ->
-                first show . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
-                    String
-                    (Path Abs)
-              )
-            )
+            str
             (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
               "Absolute path to patch directory (applied in order, uses -p1)"
             )
@@ -1040,13 +1026,7 @@ upgradeOptsP =
       )
     <|> (   UpgradeAt
         <$> option
-              (eitherReader
-                (\x ->
-                  first show . parseAbs . E.encodeUtf8 . T.pack $ x :: Either
-                      String
-                      (Path Abs)
-                )
-              )
+              str
               (short 't' <> long "target" <> metavar "TARGET_DIR" <> help
                 "Absolute filepath to write ghcup into"
               )
@@ -1058,9 +1038,9 @@ upgradeOptsP =
 describe_result :: String
 describe_result = $( LitE . StringL <$>
                      runIO (do
-                             CapturedProcess{..} <- executeOut [rel|git|] ["describe"] Nothing
+                             CapturedProcess{..} <- executeOut "git" ["describe"] Nothing
                              case _exitCode of
-                               ExitSuccess   -> pure . T.unpack . decUTF8Safe $ _stdOut
+                               ExitSuccess   -> pure . T.unpack . decUTF8Safe' $ _stdOut
                                ExitFailure _ -> pure numericVer
                      )
                    )
@@ -1114,7 +1094,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = verbose settings
                 , colorOutter  = B.hPut stderr
-                , rawOutter    = appendFile logfile
+                , rawOutter    = B.appendFile logfile
                 }
           let runLogger = myLoggerT loggerConfig
 
@@ -1616,12 +1596,9 @@ Make sure to clean up #{tmpdir} afterwards.|])
 
             Upgrade uOpts force -> do
               target <- case uOpts of
-                UpgradeInplace -> do
-                  efp <- liftIO getExecutablePath
-                  p   <- parseAbs . E.encodeUtf8 . T.pack $ efp
-                  pure $ Just p
+                UpgradeInplace  -> Just <$> liftIO getExecutablePath
                 (UpgradeAt p)   -> pure $ Just p
-                UpgradeGHCupDir -> pure (Just (binDir </> [rel|ghcup|]))
+                UpgradeGHCupDir -> pure (Just (binDir </> "ghcup"))
 
               runUpgrade (liftE $ upgradeGHCup dls target force pfreq) >>= \case
                 VRight v' -> do
@@ -1677,12 +1654,12 @@ Make sure to clean up #{tmpdir} afterwards.|])
                               Darwin  -> "open"
                               Linux _ -> "xdg-open"
                               FreeBSD -> "xdg-open"
+                              Windows -> "start"
 
                   if clOpen
                     then
                       exec cmd
-                           True
-                           [serializeURIRef' uri]
+                           [T.unpack $ decUTF8Safe $ serializeURIRef' uri]
                            Nothing
                            Nothing
                         >>= \case
@@ -1977,10 +1954,10 @@ checkForUpdates dls pfreq = do
 prettyDebugInfo :: DebugInfo -> String
 prettyDebugInfo DebugInfo {..} = [i|Debug Info
 ==========
-GHCup base dir: #{toFilePath diBaseDir}
-GHCup bin dir: #{toFilePath diBinDir}
-GHCup GHC directory: #{toFilePath diGHCDir}
-GHCup cache directory: #{toFilePath diCacheDir}
+GHCup base dir: #{diBaseDir}
+GHCup bin dir: #{diBinDir}
+GHCup GHC directory: #{diGHCDir}
+GHCup cache directory: #{diCacheDir}
 Architecture: #{prettyShow diArch}
 Platform: #{prettyShow diPlatform}
 Version: #{describe_result}|]

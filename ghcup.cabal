@@ -28,19 +28,23 @@ source-repository head
   location: https://gitlab.haskell.org/haskell/ghcup-hs.git
 
 flag tui
-  description: Build the brick powered tui (ghcup tui)
+  description:
+    Build the brick powered tui (ghcup tui). This is disabled on windows.
+
   default:     False
   manual:      True
 
 flag internal-downloader
   description:
-    Compile the internal downloader, which links against OpenSSL
+    Compile the internal downloader, which links against OpenSSL. This is disabled on windows.
 
   default:     False
   manual:      True
 
 flag tar
-  description: Use tar-bytestring instead of libarchive
+  description:
+    Use tar-bytestring instead of libarchive. This is always enabled on windows.
+
   default:     False
   manual:      True
 
@@ -58,6 +62,7 @@ library
     GHCup.Utils
     GHCup.Utils.Dirs
     GHCup.Utils.File
+    GHCup.Utils.File.Common
     GHCup.Utils.Logger
     GHCup.Utils.MegaParsec
     GHCup.Utils.Prelude
@@ -90,21 +95,19 @@ library
     , base16-bytestring     >=0.1.1.6    && <1.1
     , binary                ^>=0.8.6.0
     , bytestring            ^>=0.10
-    , bz2                   >=0.5.0.5    && <1.1
     , case-insensitive      ^>=1.2.1.0
     , casing                ^>=0.1.4.1
     , concurrent-output     ^>=1.10.11
     , containers            ^>=0.6
     , cryptohash-sha256     ^>=0.11.101.0
+    , deepseq               ^>=1.4.4.0
+    , directory             ^>=1.3.6.0
     , disk-free-space       ^>=0.1.0.1
+    , extra                 ^>=1.7.9
+    , filepath              ^>=1.4.2.1
     , generics-sop          ^>=0.5
     , haskus-utils-types    ^>=1.5
     , haskus-utils-variant  >=3.0        && <3.2
-    , hpath                 >=0.11       && <0.13
-    , hpath-directory       ^>=0.14.1
-    , hpath-filepath        ^>=0.10.3
-    , hpath-io              ^>=0.14.1
-    , hpath-posix           ^>=0.13.2
     , lzma-static           ^>=5.2.5.2
     , megaparsec            >=8.0.0      && <9.1
     , monad-logger          ^>=0.3.31
@@ -115,6 +118,7 @@ library
     , parsec                ^>=3.1
     , pretty                ^>=1.1.3.1
     , pretty-terminal       ^>=0.1.0.0
+    , process               ^>=1.6.9.0
     , regex-posix           ^>=0.96
     , resourcet             ^>=1.2.2
     , safe                  ^>=0.3.18
@@ -122,27 +126,25 @@ library
     , split                 ^>=0.2.3.4
     , streamly              ^>=0.7.3
     , streamly-bytestring   ^>=0.1.2
-    , streamly-posix        ^>=0.1.0.0
     , strict-base           ^>=0.4
     , string-interpolate    >=0.2.0.0    && <0.4
     , template-haskell      >=2.7        && <2.17
+    , temporary             ^>=1.3
     , text                  ^>=1.2.4.0
     , time                  ^>=1.9.3
     , transformers          ^>=0.5
-    , unix                  ^>=2.7
-    , unix-bytestring       ^>=0.3
     , unliftio-core         ^>=0.2.0.1
     , unordered-containers  ^>=0.2.10.0
     , uri-bytestring        ^>=0.3.2.2
     , utf8-string           ^>=1.0
     , vector                ^>=0.12
     , versions              ^>=4.0.1
-    , vty                   >=5.28.2     && <5.34
     , word8                 ^>=0.1.3
     , yaml                  ^>=0.11.4.0
+    , zip                   ^>=1.7.0
     , zlib                  ^>=0.6.2.2
 
-  if flag(internal-downloader)
+  if (flag(internal-downloader) && !os(windows))
     exposed-modules: GHCup.Download.IOStreams
     cpp-options:     -DINTERNAL_DOWNLOADER
     build-depends:
@@ -151,12 +153,30 @@ library
       , io-streams             >=1.5
       , terminal-progress-bar  >=0.4.1
 
-  if flag(tar)
+  if (flag(tar) || os(windows))
     cpp-options:   -DTAR
-    build-depends: tar-bytestring ^>=0.6.3.1
+    build-depends: tar
 
   else
     build-depends: libarchive ^>=3.0.0.0
+
+  if os(windows)
+    cpp-options:   -DIS_WINDOWS
+    other-modules: GHCup.Utils.File.Windows
+    build-depends: bzlib
+
+  else
+    other-modules: GHCup.Utils.File.Posix
+    build-depends:
+        bz2              >=0.5.0.5 && <1.1
+      , hpath-posix      ^>=0.13.3
+      , streamly-posix   ^>=0.1.0.0
+      , unix             ^>=2.7
+      , unix-bytestring  ^>=0.3.7.3
+
+  if (flag(tui) && !os(windows))
+    cpp-options:   -DBRICK
+    build-depends: vty >=5.28.2 && <5.34
 
 executable ghcup
   main-is:            Main.hs
@@ -181,10 +201,9 @@ executable ghcup
     , base                  >=4.13     && <5
     , bytestring            ^>=0.10
     , containers            ^>=0.6
+    , filepath              ^>=1.4.2.1
     , ghcup
     , haskus-utils-variant  >=3.0      && <3.2
-    , hpath                 >=0.11     && <0.13
-    , hpath-io              ^>=0.14.1
     , megaparsec            >=8.0.0    && <9.1
     , monad-logger          ^>=0.3.31
     , mtl                   ^>=2.2
@@ -204,7 +223,7 @@ executable ghcup
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER
 
-  if flag(tui)
+  if (flag(tui) && !os(windows))
     cpp-options:   -DBRICK
     other-modules: BrickMain
     build-depends:
@@ -212,7 +231,7 @@ executable ghcup
       , vector  ^>=0.12
       , vty     >=5.28.2 && <5.34
 
-  if flag(tar)
+  if (flag(tar) || os(windows))
     cpp-options: -DTAR
 
   else
@@ -241,10 +260,9 @@ executable ghcup-gen
     , base                  >=4.13     && <5
     , bytestring            ^>=0.10
     , containers            ^>=0.6
+    , filepath              ^>=1.4.2.1
     , ghcup
     , haskus-utils-variant  >=3.0      && <3.2
-    , hpath                 >=0.11     && <0.13
-    , hpath-filepath        ^>=0.10.3
     , monad-logger          ^>=0.3.31
     , mtl                   ^>=2.2
     , optics                >=0.2      && <0.5
@@ -262,9 +280,9 @@ executable ghcup-gen
     , versions              ^>=4.0.1
     , yaml                  ^>=0.11.4.0
 
-  if flag(tar)
+  if (flag(tar) || os(windows))
     cpp-options:   -DTAR
-    build-depends: tar-bytestring ^>=0.6.3.1
+    build-depends: tar
 
   else
     build-depends: libarchive ^>=3.0.0.0
@@ -297,9 +315,8 @@ test-suite ghcup-test
     , containers                ^>=0.6
     , generic-arbitrary         ^>=0.1.0
     , ghcup
-    , hpath                     >=0.11    && <0.13
-    , hspec                     ^>=2.7.4
-    , hspec-golden-aeson        >=0.7     && <0.10
+    , hspec                     ^>=2.7.10
+    , hspec-golden-aeson        >=0.9 && <0.10
     , QuickCheck                ^>=2.14.1
     , quickcheck-arbitrary-adt  ^>=0.3.1.0
     , text                      ^>=1.2.4.0

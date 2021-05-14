@@ -11,7 +11,6 @@ import           GHCup.Types
 import           Data.ByteString                ( ByteString )
 import           Data.Versions
 import           Data.List.NonEmpty
-import           HPath
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.ADT  ( ToADTArbitrary )
 import           Test.QuickCheck.Arbitrary.Generic
@@ -163,11 +162,6 @@ instance Arbitrary (NonEmpty VersionCmp) where
 instance Arbitrary VersionCmp where
   arbitrary = genericArbitrary
   shrink    = genericShrink
-
-instance Arbitrary (Path Rel) where
-  arbitrary =
-    either (error . show) id . parseRel . E.encodeUtf8 . T.pack
-      <$> listOf1 (elements ['a' .. 'z'])
 
 instance Arbitrary TarDir where
   arbitrary = genericArbitrary

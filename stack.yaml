@@ -1,4 +1,4 @@
-resolver: lts-17.4
+resolver: lts-17.11
 
 packages:
   - .
@@ -6,6 +6,9 @@ packages:
 extra-deps:
   - git: https://github.com/hasufell/text-conversions.git
     commit: 9abf0e5e5664a3178367597c32db19880477a53c
+
+  - git: https://github.com/Bodigrim/tar
+    commit: ac197ec7ea4838dc2b4e22b9b888b080cedf29cf
 
   - IfElse-0.85@sha256:6939b94acc6a55f545f63a168a349dd2fbe4b9a7cca73bf60282db5cc6aa47d2,445
   - ascii-string-1.0.1.4@sha256:fa34f1d9ba57e8e89c0d4c9cef5e01ba32cb2d4373d13f92dcc0b531a6c6749b,2582
@@ -17,16 +20,18 @@ extra-deps:
   - haskus-utils-data-1.3@sha256:f62c4e49021b463185d043f7b69c727b63af641a71d7edd582d9f4f98e80e500,1466
   - haskus-utils-types-1.5.1@sha256:991c472f4e751e2f0d7aab6ad4220ef151d6160876dcf0511bbf876bbd432020,1298
   - haskus-utils-variant-3.0@sha256:8d51e45d3b664e61ccc25a58b37c0ccc4ee7537138b9fee21cd15c356906dd34,2159
-  - hpath-0.11.0@sha256:12b8405bee13d0007d644a888ef8407069ce7bbbd76970f8746b801447124ade,1440
-  - hpath-directory-0.14.1@sha256:548ac1321222c34caa843a41a2379a77d961141082a4695bb37cc4731e91b2c7,5312
-  - hpath-filepath-0.10.4@sha256:e9e44fb5fdbade7f30b5b5451257dbee15b6ef1aae4060034d73008bb3b5d878,1269
-  - hpath-io-0.14.1@sha256:d91373cd81483eb370a1c683e4add6182250dccce32f9b682bb1104f7765c750,1522
-  - hpath-posix-0.13.2@sha256:eec4ff2b00dc86be847aca0f409fc8f6212ffd2170ec36a17dc9a52b46562392,1615
   - http-io-streams-0.1.6.0@sha256:53f5bab177efb52cd65ec396fd04ed59b93e5f919fb3700cd7dacd6cfce6f06d,3582
+  - hpath-filepath-0.10.4@sha256:e9e44fb5fdbade7f30b5b5451257dbee15b6ef1aae4060034d73008bb3b5d878,1269
+  - hpath-posix-0.13.3@sha256:abe472cf16bccd3a8b8814865ed3551a728fde0f3a2baea2acc03023bec6c565,1615
+  - hspec-2.7.10@sha256:c9e82c90086acebac576552a06f3cabd249bba048edd1667c7fae0b1313d5bce,1712
+  - hspec-core-2.7.10@sha256:2aba6ea126442b29e8183ab27f1c811706b19b1d83b02f193a896f6fc1589d13,4621
+  - hspec-discover-2.7.10@sha256:d08bf5dd785629f589571477d9beb7cd91529471bd89f39517c1cb4b9b38160f,2184
+  - hspec-golden-aeson-0.9.0.0@sha256:aa17274114026661ba4dfc9c60c230673c8f408bd86482fd611d2d5cb6aff996,2179
   - lzma-static-5.2.5.2@sha256:ac38dcad9ab423342a72ba48415bd75f62234e9c9e11831495b75603b5a060f6,7184
   - libarchive-3.0.2.1@sha256:40ebf2a278e585802427bc58826867208bb33822f63d56107a1fcc3ca04d691d,10990
   - os-release-1.0.1@sha256:1281c62081f438fc3f0874d3bae6a4887d5964ac25261ba06e29d368ab173467,2716
   - primitive-0.7.0.1@sha256:a381571c36edc7dca28b77fe8159b43c14c640087ec5946adacf949feec64231,3433
+  - regex-posix-clib-2.7
   - streamly-0.7.3@sha256:ad2a488fe802692ed47cab9fd0416c2904aac9e51cf2d8aafd1c3a40064c42f5,27421
   - streamly-bytestring-0.1.2@sha256:cc828f41d1c714c711d38fb213b4ed186febabba598ab080e13255f69c20b13c,2469
   - streamly-posix-0.1.0.1@sha256:5d89b806281035d34020387ed99dde1ddab282c7ed66df3b7cd010b38fd3517b,2138
@@ -40,13 +45,8 @@ flags:
   libarchive:
     system-libarchive: false
 
-  ghcup:
-    tui: true
-    internal-downloader: true
-
-system-ghc: true
-compiler: ghc-8.10.4
-compiler-check: match-exact
+  regex-posix:
+    _regex-posix-clib: true
 
 ghc-options:
   "$locals": -O2

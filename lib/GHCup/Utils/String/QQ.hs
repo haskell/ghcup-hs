@@ -7,7 +7,7 @@ Copyright   : (c) Audrey Tang <audreyt@audreyt.org> 2019, Julian Ospald <hasufel
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 
 QuasiQuoter for non-interpolated strings, texts and bytestrings.
 

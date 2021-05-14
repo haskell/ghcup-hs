@@ -12,7 +12,7 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 
 GHCup specific prelude. Lots of Excepts functionality.
 -}
@@ -32,8 +32,6 @@ import           Data.Word8
 import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
 import           System.IO.Error
-import           System.Posix.Env.ByteString    ( getEnvironment )
-
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.Strict.Maybe             as S
@@ -242,6 +240,8 @@ throwEither' e eth = case eth of
 verToBS :: Version -> ByteString
 verToBS = E.encodeUtf8 . prettyVer
 
+verToS :: Version -> String
+verToS = T.unpack . prettyVer
 
 intToText :: Integral a => a -> T.Text
 intToText = TL.toStrict . B.toLazyText . B.decimal
@@ -250,14 +250,6 @@ intToText = TL.toStrict . B.toLazyText . B.decimal
 removeLensFieldLabel :: String -> String
 removeLensFieldLabel str' =
   maybe str' T.unpack . T.stripPrefix (T.pack "_") . T.pack $ str'
-
-
-addToCurrentEnv :: MonadIO m
-                => [(ByteString, ByteString)]
-                -> m [(ByteString, ByteString)]
-addToCurrentEnv adds = do
-  cEnv <- liftIO getEnvironment
-  pure (adds ++ cEnv)
 
 
 pvpToVersion :: PVP -> Version

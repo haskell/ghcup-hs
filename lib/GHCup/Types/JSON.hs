@@ -17,7 +17,7 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 -}
 module GHCup.Types.JSON where
 
@@ -33,15 +33,11 @@ import           Data.List.NonEmpty             ( NonEmpty(..) )
 import           Data.Text.Encoding            as E
 import           Data.Versions
 import           Data.Void
-import           Data.Word8
-import           HPath
 import           URI.ByteString
 import           Text.Casing
 
-import qualified Data.ByteString               as BS
 import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
-import qualified Graphics.Vty                  as Vty
 import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
 
@@ -64,7 +60,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downlo
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "u-") . T.pack . kebab $ str' } ''UserSettings
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
-deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Vty.Key
+deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
 
 instance ToJSON Tag where
   toJSON Latest             = String "Latest"
@@ -128,11 +124,13 @@ instance ToJSONKey Platform where
     Darwin  -> T.pack "Darwin"
     FreeBSD -> T.pack "FreeBSD"
     Linux d -> T.pack ("Linux_" <> show d)
+    Windows -> T.pack "Windows"
 
 instance FromJSONKey Platform where
   fromJSONKey = FromJSONKeyTextParser $ \t -> if
     | T.pack "Darwin" == t -> pure Darwin
     | T.pack "FreeBSD" == t -> pure FreeBSD
+    | T.pack "Windows" == t -> pure Windows
     | T.pack "Linux_" `T.isPrefixOf` t -> case
         T.stripPrefix (T.pack "Linux_") t
       of
@@ -198,20 +196,6 @@ instance ToJSONKey Tool where
 
 instance FromJSONKey Tool where
   fromJSONKey = genericFromJSONKey defaultJSONKeyOptions
-
-instance ToJSON (Path Rel) where
-  toJSON p = case and . fmap isAscii . BS.unpack $ fp of
-    True  -> toJSON . decUTF8Safe $ fp
-    False -> String "/not/a/valid/path"
-    where fp = toFilePath p
-
-instance FromJSON (Path Rel) where
-  parseJSON = withText "HPath Rel" $ \t -> do
-    let d = encodeUtf8 t
-    case parseRel d of
-      Right x -> pure x
-      Left  e -> fail $ "Failure in HPath Rel (FromJSON)" <> show e
-
 
 instance ToJSON TarDir where
   toJSON (RealDir  p) = toJSON p

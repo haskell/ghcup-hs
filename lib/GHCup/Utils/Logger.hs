@@ -8,14 +8,13 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 
 Here we define our main logger.
 -}
 module GHCup.Utils.Logger where
 
 import           GHCup.Types
-import           GHCup.Utils
 import           GHCup.Utils.File
 import           GHCup.Utils.String.QQ
 
@@ -23,14 +22,15 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Control.Monad.Logger
-import           HPath
-import           HPath.IO
 import           Prelude                 hiding ( appendFile )
 import           System.Console.Pretty
+import           System.Directory        hiding ( findFiles )
+import           System.FilePath
 import           System.IO.Error
 import           Text.Regex.Posix
 
 import qualified Data.ByteString               as B
+import GHCup.Utils.Prelude
 
 
 data LoggerConfig = LoggerConfig
@@ -68,19 +68,19 @@ myLoggerT LoggerConfig {..} loggingt = runLoggingT loggingt mylogger
     rawOutter outr
 
 
-initGHCupFileLogging :: (MonadIO m, MonadReader AppState m) => m (Path Abs)
+initGHCupFileLogging :: (MonadIO m, MonadReader AppState m) => m FilePath
 initGHCupFileLogging = do
   AppState {dirs = Dirs {..}} <- ask
-  let logfile = logsDir </> [rel|ghcup.log|]
+  let logfile = logsDir </> "ghcup.log"
   liftIO $ do
-    createDirRecursive' logsDir
+    createDirectoryIfMissing True logsDir
     logFiles <- findFiles
       logsDir
       (makeRegexOpts compExtended
                      execBlank
                      ([s|^.*\.log$|] :: B.ByteString)
       )
-    forM_ logFiles $ hideError doesNotExistErrorType . deleteFile . (logsDir </>)
+    forM_ logFiles $ hideError doesNotExistErrorType . removeFile . (logsDir </>)
 
-    createRegularFile newFilePerms logfile
+    writeFile logfile ""
     pure logfile

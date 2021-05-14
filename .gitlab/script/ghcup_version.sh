@@ -7,11 +7,11 @@ set -eux
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
 
 ecabal() {
-	cabal --store-dir="$(pwd)"/.store "$@"
+	cabal --store-dir="$CI_PROJECT_DIR"/.store "$@"
 }
 
 eghcup() {
-	ghcup -v -c -s file://$(pwd)/ghcup-${JSON_VERSION}.yaml "$@"
+	ghcup -v -c -s file://$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml "$@"
 }
 
 git describe --always
@@ -116,8 +116,12 @@ fi
 eghcup rm $(ghc --numeric-version)
 
 # https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/116
-eghcup install cabal -u https://oleg.fi/cabal-install-3.4.0.0-rc4/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz 3.4.0.0-rc4
-eghcup rm cabal 3.4.0.0-rc4
+if [ "${OS}" = "LINUX" ] ; then
+	if [ "${ARCH}" = "64" ] ; then
+		eghcup install cabal -u https://oleg.fi/cabal-install-3.4.0.0-rc4/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz 3.4.0.0-rc4
+		eghcup rm cabal 3.4.0.0-rc4
+	fi
+fi
 
 eghcup upgrade
 eghcup upgrade -f

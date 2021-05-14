@@ -10,6 +10,11 @@ package ghcup
     tests: True
     flags: +tui
 
+source-repository-package
+    type: git
+    location: https://github.com/Bodigrim/tar
+    tag: ac197ec7ea4838dc2b4e22b9b888b080cedf29cf
+
 constraints: http-io-streams -brotli
 
 package libarchive

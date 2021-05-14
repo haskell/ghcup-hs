@@ -37,12 +37,11 @@ import           Data.IORef
 import           Data.List
 import           Data.String.Interpolate
 import           Data.Versions
-import           HPath                          ( toFilePath, rel )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
+import           System.FilePath
 import           System.Exit
 import           System.IO
-import           System.Posix.FilePath
 import           Text.ParserCombinators.ReadP
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
@@ -106,6 +105,10 @@ validate dls = do
       addError
     when ((notElem FreeBSD pspecs) && arch == A_64) $ lift $ $(logWarn)
       [i|FreeBSD missing for #{t} #{v'} #{arch'}|]
+    when (notElem Windows pspecs && arch == A_64) $ do
+      lift $ $(logError)
+        [i|Windows missing for for #{t} #{v'} #{arch'}|]
+      addError
 
     -- alpine needs to be set explicitly, because
     -- we cannot assume that "Linux UnknownLinux" runs on Alpine
@@ -238,7 +241,7 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
       $ do
         case tool of
           Just GHCup -> do
-            let fn = [rel|ghcup|]
+            let fn = "ghcup"
             dir <- liftIO ghcupCacheDir
             p <- liftE $ download dli dir (Just fn)
             liftE $ checkDigest dli p
@@ -252,7 +255,7 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
     case r of
       VRight (Just basePath) -> do
         case _dlSubdir dli of
-          Just (RealDir (toFilePath -> prel)) -> do
+          Just (RealDir prel) -> do
             lift $ $(logInfo)
               [i|verifying subdir: #{prel}|]
             when (basePath /= prel) $ do

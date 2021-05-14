@@ -2,7 +2,6 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes           #-}
 
 {-|
 Module      : GHCup.Types
@@ -11,25 +10,38 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 -}
-module GHCup.Types where
+module GHCup.Types
+  ( module GHCup.Types
+#if defined(BRICK)
+  , Key(..)
+#endif
+  )
+  where
 
 import           Data.Map.Strict                ( Map )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
-import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           HPath
 import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text)
 import           URI.ByteString
+#if defined(BRICK)
+import           Graphics.Vty                   ( Key(..) )
+#endif
 
 import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as E
-import qualified Data.Text.Encoding.Error      as E
 import qualified GHC.Generics                  as GHC
-import qualified Graphics.Vty                  as Vty
 
+
+#if !defined(BRICK)
+data Key = KEsc  | KChar Char | KBS | KEnter
+         | KLeft | KRight | KUp | KDown
+         | KUpLeft | KUpRight | KDownLeft | KDownRight | KCenter
+         | KFun Int | KBackTab | KPrtScr | KPause | KIns
+         | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
+    deriving (Eq,Show,Read,Ord,GHC.Generic)
+#endif
 
 
     --------------------
@@ -157,12 +169,15 @@ data Platform = Linux LinuxDistro
               | Darwin
               -- ^ must exit
               | FreeBSD
+              | Windows
+              -- ^ must exit
   deriving (Eq, GHC.Generic, Ord, Show)
 
 platformToString :: Platform -> String
 platformToString (Linux distro) = "linux-" ++ distroToString distro
 platformToString Darwin = "darwin"
 platformToString FreeBSD = "freebsd"
+platformToString Windows = "windows"
 
 instance Pretty Platform where
   pPrint = text . platformToString
@@ -218,12 +233,12 @@ data DownloadInfo = DownloadInfo
 
 
 -- | How to descend into a tar archive.
-data TarDir = RealDir (Path Rel)
+data TarDir = RealDir FilePath
             | RegexDir String     -- ^ will be compiled to regex, the first match will "win"
             deriving (Eq, Ord, GHC.Generic, Show)
 
 instance Pretty TarDir where
-  pPrint (RealDir path) = text [i|#{E.decodeUtf8With E.lenientDecode . toFilePath $ path}|]
+  pPrint (RealDir path) = text path
   pPrint (RegexDir regex) = text regex
 
 
@@ -250,42 +265,42 @@ defaultUserSettings :: UserSettings
 defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 data UserKeyBindings = UserKeyBindings
-  { kUp        :: Maybe Vty.Key
-  , kDown      :: Maybe Vty.Key
-  , kQuit      :: Maybe Vty.Key
-  , kInstall   :: Maybe Vty.Key
-  , kUninstall :: Maybe Vty.Key
-  , kSet       :: Maybe Vty.Key
-  , kChangelog :: Maybe Vty.Key
-  , kShowAll   :: Maybe Vty.Key
-  , kShowAllTools :: Maybe Vty.Key
+  { kUp        :: Maybe Key
+  , kDown      :: Maybe Key
+  , kQuit      :: Maybe Key
+  , kInstall   :: Maybe Key
+  , kUninstall :: Maybe Key
+  , kSet       :: Maybe Key
+  , kChangelog :: Maybe Key
+  , kShowAll   :: Maybe Key
+  , kShowAllTools :: Maybe Key
   }
   deriving (Show, GHC.Generic)
 
 data KeyBindings = KeyBindings
-  { bUp        :: Vty.Key
-  , bDown      :: Vty.Key
-  , bQuit      :: Vty.Key
-  , bInstall   :: Vty.Key
-  , bUninstall :: Vty.Key
-  , bSet       :: Vty.Key
-  , bChangelog :: Vty.Key
-  , bShowAllVersions :: Vty.Key
-  , bShowAllTools :: Vty.Key
+  { bUp        :: Key
+  , bDown      :: Key
+  , bQuit      :: Key
+  , bInstall   :: Key
+  , bUninstall :: Key
+  , bSet       :: Key
+  , bChangelog :: Key
+  , bShowAllVersions :: Key
+  , bShowAllTools :: Key
   }
   deriving (Show, GHC.Generic)
 
 defaultKeyBindings :: KeyBindings
 defaultKeyBindings = KeyBindings
-  { bUp = Vty.KUp
-  , bDown = Vty.KDown
-  , bQuit = Vty.KChar 'q'
-  , bInstall = Vty.KChar 'i'
-  , bUninstall = Vty.KChar 'u'
-  , bSet = Vty.KChar 's'
-  , bChangelog = Vty.KChar 'c'
-  , bShowAllVersions = Vty.KChar 'a'
-  , bShowAllTools = Vty.KChar 't'
+  { bUp = KUp
+  , bDown = KDown
+  , bQuit = KChar 'q'
+  , bInstall = KChar 'i'
+  , bUninstall = KChar 'u'
+  , bSet = KChar 's'
+  , bChangelog = KChar 'c'
+  , bShowAllVersions = KChar 'a'
+  , bShowAllTools = KChar 't'
   }
 
 data AppState = AppState
@@ -305,11 +320,11 @@ data Settings = Settings
   deriving (Show, GHC.Generic)
 
 data Dirs = Dirs
-  { baseDir  :: Path Abs
-  , binDir   :: Path Abs
-  , cacheDir :: Path Abs
-  , logsDir  :: Path Abs
-  , confDir  :: Path Abs
+  { baseDir  :: FilePath
+  , binDir   :: FilePath
+  , cacheDir :: FilePath
+  , logsDir  :: FilePath
+  , confDir  :: FilePath
   }
   deriving Show
 
@@ -326,10 +341,10 @@ data Downloader = Curl
   deriving (Eq, Show, Ord)
 
 data DebugInfo = DebugInfo
-  { diBaseDir  :: Path Abs
-  , diBinDir   :: Path Abs
-  , diGHCDir   :: Path Abs
-  , diCacheDir :: Path Abs
+  { diBaseDir  :: FilePath
+  , diBinDir   :: FilePath
+  , diGHCDir   :: FilePath
+  , diCacheDir :: FilePath
   , diArch     :: Architecture
   , diPlatform :: PlatformResult
   }

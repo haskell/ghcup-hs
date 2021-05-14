@@ -14,6 +14,7 @@ import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils
+import           GHCup.Utils.Prelude ( decUTF8Safe )
 import           GHCup.Utils.File
 import           GHCup.Utils.Logger
 
@@ -518,7 +519,8 @@ changelog' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
             Darwin  -> "open"
             Linux _ -> "xdg-open"
             FreeBSD -> "xdg-open"
-      exec cmd True [serializeURIRef' uri] Nothing Nothing >>= \case
+            Windows -> "start"
+      exec cmd [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing >>= \case
         Right _ -> pure $ Right ()
         Left  e -> pure $ Left $ prettyShow e
 
