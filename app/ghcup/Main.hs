@@ -126,6 +126,7 @@ toSetToolVer Nothing = SetRecommended
 data InstallCommand = InstallGHC InstallOptions
                     | InstallCabal InstallOptions
                     | InstallHLS InstallOptions
+                    | InstallStack InstallOptions
 
 data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
@@ -137,6 +138,7 @@ data InstallOptions = InstallOptions
 data SetCommand = SetGHC SetOptions
                 | SetCabal SetOptions
                 | SetHLS SetOptions
+                | SetStack SetOptions
 
 -- a superset of ToolVersion
 data SetToolVersion = SetToolVersion GHCTargetVersion
@@ -157,6 +159,7 @@ data ListOptions = ListOptions
 data RmCommand = RmGHC RmOptions
                | RmCabal Version
                | RmHLS Version
+               | RmStack Version
 
 data RmOptions = RmOptions
   { ghcVer :: GHCTargetVersion
@@ -432,6 +435,15 @@ installParser =
                  <> footerDoc (Just $ text installHLSFooter)
                  )
            )
+      <> command
+           "stack"
+           (   InstallStack
+           <$> info
+                 (installOpts (Just Stack) <**> helper)
+                 (  progDesc "Install stack"
+                 <> footerDoc (Just $ text installStackFooter)
+                 )
+           )
       )
     )
     <|> (Right <$> installOpts Nothing)
@@ -442,8 +454,16 @@ installParser =
   into "~/.ghcup/bin"
 
 Examples:
-  # install recommended GHC
+  # install recommended HLS
   ghcup install hls|]
+
+  installStackFooter :: String
+  installStackFooter = [s|Discussion:
+  Installs stack binaries into "~/.ghcup/bin"
+
+Examples:
+  # install recommended Stack
+  ghcup install stack|]
 
   installGHCFooter :: String
   installGHCFooter = [s|Discussion:
@@ -528,6 +548,15 @@ setParser =
                  <> footerDoc (Just $ text setHLSFooter)
                  )
            )
+      <> command
+           "stack"
+           (   SetStack
+           <$> info
+                 (setOpts (Just Stack) <**> helper)
+                 (  progDesc "Set stack version"
+                 <> footerDoc (Just $ text setStackFooter)
+                 )
+           )
       )
     )
     <|> (Right <$> setOpts Nothing)
@@ -541,6 +570,10 @@ setParser =
   setCabalFooter :: String
   setCabalFooter = [s|Discussion:
     Sets the the current Cabal version.|]
+
+  setStackFooter :: String
+  setStackFooter = [s|Discussion:
+    Sets the the current Stack version.|]
 
   setHLSFooter :: String
   setHLSFooter = [s|Discussion:
@@ -594,6 +627,12 @@ rmParser =
            <$> info (versionParser' (Just ListInstalled) (Just HLS) <**> helper)
                     (progDesc "Remove haskell-language-server version")
            )
+      <> command
+           "stack"
+           (   RmStack
+           <$> info (versionParser' (Just ListInstalled) (Just Stack) <**> helper)
+                    (progDesc "Remove stack version")
+           )
       )
     )
     <|> (Right <$> rmOpts Nothing)
@@ -615,6 +654,7 @@ changelogP =
                 "ghc"   -> Right GHC
                 "cabal" -> Right Cabal
                 "ghcup" -> Right GHCup
+                "stack" -> Right Stack
                 e       -> Left e
               )
             )
@@ -986,7 +1026,8 @@ toSettings options = do
          , bUninstall = fromMaybe bUninstall kUninstall
          , bSet = fromMaybe bSet kSet
          , bChangelog = fromMaybe bChangelog kChangelog
-         , bShowAll = fromMaybe bShowAll kShowAll
+         , bShowAllVersions = fromMaybe bShowAllVersions kShowAll
+         , bShowAllTools = fromMaybe bShowAllTools kShowAllTools
          }
 
 
@@ -1325,6 +1366,36 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             $(logError) [i|Also check the logs in #{logsDir}|]
                           pure $ ExitFailure 4
 
+          let installStack InstallOptions{..} =
+                (case instBindist of
+                   Nothing -> runInstTool $ do
+                     (v, vi) <- liftE $ fromVersion dls instVer Stack
+                     liftE $ installStackBin dls (_tvVersion v) (fromMaybe pfreq instPlatform)
+                     pure vi
+                   Just uri -> runInstTool' appstate{ settings = settings { noVerify = True}} $ do
+                     (v, vi) <- liftE $ fromVersion dls instVer Stack
+                     liftE $ installStackBindist
+                         (DownloadInfo uri Nothing "")
+                         (_tvVersion v)
+                         (fromMaybe pfreq instPlatform)
+                     pure vi
+                  )
+                  >>= \case
+                        VRight vi -> do
+                          runLogger $ $(logInfo) "Stack installation successful"
+                          forM_ (_viPostInstall =<< vi) $ \msg ->
+                            runLogger $ $(logInfo) msg
+                          pure ExitSuccess
+                        VLeft (V (AlreadyInstalled _ v)) -> do
+                          runLogger $ $(logWarn)
+                            [i|Stack ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm stack #{prettyVer v}' first|]
+                          pure ExitSuccess
+                        VLeft e -> do
+                          runLogger $ do
+                            $(logError) $ T.pack $ prettyShow e
+                            $(logError) [i|Also check the logs in #{logsDir}|]
+                          pure $ ExitFailure 4
+
 
           let setGHC' SetOptions{..} =
                 runSetGHC (do
@@ -1368,6 +1439,22 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           runLogger
                             $ $(logInfo)
                                 [i|HLS #{prettyVer _tvVersion} successfully set as default version|]
+                          pure ExitSuccess
+                        VLeft  e -> do
+                          runLogger $ $(logError) $ T.pack $ prettyShow e
+                          pure $ ExitFailure 14
+
+          let setStack' SetOptions{..} =
+                runSetCabal (do
+                    v <- liftE $ fst <$> fromVersion' dls sToolVer Stack
+                    liftE $ setStack (_tvVersion v)
+                    pure v
+                  )
+                  >>= \case
+                        VRight GHCTargetVersion{..} -> do
+                          runLogger
+                            $ $(logInfo)
+                                [i|Stack #{prettyVer _tvVersion} successfully set as default version|]
                           pure ExitSuccess
                         VLeft  e -> do
                           runLogger $ $(logError) $ T.pack $ prettyShow e
@@ -1418,6 +1505,20 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           runLogger $ $(logError) $ T.pack $ prettyShow e
                           pure $ ExitFailure 15
 
+          let rmStack' tv =
+                runRm (do
+                    liftE $
+                      rmStackVer tv
+                    pure (getVersionInfo tv Stack dls)
+                  )
+                  >>= \case
+                        VRight vi -> do
+                          forM_ (_viPostRemove =<< vi) $ \msg ->
+                            runLogger $ $(logInfo) msg
+                          pure ExitSuccess
+                        VLeft  e -> do
+                          runLogger $ $(logError) $ T.pack $ prettyShow e
+                          pure $ ExitFailure 15
 
           res <- case optCommand of
 #if defined(BRICK)
@@ -1429,6 +1530,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Install (Left (InstallGHC iopts)) -> installGHC iopts
             Install (Left (InstallCabal iopts)) -> installCabal iopts
             Install (Left (InstallHLS iopts)) -> installHLS iopts
+            Install (Left (InstallStack iopts)) -> installStack iopts
             InstallCabalLegacy iopts -> do
               runLogger ($(logWarn) [i|This is an old-style command for installing cabal. Use 'ghcup install cabal' instead.|])
               installCabal iopts
@@ -1439,6 +1541,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Set (Left (SetGHC sopts)) -> setGHC' sopts
             Set (Left (SetCabal sopts)) -> setCabal' sopts
             Set (Left (SetHLS sopts)) -> setHLS' sopts
+            Set (Left (SetStack sopts)) -> setStack' sopts
 
             List ListOptions {..} ->
               runListGHC (do
@@ -1453,6 +1556,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Rm (Left (RmGHC rmopts)) -> rmGHC' rmopts
             Rm (Left (RmCabal rmopts)) -> rmCabal' rmopts
             Rm (Left (RmHLS rmopts)) -> rmHLS' rmopts
+            Rm (Left (RmStack rmopts)) -> rmStack' rmopts
 
             DInfo ->
               do runDebugInfo $ liftE getDebugInfo
@@ -1654,6 +1758,16 @@ fromVersion' av SetNext tool = do
         . cycle
         . sort
         $ hlses) ?? NoToolVersionSet tool
+    Stack -> do
+      set <- stackSet !? NoToolVersionSet tool
+      stacks <- rights <$> lift getInstalledStacks
+      (fmap (GHCTargetVersion Nothing)
+        . headMay
+        . tail
+        . dropWhile (/= set)
+        . cycle
+        . sort
+        $ stacks) ?? NoToolVersionSet tool
     GHCup -> fail "GHCup cannot be set"
   let vi = getVersionInfo (_tvVersion next) tool av
   pure (next, vi)
@@ -1851,6 +1965,13 @@ checkForUpdates dls pfreq = do
       when (l > hls_ver)
         $ $(logWarn)
             [i|New HLS version available: #{prettyVer l}. To upgrade, run 'ghcup install hls #{prettyVer l}'|]
+
+  forM_ (getLatest dls Stack) $ \(l, _) -> do
+    let mstack_ver = latestInstalled Stack
+    forM mstack_ver $ \stack_ver ->
+      when (l > stack_ver)
+        $ $(logWarn)
+            [i|New Stack version available: #{prettyVer l}. To upgrade, run 'ghcup install stack #{prettyVer l}'|]
 
 
 prettyDebugInfo :: DebugInfo -> String

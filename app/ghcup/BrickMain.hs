@@ -66,7 +66,8 @@ data BrickData = BrickData
   deriving Show
 
 data BrickSettings = BrickSettings
-  { showAll :: Bool
+  { showAllVersions :: Bool
+  , showAllTools    :: Bool
   }
   deriving Show
 
@@ -97,17 +98,22 @@ keyHandlers KeyBindings {..} =
   , (bUninstall, const "Uninstall", withIOAction del')
   , (bSet, const "Set"      , withIOAction set')
   , (bChangelog, const "ChangeLog", withIOAction changelog')
-  , ( bShowAll
+  , ( bShowAllVersions
     , \BrickSettings {..} ->
-       if showAll then "Hide old versions" else "Show all versions"
-    , hideShowHandler
+       if showAllVersions then "Don't show all versions" else "Show all versions"
+    , hideShowHandler (not . showAllVersions) showAllTools
+    )
+  , ( bShowAllTools
+    , \BrickSettings {..} ->
+       if showAllTools then "Don't show all tools" else "Show all tools"
+    , hideShowHandler showAllVersions (not . showAllTools)
     )
   , (bUp, const "Up", \BrickState {..} -> continue BrickState{ appState = moveCursor 1 appState Up, .. })
   , (bDown, const "Down", \BrickState {..} -> continue BrickState{ appState = moveCursor 1 appState Down, .. })
   ]
  where
-  hideShowHandler BrickState{..} =
-    let newAppSettings   = appSettings { showAll = not . showAll $ appSettings }
+  hideShowHandler f p BrickState{..} =
+    let newAppSettings   = appSettings { showAllVersions = f appSettings , showAllTools = p appSettings }
         newInternalState = constructList appData newAppSettings (Just appState)
     in  continue (BrickState appData newAppSettings newInternalState appKeys)
 
@@ -142,7 +148,12 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
       <+> minHSize 15 (str "Version")
       <+> padLeft (Pad 1) (minHSize 25 $ str "Tags")
       <+> padLeft (Pad 5) (str "Notes")
-  renderList' = withDefAttr listAttr . drawListElements renderItem True
+  renderList' = withDefAttr listAttr . drawListElements renderItem True . filterStack
+  filterStack appState'
+    | showAllTools as = appState'
+    | let v = clr appState'
+          nv = V.filter (\ListResult{..} -> lTool /= Stack) v
+    , otherwise = BrickInternalState { clr = nv, ix = ix appState' }
   renderItem _ b listResult@ListResult{..} =
     let marks = if
           | lSet       -> (withAttr "set" $ str "✔✔")
@@ -194,6 +205,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
   printTool GHC = str "GHC"
   printTool GHCup = str "GHCup"
   printTool HLS = str "HLS"
+  printTool Stack = str "Stack"
 
   printNotes ListResult {..} =
     (if hlsPowered then [withAttr "hls-powered" $ str "hls-powered"] else mempty
@@ -351,7 +363,7 @@ constructList :: BrickData
               -> Maybe BrickInternalState
               -> BrickInternalState
 constructList appD appSettings =
-  replaceLR (filterVisible (showAll appSettings)) (lr appD)
+  replaceLR (filterVisible (showAllVersions appSettings)) (lr appD)
 
 listSelectedElement' :: BrickInternalState -> Maybe (Int, ListResult)
 listSelectedElement' BrickInternalState{..} = fmap (ix, ) $ clr !? ix
@@ -385,9 +397,9 @@ replaceLR filterF lr s =
 
 
 filterVisible :: Bool -> ListResult -> Bool
-filterVisible showAll e | lInstalled e = True
-                        | showAll      = True
-                        | otherwise    = not (elem Old (lTag e))
+filterVisible showAllVersions e | lInstalled e = True
+                                | showAllVersions = True
+                                | otherwise    = not (elem Old (lTag e))
 
 
 install' :: BrickState -> (Int, ListResult) -> IO (Either String ())
@@ -432,6 +444,9 @@ install' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
         HLS   -> do
           let vi = getVersionInfo lVer HLS dls
           liftE $ installHLSBin dls lVer pfreq $> vi
+        Stack -> do
+          let vi = getVersionInfo lVer Stack dls
+          liftE $ installStackBin dls lVer pfreq $> vi
     )
     >>= \case
           VRight vi                         -> do
@@ -460,6 +475,7 @@ set' _ (_, ListResult {..}) = do
         GHC   -> liftE $ setGHC (GHCTargetVersion lCross lVer) SetGHCOnly $> ()
         Cabal -> liftE $ setCabal lVer $> ()
         HLS   -> liftE $ setHLS lVer $> ()
+        Stack -> liftE $ setStack lVer $> ()
         GHCup -> pure ()
     )
     >>= \case
@@ -481,6 +497,7 @@ del' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
         GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> vi
         Cabal -> liftE $ rmCabalVer lVer $> vi
         HLS   -> liftE $ rmHLSVer lVer $> vi
+        Stack -> liftE $ rmStackVer lVer $> vi
         GHCup -> pure Nothing
     )
     >>= \case
@@ -564,7 +581,7 @@ brickMain s l av pfreq' = do
 
 
 defaultAppSettings :: BrickSettings
-defaultAppSettings = BrickSettings { showAll = False }
+defaultAppSettings = BrickSettings { showAllVersions = False, showAllTools = False }
 
 
 getDownloads' :: IO (Either String GHCupDownloads)
