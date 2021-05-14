@@ -123,8 +123,8 @@ main = do
 
  where
   valAndExit f contents = do
-    (GHCupInfo _ av) <- case Y.decodeEither' contents of
+    (GHCupInfo _ av gt) <- case Y.decodeEither' contents of
       Right r -> pure r
       Left  e -> die (color Red $ show e)
-    myLoggerT (LoggerConfig True (B.hPut stdout) (\_ -> pure ())) (f av)
+    myLoggerT (LoggerConfig True (B.hPut stdout) (\_ -> pure ())) (f av gt)
       >>= exitWith

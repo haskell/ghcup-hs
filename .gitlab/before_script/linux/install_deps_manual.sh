@@ -19,7 +19,7 @@ ednf() {
 }
 
 ednf update
-ednf install gcc gcc-c++ gmp gmp-devel make ncurses ncurses-devel xz xz-devel perl zlib zlib-devel openssl-devel openssl-libs openssl libffi libffi-devel lbzip2 lbzip2-utils
+ednf install gcc gcc-c++ gmp gmp-devel make ncurses ncurses-devel xz xz-devel perl zlib zlib-devel openssl-devel openssl-libs openssl libffi libffi-devel lbzip2 lbzip2-utils bzip2-devel
 if [ "${ARCH}" = "ARM64" ] ; then
 	ednf install numactl numactl-libs numactl-devel
 fi

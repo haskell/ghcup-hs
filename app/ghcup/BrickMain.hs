@@ -6,6 +6,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE ViewPatterns      #-}
+{-# LANGUAGE RankNTypes        #-}
 
 module BrickMain where
 
@@ -14,6 +15,7 @@ import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils
+import           GHCup.Utils.Prelude ( decUTF8Safe )
 import           GHCup.Utils.File
 import           GHCup.Utils.Logger
 
@@ -31,6 +33,7 @@ import           Codec.Archive
 import           Control.Exception.Safe
 import           Control.Monad.Logger
 import           Control.Monad.Reader
+import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Resource
 import           Data.Bool
 import           Data.Functor
@@ -57,11 +60,12 @@ import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
 
 
+hiddenTools :: [Tool]
+hiddenTools = [Stack]
+
 
 data BrickData = BrickData
   { lr    :: [ListResult]
-  , dls   :: GHCupDownloads
-  , pfreq :: PlatformRequest
   }
   deriving Show
 
@@ -96,7 +100,7 @@ keyHandlers KeyBindings {..} =
   [ (bQuit, const "Quit"     , halt)
   , (bInstall, const "Install"  , withIOAction install')
   , (bUninstall, const "Uninstall", withIOAction del')
-  , (bSet, const "Set"      , withIOAction set')
+  , (bSet, const "Set"      , withIOAction ((liftIO .) . set'))
   , (bChangelog, const "ChangeLog", withIOAction changelog')
   , ( bShowAllVersions
     , \BrickSettings {..} ->
@@ -148,12 +152,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
       <+> minHSize 15 (str "Version")
       <+> padLeft (Pad 1) (minHSize 25 $ str "Tags")
       <+> padLeft (Pad 5) (str "Notes")
-  renderList' = withDefAttr listAttr . drawListElements renderItem True . filterStack
-  filterStack appState'
-    | showAllTools as = appState'
-    | let v = clr appState'
-          nv = V.filter (\ListResult{..} -> lTool /= Stack) v
-    , otherwise = BrickInternalState { clr = nv, ix = ix appState' }
+  renderList' = withDefAttr listAttr . drawListElements renderItem True
   renderItem _ b listResult@ListResult{..} =
     let marks = if
           | lSet       -> (withAttr "set" $ str "✔✔")
@@ -328,21 +327,25 @@ moveCursor steps ais@BrickInternalState{..} direction =
 
 -- | Suspend the current UI and run an IO action in terminal. If the
 -- IO action returns a Left value, then it's thrown as userError.
-withIOAction :: (BrickState -> (Int, ListResult) -> IO (Either String a))
+withIOAction :: (BrickState
+                 -> (Int, ListResult)
+                 -> ReaderT AppState IO (Either String a))
              -> BrickState
              -> EventM n (Next BrickState)
 withIOAction action as = case listSelectedElement' (appState as) of
   Nothing      -> continue as
-  Just (ix, e) -> suspendAndResume $ do
-    action as (ix, e) >>= \case
-      Left  err -> putStrLn ("Error: " <> err)
-      Right _   -> putStrLn "Success"
-    getAppData Nothing (pfreq . appData $ as) >>= \case
-      Right data' -> do
-        putStrLn "Press enter to continue"
-        _ <- getLine
-        pure (updateList data' as)
-      Left err -> throwIO $ userError err
+  Just (ix, e) -> do
+    suspendAndResume $ do
+      settings <- readIORef settings'
+      flip runReaderT settings $ action as (ix, e) >>= \case
+        Left  err -> liftIO $ putStrLn ("Error: " <> err)
+        Right _   -> liftIO $ putStrLn "Success"
+      getAppData Nothing >>= \case
+        Right data' -> do
+          putStrLn "Press enter to continue"
+          _ <- getLine
+          pure (updateList data' as)
+        Left err -> throwIO $ userError err
 
 
 -- | Update app data and list internal state based on new evidence.
@@ -363,7 +366,9 @@ constructList :: BrickData
               -> Maybe BrickInternalState
               -> BrickInternalState
 constructList appD appSettings =
-  replaceLR (filterVisible (showAllVersions appSettings)) (lr appD)
+  replaceLR (filterVisible (showAllVersions appSettings)
+                           (showAllTools appSettings))
+            (lr appD)
 
 listSelectedElement' :: BrickInternalState -> Maybe (Int, ListResult)
 listSelectedElement' BrickInternalState{..} = fmap (ix, ) $ clr !? ix
@@ -396,21 +401,32 @@ replaceLR filterF lr s =
     lTool e1 == lTool e2 && lVer e1 == lVer e2 && lCross e1 == lCross e2
 
 
-filterVisible :: Bool -> ListResult -> Bool
-filterVisible showAllVersions e | lInstalled e = True
-                                | showAllVersions = True
-                                | otherwise    = not (elem Old (lTag e))
+filterVisible :: Bool -> Bool -> ListResult -> Bool
+filterVisible v t e | lInstalled e = True
+                    | v
+                    , not t
+                    , not (elem (lTool e) hiddenTools) = True
+                    | not v
+                    , t
+                    , not (elem Old (lTag e)) = True
+                    | v
+                    , t = True
+                    | otherwise = not (elem Old (lTag e)) &&
+                                  not (elem (lTool e) hiddenTools)
 
 
-install' :: BrickState -> (Int, ListResult) -> IO (Either String ())
-install' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
-  settings <- readIORef settings'
-  l        <- readIORef logger'
+install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
+         => BrickState
+         -> (Int, ListResult)
+         -> m (Either String ())
+install' _ (_, ListResult {..}) = do
+  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
+
+  l        <- liftIO $ readIORef logger'
   let runLogger = myLoggerT l
 
   let run =
         runLogger
-          . flip runReaderT settings
           . runResourceT
           . runE
             @'[ AlreadyInstalled
@@ -434,24 +450,24 @@ install' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
       case lTool of
         GHC   -> do
           let vi = getVersionInfo lVer GHC dls
-          liftE $ installGHCBin dls lVer pfreq $> vi
+          liftE $ installGHCBin lVer $> vi
         Cabal -> do
           let vi = getVersionInfo lVer Cabal dls
-          liftE $ installCabalBin dls lVer pfreq $> vi
+          liftE $ installCabalBin lVer $> vi
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
-          liftE $ upgradeGHCup dls Nothing False pfreq $> vi
+          liftE $ upgradeGHCup Nothing False $> vi
         HLS   -> do
           let vi = getVersionInfo lVer HLS dls
-          liftE $ installHLSBin dls lVer pfreq $> vi
+          liftE $ installHLSBin lVer $> vi
         Stack -> do
           let vi = getVersionInfo lVer Stack dls
-          liftE $ installStackBin dls lVer pfreq $> vi
+          liftE $ installStackBin lVer $> vi
     )
     >>= \case
           VRight vi                         -> do
             forM_ (_viPostInstall =<< vi) $ \msg ->
-              runLogger $ $(logInfo) msg
+              myLoggerT l $ $(logInfo) msg
             pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
           VLeft (V NoUpdate) -> pure $ Right ()
@@ -483,13 +499,16 @@ set' _ (_, ListResult {..}) = do
           VLeft  e -> pure $ Left (prettyShow e)
 
 
-del' :: BrickState -> (Int, ListResult) -> IO (Either String ())
-del' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
-  settings <- readIORef settings'
-  l        <- readIORef logger'
-  let runLogger = myLoggerT l
+del' :: (MonadReader AppState m, MonadIO m, MonadFail m, MonadMask m, MonadUnliftIO m)
+     => BrickState
+     -> (Int, ListResult)
+     -> m (Either String ())
+del' _ (_, ListResult {..}) = do
+  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
 
-  let run = runLogger . flip runReaderT settings . runE @'[NotInstalled]
+  l <- liftIO $ readIORef logger'
+  let runLogger = myLoggerT l
+  let run = myLoggerT l . runE @'[NotInstalled]
 
   run (do
       let vi = getVersionInfo lVer lTool dls
@@ -508,8 +527,12 @@ del' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
           VLeft  e -> pure $ Left (prettyShow e)
 
 
-changelog' :: BrickState -> (Int, ListResult) -> IO (Either String ())
-changelog' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
+changelog' :: (MonadReader AppState m, MonadIO m)
+           => BrickState
+           -> (Int, ListResult)
+           -> m (Either String ())
+changelog' _ (_, ListResult {..}) = do
+  AppState { pfreq, ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
   case getChangeLog dls lTool (Left lVer) of
     Nothing -> pure $ Left
       [i|Could not find ChangeLog for #{lTool}, version #{prettyVer lVer}|]
@@ -518,7 +541,8 @@ changelog' BrickState { appData = BrickData {..} } (_, ListResult {..}) = do
             Darwin  -> "open"
             Linux _ -> "xdg-open"
             FreeBSD -> "xdg-open"
-      exec cmd True [serializeURIRef' uri] Nothing Nothing >>= \case
+            Windows -> "start"
+      exec cmd [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing >>= \case
         Right _ -> pure $ Right ()
         Left  e -> pure $ Left $ prettyShow e
 
@@ -537,6 +561,8 @@ settings' = unsafePerformIO $ do
                                 })
                       dirs
                       defaultKeyBindings
+                      (GHCupInfo mempty mempty mempty)
+                      (PlatformRequest A_64 Darwin Nothing)
 
 
 
@@ -552,10 +578,9 @@ logger' = unsafePerformIO
 
 brickMain :: AppState
           -> LoggerConfig
-          -> GHCupDownloads
-          -> PlatformRequest
+          -> GHCupInfo
           -> IO ()
-brickMain s l av pfreq' = do
+brickMain s l gi = do
   writeIORef settings' s
   -- logger interpreter
   writeIORef logger'   l
@@ -563,7 +588,7 @@ brickMain s l av pfreq' = do
 
   no_color <- isJust <$> lookupEnv "NO_COLOR"
 
-  eAppData <- getAppData (Just av) pfreq'
+  eAppData <- getAppData (Just gi)
   case eAppData of
     Right ad ->
       defaultMain
@@ -584,8 +609,8 @@ defaultAppSettings :: BrickSettings
 defaultAppSettings = BrickSettings { showAllVersions = False, showAllTools = False }
 
 
-getDownloads' :: IO (Either String GHCupDownloads)
-getDownloads' = do
+getGHCupInfo :: IO (Either String GHCupInfo)
+getGHCupInfo = do
   settings <- readIORef settings'
   l        <- readIORef logger'
   let runLogger = myLoggerT l
@@ -594,29 +619,25 @@ getDownloads' = do
     runLogger
     . flip runReaderT settings
     . runE @'[JSONError , DownloadFailed , FileDoesNotExistError]
-    $ fmap _ghcupDownloads
     $ liftE
-    $ getDownloadsF (urlSource . GT.settings $ settings)
+    $ getDownloadsF (GT.settings settings) (GT.dirs settings)
 
   case r of
     VRight a -> pure $ Right a
     VLeft  e -> pure $ Left (prettyShow e)
 
 
-getAppData :: Maybe GHCupDownloads
-           -> PlatformRequest
+getAppData :: Maybe GHCupInfo
            -> IO (Either String BrickData)
-getAppData mg pfreq' = do
-  settings <- readIORef settings'
-  l        <- readIORef logger'
+getAppData mgi = runExceptT $ do
+  l        <- liftIO $ readIORef logger'
   let runLogger = myLoggerT l
 
-  r <- maybe getDownloads' (pure . Right) mg
+  r <- ExceptT $ maybe getGHCupInfo (pure . Right) mgi
+  liftIO $ modifyIORef settings' (\s -> s { ghcupInfo = r })
+  settings <- liftIO $ readIORef settings'
 
   runLogger . flip runReaderT settings $ do
-    case r of
-      Right dls -> do
-        lV <- listVersions dls Nothing Nothing pfreq'
-        pure $ Right $ BrickData (reverse lV) dls pfreq'
-      Left e -> pure $ Left [i|#{e}|]
+    lV <- listVersions Nothing Nothing
+    pure $ BrickData (reverse lV)
 

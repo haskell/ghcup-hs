@@ -8,7 +8,7 @@ Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 -}
 module GHCup.Version where
 
@@ -25,7 +25,7 @@ import qualified Data.Text                     as T
 
 -- | This reflects the API version of the YAML.
 ghcupURL :: URI
-ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.4.yaml|]
+ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.5.yaml|]
 
 -- | The current ghcup version.
 ghcUpVer :: PVP

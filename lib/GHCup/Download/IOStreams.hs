@@ -24,8 +24,6 @@ import           Data.CaseInsensitive           ( CI )
 import           Data.IORef
 import           Data.Maybe
 import           Data.Text.Read
-import           HPath
-import           HPath.IO                      as HIO
 import           Haskus.Utils.Variant.Excepts
 import           Network.Http.Client     hiding ( URL )
 import           Optics
@@ -33,11 +31,8 @@ import           Prelude                 hiding ( abs
                                                 , readFile
                                                 , writeFile
                                                 )
-import "unix"    System.Posix.IO.ByteString
-                                         hiding ( fdWrite )
-import "unix-bytestring" System.Posix.IO.ByteString
-                                                ( fdWrite )
 import           System.ProgressBar
+import           System.IO
 import           URI.ByteString
 
 import qualified Data.ByteString               as BS
@@ -81,12 +76,12 @@ downloadToFile :: (MonadMask m, MonadIO m)
                -> ByteString       -- ^ host (e.g. "www.example.com")
                -> ByteString       -- ^ path (e.g. "/my/file") including query
                -> Maybe Int        -- ^ optional port (e.g. 3000)
-               -> Path Abs         -- ^ destination file to create and write to
+               -> FilePath         -- ^ destination file to create and write to
                -> Excepts '[DownloadFailed] m ()
 downloadToFile https host fullPath port destFile = do
-  fd <- liftIO $ createRegularFileFd newFilePerms destFile
-  let stepper = fdWrite fd
-  flip finally (liftIO $ closeFd fd)
+  fd <- liftIO $ openFile destFile WriteMode
+  let stepper = BS.hPut fd
+  flip finally (liftIO $ hClose fd)
     $ reThrowAll DownloadFailed $ downloadInternal True https host fullPath port stepper
 
 
