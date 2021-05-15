@@ -4,8 +4,6 @@ It follows the unix UNIX philosophy of [do one thing and do it well](https://en.
 
 Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [pyenv](https://github.com/pyenv/pyenv) and [jenv](http://www.jenv.be).
 
-*Ubuntu users may prefer [hvr's ppa](https://launchpad.net/~hvr/+archive/ubuntu/ghc).*
-
 ## Table of Contents
 
    * [Installation](#installation)
@@ -79,7 +77,7 @@ ghcup install cabal
 ghcup upgrade
 ```
 
-Generally this is meant to be used with [`cabal-install`](https://hackage.haskell.org/package/cabal-install), which
+GHCup works very well with [`cabal-install`](https://hackage.haskell.org/package/cabal-install), which
 handles your haskell packages and can demand that [a specific version](https://cabal.readthedocs.io/en/latest/nix-local-build.html#cfg-flag---with-compiler)  of `ghc` is available, which `ghcup` can do.
 
 ### Configuration
@@ -236,8 +234,8 @@ ghcup is not a reimplementation of stack. The only common part is automatic inst
 
 2. Why not support windows?
 
-Consider using [Chocolatey](https://chocolatey.org/search?q=ghc) or [ghcups](https://github.com/kakkun61/ghcups).
+Windows support is [WIP](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/130).
 
 3. Why the haskell reimplementation?
 
-Why not?
+:-)
