@@ -28,8 +28,8 @@ else
 fi
 chmod +x ghcup-bin
 ./ghcup-bin upgrade -i -f
-./ghcup-bin -s file://$(pwd)/ghcup-${JSON_VERSION}.yaml install ${GHC_VERSION}
-./ghcup-bin -s file://$(pwd)/ghcup-${JSON_VERSION}.yaml install-cabal ${CABAL_VERSION}
+./ghcup-bin install ${GHC_VERSION}
+./ghcup-bin install-cabal ${CABAL_VERSION}
 
 # utils
 apk add --no-cache \

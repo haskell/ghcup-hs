@@ -85,6 +85,7 @@ data Tool = GHC
           | Cabal
           | GHCup
           | HLS
+          | Stack
   deriving (Eq, GHC.Generic, Ord, Show, Enum, Bounded)
 
 
@@ -257,6 +258,7 @@ data UserKeyBindings = UserKeyBindings
   , kSet       :: Maybe Vty.Key
   , kChangelog :: Maybe Vty.Key
   , kShowAll   :: Maybe Vty.Key
+  , kShowAllTools :: Maybe Vty.Key
   }
   deriving (Show, GHC.Generic)
 
@@ -268,7 +270,8 @@ data KeyBindings = KeyBindings
   , bUninstall :: Vty.Key
   , bSet       :: Vty.Key
   , bChangelog :: Vty.Key
-  , bShowAll   :: Vty.Key
+  , bShowAllVersions :: Vty.Key
+  , bShowAllTools :: Vty.Key
   }
   deriving (Show, GHC.Generic)
 
@@ -281,7 +284,8 @@ defaultKeyBindings = KeyBindings
   , bUninstall = Vty.KChar 'u'
   , bSet = Vty.KChar 's'
   , bChangelog = Vty.KChar 'c'
-  , bShowAll = Vty.KChar 'a'
+  , bShowAllVersions = Vty.KChar 'a'
+  , bShowAllTools = Vty.KChar 't'
   }
 
 data AppState = AppState

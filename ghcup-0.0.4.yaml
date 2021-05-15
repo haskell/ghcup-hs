@@ -1835,3 +1835,45 @@ ghcupDownloads:
               dlHash: 4e89b192e2f49637d772e974f2c17b16da067ecd5912575eaa542551de97681b
           Linux_Alpine:
             unknown_versioning: *hls-64
+  Stack:
+    2.5.1:
+      viTags: []
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v251
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-251-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.5.1/stack-2.5.1-linux-x86_64.tar.gz
+              dlHash: c83b6c93d6541c0bce2175085a04062020f4160a86116e20f3b343b562f2d1e8
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.5.1/stack-2.5.1-osx-x86_64.tar.gz
+              dlHash: f4aedfa8fbe371f77286ee97ec5c3c553842e7ae15b2952a8b8442dccba04bf0
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-251-64
+    2.7.1:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v271
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.1/stack-2.7.1-linux-x86_64.tar.gz
+              dlHash: 2bc47749ee4be5eccb52a2d4a6a00b0f3b28b92517742b40c675836d7db2777d
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.1/stack-2.7.1-osx-x86_64.tar.gz
+              dlHash: 4248c6fbc87e8a2c06f39e867eb5ef28eae0d99470137cb415356c631c0dcbf2
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-64
+

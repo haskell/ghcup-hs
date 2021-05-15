@@ -96,14 +96,19 @@ eghcup set ${GHC_VERSION}
 eghcup rm 8.10.3
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 
-# install hls
 if [ "${OS}" = "DARWIN" ] ; then
 	eghcup install hls
 	haskell-language-server-wrapper --version
+
+	eghcup install stack
+	stack --version
 elif [ "${OS}" = "LINUX" ] ; then
 	if [ "${ARCH}" = "64" ] ; then
 		eghcup install hls
 		haskell-language-server-wrapper --version
+
+		eghcup install stack
+		stack --version
 	fi
 fi
 

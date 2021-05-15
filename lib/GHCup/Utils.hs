@@ -359,6 +359,54 @@ getInstalledHLSs = do
         Just (Left  _) -> pure $ Left f
         Nothing        -> pure $ Left f
 
+-- | Get all installed stacks, by matching on
+-- @~\/.ghcup\/bin/stack-<\stackver\>@.
+getInstalledStacks :: (MonadReader AppState m, MonadIO m, MonadCatch m)
+                   => m [Either (Path Rel) Version]
+getInstalledStacks = do
+  AppState { dirs = Dirs {..} } <- ask
+  bins                          <- liftIO $ handleIO (\_ -> pure []) $ findFiles
+    binDir
+    (makeRegexOpts compExtended
+                   execBlank
+                   ([s|^stack-.*$|] :: ByteString)
+    )
+  forM bins $ \f ->
+    case
+          fmap (version . decUTF8Safe) . B.stripPrefix "stack-" . toFilePath $ f
+      of
+        Just (Right r) -> pure $ Right r
+        Just (Left  _) -> pure $ Left f
+        Nothing        -> pure $ Left f
+
+-- Return the currently set stack version, if any.
+-- TODO: there's a lot of code duplication here :>
+stackSet :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
+stackSet = do
+  AppState {dirs = Dirs {..}} <- ask
+  let stackBin = binDir </> [rel|stack|]
+
+  liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
+    broken <- isBrokenSymlink stackBin
+    if broken
+      then pure Nothing
+      else do
+        link <- readSymbolicLink $ toFilePath stackBin
+        Just <$> linkVersion link
+ where
+  linkVersion :: MonadThrow m => ByteString -> m Version
+  linkVersion bs = do
+    t <- throwEither $ E.decodeUtf8' bs
+    throwEither $ MP.parse parser "" t
+   where
+    parser =
+      MP.chunk "stack-" *> version'
+
+-- | Whether the given Stack version is installed.
+stackInstalled :: (MonadIO m, MonadReader AppState m, MonadCatch m) => Version -> m Bool
+stackInstalled ver = do
+  vers <- fmap rights getInstalledStacks
+  pure $ elem ver vers
 
 -- | Whether the given HLS version is installed.
 hlsInstalled :: (MonadIO m, MonadReader AppState m, MonadCatch m) => Version -> m Bool

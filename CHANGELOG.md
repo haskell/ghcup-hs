@@ -5,6 +5,11 @@
 * Add date to GHC bindist names created by ghcup
 * Warn when /tmp doesn't have 5GB or more of disk space
 * Allow to compile GHC from git repo wrt [#126](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/126)
+* Add stack support
+
+## 0.1.14.2 -- 2021-05-12
+
+* Remove dead dependency on ascii-string
 
 ## 0.1.14.1 -- 2021-04-11
 

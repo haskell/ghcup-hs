@@ -503,6 +503,115 @@ installHLSBin bDls ver pfreq = do
   installHLSBindist dlinfo ver pfreq
 
 
+-- | Installs stack into @~\/.ghcup\/bin/stack-\<ver\>@ and
+-- creates a default @stack -> stack-x.y.z.q@ symlink for
+-- the latest installed version.
+installStackBin :: ( MonadMask m
+                   , MonadCatch m
+                   , MonadReader AppState m
+                   , MonadLogger m
+                   , MonadResource m
+                   , MonadIO m
+                   , MonadUnliftIO m
+                   , MonadFail m
+                   )
+                => GHCupDownloads
+                -> Version
+                -> PlatformRequest
+                -> Excepts
+                     '[ AlreadyInstalled
+                      , CopyError
+                      , DigestError
+                      , DownloadFailed
+                      , NoDownload
+                      , NotInstalled
+                      , UnknownArchive
+                      , TarDirDoesNotExist
+#if !defined(TAR)
+                      , ArchiveResult
+#endif
+                      ]
+                     m
+                     ()
+installStackBin bDls ver pfreq = do
+  dlinfo <- lE $ getDownloadInfo Stack ver pfreq bDls
+  installStackBindist dlinfo ver pfreq
+
+
+-- | Like 'installStackBin', except takes the 'DownloadInfo' as
+-- argument instead of looking it up from 'GHCupDownloads'.
+installStackBindist :: ( MonadMask m
+                       , MonadCatch m
+                       , MonadReader AppState m
+                       , MonadLogger m
+                       , MonadResource m
+                       , MonadIO m
+                       , MonadUnliftIO m
+                       , MonadFail m
+                       )
+                    => DownloadInfo
+                    -> Version
+                    -> PlatformRequest
+                    -> Excepts
+                         '[ AlreadyInstalled
+                          , CopyError
+                          , DigestError
+                          , DownloadFailed
+                          , NoDownload
+                          , NotInstalled
+                          , UnknownArchive
+                          , TarDirDoesNotExist
+#if !defined(TAR)
+                          , ArchiveResult
+#endif
+                          ]
+                         m
+                         ()
+installStackBindist dlinfo ver PlatformRequest {..} = do
+  lift $ $(logDebug) [i|Requested to install stack version #{ver}|]
+
+  AppState {dirs = Dirs {..}} <- lift ask
+
+  whenM (lift (hlsInstalled ver))
+    (throwE $ AlreadyInstalled Stack ver)
+
+  -- download (or use cached version)
+  dl                           <- liftE $ downloadCached dlinfo Nothing
+
+  -- unpack
+  tmpUnpack                    <- lift withGHCupTmpDir
+  liftE $ unpackToDir tmpUnpack dl
+  void $ liftIO $ darwinNotarization _rPlatform tmpUnpack
+
+  -- the subdir of the archive where we do the work
+  workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
+
+  liftE $ installStack' workdir binDir
+
+  -- create symlink if this is the latest version
+  sVers <- lift $ fmap rights getInstalledStacks
+  let lInstStack = headMay . reverse . sort $ sVers
+  when (maybe True (ver >=) lInstStack) $ liftE $ setStack ver
+
+ where
+  -- | Install an unpacked stack distribution.
+  installStack' :: (MonadLogger m, MonadCatch m, MonadIO m)
+                => Path Abs      -- ^ Path to the unpacked stack bindist (where the executable resides)
+                -> Path Abs      -- ^ Path to install to
+                -> Excepts '[CopyError] m ()
+  installStack' path inst = do
+    lift $ $(logInfo) "Installing stack"
+    let stackFile = [rel|stack|]
+    liftIO $ createDirRecursive' inst
+    destFileName <- lift $ parseRel (toFilePath stackFile <> "-" <> verToBS ver)
+    let destPath = inst </> destFileName
+    handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+      (path </> stackFile)
+      destPath
+      Overwrite
+    lift $ chmod_755 destPath
+
+
 
 
     ---------------------
@@ -681,6 +790,35 @@ setHLS ver = do
   pure ()
 
 
+-- | Set the @~\/.ghcup\/bin\/stack@ symlink.
+setStack :: (MonadReader AppState m, MonadLogger m, MonadThrow m, MonadFail m, MonadIO m)
+         => Version
+         -> Excepts '[NotInstalled] m ()
+setStack ver = do
+  let verBS = verToBS ver
+  targetFile <- parseRel ("stack-" <> verBS)
+
+  -- symlink destination
+  AppState {dirs = Dirs {..}} <- lift ask
+  liftIO $ createDirRecursive' binDir
+
+  whenM (liftIO $ not <$> doesFileExist (binDir </> targetFile))
+    $ throwE
+    $ NotInstalled Stack (GHCTargetVersion Nothing ver)
+
+  let stackbin = binDir </> [rel|stack|]
+
+  -- delete old file (may be binary or symlink)
+  lift $ $(logDebug) [i|rm -f #{toFilePath stackbin}|]
+  liftIO $ hideError doesNotExistErrorType $ deleteFile
+    stackbin
+
+  -- create symlink
+  let destL = toFilePath targetFile
+  lift $ $(logDebug) [i|ln -s #{destL} #{toFilePath stackbin}|]
+  liftIO $ createSymlink stackbin destL
+
+  pure ()
 
 
 
@@ -738,15 +876,17 @@ listVersions av lt' criteria pfreq = do
   cabals <- getInstalledCabals' cSet
   hlsSet' <- hlsSet
   hlses <- getInstalledHLSs
+  sSet <- stackSet
+  stacks <- getInstalledStacks
 
-  go lt' cSet cabals hlsSet' hlses
+  go lt' cSet cabals hlsSet' hlses sSet stacks
  where
-  go lt cSet cabals hlsSet' hlses = do
+  go lt cSet cabals hlsSet' hlses sSet stacks = do
     case lt of
       Just t -> do
         -- get versions from GHCupDownloads
         let avTools = availableToolVersions av t
-        lr <- filter' <$> forM (Map.toList avTools) (toListResult t cSet cabals hlsSet' hlses)
+        lr <- filter' <$> forM (Map.toList avTools) (toListResult t cSet cabals hlsSet' hlses sSet stacks)
 
         case t of
           GHC -> do
@@ -758,13 +898,17 @@ listVersions av lt' criteria pfreq = do
           HLS -> do
             slr <- strayHLS avTools
             pure (sort (slr ++ lr))
+          Stack -> do
+            slr <- strayStacks avTools
+            pure (sort (slr ++ lr))
           GHCup -> pure lr
       Nothing -> do
-        ghcvers   <- go (Just GHC) cSet cabals hlsSet' hlses
-        cabalvers <- go (Just Cabal) cSet cabals hlsSet' hlses
-        hlsvers   <- go (Just HLS) cSet cabals hlsSet' hlses
-        ghcupvers <- go (Just GHCup) cSet cabals hlsSet' hlses
-        pure (ghcvers <> cabalvers <> hlsvers <> ghcupvers)
+        ghcvers   <- go (Just GHC) cSet cabals hlsSet' hlses sSet stacks
+        cabalvers <- go (Just Cabal) cSet cabals hlsSet' hlses sSet stacks
+        hlsvers   <- go (Just HLS) cSet cabals hlsSet' hlses sSet stacks
+        ghcupvers <- go (Just GHCup) cSet cabals hlsSet' hlses sSet stacks
+        stackvers <- go (Just Stack) cSet cabals hlsSet' hlses sSet stacks
+        pure (ghcvers <> cabalvers <> hlsvers <> stackvers <> ghcupvers)
   strayGHCs :: (MonadCatch m, MonadReader AppState m, MonadThrow m, MonadLogger m, MonadIO m)
             => Map.Map Version [Tag]
             -> m [ListResult]
@@ -864,6 +1008,34 @@ listVersions av lt' criteria pfreq = do
           [i|Could not parse version of stray directory #{toFilePath e}|]
         pure Nothing
 
+  strayStacks :: (MonadReader AppState m, MonadCatch m, MonadThrow m, MonadLogger m, MonadIO m)
+              => Map.Map Version [Tag]
+              -> m [ListResult]
+  strayStacks avTools = do
+    stacks <- getInstalledStacks
+    fmap catMaybes $ forM stacks $ \case
+      Right ver ->
+        case Map.lookup ver avTools of
+          Just _  -> pure Nothing
+          Nothing -> do
+            lSet    <- fmap (== Just ver) hlsSet
+            pure $ Just $ ListResult
+              { lTool      = Stack
+              , lVer       = ver
+              , lCross     = Nothing
+              , lTag       = []
+              , lInstalled = True
+              , lStray     = isNothing (Map.lookup ver avTools)
+              , lNoBindist = False
+              , fromSrc    = False -- actually, we don't know :>
+              , hlsPowered = False
+              , ..
+              }
+      Left e -> do
+        $(logWarn)
+          [i|Could not parse version of stray directory #{toFilePath e}|]
+        pure Nothing
+
   -- NOTE: this are not cross ones, because no bindists
   toListResult :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadCatch m)
                => Tool
@@ -871,9 +1043,11 @@ listVersions av lt' criteria pfreq = do
                -> [Either (Path Rel) Version]
                -> Maybe Version
                -> [Either (Path Rel) Version]
+               -> Maybe Version
+               -> [Either (Path Rel) Version]
                -> (Version, [Tag])
                -> m ListResult
-  toListResult t cSet cabals hlsSet' hlses (v, tags) = case t of
+  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, tags) = case t of
     GHC -> do
       let lNoBindist = isLeft $ getDownloadInfo GHC v pfreq av
       let tver = mkTVer v
@@ -912,6 +1086,19 @@ listVersions av lt' criteria pfreq = do
       let lNoBindist = isLeft $ getDownloadInfo HLS v pfreq av
       let lSet = hlsSet' == Just v
       let lInstalled = elem v $ rights hlses
+      pure ListResult { lVer    = v
+                      , lCross  = Nothing
+                      , lTag    = tags
+                      , lTool   = t
+                      , fromSrc = False
+                      , lStray  = False
+                      , hlsPowered = False
+                      , ..
+                      }
+    Stack -> do
+      let lNoBindist = isLeft $ getDownloadInfo Stack v pfreq av
+      let lSet = stackSet' == Just v
+      let lInstalled = elem v $ rights stacks
       pure ListResult { lVer    = v
                       , lCross  = Nothing
                       , lTag    = tags
@@ -1037,6 +1224,28 @@ rmHLSVer ver = do
       Just latestver -> setHLS latestver
       Nothing        -> pure ()
 
+
+-- | Delete a stack version. Will try to fix the @stack@ symlink
+-- after removal (e.g. setting it to an older version).
+rmStackVer :: (MonadReader AppState m, MonadThrow m, MonadLogger m, MonadIO m, MonadFail m, MonadCatch m)
+           => Version
+           -> Excepts '[NotInstalled] m ()
+rmStackVer ver = do
+  whenM (lift $ fmap not $ stackInstalled ver) $ throwE (NotInstalled Stack (GHCTargetVersion Nothing ver))
+
+  sSet      <- lift stackSet
+
+  AppState {dirs = Dirs {..}} <- lift ask
+
+  stackFile <- lift $ parseRel ("stack-" <> verToBS ver)
+  liftIO $ hideError doesNotExistErrorType $ deleteFile (binDir </> stackFile)
+
+  when (Just ver == sSet) $ do
+    sVers <- lift $ fmap rights getInstalledStacks
+    case headMay . reverse . sort $ sVers of
+      Just latestver -> setStack latestver
+      Nothing        -> liftIO $ hideError doesNotExistErrorType $ deleteFile
+        (binDir </> [rel|stack|])
 
 
 

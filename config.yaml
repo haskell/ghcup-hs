@@ -29,6 +29,8 @@ key-bindings:
     KChar: 'c'
   show-all:
     KChar: 'a'
+  show-all-tools:
+    KChar: 't'
 
 # Where to get GHC/cabal/hls download info/versions from. For more detailed explanation
 # check the 'URLSource' type in the code.
