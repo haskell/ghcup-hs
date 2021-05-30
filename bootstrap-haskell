@@ -147,9 +147,10 @@ echo "Welcome to Haskell!"
 echo
 echo "This script will download and install the following binaries:"
 echo "  * ghcup - The Haskell toolchain installer"
-echo "            (for managing GHC/cabal versions)"
 echo "  * ghc   - The Glasgow Haskell Compiler"
-echo "  * cabal - The Cabal build tool"
+echo "  * cabal - The Cabal build tool for managing Haskell software"
+echo "  * stack - (optional) A cross-platform program for developing Haskell projects"
+echo "  * hls   - (optional) A language server for developers to integrate with their editor/IDE"
 echo
 if [ -z "${GHCUP_USE_XDG_DIRS}" ] ; then
 	echo "ghcup installs only into the following directory,"
@@ -221,6 +222,27 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 		case $hls_answer in
 			[Yy]*)
 				eghcup --cache install hls
+				break ;;
+			[Nn]*)
+				break ;;
+			*)
+				echo "Please type YES or NO and press enter.";;
+		esac
+	done
+
+	printf "\\033[0;35m%s\\033[0m\\n" "Do you want to install stack now?"
+	printf "\\033[0;35m%s\\033[0m\\n" "Stack is a haskell build tool similar to cabal that is used by some projects."
+	printf "\\033[0;35m%s\\033[0m\\n" "Also see https://docs.haskellstack.org/"
+	printf "\\033[0;35m%s\\033[0m\\n" ""
+	printf "\\033[0;35m%s\\033[0m\\n" "Answer with YES or NO and press ENTER."
+	printf "\\033[0;35m%s\\033[0m\\n" ""
+
+	while true; do
+		read -r stack_answer </dev/tty
+
+		case $stack_answer in
+			[Yy]*)
+				eghcup --cache install stack
 				break ;;
 			[Nn]*)
 				break ;;

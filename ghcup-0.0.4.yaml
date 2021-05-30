@@ -1839,6 +1839,7 @@ ghcupDownloads:
     2.5.1:
       viTags: []
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v251
+      viPostInstall: &stack-post "Stack manages GHC versions internally by default. In order to make it use ghcup installed GHC versions have a look at the options 'system-ghc', 'compiler-check' and 'compiler': https://docs.haskellstack.org/en/stable/yaml_configuration/#system-ghc"
       viArch:
         A_64:
           Linux_UnknownLinux:
@@ -1860,6 +1861,7 @@ ghcupDownloads:
         - Recommended
         - Latest
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v271
+      viPostInstall: *stack-post
       viArch:
         A_64:
           Linux_UnknownLinux:
