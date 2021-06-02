@@ -49,11 +49,11 @@
         <p>
           To install Haskell, follow the instructions on
           <a class="windows-download" href="https://www.haskell.org/platform/#windows">Haskell Platform</a>
-		<p>If you're a Windows Subsystem for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.
+		<p>If you're a Windows Subsystem 2 for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.
 		</p>
 		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
         </p>
-        <p class="other-help">You appear to be running Windows 32-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
+		<p class="other-help">WSL1 does not work with ghcup, follow  <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">the instructions here</a> to upgrade to WSL2 if needed.</br>You appear to be running Windows 32-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
       </div>
 
       <div id="platform-instructions-win64" class="instructions" style="display: none;">
@@ -61,10 +61,10 @@
           To install Haskell, follow the instructions on
           <a class="windows-download" href="https://www.haskell.org/platform/#windows">Haskell Platform</a>
         </p>
-		<p>If you're a Windows Subsystem for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.
+		<p>If you're a Windows Subsystem 2 for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.</br>
 		</p>
 		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
-        <p class="other-help">You appear to be running Windows 64-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
+		<p class="other-help">WSL1 does not work with ghcup, follow  <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">the instructions here</a> to upgrade to WSL2 if needed.</br>You appear to be running Windows 64-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
       </div>
 
       <div id="platform-instructions-unknown" class="instructions" style="display: none;">
@@ -86,7 +86,7 @@
 
         <!-- duplicate the default cross-platform instructions -->
         <div>
-          <p>If you are running Linux, macOS, FreeBSD or Windows Subsystem for Linux, run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
+          <p>If you are running Linux, macOS, FreeBSD or Windows Subsystem 2 for Linux, run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
 		  <div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
           <p class="other-help">If you don't like curl | sh, see <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">other installation methods</a>.</p>
         </div>
@@ -104,7 +104,7 @@
 
       <div id="platform-instructions-default" class="instructions">
         <div>
-          <p>To install Haskell, if you are running Linux, macOS (on Intel), FreeBSD or Windows Subsystem for Linux, run the following
+          <p>To install Haskell, if you are running Linux, macOS (on Intel), FreeBSD or Windows Subsystem 2 for Linux, run the following
           in your terminal (as a user other than root), then follow the onscreen instructions.</p>
 		  <div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
           <p>For macOS on Apple Silicon, run this instead:</p>
@@ -151,7 +151,7 @@
 
       <div id="platform-instructions-default" class="instructions">
         <div>
-          <p>To install Haskell, if you are running Linux, macOS (on Intel), FreeBSD or Windows Subsystem for Linux, run the following
+          <p>To install Haskell, if you are running Linux, macOS (on Intel), FreeBSD or Windows Subsystem for Linux 2, run the following
           in your terminal (as a user other than root), then follow the onscreen instructions.</p>
 		  <pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre>
           <p>For macOS on Apple Silicon, run this instead:</p>
