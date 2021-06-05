@@ -1324,6 +1324,7 @@ compileGHC :: ( MonadMask m
               , MonadFail m
               )
            => Either GHCTargetVersion GitBranch          -- ^ version to install
+           -> Maybe Version            -- ^ overwrite version
            -> Either Version FilePath  -- ^ version to bootstrap with
            -> Maybe Int                  -- ^ jobs
            -> Maybe FilePath           -- ^ build config
@@ -1347,7 +1348,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc bstrap jobs mbuildConfig patchdir aargs
+compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
   = do
     AppState { pfreq = PlatformRequest {..}
              , ghcupInfo = GHCupInfo { _ghcupDownloads = dls }
@@ -1411,8 +1412,11 @@ compileGHC targetGhc bstrap jobs mbuildConfig patchdir aargs
         lift $ $(logInfo) [i|Git version #{ref} corresponds to GHC version #{prettyVer tver}|]
 
         pure (tmpUnpack, tmpUnpack, GHCTargetVersion Nothing tver)
+    -- the version that's installed may differ from the
+    -- compiled version, so the user can overwrite it
+    let installVer = maybe tver (\ov' -> tver { _tvVersion = ov' }) ov
 
-    alreadyInstalled <- lift $ ghcInstalled tver
+    alreadyInstalled <- lift $ ghcInstalled installVer
     alreadySet <- fmap (== Just tver) $ lift $ ghcSet (_tvTarget tver)
     when alreadyInstalled $ do
       lift $ $(logWarn) [i|GHC #{prettyShow tver} already installed. Will overwrite existing version.|]
@@ -1420,7 +1424,7 @@ compileGHC targetGhc bstrap jobs mbuildConfig patchdir aargs
         "...waiting for 10 seconds before continuing, you can still abort..."
       liftIO $ threadDelay 10000000 -- give the user a sec to intervene
 
-    ghcdir         <- lift $ ghcupGHCDir tver
+    ghcdir         <- lift $ ghcupGHCDir installVer
 
     bghc <- case bstrap of
       Right g    -> pure $ Right g

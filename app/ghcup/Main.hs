@@ -174,6 +174,7 @@ data GHCCompileOptions = GHCCompileOptions
   , crossTarget  :: Maybe Text
   , addConfArgs  :: [Text]
   , setCompile   :: Bool
+  , ovewrwiteVer :: Maybe Version
   }
 
 data UpgradeOpts = UpgradeInplace
@@ -761,6 +762,15 @@ ghcCompileOpts =
           True
           (long "set" <> help
             "Set as active version after install"
+          )
+    <*> optional
+          (option
+            (eitherReader
+              (first (const "Not a valid version") . version . T.pack)
+            )
+            (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION" <> help
+              "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
+            )
           )
 
 
@@ -1571,6 +1581,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   Right _ -> pure ()
                 targetVer <- liftE $ compileGHC
                             (first (GHCTargetVersion crossTarget) targetGhc)
+                            ovewrwiteVer
                             bootstrapGhc
                             jobs
                             buildConfig
