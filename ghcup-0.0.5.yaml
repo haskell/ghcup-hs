@@ -1,4 +1,8 @@
 ---
+globalTools:
+  ShimGen:
+    dlUri: https://downloads.haskell.org/~ghcup/tmp/gs.exe
+    dlHash: 9ce8b7dad7ff4e5017dbd63d6f6f3d16412b889560cb6ccd3903dbcab0bf4f0d
 toolRequirements:
   GHC:
     unknown_version:
@@ -1729,7 +1733,7 @@ ghcupDownloads:
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghc/9.2.1-alpha2/ghc-9.2.0.20210422-x86_64-unknown-mingw32.tar.xz
-              dlSubdir: ghc-9.0.1-x86_64-unknown-mingw32
+              dlSubdir: ghc-9.2.0.20210422-x86_64-unknown-mingw32
               dlHash: 33f173b754d18f26bb27f52bb77a92fd22a48675daa2b43a1879bf01dddd7e8f
         A_32:
           Linux_Debian:
@@ -1893,9 +1897,9 @@ ghcupDownloads:
               dlHash: a1e2db664ec00e42a1e071a4181f6476f6e0bad321f1ddc0cf27831119f4c6d4
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.0.0/cabal-install-3.4.0.0-x86_64-windows.zip
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-x86_64-windows.zip
               dlSubdir:
-              dlHash: 860fff2d39a82d1dc0ca924a77164d0988af49c2c5f45e15d615144122beb647
+              dlHash: c898496b199a3ebf41fb399c12a0cb55a470a67e758cee4b08b9f304c4be6979
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &cabal-3400-32
@@ -1936,8 +1940,8 @@ ghcupDownloads:
               dlHash: 89a70980d77888dae8b9fd0f05e7a7920f421bc3bb5192da8e73fd4e7b4cb86f
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/ghcup/tmp/ghcup.exe
-              dlHash: e6dc0b337b29164d5e4a299e572955591b1b6e5d4d11e895c8cbc05666d98ad5
+              dlUri: https://downloads.haskell.org/~ghcup/tmp/x86_64-mingw64-ghcup-1.exe
+              dlHash: a61ae29e677db0f0a93505e0ab3b35b7ccc3ebec6a2a2cf9418cfd550ef82ec6
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:

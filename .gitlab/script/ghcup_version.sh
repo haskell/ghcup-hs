@@ -6,12 +6,18 @@ set -eux
 
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
 
+CI_PROJECT_DIR=$(pwd)
+
 ecabal() {
-	cabal --store-dir="$(pwd)"/.store "$@"
+	cabal "$@"
 }
 
 eghcup() {
-	ghcup -v -c -s file://$(pwd)/ghcup-${JSON_VERSION}.yaml "$@"
+	if [ "${OS}" = "WINDOWS" ] ; then
+		ghcup -v -c -s file:/$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml "$@"
+	else
+		ghcup -v -c -s file://$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml "$@"
+	fi
 }
 
 git describe --always
@@ -36,6 +42,9 @@ elif [ "${OS}" = "LINUX" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui ghcup-test
 	fi
+elif [ "${OS}" = "WINDOWS" ] ; then
+	ecabal build -w ghc-${GHC_VERSION}
+	ecabal test -w ghc-${GHC_VERSION} ghcup-test
 else
 	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 	ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui ghcup-test
@@ -116,8 +125,12 @@ fi
 eghcup rm $(ghc --numeric-version)
 
 # https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/116
-eghcup install cabal -u https://oleg.fi/cabal-install-3.4.0.0-rc4/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz 3.4.0.0-rc4
-eghcup rm cabal 3.4.0.0-rc4
+if [ "${OS}" = "LINUX" ] ; then
+	if [ "${ARCH}" = "64" ] ; then
+		eghcup install cabal -u https://oleg.fi/cabal-install-3.4.0.0-rc4/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz 3.4.0.0-rc4
+		eghcup rm cabal 3.4.0.0-rc4
+	fi
+fi
 
 eghcup upgrade
 eghcup upgrade -f

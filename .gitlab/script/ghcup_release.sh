@@ -7,7 +7,7 @@ set -eux
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
 
 ecabal() {
-	cabal --store-dir="$(pwd)"/.store "$@"
+	cabal "$@"
 }
 
 git describe
@@ -30,6 +30,8 @@ if [ "${OS}" = "LINUX" ] ; then
 	fi
 elif [ "${OS}" = "FREEBSD" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections' --constraint="zlib +bundled-c-zlib" -ftui
+elif [ "${OS}" = "WINDOWS" ] ; then
+	ecabal build -w ghc-${GHC_VERSION} --constraint="zlib +bundled-c-zlib" --constraint="lzma +static"
 else
 	ecabal build -w ghc-${GHC_VERSION} --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" -ftui
 fi

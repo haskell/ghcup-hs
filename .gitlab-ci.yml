@@ -20,6 +20,7 @@ variables:
   variables:
     OS: "LINUX"
     ARCH: "64"
+    CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .alpine:64bit:
   image: "alpine:3.12"
@@ -28,6 +29,7 @@ variables:
   variables:
     OS: "LINUX"
     ARCH: "64"
+    CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .alpine:32bit:
   image: "i386/alpine:3.12"
@@ -36,6 +38,7 @@ variables:
   variables:
     OS: "LINUX"
     ARCH: "32"
+    CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .linux:armv7:
   image: "arm32v7/fedora"
@@ -44,6 +47,7 @@ variables:
   variables:
     OS: "LINUX"
     ARCH: "ARM"
+    CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .linux:aarch64:
   image: "arm64v8/fedora"
@@ -52,6 +56,7 @@ variables:
   variables:
     OS: "LINUX"
     ARCH: "ARM64"
+    CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .darwin:
   tags:
@@ -59,6 +64,7 @@ variables:
   variables:
     OS: "DARWIN"
     ARCH: "64"
+    CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .freebsd:
   tags:
@@ -66,22 +72,25 @@ variables:
   variables:
     OS: "FREEBSD"
     ARCH: "64"
+    CABAL_DIR: "$CI_PROJECT_DIR/cabal"
+
+.windows:
+  tags:
+    - new-x86_64-windows
+  variables:
+    OS: "WINDOWS"
+    ARCH: "64"
+    CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .root_cleanup:
   after_script:
-    - BUILD_DIR=$CI_PROJECT_DIR
-    - echo "Cleaning $BUILD_DIR"
-    - cd $HOME
-    - test -n "$BUILD_DIR"
-    - shopt -s extglob
-    - rm -Rf "$BUILD_DIR"/!(out)
-    - exit 0
+    - bash ./.gitlab/after_script.sh
 
 .test_ghcup_version:
   script:
-    - ./.gitlab/script/ghcup_version.sh
+    - bash ./.gitlab/script/ghcup_version.sh
   variables:
-    JSON_VERSION: "0.0.4"
+    JSON_VERSION: "0.0.5"
   artifacts:
     expire_in: 2 week
     paths:
@@ -132,9 +141,18 @@ variables:
   before_script:
     - ./.gitlab/before_script/freebsd/install_deps.sh
 
+.test_ghcup_version:windows:
+  extends:
+    - .test_ghcup_version
+    - .windows
+    - .root_cleanup
+  before_script:
+    - set CABAL_DIR="$CI_PROJECT_DIR/cabal"
+    - bash ./.gitlab/before_script/windows/install_deps.sh
+
 .release_ghcup:
   script:
-    - ./.gitlab/script/ghcup_release.sh
+    - bash ./.gitlab/script/ghcup_release.sh
   artifacts:
     expire_in: 2 week
     paths:
@@ -142,7 +160,7 @@ variables:
   only:
     - tags
   variables:
-    JSON_VERSION: "0.0.4"
+    JSON_VERSION: "0.0.5"
 
 ######## stack test ########
 
@@ -260,6 +278,15 @@ test:freebsd:latest:
   when: manual
   needs: []
 
+######## windows test ########
+
+test:windows:recommended:
+  stage: test
+  extends: .test_ghcup_version:windows
+  variables:
+    GHC_VERSION: "8.10.4"
+    CABAL_VERSION: "3.4.0.0"
+  needs: []
 
 ######## linux release ########
 
@@ -350,6 +377,21 @@ release:freebsd:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
 
+######## windows release ########
+
+release:windows:
+  stage: release
+  needs: ["test:windows:recommended"]
+  extends:
+    - .windows
+    - .release_ghcup
+    - .root_cleanup
+  before_script:
+    - bash ./.gitlab/before_script/windows/install_deps.sh
+  variables:
+    ARTIFACT: "x86_64-mingw64-ghcup"
+    GHC_VERSION: "8.10.4"
+    CABAL_VERSION: "3.4.0.0"
 
 ######## hlint ########
 

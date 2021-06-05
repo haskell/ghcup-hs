@@ -11,6 +11,7 @@ module Validate where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
+import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
@@ -22,6 +23,7 @@ import qualified Codec.Archive.Tar             as Tar
 #else
 import           Codec.Archive
 #endif
+import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Class
@@ -37,12 +39,11 @@ import           Data.IORef
 import           Data.List
 import           Data.String.Interpolate
 import           Data.Versions
-import           HPath                          ( toFilePath, rel )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
+import           System.FilePath
 import           System.Exit
 import           System.IO
-import           System.Posix.FilePath
 import           Text.ParserCombinators.ReadP
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
@@ -67,8 +68,9 @@ addError = do
 
 validate :: (Monad m, MonadLogger m, MonadThrow m, MonadIO m, MonadUnliftIO m)
          => GHCupDownloads
+         -> M.Map GlobalTool DownloadInfo
          -> m ExitCode
-validate dls = do
+validate dls _ = do
   ref <- liftIO $ newIORef 0
 
   -- verify binary downloads --
@@ -106,6 +108,10 @@ validate dls = do
       addError
     when ((notElem FreeBSD pspecs) && arch == A_64) $ lift $ $(logWarn)
       [i|FreeBSD missing for #{t} #{v'} #{arch'}|]
+    when (notElem Windows pspecs && arch == A_64) $ do
+      lift $ $(logError)
+        [i|Windows missing for for #{t} #{v'} #{arch'}|]
+      addError
 
     -- alpine needs to be set explicitly, because
     -- we cannot assume that "Linux UnknownLinux" runs on Alpine
@@ -188,22 +194,24 @@ validateTarballs :: ( Monad m
                     , MonadIO m
                     , MonadUnliftIO m
                     , MonadMask m
+                    , Alternative m
+                    , MonadFail m
                     )
                  => TarballFilter
                  -> GHCupDownloads
+                 -> M.Map GlobalTool DownloadInfo
                  -> m ExitCode
-validateTarballs (TarballFilter tool versionRegex) dls = do
+validateTarballs (TarballFilter tool versionRegex) dls gt = do
   ref <- liftIO $ newIORef 0
 
   flip runReaderT ref $ do
      -- download/verify all tarballs
-    let dlis = nubOrd $ dls ^.. each
-          %& indices (maybe (const True) (==) tool) %> each
-          %& indices (matchTest versionRegex . T.unpack . prettyVer)
-          % (viSourceDL % _Just `summing` viArch % each % each % each)
+    let dlis = nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool) %> each %& indices (matchTest versionRegex . T.unpack . prettyVer) % (viSourceDL % _Just `summing` viArch % each % each % each)
     when (null dlis) $ $(logError) [i|no tarballs selected by filter|] *> addError
 
-    forM_ dlis downloadAll
+    let gdlis = nubOrd $ gt ^.. each
+
+    forM_ (dlis ++ gdlis) downloadAll
 
     -- exit
     e <- liftIO $ readIORef ref
@@ -220,11 +228,21 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
                                      }
   downloadAll dli = do
     dirs <- liftIO getDirs
-    let settings = AppState (Settings True False Never Curl False GHCupURL) dirs defaultKeyBindings
+
+    pfreq <- (
+      runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest
+      ) >>= \case
+              VRight r -> pure r
+              VLeft e -> do
+                lift $ runLogger
+                  ($(logError) $ T.pack $ prettyShow e)
+                liftIO $ exitWith (ExitFailure 2)
+
+    let appstate = AppState (Settings True False Never Curl False GHCupURL) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq
 
     r <-
       runLogger
-      . flip runReaderT settings
+      . flip runReaderT appstate
       . runResourceT
       . runE @'[DigestError
                , DownloadFailed
@@ -238,13 +256,12 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
       $ do
         case tool of
           Just GHCup -> do
-            let fn = [rel|ghcup|]
-            dir <- liftIO ghcupCacheDir
-            p <- liftE $ download dli dir (Just fn)
-            liftE $ checkDigest dli p
+            let fn = "ghcup"
+            p <- liftE $ download (settings appstate) dli (cacheDir dirs) (Just fn)
+            liftE $ checkDigest (settings appstate) dli p
             pure Nothing
           _ -> do
-            p <- liftE $ downloadCached dli Nothing
+            p <- liftE $ downloadCached (settings appstate) dirs dli Nothing
             fmap (Just . head . splitDirectories . head)
               . liftE
               . getArchiveFiles
@@ -252,7 +269,7 @@ validateTarballs (TarballFilter tool versionRegex) dls = do
     case r of
       VRight (Just basePath) -> do
         case _dlSubdir dli of
-          Just (RealDir (toFilePath -> prel)) -> do
+          Just (RealDir prel) -> do
             lift $ $(logInfo)
               [i|verifying subdir: #{prel}|]
             when (basePath /= prel) $ do

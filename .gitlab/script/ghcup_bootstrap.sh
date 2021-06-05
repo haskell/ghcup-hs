@@ -7,7 +7,7 @@ set -eux
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
 
 ecabal() {
-	cabal --store-dir="$(pwd)"/.store "$@"
+	cabal "$@"
 }
 
 eghcup() {

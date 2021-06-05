@@ -14,24 +14,49 @@
 # safety subshell to avoid executing anything in case this script is not downloaded properly
 (
 
-: "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}"
+plat="$(uname -s)"
+arch=$(uname -m)
+ghver="0.1.14.1"
+base_url="https://downloads.haskell.org/~ghcup"
 
-export GHCUP_USE_XDG_DIRS
+case "${plat}" in
+        MSYS*|MINGW*)
+			: "${GHCUP_INSTALL_BASE_PREFIX:=/c}"
+			GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/ghcup
+			GHCUP_BIN=${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin
+			;;
+		*)
+			: "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}"
+			export GHCUP_USE_XDG_DIRS
 
-if [ -n "${GHCUP_USE_XDG_DIRS}" ] ; then
-	GHCUP_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/ghcup
-	GHCUP_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
-else
-	GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup
-	GHCUP_BIN=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/bin
-fi
+			if [ -n "${GHCUP_USE_XDG_DIRS}" ] ; then
+				GHCUP_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/ghcup
+				GHCUP_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
+			else
+				GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup
+				GHCUP_BIN=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/bin
+			fi
+			;;
+esac
 
 : "${BOOTSTRAP_HASKELL_GHC_VERSION:=recommended}"
 : "${BOOTSTRAP_HASKELL_CABAL_VERSION:=recommended}"
 
+
 die() {
     (>&2 printf "\\033[0;31m%s\\033[0m\\n" "$1")
     exit 2
+}
+
+warn() {
+	case "${plat}" in
+			MSYS*|MINGW*)
+				echo -e "\\033[0;35m$1\\033[0m"
+				;;
+			*)
+				printf "\\033[0;35m%s\\033[0m\\n" "$1"
+				;;
+	esac
 }
 
 edo() {
@@ -43,92 +68,133 @@ eghcup() {
 }
 
 _eghcup() {
+	if [ -n "${BOOTSTRAP_HASKELL_YAML}" ] ; then
+		args="-s ${BOOTSTRAP_HASKELL_YAML}"
+	fi 
     if [ -z "${BOOTSTRAP_HASKELL_VERBOSE}" ] ; then
-        ghcup "$@"
+        ghcup ${args} "$@"
     else
-        ghcup --verbose "$@"
+        ghcup ${args} --verbose "$@"
     fi
 }
 
 _done() {
-	echo
-    echo "All done!"
-	echo
-	echo "To start a simple repl, run:"
-	echo "  ghci"
-	echo
-	echo "To start a new haskell project in the current directory, run:"
-	echo "  cabal init --interactive"
-	echo
-	echo "To install other GHC versions, run:"
-	echo "  ghcup tui"
+	case "${plat}" in
+			MSYS*|MINGW*)
+				echo
+				echo "All done!"
+				echo
+				echo "In a new powershell or cmd.exe session, now you can..."
+				echo
+				echo "Start a simple repl via:"
+				echo "  ghci"
+				echo
+				echo "Start a new haskell project in the current directory via:"
+				echo "  cabal init --interactive"
+				echo
+				echo "Install other GHC versions and tools via:"
+				echo "  ghcup list"
+				echo "  ghcup install <tool> <version>"
+				echo
+				echo "To install system libraries and update msys2/mingw64,"
+				echo "open the \"Mingw haskell shell\""
+				echo "and the \"Mingw package management docs\""
+				echo "desktop shortcuts."
+				;;
+			*)
+				echo
+				echo "All done!"
+				echo
+				echo "To start a simple repl, run:"
+				echo "  ghci"
+				echo
+				echo "To start a new haskell project in the current directory, run:"
+				echo "  cabal init --interactive"
+				echo
+				echo "To install other GHC versions and tools, run:"
+				echo "  ghcup tui"
+				;;
+
+	esac
+
 
 	exit 0
 }
 
 download_ghcup() {
-	_plat="$(uname -s)"
-	_arch=$(uname -m)
-	_ghver="0.1.14.1"
-	_base_url="https://downloads.haskell.org/~ghcup"
 
-    case "${_plat}" in
+    case "${plat}" in
         "linux"|"Linux")
-			case "${_arch}" in
+			case "${arch}" in
 				x86_64|amd64)
 					# we could be in a 32bit docker container, in which
 					# case uname doesn't give us what we want
 					if [ "$(getconf LONG_BIT)" = "32" ] ; then
-						_url=${_base_url}/${_ghver}/i386-linux-ghcup-${_ghver}
+						_url=${base_url}/${ghver}/i386-linux-ghcup-${ghver}
 					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
-						_url=${_base_url}/${_ghver}/x86_64-linux-ghcup-${_ghver}
+						_url=${base_url}/${ghver}/x86_64-linux-ghcup-${ghver}
 					else
 						die "Unknown long bit size: $(getconf LONG_BIT)"
 					fi
 					;;
 				i*86)
-					_url=${_base_url}/${_ghver}/i386-linux-ghcup-${_ghver}
+					_url=${base_url}/${ghver}/i386-linux-ghcup-${ghver}
 					;;
 				armv7*)
-					_url=${_base_url}/${_ghver}/armv7-linux-ghcup-${_ghver}
+					_url=${base_url}/${ghver}/armv7-linux-ghcup-${ghver}
 					;;
 				aarch64|arm64|armv8l)
-					_url=${_base_url}/${_ghver}/aarch64-linux-ghcup-${_ghver}
+					_url=${base_url}/${ghver}/aarch64-linux-ghcup-${ghver}
 					;;
-				*) die "Unknown architecture: ${_arch}"
+				*) die "Unknown architecture: ${arch}"
 					;;
 			esac
 			;;
         "FreeBSD"|"freebsd")
-			case "${_arch}" in
+			case "${arch}" in
 				x86_64|amd64)
 					;;
 				i*86)
 					die "i386 currently not supported!"
 					;;
-				*) die "Unknown architecture: ${_arch}"
+				*) die "Unknown architecture: ${arch}"
 					;;
 			esac
-			_url=${_base_url}/${_ghver}/x86_64-portbld-freebsd-ghcup-${_ghver}
+			_url=${base_url}/${ghver}/x86_64-portbld-freebsd-ghcup-${ghver}
             ;;
         "Darwin"|"darwin")
-			case "${_arch}" in
+			case "${arch}" in
 				x86_64|amd64)
 					;;
 				i*86)
 					die "i386 currently not supported!"
 					;;
-				*) die "Unknown architecture: ${_arch}"
+				*) die "Unknown architecture: ${arch}"
 					;;
 			esac
-			_url=${_base_url}/${_ghver}/x86_64-apple-darwin-ghcup-${_ghver} ;;
-        *) die "Unknown platform: ${_plat}"
+			_url=${base_url}/${ghver}/x86_64-apple-darwin-ghcup-${ghver} ;;
+        MSYS*|MINGW*)
+			case "${arch}" in
+				x86_64|amd64)
+					_url=https://downloads.haskell.org/~ghcup/tmp/x86_64-mingw64-ghcup-7.exe
+					;;
+				*) die "Unknown architecture: ${arch}"
+					;;
+			esac
+			;;
+        *) die "Unknown platform: ${plat}"
 			;;
     esac
-
-	edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup
-
-    edo chmod +x "${GHCUP_BIN}"/ghcup
+    case "${plat}" in
+        MSYS*|MINGW*)
+			edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup.exe
+			edo chmod +x "${GHCUP_BIN}"/ghcup.exe
+			;;
+		*)
+			edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup
+			edo chmod +x "${GHCUP_BIN}"/ghcup
+			;;
+	esac
 
   edo mkdir -p "${GHCUP_DIR}"
 	cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
@@ -137,8 +203,6 @@ download_ghcup() {
 	# shellcheck disable=SC1090
     edo . "${GHCUP_DIR}"/env
     eghcup upgrade
-
-	unset _plat _arch _url _ghver _base_url
 }
 
 
@@ -155,7 +219,14 @@ echo
 if [ -z "${GHCUP_USE_XDG_DIRS}" ] ; then
 	echo "ghcup installs only into the following directory,"
     echo "which can be removed anytime:"
-	echo "  $GHCUP_INSTALL_BASE_PREFIX/.ghcup"
+	case "${plat}" in
+			MSYS*|MINGW*)
+				echo "  $(cygpath -w "$GHCUP_DIR")"
+				;;
+			*)
+				echo "  $GHCUP_DIR"
+				;;
+	esac
 else
 	echo "ghcup installs into XDG directories as long as"
     echo "'GHCUP_USE_XDG_DIRS' is set."
@@ -163,8 +234,8 @@ fi
 echo
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
-    printf "\\033[0;35m%s\\033[0m\\n" "Press ENTER to proceed or ctrl-c to abort."
-    printf "\\033[0;35m%s\\033[0m\\n" "Note that this script can be re-run at any given time."
+    warn "Press ENTER to proceed or ctrl-c to abort."
+    warn "Note that this script can be re-run at any given time."
     echo
     # Wait for user input to continue.
     # shellcheck disable=SC2034
@@ -182,12 +253,12 @@ else
 fi
 
 echo
-echo "$(ghcup tool-requirements)"
+echo "$(if [ -n "${BOOTSTRAP_HASKELL_YAML}" ] ; then ghcup -s "${BOOTSTRAP_HASKELL_YAML}" tool-requirements ; else ghcup tool-requirements ; fi)"
 echo
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
-    printf "\\033[0;35m%s\\033[0m\\n" "Press ENTER to proceed or ctrl-c to abort."
-    printf "\\033[0;35m%s\\033[0m\\n" "Installation may take a while."
+    warn "Press ENTER to proceed or ctrl-c to abort."
+    warn "Installation may take a while."
     echo
 
     # Wait for user input to continue.
@@ -200,21 +271,54 @@ eghcup --cache install ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
 eghcup set ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
 eghcup --cache install cabal "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
 
+adjust_cabal_config() {
+	edo cabal user-config -a "extra-prog-path: $(cygpath -w $GHCUP_BIN), $(cygpath -w "$HOME"/AppData/Roaming/cabal/bin), $(cygpath -w "$GHCUP_DIR"/msys64/usr/bin), $(cygpath -w "$GHCUP_DIR"/msys64/mingw64/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_DIR"/msys64/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_DIR"/msys64/mingw64/lib)" -f init
+}
+
+case "${plat}" in
+        MSYS*|MINGW*)
+			if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+				warn "Create an initial cabal.config including relevant msys2 paths (recommended)?"
+				warn "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
+				echo
+				while true; do
+					read -r mingw_answer </dev/tty
+
+					case $mingw_answer in
+						[Yy]* | "")
+							adjust_cabal_config
+							break ;;
+						[Nn]*)
+							echo "Make sure that your global cabal.config references the correct mingw64 paths (extra-prog-path, extra-include-dirs and extra-lib-dirs)."
+							sleep 5
+							break ;;
+						*)
+							echo "Possible choices are:"
+							echo
+							echo "Y - Yes, create a cabal.config with pre-set paths to msys2/mingw64 (default)"
+							echo "N - No, leave the current/default cabal config untouched"
+							echo
+							echo "Please make your choice and press ENTER."
+							;;
+					esac
+				done
+			else
+				adjust_cabal_config
+			fi
+			;;
+esac
+
+
 edo cabal new-update
 
-printf "\\033[0;35m%s\\033[0m\\n" ""
-printf "\\033[0;35m%s\\033[0m\\n" "Installation done!"
-printf "\\033[0;35m%s\\033[0m\\n" ""
-
-
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
-	printf "\\033[0;35m%s\\033[0m\\n" "Do you want to install haskell-language-server (HLS) now?"
-	printf "\\033[0;35m%s\\033[0m\\n" "HLS is a language-server that provides IDE-like functionality"
-	printf "\\033[0;35m%s\\033[0m\\n" "and can integrate with different editors, such as Vim, Emacs, VS Code, Atom, ..."
-	printf "\\033[0;35m%s\\033[0m\\n" "Also see https://github.com/haskell/haskell-language-server/blob/master/README.md"
-	printf "\\033[0;35m%s\\033[0m\\n" ""
-	printf "\\033[0;35m%s\\033[0m\\n" "Answer with YES or NO and press ENTER."
-	printf "\\033[0;35m%s\\033[0m\\n" ""
+	warn "Do you want to install haskell-language-server (HLS) now?"
+	warn "HLS is a language-server that provides IDE-like functionality"
+	warn "and can integrate with different editors, such as Vim, Emacs, VS Code, Atom, ..."
+	warn "Also see https://github.com/haskell/haskell-language-server/blob/master/README.md"
+	warn ""
+	warn "[Y] Yes  [N] No  [?] Help (default is \"N\")."
+	warn ""
 
 	while true; do
 		read -r hls_answer </dev/tty
@@ -223,19 +327,25 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 			[Yy]*)
 				eghcup --cache install hls
 				break ;;
-			[Nn]*)
+			[Nn]* | "")
 				break ;;
 			*)
-				echo "Please type YES or NO and press enter.";;
+				echo "Possible choices are:"
+				echo
+				echo "Y - Yes, install the haskell-langauge-server"
+				echo "N - No, don't install anything more (default)"
+				echo
+				echo "Please make your choice and press ENTER."
+				;;
 		esac
 	done
 
-	printf "\\033[0;35m%s\\033[0m\\n" "Do you want to install stack now?"
-	printf "\\033[0;35m%s\\033[0m\\n" "Stack is a haskell build tool similar to cabal that is used by some projects."
-	printf "\\033[0;35m%s\\033[0m\\n" "Also see https://docs.haskellstack.org/"
-	printf "\\033[0;35m%s\\033[0m\\n" ""
-	printf "\\033[0;35m%s\\033[0m\\n" "Answer with YES or NO and press ENTER."
-	printf "\\033[0;35m%s\\033[0m\\n" ""
+	warn "Do you want to install stack now?"
+	warn "Stack is a haskell build tool similar to cabal that is used by some projects."
+	warn "Also see https://docs.haskellstack.org/"
+	warn ""
+	warn "[Y] Yes  [N] No  [?] Help (default is \"N\")."
+	warn ""
 
 	while true; do
 		read -r stack_answer </dev/tty
@@ -244,10 +354,16 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 			[Yy]*)
 				eghcup --cache install stack
 				break ;;
-			[Nn]*)
+			[Nn]* | "")
 				break ;;
 			*)
-				echo "Please type YES or NO and press enter.";;
+				echo "Possible choices are:"
+				echo
+				echo "Y - Yes, install stack"
+				echo "N - No, don't install anything more (default)"
+				echo
+				echo "Please make your choice and press ENTER."
+				;;
 		esac
 	done
 
@@ -280,17 +396,20 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 	esac
 
 
-	printf "\\033[0;35m%s\\033[0m\\n" ""
-	printf "\\033[0;35m%s\\033[0m\\n" "Detected ${MY_SHELL} shell on your system..."
-	printf "\\033[0;35m%s\\033[0m\\n" "If you want ghcup to automatically add the required PATH variable to \"${GHCUP_PROFILE_FILE}\""
-	printf "\\033[0;35m%s\\033[0m\\n" "answer with YES, otherwise with NO and press ENTER."
-	printf "\\033[0;35m%s\\033[0m\\n" ""
+	warn ""
+	warn "Detected ${MY_SHELL} shell on your system..."
+	warn "If you want ghcup to automatically add the required PATH variable to \"${GHCUP_PROFILE_FILE}\""
+	warn ""
+	warn "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
+	warn ""
 
     while true; do
         read -r next_answer </dev/tty
 
         case $next_answer in
-            [Yy]*)
+            [Nn]*)
+                _done ;;
+            [Yy]* | "")
 				case $MY_SHELL in
 					"") break ;;
 					fish)
@@ -305,7 +424,7 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
 							echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 						fi
-						case "$(uname -s)" in
+						case "${plat}" in
 							"Darwin"|"darwin")
 								if ! grep -q "ghcup-env" "${HOME}/.bash_profile" ; then
 									echo "[[ -f ~/.bashrc ]] && source ~/.bashrc # ghcup-env" >> "${HOME}/.bash_profile"
@@ -320,17 +439,24 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 						fi
 						break ;;
 				esac
-                printf "\\033[0;35m%s\\033[0m\\n" "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
-                printf "\\033[0;35m%s\\033[0m\\n" "or type \"source ${GHCUP_DIR}/env\" to apply them in your current terminal session."
+                warn "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
+                warn "or type \"source ${GHCUP_DIR}/env\" to apply them in your current terminal session."
 				_done
                 ;;
-            [Nn]*)
-                _done ;;
-            *)
-                echo "Please type YES or NO and press enter.";;
+			*)
+				echo "Possible choices are:"
+				echo
+				echo "Y - Yes, update my \"${GHCUP_PROFILE_FILE}\" (default)"
+				echo "N - No, don't mess with my configuration"
+				echo
+				echo "Please make your choice and press ENTER."
+				;;
         esac
     done
 fi
+
+_done
+
 )
 
 # vim: tabstop=4 shiftwidth=4 expandtab
