@@ -29,7 +29,7 @@ if [ "${OS}" = "LINUX" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} -ftui
 	fi
 elif [ "${OS}" = "FREEBSD" ] ; then
-	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections' --constraint="zlib +bundled-c-zlib" -ftui
+	ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections' --constraint="zlib +bundled-c-zlib" --constraint="zip +disable-zstd" -ftui
 elif [ "${OS}" = "WINDOWS" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} --constraint="zlib +bundled-c-zlib" --constraint="lzma +static"
 else
