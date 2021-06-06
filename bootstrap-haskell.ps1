@@ -93,7 +93,7 @@ function Get-FileWCSynchronous{
 
 $ErrorActionPreference = 'Stop'
 
-$GhcupDir = "$env:HOMEDRIVE\ghcup"
+$GhcupDir = "C:\ghcup"
 $MsysDir = ('{0}\msys64' -f $GhcupDir)
 $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
 
