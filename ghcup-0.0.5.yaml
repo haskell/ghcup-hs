@@ -1489,7 +1489,7 @@ ghcupDownloads:
         dlSubdir: ghc-8.10.4
         dlHash: 52af871b4e08550257d720c2944ac85727d0b948407cef1bebfe7508c224910e
       viPostRemove: *ghc-post-remove
-      viPreCompile: "If you have autoconf >= 2.70 you'll need this patch https://gitlab.haskell.org/ghc/ghc/-/snippets/2040 (see the --patchdir option)"
+      viPreCompile: &ghc-pre-compile "If you have autoconf >= 2.70 you'll need this patch https://gitlab.haskell.org/ghc/ghc/-/snippets/2040 (see the --patchdir option)"
       viArch:
         A_64:
           Linux_Debian:
@@ -1585,7 +1585,7 @@ ghcupDownloads:
         dlSubdir: ghc-8.10.5
         dlHash: f10941f16e4fbd98580ab5241b9271bb0851304560c4d5ca127e3b0e20e3076f
       viPostRemove: *ghc-post-remove
-      viPreCompile: "If you have autoconf >= 2.70 you'll need this patch https://gitlab.haskell.org/ghc/ghc/-/snippets/2040 (see the --patchdir option)"
+      viPreCompile: *ghc-pre-compile
       viArch:
         A_64:
           Linux_Debian:
