@@ -1387,6 +1387,7 @@ ghcupDownloads:
               dlHash: bb9c97826b1f4d7a8ef8bce0616b612f1ded10480ef10fcf7fb4e6d10a6681c8
     8.10.3:
       viTags:
+      - old
       - base-4.14.1.0
       viChangeLog: https://downloads.haskell.org/~ghc/8.10.3/docs/html/users_guide/8.10.3-notes.html
       viSourceDL:
@@ -1481,7 +1482,6 @@ ghcupDownloads:
               dlHash: b823b58cae36fbac0741680ca7605180fa4cf4c6ae439123d282184b94d32fd6
     8.10.4:
       viTags:
-      - Recommended
       - base-4.14.1.0
       viChangeLog: https://downloads.haskell.org/~ghc/8.10.4/docs/html/users_guide/8.10.4-notes.html
       viSourceDL:
@@ -1575,6 +1575,102 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-armv7-deb10-linux.tar.xz
               dlSubdir: ghc-8.10.4
               dlHash: 0d18ef83593272f6196a41cc3abdc48dfe5e14372db75d71ea19fe35320c4e81
+    8.10.5:
+      viTags:
+      - Recommended
+      - base-4.14.2.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.5/docs/html/users_guide/8.10.5-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-src.tar.xz
+        dlSubdir: ghc-8.10.5
+        dlHash: f10941f16e4fbd98580ab5241b9271bb0851304560c4d5ca127e3b0e20e3076f
+      viPostRemove: *ghc-post-remove
+      viPreCompile: "If you have autoconf >= 2.70 you'll need this patch https://gitlab.haskell.org/ghc/ghc/-/snippets/2040 (see the --patchdir option)"
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8105-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 15e71325c3bdfe3804be0f84c2fc5c913d811322d19b0f4d4cff20f29cdd804d
+            '( >= 10 && < 11 )': &ghc-8105-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: bc623c20ca4c5c18e952071ba14aa0cfc5c94d34219bffaa615f7b491f376787
+            unknown_versioning: *ghc-8105-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8105-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 73528ebfb219b50aa9042ee51a0a2bd764828d605f058404989d0b645752d210
+            '( >= 16 && < 19 )': *ghc-8105-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8105-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-8105-64-fedora
+            unknown_versioning: *ghc-8105-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-8105-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 4cdb259ec74d1408dab45dab20dcedc21690f39921c2ea4546486fb3e81f4fbd
+            unknown_versioning: *ghc-8105-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8105-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.5-x86_64-unknown-linux
+              dlHash: f4d7cd9ed12a4b8592219c9a63a86db1a256a09fa9e6ed755a60afc57dc782e2
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8105-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8105-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: ef0f47eff8962d58fa447123636cf8ef31c1e5b2d0ae90177d3388861ddf4a22
+          # FreeBSD:
+          #   unknown_versioning:
+          #     dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-portbld-freebsd.tar.xz
+          #     dlSubdir: ghc-8.10.5
+          #     dlHash: c9776a2ccf9629b03e967206a507fcdcb6c5189800a626e9461ababf6733c357
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 4443d989df4f2680f681a4d8b8db310ce9582d21743984016b0eb0163b0c9998
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8105-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 0ccb5b2c1222374874795c35410754dd650f649b774872abbea2a4ef21ac9c9d
+            unknown_versioning: *ghc-8105-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8105-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8105-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8105-32-deb9
+          # Linux_Alpine:
+          #   unknown_versioning:
+          #     dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.5/ghc-8.10.5-i386-alpine-linux.tar.xz
+          #     dlSubdir: ghc-8.10.5
+          #     dlHash: 9161a98bed763692101854d83af69c1316030cfe5ee6f6acde283d04ef139735
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 9a085cd8a7f8e0ace21ac67dbf659a56fcf41564b48817ba42cd8a1aac7f0ddc
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-armv7-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 56170d1a8450e18b7eb9c23c94723da352815b27ec250bb23742a62f16dcab6c
     9.0.1:
       viTags:
       - Latest
