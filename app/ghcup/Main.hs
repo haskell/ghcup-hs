@@ -292,7 +292,7 @@ com =
           (   Install
           <$> info
                 (installParser <**> helper)
-                (  progDesc "Install or update GHC/cabal"
+                (  progDesc "Install or update GHC/cabal/HLS"
                 <> footerDoc (Just $ text installToolFooter)
                 )
           )
@@ -308,7 +308,7 @@ com =
            "rm"
            (info
              (Rm <$> rmParser <**> helper)
-             (  progDesc "Remove a GHC/cabal version"
+             (  progDesc "Remove a GHC/cabal/HLS version"
              <> footerDoc (Just $ text rmFooter)
              )
            )
@@ -1124,7 +1124,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           ----------------------------------------
           -- Getting download and platform info --
           ----------------------------------------
-          
+
           ghcupInfo <-
             ( runLogger
               . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
