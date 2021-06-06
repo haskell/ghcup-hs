@@ -19,6 +19,7 @@ extra-doc-files:
   CHANGELOG.md
   config.yaml
   ghcup-0.0.4.yaml
+  ghcup-0.0.5.yaml
   HACKING.md
   README.md
   RELEASING.md
