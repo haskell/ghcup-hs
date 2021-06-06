@@ -34,23 +34,31 @@ ecabal update
 if [ "${OS}" = "DARWIN" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} -ftui
 	ecabal test -w ghc-${GHC_VERSION} -ftui ghcup-test
+	ecabal haddock -w ghc-${GHC_VERSION} -ftui
 elif [ "${OS}" = "LINUX" ] ; then
 	if [ "${ARCH}" = "32" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar
 		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar ghcup-test
+		ecabal haddock -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar
 	else
 		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui ghcup-test
+		ecabal haddock -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 	fi
+elif [ "${OS}" = "FREEBSD" ] ; then
+	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui --constraint="zip +disable-zstd"
+	ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui --constraint="zip +disable-zstd" ghcup-test
+	ecabal haddock -w ghc-${GHC_VERSION} -finternal-downloader -ftui --constraint="zip +disable-zstd"
 elif [ "${OS}" = "WINDOWS" ] ; then
 	ecabal build -w ghc-${GHC_VERSION}
 	ecabal test -w ghc-${GHC_VERSION} ghcup-test
+	ecabal haddock -w ghc-${GHC_VERSION}
 else
 	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 	ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui ghcup-test
+	ecabal haddock -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 fi
 
-ecabal haddock -w ghc-${GHC_VERSION} -ftar
 
 cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup')" .
 cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" .
