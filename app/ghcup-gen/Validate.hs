@@ -184,7 +184,7 @@ validate dls _ = do
   isBase _        = False
 
 data TarballFilter = TarballFilter
-  { tfTool    :: Maybe Tool
+  { tfTool    :: Either GlobalTool (Maybe Tool)
   , tfVersion :: Regex
   }
 
@@ -201,17 +201,16 @@ validateTarballs :: ( Monad m
                  -> GHCupDownloads
                  -> M.Map GlobalTool DownloadInfo
                  -> m ExitCode
-validateTarballs (TarballFilter tool versionRegex) dls gt = do
+validateTarballs (TarballFilter etool versionRegex) dls gt = do
   ref <- liftIO $ newIORef 0
 
   flip runReaderT ref $ do
      -- download/verify all tarballs
-    let dlis = nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool) %> each %& indices (matchTest versionRegex . T.unpack . prettyVer) % (viSourceDL % _Just `summing` viArch % each % each % each)
-    when (null dlis) $ $(logError) [i|no tarballs selected by filter|] *> addError
-
+    let dlis = either (const []) (\tool -> nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool) %> each %& indices (matchTest versionRegex . T.unpack . prettyVer) % (viSourceDL % _Just `summing` viArch % each % each % each)) etool
     let gdlis = nubOrd $ gt ^.. each
-
-    forM_ (dlis ++ gdlis) downloadAll
+    let allDls = dlis ++ gdlis
+    when (null allDls) $ $(logError) [i|no tarballs selected by filter|] *> addError
+    forM_ allDls downloadAll
 
     -- exit
     e <- liftIO $ readIORef ref
@@ -254,18 +253,21 @@ validateTarballs (TarballFilter tool versionRegex) dls gt = do
 #endif
                ]
       $ do
-        case tool of
-          Just GHCup -> do
-            let fn = "ghcup"
-            p <- liftE $ download (settings appstate) dli (cacheDir dirs) (Just fn)
-            liftE $ checkDigest (settings appstate) dli p
+        case etool of
+          Right (Just GHCup) -> do
+            tmpUnpack <- lift mkGhcupTmpDir
+            _ <- liftE $ download (settings appstate) dli tmpUnpack Nothing
             pure Nothing
-          _ -> do
+          Right _ -> do
             p <- liftE $ downloadCached (settings appstate) dirs dli Nothing
             fmap (Just . head . splitDirectories . head)
               . liftE
               . getArchiveFiles
               $ p
+          Left ShimGen -> do
+            tmpUnpack <- lift mkGhcupTmpDir
+            _ <- liftE $ download (settings appstate) dli tmpUnpack Nothing
+            pure Nothing
     case r of
       VRight (Just basePath) -> do
         case _dlSubdir dli of

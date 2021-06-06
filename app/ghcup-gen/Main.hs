@@ -69,13 +69,15 @@ tarballFilterP = option readm $
   long "tarball-filter" <> short 'u' <> metavar "<tool>-<version>" <> value def
     <> help "Only check certain tarballs (format: <tool>-<version>)"
   where
-    def = TarballFilter Nothing (makeRegex ("" :: String))
+    def = TarballFilter (Right Nothing) (makeRegex ("" :: String))
     readm = do
       s <- str
       case span (/= '-') s of
         (_, []) -> fail "invalid format, missing '-' after the tool name"
         (t, v) | [tool] <- [ tool | tool <- [minBound..maxBound], low (show tool) == low t ] ->
-          pure (TarballFilter $ Just tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
+          pure (TarballFilter $ Right $ Just tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
+        (t, v) | [tool] <- [ tool | tool <- [minBound..maxBound], low (show tool) == low t ] ->
+          pure (TarballFilter $ Left tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
         _ -> fail "invalid tool"
     low = fmap toLower
 
@@ -105,23 +107,18 @@ main :: IO ()
 main = do
   _ <- customExecParser (prefs showHelpOnError) (info (opts <**> helper) idm)
     >>= \Options {..} -> case optCommand of
-          ValidateYAML vopts -> case vopts of
-            ValidateYAMLOpts { vInput = Nothing } ->
-              B.getContents >>= valAndExit validate
-            ValidateYAMLOpts { vInput = Just StdInput } ->
-              B.getContents >>= valAndExit validate
-            ValidateYAMLOpts { vInput = Just (FileInput file) } ->
-              B.readFile file >>= valAndExit validate
-          ValidateTarballs vopts tarballFilter -> case vopts of
-            ValidateYAMLOpts { vInput = Nothing } ->
-              B.getContents >>= valAndExit (validateTarballs tarballFilter)
-            ValidateYAMLOpts { vInput = Just StdInput } ->
-              B.getContents >>= valAndExit (validateTarballs tarballFilter)
-            ValidateYAMLOpts { vInput = Just (FileInput file) } ->
-              B.readFile file >>= valAndExit (validateTarballs tarballFilter)
+          ValidateYAML vopts -> withValidateYamlOpts vopts validate
+          ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (validateTarballs tarballFilter)
   pure ()
 
  where
+  withValidateYamlOpts vopts f = case vopts of
+    ValidateYAMLOpts { vInput = Nothing } ->
+      B.getContents >>= valAndExit f
+    ValidateYAMLOpts { vInput = Just StdInput } ->
+      B.getContents >>= valAndExit f
+    ValidateYAMLOpts { vInput = Just (FileInput file) } ->
+      B.readFile file >>= valAndExit f
   valAndExit f contents = do
     (GHCupInfo _ av gt) <- case Y.decodeEither' contents of
       Right r -> pure r
