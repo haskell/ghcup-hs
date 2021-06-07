@@ -214,10 +214,10 @@ createProcessWithMingwPath :: MonadIO m
                           => CreateProcess
                           -> m CreateProcess
 createProcessWithMingwPath cp = do
-  baseDir <- liftIO ghcupBaseDir
+  msys2Dir <- liftIO ghcupMsys2Dir
   cEnv <- Map.fromList <$> maybe (liftIO getEnvironment) pure (env cp)
-  let mingWPaths = [baseDir </> "msys64" </> "usr" </> "bin"
-                   ,baseDir </> "msys64" </> "mingw64" </> "bin"]
+  let mingWPaths = [msys2Dir </> "usr" </> "bin"
+                   ,msys2Dir </> "mingw64" </> "bin"]
       paths = ["PATH", "Path"]
       curPaths = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
       newPath = intercalate [searchPathSeparator] (mingWPaths ++ curPaths)
@@ -226,6 +226,13 @@ createProcessWithMingwPath cp = do
   liftIO $ setEnv "Path" newPath
   pure $ cp { env = Just $ Map.toList envWithNewPath }
 
+ghcupMsys2Dir :: IO FilePath
+ghcupMsys2Dir =
+  lookupEnv "GHCUP_MSYS2" >>= \case
+    Just fp -> pure fp
+    Nothing -> do
+      baseDir <- liftIO ghcupBaseDir
+      pure (baseDir </> "msys64")
 
 -- | Checks whether the binary is a broken link.
 isBrokenSymlink :: FilePath -> IO Bool

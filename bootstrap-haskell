@@ -24,6 +24,7 @@ case "${plat}" in
 			: "${GHCUP_INSTALL_BASE_PREFIX:=/c}"
 			GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/ghcup
 			GHCUP_BIN=${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin
+			: "${GHCUP_MSYS2:=${GHCUP_DIR}/msys64}"
 			;;
 		*)
 			: "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}"
@@ -272,7 +273,7 @@ eghcup set ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
 eghcup --cache install cabal "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
 
 adjust_cabal_config() {
-	edo cabal user-config -a "extra-prog-path: $(cygpath -w $GHCUP_BIN), $(cygpath -w "$HOME"/AppData/Roaming/cabal/bin), $(cygpath -w "$GHCUP_DIR"/msys64/usr/bin), $(cygpath -w "$GHCUP_DIR"/msys64/mingw64/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_DIR"/msys64/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_DIR"/msys64/mingw64/lib)" -f init
+	edo cabal user-config -a "extra-prog-path: $(cygpath -w $GHCUP_BIN), $(cygpath -w "$HOME"/AppData/Roaming/cabal/bin), $(cygpath -w "$GHCUP_MSYS2"/usr/bin), $(cygpath -w "$GHCUP_MSYS2"/mingw64/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/lib)" -f init
 }
 
 case "${plat}" in
@@ -290,6 +291,7 @@ case "${plat}" in
 							break ;;
 						[Nn]*)
 							echo "Make sure that your global cabal.config references the correct mingw64 paths (extra-prog-path, extra-include-dirs and extra-lib-dirs)."
+							echo "And set the environment variable GHCUP_MSYS2 to the root path of your msys2 installation."
 							sleep 5
 							break ;;
 						*)
