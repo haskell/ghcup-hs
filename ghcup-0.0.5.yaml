@@ -1654,11 +1654,11 @@ ghcupDownloads:
             unknown_versioning: *ghc-8105-32-deb9
           Linux_UnknownLinux:
             unknown_versioning: *ghc-8105-32-deb9
-          # Linux_Alpine:
-          #   unknown_versioning:
-          #     dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.5/ghc-8.10.5-i386-alpine-linux.tar.xz
-          #     dlSubdir: ghc-8.10.5
-          #     dlHash: 9161a98bed763692101854d83af69c1316030cfe5ee6f6acde283d04ef139735
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/8.10.5/ghc-8.10.5-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 0e91abe61607f9375d4e252ee9c261e4856df396f60641bb1b880ab8a3a83ea7
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
