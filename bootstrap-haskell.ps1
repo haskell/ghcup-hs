@@ -96,6 +96,8 @@ $ErrorActionPreference = 'Stop'
 $GhcupDir = "C:\ghcup"
 $MsysDir = ('{0}\msys64' -f $GhcupDir)
 $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
+$Msys2Shell = ('{0}\msys2_shell.cmd' -f $MsysDir)
+$BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell-windows'
 
 Print-Msg -msg 'Preparing for GHCup installation...'
 
@@ -168,7 +170,14 @@ Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
 Add-EnvPath -Path ('{0}\bin' -f $GhcupDir) -Container 'User'
 
 Print-Msg -msg 'Starting GHCup installer...'
-& "$Bash" -lc "export PATH=`"/c/ghcup/bin:`$PATH`" ; curl --proto =https --tlsv1.2 -sSf https://gitlab.haskell.org/haskell/ghcup-hs/-/raw/windows-support/bootstrap-haskell | bash"
+
+if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
+  & "$Bash" -lc ('export PATH="/c/ghcup/bin:$PATH" ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl)
+} else {
+  & "$Msys2Shell" -mingw64 -mintty -c ('export PATH="/c/ghcup/bin:$PATH" ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl)
+}
+
+
 # SIG # Begin signature block
   # MIID4QYJKoZIhvcNAQcCoIID0jCCA84CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
   # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
