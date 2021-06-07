@@ -44,6 +44,7 @@ import           Prelude                 hiding ( abs
 import           System.Info
 import           System.Directory
 import           System.OsRelease
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
@@ -108,7 +109,7 @@ getPlatform = do
       pure $ PlatformResult { _platform = FreeBSD, _distroVersion = ver }
     "mingw32" -> pure PlatformResult { _platform = Windows, _distroVersion = Nothing }
     what -> throwE $ NoCompatiblePlatform what
-  lift $ $(logDebug) [i|Identified Platform as: #{pfr}|]
+  lift $ $(logDebug) [i|Identified Platform as: #{prettyShow pfr}|]
   pure pfr
  where
   getMajorVersion = T.intercalate "." . take 2 . T.split (== '.')
