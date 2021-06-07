@@ -1,7 +1,7 @@
 ---
 globalTools:
   ShimGen:
-    dlUri: https://downloads.haskell.org/~ghcup/tmp/gs.exe
+    dlUri: https://downloads.haskell.org/~ghcup/shimgen/gs.exe
     dlHash: 9ce8b7dad7ff4e5017dbd63d6f6f3d16412b889560cb6ccd3903dbcab0bf4f0d
 toolRequirements:
   GHC:
