@@ -208,7 +208,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
      -- download/verify all tarballs
     let dlis = either (const []) (\tool -> nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool) %> each %& indices (matchTest versionRegex . T.unpack . prettyVer) % (viSourceDL % _Just `summing` viArch % each % each % each)) etool
     let gdlis = nubOrd $ gt ^.. each
-    let allDls = dlis ++ gdlis
+    let allDls = either (const gdlis) (const dlis) etool
     when (null allDls) $ $(logError) [i|no tarballs selected by filter|] *> addError
     forM_ allDls downloadAll
 

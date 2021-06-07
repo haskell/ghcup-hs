@@ -66,6 +66,14 @@ variables:
     ARCH: "64"
     CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
+.darwin:aarch64:
+  tags:
+    - aarch64-darwin-m1
+  variables:
+    OS: "DARWIN"
+    ARCH: "ARM64"
+    CABAL_DIR: "$CI_PROJECT_DIR/cabal"
+
 .freebsd:
   tags:
     - x86_64-freebsd
@@ -129,6 +137,14 @@ variables:
   extends:
     - .test_ghcup_version
     - .darwin
+    - .root_cleanup
+  before_script:
+    - ./.gitlab/before_script/darwin/install_deps.sh
+
+.test_ghcup_version:darwin:aarch64:
+  extends:
+    - .test_ghcup_version
+    - .darwin:aarch64
     - .root_cleanup
   before_script:
     - ./.gitlab/before_script/darwin/install_deps.sh
@@ -252,6 +268,14 @@ test:mac:latest:
   extends: .test_ghcup_version:darwin
   variables:
     GHC_VERSION: "8.10.4"
+    CABAL_VERSION: "3.4.0.0"
+  needs: []
+
+test:mac:recommended:aarch64:
+  stage: test
+  extends: .test_ghcup_version:darwin:aarch64
+  variables:
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
   needs: []
 
