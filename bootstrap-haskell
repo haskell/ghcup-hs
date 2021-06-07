@@ -16,7 +16,7 @@
 
 plat="$(uname -s)"
 arch=$(uname -m)
-ghver="0.1.15"
+ghver="0.1.14.1"
 base_url="https://downloads.haskell.org/~ghcup"
 
 case "${plat}" in
