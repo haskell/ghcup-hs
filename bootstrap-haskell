@@ -415,17 +415,13 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 				case $MY_SHELL in
 					"") break ;;
 					fish)
-						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
 							mkdir -p "${GHCUP_PROFILE_FILE%/*}"
-							echo "# ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME" >> "${GHCUP_PROFILE_FILE}"
-							echo "test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH" >> "${GHCUP_PROFILE_FILE}"
-						fi
+							sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 						break ;;
 					bash)
-						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
-							echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-						fi
+						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+						echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 						case "${plat}" in
 							"Darwin"|"darwin")
 								if ! grep -q "ghcup-env" "${HOME}/.bash_profile" ; then
@@ -436,9 +432,8 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 						break ;;
 
 					zsh)
-						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
-							echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-						fi
+						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+						echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 						break ;;
 				esac
                 warn "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
