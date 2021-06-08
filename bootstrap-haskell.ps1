@@ -91,9 +91,47 @@ function Get-FileWCSynchronous{
     Get-Item -Path $destination | Unblock-File
 }
 
+function Test-AbsolutePath {
+  Param (
+      [Parameter(Mandatory=$True)]
+      [ValidateScript({[System.IO.Path]::IsPathRooted($_)})]
+      [String]$Path
+  )
+}
+
 $ErrorActionPreference = 'Stop'
 
-$GhcupDir = "C:\ghcup"
+$GhcupBasePrefix = [System.Environment]::GetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'user')
+
+if ($GhcupBasePrefix) {
+  $defaultGhcupBasePrefix = $GhcupBasePrefix
+} else {
+  $defaultGhcupBasePrefix = 'C:\'
+}
+
+while ($true) {
+  Print-Msg -color Magenta -msg ('Where to install to (this should be a short Path, preferably a Drive like ''C:\''){1}Press enter to accept the default [{0}]:' -f $defaultGhcupBasePrefix, "`n")
+  $basePrefixPrompt = Read-Host
+  $GhcupBasePrefix = ($defaultGhcupBasePrefix,$basePrefixPrompt)[[bool]$basePrefixPrompt]
+  if (!($GhcupBasePrefix.EndsWith('\'))) {
+    $GhcupBasePrefix = ('{0}\' -f $GhcupBasePrefix)
+  }
+
+  if (!($GhcupBasePrefix)) {
+    Print-Msg -color Red -msg "No directory specified!"
+  } elseif (!(Test-Path -LiteralPath ('{0}' -f $GhcupBasePrefix))) {
+    Print-Msg -color Red -msg "Directory does not exist, need to specify an existing Drive/Directory"
+  } elseif (!(Split-Path -IsAbsolute -Path "$GhcupBasePrefix")) {
+    Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+  } else {
+    Break
+  }
+}
+Print-Msg -msg ('Setting env variable GHCUP_INSTALL_BASE_PREFIX to ''{0}''' -f $GhcupBasePrefix)
+$null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $GhcupBasePrefix, [System.EnvironmentVariableTarget]::User)
+
+
+$GhcupDir = ('{0}\ghcup' -f $GhcupBasePrefix)
 $MsysDir = ('{0}\msys64' -f $GhcupDir)
 $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
 $BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell-windows'
@@ -101,7 +139,7 @@ $GhcupMsys2 = [System.Environment]::GetEnvironmentVariable('GHCUP_MSYS2', 'user'
 
 Print-Msg -msg 'Preparing for GHCup installation...'
 
-if (Test-Path -Path ('{0}' -f $GhcupDir)) {
+if (Test-Path -LiteralPath ('{0}' -f $GhcupDir)) {
   $decision = $Host.UI.PromptForChoice('Install GHCup'
                                       , 'GHCup is already installed, what do you want to do?'
                                       , @('&Reinstall'
@@ -124,7 +162,7 @@ $null = New-Item -Path ('{0}' -f $GhcupDir) -Name 'bin' -ItemType 'directory' -E
 
 Print-Msg -msg 'First checking for Msys2...'
 
-if (!(Test-Path -Path ('{0}' -f $MsysDir)) -And !($GhcupMsys2)) {
+if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
   $msys2Decision = $Host.UI.PromptForChoice('Install MSys2'
                                            , 'Do you want GHCup to install a default MSys2 toolchain (recommended)?'
                                            , @('&Yes'
@@ -166,31 +204,31 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir)) -And !($GhcupMsys2)) {
     Print-Msg -msg 'Setting default home directory...'
     & "$Bash" -lc "sed -i -e 's/db_home:.*$/db_home: windows/' /etc/nsswitch.conf"
   } elseif ($msys2Decision -eq 1) {
-    Print-Msg -color Magenta -msg 'Skipping MSys2 installation.'
-    if ($GhcupMsys2) {
-      Print-Msg -msg 'GHCUP_MSYS2 env var set, using existing installation...'
-      $MsysDir = $GhcupMsys2
-    } else {
-      $MsysDir = Read-Host -Prompt 'Input existing MSys2 toolchain directory'
+    Print-Msg -color Yellow -msg 'Skipping MSys2 installation.'
+    while ($true) {
+      if ($GhcupMsys2) {
+        $defaultMsys2Dir = $GhcupMsys2
+        Print-Msg -color Magenta -msg ('Input existing MSys2 toolchain directory. Press enter to accept the default [{0}]:' -f $defaultMsys2Dir)
+        $MsysDirPrompt = Read-Host
+        $MsysDir = ($defaultMsys2Dir,$MsysDirPrompt)[[bool]$MsysDirPrompt]
+      } else {
+        Print-Msg -color Magenta -msg 'Input existing MSys2 toolchain directory:' 
+        $MsysDir = Read-Host
+      }
+      if (!($MsysDir)) {
+        Print-Msg -color Red -msg "No directory specified!"         
+      } elseif (!(Test-Path -LiteralPath ('{0}' -f $MsysDir))) {
+        Print-Msg -color Red -msg ('MSys2 installation at ''{0}'' could not be found!' -f $MsysDir)
+      } elseif (!(Split-Path -IsAbsolute -Path "$MsysDir")) {
+        Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+      } else {
+        Break
+      }
     }
-
-    if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
-      Print-Msg -color Red -msg ('MSys2 installation at ''{0}'' could not be found, aborting!' -f $MsysDir)
-      Break
-    }
-    Print-Msg -msg 'Making MSys2 discoverable for GHCup...'
+    Print-Msg -msg ('Setting GHCUP_MSYS2 env var to ''{0}''' -f $MsysDir)
     $null = [Environment]::SetEnvironmentVariable("GHCUP_MSYS2", $MsysDir, [System.EnvironmentVariableTarget]::User)
     $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
   }
-} elseif ($GhcupMsys2) {
-  if (!(Test-Path -Path ('{0}' -f $GhcupMsys2))) {
-    Print-Msg -color Red -msg ('MSys2 installation at ''{0}'' could not be found, aborting!' -f $GhcupMsys2)
-    Break
-  }
-  $MsysDir = $GhcupMsys2
-  Print-Msg -msg 'Making MSys2 discoverable for GHCup...'
-  $null = [Environment]::SetEnvironmentVariable("GHCUP_MSYS2", $MsysDir, [System.EnvironmentVariableTarget]::User)
-  $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
 } else {
     Print-Msg -msg ('...Msys2 found in {0} ...skipping Msys2 installation.' -f $MsysDir)
 }
@@ -207,9 +245,9 @@ Print-Msg -msg 'Starting GHCup installer...'
 $Msys2Shell = ('{0}\msys2_shell.cmd' -f $MsysDir)
 
 if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
-  & "$Bash" -lc ('[ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -w ''{1}'') ; export PATH="/c/ghcup/bin:$PATH" ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl, $MsysDir)
+  & "$Bash" -lc ('[ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir)
 } else {
-  & "$Msys2Shell" -mingw64 -mintty -c ('[ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -w ''{1}'') ; export PATH="/c/ghcup/bin:$PATH" ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir)
+  & "$Msys2Shell" -mingw64 -mintty -c ('[ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir)
 }
 
 

@@ -47,14 +47,12 @@ import           Data.Maybe
 import           Data.String.Interpolate
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
-#if !defined(IS_WINDOWS)
 import           Optics
+#if !defined(IS_WINDOWS)
 import           System.Directory                                                
 #endif
 import           System.DiskSpace                                                
-#if !defined(IS_WINDOWS)
 import           System.Environment
-#endif
 import           System.FilePath
 import           System.IO.Temp
 
@@ -78,7 +76,8 @@ import Control.Concurrent (threadDelay)
 ghcupBaseDir :: IO FilePath
 ghcupBaseDir = do
 #if defined(IS_WINDOWS)
-  pure ("C:\\" </> "ghcup")
+  bdir <- fromMaybe "C:\\" <$> lookupEnv "GHCUP_INSTALL_BASE_PREFIX"
+  pure (bdir </> "ghcup")
 #else
   xdg <- useXDG
   if xdg
@@ -104,7 +103,7 @@ ghcupBaseDir = do
 ghcupConfigDir :: IO FilePath
 ghcupConfigDir = do
 #if defined(IS_WINDOWS)
-  pure ("C:\\" </> "ghcup")
+  ghcupBaseDir
 #else
   xdg <- useXDG
   if xdg
@@ -129,7 +128,7 @@ ghcupConfigDir = do
 ghcupBinDir :: IO FilePath
 ghcupBinDir = do
 #if defined(IS_WINDOWS)
-  pure ("C:\\" </> "ghcup" </> "bin")
+  ghcupBaseDir <&> (</> "bin")
 #else
   xdg <- useXDG
   if xdg
@@ -150,7 +149,7 @@ ghcupBinDir = do
 ghcupCacheDir :: IO FilePath
 ghcupCacheDir = do
 #if defined(IS_WINDOWS)
-  pure ("C:\\" </> "ghcup" </> "cache")
+  ghcupBaseDir <&> (</> "cache")
 #else
   xdg <- useXDG
   if xdg
@@ -172,7 +171,7 @@ ghcupCacheDir = do
 ghcupLogsDir :: IO FilePath
 ghcupLogsDir = do
 #if defined(IS_WINDOWS)
-  pure ("C:\\" </> "ghcup" </> "logs")
+  ghcupBaseDir <&> (</> "logs")
 #else
   xdg <- useXDG
   if xdg

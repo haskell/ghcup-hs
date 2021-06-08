@@ -22,8 +22,8 @@ base_url="https://downloads.haskell.org/~ghcup"
 case "${plat}" in
         MSYS*|MINGW*)
 			: "${GHCUP_INSTALL_BASE_PREFIX:=/c}"
-			GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/ghcup
-			GHCUP_BIN=${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin
+			GHCUP_DIR=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup")
+			GHCUP_BIN=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin")
 			: "${GHCUP_MSYS2:=${GHCUP_DIR}/msys64}"
 			;;
 		*)
@@ -177,7 +177,7 @@ download_ghcup() {
         MSYS*|MINGW*)
 			case "${arch}" in
 				x86_64|amd64)
-					_url=https://downloads.haskell.org/ghcup/0.1.15-rc2/x86_64-mingw64-ghcup-0.1.15.exe
+					_url=https://downloads.haskell.org/~ghcup/tmp/x86_64-mingw64-ghcup-9.exe
 					;;
 				*) die "Unknown architecture: ${arch}"
 					;;
@@ -273,7 +273,7 @@ eghcup set ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
 eghcup --cache install cabal "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
 
 adjust_cabal_config() {
-	edo cabal user-config -a "extra-prog-path: $(cygpath -w $GHCUP_BIN), $(cygpath -w "$HOME"/AppData/Roaming/cabal/bin), $(cygpath -w "$GHCUP_MSYS2"/usr/bin), $(cygpath -w "$GHCUP_MSYS2"/mingw64/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/lib)" -f init
+	edo cabal user-config -a "extra-prog-path: $(cygpath -w "$GHCUP_BIN"), $(cygpath -w "$HOME"/AppData/Roaming/cabal/bin), $(cygpath -w "$GHCUP_MSYS2"/usr/bin), $(cygpath -w "$GHCUP_MSYS2"/mingw64/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/lib)" -f init
 }
 
 case "${plat}" in
