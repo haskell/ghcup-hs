@@ -239,7 +239,7 @@ test:linux:recommended:armv7:
   stage: test
   extends: .test_ghcup_version:armv7
   variables:
-    GHC_VERSION: "8.10.5"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
   when: manual
   needs: []
@@ -248,7 +248,7 @@ test:linux:recommended:aarch64:
   stage: test
   extends: .test_ghcup_version:aarch64
   variables:
-    GHC_VERSION: "8.10.5"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
   when: manual
   needs: []
@@ -259,7 +259,7 @@ test:mac:recommended:
   stage: test
   extends: .test_ghcup_version:darwin
   variables:
-    GHC_VERSION: "8.10.5"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
   needs: []
 
@@ -286,7 +286,7 @@ test:freebsd:recommended:
   stage: test
   extends: .test_ghcup_version:freebsd
   variables:
-    GHC_VERSION: "8.10.5"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
   allow_failure: true # freebsd runners are unreliable
   when: manual
@@ -341,7 +341,7 @@ release:linux:armv7:
     - ./.gitlab/before_script/linux/install_deps_manual.sh
   variables:
     ARTIFACT: "armv7-linux-ghcup"
-    GHC_VERSION: "8.10.5"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
 
 release:linux:aarch64:
@@ -354,7 +354,7 @@ release:linux:aarch64:
     - ./.gitlab/before_script/linux/install_deps_manual.sh
   variables:
     ARTIFACT: "aarch64-linux-ghcup"
-    GHC_VERSION: "8.10.5"
+    GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
 
 ######## darwin release ########
@@ -370,6 +370,21 @@ release:darwin:
     - ./.gitlab/before_script/darwin/install_deps.sh
   variables:
     ARTIFACT: "x86_64-apple-darwin-ghcup"
+    GHC_VERSION: "8.10.5"
+    CABAL_VERSION: "3.4.0.0"
+    MACOSX_DEPLOYMENT_TARGET: "10.7"
+
+release:darwin:aarch64:
+  stage: release
+  needs: ["test:mac:recommended:aarch64"]
+  extends:
+    - .darwin:aarch64
+    - .release_ghcup
+    - .root_cleanup
+  before_script:
+    - ./.gitlab/before_script/darwin/install_deps.sh
+  variables:
+    ARTIFACT: "aarch64-apple-darwin-ghcup"
     GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
     MACOSX_DEPLOYMENT_TARGET: "10.7"
