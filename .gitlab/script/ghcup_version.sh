@@ -106,7 +106,11 @@ else # test wget a bit
 fi
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 eghcup set 8.10.3
+eghcup list
+which ghc
 eghcup set 8.10.3
+eghcup list
+which ghc
 [ "$(ghc --numeric-version)" = "8.10.3" ]
 eghcup set ${GHC_VERSION}
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]
