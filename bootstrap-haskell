@@ -73,9 +73,9 @@ _eghcup() {
 		args="-s ${BOOTSTRAP_HASKELL_YAML}"
 	fi 
     if [ -z "${BOOTSTRAP_HASKELL_VERBOSE}" ] ; then
-        ghcup ${args} "$@"
+        "${GHCUP_BIN}/ghcup" ${args} "$@"
     else
-        ghcup ${args} --verbose "$@"
+        "${GHCUP_BIN}/ghcup" ${args} --verbose "$@"
     fi
 }
 
