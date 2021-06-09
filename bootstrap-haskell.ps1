@@ -204,7 +204,7 @@ if (Test-Path -LiteralPath ('{0}' -f $GhcupDir)) {
   } elseif (!($Silent)) {
     $decision = $Host.UI.PromptForChoice('Install GHCup'
                                         , 'GHCup is already installed, what do you want to do?'
-                                        , @('&Reinstall'
+                                        , [System.Management.Automation.Host.ChoiceDescription[]] @('&Reinstall'
                                             '&Continue'
                                             '&Abort'), 1)
   } else {
@@ -234,7 +234,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
   } else {
     $msys2Decision = $Host.UI.PromptForChoice('Install MSys2'
         , 'Do you want GHCup to install a default MSys2 toolchain (recommended)?'
-        , @('&Yes'
+        , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
             '&No'), 0)
   }
 
@@ -271,7 +271,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     } elseif (!($Silent)) {
       $ghcBuildDeps = $Host.UI.PromptForChoice('Install Dependencies'
         , 'Install various dependencies to be able to build GHC itself and make use of ''ghcup compile'' command? (recommended, however this might take a while)'
-        , @('&Yes'
+        , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
             '&No'), 0)
     } else {
       $ghcBuildDeps = 0
