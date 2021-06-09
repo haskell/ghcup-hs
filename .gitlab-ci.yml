@@ -271,13 +271,13 @@ test:mac:latest:
     CABAL_VERSION: "3.4.0.0"
   needs: []
 
-# test:mac:recommended:aarch64:
-  # stage: test
-  # extends: .test_ghcup_version:darwin:aarch64
-  # variables:
-    # GHC_VERSION: "8.10.5"
-    # CABAL_VERSION: "3.4.0.0"
-  # needs: []
+test:mac:recommended:aarch64:
+  stage: test
+  extends: .test_ghcup_version:darwin:aarch64
+  variables:
+    GHC_VERSION: "8.10.5"
+    CABAL_VERSION: "3.4.0.0"
+  needs: []
 
 
 ######## freebsd test ########
