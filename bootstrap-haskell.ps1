@@ -123,6 +123,25 @@ function Test-AbsolutePath {
   )
 }
 
+function Exec
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0, Mandatory = 1)][string]$cmd,
+        [Parameter()][string]$errorMessage,
+        [parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$Passthrough
+    )
+    & $cmd @Passthrough
+    if ($lastexitcode -ne 0) {
+        if (!($errorMessage)) {
+          throw ('Exec: Error executing command {0} with arguments ''{1}''' -f $cmd, "$Passthrough")
+        } else {
+          throw ('Exec: ' + $errorMessage)
+        }
+    }
+}
+
 $ErrorActionPreference = 'Stop'
 
 $GhcupBasePrefixEnv = [System.Environment]::GetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'user')
@@ -227,7 +246,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     $archive = 'msys2-x86_64-latest.sfx.exe'
     
     if (Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue) {
-      curl.exe -o ('{0}\{1}' -f $env:TEMP, $archive) ('https://repo.msys2.org/distrib/{0}' -f $archive)
+      Exec "curl.exe" '-o' ('{0}\{1}' -f $env:TEMP, $archive) ('https://repo.msys2.org/distrib/{0}' -f $archive)
     } else {
       Get-FileWCSynchronous -url ('https://repo.msys2.org/distrib/{0}' -f $archive) -destinationFolder "$env:TEMP" -includeStats
     }
@@ -237,15 +256,15 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     Remove-Item -Path ('{0}/{1}' -f $env:TEMP, $archive)
 
     Print-Msg -msg 'Processing MSYS2 bash for first time use...'
-    & "$Bash" -lc 'exit'
+    Exec "$Bash" '-lc' 'exit'
 
-    & "$env:windir\system32\taskkill.exe" /F /FI `"MODULES eq msys-2.0.dll`"
+    Exec "$env:windir\system32\taskkill.exe" /F /FI `"MODULES eq msys-2.0.dll`"
 
     Print-Msg -msg 'Upgrading full system...'
-    & "$Bash" -lc 'pacman --noconfirm -Syuu'
+    Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
 
     Print-Msg -msg 'Upgrading full system twice...'
-    & "$Bash" -lc 'pacman --noconfirm -Syuu'
+    Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
 
     if ($Quick) {
       $ghcBuildDeps = $Quick
@@ -259,14 +278,14 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     }
     if ($ghcBuildDeps -eq 0) {
       Print-Msg -msg 'Installing GHC Build Dependencies...'
-      & "$Bash" -lc 'pacman --noconfirm -S --needed git tar curl wget base-devel gettext binutils autoconf make libtool automake python p7zip patch unzip mingw-w64-x86_64-toolchain mingw-w64-x86_64-gcc mingw-w64-x86_64-gdb mingw-w64-x86_64-python2 mingw-w64-x86_64-python3-sphinx'
+      Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed git tar curl wget base-devel gettext binutils autoconf make libtool automake python p7zip patch unzip mingw-w64-x86_64-toolchain mingw-w64-x86_64-gcc mingw-w64-x86_64-gdb mingw-w64-x86_64-python2 mingw-w64-x86_64-python3-sphinx'
     }
 
     Print-Msg -msg 'Updating SSL root certificate authorities...'
-    & "$Bash" -lc 'pacman --noconfirm -S ca-certificates'
+    Exec "$Bash" '-lc' 'pacman --noconfirm -S ca-certificates'
 
     Print-Msg -msg 'Setting default home directory...'
-    & "$Bash" -lc "sed -i -e 's/db_home:.*$/db_home: windows/' /etc/nsswitch.conf"
+    Exec "$Bash" '-lc' "sed -i -e 's/db_home:.*$/db_home: windows/' /etc/nsswitch.conf"
   } elseif ($msys2Decision -eq 1) {
     Print-Msg -color Yellow -msg 'Skipping MSys2 installation.'
     while ($true) {
@@ -315,9 +334,9 @@ if ($Silent) {
 }
 
 if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
-  & "$Bash" -lc ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport)
+  Exec "$Bash" '-lc' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport)
 } else {
-  & "$Msys2Shell" -mingw64 -mintty -c ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport)
+  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport)
 }
 
 
