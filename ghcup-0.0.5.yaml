@@ -1631,11 +1631,11 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-apple-darwin.tar.xz
               dlSubdir: ghc-8.10.5
               dlHash: ef0f47eff8962d58fa447123636cf8ef31c1e5b2d0ae90177d3388861ddf4a22
-          # FreeBSD:
-          #   unknown_versioning:
-          #     dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-portbld-freebsd.tar.xz
-          #     dlSubdir: ghc-8.10.5
-          #     dlHash: c9776a2ccf9629b03e967206a507fcdcb6c5189800a626e9461ababf6733c357
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/8.10.5/ghc-8.10.5-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 11a0b490bfb2f57b5bc87c69c197542eafce1b4991cc22f625179a6c6e567834
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-unknown-mingw32.tar.xz
