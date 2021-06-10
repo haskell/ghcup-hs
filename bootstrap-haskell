@@ -22,8 +22,8 @@ base_url="https://downloads.haskell.org/~ghcup"
 case "${plat}" in
         MSYS*|MINGW*)
 			: "${GHCUP_INSTALL_BASE_PREFIX:=/c}"
-			GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/ghcup
-			GHCUP_BIN=${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin
+			GHCUP_DIR=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup")
+			GHCUP_BIN=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin")
 			: "${GHCUP_MSYS2:=${GHCUP_DIR}/msys64}"
 			;;
 		*)
@@ -73,9 +73,9 @@ _eghcup() {
 		args="-s ${BOOTSTRAP_HASKELL_YAML}"
 	fi 
     if [ -z "${BOOTSTRAP_HASKELL_VERBOSE}" ] ; then
-        ghcup ${args} "$@"
+        "${GHCUP_BIN}/ghcup" ${args} "$@"
     else
-        ghcup ${args} --verbose "$@"
+        "${GHCUP_BIN}/ghcup" ${args} --verbose "$@"
     fi
 }
 
@@ -177,7 +177,7 @@ download_ghcup() {
         MSYS*|MINGW*)
 			case "${arch}" in
 				x86_64|amd64)
-					_url=https://downloads.haskell.org/ghcup/0.1.15-rc2/x86_64-mingw64-ghcup-0.1.15.exe
+					_url=https://downloads.haskell.org/~ghcup/tmp/x86_64-mingw64-ghcup-9.exe
 					;;
 				*) die "Unknown architecture: ${arch}"
 					;;
@@ -273,7 +273,7 @@ eghcup set ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
 eghcup --cache install cabal "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
 
 adjust_cabal_config() {
-	edo cabal user-config -a "extra-prog-path: $(cygpath -w $GHCUP_BIN), $(cygpath -w "$HOME"/AppData/Roaming/cabal/bin), $(cygpath -w "$GHCUP_MSYS2"/usr/bin), $(cygpath -w "$GHCUP_MSYS2"/mingw64/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/lib)" -f init
+	edo cabal user-config -a "extra-prog-path: $(cygpath -w "$GHCUP_BIN"), $(cygpath -w "$HOME"/AppData/Roaming/cabal/bin), $(cygpath -w "$GHCUP_MSYS2"/usr/bin), $(cygpath -w "$GHCUP_MSYS2"/mingw64/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/lib)" -f init
 }
 
 case "${plat}" in
@@ -415,17 +415,13 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 				case $MY_SHELL in
 					"") break ;;
 					fish)
-						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
 							mkdir -p "${GHCUP_PROFILE_FILE%/*}"
-							echo "# ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME" >> "${GHCUP_PROFILE_FILE}"
-							echo "test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH" >> "${GHCUP_PROFILE_FILE}"
-						fi
+							sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 						break ;;
 					bash)
-						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
-							echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-						fi
+						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+						echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 						case "${plat}" in
 							"Darwin"|"darwin")
 								if ! grep -q "ghcup-env" "${HOME}/.bash_profile" ; then
@@ -436,9 +432,8 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 						break ;;
 
 					zsh)
-						if ! grep -q "ghcup-env" "${GHCUP_PROFILE_FILE}" ; then
-							echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-						fi
+						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+						echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 						break ;;
 				esac
                 warn "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"

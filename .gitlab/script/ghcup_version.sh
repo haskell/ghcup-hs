@@ -60,15 +60,16 @@ else
 fi
 
 
-cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup')" .
-cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" .
-
-cp ./ghcup "$CI_PROJECT_DIR"/.local/bin/ghcup
-cp ./ghcup-gen "$CI_PROJECT_DIR"/.local/bin/ghcup-gen
+cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup')" "$CI_PROJECT_DIR"/.local/bin/ghcup
+cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" "$CI_PROJECT_DIR"/.local/bin/ghcup-gen
 
 ### cleanup
 
-rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
+if [ "${OS}" = "WINDOWS" ] ; then
+	rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/ghcup
+else
+	rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
+fi
 
 
 ### manual cli based testing
@@ -92,9 +93,11 @@ eghcup list -t cabal
 
 ghc_ver=$(ghc --numeric-version)
 ghc --version
-ghci --version
-ghc-$(ghc --numeric-version) --version
-ghci-$(ghc --numeric-version) --version
+ghc-${ghc_ver} --version
+if [ "${OS}" != "WINDOWS" ] ; then
+		ghci --version
+		ghci-${ghc_ver} --version
+fi
 
 
 # test installing new ghc doesn't mess with currently set GHC
@@ -106,7 +109,11 @@ else # test wget a bit
 fi
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 eghcup set 8.10.3
+eghcup list
+which ghc
 eghcup set 8.10.3
+eghcup list
+which ghc
 [ "$(ghc --numeric-version)" = "8.10.3" ]
 eghcup set ${GHC_VERSION}
 [ "$(ghc --numeric-version)" = "${ghc_ver}" ]

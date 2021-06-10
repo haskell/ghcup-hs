@@ -199,7 +199,7 @@ test:linux:bootstrap_script:
   script:
     - ./.gitlab/script/ghcup_bootstrap.sh
   variables:
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
   extends:
     - .debian
@@ -211,7 +211,7 @@ test:linux:recommended:
   stage: test
   extends: .test_ghcup_version:linux
   variables:
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
   needs: []
 
@@ -219,7 +219,7 @@ test:linux:latest:
   stage: test
   extends: .test_ghcup_version:linux
   variables:
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "9.0.1"
     CABAL_VERSION: "3.4.0.0"
   needs: []
 
@@ -229,7 +229,7 @@ test:linux:recommended:32bit:
   stage: test
   extends: .test_ghcup_version:linux32
   variables:
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.2.0.0"
   needs: []
 
@@ -267,7 +267,7 @@ test:mac:latest:
   stage: test
   extends: .test_ghcup_version:darwin
   variables:
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "9.0.1"
     CABAL_VERSION: "3.4.0.0"
   needs: []
 
@@ -292,23 +292,13 @@ test:freebsd:recommended:
   when: manual
   needs: []
 
-test:freebsd:latest:
-  stage: test
-  extends: .test_ghcup_version:freebsd
-  variables:
-    GHC_VERSION: "8.10.4"
-    CABAL_VERSION: "3.4.0.0"
-  allow_failure: true # freebsd runners are unreliable
-  when: manual
-  needs: []
-
 ######## windows test ########
 
 test:windows:recommended:
   stage: test
   extends: .test_ghcup_version:windows
   variables:
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
   needs: []
 
@@ -324,7 +314,7 @@ release:linux:64bit:
     - ./.gitlab/before_script/linux/alpine/install_deps.sh
   variables:
     ARTIFACT: "x86_64-linux-ghcup"
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
 
 
@@ -338,7 +328,7 @@ release:linux:32bit:
     - ./.gitlab/before_script/linux/alpine/install_deps.sh
   variables:
     ARTIFACT: "i386-linux-ghcup"
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.2.0.0"
 
 release:linux:armv7:
@@ -380,7 +370,22 @@ release:darwin:
     - ./.gitlab/before_script/darwin/install_deps.sh
   variables:
     ARTIFACT: "x86_64-apple-darwin-ghcup"
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
+    CABAL_VERSION: "3.4.0.0"
+    MACOSX_DEPLOYMENT_TARGET: "10.7"
+
+release:darwin:aarch64:
+  stage: release
+  needs: ["test:mac:recommended:aarch64"]
+  extends:
+    - .darwin:aarch64
+    - .release_ghcup
+    - .root_cleanup
+  before_script:
+    - ./.gitlab/before_script/darwin/install_deps.sh
+  variables:
+    ARTIFACT: "aarch64-apple-darwin-ghcup"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
     MACOSX_DEPLOYMENT_TARGET: "10.7"
 
@@ -389,7 +394,7 @@ release:darwin:
 
 release:freebsd:
   stage: release
-  needs: ["test:freebsd:recommended", "test:freebsd:latest"]
+  needs: ["test:freebsd:recommended"]
   extends:
     - .freebsd
     - .release_ghcup
@@ -398,7 +403,7 @@ release:freebsd:
     - ./.gitlab/before_script/freebsd/install_deps.sh
   variables:
     ARTIFACT: "x86_64-portbld-freebsd-ghcup"
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
 
 ######## windows release ########
@@ -414,7 +419,7 @@ release:windows:
     - bash ./.gitlab/before_script/windows/install_deps.sh
   variables:
     ARTIFACT: "x86_64-mingw64-ghcup"
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
 
 ######## hlint ########
@@ -428,7 +433,7 @@ hlint:
   script:
     - ./.gitlab/script/hlint.sh
   variables:
-    GHC_VERSION: "8.10.4"
+    GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
     JSON_VERSION: "0.0.4"
   allow_failure: true

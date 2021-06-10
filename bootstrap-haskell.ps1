@@ -1,3 +1,32 @@
+<#
+    .SYNOPSIS
+    Script to bootstrap a Haskell environment
+
+    .DESCRIPTION
+    This is the windows GHCup installer, installing:
+
+    * ghcup - The Haskell toolchain installer"
+    * ghc   - The Glasgow Haskell Compiler"
+    * msys2 - Unix-style toolchain needed for dependencies and tools
+    * cabal - The Cabal build tool for managing Haskell software"
+    * stack - (optional) A cross-platform program for developing Haskell projects"
+    * hls   - (optional) A language server for developers to integrate with their editor/IDE"
+#>
+param (
+    # Run a non-interactive installation
+    [switch]$Silent,
+    # Specify the install root (default: 'C:\')
+    [string]$InstallDir,
+    # Instead of installing a new MSys2, use an existing installation
+    [string]$ExistingMsys2Dir,
+    # Specify the cabal root directory (default: '$InstallDir\cabal')
+    [string]$CabalDir,
+    # Perform a quick installation, omitting some expensive operations (you may have to install dependencies yourself later)
+    [bool]$Quick,
+    # Overwrite (or rather backup) a previous install
+    [bool]$Overwrite
+)
+
 function Print-Msg {
   param ( [Parameter(Mandatory=$true, HelpMessage='String to output')][string]$msg, [string]$color = "Green" )
   Write-Host ('{0}' -f $msg) -ForegroundColor $color
@@ -15,50 +44,47 @@ function Create-Shortcut {
 }
 
 function Add-EnvPath {
-    param(
-        [Parameter(Mandatory=$true,HelpMessage='The Pathe to add to Users environment')]
-        [string] $Path,
+  param(
+      [Parameter(Mandatory=$true,HelpMessage='The Path to add to Users environment')]
+      [string] $Path,
 
-        [ValidateSet('Machine', 'User', 'Session')]
-        [string] $Container = 'Session'
-    )
+      [ValidateSet('Machine', 'User', 'Session')]
+      [string] $Container = 'Session'
+  )
 
-    function Where-Something
-    {
-      param
-      (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, HelpMessage='Data to filter')]
-        $InputObject
-      )
-      process
-      {
-        if ($InputObject)
-        {
-          $InputObject
-        }
+  if ($Container -eq 'Session') {
+      $envPaths = [Collections.Generic.List[String]]($env:Path -split ([IO.Path]::PathSeparator))
+      if ($envPaths -notcontains $Path) {
+          $envPaths.Add($Path)
+          $env:PATH = $envPaths -join ([IO.Path]::PathSeparator)
       }
-    }
+  }
+  else {
+      [Microsoft.Win32.RegistryHive]$hive, $keyPath = switch ($Container) {
+          'Machine' { 'LocalMachine', 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment' }
+          'User' { 'CurrentUser', 'Environment' }
+      }
 
-  if ($Container -ne 'Session') {
-        $containerMapping = @{
-            Machine = [EnvironmentVariableTarget]::Machine
-            User = [EnvironmentVariableTarget]::User
-        }
-        $containerType = $containerMapping[$Container]
+      $hiveKey = $envKey = $null
+      try {
+          $hiveKey = [Microsoft.Win32.RegistryKey]::OpenBaseKey($hive, 'Default')
+          $envKey = $hiveKey.OpenSubKey($keyPath, $true)
+          $rawPath = $envKey.GetValue('PATH', '', 'DoNotExpandEnvironmentNames')
 
-        $persistedPaths = [Environment]::GetEnvironmentVariable('Path', $containerType) -split ';'
-        if ($persistedPaths -notcontains $Path) {
-            $persistedPaths = $persistedPaths + $Path | Where-Something
-            [Environment]::SetEnvironmentVariable('Path', $persistedPaths -join ';', $containerType)
-        }
-    }
-
-    $envPaths = $env:Path -split ';'
-    if ($envPaths -notcontains $Path) {
-        $envPaths = $envPaths + $Path | Where-Something
-        $env:Path = $envPaths -join ';'
-    }
+          $envPaths = [Collections.Generic.List[String]]($rawPath -split ([IO.Path]::PathSeparator))
+          if ($envPaths -notcontains $Path) {
+              $envPaths.Add($Path)
+              $envKey.SetValue('PATH', ($envPaths -join ([IO.Path]::PathSeparator)), 'ExpandString')
+          }
+      }
+      finally {
+          if ($envKey) { $envKey.Dispose() }
+          if ($hiveKey) { $hiveKey.Dispose() }
+      }
+  }
 }
+
+
 
 filter Get-FileSize {
 	'{0:N2} {1}' -f $(
@@ -91,9 +117,81 @@ function Get-FileWCSynchronous{
     Get-Item -Path $destination | Unblock-File
 }
 
+function Test-AbsolutePath {
+  Param (
+      [Parameter(Mandatory=$True)]
+      [ValidateScript({[System.IO.Path]::IsPathRooted($_)})]
+      [String]$Path
+  )
+}
+
+function Exec
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0, Mandatory = 1)][string]$cmd,
+        [Parameter()][string]$errorMessage,
+        [parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$Passthrough
+    )
+    & $cmd @Passthrough
+    if ($lastexitcode -ne 0) {
+        if (!($errorMessage)) {
+          throw ('Exec: Error executing command {0} with arguments ''{1}''' -f $cmd, "$Passthrough")
+        } else {
+          throw ('Exec: ' + $errorMessage)
+        }
+    }
+}
+
 $ErrorActionPreference = 'Stop'
 
-$GhcupDir = "C:\ghcup"
+$GhcupBasePrefixEnv = [System.Environment]::GetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'user')
+
+if ($GhcupBasePrefixEnv) {
+  $defaultGhcupBasePrefix = $GhcupBasePrefixEnv
+} else {
+  $defaultGhcupBasePrefix = 'C:\'
+}
+
+if ($Silent -and !($InstallDir)) {
+  $GhcupBasePrefix = $defaultGhcupBasePrefix
+} elseif ($InstallDir) {
+  if (!(Test-Path -LiteralPath ('{0}' -f $InstallDir) -IsValid)) {
+    Print-Msg -color Red -msg "Not a valid directory!"
+    Exit 1
+  } elseif (!(Split-Path -IsAbsolute -Path "$InstallDir")) {
+    Print-Msg -color Red -msg "Non-absolute Path specified!"
+    Exit 1
+  } else {
+    $GhcupBasePrefix = $InstallDir
+  }
+} else {
+  while ($true) {
+    Print-Msg -color Magenta -msg ('Where to install to (this should be a short Path, preferably a Drive like ''C:\''){1}Press enter to accept the default [{0}]:' -f $defaultGhcupBasePrefix, "`n")
+    $basePrefixPrompt = Read-Host
+    $GhcupBasePrefix = ($defaultGhcupBasePrefix,$basePrefixPrompt)[[bool]$basePrefixPrompt]
+    if (!($GhcupBasePrefix.EndsWith('\'))) {
+      $GhcupBasePrefix = ('{0}\' -f $GhcupBasePrefix)
+    }
+  
+    if (!($GhcupBasePrefix)) {
+      Print-Msg -color Red -msg "No directory specified!"
+    } elseif (!(Test-Path -LiteralPath ('{0}' -f $GhcupBasePrefix))) {
+      Print-Msg -color Red -msg "Directory does not exist, need to specify an existing Drive/Directory"
+    } elseif (!(Split-Path -IsAbsolute -Path "$GhcupBasePrefix")) {
+      Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+    } else {
+      Break
+    }
+  }
+}
+
+Print-Msg -msg ('Setting env variable GHCUP_INSTALL_BASE_PREFIX to ''{0}''' -f $GhcupBasePrefix)
+$null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $GhcupBasePrefix, [System.EnvironmentVariableTarget]::User)
+
+
+$GhcupDir = ('{0}\ghcup' -f $GhcupBasePrefix)
 $MsysDir = ('{0}\msys64' -f $GhcupDir)
 $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
 $BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell-windows'
@@ -101,12 +199,20 @@ $GhcupMsys2 = [System.Environment]::GetEnvironmentVariable('GHCUP_MSYS2', 'user'
 
 Print-Msg -msg 'Preparing for GHCup installation...'
 
-if (Test-Path -Path ('{0}' -f $GhcupDir)) {
-  $decision = $Host.UI.PromptForChoice('Install GHCup'
-                                      , 'GHCup is already installed, what do you want to do?'
-                                      , @('&Reinstall'
-                                          '&Continue'
-                                          '&Abort'), 1)
+if (Test-Path -LiteralPath ('{0}' -f $GhcupDir)) {
+  Print-Msg -msg ('GHCup already installed at ''{0}''...' -f $GhcupDir)
+  if ($Overwrite) {
+    $decision = 0
+  } elseif (!($Silent)) {
+    $decision = $Host.UI.PromptForChoice('Install GHCup'
+                                        , 'GHCup is already installed, what do you want to do?'
+                                        , [System.Management.Automation.Host.ChoiceDescription[]] @('&Reinstall'
+                                            '&Continue'
+                                            '&Abort'), 1)
+  } else {
+    $decision = 1
+  }
+
   if ($decision -eq 0) {
     $suffix = [IO.Path]::GetRandomFileName()
     Print-Msg -msg ('Backing up {0} to {0}-{1} ...' -f $GhcupDir, $suffix)
@@ -114,7 +220,7 @@ if (Test-Path -Path ('{0}' -f $GhcupDir)) {
   } elseif ($decision -eq 1) {
     Print-Msg -msg 'Continuing installation...'
   } elseif ($decision -eq 2) {
-    Break
+    Exit 0
   }
 }
 
@@ -124,11 +230,16 @@ $null = New-Item -Path ('{0}' -f $GhcupDir) -Name 'bin' -ItemType 'directory' -E
 
 Print-Msg -msg 'First checking for Msys2...'
 
-if (!(Test-Path -Path ('{0}' -f $MsysDir)) -And !($GhcupMsys2)) {
-  $msys2Decision = $Host.UI.PromptForChoice('Install MSys2'
-                                           , 'Do you want GHCup to install a default MSys2 toolchain (recommended)?'
-                                           , @('&Yes'
-                                               '&No'), 0)
+if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
+  if ($Silent) {
+    $msys2Decision = 0
+  } else {
+    $msys2Decision = $Host.UI.PromptForChoice('Install MSys2'
+        , 'Do you want GHCup to install a default MSys2 toolchain (recommended)?'
+        , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
+            '&No'), 0)
+  }
+
   if ($msys2Decision -eq 0) {
     Print-Msg -msg ('...Msys2 doesn''t exist, installing into {0} ...this may take a while' -f $MsysDir)
 
@@ -137,7 +248,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir)) -And !($GhcupMsys2)) {
     $archive = 'msys2-x86_64-latest.sfx.exe'
     
     if (Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue) {
-      curl.exe -o ('{0}\{1}' -f $env:TEMP, $archive) ('https://repo.msys2.org/distrib/{0}' -f $archive)
+      Exec "curl.exe" '-o' ('{0}\{1}' -f $env:TEMP, $archive) ('https://repo.msys2.org/distrib/{0}' -f $archive)
     } else {
       Get-FileWCSynchronous -url ('https://repo.msys2.org/distrib/{0}' -f $archive) -destinationFolder "$env:TEMP" -includeStats
     }
@@ -147,50 +258,62 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir)) -And !($GhcupMsys2)) {
     Remove-Item -Path ('{0}/{1}' -f $env:TEMP, $archive)
 
     Print-Msg -msg 'Processing MSYS2 bash for first time use...'
-    & "$Bash" -lc 'exit'
+    Exec "$Bash" '-lc' 'exit'
 
-    & "$env:windir\system32\taskkill.exe" /F /FI `"MODULES eq msys-2.0.dll`"
+    Exec "$env:windir\system32\taskkill.exe" /F /FI `"MODULES eq msys-2.0.dll`"
 
     Print-Msg -msg 'Upgrading full system...'
-    & "$Bash" -lc 'pacman --noconfirm -Syuu'
+    Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
 
     Print-Msg -msg 'Upgrading full system twice...'
-    & "$Bash" -lc 'pacman --noconfirm -Syuu'
+    Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
 
-    Print-Msg -msg 'Installing GHC Build Dependencies...'
-    & "$Bash" -lc 'pacman --noconfirm -S --needed git tar curl wget base-devel gettext binutils autoconf make libtool automake python p7zip patch unzip mingw-w64-x86_64-toolchain mingw-w64-x86_64-gcc mingw-w64-x86_64-gdb mingw-w64-x86_64-python2 mingw-w64-x86_64-python3-sphinx'
+    if ($Quick) {
+      $ghcBuildDeps = $Quick
+    } elseif (!($Silent)) {
+      $ghcBuildDeps = $Host.UI.PromptForChoice('Install Dependencies'
+        , 'Install various dependencies to be able to build GHC itself and make use of ''ghcup compile'' command? (recommended, however this might take a while)'
+        , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
+            '&No'), 0)
+    } else {
+      $ghcBuildDeps = 0
+    }
+    if ($ghcBuildDeps -eq 0) {
+      Print-Msg -msg 'Installing GHC Build Dependencies...'
+      Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed git tar curl wget base-devel gettext binutils autoconf make libtool automake python p7zip patch unzip mingw-w64-x86_64-toolchain mingw-w64-x86_64-gcc mingw-w64-x86_64-gdb mingw-w64-x86_64-python2 mingw-w64-x86_64-python3-sphinx'
+    }
 
     Print-Msg -msg 'Updating SSL root certificate authorities...'
-    & "$Bash" -lc 'pacman --noconfirm -S ca-certificates'
+    Exec "$Bash" '-lc' 'pacman --noconfirm -S ca-certificates'
 
     Print-Msg -msg 'Setting default home directory...'
-    & "$Bash" -lc "sed -i -e 's/db_home:.*$/db_home: windows/' /etc/nsswitch.conf"
+    Exec "$Bash" '-lc' "sed -i -e 's/db_home:.*$/db_home: windows/' /etc/nsswitch.conf"
   } elseif ($msys2Decision -eq 1) {
-    Print-Msg -color Magenta -msg 'Skipping MSys2 installation.'
-    if ($GhcupMsys2) {
-      Print-Msg -msg 'GHCUP_MSYS2 env var set, using existing installation...'
-      $MsysDir = $GhcupMsys2
-    } else {
-      $MsysDir = Read-Host -Prompt 'Input existing MSys2 toolchain directory'
+    Print-Msg -color Yellow -msg 'Skipping MSys2 installation.'
+    while ($true) {
+      if ($GhcupMsys2) {
+        $defaultMsys2Dir = $GhcupMsys2
+        Print-Msg -color Magenta -msg ('Input existing MSys2 toolchain directory. Press enter to accept the default [{0}]:' -f $defaultMsys2Dir)
+        $MsysDirPrompt = Read-Host
+        $MsysDir = ($defaultMsys2Dir,$MsysDirPrompt)[[bool]$MsysDirPrompt]
+      } else {
+        Print-Msg -color Magenta -msg 'Input existing MSys2 toolchain directory:' 
+        $MsysDir = Read-Host
+      }
+      if (!($MsysDir)) {
+        Print-Msg -color Red -msg "No directory specified!"         
+      } elseif (!(Test-Path -LiteralPath ('{0}' -f $MsysDir))) {
+        Print-Msg -color Red -msg ('MSys2 installation at ''{0}'' could not be found!' -f $MsysDir)
+      } elseif (!(Split-Path -IsAbsolute -Path "$MsysDir")) {
+        Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+      } else {
+        Break
+      }
     }
-
-    if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
-      Print-Msg -color Red -msg ('MSys2 installation at ''{0}'' could not be found, aborting!' -f $MsysDir)
-      Break
-    }
-    Print-Msg -msg 'Making MSys2 discoverable for GHCup...'
+    Print-Msg -msg ('Setting GHCUP_MSYS2 env var to ''{0}''' -f $MsysDir)
     $null = [Environment]::SetEnvironmentVariable("GHCUP_MSYS2", $MsysDir, [System.EnvironmentVariableTarget]::User)
     $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
   }
-} elseif ($GhcupMsys2) {
-  if (!(Test-Path -Path ('{0}' -f $GhcupMsys2))) {
-    Print-Msg -color Red -msg ('MSys2 installation at ''{0}'' could not be found, aborting!' -f $GhcupMsys2)
-    Break
-  }
-  $MsysDir = $GhcupMsys2
-  Print-Msg -msg 'Making MSys2 discoverable for GHCup...'
-  $null = [Environment]::SetEnvironmentVariable("GHCUP_MSYS2", $MsysDir, [System.EnvironmentVariableTarget]::User)
-  $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
 } else {
     Print-Msg -msg ('...Msys2 found in {0} ...skipping Msys2 installation.' -f $MsysDir)
 }
@@ -200,16 +323,55 @@ Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourc
 Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath ('{0}\Desktop\Mingw package management docs.url' -f $HOME)
 
 Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
-Add-EnvPath -Path ('{0}\bin' -f $GhcupDir) -Container 'User'
+Add-EnvPath -Path ('{0}\bin' -f ([System.IO.Path]::GetFullPath("$GhcupDir"))) -Container 'User'
+
+if ($CabalDir) {
+  $CabDirEnv = $CabalDir
+  if (!($CabDirEnv)) {
+    Print-Msg -color Red -msg "No directory specified!"
+    Exit 1        
+  } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
+    Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+    Exit 1
+  }
+} elseif (!($Silent)) {
+  while ($true) {
+
+    $defaultCabalDir = ('{0}\cabal' -f $GhcupBasePrefix)
+    Print-Msg -color Magenta -msg ('Specify Cabal directory (this is where haskell packages end up). Press enter to accept the default [{0}]:' -f $defaultCabalDir)
+    $CabalDirPrompt = Read-Host
+    $CabDirEnv = ($defaultCabalDir,$CabalDirPrompt)[[bool]$CabalDirPrompt]
+
+    if (!($CabDirEnv)) {
+      Print-Msg -color Red -msg "No directory specified!"         
+    } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
+      Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+    } else {
+      Break
+    }
+  }
+} else {
+  $CabDirEnv = ('{0}\cabal' -f $GhcupBasePrefix)
+}
+
+$CabalDirFull = [System.IO.Path]::GetFullPath("$CabDirEnv")
+Print-Msg -msg ('Setting CABAL_DIR to ''{0}''' -f $CabalDirFull)
+$null = [Environment]::SetEnvironmentVariable("CABAL_DIR", $CabalDirFull, [System.EnvironmentVariableTarget]::User)
 
 Print-Msg -msg 'Starting GHCup installer...'
 
 $Msys2Shell = ('{0}\msys2_shell.cmd' -f $MsysDir)
 
-if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
-  & "$Bash" -lc ('[ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -w ''{1}'') ; export PATH="/c/ghcup/bin:$PATH" ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl, $MsysDir)
+if ($Silent) {
+  $SilentExport = 'export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 ;'
 } else {
-  & "$Msys2Shell" -mingw64 -mintty -c ('[ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -w ''{1}'') ; export PATH="/c/ghcup/bin:$PATH" ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir)
+  $SilentExport = ''
+}
+
+if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
+  Exec "$Bash" '-lc' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
+} else {
+  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
 }
 
 
