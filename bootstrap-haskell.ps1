@@ -14,7 +14,7 @@
 #>
 param (
     # Run a non-interactive installation
-    [bool]$Silent = $false,
+    [switch]$Silent,
     # Specify the install root (default: 'C:\')
     [string]$InstallDir,
     # Instead of installing a new MSys2, use an existing installation
