@@ -19,6 +19,8 @@ param (
     [string]$InstallDir,
     # Instead of installing a new MSys2, use an existing installation
     [string]$ExistingMsys2Dir,
+    # Specify the cabal root directory (default: '$InstallDir\cabal')
+    [string]$CabalDir,
     # Perform a quick installation, omitting some expensive operations (you may have to install dependencies yourself later)
     [bool]$Quick,
     # Overwrite (or rather backup) a previous install
@@ -323,6 +325,39 @@ Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -Argu
 Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
 Add-EnvPath -Path ('{0}\bin' -f ([System.IO.Path]::GetFullPath("$GhcupDir"))) -Container 'User'
 
+if ($CabalDir) {
+  $CabDirEnv = $CabalDir
+  if (!($CabDirEnv)) {
+    Print-Msg -color Red -msg "No directory specified!"
+    Exit 1        
+  } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
+    Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+    Exit 1
+  }
+} elseif (!($Silent)) {
+  while ($true) {
+
+    $defaultCabalDir = ('{0}\cabal' -f $GhcupBasePrefix)
+    Print-Msg -color Magenta -msg ('Specify Cabal directory (this is where haskell packages end up). Press enter to accept the default [{0}]:' -f $defaultCabalDir)
+    $CabalDirPrompt = Read-Host
+    $CabDirEnv = ($defaultCabalDir,$CabalDirPrompt)[[bool]$CabalDirPrompt]
+
+    if (!($CabDirEnv)) {
+      Print-Msg -color Red -msg "No directory specified!"         
+    } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
+      Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+    } else {
+      Break
+    }
+  }
+} else {
+  $CabDirEnv = ('{0}\cabal' -f $GhcupBasePrefix)
+}
+
+$CabalDirFull = [System.IO.Path]::GetFullPath("$CabDirEnv")
+Print-Msg -msg ('Setting CABAL_DIR to ''{0}''' -f $CabalDirFull)
+$null = [Environment]::SetEnvironmentVariable("CABAL_DIR", $CabalDirFull, [System.EnvironmentVariableTarget]::User)
+
 Print-Msg -msg 'Starting GHCup installer...'
 
 $Msys2Shell = ('{0}\msys2_shell.cmd' -f $MsysDir)
@@ -334,9 +369,9 @@ if ($Silent) {
 }
 
 if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
-  Exec "$Bash" '-lc' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport)
+  Exec "$Bash" '-lc' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
 } else {
-  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport)
+  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
 }
 
 
