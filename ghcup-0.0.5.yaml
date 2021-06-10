@@ -1665,6 +1665,11 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-aarch64-deb10-linux.tar.xz
               dlSubdir: ghc-8.10.5
               dlHash: 9a085cd8a7f8e0ace21ac67dbf659a56fcf41564b48817ba42cd8a1aac7f0ddc
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-aarch64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 03684e70ff03d041b9a4e0f84c177953a241ab8ec7a028c72fa21ac67e66cb09
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
@@ -2008,6 +2013,11 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.0.0/cabal-install-3.4.0.0-aarch64-ubuntu-18.04.tar.xz
               dlHash: 04d378347896dfdc3510b192b97489815cfa5d692f46e2758da0f789e682b8f0
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-aarch64-darwin-big-sur.tar.xz
+              dlHash: 46d8f96446a6bcdb81b3a9fbc14b137dc4f08436b46fe6446c5fba7bcb9b3d75
+
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
