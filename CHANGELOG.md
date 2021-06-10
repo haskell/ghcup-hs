@@ -1,7 +1,8 @@
 # Revision history for ghcup
 
-## 0.1.15 -- ????-??-??
+## 0.1.15.1 -- ????-??-??
 
+* Add Apple Silicon support
 * Add windows support wrt [#130](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/130)
 * Add date to GHC bindist names created by ghcup
 * Warn when /tmp doesn't have 5GB or more of disk space
