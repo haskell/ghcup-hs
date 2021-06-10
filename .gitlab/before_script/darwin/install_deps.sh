@@ -7,7 +7,7 @@ set -eux
 mkdir -p "${TMPDIR}"
 
 if [ $ARCH = 'ARM64' ] ; then
-	curl -O https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-aarch64-apple-darwin.tar.xz
+	curl -L -O https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-aarch64-apple-darwin.tar.xz
 	tar -xf ghc-*.tar.*
 	cd ghc-*
 	./configure --prefix="${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/ghc/8.10.5
@@ -22,8 +22,8 @@ if [ $ARCH = 'ARM64' ] ; then
 	cd ..
 	rm -rf ghc-8.10.5 ghc-*.tar.*
 
-	curl -O https://github.com/haskell/cabal/files/6617482/cabal-install-3.5-arm64-darwin-11.4-bootstrapped.tar.gz
-	tar -xf cabal-install-*
+	curl -L -O https://github.com/haskell/cabal/files/6617482/cabal-install-3.5-arm64-darwin-11.4-bootstrapped.tar.gz
+	tar xf cabal-install-*
 	mv cabal "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup/bin/cabal
 	rm -rf cabal-install
 else
