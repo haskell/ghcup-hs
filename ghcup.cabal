@@ -115,7 +115,7 @@ library
     , generics-sop          ^>=0.5
     , haskus-utils-types    ^>=1.5
     , haskus-utils-variant  >=3.0        && <3.2
-    , lzma-static           ^>=5.2.5.2
+    , lzma-static           ^>=5.2.5.3
     , megaparsec            >=8.0.0      && <9.1
     , monad-logger          ^>=0.3.31
     , mtl                   ^>=2.2
