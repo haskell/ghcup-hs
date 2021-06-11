@@ -98,7 +98,6 @@ getPlatform = do
         either (const Nothing) Just
           . versioning
           -- TODO: maybe do this somewhere else
-          . getMajorVersion
           . decUTF8Safe'
         <$> getDarwinVersion
       pure $ PlatformResult { _platform = Darwin, _distroVersion = ver }
@@ -112,7 +111,6 @@ getPlatform = do
   lift $ $(logDebug) [i|Identified Platform as: #{prettyShow pfr}|]
   pure pfr
  where
-  getMajorVersion = T.intercalate "." . take 2 . T.split (== '.')
   getFreeBSDVersion = lift $ fmap _stdOut $ executeOut "freebsd-version" [] Nothing
   getDarwinVersion = lift $ fmap _stdOut $ executeOut "sw_vers"
                                                         ["-productVersion"]
