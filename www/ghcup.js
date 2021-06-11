@@ -158,8 +158,8 @@ function copyToClipboard() {
   document.body.removeChild(el);
 }
 
-function copyToClipboardSilicon() {
-  const text = document.getElementById("ghcup-command-silicon").innerText;
+function copyToClipboardPowershell() {
+  const text = document.getElementById("ghcup-command-powershell").innerText;
   const el = document.createElement('textarea');
   el.value = text;
   document.body.appendChild(el);
