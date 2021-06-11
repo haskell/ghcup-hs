@@ -67,7 +67,7 @@ function Add-EnvPath {
 
       $hiveKey = $envKey = $null
       try {
-          $hiveKey = [Microsoft.Win32.RegistryKey]::OpenBaseKey($hive, 'Default')
+          $hiveKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($hive, '')
           $envKey = $hiveKey.OpenSubKey($keyPath, $true)
           $rawPath = $envKey.GetValue('PATH', '', 'DoNotExpandEnvironmentNames')
 
@@ -78,8 +78,8 @@ function Add-EnvPath {
           }
       }
       finally {
-          if ($envKey) { $envKey.Dispose() }
-          if ($hiveKey) { $hiveKey.Dispose() }
+          if ($envKey) { $envKey.Close() }
+          if ($hiveKey) { $hiveKey.Close() }
       }
   }
 }
