@@ -7,6 +7,7 @@ set -eux
 mkdir -p "${TMPDIR}"
 
 if [ $ARCH = 'ARM64' ] ; then
+	export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
 	curl -sSfL https://downloads.haskell.org/~ghcup/0.1.15.1/aarch64-apple-darwin-ghcup-0.1.15.1 > ./ghcup-bin
 	chmod +x ghcup-bin
 else
