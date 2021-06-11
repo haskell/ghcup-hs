@@ -194,7 +194,7 @@ $null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $Ghcu
 $GhcupDir = ('{0}\ghcup' -f $GhcupBasePrefix)
 $MsysDir = ('{0}\msys64' -f $GhcupDir)
 $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
-$BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell-windows'
+$BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell'
 $GhcupMsys2 = [System.Environment]::GetEnvironmentVariable('GHCUP_MSYS2', 'user')
 
 Print-Msg -msg 'Preparing for GHCup installation...'
