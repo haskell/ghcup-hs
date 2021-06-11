@@ -1,14 +1,14 @@
 # Revision history for ghcup
 
-## 0.1.15.1 -- ????-??-??
+## 0.1.15.1 -- 2021-06-11
 
 * Add Apple Silicon support
 * Add windows support wrt [#130](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/130)
-* Add date to GHC bindist names created by ghcup
+* Add stack support
 * Warn when /tmp doesn't have 5GB or more of disk space
 * Allow to compile GHC from git repo wrt [#126](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/126)
 * Allow to set custom ghc version when running 'ghcup compile ghc' wrt [#136](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/136)
-* Add stack support
+* Add date to GHC bindist names created by ghcup
 
 ## 0.1.14.2 -- 2021-05-12
 

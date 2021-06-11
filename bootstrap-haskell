@@ -16,7 +16,7 @@
 
 plat="$(uname -s)"
 arch=$(uname -m)
-ghver="0.1.14.1"
+ghver="0.1.15.1"
 base_url="https://downloads.haskell.org/~ghcup"
 
 case "${plat}" in
@@ -166,6 +166,10 @@ download_ghcup() {
         "Darwin"|"darwin")
 			case "${arch}" in
 				x86_64|amd64)
+					_url=${base_url}/${ghver}/x86_64-apple-darwin-ghcup-${ghver}
+					;;
+				aarch64|arm64|armv8l)
+					_url=${base_url}/${ghver}/aarch64-apple-darwin-ghcup-${ghver}
 					;;
 				i*86)
 					die "i386 currently not supported!"
@@ -173,11 +177,11 @@ download_ghcup() {
 				*) die "Unknown architecture: ${arch}"
 					;;
 			esac
-			_url=${base_url}/${ghver}/x86_64-apple-darwin-ghcup-${ghver} ;;
+			;;
         MSYS*|MINGW*)
 			case "${arch}" in
 				x86_64|amd64)
-					_url=https://downloads.haskell.org/~ghcup/tmp/x86_64-mingw64-ghcup-9.exe
+					_url=${base_url}/${ghver}/x86_64-mingw64-ghcup-${ghver}.exe
 					;;
 				*) die "Unknown architecture: ${arch}"
 					;;

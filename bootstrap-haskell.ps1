@@ -194,7 +194,7 @@ $null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $Ghcu
 $GhcupDir = ('{0}\ghcup' -f $GhcupBasePrefix)
 $MsysDir = ('{0}\msys64' -f $GhcupDir)
 $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
-$BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell-windows'
+$BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell'
 $GhcupMsys2 = [System.Environment]::GetEnvironmentVariable('GHCUP_MSYS2', 'user')
 
 Print-Msg -msg 'Preparing for GHCup installation...'
@@ -272,15 +272,15 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
       $ghcBuildDeps = $Quick
     } elseif (!($Silent)) {
       $ghcBuildDeps = $Host.UI.PromptForChoice('Install Dependencies'
-        , 'Install various dependencies to be able to build GHC itself and make use of ''ghcup compile'' command? (recommended, however this might take a while)'
+        , 'Install a standard set of mingw64 packages to be able to build various haskell packages requiring unix libraries? (recommended, however this might take a while... if you skip this, you might have to do it manually later)'
         , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
             '&No'), 0)
     } else {
       $ghcBuildDeps = 0
     }
     if ($ghcBuildDeps -eq 0) {
-      Print-Msg -msg 'Installing GHC Build Dependencies...'
-      Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed git tar curl wget base-devel gettext binutils autoconf make libtool automake python p7zip patch unzip mingw-w64-x86_64-toolchain mingw-w64-x86_64-gcc mingw-w64-x86_64-gdb mingw-w64-x86_64-python2 mingw-w64-x86_64-python3-sphinx'
+      Print-Msg -msg 'Installing Dependencies...'
+      Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed git tar curl wget base-devel gettext binutils autoconf make libtool automake pkgconf python p7zip patch unzip'
     }
 
     Print-Msg -msg 'Updating SSL root certificate authorities...'
@@ -398,3 +398,4 @@ if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
   # aED5Ujwyq3Qre+TGVRUqwkEauDhQiX2A008G00fRO6+di6yJRCRn5eaRAbdU3Xww
   # E5VhEwLBnwzWrvLKtdEclhgUCo5Tq87QMXVdgX4aRmunl4ZE+Q==
 # SIG # End signature block
+
