@@ -331,7 +331,7 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 
 		case $hls_answer in
 			[Yy]*)
-				eghcup --cache install hls
+				eghcup --cache install hls || warn "HLS installation failed, continuing anyway"
 				break ;;
 			[Nn]* | "")
 				break ;;
@@ -358,7 +358,7 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 
 		case $stack_answer in
 			[Yy]*)
-				eghcup --cache install stack
+				eghcup --cache install stack || warn "Stack installation failed, continuing anyway"
 				break ;;
 			[Nn]* | "")
 				break ;;
