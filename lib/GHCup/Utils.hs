@@ -355,18 +355,25 @@ getInstalledStacks = do
 
 -- Return the currently set stack version, if any.
 -- TODO: there's a lot of code duplication here :>
-stackSet :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
+stackSet :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadCatch m, MonadLogger m) => m (Maybe Version)
 stackSet = do
   AppState {dirs = Dirs {..}} <- ask
   let stackBin = binDir </> "stack" <> exeExt
 
-  liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
-    broken <- isBrokenSymlink stackBin
+  handleIO' NoSuchThing (\_ -> pure Nothing) $ do
+    broken <- liftIO $ isBrokenSymlink stackBin
     if broken
       then pure Nothing
       else do
-        link <- liftIO $ getLinkTarget stackBin
-        Just <$> linkVersion link
+        link <- liftIO
+          $ handleIO' InvalidArgument
+            (\e -> pure $ Left (toException e))
+          $ fmap Right $ getLinkTarget stackBin
+        case linkVersion =<< link of
+          Right v -> pure $ Just v
+          Left err -> do
+            $(logWarn) [i|Failed to parse stack symlink target with: "#{err}". The symlink #{stackBin} needs to point to valid stack binary, such as 'stack-2.7.1'.|]
+            pure Nothing
  where
   linkVersion :: MonadThrow m => FilePath -> m Version
   linkVersion = throwEither . MP.parse parser "" . T.pack . dropSuffix exeExt
