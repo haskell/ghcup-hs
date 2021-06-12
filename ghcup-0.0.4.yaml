@@ -1888,10 +1888,6 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/x86_64-portbld-freebsd-ghcup-0.1.15.1
               dlHash: b4ad9c9f1a878560e8f770d985d53b8fb70582baf99e40e53ec9ee97dc47ae64
-          Windows:
-            unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/x86_64-mingw64-ghcup-0.1.15.1.exe
-              dlHash: 6243ade97cf50788b5c9752b876684f64f70d048a9d2d93ddedf5512136cc014
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
