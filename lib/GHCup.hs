@@ -1400,7 +1400,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
 
           lEM $ git [ "checkout", "FETCH_HEAD" ]
           lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
-          lEM $ execLogged "sh" ["./boot"] (Just tmpUnpack) "ghc-bootstrap" Nothing
+          lEM $ execLogged "python3" ["./boot"] (Just tmpUnpack) "ghc-bootstrap" Nothing
           lEM $ execLogged "sh" ["./configure"] (Just tmpUnpack) "ghc-bootstrap" Nothing
           CapturedProcess {..} <- lift $ makeOut
             ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just tmpUnpack)
