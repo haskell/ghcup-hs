@@ -278,6 +278,7 @@ test:mac:recommended:aarch64:
     GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
   needs: []
+  allow_failure: true
 
 
 ######## freebsd test ########
@@ -388,6 +389,7 @@ release:darwin:aarch64:
     GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
     MACOSX_DEPLOYMENT_TARGET: "10.7"
+  allow_failure: true
 
 
 ######## freebsd release ########
@@ -405,6 +407,7 @@ release:freebsd:
     ARTIFACT: "x86_64-portbld-freebsd-ghcup"
     GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
+  allow_failure: true
 
 ######## windows release ########
 
