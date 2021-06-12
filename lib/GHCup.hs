@@ -878,7 +878,7 @@ listVersions :: ( MonadCatch m
 listVersions lt' criteria = do
   -- some annoying work to avoid too much repeated IO
   cSet <- cabalSet
-  cabals <- getInstalledCabals' cSet
+  cabals <- getInstalledCabals
   hlsSet' <- hlsSet
   hlses <- getInstalledHLSs
   sSet <- stackSet

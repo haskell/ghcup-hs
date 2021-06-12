@@ -87,7 +87,6 @@ import qualified Codec.Archive.Tar             as Tar
 import qualified Codec.Compression.BZip        as BZip
 import qualified Codec.Compression.GZip        as GZip
 import qualified Codec.Compression.Lzma        as Lzma
-import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
@@ -253,14 +252,6 @@ getInstalledGHCs = do
 getInstalledCabals :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadCatch m)
                    => m [Either FilePath Version]
 getInstalledCabals = do
-  cs <- cabalSet -- for legacy cabal
-  getInstalledCabals' cs
-
-
-getInstalledCabals' :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadCatch m)
-                   => Maybe Version
-                   -> m [Either FilePath Version]
-getInstalledCabals' cs = do
   AppState {dirs = Dirs {..}} <- ask
   bins   <- liftIO $ handleIO (\_ -> pure []) $ findFiles
     binDir
@@ -269,7 +260,7 @@ getInstalledCabals' cs = do
     Just (Right r) -> pure $ Right r
     Just (Left  _) -> pure $ Left f
     Nothing        -> pure $ Left f
-  pure $ maybe vs (\x -> nub $ Right x:vs) cs
+  pure $ nub vs
 
 
 -- | Whether the given cabal version is installed.
@@ -284,32 +275,21 @@ cabalSet :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadThrow m, Mon
 cabalSet = do
   AppState {dirs = Dirs {..}} <- ask
   let cabalbin = binDir </> "cabal" <> exeExt
-  b        <- handleIO (\_ -> pure False) $ liftIO $ pathIsLink cabalbin
-  if
-    | b -> do
-      handleIO' NoSuchThing (\_ -> pure Nothing) $ do
-        broken <- liftIO $ isBrokenSymlink cabalbin
-        if broken
-          then pure Nothing
-          else do
-            link <- liftIO $ getLinkTarget cabalbin
-            case linkVersion link of
-              Right v -> pure $ Just v
-              Left err -> do
-                $(logWarn) [i|Failed to parse cabal symlink target with: "#{err}". The symlink #{cabalbin} needs to point to valid cabal binary, such as 'cabal-3.4.0.0'.|]
-                pure Nothing
-    | otherwise -> do -- legacy behavior
-      mc <- handleIO (\_ -> pure Nothing) $ fmap Just $ executeOut
-        cabalbin
-        ["--numeric-version"]
-        Nothing
-      fmap join $ forM mc $ \c -> if
-        | not (BL.null (_stdOut c)), _exitCode c == ExitSuccess -> do
-          let reportedVer = fst . B.spanEnd isNewLine . BL.toStrict . _stdOut $ c
-          case version $ decUTF8Safe reportedVer of
-            Left  e -> throwM e
-            Right r -> pure $ Just r
-        | otherwise -> pure Nothing
+
+  handleIO' NoSuchThing (\_ -> pure Nothing) $ do
+    broken <- liftIO $ isBrokenSymlink cabalbin
+    if broken
+      then pure Nothing
+      else do
+        link <- liftIO
+          $ handleIO' InvalidArgument
+            (\e -> pure $ Left (toException e))
+          $ fmap Right $ getLinkTarget cabalbin
+        case linkVersion =<< link of
+          Right v -> pure $ Just v
+          Left err -> do
+            $(logWarn) [i|Failed to parse cabal symlink target with: "#{err}". The symlink #{cabalbin} needs to point to valid cabal binary, such as 'cabal-3.4.0.0'.|]
+            pure Nothing
  where
   -- We try to be extra permissive with link destination parsing,
   -- because of:
