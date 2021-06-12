@@ -123,6 +123,9 @@ Then you can control the locations via XDG environment variables as such:
 * `XDG_BIN_HOME`: binaries end up here (default: `~/.local/bin`)
 * `XDG_CONFIG_HOME`: the config file is stored in `ghcup` subdir as `config.yaml` (default: `~/.config`)
 
+**Note that `ghcup` makes some assumptions about structure of files in `XDG_BIN_HOME`. So if you have other tools
+installing e.g. stack/cabal/ghc into it, this will likely clash. In that case consider disabling XDG support.**
+
 ### Env variables
 
 This is the complete list of env variables that change GHCup behavior:
