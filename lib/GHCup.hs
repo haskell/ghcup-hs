@@ -1644,7 +1644,9 @@ upgradeGHCup mtarget force = do
   liftIO $ hideError NoSuchThing $ rmFile tempGhcup
 
   lift $ $(logDebug) [i|mv #{destFile} #{tempGhcup}|]
-  liftIO $ Win32.moveFileEx destFile (Just tempGhcup) 0
+  -- NoSuchThing may be raised when we're updating ghcup from
+  -- a non-standard location
+  liftIO $ hideError NoSuchThing $ Win32.moveFileEx destFile (Just tempGhcup) 0
   lift $ $(logDebug) [i|cp #{p} #{destFile}|]
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                            destFile

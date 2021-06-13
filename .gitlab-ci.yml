@@ -146,8 +146,24 @@ variables:
     - .test_ghcup_version
     - .darwin:aarch64
     - .root_cleanup
-  before_script:
-    - ./.gitlab/before_script/darwin/install_deps.sh
+  script: |
+    set -Eeuo pipefail
+    function runInNixShell() {
+      time nix-shell .gitlab/shell.nix \
+        -I nixpkgs=https://github.com/angerman/nixpkgs/archive/75f7281738b.tar.gz \
+        --argstr system "x86_64-darwin" \
+        --pure \
+        --keep GHC_VERSION --keep CABAL_INSTALL_VERSION --keep BUILD_FLAVOUR \
+        --keep BIN_DIST_PREP_TAR_COMP --keep CPUS --keep PROJECT_DIR \
+        --keep CI_PROJECT_DIR --keep MAKE_ARGS --keep HADRIAN_ARGS --keep CABAL_CACHE \
+        --keep LANG --keep CONFIGURE_ARGS --keep TEST_ENV --keep BIN_DIST_NAME \
+        --keep MACOSX_DEPLOYMENT_TARGET --keep ac_cv_func_clock_gettime --keep HACKAGE_INDEX_STATE \
+        --keep CABAL_DIR --keep ARCH --keep OS --keep CABAL_VERSION --keep GHC_VERSION \ 
+        --keep JSON_VERSION --ARTIFACT \
+        --run "$1" 2>&1
+    }
+    runInNixShell ./.gitlab/before_script/darwin/install_deps.sh 2>&1
+    runInNixShell ./.gitlab/script/ghcup_version.sh 2>&1
 
 .test_ghcup_version:freebsd:
   extends:
@@ -401,8 +417,24 @@ release:freebsd:
     - .freebsd
     - .release_ghcup
     - .root_cleanup
-  before_script:
-    - ./.gitlab/before_script/freebsd/install_deps.sh
+  script: |
+    set -Eeuo pipefail
+    function runInNixShell() {
+      time nix-shell .gitlab/shell.nix \
+        -I nixpkgs=https://github.com/angerman/nixpkgs/archive/75f7281738b.tar.gz \
+        --argstr system "x86_64-darwin" \
+        --pure \
+        --keep GHC_VERSION --keep CABAL_INSTALL_VERSION --keep BUILD_FLAVOUR \
+        --keep BIN_DIST_PREP_TAR_COMP --keep CPUS --keep PROJECT_DIR \
+        --keep CI_PROJECT_DIR --keep MAKE_ARGS --keep HADRIAN_ARGS --keep CABAL_CACHE \
+        --keep LANG --keep CONFIGURE_ARGS --keep TEST_ENV --keep BIN_DIST_NAME \
+        --keep MACOSX_DEPLOYMENT_TARGET --keep ac_cv_func_clock_gettime --keep HACKAGE_INDEX_STATE \
+        --keep CABAL_DIR --keep ARCH --keep OS --keep CABAL_VERSION --keep GHC_VERSION \ 
+        --keep JSON_VERSION --ARTIFACT \
+        --run "$1" 2>&1
+    }
+    runInNixShell ./.gitlab/before_script/freebsd/install_deps.sh 2>&1
+    runInNixShell ./.gitlab/script/ghcup_release.sh 2>&1
   variables:
     ARTIFACT: "x86_64-portbld-freebsd-ghcup"
     GHC_VERSION: "8.10.5"

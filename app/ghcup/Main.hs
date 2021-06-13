@@ -1144,7 +1144,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           case optCommand of
             Upgrade _ _ -> pure ()
-            _ -> runLogger $ flip runReaderT appstate $ checkForUpdates
+            _ -> do
+              lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
+                Nothing -> runLogger $ flip runReaderT appstate $ checkForUpdates
+                Just _ -> pure ()
 
 
           -- ensure global tools

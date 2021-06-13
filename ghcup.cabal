@@ -157,7 +157,7 @@ library
       , io-streams             >=1.5.2.1
       , terminal-progress-bar  >=0.4.1
 
-  if (flag(tar) || os(windows))
+  if flag(tar)
     cpp-options:   -DTAR
     build-depends: tar
 
@@ -243,7 +243,7 @@ executable ghcup
   if os(windows)
     cpp-options: -DIS_WINDOWS
 
-  if (flag(tar) || os(windows))
+  if flag(tar)
     cpp-options: -DTAR
 
   else
@@ -297,7 +297,7 @@ executable ghcup-gen
     , versions              ^>=4.0.1
     , yaml                  ^>=0.11.4.0
 
-  if (flag(tar) || os(windows))
+  if flag(tar)
     cpp-options:   -DTAR
     build-depends: tar
 
