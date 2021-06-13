@@ -1,5 +1,13 @@
 # Revision history for ghcup
 
+## 0.1.15.2 -- 2021-06-13
+
+* Remove legacy handling of cabal binary and be more graceful about binaries not installed by ghcup (e.g. stack)
+* Fix GHC compilation from git
+* Fix 'ghcup upgrade' on windows
+* Allow to skip update checks via `GHCUP_SKIP_UPDATE_CHECK`
+* Use libarchive on windows as well, fixing unpack errors wrt [#147](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/147)
+
 ## 0.1.15.1 -- 2021-06-11
 
 * Add Apple Silicon support
