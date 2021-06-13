@@ -1618,7 +1618,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
               target <- case uOpts of
                 UpgradeInplace  -> Just <$> liftIO getExecutablePath
                 (UpgradeAt p)   -> pure $ Just p
-                UpgradeGHCupDir -> pure (Just (binDir </> "ghcup"))
+                UpgradeGHCupDir -> pure (Just (binDir </> "ghcup" <> exeExt))
 
               runUpgrade (liftE $ upgradeGHCup target force) >>= \case
                 VRight v' -> do
