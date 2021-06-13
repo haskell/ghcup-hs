@@ -2024,7 +2024,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-armv7-linux-bootstrapped.tar.xz
               dlHash: 16c0d1eaba24bed14f3e152970179a45d9f9bb5cc839b2c210ad06eb7d4826ed
   GHCup:
-    0.1.15.1:
+    0.1.15.2:
       viTags:
       - Recommended
       - Latest
@@ -2034,43 +2034,43 @@ ghcupDownloads:
         A_64:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-64
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/x86_64-linux-ghcup-0.1.15.1
-              dlHash: 871c9dc1bfbf7df6fe3b9b7250c20a3dae8a7aee171712a3e63689ab75bc9439
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.2/x86_64-linux-ghcup-0.1.15.2
+              dlHash: 1eb1bb318a327754f42eaa2245bc81fe53be7c791160d28a186893ded3004ed7
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/x86_64-apple-darwin-ghcup-0.1.15.1
-              dlHash: 7cd67b554fc58c4ffb224b73e369c5dd27c5276c01f102f6423230b34cc635bc
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.2/x86_64-apple-darwin-ghcup-0.1.15.2
+              dlHash: c2a6436a49f19f108493954d4a3efcb27503e343dd6288c2641784d32320b1ea
           FreeBSD:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/x86_64-portbld-freebsd-ghcup-0.1.15.1
-              dlHash: b4ad9c9f1a878560e8f770d985d53b8fb70582baf99e40e53ec9ee97dc47ae64
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.2/x86_64-portbld-freebsd-ghcup-0.1.15.2
+              dlHash: 7e0c17dd78ebd9fd03e6ecea278c192bac31ca333721bde5b0ef99438b847a20
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/x86_64-mingw64-ghcup-0.1.15.1.exe
-              dlHash: 045bac4620fc9d1119ed4961aeba46b616ed572dd11b7d35b48caf58eea08d0f
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.2/x86_64-mingw64-ghcup-0.1.15.2.exe
+              dlHash: 4d832052754379531ac472aeef35666e433acfee79d4079826b8ede8ca5de520
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-32
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/i386-linux-ghcup-0.1.15.1
-              dlHash: 0c1dcbdd7cfa8accdfbe14c623924f3ca29a35d32a2ac3e61f0eb322855e2cb1
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.2/i386-linux-ghcup-0.1.15.2
+              dlHash: 3b1fe710cded0398e920ec9716089ba65226abf181741897f387e7c539a619c2
           Linux_Alpine:
             unknown_versioning: *ghcup-32
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/aarch64-linux-ghcup-0.1.15.1
-              dlHash: 7fa29d8e9a9fe3d1e3a63a1d16fc3550128edbdb9b5b5dff7974358c4dab192c
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.2/aarch64-linux-ghcup-0.1.15.2
+              dlHash: d91b7a5416f292f2cf813824eb419f76ad9976d258cee3581123cb6eb01db9a7
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/aarch64-apple-darwin-ghcup-0.1.15.1
-              dlHash: 6a743cd50e8124ac2de8be77013d49dcf3b99ce7cc463ec86ed99a904a51dfd9
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.2/aarch64-apple-darwin-ghcup-0.1.15.2
+              dlHash: 20625ba5e7488f2a6155331750ecead3815ea16b2695c20521633c1412f012cc
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/armv7-linux-ghcup-0.1.15.1
-              dlHash: 77ee5d9828c2ba771127274e301e81412b9f29af2d65dd85dada4786d9438c2c
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.15.2/armv7-linux-ghcup-0.1.15.2
+              dlHash: 03a4af5ed895ada1dd21f4cc3f64dc9078a5bf4268313021d004c04bea7f9c2e
   HLS:
     1.1.0:
       viTags:
