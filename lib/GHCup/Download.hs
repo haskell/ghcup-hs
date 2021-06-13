@@ -227,7 +227,6 @@ getBase dirs@Dirs{..} Settings{ downloader }  =
           else -- access in less than 5 minutes, re-use file
                liftIO $ L.readFile json_file
       else do
-        liftIO $ createDirRecursive' cacheDir
         getModTime >>= \case
           Just modTime -> dlWithMod modTime json_file
           Nothing -> do

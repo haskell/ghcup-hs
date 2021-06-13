@@ -1095,10 +1095,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
     >>= \opt@Options {..} -> do
           dirs <- getDirs
 
-          (settings, keybindings) <- toSettings opt
-
           -- create ~/.ghcup dir
-          createDirRecursive' (baseDir dirs)
+          ensureDirectories dirs
+
+          (settings, keybindings) <- toSettings opt
 
           -- logger interpreter
           logfile <- initGHCupFileLogging (logsDir dirs)

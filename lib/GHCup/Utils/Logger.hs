@@ -22,7 +22,6 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Prelude                 hiding ( appendFile )
 import           System.Console.Pretty
-import           System.Directory        hiding ( findFiles )
 import           System.FilePath
 import           System.IO.Error
 import           Text.Regex.Posix
@@ -70,7 +69,6 @@ initGHCupFileLogging :: (MonadIO m) => FilePath -> m FilePath
 initGHCupFileLogging logsDir = do
   let logfile = logsDir </> "ghcup.log"
   liftIO $ do
-    createDirectoryIfMissing True logsDir
     logFiles <- findFiles
       logsDir
       (makeRegexOpts compExtended

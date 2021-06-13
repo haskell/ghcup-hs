@@ -661,7 +661,6 @@ setGHC ver sghc = do
 
   -- symlink destination
   AppState { dirs = Dirs {..} } <- lift ask
-  liftIO $ createDirRecursive' binDir
 
   -- first delete the old symlinks (this fixes compatibility issues
   -- with old ghcup)
@@ -744,7 +743,6 @@ setCabal ver = do
 
   -- symlink destination
   AppState {dirs = Dirs {..}} <- lift ask
-  liftIO $ createDirRecursive' binDir
 
   whenM (liftIO $ not <$> doesFileExist (binDir </> targetFile))
     $ throwE
@@ -775,7 +773,6 @@ setHLS :: ( MonadCatch m
        -> Excepts '[NotInstalled] m ()
 setHLS ver = do
   AppState { dirs = Dirs {..} } <- lift ask
-  liftIO $ createDirRecursive' binDir
 
   -- Delete old symlinks, since these might have different ghc versions than the
   -- selected version, so we could end up with stray or incorrect symlinks.
@@ -818,7 +815,6 @@ setStack ver = do
 
   -- symlink destination
   AppState {dirs = Dirs {..}} <- lift ask
-  liftIO $ createDirRecursive' binDir
 
   whenM (liftIO $ not <$> doesFileExist (binDir </> targetFile))
     $ throwE
