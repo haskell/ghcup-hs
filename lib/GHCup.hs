@@ -84,6 +84,9 @@ import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
+#if defined(IS_WINDOWS)
+import qualified System.Win32.File             as Win32
+#endif
 import qualified Text.Megaparsec               as MP
 import GHCup.Utils.MegaParsec
 import Control.Concurrent (threadDelay)
@@ -1637,14 +1640,25 @@ upgradeGHCup mtarget force = do
   let fn = "ghcup" <> exeExt
   p <- liftE $ download settings dli tmp (Just fn)
   let destDir = takeDirectory destFile
-      destFile = fromMaybe (binDir </> (fn <> exeExt)) mtarget
+      destFile = fromMaybe (binDir </> fn <> exeExt) mtarget
   lift $ $(logDebug) [i|mkdir -p #{destDir}|]
   liftIO $ createDirRecursive' destDir
+#if defined(IS_WINDOWS)
+  let tempGhcup = cacheDir </> "ghcup.old"
+  liftIO $ hideError NoSuchThing $ rmFile tempGhcup
+
+  lift $ $(logDebug) [i|mv #{destFile} #{tempGhcup}|]
+  liftIO $ Win32.moveFileEx destFile (Just tempGhcup) 0
+  lift $ $(logDebug) [i|cp #{p} #{destFile}|]
+  handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
+                                                           destFile
+#else
   lift $ $(logDebug) [i|rm -f #{destFile}|]
   liftIO $ hideError NoSuchThing $ rmFile destFile
   lift $ $(logDebug) [i|cp #{p} #{destFile}|]
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                            destFile
+#endif
   lift $ chmod_755 destFile
 
   liftIO (isInPath destFile) >>= \b -> unless b $

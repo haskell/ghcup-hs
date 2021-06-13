@@ -2047,7 +2047,7 @@ ghcupDownloads:
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/0.1.15.1/x86_64-mingw64-ghcup-0.1.15.1.exe
-              dlHash: 8fad2fb67b044ebd5075ee01fad6682a6f20791352c9ad1145189819b40b2383
+              dlHash: 045bac4620fc9d1119ed4961aeba46b616ed572dd11b7d35b48caf58eea08d0f
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
