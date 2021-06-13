@@ -1637,7 +1637,7 @@ upgradeGHCup mtarget force = do
   let fn = "ghcup" <> exeExt
   p <- liftE $ download settings dli tmp (Just fn)
   let destDir = takeDirectory destFile
-      destFile = fromMaybe (binDir </> fn) mtarget
+      destFile = fromMaybe (binDir </> (fn <> exeExt)) mtarget
   lift $ $(logDebug) [i|mkdir -p #{destDir}|]
   liftIO $ createDirRecursive' destDir
   lift $ $(logDebug) [i|rm -f #{destFile}|]
