@@ -135,6 +135,7 @@ This is the complete list of env variables that change GHCup behavior:
 * `GHCUP_INSTALL_BASE_PREFIX`: the base of ghcup (default: `$HOME`)
 * `GHCUP_CURL_OPTS`: additional options that can be passed to curl
 * `GHCUP_WGET_OPTS`: additional options that can be passed to wget
+* `GHCUP_SKIP_UPDATE_CHECK`: Skip the (possibly annoying) update check when you run a command
 * `CC`/`LD` etc.: full environment is passed to the build system when compiling GHC via GHCup
 
 ### Installing custom bindists
