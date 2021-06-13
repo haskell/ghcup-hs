@@ -76,8 +76,6 @@ else
 	rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
 fi
 
-which ghcup
-
 ### manual cli based testing
 
 
