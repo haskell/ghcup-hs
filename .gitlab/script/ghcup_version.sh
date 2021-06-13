@@ -60,8 +60,13 @@ else
 fi
 
 
-cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup')" "$CI_PROJECT_DIR"/.local/bin/ghcup
-cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" "$CI_PROJECT_DIR"/.local/bin/ghcup-gen
+if [ "${OS}" = "WINDOWS" ] ; then
+	ext=".exe"
+else
+	ext=''
+fi
+	cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup')" "$CI_PROJECT_DIR"/.local/bin/ghcup${ext}
+	cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" "$CI_PROJECT_DIR"/.local/bin/ghcup-gen${ext}
 
 ### cleanup
 
@@ -71,6 +76,7 @@ else
 	rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
 fi
 
+which ghcup
 
 ### manual cli based testing
 
