@@ -2073,9 +2073,7 @@ ghcupDownloads:
               dlHash: 03a4af5ed895ada1dd21f4cc3f64dc9078a5bf4268313021d004c04bea7f9c2e
   HLS:
     1.1.0:
-      viTags:
-        - Recommended
-        - Latest
+      viTags: []
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#110
       viPostInstall: "This is just the server part of your LSP configuration. Consult the README on how to configure HLS, your project and your LSP client in your editor: https://github.com/haskell/haskell-language-server/blob/master/README.md"
       viArch:
@@ -2092,6 +2090,28 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/hls/1.1.0/haskell-language-server-Windows-1.1.0.tar.gz
               dlHash: a1d3f451e64a041aa527a25da29e4716a2de6ae347cef4ef9312fc7611e168cc
+          Linux_Alpine:
+            unknown_versioning: *hls-64
+    1.2.0:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#120
+      viPostInstall: "This is just the server part of your LSP configuration. Consult the README on how to configure HLS, your project and your LSP client in your editor: https://github.com/haskell/haskell-language-server/blob/master/README.md"
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &hls-64
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-Linux-1.2.0.tar.gz
+              dlHash: d29ee22f7bd706da2e2a1bd7640e25bb9736adeafb34eef47d29ea143b0fa927
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-macOS-1.2.0.tar.gz
+              dlHash: 43d2ef356fb8cbd8e27acf70f94c079157258916bb1220751547584513584aaa
+          # Windows:
+            # unknown_versioning:
+              # dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/hls/1.2.0/haskell-language-server-Windows-1.2.0.tar.gz
+              # dlHash: a1d3f451e64a041aa527a25da29e4716a2de6ae347cef4ef9312fc7611e168cc
           Linux_Alpine:
             unknown_versioning: *hls-64
   Stack:
