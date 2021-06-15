@@ -19,4 +19,14 @@ fi
 ./ghcup-bin set ${GHC_VERSION}
 ./ghcup-bin install-cabal ${CABAL_VERSION}
 
+if [ $ARCH = 'ARM64' ] ; then
+	cabal update
+	mkdir vendored
+	cd vendored
+	cabal unpack network-3.1.2.1
+	cd network*
+	autoreconf -fi
+	cd ../..
+fi
+
 exit 0

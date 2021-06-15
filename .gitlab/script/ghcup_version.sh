@@ -104,35 +104,39 @@ if [ "${OS}" != "WINDOWS" ] ; then
 fi
 
 
-# test installing new ghc doesn't mess with currently set GHC
-# https://gitlab.haskell.org/haskell/ghcup-hs/issues/7
-if [ "${OS}" = "LINUX" ] ; then
-	eghcup --downloader=wget install 8.10.3
-else # test wget a bit
-	eghcup install 8.10.3
-fi
-[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
-eghcup set 8.10.3
-eghcup set 8.10.3
-[ "$(ghc --numeric-version)" = "8.10.3" ]
-eghcup set ${GHC_VERSION}
-[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
-eghcup rm 8.10.3
-[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
+if [ "${OS}" = "DARWIN" ] && [ "${ARCH}" = "ARM64" ] ; then
+	echo
+else
+	# test installing new ghc doesn't mess with currently set GHC
+	# https://gitlab.haskell.org/haskell/ghcup-hs/issues/7
+	if [ "${OS}" = "LINUX" ] ; then
+		eghcup --downloader=wget install 8.10.3
+	else # test wget a bit
+		eghcup install 8.10.3
+	fi
+	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
+	eghcup set 8.10.3
+	eghcup set 8.10.3
+	[ "$(ghc --numeric-version)" = "8.10.3" ]
+	eghcup set ${GHC_VERSION}
+	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
+	eghcup rm 8.10.3
+	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 
-if [ "${OS}" = "DARWIN" ] ; then
-	eghcup install hls
-	haskell-language-server-wrapper --version
-
-	eghcup install stack
-	stack --version
-elif [ "${OS}" = "LINUX" ] ; then
-	if [ "${ARCH}" = "64" ] ; then
+	if [ "${OS}" = "DARWIN" ] ; then
 		eghcup install hls
 		haskell-language-server-wrapper --version
 
 		eghcup install stack
 		stack --version
+	elif [ "${OS}" = "LINUX" ] ; then
+		if [ "${ARCH}" = "64" ] ; then
+			eghcup install hls
+			haskell-language-server-wrapper --version
+
+			eghcup install stack
+			stack --version
+		fi
 	fi
 fi
 
@@ -150,3 +154,11 @@ fi
 eghcup upgrade
 eghcup upgrade -f
 
+
+# nuke
+eghcup nuke
+if [ "${OS}" = "WINDOWS" ] ; then
+	[ ! -e "${GHCUP_INSTALL_BASE_PREFIX}/ghcup" ]
+else
+	[ ! -e "${GHCUP_INSTALL_BASE_PREFIX}/.ghcup" ]
+fi

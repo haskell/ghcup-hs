@@ -42,6 +42,7 @@ import           GHCup.Version
 import           Codec.Archive                  ( ArchiveResult )
 #endif
 import           Control.Applicative
+import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
 #if !MIN_VERSION_base(4,13,0)
@@ -1295,7 +1296,7 @@ rmGhcup = do
   let ghcupFilename = "ghcup" <> exeExt
   let ghcupFilepath = binDir </> ghcupFilename
 
-  currentRunningExecPath <- liftIO $ getExecutablePath
+  currentRunningExecPath <- liftIO getExecutablePath
 
   -- if paths do no exist, warn user, and continue to compare them, as is,
   -- which should eventually fail and result in a non-standard install warning
@@ -1310,8 +1311,7 @@ rmGhcup = do
 
   let areEqualPaths = equalFilePath p1 p2
 
-  when (not areEqualPaths) $ do
-    $logWarn $ nonStandardInstallLocationMsg currentRunningExecPath
+  unless areEqualPaths $ $logWarn $ nonStandardInstallLocationMsg currentRunningExecPath
 
 #if defined(IS_WINDOWS)
   -- since it doesn't seem possible to delete a running exec in windows
@@ -1400,16 +1400,18 @@ rmGhcupDirs = do
       $logInfo "removing Ghcup Config File"
       hideError doesNotExistErrorType $ liftIO $ deleteFile confFilePath
 
-    rmDir :: (MonadLogger m, MonadIO m) => FilePath -> m ()
+    rmDir :: (MonadLogger m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmDir dir = do
       $logInfo [i|removing #{dir}|]
-      contents <- liftIO $ getDirectoryContentsRecursive dir
+      contents <- hideErrorDef [doesNotExistErrorType] []
+        $ liftIO
+        (getDirectoryContentsRecursive dir >>= evaluate)
       forM_ contents (liftIO . deleteFile . (dir </>))
 
     rmBinDir :: (MonadCatch m, MonadIO m) => FilePath -> m ()
     rmBinDir binDir = do
 #if !defined(IS_WINDOWS)
-      isXDGStyle <- liftIO $ useXDG
+      isXDGStyle <- liftIO useXDG
       if not isXDGStyle
         then removeDirIfEmptyOrIsSymlink binDir
         else pure ()
@@ -1421,7 +1423,7 @@ rmGhcupDirs = do
     reportRemainingFiles dir = do
       remainingFiles <- liftIO $ getDirectoryContentsRecursive dir
       let normalizedFilePaths = fmap normalise remainingFiles
-      let sortedByDepthRemainingFiles = reverse $ sortBy compareFn normalizedFilePaths
+      let sortedByDepthRemainingFiles = sortBy (flip compareFn) normalizedFilePaths
       let remainingFilesAbsolute = fmap (dir </>) sortedByDepthRemainingFiles
 
       pure remainingFilesAbsolute
@@ -1803,14 +1805,14 @@ upgradeGHCup :: ( MonadMask m
                    ]
                   m
                   Version
-upgradeGHCup mtarget force = do
+upgradeGHCup mtarget force' = do
   AppState { dirs = Dirs {..}
            , pfreq
            , ghcupInfo = GHCupInfo { _ghcupDownloads = dls }
            , settings } <- lift ask
   lift $ $(logInfo) [i|Upgrading GHCup...|]
   let latestVer = fromJust $ fst <$> getLatest dls GHCup
-  when (not force && (latestVer <= pvpToVersion ghcUpVer)) $ throwE NoUpdate
+  when (not force' && (latestVer <= pvpToVersion ghcUpVer)) $ throwE NoUpdate
   dli   <- lE $ getDownloadInfo GHCup latestVer pfreq dls
   tmp   <- lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt

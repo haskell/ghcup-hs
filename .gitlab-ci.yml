@@ -7,7 +7,7 @@ variables:
   GIT_SSL_NO_VERIFY: "1"
 
   # Commit of ghc/ci-images repository from which to pull Docker images
-  DOCKER_REV: 1ac7f435c9312f10422a82d304194778378e2a1a
+  DOCKER_REV: 8d0224e6b2a08157649651e69302380b2bd24e11
 
 ############################################################
 # CI Step
@@ -149,17 +149,19 @@ variables:
   script: |
     set -Eeuo pipefail
     function runInNixShell() {
-      time nix-shell .gitlab/shell.nix \
+      time nix-shell $CI_PROJECT_DIR/.gitlab/shell.nix \
         -I nixpkgs=https://github.com/angerman/nixpkgs/archive/75f7281738b.tar.gz \
         --argstr system "aarch64-darwin" \
         --pure \
-        --keep GHC_VERSION --keep CABAL_INSTALL_VERSION --keep BUILD_FLAVOUR \
-        --keep BIN_DIST_PREP_TAR_COMP --keep CPUS --keep PROJECT_DIR \
-        --keep CI_PROJECT_DIR --keep MAKE_ARGS --keep HADRIAN_ARGS --keep CABAL_CACHE \
-        --keep LANG --keep CONFIGURE_ARGS --keep TEST_ENV --keep BIN_DIST_NAME \
-        --keep MACOSX_DEPLOYMENT_TARGET --keep ac_cv_func_clock_gettime --keep HACKAGE_INDEX_STATE \
-        --keep CABAL_DIR --keep ARCH --keep OS --keep CABAL_VERSION --keep GHC_VERSION \ 
-        --keep JSON_VERSION --ARTIFACT \
+        --keep CI_PROJECT_DIR \
+        --keep MACOSX_DEPLOYMENT_TARGET \
+        --keep JSON_VERSION \
+        --keep ARTIFACT \
+        --keep OS \
+        --keep ARCH \
+        --keep CABAL_DIR \
+        --keep GHC_VERSION \
+        --keep CABAL_VERSION \
         --run "$1" 2>&1
     }
     runInNixShell ./.gitlab/before_script/darwin/install_deps.sh 2>&1
@@ -405,13 +407,9 @@ release:darwin:aarch64:
         -I nixpkgs=https://github.com/angerman/nixpkgs/archive/75f7281738b.tar.gz \
         --argstr system "aarch64-darwin" \
         --pure \
-        --keep GHC_VERSION --keep CABAL_INSTALL_VERSION --keep BUILD_FLAVOUR \
-        --keep BIN_DIST_PREP_TAR_COMP --keep CPUS --keep PROJECT_DIR \
         --keep CI_PROJECT_DIR --keep MAKE_ARGS --keep HADRIAN_ARGS --keep CABAL_CACHE \
-        --keep LANG --keep CONFIGURE_ARGS --keep TEST_ENV --keep BIN_DIST_NAME \
-        --keep MACOSX_DEPLOYMENT_TARGET --keep ac_cv_func_clock_gettime --keep HACKAGE_INDEX_STATE \
-        --keep CABAL_DIR --keep ARCH --keep OS --keep CABAL_VERSION --keep GHC_VERSION \ 
-        --keep JSON_VERSION --ARTIFACT \
+        --keep MACOSX_DEPLOYMENT_TARGET \
+        --keep JSON_VERSION --keep ARTIFACT \
         --run "$1" 2>&1
     }
     runInNixShell ./.gitlab/before_script/darwin/install_deps.sh 2>&1
