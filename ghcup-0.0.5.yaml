@@ -2108,10 +2108,10 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-macOS-1.2.0.tar.gz
               dlHash: 43d2ef356fb8cbd8e27acf70f94c079157258916bb1220751547584513584aaa
-          # Windows:
-            # unknown_versioning:
-              # dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/hls/1.2.0/haskell-language-server-Windows-1.2.0.tar.gz
-              # dlHash: a1d3f451e64a041aa527a25da29e4716a2de6ae347cef4ef9312fc7611e168cc
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-Windows-1.2.0.tar.gz
+              dlHash: 961c6ff12c9a9c7a4609f239c5ac70d7d16753cdb8c10348a6a51feeaa0b6aea
           Linux_Alpine:
             unknown_versioning: *hls-64
   Stack:
