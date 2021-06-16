@@ -319,8 +319,9 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 }
 
 Print-Msg -msg 'Creating shortcuts...'
-Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath ('{0}\Desktop\Mingw haskell shell.lnk' -f $HOME)
-Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath ('{0}\Desktop\Mingw package management docs.url' -f $HOME)
+$DesktopDir = [Environment]::GetFolderPath("Desktop")
+Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath ('{0}\Mingw haskell shell.lnk' -f $DesktopDir)
+Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath ('{0}\Mingw package management docs.url' -f $DesktopDir)
 
 Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
 Add-EnvPath -Path ('{0}\bin' -f ([System.IO.Path]::GetFullPath("$GhcupDir"))) -Container 'User'
