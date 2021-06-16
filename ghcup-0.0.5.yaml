@@ -1,8 +1,8 @@
 ---
 globalTools:
   ShimGen:
-    dlUri: https://downloads.haskell.org/~ghcup/shimgen/gs.exe
-    dlHash: 9ce8b7dad7ff4e5017dbd63d6f6f3d16412b889560cb6ccd3903dbcab0bf4f0d
+    dlUri: https://downloads.haskell.org/~ghcup/shimgen/shim-2.exe
+    dlHash: 7c55e201f71860c5babea886007c8fa44b861abf50d1c07e5677eb0bda387a70
 toolRequirements:
   GHC:
     unknown_version:
@@ -2107,7 +2107,7 @@ ghcupDownloads:
           Darwin:
             unknown_versioning:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-macOS-1.2.0.tar.gz
-              dlHash: 43d2ef356fb8cbd8e27acf70f94c079157258916bb1220751547584513584aaa
+              dlHash: a310d8a3e9c5c4218210f750682c74a0f82ad0f59995adde0dbe775115b1e357
           Windows:
             unknown_versioning:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-Windows-1.2.0.tar.gz
