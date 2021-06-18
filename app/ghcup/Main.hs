@@ -1662,10 +1662,6 @@ Make sure to clean up #{tmpdir} afterwards.|])
                       VLeft  e -> do
                         runLogger $ $(logError) $ T.pack $ prettyShow e
                         pure $ ExitFailure 12
-            Nuke -> do
-              putStrLn "Nuking in 3...2....1"
-              putStrLn "BOOM!"
-              pure ExitSuccess
 
             ChangeLog ChangeLogOptions{..} -> do
               let tool = fromMaybe GHC clTool
@@ -1704,6 +1700,11 @@ Make sure to clean up #{tmpdir} afterwards.|])
                               Left  e -> runLogger ($(logError) [i|#{e}|])
                                 >> pure (ExitFailure 13)
                     else putStrLn uri' >> pure ExitSuccess
+
+            Nuke -> do
+              putStrLn "Nuking in 3...2....1"
+              putStrLn "BOOM!"
+              pure ExitSuccess
 
           case res of
             ExitSuccess        -> pure ()
