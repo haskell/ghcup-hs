@@ -103,6 +103,7 @@ data Command
   | Upgrade UpgradeOpts Bool
   | ToolRequirements
   | ChangeLog ChangeLogOptions
+  | Nuke
 #if defined(BRICK)
   | Interactive
 #endif
@@ -219,7 +220,7 @@ invertableSwitch'
     -> Mod FlagFields Bool -- ^ option modifier for --no-foo
     -> Parser (Maybe Bool)
 invertableSwitch' longopt shortopt defv enmod dismod = optional
-    ( flag' True (enmod <> long longopt <> if defv then mempty else short shortopt)
+    ( flag' True ( enmod <> long longopt <> if defv then mempty else short shortopt)
     <|> flag' False (dismod <> long nolongopt <> if defv then short shortopt else mempty)
     )
   where
@@ -368,6 +369,14 @@ com =
               )
           <> internal
           )
+     <|> subparser
+          (command
+              "nuke"
+               (info (pure Nuke <**> helper)
+                     (progDesc "Completely remove ghcup from your system"))
+           <> commandGroup "Nuclear Commands:"
+          )
+
  where
   installToolFooter :: String
   installToolFooter = [s|Discussion:
@@ -392,7 +401,6 @@ com =
   changeLogFooter = [s|Discussion:
   By default returns the URI of the ChangeLog of the latest GHC release.
   Pass '-o' to automatically open via xdg-open.|]
-
 
 installCabalFooter :: String
 installCabalFooter = [s|Discussion:
@@ -1654,6 +1662,10 @@ Make sure to clean up #{tmpdir} afterwards.|])
                       VLeft  e -> do
                         runLogger $ $(logError) $ T.pack $ prettyShow e
                         pure $ ExitFailure 12
+            Nuke -> do
+              putStrLn "Nuking in 3...2....1"
+              putStrLn "BOOM!"
+              pure ExitSuccess
 
             ChangeLog ChangeLogOptions{..} -> do
               let tool = fromMaybe GHC clTool
@@ -1696,6 +1708,8 @@ Make sure to clean up #{tmpdir} afterwards.|])
           case res of
             ExitSuccess        -> pure ()
             ef@(ExitFailure _) -> exitWith ef
+
+
   pure ()
 
 fromVersion :: (MonadLogger m, MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)
