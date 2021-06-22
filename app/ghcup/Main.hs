@@ -1713,6 +1713,8 @@ Make sure to clean up #{tmpdir} afterwards.|])
               lInstalled <- runLogger . flip runReaderT appstate $ listVersions Nothing (Just ListInstalled)
               forM_ lInstalled $ runRm . rmTool
 
+              runLogger $ runReaderT rmGhcupDirs appstate
+
               pure ExitSuccess
 
           case res of
