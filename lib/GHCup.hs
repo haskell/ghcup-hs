@@ -1290,8 +1290,7 @@ rmTool :: ( MonadReader AppState m
            => ListResult
            -> Excepts '[NotInstalled ] m ()
 
-rmTool tool = do
-  let ListResult {lVer, lTool, lCross} = tool
+rmTool ListResult {lVer, lTool, lCross} = do
   -- appstate <- ask
 
   case lTool of
