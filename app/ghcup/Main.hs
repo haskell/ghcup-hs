@@ -1702,11 +1702,8 @@ Make sure to clean up #{tmpdir} afterwards.|])
                     else putStrLn uri' >> pure ExitSuccess
 
             Nuke -> do
-              putStrLn "Initiating Nuclear Sequence... "
               lInstalled <- runLogger . flip runReaderT appstate $ listVersions Nothing (Just ListInstalled)
-              forM_ lInstalled $ runLogger . flip runReaderT appstate . rmTool
-              putStrLn "Nuking in 3...2...1"
-              putStrLn "BOOM!"
+              forM_ lInstalled $ runRm . rmTool
               pure ExitSuccess
 
           case res of
