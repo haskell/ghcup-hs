@@ -1702,8 +1702,12 @@ Make sure to clean up #{tmpdir} afterwards.|])
                     else putStrLn uri' >> pure ExitSuccess
 
             Nuke -> do
+              runLogger $ $logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
+              runLogger $ $logInfo "Nuking in 3...2...1"
+
               lInstalled <- runLogger . flip runReaderT appstate $ listVersions Nothing (Just ListInstalled)
               forM_ lInstalled $ runRm . rmTool
+
               pure ExitSuccess
 
           case res of
