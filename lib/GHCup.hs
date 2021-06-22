@@ -1288,7 +1288,7 @@ rmTool :: ( MonadReader AppState m
            , MonadMask m
            , MonadUnliftIO m)
            => ListResult
-           -> m ()
+           -> Excepts '[NotInstalled ] m ()
 
 rmTool tool = do
   let ListResult {lVer, lTool, lCross} = tool
@@ -1297,20 +1297,16 @@ rmTool tool = do
   case lTool of
     GHC -> do
       let ghcTargetVersion = GHCTargetVersion lCross lVer
-      _ <- runE @'[NotInstalled] $ rmGHCVer ghcTargetVersion
-      pure ()
+      rmGHCVer ghcTargetVersion
 
     HLS -> do
-      _ <- runE @'[NotInstalled] $ rmHLSVer lVer
-      pure ()
+      rmHLSVer lVer
 
     Cabal -> do
-      _ <- runE @'[NotInstalled] $ rmCabalVer lVer
-      pure ()
+      rmCabalVer lVer
 
     Stack -> do
-      _ <- runE @'[NotInstalled] $ rmStackVer lVer
-      pure ()
+      rmStackVer lVer
 
     GHCup -> do
       -- leaving this unimplemented for now.
