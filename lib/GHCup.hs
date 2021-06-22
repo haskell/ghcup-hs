@@ -1311,6 +1311,66 @@ rmTool ListResult {lVer, lTool, lCross} = do
       -- leaving this unimplemented for now.
       pure ()
 
+rmGhcupDirs :: ( MonadReader AppState m
+               , MonadIO m
+               , MonadLogger m)
+                => m ()
+rmGhcupDirs = do
+  dirs@Dirs
+    { baseDir
+    , binDir
+    , logsDir
+    , cacheDir
+    , confDir } <- asks dirs
+
+  let envDir = baseDir </> "env"
+
+  -- remove env Dir
+  rmEnvDir envDir
+
+  -- remove entire cache Dir
+  rmCacheDir cacheDir
+
+  -- remove entire logs Dir
+  rmLogsDir logsDir
+
+  -- remove the $ghcupConfigDir/config.yaml file
+  rmConfFile confDir
+
+  liftIO $ print dirs
+
+  where
+
+    rmEnvDir envDir = do
+      isEnvDirPresent <- liftIO $ doesDirectoryExist envDir
+
+      if isEnvDirPresent
+        then do
+          $logInfo "Removing Ghcup Environment Dir"
+          liftIO $ removeDirectory envDir
+        else
+          $logInfo "EnvDir Not Found, Skipping"
+
+    rmCacheDir cacheDir = do
+      $logInfo "removing ghcup cache Dir"
+      liftIO $ removeDirectory cacheDir
+
+
+    rmLogsDir logsDir = do
+      $logInfo "removing ghcup logs Dir"
+      liftIO $ removeDirectory logsDir
+
+    rmConfFile confDir = do
+      let confPath = confDir </> "config.yaml"
+
+      exists <- liftIO $ doesFileExist confPath
+
+      if exists
+        then do
+          $logInfo "removing config.yaml"
+          liftIO $ removeFile confPath
+        else
+          $logInfo "no config file found, skipping."
 
     ------------------
     --[ Debug info ]--
