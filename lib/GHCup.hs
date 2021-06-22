@@ -1282,6 +1282,40 @@ rmStackVer ver = do
       Nothing        -> liftIO $ rmLink (binDir </> "stack" <> exeExt)
 
 
+rmTool :: ( MonadReader AppState m
+           , MonadLogger m
+           , MonadFail m
+           , MonadMask m
+           , MonadUnliftIO m)
+           => ListResult
+           -> m ()
+
+rmTool tool = do
+  let ListResult {lVer, lTool, lCross} = tool
+  -- appstate <- ask
+
+  case lTool of
+    GHC -> do
+      let ghcTargetVersion = GHCTargetVersion lCross lVer
+      _ <- runE @'[NotInstalled] $ rmGHCVer ghcTargetVersion
+      pure ()
+
+    HLS -> do
+      _ <- runE @'[NotInstalled] $ rmHLSVer lVer
+      pure ()
+
+    Cabal -> do
+      _ <- runE @'[NotInstalled] $ rmCabalVer lVer
+      pure ()
+
+    Stack -> do
+      _ <- runE @'[NotInstalled] $ rmStackVer lVer
+      pure ()
+
+    GHCup -> do
+      -- leaving this unimplemented for now.
+      pure ()
+
 
     ------------------
     --[ Debug info ]--
