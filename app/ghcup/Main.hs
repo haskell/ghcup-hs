@@ -1702,6 +1702,11 @@ Make sure to clean up #{tmpdir} afterwards.|])
                     else putStrLn uri' >> pure ExitSuccess
 
             Nuke -> do
+              runLogger $ $logWarn "WARNING: This will remove GHCup and all installed components from your system."
+              runLogger $ $logWarn "Wating 10 seconds before commencing, if you want to cancel it, now would be the time."
+
+              threadDelay 10000000  -- wait 10s
+              
               runLogger $ $logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
               runLogger $ $logInfo "Nuking in 3...2...1"
 
