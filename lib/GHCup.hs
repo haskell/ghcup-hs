@@ -1313,7 +1313,8 @@ rmTool ListResult {lVer, lTool, lCross} = do
 
 rmGhcupDirs :: ( MonadReader AppState m
                , MonadIO m
-               , MonadLogger m)
+               , MonadLogger m
+               , MonadCatch m )
                 => m ()
 rmGhcupDirs = do
   dirs@Dirs
@@ -1323,10 +1324,15 @@ rmGhcupDirs = do
     , cacheDir
     , confDir } <- asks dirs
 
-  let envDir = baseDir </> "env"
+  let envFilePath = baseDir </> "env"
 
-  -- remove env Dir
-  rmEnvDir envDir
+  confFilePath <- getConfigFilePath
+
+  -- remove env File
+  rmEnvFile envFilePath
+
+-- remove the configFile file
+  rmConfFile confFilePath
 
   -- remove entire cache Dir
   rmCacheDir cacheDir
@@ -1334,43 +1340,25 @@ rmGhcupDirs = do
   -- remove entire logs Dir
   rmLogsDir logsDir
 
-  -- remove the $ghcupConfigDir/config.yaml file
-  rmConfFile confDir
-
   liftIO $ print dirs
 
   where
 
-    rmEnvDir envDir = do
-      isEnvDirPresent <- liftIO $ doesDirectoryExist envDir
-
-      if isEnvDirPresent
-        then do
-          $logInfo "Removing Ghcup Environment Dir"
-          liftIO $ removeDirectory envDir
-        else
-          $logInfo "EnvDir Not Found, Skipping"
+    rmEnvFile enFilePath = do
+      $logInfo "Removing Ghcup Environment File"
+      hideError doesNotExistErrorType $ liftIO $ removeFile enFilePath
 
     rmCacheDir cacheDir = do
       $logInfo "removing ghcup cache Dir"
       liftIO $ removeDirectory cacheDir
 
-
     rmLogsDir logsDir = do
       $logInfo "removing ghcup logs Dir"
       liftIO $ removeDirectory logsDir
 
-    rmConfFile confDir = do
-      let confPath = confDir </> "config.yaml"
-
-      exists <- liftIO $ doesFileExist confPath
-
-      if exists
-        then do
-          $logInfo "removing config.yaml"
-          liftIO $ removeFile confPath
-        else
-          $logInfo "no config file found, skipping."
+    rmConfFile confFilePath = do
+      $logInfo "removing Ghcup Config File"
+      hideError doesNotExistErrorType $ liftIO $ removeFile confFilePath
 
     ------------------
     --[ Debug info ]--
