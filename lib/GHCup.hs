@@ -1355,31 +1355,20 @@ rmGhcupDirs = do
     rmCacheDir cacheDir = do
       $logInfo "removing ghcup cache Dir"
       contents <- liftIO $ listDirectory cacheDir
-      forM_ contents removeIfFile
+      forM_ contents deleteFile
       removeDirIfEmpty cacheDir
 
     rmLogsDir logsDir = do
       $logInfo "removing ghcup logs Dir"
       contents <- liftIO $ listDirectory logsDir
-      forM_ contents removeIfFile
+      forM_ contents deleteFile
       removeDirIfEmpty logsDir
 
-    removeIfFile filepath = do
-      isFile <- checkIfSymlink filepath
-      isSymlink <- checkIfRegularFile filepath
-
-      if isFile && not isSymlink
-        then liftIO $ removeFile filepath
-        else pure ()
-
-    checkIfSymlink filepath =
-      liftIO $ pathIsSymbolicLink filepath
-
-    checkIfRegularFile filepath =
-      liftIO $ doesFileExist filepath
+    deleteFile filepath = do
+      hideError InappropriateType $ liftIO $ removeFile filepath
 
     removeDirIfEmpty filepath =
-      liftIO $ removeDirectory filepath
+      hideError UnsatisfiedConstraints $ liftIO $ removeDirectory filepath
 
     ------------------
     --[ Debug info ]--
