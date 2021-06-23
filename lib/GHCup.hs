@@ -1348,17 +1348,38 @@ rmGhcupDirs = do
       $logInfo "Removing Ghcup Environment File"
       hideError doesNotExistErrorType $ liftIO $ removeFile enFilePath
 
-    rmCacheDir cacheDir = do
-      $logInfo "removing ghcup cache Dir"
-      liftIO $ removeDirectory cacheDir
-
-    rmLogsDir logsDir = do
-      $logInfo "removing ghcup logs Dir"
-      liftIO $ removeDirectory logsDir
-
     rmConfFile confFilePath = do
       $logInfo "removing Ghcup Config File"
       hideError doesNotExistErrorType $ liftIO $ removeFile confFilePath
+
+    rmCacheDir cacheDir = do
+      $logInfo "removing ghcup cache Dir"
+      contents <- liftIO $ listDirectory cacheDir
+      forM_ contents removeIfFile
+      removeDirIfEmpty cacheDir
+
+    rmLogsDir logsDir = do
+      $logInfo "removing ghcup logs Dir"
+      contents <- liftIO $ listDirectory logsDir
+      forM_ contents removeIfFile
+      removeDirIfEmpty logsDir
+
+    removeIfFile filepath = do
+      isFile <- checkIfSymlink filepath
+      isSymlink <- checkIfRegularFile filepath
+
+      if isFile && not isSymlink
+        then liftIO $ removeFile filepath
+        else pure ()
+
+    checkIfSymlink filepath =
+      liftIO $ pathIsSymbolicLink filepath
+
+    checkIfRegularFile filepath =
+      liftIO $ doesFileExist filepath
+
+    removeDirIfEmpty filepath =
+      liftIO $ removeDirectory filepath
 
     ------------------
     --[ Debug info ]--
