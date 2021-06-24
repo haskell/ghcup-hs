@@ -1314,7 +1314,8 @@ rmTool ListResult {lVer, lTool, lCross} = do
 rmGhcupDirs :: ( MonadReader AppState m
                , MonadIO m
                , MonadLogger m
-               , MonadCatch m )
+               , MonadCatch m
+               , MonadMask m )
                 => m ()
 rmGhcupDirs = do
   dirs@Dirs
@@ -1365,7 +1366,7 @@ rmGhcupDirs = do
       removeDirIfEmpty logsDir
 
     deleteFile filepath = do
-      hideError InappropriateType $ liftIO $ removeFile filepath
+      hideError InappropriateType $ rmFile filepath
 
     removeDirIfEmpty filepath =
       hideError UnsatisfiedConstraints $ liftIO $ removeDirectory filepath
