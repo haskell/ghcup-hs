@@ -1370,7 +1370,7 @@ rmGhcupDirs = do
 
     rmBinDir binDir = do
 #if !defined(IS_WINDOWS)
-      isXDGStyle <- useXDG
+      isXDGStyle <- liftIO $ useXDG
       if not isXDGStyle
         then removeDirIfEmpty binDir
         else pure ()

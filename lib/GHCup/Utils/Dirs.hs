@@ -27,6 +27,9 @@ module GHCup.Utils.Dirs
   , relativeSymlink
   , withGHCupTmpDir
   , getConfigFilePath
+#if !defined(IS_WINDOWS)
+  , useXDG
+#endif
   )
 where
 
