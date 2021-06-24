@@ -1341,6 +1341,9 @@ rmGhcupDirs = do
   -- remove entire logs Dir
   rmLogsDir logsDir
 
+  -- remove bin directory conditionally
+  rmBinDir binDir
+
   liftIO $ print dirs
 
   where
@@ -1364,6 +1367,16 @@ rmGhcupDirs = do
       contents <- liftIO $ listDirectory logsDir
       forM_ contents deleteFile
       removeDirIfEmpty logsDir
+
+    rmBinDir binDir = do
+#if !defined(IS_WINDOWS)
+      isXDGStyle <- useXDG
+      if not isXDGStyle
+        then removeDirIfEmpty binDir
+        else pure ()
+#else
+      removeDirIfEmpty binDir
+#endif
 
     deleteFile filepath = do
       hideError InappropriateType $ rmFile filepath
