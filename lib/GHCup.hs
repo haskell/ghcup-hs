@@ -1297,7 +1297,7 @@ rmGhcup = do
   -- since it doesn't seem possible to delete a running exec in windows
   -- we move it to temp dir, to be deleted at next reboot
   tempDir <- liftIO $ getTemporaryDirectory
-  tempFilepath = tempDir </> ghcupFilename
+  let tempFilepath = tempDir </> ghcupFilename
   liftIO $ hideError NoSuchThing $ Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
 #else
   -- delete it.
