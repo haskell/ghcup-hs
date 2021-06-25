@@ -1298,9 +1298,10 @@ rmGhcup = do
   -- we move it to temp dir, to be deleted at next reboot
   tempDir <- liftIO $ getTemporaryDirectory
   tempFilepath = tempDir </> ghcupFilename
-  hideError doesNotExistErrorType  $ liftIO $ renameFile ghcupFilepath tempFilepath
+  liftIO $ hideError NoSuchThing $ Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
 #else
-  hideError doesNotExistErrorType  $ liftIO $ rmFile ghcupFilepath
+  -- delete it.
+  hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
 #endif
 
 rmTool :: ( MonadReader AppState m
