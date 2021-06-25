@@ -85,7 +85,7 @@ handles your haskell packages and can demand that [a specific version](https://c
 A configuration file can be put in `~/.ghcup/config.yaml`. The default config file
 explaining all possible configurations can be found in this repo: [config.yaml](./config.yaml).
 
-Partial configuration is fine. Command line options always overwrite the config file settings.
+Partial configuration is fine. Command line options always override the config file settings.
 
 ### Manpages
 
