@@ -1284,14 +1284,24 @@ rmStackVer ver = do
 
 -- assuming the current scheme of having just 1 ghcup bin, no version info is required.
 rmGhcup :: ( MonadReader AppState m
-           , MonadIO m
+           , MonadIO m,
+             MonadCatch m
            )
         => Excepts '[NotInstalled] m ()
 
 rmGhcup = do
   AppState {dirs = Dirs {binDir}} <- lift ask
-  let ghcupFile = "ghcup" <> exeExt
-  liftIO $ hideError doesNotExistErrorType $ rmFile (binDir </> ghcupFile)
+  let ghcupFilename = "ghcup" <> exeExt
+  let ghcupFilepath = binDir </> ghcupFilename
+#if defined(IS_WINDOWS)
+  -- since it doesn't seem possible to delete a running exec in windows
+  -- we move it to temp dir, to be deleted at next reboot
+  tempDir <- liftIO $ getTemporaryDirectory
+  tempFilepath = tempDir </> ghcupFilename
+  hideError doesNotExistErrorType  $ liftIO $ renameFile ghcupFilepath tempFilepath
+#else
+  hideError doesNotExistErrorType  $ liftIO $ rmFile ghcupFilepath
+#endif
 
 rmTool :: ( MonadReader AppState m
            , MonadLogger m
