@@ -1298,7 +1298,9 @@ rmGhcup = do
   -- we move it to temp dir, to be deleted at next reboot
   tempDir <- liftIO $ getTemporaryDirectory
   let tempFilepath = tempDir </> ghcupFilename
-  liftIO $ hideError NoSuchThing $ Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
+  hideError UnsupportedOperation $
+            liftIO $ hideError NoSuchThing $
+            Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
 #else
   -- delete it.
   hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
