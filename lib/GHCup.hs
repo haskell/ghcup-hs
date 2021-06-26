@@ -1339,7 +1339,7 @@ rmGhcupDirs :: ( MonadReader AppState m
                , MonadLogger m
                , MonadCatch m
                , MonadMask m )
-                => m ()
+                => m [FilePath]
 rmGhcupDirs = do
   dirs@Dirs
     { baseDir
