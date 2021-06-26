@@ -1367,7 +1367,7 @@ rmGhcupDirs = do
   -- remove bin directory conditionally
   rmBinDir binDir
 
-  liftIO $ print dirs
+  reportRemainingFiles baseDir
 
   where
 
@@ -1400,6 +1400,10 @@ rmGhcupDirs = do
 #else
       removeDirIfEmpty binDir
 #endif
+
+    reportRemainingFiles ghcupDir = do
+      remainingFiles <- liftIO $ getDirectoryContentsRecursive ghcupDir
+      pure remainingFiles
 
     deleteFile filepath = do
       hideError InappropriateType $ rmFile filepath
