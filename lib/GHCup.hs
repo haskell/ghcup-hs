@@ -1398,7 +1398,7 @@ rmGhcupDirs = do
         then removeDirIfEmptyOrIsSymlink binDir
         else pure ()
 #else
-      removeDirIfEmpty binDir
+      removeDirIfEmptyOrIsSymlink binDir
 #endif
 
     reportRemainingFiles ghcupDir = do
