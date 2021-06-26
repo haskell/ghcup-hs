@@ -1713,7 +1713,13 @@ Make sure to clean up #{tmpdir} afterwards.|])
               lInstalled <- runLogger . flip runReaderT appstate $ listVersions Nothing (Just ListInstalled)
               forM_ lInstalled $ runRm . rmTool
 
-              runLogger $ runReaderT rmGhcupDirs appstate
+              leftOverFiles <- runLogger $ runReaderT rmGhcupDirs appstate
+
+              case length leftOverFiles of
+                0 -> runLogger $ $logInfo "Nuclear Annihilation complete!"
+                _ -> do
+                     runLogger $ $logWarn "These Directories have survived Nuclear Annihilation, you'd may remove them manually."
+                     forM_ leftOverFiles (runLogger . $logWarn . T.pack)
 
               pure ExitSuccess
 
