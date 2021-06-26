@@ -1296,25 +1296,26 @@ rmGhcup = do
   let ghcupFilepath = binDir </> ghcupFilename
   currentRunningExecPath <- liftIO $ getExecutablePath
   if currentRunningExecPath == ghcupFilepath
-  then do
+    then
+      do
 #if defined(IS_WINDOWS)
-  -- since it doesn't seem possible to delete a running exec in windows
-  -- we move it to temp dir, to be deleted at next reboot
-    tempDir <- liftIO $ getTemporaryDirectory
-    let tempFilepath = tempDir </> ghcupFilename
-      hideError UnsupportedOperation $
-              liftIO $ hideError NoSuchThing $
-              Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
+    -- since it doesn't seem possible to delete a running exec in windows
+    -- we move it to temp dir, to be deleted at next reboot
+        tempDir <- liftIO $ getTemporaryDirectory
+        let tempFilepath = tempDir </> ghcupFilename
+        hideError UnsupportedOperation $
+                  liftIO $ hideError NoSuchThing $
+                  Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
 #else
-         -- delete it.
-    hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
+    -- delete it.
+        hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
 #endif
-   else
+    else
       $logWarn $
       nonStandardInstallLocationMsg currentRunningExecPath
 
-   where
-     nonStandardInstallLocationMsg path = T.pack $
+  where
+    nonStandardInstallLocationMsg path = T.pack $
       "current ghcup is invoked from a non-standard location: \n"
       <> path <>
       "\n you may have to uninstall it manually."
