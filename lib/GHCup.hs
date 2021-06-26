@@ -1367,6 +1367,7 @@ rmGhcupDirs = do
   -- remove bin directory conditionally
   rmBinDir binDir
 
+  -- report files in baseDir that are left-over after the standard location deletions above
   reportRemainingFiles baseDir
 
   where
@@ -1405,6 +1406,9 @@ rmGhcupDirs = do
       remainingFiles <- liftIO $ getDirectoryContentsRecursive ghcupDir
       pure remainingFiles
 
+    -- we expect only files inside cache/log dir
+    -- we report remaining files/dirs later,
+    -- hence the force/quiet mode in these delete functions below.
     deleteFile filepath = do
       hideError InappropriateType $ rmFile filepath
 
