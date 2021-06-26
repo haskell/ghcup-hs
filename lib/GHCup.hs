@@ -1286,6 +1286,7 @@ rmStackVer ver = do
 rmGhcup :: ( MonadReader AppState m
            , MonadIO m
            , MonadCatch m
+           , MonadLogger m
            )
         => m ()
 
@@ -1293,18 +1294,30 @@ rmGhcup = do
   AppState {dirs = Dirs {binDir}} <- ask
   let ghcupFilename = "ghcup" <> exeExt
   let ghcupFilepath = binDir </> ghcupFilename
+  currentRunningExecPath <- liftIO $ getExecutablePath
+  if currentRunningExecPath == ghcupFilepath
+  then do
 #if defined(IS_WINDOWS)
   -- since it doesn't seem possible to delete a running exec in windows
   -- we move it to temp dir, to be deleted at next reboot
-  tempDir <- liftIO $ getTemporaryDirectory
-  let tempFilepath = tempDir </> ghcupFilename
-  hideError UnsupportedOperation $
-            liftIO $ hideError NoSuchThing $
-            Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
+    tempDir <- liftIO $ getTemporaryDirectory
+    let tempFilepath = tempDir </> ghcupFilename
+      hideError UnsupportedOperation $
+              liftIO $ hideError NoSuchThing $
+              Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
 #else
-  -- delete it.
-  hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
+         -- delete it.
+    hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
 #endif
+   else
+      $logWarn $
+      nonStandardInstallLocationMsg currentRunningExecPath
+
+   where
+     nonStandardInstallLocationMsg path = T.pack $
+      "current ghcup is invoked from a non-standard location: \n"
+      <> path <>
+      "\n you may have to uninstall it manually."
 
 rmTool :: ( MonadReader AppState m
            , MonadLogger m
