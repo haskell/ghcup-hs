@@ -1371,11 +1371,11 @@ rmGhcupDirs = do
 
     rmEnvFile enFilePath = do
       $logInfo "Removing Ghcup Environment File"
-      hideError doesNotExistErrorType $ liftIO $ removeFile enFilePath
+      hideError doesNotExistErrorType $ liftIO $ deleteFile enFilePath
 
     rmConfFile confFilePath = do
       $logInfo "removing Ghcup Config File"
-      hideError doesNotExistErrorType $ liftIO $ removeFile confFilePath
+      hideError doesNotExistErrorType $ liftIO $ deleteFile confFilePath
 
     rmCacheDir cacheDir = do
       $logInfo "removing ghcup cache Dir"
