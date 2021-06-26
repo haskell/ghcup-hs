@@ -1284,13 +1284,13 @@ rmStackVer ver = do
 
 -- assuming the current scheme of having just 1 ghcup bin, no version info is required.
 rmGhcup :: ( MonadReader AppState m
-           , MonadIO m,
-             MonadCatch m
+           , MonadIO m
+           , MonadCatch m
            )
-        => Excepts '[NotInstalled] m ()
+        => m ()
 
 rmGhcup = do
-  AppState {dirs = Dirs {binDir}} <- lift ask
+  AppState {dirs = Dirs {binDir}} <- ask
   let ghcupFilename = "ghcup" <> exeExt
   let ghcupFilepath = binDir </> ghcupFilename
 #if defined(IS_WINDOWS)
@@ -1332,7 +1332,7 @@ rmTool ListResult {lVer, lTool, lCross} = do
       rmStackVer lVer
 
     GHCup -> do
-      rmGhcup
+      lift rmGhcup
 
 rmGhcupDirs :: ( MonadReader AppState m
                , MonadIO m
