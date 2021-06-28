@@ -1294,8 +1294,23 @@ rmGhcup = do
   AppState {dirs = Dirs {binDir}} <- ask
   let ghcupFilename = "ghcup" <> exeExt
   let ghcupFilepath = binDir </> ghcupFilename
+
   currentRunningExecPath <- liftIO $ getExecutablePath
-  if currentRunningExecPath == ghcupFilepath
+
+  -- if paths do no exist, warn user, and continue to compare them, as is,
+  -- which should eventually fail and result in a non-standard install warning
+
+  p1 <- handleIO' doesNotExistErrorType
+                  (handlePathNotPresent currentRunningExecPath)
+                  (liftIO $ canonicalizePath currentRunningExecPath)
+
+  p2 <- handleIO' doesNotExistErrorType
+                  (handlePathNotPresent ghcupFilename)
+                  (liftIO $ canonicalizePath ghcupFilename)
+
+  let areEqualPaths = equalFilePath p1 p2
+
+  if areEqualPaths
     then
       do
 #if defined(IS_WINDOWS)
@@ -1315,6 +1330,10 @@ rmGhcup = do
       nonStandardInstallLocationMsg currentRunningExecPath
 
   where
+    handlePathNotPresent fp _err = do
+      $logWarn $ "Error: The path does not exist, " <> T.pack fp
+      pure fp
+
     nonStandardInstallLocationMsg path = T.pack $
       "current ghcup is invoked from a non-standard location: \n"
       <> path <>
