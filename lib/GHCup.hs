@@ -1331,7 +1331,7 @@ rmGhcup = do
 
   where
     handlePathNotPresent fp _err = do
-      $logWarn $ "Error: The path does not exist, " <> T.pack fp
+      $logDebug $ "Error: The path does not exist, " <> T.pack fp
       pure fp
 
     nonStandardInstallLocationMsg path = T.pack $
