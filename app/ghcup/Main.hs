@@ -1703,7 +1703,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
 
             Nuke -> do
               runLogger $ $logWarn "WARNING: This will remove GHCup and all installed components from your system."
-              runLogger $ $logWarn "Wating 10 seconds before commencing, if you want to cancel it, now would be the time."
+              runLogger $ $logWarn "Waiting 10 seconds before commencing, if you want to cancel it, now would be the time."
 
               threadDelay 10000000  -- wait 10s
               
@@ -1718,7 +1718,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
               case length leftOverFiles of
                 0 -> runLogger $ $logInfo "Nuclear Annihilation complete!"
                 _ -> do
-                     runLogger $ $logWarn "These Directories have survived Nuclear Annihilation, you'd may remove them manually."
+                     runLogger $ $logWarn "These Directories/Files have survived Nuclear Annihilation, you may remove them manually."
                      forM_ leftOverFiles (runLogger . $logWarn . T.pack)
 
               pure ExitSuccess
