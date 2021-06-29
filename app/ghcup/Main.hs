@@ -1701,27 +1701,39 @@ Make sure to clean up #{tmpdir} afterwards.|])
                                 >> pure (ExitFailure 13)
                     else putStrLn uri' >> pure ExitSuccess
 
-            Nuke -> do
-              runLogger $ $logWarn "WARNING: This will remove GHCup and all installed components from your system."
-              runLogger $ $logWarn "Waiting 10 seconds before commencing, if you want to cancel it, now would be the time."
+            Nuke ->
+              runRm (do
+                   lift $ runLogger $ $logWarn "WARNING: This will remove GHCup and all installed components from your system."
+                   lift $ runLogger $ $logWarn "Waiting 10 seconds before commencing, if you want to cancel it, now would be the time."
+                   liftIO $ threadDelay 10000000  -- wait 10s
 
-              threadDelay 10000000  -- wait 10s
+                   lift $ runLogger $ $logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
+                   lift $ runLogger $ $logInfo "Nuking in 3...2...1"
               
-              runLogger $ $logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
-              runLogger $ $logInfo "Nuking in 3...2...1"
 
-              lInstalled <- runLogger . flip runReaderT appstate $ listVersions Nothing (Just ListInstalled)
-              forM_ lInstalled $ runRm . rmTool
+                   lInstalled <- lift $ runLogger . flip runReaderT appstate $ listVersions Nothing (Just ListInstalled)
 
-              leftOverFiles <- runLogger $ runReaderT rmGhcupDirs appstate
+                   forM_ lInstalled (liftE . rmTool)
 
-              case length leftOverFiles of
-                0 -> runLogger $ $logInfo "Nuclear Annihilation complete!"
-                _ -> do
-                     runLogger $ $logWarn "These Directories/Files have survived Nuclear Annihilation, you may remove them manually."
-                     forM_ leftOverFiles (runLogger . $logWarn . T.pack)
+                   leftOverFiles <- lift $ runLogger $ runReaderT rmGhcupDirs appstate
+                   pure leftOverFiles
 
-              pure ExitSuccess
+                   ) >>= \case
+                            VRight leftOverFiles -> do
+
+                              case length leftOverFiles of
+                                0 -> do
+                                  runLogger $ $logInfo "Nuclear Annihilation complete!"
+                                  pure ExitSuccess
+                                _ -> do
+                                  runLogger $ $logWarn "These Directories/Files have survived Nuclear Annihilation, you may remove them manually."
+                                  forM_ leftOverFiles (runLogger . $logDebug . T.pack)
+                                  pure ExitSuccess
+
+                            VLeft e -> do
+                              runLogger $ $(logError) $ T.pack $ prettyShow e
+                              pure $ ExitFailure 15
+
 
           case res of
             ExitSuccess        -> pure ()
