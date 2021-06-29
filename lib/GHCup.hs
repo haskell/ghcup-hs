@@ -1437,11 +1437,15 @@ rmGhcupDirs = do
 
     reportRemainingFiles ghcupDir = do
       remainingFiles <- liftIO $ getDirectoryContentsRecursive ghcupDir
-      pure remainingFiles
+      remainingFilesAbsolute <- makePathsAbsolute remainingFiles
+      pure remainingFilesAbsolute
+
+    makePathsAbsolute paths = liftIO $ traverse makeAbsolute paths
 
     -- we expect only files inside cache/log dir
     -- we report remaining files/dirs later,
     -- hence the force/quiet mode in these delete functions below.
+
     deleteFile filepath = do
       hideError InappropriateType $ rmFile filepath
 
