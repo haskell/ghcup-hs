@@ -1437,10 +1437,22 @@ rmGhcupDirs = do
 
     reportRemainingFiles ghcupDir = do
       remainingFiles <- liftIO $ getDirectoryContentsRecursive ghcupDir
-      remainingFilesAbsolute <- makePathsAbsolute remainingFiles
+      let normalizedFilePaths = fmap normalise remainingFiles
+      let sortedByDepthRemainingFiles = reverse $ sortBy compareFn normalizedFilePaths
+      remainingFilesAbsolute <- makePathsAbsolute sortedByDepthRemainingFiles
+
       pure remainingFilesAbsolute
 
-    makePathsAbsolute paths = liftIO $ traverse makeAbsolute paths
+      where
+        calcDepth :: FilePath -> Int
+        calcDepth = length . filter isPathSeparator
+
+        compareFn :: FilePath -> FilePath -> Ordering
+        compareFn fp1 fp2 = compare (calcDepth fp1) (calcDepth fp2)
+
+    makePathsAbsolute :: (MonadIO m) => [FilePath] -> m [FilePath]
+    makePathsAbsolute paths = liftIO $
+                              traverse (makeAbsolute . normalise) paths
 
     -- we expect only files inside cache/log dir
     -- we report remaining files/dirs later,
