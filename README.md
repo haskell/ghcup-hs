@@ -1,5 +1,5 @@
 `ghcup` makes it easy to install specific versions of `ghc` on GNU/Linux,
-macOS (aka Darwin) and FreeBSD and can also bootstrap a fresh Haskell developer environment from scratch.
+macOS (aka Darwin), FreeBSD and Windows and can also bootstrap a fresh Haskell developer environment from scratch.
 It follows the unix UNIX philosophy of [do one thing and do it well](https://en.wikipedia.org/wiki/Unix_philosophy#Do_One_Thing_and_Do_It_Well).
 
 Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [pyenv](https://github.com/pyenv/pyenv) and [jenv](http://www.jenv.be).
