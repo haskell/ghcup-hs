@@ -1113,7 +1113,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = verbose settings
                 , colorOutter  = B.hPut stderr
-                , rawOutter    = B.appendFile logfile
+                , rawOutter    =
+                    case optCommand of
+                      Nuke -> \_ -> pure ()
+                      _ -> B.appendFile logfile
                 }
           let runLogger = myLoggerT loggerConfig
           let siletRunLogger = myLoggerT loggerConfig { colorOutter = \_ -> pure () }
@@ -1703,31 +1706,27 @@ Make sure to clean up #{tmpdir} afterwards.|])
 
             Nuke ->
               runRm (do
-                   lift $ runLogger $ $logWarn "WARNING: This will remove GHCup and all installed components from your system."
-                   lift $ runLogger $ $logWarn "Waiting 10 seconds before commencing, if you want to cancel it, now would be the time."
+                   lift $ $logWarn "WARNING: This will remove GHCup and all installed components from your system."
+                   lift $ $logWarn "Waiting 10 seconds before commencing, if you want to cancel it, now would be the time."
                    liftIO $ threadDelay 10000000  -- wait 10s
 
-                   lift $ runLogger $ $logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
-                   lift $ runLogger $ $logInfo "Nuking in 3...2...1"
+                   lift $ $logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
+                   lift $ $logInfo "Nuking in 3...2...1"
               
-
-                   lInstalled <- lift $ runLogger . flip runReaderT appstate $ listVersions Nothing (Just ListInstalled)
+                   lInstalled <- lift $ listVersions Nothing (Just ListInstalled)
 
                    forM_ lInstalled (liftE . rmTool)
 
-                   leftOverFiles <- lift $ runLogger $ runReaderT rmGhcupDirs appstate
-                   pure leftOverFiles
+                   lift rmGhcupDirs
 
                    ) >>= \case
-                            VRight leftOverFiles -> do
-
-                              case length leftOverFiles of
-                                0 -> do
+                            VRight leftOverFiles
+                              | null leftOverFiles -> do
                                   runLogger $ $logInfo "Nuclear Annihilation complete!"
                                   pure ExitSuccess
-                                _ -> do
-                                  runLogger $ $logWarn "These Directories/Files have survived Nuclear Annihilation, you may remove them manually."
-                                  forM_ leftOverFiles (runLogger . $logDebug . T.pack)
+                              | otherwise -> do
+                                  runLogger $ $logWarn "These Files have survived Nuclear Annihilation, you may remove them manually."
+                                  forM_ leftOverFiles putStrLn
                                   pure ExitSuccess
 
                             VLeft e -> do

@@ -1305,29 +1305,26 @@ rmGhcup = do
                   (liftIO $ canonicalizePath currentRunningExecPath)
 
   p2 <- handleIO' doesNotExistErrorType
-                  (handlePathNotPresent ghcupFilename)
-                  (liftIO $ canonicalizePath ghcupFilename)
+                  (handlePathNotPresent ghcupFilepath)
+                  (liftIO $ canonicalizePath ghcupFilepath)
 
   let areEqualPaths = equalFilePath p1 p2
 
-  if areEqualPaths
-    then
-      do
+  when (not areEqualPaths) $ do
+    $logWarn $ nonStandardInstallLocationMsg currentRunningExecPath
+
 #if defined(IS_WINDOWS)
-    -- since it doesn't seem possible to delete a running exec in windows
-    -- we move it to temp dir, to be deleted at next reboot
-        tempDir <- liftIO $ getTemporaryDirectory
-        let tempFilepath = tempDir </> ghcupFilename
-        hideError UnsupportedOperation $
-                  liftIO $ hideError NoSuchThing $
-                  Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
+  -- since it doesn't seem possible to delete a running exec in windows
+  -- we move it to temp dir, to be deleted at next reboot
+  tempDir <- liftIO $ getTemporaryDirectory
+  let tempFilepath = tempDir </> ghcupFilename
+  hideError UnsupportedOperation $
+            liftIO $ hideError NoSuchThing $
+            Win32.moveFileEx ghcupFilepath (Just tempFilepath) Win32.mOVEFILE_REPLACE_EXISTING
 #else
-    -- delete it.
-        hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
+  -- delete it.
+  hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
 #endif
-    else
-      $logWarn $
-      nonStandardInstallLocationMsg currentRunningExecPath
 
   where
     handlePathNotPresent fp _err = do
@@ -1348,83 +1345,74 @@ rmTool :: ( MonadReader AppState m
            -> Excepts '[NotInstalled ] m ()
 
 rmTool ListResult {lVer, lTool, lCross} = do
-  -- appstate <- ask
-
   case lTool of
-    GHC -> do
+    GHC ->
       let ghcTargetVersion = GHCTargetVersion lCross lVer
-      rmGHCVer ghcTargetVersion
+      in rmGHCVer ghcTargetVersion
+    HLS -> rmHLSVer lVer
+    Cabal -> rmCabalVer lVer
+    Stack -> rmStackVer lVer
+    GHCup -> lift rmGhcup
 
-    HLS -> do
-      rmHLSVer lVer
-
-    Cabal -> do
-      rmCabalVer lVer
-
-    Stack -> do
-      rmStackVer lVer
-
-    GHCup -> do
-      lift rmGhcup
 
 rmGhcupDirs :: ( MonadReader AppState m
                , MonadIO m
                , MonadLogger m
                , MonadCatch m
                , MonadMask m )
-                => m [FilePath]
+            => m [FilePath]
 rmGhcupDirs = do
-  dirs@Dirs
+  Dirs
     { baseDir
     , binDir
     , logsDir
     , cacheDir
-    , confDir } <- asks dirs
+    } <- asks dirs
 
   let envFilePath = baseDir </> "env"
 
   confFilePath <- getConfigFilePath
 
-  -- remove env File
-  rmEnvFile envFilePath
-
--- remove the configFile file
+  rmEnvFile  envFilePath
   rmConfFile confFilePath
-
-  -- remove entire cache Dir
   rmCacheDir cacheDir
+  rmLogsDir  logsDir
+  rmBinDir   binDir
+#if defined(IS_WINDOWS)
+  rmPath (baseDir </> "msys64")
+#endif
 
-  -- remove entire logs Dir
-  rmLogsDir logsDir
+  liftIO $ removeEmptyDirsRecursive baseDir
 
-  -- remove bin directory conditionally
-  rmBinDir binDir
-
-  -- report files in baseDir that are left-over after the standard location deletions above
-  reportRemainingFiles baseDir
+  -- report files in baseDir that are left-over after
+  -- the standard location deletions above
+  hideErrorDef [doesNotExistErrorType] [] $ reportRemainingFiles baseDir
 
   where
 
+    rmEnvFile :: (MonadCatch m, MonadLogger m, MonadIO m) => FilePath -> m ()
     rmEnvFile enFilePath = do
       $logInfo "Removing Ghcup Environment File"
       hideError doesNotExistErrorType $ liftIO $ deleteFile enFilePath
 
+    rmConfFile :: (MonadCatch m, MonadLogger m, MonadIO m) => FilePath -> m ()
     rmConfFile confFilePath = do
       $logInfo "removing Ghcup Config File"
       hideError doesNotExistErrorType $ liftIO $ deleteFile confFilePath
 
+    rmCacheDir :: (MonadLogger m, MonadIO m) => FilePath -> m ()
     rmCacheDir cacheDir = do
       $logInfo "removing ghcup cache Dir"
-      contents <- liftIO $ listDirectory cacheDir
-      forM_ contents deleteFile
-      removeDirIfEmptyOrIsSymlink cacheDir
+      contents <- liftIO $ getDirectoryContentsRecursive cacheDir
+      forM_ contents (liftIO . deleteFile . (cacheDir </>))
 
+    rmLogsDir :: (MonadLogger m, MonadIO m) => FilePath -> m ()
     rmLogsDir logsDir = do
       $logInfo "removing ghcup logs Dir"
-      contents <- liftIO $ listDirectory logsDir
-      forM_ contents deleteFile
-      removeDirIfEmptyOrIsSymlink logsDir
+      contents <- liftIO $ getDirectoryContentsRecursive logsDir
+      forM_ contents (liftIO . deleteFile . (logsDir </>))
 
+    rmBinDir :: (MonadCatch m, MonadIO m) => FilePath -> m ()
     rmBinDir binDir = do
 #if !defined(IS_WINDOWS)
       isXDGStyle <- liftIO $ useXDG
@@ -1435,11 +1423,12 @@ rmGhcupDirs = do
       removeDirIfEmptyOrIsSymlink binDir
 #endif
 
-    reportRemainingFiles ghcupDir = do
-      remainingFiles <- liftIO $ getDirectoryContentsRecursive ghcupDir
+    reportRemainingFiles :: MonadIO m => FilePath -> m [FilePath]
+    reportRemainingFiles dir = do
+      remainingFiles <- liftIO $ getDirectoryContentsRecursive dir
       let normalizedFilePaths = fmap normalise remainingFiles
       let sortedByDepthRemainingFiles = reverse $ sortBy compareFn normalizedFilePaths
-      remainingFilesAbsolute <- makePathsAbsolute sortedByDepthRemainingFiles
+      let remainingFilesAbsolute = fmap (dir </>) sortedByDepthRemainingFiles
 
       pure remainingFilesAbsolute
 
@@ -1450,17 +1439,22 @@ rmGhcupDirs = do
         compareFn :: FilePath -> FilePath -> Ordering
         compareFn fp1 fp2 = compare (calcDepth fp1) (calcDepth fp2)
 
-    makePathsAbsolute :: (MonadIO m) => [FilePath] -> m [FilePath]
-    makePathsAbsolute paths = liftIO $
-                              traverse (makeAbsolute . normalise) paths
+    removeEmptyDirsRecursive :: FilePath -> IO ()
+    removeEmptyDirsRecursive fp = do
+      cs <- listDirectory fp >>= filterM doesDirectoryExist . fmap (fp </>)
+      forM_ cs removeEmptyDirsRecursive
+      hideError InappropriateType $ removeDirIfEmptyOrIsSymlink fp
+        
 
     -- we expect only files inside cache/log dir
     -- we report remaining files/dirs later,
     -- hence the force/quiet mode in these delete functions below.
 
+    deleteFile :: FilePath -> IO ()
     deleteFile filepath = do
       hideError InappropriateType $ rmFile filepath
 
+    removeDirIfEmptyOrIsSymlink :: (MonadCatch m, MonadIO m) => FilePath -> m ()
     removeDirIfEmptyOrIsSymlink filepath =
       hideError UnsatisfiedConstraints $
       handleIO' InappropriateType
@@ -1472,6 +1466,8 @@ rmGhcupDirs = do
           if isSym
           then liftIO $ deleteFile fp
           else liftIO $ ioError e
+
+
 
     ------------------
     --[ Debug info ]--
