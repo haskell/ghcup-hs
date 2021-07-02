@@ -190,14 +190,14 @@ hideError :: (MonadIO m, MonadCatch m) => IOErrorType -> m () -> m ()
 hideError err = handleIO (\e -> if err == ioeGetErrorType e then pure () else liftIO . ioError $ e)
 
 
-hideErrorDef :: [IOErrorType] -> a -> IO a -> IO a
+hideErrorDef :: (MonadIO m, MonadCatch m) => [IOErrorType] -> a -> m a -> m a
 hideErrorDef errs def =
-  handleIO (\e -> if ioeGetErrorType e `elem` errs then pure def else ioError e)
+  handleIO (\e -> if ioeGetErrorType e `elem` errs then pure def else liftIO $ ioError e)
 
 
-hideErrorDefM :: [IOErrorType] -> IO a -> IO a -> IO a
+hideErrorDefM :: (MonadIO m, MonadCatch m) => [IOErrorType] -> m a -> m a -> m a
 hideErrorDefM errs def =
-  handleIO (\e -> if ioeGetErrorType e `elem` errs then def else ioError e)
+  handleIO (\e -> if ioeGetErrorType e `elem` errs then def else liftIO $ ioError e)
 
 
 -- TODO: does this work?
@@ -334,12 +334,13 @@ copyDirectoryRecursive srcDir destDir = do
                    in doCopy src dest
                 | (srcBase, srcFile) <- srcFiles ]
 
-    -- | List all the files in a directory and all subdirectories.
-    --
-    -- The order places files in sub-directories after all the files in their
-    -- parent directories. The list is generated lazily so is not well defined if
-    -- the source directory structure changes before the list is used.
-    --
+
+-- | List all the files in a directory and all subdirectories.
+--
+-- The order places files in sub-directories after all the files in their
+-- parent directories. The list is generated lazily so is not well defined if
+-- the source directory structure changes before the list is used.
+--
 getDirectoryContentsRecursive :: FilePath -> IO [FilePath]
 getDirectoryContentsRecursive topdir = recurseDirectories [""]
   where
