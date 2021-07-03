@@ -21,8 +21,6 @@ param (
     [string]$ExistingMsys2Dir,
     # Specify the cabal root directory (default: '$InstallDir\cabal')
     [string]$CabalDir,
-    # Perform a quick installation, omitting some expensive operations (you may have to install dependencies yourself later)
-    [bool]$Quick,
     # Overwrite (or rather backup) a previous install
     [bool]$Overwrite
 )
@@ -268,20 +266,8 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     Print-Msg -msg 'Upgrading full system twice...'
     Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
 
-    if ($Quick) {
-      $ghcBuildDeps = $Quick
-    } elseif (!($Silent)) {
-      $ghcBuildDeps = $Host.UI.PromptForChoice('Install Dependencies'
-        , 'Install a standard set of mingw64 packages to be able to build various haskell packages requiring unix libraries? (recommended, however this might take a while... if you skip this, you might have to do it manually later)'
-        , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
-            '&No'), 0)
-    } else {
-      $ghcBuildDeps = 0
-    }
-    if ($ghcBuildDeps -eq 0) {
-      Print-Msg -msg 'Installing Dependencies...'
-      Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed git tar curl wget base-devel gettext binutils autoconf make libtool automake pkgconf python p7zip patch unzip'
-    }
+    Print-Msg -msg 'Installing Dependencies...'
+    Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed curl mingw-w64-x86_64-pkgconf'
 
     Print-Msg -msg 'Updating SSL root certificate authorities...'
     Exec "$Bash" '-lc' 'pacman --noconfirm -S ca-certificates'
@@ -320,6 +306,8 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 
 Print-Msg -msg 'Creating shortcuts...'
 $DesktopDir = [Environment]::GetFolderPath("Desktop")
+$GhcInstArgs = '-mingw64 -mintty -c "pacman --noconfirm -S --needed base-devel gettext autoconf make libtool automake python p7zip patch unzip"'
+Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $GhcInstArgs -DestinationPath ('{0}\Install GHC dev dependencies.lnk' -f $DesktopDir)
 Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath ('{0}\Mingw haskell shell.lnk' -f $DesktopDir)
 Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath ('{0}\Mingw package management docs.url' -f $DesktopDir)
 
@@ -399,4 +387,6 @@ if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
   # aED5Ujwyq3Qre+TGVRUqwkEauDhQiX2A008G00fRO6+di6yJRCRn5eaRAbdU3Xww
   # E5VhEwLBnwzWrvLKtdEclhgUCo5Tq87QMXVdgX4aRmunl4ZE+Q==
 # SIG # End signature block
+
+
 
