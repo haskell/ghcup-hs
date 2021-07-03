@@ -1282,6 +1282,196 @@ rmStackVer ver = do
       Nothing        -> liftIO $ rmLink (binDir </> "stack" <> exeExt)
 
 
+-- assuming the current scheme of having just 1 ghcup bin, no version info is required.
+rmGhcup :: ( MonadReader AppState m
+           , MonadIO m
+           , MonadCatch m
+           , MonadLogger m
+           )
+        => m ()
+
+rmGhcup = do
+  AppState {dirs = Dirs {binDir}} <- ask
+  let ghcupFilename = "ghcup" <> exeExt
+  let ghcupFilepath = binDir </> ghcupFilename
+
+  currentRunningExecPath <- liftIO $ getExecutablePath
+
+  -- if paths do no exist, warn user, and continue to compare them, as is,
+  -- which should eventually fail and result in a non-standard install warning
+
+  p1 <- handleIO' doesNotExistErrorType
+                  (handlePathNotPresent currentRunningExecPath)
+                  (liftIO $ canonicalizePath currentRunningExecPath)
+
+  p2 <- handleIO' doesNotExistErrorType
+                  (handlePathNotPresent ghcupFilename)
+                  (liftIO $ canonicalizePath ghcupFilename)
+
+  let areEqualPaths = equalFilePath p1 p2
+
+  if areEqualPaths
+    then
+      do
+#if defined(IS_WINDOWS)
+    -- since it doesn't seem possible to delete a running exec in windows
+    -- we move it to temp dir, to be deleted at next reboot
+        tempDir <- liftIO $ getTemporaryDirectory
+        let tempFilepath = tempDir </> ghcupFilename
+        hideError UnsupportedOperation $
+                  liftIO $ hideError NoSuchThing $
+                  Win32.moveFileEx ghcupFilepath (Just tempFilepath) 1
+#else
+    -- delete it.
+        hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
+#endif
+    else
+      $logWarn $
+      nonStandardInstallLocationMsg currentRunningExecPath
+
+  where
+    handlePathNotPresent fp _err = do
+      $logDebug $ "Error: The path does not exist, " <> T.pack fp
+      pure fp
+
+    nonStandardInstallLocationMsg path = T.pack $
+      "current ghcup is invoked from a non-standard location: \n"
+      <> path <>
+      "\n you may have to uninstall it manually."
+
+rmTool :: ( MonadReader AppState m
+           , MonadLogger m
+           , MonadFail m
+           , MonadMask m
+           , MonadUnliftIO m)
+           => ListResult
+           -> Excepts '[NotInstalled ] m ()
+
+rmTool ListResult {lVer, lTool, lCross} = do
+  -- appstate <- ask
+
+  case lTool of
+    GHC -> do
+      let ghcTargetVersion = GHCTargetVersion lCross lVer
+      rmGHCVer ghcTargetVersion
+
+    HLS -> do
+      rmHLSVer lVer
+
+    Cabal -> do
+      rmCabalVer lVer
+
+    Stack -> do
+      rmStackVer lVer
+
+    GHCup -> do
+      lift rmGhcup
+
+rmGhcupDirs :: ( MonadReader AppState m
+               , MonadIO m
+               , MonadLogger m
+               , MonadCatch m
+               , MonadMask m )
+                => m [FilePath]
+rmGhcupDirs = do
+  dirs@Dirs
+    { baseDir
+    , binDir
+    , logsDir
+    , cacheDir
+    , confDir } <- asks dirs
+
+  let envFilePath = baseDir </> "env"
+
+  confFilePath <- getConfigFilePath
+
+  -- remove env File
+  rmEnvFile envFilePath
+
+-- remove the configFile file
+  rmConfFile confFilePath
+
+  -- remove entire cache Dir
+  rmCacheDir cacheDir
+
+  -- remove entire logs Dir
+  rmLogsDir logsDir
+
+  -- remove bin directory conditionally
+  rmBinDir binDir
+
+  -- report files in baseDir that are left-over after the standard location deletions above
+  reportRemainingFiles baseDir
+
+  where
+
+    rmEnvFile enFilePath = do
+      $logInfo "Removing Ghcup Environment File"
+      hideError doesNotExistErrorType $ liftIO $ deleteFile enFilePath
+
+    rmConfFile confFilePath = do
+      $logInfo "removing Ghcup Config File"
+      hideError doesNotExistErrorType $ liftIO $ deleteFile confFilePath
+
+    rmCacheDir cacheDir = do
+      $logInfo "removing ghcup cache Dir"
+      contents <- liftIO $ listDirectory cacheDir
+      forM_ contents deleteFile
+      removeDirIfEmptyOrIsSymlink cacheDir
+
+    rmLogsDir logsDir = do
+      $logInfo "removing ghcup logs Dir"
+      contents <- liftIO $ listDirectory logsDir
+      forM_ contents deleteFile
+      removeDirIfEmptyOrIsSymlink logsDir
+
+    rmBinDir binDir = do
+#if !defined(IS_WINDOWS)
+      isXDGStyle <- liftIO $ useXDG
+      if not isXDGStyle
+        then removeDirIfEmptyOrIsSymlink binDir
+        else pure ()
+#else
+      removeDirIfEmptyOrIsSymlink binDir
+#endif
+
+    reportRemainingFiles ghcupDir = do
+      remainingFiles <- liftIO $ getDirectoryContentsRecursive ghcupDir
+      let normalizedFilePaths = fmap normalise remainingFiles
+      let sortedByDepthRemainingFiles = reverse $ sortBy compareFn normalizedFilePaths
+      remainingFilesAbsolute <- makePathsAbsolute sortedByDepthRemainingFiles
+
+      pure remainingFilesAbsolute
+
+      where
+        calcDepth :: FilePath -> Int
+        calcDepth = length . filter isPathSeparator
+
+        compareFn :: FilePath -> FilePath -> Ordering
+        compareFn fp1 fp2 = compare (calcDepth fp1) (calcDepth fp2)
+
+    makePathsAbsolute :: (MonadIO m) => [FilePath] -> m [FilePath]
+    makePathsAbsolute paths = liftIO $
+                              traverse (makeAbsolute . normalise) paths
+
+    -- we expect only files inside cache/log dir
+    -- we report remaining files/dirs later,
+    -- hence the force/quiet mode in these delete functions below.
+
+    deleteFile filepath = do
+      hideError InappropriateType $ rmFile filepath
+
+    removeDirIfEmptyOrIsSymlink filepath =
+      hideError UnsatisfiedConstraints $
+      handleIO' InappropriateType
+            (handleIfSym filepath)
+            (liftIO $ removeDirectory filepath)
+      where
+        handleIfSym fp e = do
+          isSym <- liftIO $ pathIsSymbolicLink fp
+          if isSym
+          then liftIO $ deleteFile fp
+          else liftIO $ ioError e
 
     ------------------
     --[ Debug info ]--

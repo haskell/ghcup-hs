@@ -103,6 +103,7 @@ data Command
   | Upgrade UpgradeOpts Bool
   | ToolRequirements
   | ChangeLog ChangeLogOptions
+  | Nuke
 #if defined(BRICK)
   | Interactive
 #endif
@@ -219,7 +220,7 @@ invertableSwitch'
     -> Mod FlagFields Bool -- ^ option modifier for --no-foo
     -> Parser (Maybe Bool)
 invertableSwitch' longopt shortopt defv enmod dismod = optional
-    ( flag' True (enmod <> long longopt <> if defv then mempty else short shortopt)
+    ( flag' True ( enmod <> long longopt <> if defv then mempty else short shortopt)
     <|> flag' False (dismod <> long nolongopt <> if defv then short shortopt else mempty)
     )
   where
@@ -368,6 +369,14 @@ com =
               )
           <> internal
           )
+     <|> subparser
+          (command
+              "nuke"
+               (info (pure Nuke <**> helper)
+                     (progDesc "Completely remove ghcup from your system"))
+           <> commandGroup "Nuclear Commands:"
+          )
+
  where
   installToolFooter :: String
   installToolFooter = [s|Discussion:
@@ -392,7 +401,6 @@ com =
   changeLogFooter = [s|Discussion:
   By default returns the URI of the ChangeLog of the latest GHC release.
   Pass '-o' to automatically open via xdg-open.|]
-
 
 installCabalFooter :: String
 installCabalFooter = [s|Discussion:
@@ -1693,9 +1701,45 @@ Make sure to clean up #{tmpdir} afterwards.|])
                                 >> pure (ExitFailure 13)
                     else putStrLn uri' >> pure ExitSuccess
 
+            Nuke ->
+              runRm (do
+                   lift $ runLogger $ $logWarn "WARNING: This will remove GHCup and all installed components from your system."
+                   lift $ runLogger $ $logWarn "Waiting 10 seconds before commencing, if you want to cancel it, now would be the time."
+                   liftIO $ threadDelay 10000000  -- wait 10s
+
+                   lift $ runLogger $ $logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
+                   lift $ runLogger $ $logInfo "Nuking in 3...2...1"
+              
+
+                   lInstalled <- lift $ runLogger . flip runReaderT appstate $ listVersions Nothing (Just ListInstalled)
+
+                   forM_ lInstalled (liftE . rmTool)
+
+                   leftOverFiles <- lift $ runLogger $ runReaderT rmGhcupDirs appstate
+                   pure leftOverFiles
+
+                   ) >>= \case
+                            VRight leftOverFiles -> do
+
+                              case length leftOverFiles of
+                                0 -> do
+                                  runLogger $ $logInfo "Nuclear Annihilation complete!"
+                                  pure ExitSuccess
+                                _ -> do
+                                  runLogger $ $logWarn "These Directories/Files have survived Nuclear Annihilation, you may remove them manually."
+                                  forM_ leftOverFiles (runLogger . $logDebug . T.pack)
+                                  pure ExitSuccess
+
+                            VLeft e -> do
+                              runLogger $ $(logError) $ T.pack $ prettyShow e
+                              pure $ ExitFailure 15
+
+
           case res of
             ExitSuccess        -> pure ()
             ef@(ExitFailure _) -> exitWith ef
+
+
   pure ()
 
 fromVersion :: (MonadLogger m, MonadFail m, MonadReader AppState m, MonadThrow m, MonadIO m, MonadCatch m)

@@ -26,6 +26,10 @@ module GHCup.Utils.Dirs
   , parseGHCupGHCDir
   , relativeSymlink
   , withGHCupTmpDir
+  , getConfigFilePath
+#if !defined(IS_WINDOWS)
+  , useXDG
+#endif
   )
 where
 
@@ -201,13 +205,16 @@ getDirs = do
     --[ GHCup files ]--
     -------------------
 
+getConfigFilePath :: (MonadIO m) => m FilePath
+getConfigFilePath = do
+  confDir <- liftIO ghcupConfigDir
+  pure $ confDir </> "config.yaml"
 
 ghcupConfigFile :: (MonadIO m)
                 => Excepts '[JSONError] m UserSettings
 ghcupConfigFile = do
-  confDir <- liftIO ghcupConfigDir
-  let file = confDir </> "config.yaml"
-  contents <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> BS.readFile file
+  filepath <- getConfigFilePath
+  contents <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> BS.readFile filepath
   case contents of
       Nothing -> pure defaultUserSettings
       Just contents' -> lE' JSONDecodeError . first show . Y.decodeEither' $ contents'
