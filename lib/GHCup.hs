@@ -1375,11 +1375,11 @@ rmGhcupDirs = do
 
   rmEnvFile  envFilePath
   rmConfFile confFilePath
-  rmCacheDir cacheDir
-  rmLogsDir  logsDir
+  rmDir cacheDir
+  rmDir logsDir
   rmBinDir   binDir
 #if defined(IS_WINDOWS)
-  rmPath (baseDir </> "msys64")
+  rmDir (baseDir </> "msys64")
 #endif
 
   liftIO $ removeEmptyDirsRecursive baseDir
@@ -1400,17 +1400,11 @@ rmGhcupDirs = do
       $logInfo "removing Ghcup Config File"
       hideError doesNotExistErrorType $ liftIO $ deleteFile confFilePath
 
-    rmCacheDir :: (MonadLogger m, MonadIO m) => FilePath -> m ()
-    rmCacheDir cacheDir = do
-      $logInfo "removing ghcup cache Dir"
-      contents <- liftIO $ getDirectoryContentsRecursive cacheDir
-      forM_ contents (liftIO . deleteFile . (cacheDir </>))
-
-    rmLogsDir :: (MonadLogger m, MonadIO m) => FilePath -> m ()
-    rmLogsDir logsDir = do
-      $logInfo "removing ghcup logs Dir"
-      contents <- liftIO $ getDirectoryContentsRecursive logsDir
-      forM_ contents (liftIO . deleteFile . (logsDir </>))
+    rmDir :: (MonadLogger m, MonadIO m) => FilePath -> m ()
+    rmDir dir = do
+      $logInfo [i|removing #{dir}|]
+      contents <- liftIO $ getDirectoryContentsRecursive dir
+      forM_ contents (liftIO . deleteFile . (dir </>))
 
     rmBinDir :: (MonadCatch m, MonadIO m) => FilePath -> m ()
     rmBinDir binDir = do
