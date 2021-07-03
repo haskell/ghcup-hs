@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## 0.1.16 -- ????-??-??
+
+* Add 'nuke' subcommand wrt [#135](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/135), implemented by Arjun Kathuria
+
 ## 0.1.15.2 -- 2021-06-13
 
 * Remove legacy handling of cabal binary and be more graceful about binaries not installed by ghcup (e.g. stack)
