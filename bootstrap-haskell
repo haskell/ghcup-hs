@@ -210,6 +210,90 @@ download_ghcup() {
     eghcup upgrade
 }
 
+adjust_bashrc() {
+	case $SHELL in
+		*/zsh) # login shell is zsh
+			GHCUP_PROFILE_FILE="$HOME/.zshrc"
+			MY_SHELL="zsh" ;;
+		*/bash) # login shell is bash
+			GHCUP_PROFILE_FILE="$HOME/.bashrc"
+			MY_SHELL="bash" ;;
+		*/sh) # login shell is sh, but might be a symlink to bash or zsh
+			if [ -n "${BASH}" ] ; then
+				GHCUP_PROFILE_FILE="$HOME/.bashrc"
+				MY_SHELL="bash"
+			elif [ -n "${ZSH_VERSION}" ] ; then
+				GHCUP_PROFILE_FILE="$HOME/.zshrc"
+				MY_SHELL="zsh"
+			else
+				return
+			fi
+			;;
+		*/fish) # login shell is fish
+			GHCUP_PROFILE_FILE="$HOME/.config/fish/config.fish"
+			MY_SHELL="fish" ;;
+		*) return ;;
+	esac
+
+
+	warn ""
+	warn "Detected ${MY_SHELL} shell on your system..."
+	warn "If you want ghcup to automatically add the required PATH variable to \"${GHCUP_PROFILE_FILE}\""
+	warn ""
+	warn "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
+	warn ""
+
+	while true; do
+		if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+			read -r next_answer </dev/tty
+		else
+			next_answer="yes"
+		fi
+
+		case $next_answer in
+			[Nn]*)
+				return ;;
+			[Yy]* | "")
+				case $MY_SHELL in
+					"") break ;;
+					fish)
+							mkdir -p "${GHCUP_PROFILE_FILE%/*}"
+							sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+						break ;;
+					bash)
+						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+						echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+						case "${plat}" in
+							"Darwin"|"darwin")
+								if ! grep -q "ghcup-env" "${HOME}/.bash_profile" ; then
+									echo "[[ -f ~/.bashrc ]] && source ~/.bashrc # ghcup-env" >> "${HOME}/.bash_profile"
+								fi
+								;;
+						esac
+						break ;;
+
+					zsh)
+						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+						echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+						break ;;
+				esac
+				warn "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
+				warn "or type \"source ${GHCUP_DIR}/env\" to apply them in your current terminal session."
+				return
+				;;
+			*)
+				echo "Possible choices are:"
+				echo
+				echo "Y - Yes, update my \"${GHCUP_PROFILE_FILE}\" (default)"
+				echo "N - No, don't mess with my configuration"
+				echo
+				echo "Please make your choice and press ENTER."
+				;;
+		esac
+	done
+}
+
 
 echo
 echo "Welcome to Haskell!"
@@ -317,6 +401,7 @@ esac
 
 edo cabal new-update
 
+
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 	warn "Do you want to install haskell-language-server (HLS) now?"
 	warn "HLS is a language-server that provides IDE-like functionality"
@@ -372,89 +457,24 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 				;;
 		esac
 	done
+fi
 
-    echo "In order to run ghc and cabal, you need to adjust your PATH variable."
-    echo "You may want to source '$GHCUP_DIR/env' in your shell"
-    echo "configuration to do so (e.g. ~/.bashrc)."
+# short-circuit script based on platform
+case "${plat}" in
+        MSYS*|MINGW*)
+			# For windows we always adjust bashrc, since it's inside msys2
+			adjust_bashrc
+			;;
+		*)
+        	if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+				echo "In order to run ghc and cabal, you need to adjust your PATH variable."
+				echo "You may want to source '$GHCUP_DIR/env' in your shell"
+				echo "configuration to do so (e.g. ~/.bashrc)."
 
-	case $SHELL in
-		*/zsh) # login shell is zsh
-			GHCUP_PROFILE_FILE="$HOME/.zshrc"
-			MY_SHELL="zsh" ;;
-		*/bash) # login shell is bash
-			GHCUP_PROFILE_FILE="$HOME/.bashrc"
-			MY_SHELL="bash" ;;
-		*/sh) # login shell is sh, but might be a symlink to bash or zsh
-			if [ -n "${BASH}" ] ; then
-				GHCUP_PROFILE_FILE="$HOME/.bashrc"
-				MY_SHELL="bash"
-			elif [ -n "${ZSH_VERSION}" ] ; then
-				GHCUP_PROFILE_FILE="$HOME/.zshrc"
-				MY_SHELL="zsh"
-			else
-			    _done
+				adjust_bashrc
 			fi
 			;;
-		*/fish) # login shell is fish
-			GHCUP_PROFILE_FILE="$HOME/.config/fish/config.fish"
-			MY_SHELL="fish" ;;
-		*) _done ;;
-	esac
-
-
-	warn ""
-	warn "Detected ${MY_SHELL} shell on your system..."
-	warn "If you want ghcup to automatically add the required PATH variable to \"${GHCUP_PROFILE_FILE}\""
-	warn ""
-	warn "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
-	warn ""
-
-    while true; do
-        read -r next_answer </dev/tty
-
-        case $next_answer in
-            [Nn]*)
-                _done ;;
-            [Yy]* | "")
-				case $MY_SHELL in
-					"") break ;;
-					fish)
-							mkdir -p "${GHCUP_PROFILE_FILE%/*}"
-							sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
-							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-						break ;;
-					bash)
-						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
-						echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-						case "${plat}" in
-							"Darwin"|"darwin")
-								if ! grep -q "ghcup-env" "${HOME}/.bash_profile" ; then
-									echo "[[ -f ~/.bashrc ]] && source ~/.bashrc # ghcup-env" >> "${HOME}/.bash_profile"
-								fi
-								;;
-						esac
-						break ;;
-
-					zsh)
-						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
-						echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-						break ;;
-				esac
-                warn "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
-                warn "or type \"source ${GHCUP_DIR}/env\" to apply them in your current terminal session."
-				_done
-                ;;
-			*)
-				echo "Possible choices are:"
-				echo
-				echo "Y - Yes, update my \"${GHCUP_PROFILE_FILE}\" (default)"
-				echo "N - No, don't mess with my configuration"
-				echo
-				echo "Please make your choice and press ENTER."
-				;;
-        esac
-    done
-fi
+esac
 
 _done
 

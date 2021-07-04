@@ -13,19 +13,23 @@
     * hls   - (optional) A language server for developers to integrate with their editor/IDE"
 #>
 param (
-    # Run a non-interactive installation
-    [switch]$Silent,
+    # Run an interactive installation
+    [switch]$Interactive,
     # Specify the install root (default: 'C:\')
     [string]$InstallDir,
     # Instead of installing a new MSys2, use an existing installation
     [string]$ExistingMsys2Dir,
     # Specify the cabal root directory (default: '$InstallDir\cabal')
     [string]$CabalDir,
-    # Perform a quick installation, omitting some expensive operations (you may have to install dependencies yourself later)
-    [bool]$Quick,
     # Overwrite (or rather backup) a previous install
-    [bool]$Overwrite
+    [switch]$Overwrite,
+    # Specify the bootstrap url (default: 'https://www.haskell.org/ghcup/sh/bootstrap-haskell')
+    [string]$BootstrapUrl,
+    # Run the final bootstrap script via 'bash' instead of a full newly spawned msys2 shell
+    [switch]$InBash
 )
+
+$Silent = !$Interactive
 
 function Print-Msg {
   param ( [Parameter(Mandatory=$true, HelpMessage='String to output')][string]$msg, [string]$color = "Green" )
@@ -151,7 +155,27 @@ $GhcupBasePrefixEnv = [System.Environment]::GetEnvironmentVariable('GHCUP_INSTAL
 if ($GhcupBasePrefixEnv) {
   $defaultGhcupBasePrefix = $GhcupBasePrefixEnv
 } else {
-  $defaultGhcupBasePrefix = 'C:\'
+  $partitions = Get-CimInstance win32_logicaldisk
+  $defaultGhcupBasePrefix = $null
+  foreach ($p in $partitions){
+    try {
+      if ($p."FreeSpace" -lt 5368709120) { # at least 5 GB are needed
+        throw ("Not enough free space on {0}" -f $p."DeviceId")
+      }
+      $null = New-Item -Path ('{0}\' -f $p."DeviceId") -Name "ghcup.test" -ItemType "directory" -Force
+      $defaultGhcupBasePrefix = ('{0}\' -f $p."DeviceId")
+      Remove-Item -LiteralPath ('{0}\ghcup.test' -f $p."DeviceId")
+      break
+    } catch {
+      Print-Msg -color Yellow -msg ("{0} not writable or not enough disk space, trying next device" -f $p."DeviceId")
+    }
+  }
+  if ($defaultGhcupBasePrefix) {
+    Print-Msg -color Green -msg ("Picked {0} as default Install prefix!" -f $defaultGhcupBasePrefix)
+  } else {
+    Print-Msg -color Red -msg "Couldn't find a writable partition with at least 5GB free disk space!"
+    Exit 1    
+  }
 }
 
 if ($Silent -and !($InstallDir)) {
@@ -194,7 +218,9 @@ $null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $Ghcu
 $GhcupDir = ('{0}\ghcup' -f $GhcupBasePrefix)
 $MsysDir = ('{0}\msys64' -f $GhcupDir)
 $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
-$BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell'
+if (!($BootstrapUrl)) {
+  $BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell'
+}
 $GhcupMsys2 = [System.Environment]::GetEnvironmentVariable('GHCUP_MSYS2', 'user')
 
 Print-Msg -msg 'Preparing for GHCup installation...'
@@ -268,20 +294,8 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     Print-Msg -msg 'Upgrading full system twice...'
     Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
 
-    if ($Quick) {
-      $ghcBuildDeps = $Quick
-    } elseif (!($Silent)) {
-      $ghcBuildDeps = $Host.UI.PromptForChoice('Install Dependencies'
-        , 'Install a standard set of mingw64 packages to be able to build various haskell packages requiring unix libraries? (recommended, however this might take a while... if you skip this, you might have to do it manually later)'
-        , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
-            '&No'), 0)
-    } else {
-      $ghcBuildDeps = 0
-    }
-    if ($ghcBuildDeps -eq 0) {
-      Print-Msg -msg 'Installing Dependencies...'
-      Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed git tar curl wget base-devel gettext binutils autoconf make libtool automake pkgconf python p7zip patch unzip'
-    }
+    Print-Msg -msg 'Installing Dependencies...'
+    Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed curl mingw-w64-x86_64-pkgconf'
 
     Print-Msg -msg 'Updating SSL root certificate authorities...'
     Exec "$Bash" '-lc' 'pacman --noconfirm -S ca-certificates'
@@ -320,6 +334,8 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 
 Print-Msg -msg 'Creating shortcuts...'
 $DesktopDir = [Environment]::GetFolderPath("Desktop")
+$GhcInstArgs = '-mingw64 -mintty -c "pacman --noconfirm -S --needed base-devel gettext autoconf make libtool automake python p7zip patch unzip"'
+Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $GhcInstArgs -DestinationPath ('{0}\Install GHC dev dependencies.lnk' -f $DesktopDir)
 Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath ('{0}\Mingw haskell shell.lnk' -f $DesktopDir)
 Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath ('{0}\Mingw package management docs.url' -f $DesktopDir)
 
@@ -369,10 +385,10 @@ if ($Silent) {
   $SilentExport = ''
 }
 
-if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
-  Exec "$Bash" '-lc' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
+if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBash) {
+  Exec "$Bash" '-lc' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
 } else {
-  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; curl --proto =https --tlsv1.2 -sSf -k {0} | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
+  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
 }
 
 
@@ -399,4 +415,8 @@ if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell")) {
   # aED5Ujwyq3Qre+TGVRUqwkEauDhQiX2A008G00fRO6+di6yJRCRn5eaRAbdU3Xww
   # E5VhEwLBnwzWrvLKtdEclhgUCo5Tq87QMXVdgX4aRmunl4ZE+Q==
 # SIG # End signature block
+
+
+
+
 

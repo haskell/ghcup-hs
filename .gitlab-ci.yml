@@ -221,6 +221,23 @@ test:linux:bootstrap_script:
     CABAL_VERSION: "3.4.0.0"
   extends:
     - .debian
+    - .root_cleanup
+  needs: []
+
+test:windows:bootstrap_powershell_script:
+  stage: test
+  script:
+    - ./bootstrap-haskell.ps1 -InstallDir $CI_PROJECT_DIR -BootstrapUrl $CI_PROJECT_DIR/bootstrap-haskell -InBash
+  after_script:
+    - "[Environment]::SetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', $null, [System.EnvironmentVariableTarget]::User)"
+    - "[Environment]::SetEnvironmentVariable('GHCUP_MSYS2', $null, [System.EnvironmentVariableTarget]::User)"
+    - "[Environment]::SetEnvironmentVariable('CABAL_DIR', $null, [System.EnvironmentVariableTarget]::User)"
+    - bash ./.gitlab/after_script.sh
+  variables:
+    GHC_VERSION: "8.10.5"
+    CABAL_VERSION: "3.4.0.0"
+  extends:
+    - .windows
   needs: []
 
 ######## linux test ########
