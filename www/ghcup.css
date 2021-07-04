@@ -132,13 +132,17 @@ hr {
     margin-bottom: 2em;
 }
 
-#platform-instructions-linux > div > pre,
-#platform-instructions-mac > div > pre,
-#platform-instructions-freebsd > div > pre,
-#platform-instructions-win32 > div > pre,
-#platform-instructions-win64 > div > pre,
-#platform-instructions-default > div > div > pre,
-#platform-instructions-unknown > div > div > pre {
+span.code {
+	font-family: 'Lucida Console', monospace;
+}
+
+#platform-instructions-linux div > pre,
+#platform-instructions-mac div > pre,
+#platform-instructions-freebsd div > pre,
+#platform-instructions-win32 div > pre,
+#platform-instructions-win64 div > pre,
+#platform-instructions-default div > div > pre,
+#platform-instructions-unknown div > div > pre {
     background-color: #515151;
     color: white;
     margin-left: auto;

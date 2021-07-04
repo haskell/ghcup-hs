@@ -44,23 +44,40 @@
       <div id="platform-instructions-win32" class="instructions">
         <p>
             To install Haskell,<br/>run the following in a powershell session (as a non-admin user).
-			<div class="command-button"><pre><span class='ghcup-command' id="ghcup-command-powershell">Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-WebRequest -UseBasicParsing https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 | Invoke-Expression</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
+			<div>
+			<div class="command-button"><pre><span class='ghcup-command' id="ghcup-command-powershell">Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
+			</div>
+				<p class="other-help">If you want to run an interactive installation, change <span class='code'>$false</span> to <span class='code'>$true</span> at the end of the script.</p>
+			</div>
 		<p>If you're a Windows Subsystem 2 for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.
 		</p>
-		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
+		<div>
+		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
+		</div>
+		<p class="other-help">WSL1 does not work with ghcup, follow  <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">the instructions here</a> to upgrade to WSL2 if needed.</p>
+		</div>
         </p>
-		<p class="other-help">WSL1 does not work with ghcup, follow  <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">the instructions here</a> to upgrade to WSL2 if needed.</br>You appear to be running Windows 32-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
+        <hr/>
+		<p class="other-help">You appear to be running Windows 32-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
       </div>
 
       <div id="platform-instructions-win64" class="instructions" style="display: none;">
         <p>
             To install Haskell,<br/>run the following in a powershell session (as a non-admin user).
-			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-WebRequest -UseBasicParsing https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 | Invoke-Expression</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
+			<div>
+			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
+			</div>
+				<p class="other-help">If you want to run an interactive installation, change <span class='code'>$false</span> to <span class='code'>$true</span> at the end of the script.</p>
+			</div>
         </p>
 		<p>If you're a Windows Subsystem 2 for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.
 		</p>
-		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
-		<p class="other-help">WSL1 does not work with ghcup, follow  <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">the instructions here</a> to upgrade to WSL2 if needed.</br>You appear to be running Windows 64-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
+		<div>
+		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
+		</div>
+		<p class="other-help">WSL1 does not work with ghcup, follow  <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">the instructions here</a> to upgrade to WSL2 if needed.</p>
+		</div>
+		<p class="other-help">You appear to be running Windows 64-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
       </div>
 
       <div id="platform-instructions-unknown" class="instructions" style="display: none;">
@@ -92,7 +109,7 @@
         <div>
           <p>
             If you are running Windows,<br/>run the following in a powershell session (as a non-admin user).
-			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-WebRequest -UseBasicParsing https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 | Invoke-Expression</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
+			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
           </p>
         </div>
 
@@ -111,7 +128,7 @@
         <div>
           <p>
             If you are running Windows,<br/>run the following in a powershell session (as a non-admin user).
-			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-WebRequest -UseBasicParsing https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 | Invoke-Expression</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
+			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
           </p>
         </div>
 
