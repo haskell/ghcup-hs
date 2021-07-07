@@ -26,7 +26,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Class      ( lift )
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
-import           Data.List                      ( nub )
+import           Data.List                      ( nub, intercalate )
 import           Data.Foldable
 import           Data.String
 import           Data.Text                      ( Text )
@@ -47,6 +47,7 @@ import           GHC.IO.Exception
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.Strict.Maybe             as S
+import qualified Data.List.Split               as Split
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Data.Text.Encoding.Error      as E
@@ -425,3 +426,19 @@ isNewLine w
   | w == _lf = True
   | w == _cr = True
   | otherwise = False
+
+
+-- | Split on a PVP suffix.
+--
+-- >>> splitOnPVP "-" "ghc-iserv-dyn-9.3.20210706" == ("ghc-iserv-dyn", "9.3.20210706")
+-- >>> splitOnPVP "-" "ghc-iserv-dyn"              == ("ghc-iserv-dyn", "")
+splitOnPVP :: String -> String -> (String, String)
+splitOnPVP c s = case Split.splitOn c s of
+  []  -> def
+  [_] -> def
+  xs
+    | let l = last xs
+    , (Right _) <- pvp (T.pack l) -> (intercalate c (init xs), l)
+    | otherwise -> def
+ where
+  def = (s, "")
