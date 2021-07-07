@@ -333,11 +333,65 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 }
 
 Print-Msg -msg 'Creating shortcuts...'
+$uninstallShortCut = @'
+Write-Host 'Removing ghcup toolchain' -ForegroundColor Green
+ghcup nuke
+
+Write-Host 'Unsetting GHCUP_INSTALL_BASE_PREFIX' -ForegroundColor Green
+[Environment]::SetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', $null, [System.EnvironmentVariableTarget]::User)
+
+$ghcupMsys2 = [System.Environment]::GetEnvironmentVariable('GHCUP_MSYS2', 'user')
+$GhcupBasePrefixEnv = [System.Environment]::GetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'user')
+
+if ($ghcupMsys2) {
+  $msys2Dir = [IO.Path]::GetFullPath($ghcupMsys2)
+  $baseDir = [IO.Path]::GetFullPath('{0}\ghcup' -f $GhcupBasePrefixEnv)
+
+  if ($msys2Dir.StartsWith($baseDir)) {
+    Write-Host 'Unsetting GHCUP_MSYS2' -ForegroundColor Green
+    [Environment]::SetEnvironmentVariable('GHCUP_MSYS2', $null, [System.EnvironmentVariableTarget]::User)
+  } else {
+    Write-Host ('GHCUP_MSYS2 env variable is set to a non-standard location {0}. Environment variable not unset. Uninstall manually.' -f $msys2Dir) -ForegroundColor Magenta
+  }
+} else {
+  Write-Host 'Unsetting GHCUP_MSYS2' -ForegroundColor Green
+  [Environment]::SetEnvironmentVariable('GHCUP_MSYS2', $null, [System.EnvironmentVariableTarget]::User)
+}
+
+Write-Host 'Removing ghcup from PATH env var' -ForegroundColor Green
+$path = [System.Environment]::GetEnvironmentVariable(
+    'PATH',
+    'user'
+)
+$path = ($path.Split(';') | Where-Object { $_ -ne ('{0}\bin' -f $baseDir) }) -join ';'
+[System.Environment]::SetEnvironmentVariable(
+    'PATH',
+    $path,
+    'user'
+)
+
+Write-Host 'Removing desktop files' -ForegroundColor Green
+$DesktopDir = [Environment]::GetFolderPath("Desktop")
+Remove-Item -LiteralPath ('{0}\Install GHC dev dependencies.lnk' -f $DesktopDir) -Force
+Remove-Item -LiteralPath ('{0}\Mingw haskell shell.lnk' -f $DesktopDir) -Force
+Remove-Item -LiteralPath ('{0}\Mingw package management docs.url' -f $DesktopDir) -Force
+
+Write-Host ('CABAL_DIR env variable is still set to {0} and will be used by cabal regardless of ghcup. You may want to uninstall this manually.' -f [System.Environment]::GetEnvironmentVariable('CABAL_DIR', 'user')) -ForegroundColor Magenta
+Write-Host 'You may remove this script now.' -ForegroundColor Magenta
+
+if ($Host.Name -eq "ConsoleHost")
+{
+    Write-Host "Press any key to continue..."
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyUp") > $null
+}
+'@
+
 $DesktopDir = [Environment]::GetFolderPath("Desktop")
 $GhcInstArgs = '-mingw64 -mintty -c "pacman --noconfirm -S --needed base-devel gettext autoconf make libtool automake python p7zip patch unzip"'
 Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $GhcInstArgs -DestinationPath ('{0}\Install GHC dev dependencies.lnk' -f $DesktopDir)
 Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath ('{0}\Mingw haskell shell.lnk' -f $DesktopDir)
 Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath ('{0}\Mingw package management docs.url' -f $DesktopDir)
+$null = New-Item -Path $DesktopDir -Name "Uninstall Haskell.ps1" -ItemType "file" -Force -Value $uninstallShortCut
 
 Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
 Add-EnvPath -Path ('{0}\bin' -f ([System.IO.Path]::GetFullPath("$GhcupDir"))) -Container 'User'

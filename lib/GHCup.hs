@@ -1393,12 +1393,14 @@ rmGhcupDirs = do
     rmEnvFile :: (MonadCatch m, MonadLogger m, MonadIO m) => FilePath -> m ()
     rmEnvFile enFilePath = do
       $logInfo "Removing Ghcup Environment File"
-      hideError doesNotExistErrorType $ liftIO $ deleteFile enFilePath
+      hideErrorDef [doesNotExistErrorType, permissionErrorType] ()
+        $ liftIO $ deleteFile enFilePath
 
     rmConfFile :: (MonadCatch m, MonadLogger m, MonadIO m) => FilePath -> m ()
     rmConfFile confFilePath = do
       $logInfo "removing Ghcup Config File"
-      hideError doesNotExistErrorType $ liftIO $ deleteFile confFilePath
+      hideErrorDef [doesNotExistErrorType, permissionErrorType] ()
+        $ liftIO $ deleteFile confFilePath
 
     rmDir :: (MonadLogger m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmDir dir = do
@@ -1448,7 +1450,7 @@ rmGhcupDirs = do
 
     deleteFile :: FilePath -> IO ()
     deleteFile filepath = do
-      hideError InappropriateType $ rmFile filepath
+      hideErrorDef [InappropriateType, permissionErrorType] () $ rmFile filepath
 
     removeDirIfEmptyOrIsSymlink :: (MonadCatch m, MonadIO m) => FilePath -> m ()
     removeDirIfEmptyOrIsSymlink filepath =
