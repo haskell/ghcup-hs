@@ -69,3 +69,7 @@ yaml files: `ghcup-<yaml-ver>.yaml`.
    Most of the `Version` parameters to functions had to be replaced with
    that and ensured the logic is consistent for cross and non-cross
    installs.
+2. This refactor added windows support wrt [#130](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/130).
+   The major changes here were switching `hpath` library out for `filepath`/`directory` (sadly) and
+   introducing a non-unix way of handling processes via the `process` library. It also introduced considerable
+   amounts of CPP wrt file handling, installation etc.
