@@ -150,6 +150,15 @@ function Exec
 
 $ErrorActionPreference = 'Stop'
 
+$elevated = ([Security.Principal.WindowsPrincipal] `
+ [Security.Principal.WindowsIdentity]::GetCurrent()
+).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if ($elevated) {
+  Print-Msg -color Yellow -msg ('This script should not be run as administrator/elevated. Waiting 10s before continuing anyway...')
+  Start-Sleep -s 10
+}
+
 $GhcupBasePrefixEnv = [System.Environment]::GetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'user')
 
 if ($GhcupBasePrefixEnv) {
