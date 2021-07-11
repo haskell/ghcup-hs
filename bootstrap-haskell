@@ -201,10 +201,13 @@ download_ghcup() {
 			;;
 	esac
 
-  edo mkdir -p "${GHCUP_DIR}"
+	edo mkdir -p "${GHCUP_DIR}"
+
+	# we may overwrite this in adjust_bashrc
 	cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
 		export PATH="\$HOME/.cabal/bin:${GHCUP_BIN}:\$PATH"
 		EOF
+
 	# shellcheck disable=SC1090
     edo . "${GHCUP_DIR}"/env
     eghcup upgrade
@@ -238,9 +241,9 @@ adjust_bashrc() {
 
 	warn ""
 	warn "Detected ${MY_SHELL} shell on your system..."
-	warn "If you want ghcup to automatically add the required PATH variable to \"${GHCUP_PROFILE_FILE}\""
+	warn "Do you want ghcup to automatically add the required PATH variable to \"${GHCUP_PROFILE_FILE}\"?"
 	warn ""
-	warn "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
+	warn "[P] Yes, prepend  [A] Yes, append  [N] No  [?] Help (default is \"P\")."
 	warn ""
 
 	while true; do
@@ -251,15 +254,36 @@ adjust_bashrc() {
 		fi
 
 		case $next_answer in
+			[Pp]* | "")
+				cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
+					export PATH="\$HOME/.cabal/bin:${GHCUP_BIN}:\$PATH"
+					EOF
+				;;
+			[Aa]*)
+				cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
+					export PATH="\$HOME/.cabal/bin:\$PATH:${GHCUP_BIN}"
+					EOF
+				;;
+			*) ;;
+		esac
+
+		case $next_answer in
 			[Nn]*)
 				return ;;
-			[Yy]* | "")
+			[Pp]* | [Aa]* | "")
 				case $MY_SHELL in
 					"") break ;;
 					fish)
-							mkdir -p "${GHCUP_PROFILE_FILE%/*}"
-							sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
-							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; test -f $GHCUP_DIR/env ; and set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+						mkdir -p "${GHCUP_PROFILE_FILE%/*}"
+						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+						case $next_answer in
+							[Pp]* | "")
+								echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+								;;
+							[Aa]*)
+								echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; set -gx PATH \$HOME/.cabal/bin \$PATH $GHCUP_BIN # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+								;;
+						esac
 						break ;;
 					bash)
 						sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
@@ -285,7 +309,8 @@ adjust_bashrc() {
 			*)
 				echo "Possible choices are:"
 				echo
-				echo "Y - Yes, update my \"${GHCUP_PROFILE_FILE}\" (default)"
+				echo "P - Yes, prepend to PATH, taking precedence (default)"
+				echo "A - Yes, append to PATH"
 				echo "N - No, don't mess with my configuration"
 				echo
 				echo "Please make your choice and press ENTER."
