@@ -2120,8 +2120,17 @@ ghcupDownloads:
         - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v251
       viPostInstall: &stack-post |
-        Stack manages GHC versions internally by default. In order to make it use ghcup installed GHC versions have a look at the options 'system-ghc', 'compiler-check' and 'compiler': https://docs.haskellstack.org/en/stable/yaml_configuration/#system-ghc
-        Additionally, you should upgrade stack only through ghcup.
+        Stack manages GHC versions internally by default. In order to make it use ghcup installed
+        GHC versions you can run the following commands:
+          stack config set install-ghc false --global
+          stack config set system-ghc  true  --global
+        
+        On windows, you may find the following config options useful too:
+          skip-msys, extra-path, extra-include-dirs, extra-lib-dirs
+
+        Also check out: https://docs.haskellstack.org/en/stable/yaml_configuration
+
+        !!! Additionally, you should upgrade stack only through ghcup and not use 'stack upgrade' !!!
       viArch:
         A_64:
           Linux_UnknownLinux:

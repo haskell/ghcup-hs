@@ -62,7 +62,7 @@ myLoggerT LoggerConfig {..} loggingt = runLoggingT loggingt mylogger
                 (x:xs) -> fromLogStr
                   . foldr (\a b -> a <> toLogStr "\n" <> b) mempty
                   . ((l <> toLogStr " " <> x) :)
-                  . fmap (\line' -> (toLogStr (style' "[ ...   ] ") <> line' ))
+                  . fmap (\line' -> toLogStr (style' "[ ...   ] ") <> line' )
                   $ xs
 
     when (lcPrintDebug || (not lcPrintDebug && (level /= LevelDebug)))
@@ -70,7 +70,7 @@ myLoggerT LoggerConfig {..} loggingt = runLoggingT loggingt mylogger
 
     -- raw output
     let lr = case level of
-          LevelDebug   -> toLogStr "Debug: "
+          LevelDebug   -> toLogStr "Debug:"
           LevelInfo    -> toLogStr "Info:"
           LevelWarn    -> toLogStr "Warn:"
           LevelError   -> toLogStr "Error:"
