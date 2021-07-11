@@ -20,6 +20,7 @@ import           GHCup.Utils.String.QQ
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
+import           Data.Char               ( ord )
 import           Prelude                 hiding ( appendFile )
 import           System.Console.Pretty
 import           System.FilePath
@@ -43,20 +44,33 @@ myLoggerT LoggerConfig {..} loggingt = runLoggingT loggingt mylogger
   mylogger :: Loc -> LogSource -> LogLevel -> LogStr -> IO ()
   mylogger _ _ level str' = do
     -- color output
+    let style' = case level of
+          LevelDebug   -> style Bold . color Blue
+          LevelInfo    -> style Bold . color Green
+          LevelWarn    -> style Bold . color Yellow
+          LevelError   -> style Bold . color Red
+          LevelOther _ -> id
     let l = case level of
-          LevelDebug   -> toLogStr (style Bold $ color Blue "[ Debug ]")
-          LevelInfo    -> toLogStr (style Bold $ color Green "[ Info  ]")
-          LevelWarn    -> toLogStr (style Bold $ color Yellow "[ Warn  ]")
-          LevelError   -> toLogStr (style Bold $ color Red "[ Error ]")
+          LevelDebug   -> toLogStr (style' "[ Debug ]")
+          LevelInfo    -> toLogStr (style' "[ Info  ]")
+          LevelWarn    -> toLogStr (style' "[ Warn  ]")
+          LevelError   -> toLogStr (style' "[ Error ]")
           LevelOther t -> toLogStr "[ " <> toLogStr t <> toLogStr " ]"
-    let out = fromLogStr (l <> toLogStr " " <> str' <> toLogStr "\n")
+    let strs = fmap toLogStr . B.split (fromIntegral $ ord '\n') . fromLogStr $ str'
+    let out = case strs of
+                [] -> B.empty
+                (x:xs) -> fromLogStr
+                  . foldr (\a b -> a <> toLogStr "\n" <> b) mempty
+                  . ((l <> toLogStr " " <> x) :)
+                  . fmap (\line' -> toLogStr (style' "[ ...   ] ") <> line' )
+                  $ xs
 
     when (lcPrintDebug || (not lcPrintDebug && (level /= LevelDebug)))
       $ colorOutter out
 
     -- raw output
     let lr = case level of
-          LevelDebug   -> toLogStr "Debug: "
+          LevelDebug   -> toLogStr "Debug:"
           LevelInfo    -> toLogStr "Info:"
           LevelWarn    -> toLogStr "Warn:"
           LevelError   -> toLogStr "Error:"
