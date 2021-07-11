@@ -250,7 +250,7 @@ adjust_bashrc() {
 		if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 			read -r next_answer </dev/tty
 		else
-			next_answer="yes"
+			next_answer="prepend"
 		fi
 
 		case $next_answer in
