@@ -41,7 +41,7 @@ variables:
     CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .linux:armv7:
-  image: "arm32v7/fedora"
+  image: "registry.gitlab.haskell.org/ghc/ci-images/armv7-linux-deb10:$DOCKER_REV"
   tags:
     - armv7-linux
   variables:
@@ -50,7 +50,7 @@ variables:
     CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .linux:aarch64:
-  image: "arm64v8/fedora"
+  image: "registry.gitlab.haskell.org/ghc/ci-images/aarch64-linux-deb10:$DOCKER_REV"
   tags:
     - aarch64-linux
   variables:
@@ -124,14 +124,14 @@ variables:
     - .test_ghcup_version
     - .linux:armv7
   before_script:
-    - ./.gitlab/before_script/linux/install_deps_manual.sh
+    - ./.gitlab/before_script/linux/install_deps.sh
 
 .test_ghcup_version:aarch64:
   extends:
     - .test_ghcup_version
     - .linux:aarch64
   before_script:
-    - ./.gitlab/before_script/linux/install_deps_manual.sh
+    - ./.gitlab/before_script/linux/install_deps.sh
 
 .test_ghcup_version:darwin:
   extends:
@@ -374,7 +374,7 @@ release:linux:armv7:
     - .linux:armv7
     - .release_ghcup
   before_script:
-    - ./.gitlab/before_script/linux/install_deps_manual.sh
+    - ./.gitlab/before_script/linux/install_deps.sh
   variables:
     ARTIFACT: "armv7-linux-ghcup"
     GHC_VERSION: "8.10.4"
@@ -387,7 +387,7 @@ release:linux:aarch64:
     - .linux:aarch64
     - .release_ghcup
   before_script:
-    - ./.gitlab/before_script/linux/install_deps_manual.sh
+    - ./.gitlab/before_script/linux/install_deps.sh
   variables:
     ARTIFACT: "aarch64-linux-ghcup"
     GHC_VERSION: "8.10.4"
