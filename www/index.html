@@ -45,9 +45,9 @@
         <p>
             To install Haskell,<br/>run the following in a powershell session (as a non-admin user).
 			<div>
-			<div class="command-button"><pre><span class='ghcup-command' id="ghcup-command-powershell">Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
+			<div class="command-button"><pre><span class='ghcup-command' id="ghcup-command-powershell">Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
 			</div>
-				<p class="other-help">If you want to run an interactive installation, change <span class='code'>$false</span> to <span class='code'>$true</span> at the end of the script.</p>
+				<p class="other-help">If you want to run a non-interactive installation, change <span class='code'>$true</span> to <span class='code'>$false</span> at the end of the script.</p>
 			</div>
 		<p>If you're a Windows Subsystem 2 for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.
 		</p>
@@ -65,9 +65,9 @@
         <p>
             To install Haskell,<br/>run the following in a powershell session (as a non-admin user).
 			<div>
-			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
+			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
 			</div>
-				<p class="other-help">If you want to run an interactive installation, change <span class='code'>$false</span> to <span class='code'>$true</span> at the end of the script.</p>
+				<p class="other-help">If you want to run an interactive installation, change <span class='code'>$true</span> to <span class='code'>$false</span> at the end of the script.</p>
 			</div>
         </p>
 		<p>If you're a Windows Subsystem 2 for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.
