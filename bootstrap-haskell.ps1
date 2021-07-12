@@ -26,7 +26,13 @@ param (
     # Specify the bootstrap url (default: 'https://www.haskell.org/ghcup/sh/bootstrap-haskell')
     [string]$BootstrapUrl,
     # Run the final bootstrap script via 'bash' instead of a full newly spawned msys2 shell
-    [switch]$InBash
+    [switch]$InBash,
+    # Whether to install stack as well
+    [switch]$InstallStack,
+    # Whether to install hls as well
+    [switch]$InstallHLS,
+    # Skip adjusting cabal.config with mingw paths
+    [switch]$NoAdjustCabalConfig
 )
 
 $Silent = !$Interactive
@@ -150,15 +156,6 @@ function Exec
 
 $ErrorActionPreference = 'Stop'
 
-$elevated = ([Security.Principal.WindowsPrincipal] `
- [Security.Principal.WindowsIdentity]::GetCurrent()
-).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
-if ($elevated) {
-  Print-Msg -color Yellow -msg ('This script should not be run as administrator/elevated. Waiting 10s before continuing anyway...')
-  Start-Sleep -s 10
-}
-
 $GhcupBasePrefixEnv = [System.Environment]::GetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'user')
 
 if ($GhcupBasePrefixEnv) {
@@ -187,6 +184,7 @@ if ($GhcupBasePrefixEnv) {
   }
 }
 
+# ask for base install prefix
 if ($Silent -and !($InstallDir)) {
   $GhcupBasePrefix = $defaultGhcupBasePrefix
 } elseif ($InstallDir) {
@@ -234,6 +232,7 @@ $GhcupMsys2 = [System.Environment]::GetEnvironmentVariable('GHCUP_MSYS2', 'user'
 
 Print-Msg -msg 'Preparing for GHCup installation...'
 
+# ask what to do in case ghcup is already installed
 if (Test-Path -LiteralPath ('{0}' -f $GhcupDir)) {
   Print-Msg -msg ('GHCup already installed at ''{0}''...' -f $GhcupDir)
   if ($Overwrite) {
@@ -263,8 +262,75 @@ if (Test-Path -LiteralPath ('{0}' -f $GhcupDir)) {
 $null = New-Item -Path ('{0}' -f $GhcupDir) -ItemType 'directory' -ErrorAction SilentlyContinue
 $null = New-Item -Path ('{0}' -f $GhcupDir) -Name 'bin' -ItemType 'directory' -ErrorAction SilentlyContinue
 
-Print-Msg -msg 'First checking for Msys2...'
+# ask for cabal dir destination
+if ($CabalDir) {
+  $CabDirEnv = $CabalDir
+  if (!($CabDirEnv)) {
+    Print-Msg -color Red -msg "No directory specified!"
+    Exit 1        
+  } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
+    Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+    Exit 1
+  }
+} elseif (!($Silent)) {
+  while ($true) {
 
+    $defaultCabalDir = ('{0}\cabal' -f $GhcupBasePrefix)
+    Print-Msg -color Magenta -msg ('Specify Cabal directory (this is where haskell packages end up). Press enter to accept the default [{0}]:' -f $defaultCabalDir)
+    $CabalDirPrompt = Read-Host
+    $CabDirEnv = ($defaultCabalDir,$CabalDirPrompt)[[bool]$CabalDirPrompt]
+
+    if (!($CabDirEnv)) {
+      Print-Msg -color Red -msg "No directory specified!"         
+    } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
+      Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+    } else {
+      Break
+    }
+  }
+} else {
+  $CabDirEnv = ('{0}\cabal' -f $GhcupBasePrefix)
+}
+
+# ask whether to install HLS
+if (!($InstallHLS)) {
+  if (!($Silent)) {
+    $HLSdecision = $Host.UI.PromptForChoice('Install HLS'
+      , 'Do you want to install the haskell-language-server (HLS) for development purposes as well?'
+      , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
+          '&No'
+          '&Abort'), 1)
+
+    if ($HLSdecision -eq 0) {
+      $InstallHLS = $true
+    } elseif ($HLSdecision -eq 2) {
+      Exit 0
+    }
+  }
+}
+
+# ask whether to install stack
+if (!($InstallStack)) {
+  if (!($Silent)) {
+    $StackDecision = $Host.UI.PromptForChoice('Install stack'
+      , 'Do you want to install stack as well?'
+      , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
+          '&No'
+          '&Abort'), 1)
+
+    if ($StackDecision -eq 0) {
+      $InstallStack = $true
+    } elseif ($StackDecision -eq 2) {
+      Exit 0
+    }
+  }
+}
+
+Print-Msg -msg 'Starting installation in 5 seconds, this may take a while...'
+Start-Sleep -s 5
+
+# mingw foo
+Print-Msg -msg 'First checking for Msys2...'
 if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
   if ($Silent) {
     $msys2Decision = 0
@@ -351,34 +417,7 @@ Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -Argu
 Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
 Add-EnvPath -Path ('{0}\bin' -f ([System.IO.Path]::GetFullPath("$GhcupDir"))) -Container 'User'
 
-if ($CabalDir) {
-  $CabDirEnv = $CabalDir
-  if (!($CabDirEnv)) {
-    Print-Msg -color Red -msg "No directory specified!"
-    Exit 1        
-  } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
-    Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
-    Exit 1
-  }
-} elseif (!($Silent)) {
-  while ($true) {
 
-    $defaultCabalDir = ('{0}\cabal' -f $GhcupBasePrefix)
-    Print-Msg -color Magenta -msg ('Specify Cabal directory (this is where haskell packages end up). Press enter to accept the default [{0}]:' -f $defaultCabalDir)
-    $CabalDirPrompt = Read-Host
-    $CabDirEnv = ($defaultCabalDir,$CabalDirPrompt)[[bool]$CabalDirPrompt]
-
-    if (!($CabDirEnv)) {
-      Print-Msg -color Red -msg "No directory specified!"         
-    } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
-      Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
-    } else {
-      Break
-    }
-  }
-} else {
-  $CabDirEnv = ('{0}\cabal' -f $GhcupBasePrefix)
-}
 
 $CabalDirFull = [System.IO.Path]::GetFullPath("$CabDirEnv")
 Print-Msg -msg ('Setting CABAL_DIR to ''{0}''' -f $CabalDirFull)
@@ -388,16 +427,25 @@ Print-Msg -msg 'Starting GHCup installer...'
 
 $Msys2Shell = ('{0}\msys2_shell.cmd' -f $MsysDir)
 
-if ($Silent) {
-  $SilentExport = 'export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 ;'
-} else {
-  $SilentExport = ''
+# The bootstrap script is always silent, since we ask relevant questions here
+$SilentExport = 'export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 ;'
+
+if ($InstallStack) {
+  $StackInstallExport = 'export BOOTSTRAP_HASKELL_INSTALL_STACK=1 ;'
+}
+
+if ($InstallHLS) {
+  $HLSInstallExport = 'export BOOTSTRAP_HASKELL_INSTALL_HLS=1 ;'
+}
+
+if (!($NoAdjustCabalConfig)) {
+  $AdjustCabalConfigExport = 'export BOOTSTRAP_HASKELL_ADJUST_CABAL_CONFIG=1 ;'
 }
 
 if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBash) {
-  Exec "$Bash" '-lc' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
+  Exec "$Bash" '-lc' ('{4} {6} {7} {8} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport)
 } else {
-  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull)
+  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} {6} {7} {8} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport)
 }
 
 
@@ -424,6 +472,8 @@ if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBa
   # aED5Ujwyq3Qre+TGVRUqwkEauDhQiX2A008G00fRO6+di6yJRCRn5eaRAbdU3Xww
   # E5VhEwLBnwzWrvLKtdEclhgUCo5Tq87QMXVdgX4aRmunl4ZE+Q==
 # SIG # End signature block
+
+
 
 
 
