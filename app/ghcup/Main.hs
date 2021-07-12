@@ -100,6 +100,7 @@ data Command
   | Rm (Either RmCommand RmOptions)
   | DInfo
   | Compile CompileCommand
+  | Whereis WhereisOptions WhereisCommand
   | Upgrade UpgradeOpts Bool
   | ToolRequirements
   | ChangeLog ChangeLogOptions
@@ -188,6 +189,13 @@ data ChangeLogOptions = ChangeLogOptions
   , clTool    :: Maybe Tool
   , clToolVer :: Maybe ToolVersion
   }
+
+
+data WhereisCommand = WhereisTool Tool (Maybe ToolVersion)
+
+data WhereisOptions = WhereisOptions {
+   directory :: Bool
+}
 
 
 -- https://github.com/pcapriotti/optparse-applicative/issues/148
@@ -335,6 +343,17 @@ com =
            <$> info (compileP <**> helper)
                     (progDesc "Compile a tool from source")
            )
+      <> command
+           "whereis"
+            (info
+             (   (Whereis
+                     <$> (WhereisOptions <$> switch (short 'd' <> long "directory" <> help "return directory of the binary instead of the binary location"))
+                     <*> whereisP
+                 ) <**> helper
+             )
+             (progDesc "Find a tools location"
+             <> footerDoc ( Just $ text whereisFooter ))
+           )
       <> commandGroup "Main commands:"
       )
     <|> subparser
@@ -401,6 +420,23 @@ com =
   changeLogFooter = [s|Discussion:
   By default returns the URI of the ChangeLog of the latest GHC release.
   Pass '-o' to automatically open via xdg-open.|]
+
+  whereisFooter :: String
+  whereisFooter = [s|Discussion:
+  Finds the location of a tool. For GHC, this is the ghc binary, that
+  usually resides in a self-contained "~/.ghcup/ghc/<ghcver>" directory.
+  For cabal/stack/hls this the binary usually at "~/.ghcup/bin/<tool>-<ver>".
+
+Examples:
+  # outputs ~/.ghcup/ghc/8.10.5/bin/ghc.exe
+  ghcup whereis ghc 8.10.5
+  # outputs ~/.ghcup/ghc/8.10.5/bin/
+  ghcup whereis --directory ghc 8.10.5
+  # outputs ~/.ghcup/bin/cabal-3.4.0.0
+  ghcup whereis cabal 3.4.0.0
+  # outputs ~/.ghcup/bin/
+  ghcup whereis --directory cabal 3.4.0.0|]
+
 
 installCabalFooter :: String
 installCabalFooter = [s|Discussion:
@@ -704,6 +740,86 @@ Examples:
   ghcup compile ghc -j 4 -v 8.4.2 -b /usr/bin/ghc-8.2.2
   # build cross compiler
   ghcup compile ghc -j 4 -v 8.4.2 -b 8.2.2 -x armv7-unknown-linux-gnueabihf --config $(pwd)/build.mk -- --enable-unregisterised|]
+
+
+whereisP :: Parser WhereisCommand
+whereisP = subparser
+  (  command
+      "ghc"
+      (WhereisTool GHC <$> info
+        ( optional (toolVersionArgument Nothing (Just GHC)) <**> helper )
+        ( progDesc "Get GHC location"
+        <> footerDoc (Just $ text whereisGHCFooter ))
+      )
+      <>
+     command
+      "cabal"
+      (WhereisTool Cabal <$> info
+        ( optional (toolVersionArgument Nothing (Just Cabal)) <**> helper )
+        ( progDesc "Get cabal location"
+        <> footerDoc (Just $ text whereisCabalFooter ))
+      )
+      <>
+     command
+      "hls"
+      (WhereisTool HLS <$> info
+        ( optional (toolVersionArgument Nothing (Just HLS)) <**> helper )
+        ( progDesc "Get HLS location"
+        <> footerDoc (Just $ text whereisHLSFooter ))
+      )
+      <>
+     command
+      "stack"
+      (WhereisTool Stack <$> info
+        ( optional (toolVersionArgument Nothing (Just Stack)) <**> helper )
+        ( progDesc "Get stack location"
+        <> footerDoc (Just $ text whereisStackFooter ))
+      )
+      <>
+     command
+      "ghcup"
+      (WhereisTool GHCup <$> info ( (pure Nothing) <**> helper ) ( progDesc "Get ghcup location" ))
+  )
+ where
+  whereisGHCFooter = [s|Discussion:
+  Finds the location of a GHC executable, which usually resides in
+  a self-contained "~/.ghcup/ghc/<ghcver>" directory.
+
+Examples:
+  # outputs ~/.ghcup/ghc/8.10.5/bin/ghc.exe
+  ghcup whereis ghc 8.10.5
+  # outputs ~/.ghcup/ghc/8.10.5/bin/
+  ghcup whereis --directory ghc 8.10.5 |]
+
+  whereisCabalFooter = [s|Discussion:
+  Finds the location of a Cabal executable, which usually resides in
+  "~/.ghcup/bin/".
+
+Examples:
+  # outputs ~/.ghcup/bin/cabal-3.4.0.0
+  ghcup whereis cabal 3.4.0.0
+  # outputs ~/.ghcup/bin
+  ghcup whereis --directory cabal 3.4.0.0|]
+
+  whereisHLSFooter = [s|Discussion:
+  Finds the location of a HLS executable, which usually resides in
+  "~/.ghcup/bin/".
+
+Examples:
+  # outputs ~/.ghcup/bin/haskell-language-server-wrapper-1.2.0
+  ghcup whereis hls 1.2.0
+  # outputs ~/.ghcup/bin/
+  ghcup whereis --directory hls 1.2.0|]
+
+  whereisStackFooter = [s|Discussion:
+  Finds the location of a stack executable, which usually resides in
+  "~/.ghcup/bin/".
+
+Examples:
+  # outputs ~/.ghcup/bin/stack-2.7.1
+  ghcup whereis stack 2.7.1
+  # outputs ~/.ghcup/bin/
+  ghcup whereis --directory stack 2.7.1|]
 
 
 ghcCompileOpts :: Parser GHCCompileOptions
@@ -1265,6 +1381,17 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 #endif
                       ]
 
+          let
+            runWhereIs =
+              runLogger
+                . flip runReaderT appstate
+                . runE
+                  @'[ NotInstalled
+                    , NoToolVersionSet
+                    , NextVerNotFound
+                    , TagNotFound
+                    ]
+
           let runUpgrade =
                 runLogger
                   . flip runReaderT appstate
@@ -1627,6 +1754,22 @@ Make sure to clean up #{tmpdir} afterwards.|])
                       VLeft e -> do
                         runLogger $ $(logError) $ T.pack $ prettyShow e
                         pure $ ExitFailure 9
+
+            Whereis WhereisOptions{..} (WhereisTool tool whereVer) ->
+              runWhereIs (do
+                (v, _) <- liftE $ fromVersion whereVer tool
+                loc <- liftE $ whereIsTool tool v
+                if directory
+                then pure $ takeDirectory loc
+                else pure loc
+                )
+                >>= \case
+                      VRight r -> do
+                        putStr r
+                        pure ExitSuccess
+                      VLeft e -> do
+                        runLogger $ $(logError) $ T.pack $ prettyShow e
+                        pure $ ExitFailure 30
 
             Upgrade uOpts force -> do
               target <- case uOpts of

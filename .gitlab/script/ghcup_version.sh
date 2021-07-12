@@ -84,8 +84,10 @@ ghcup-gen check -f ghcup-${JSON_VERSION}.yaml
 eghcup --numeric-version
 
 eghcup install ${GHC_VERSION}
+[ `$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version` = "${GHC_VERSION}" ]
 eghcup set ${GHC_VERSION}
 eghcup install-cabal ${CABAL_VERSION}
+[ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
 
 cabal --version
 
@@ -125,10 +127,10 @@ else
 
 	if [ "${OS}" = "DARWIN" ] ; then
 		eghcup install hls
-		haskell-language-server-wrapper --version
+		$(eghcup whereis hls) --version
 
 		eghcup install stack
-		stack --version
+		$(eghcup whereis stack) --version
 	elif [ "${OS}" = "LINUX" ] ; then
 		if [ "${ARCH}" = "64" ] ; then
 			eghcup install hls

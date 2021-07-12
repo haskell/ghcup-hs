@@ -1880,3 +1880,49 @@ postGHCInstall ver@GHCTargetVersion {..} = do
     $ getMajorMinorV _tvVersion
   forM_ v' $ \(mj, mi) -> lift (getGHCForMajor mj mi _tvTarget)
     >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
+
+
+-- | Reports the binary location of a given tool:
+--
+--   * for GHC, this reports: @~\/.ghcup\/ghc\/\<ver\>\/bin\/ghc@
+--   * for cabal, this reports @~\/.ghcup\/bin\/cabal-\<ver\>@
+--   * for hls, this reports @~\/.ghcup\/bin\/haskell-language-server-wrapper-\<ver\>@
+--   * for stack, this reports @~\/.ghcup\/bin\/stack-\<ver\>@
+--   * for ghcup, this reports the location of the currently running executable
+whereIsTool :: ( MonadReader AppState m
+               , MonadLogger m
+               , MonadThrow m
+               , MonadFail m
+               , MonadIO m
+               , MonadCatch m
+               , MonadMask m
+               , MonadUnliftIO m
+               )
+            => Tool
+            -> GHCTargetVersion
+            -> Excepts '[NotInstalled] m FilePath
+whereIsTool tool ver@GHCTargetVersion {..} = do
+  AppState { dirs } <- lift ask
+
+  case tool of
+    GHC -> do
+      whenM (lift $ fmap not $ ghcInstalled ver)
+        $ throwE (NotInstalled GHC ver)
+      bdir <- lift $ ghcupGHCDir ver
+      pure (bdir </> "bin" </> "ghc" <> exeExt)
+    Cabal -> do
+      whenM (lift $ fmap not $ cabalInstalled _tvVersion)
+        $ throwE (NotInstalled Cabal (GHCTargetVersion Nothing _tvVersion))
+      pure (binDir dirs </> "cabal-" <> T.unpack (prettyVer _tvVersion) <> exeExt)
+    HLS -> do
+      whenM (lift $ fmap not $ hlsInstalled _tvVersion)
+        $ throwE (NotInstalled HLS (GHCTargetVersion Nothing _tvVersion))
+      pure (binDir dirs </> "haskell-language-server-wrapper-" <> T.unpack (prettyVer _tvVersion) <> exeExt)
+
+    Stack -> do
+      whenM (lift $ fmap not $ stackInstalled _tvVersion)
+        $ throwE (NotInstalled Stack (GHCTargetVersion Nothing _tvVersion))
+      pure (binDir dirs </> "stack-" <> T.unpack (prettyVer _tvVersion) <> exeExt)
+    GHCup -> do
+      currentRunningExecPath <- liftIO getExecutablePath
+      liftIO $ canonicalizePath currentRunningExecPath
