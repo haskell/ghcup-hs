@@ -586,7 +586,7 @@ installStackBindist dlinfo ver = do
            , settings
            } <- lift ask
 
-  whenM (lift (hlsInstalled ver))
+  whenM (lift (stackInstalled ver))
     (throwE $ AlreadyInstalled Stack ver)
 
   -- download (or use cached version)
