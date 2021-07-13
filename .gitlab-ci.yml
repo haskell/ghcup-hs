@@ -420,13 +420,19 @@ release:darwin:aarch64:
   script: |
     set -Eeuo pipefail
     function runInNixShell() {
-      time nix-shell .gitlab/shell.nix \
+      time nix-shell $CI_PROJECT_DIR/.gitlab/shell.nix \
         -I nixpkgs=https://github.com/angerman/nixpkgs/archive/75f7281738b.tar.gz \
         --argstr system "aarch64-darwin" \
         --pure \
-        --keep CI_PROJECT_DIR --keep MAKE_ARGS --keep HADRIAN_ARGS --keep CABAL_CACHE \
+        --keep CI_PROJECT_DIR \
         --keep MACOSX_DEPLOYMENT_TARGET \
-        --keep JSON_VERSION --keep ARTIFACT \
+        --keep JSON_VERSION \
+        --keep ARTIFACT \
+        --keep OS \
+        --keep ARCH \
+        --keep CABAL_DIR \
+        --keep GHC_VERSION \
+        --keep CABAL_VERSION \
         --run "$1" 2>&1
     }
     runInNixShell ./.gitlab/before_script/darwin/install_deps.sh 2>&1
