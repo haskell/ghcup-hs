@@ -326,8 +326,6 @@ if (!($InstallStack)) {
   }
 }
 
-Print-Msg -msg 'Starting installation in 5 seconds, this may take a while...'
-Start-Sleep -s 5
 
 # mingw foo
 Print-Msg -msg 'First checking for Msys2...'
@@ -342,7 +340,10 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
   }
 
   if ($msys2Decision -eq 0) {
-    Print-Msg -msg ('...Msys2 doesn''t exist, installing into {0} ...this may take a while' -f $MsysDir)
+    Print-Msg -msg ('...Msys2 doesn''t exist, installing into {0}' -f $MsysDir)
+
+	Print-Msg -msg 'Starting installation in 5 seconds, this may take a while...'
+	Start-Sleep -s 5
 
     # Download the archive
     Print-Msg -msg 'Downloading Msys2 archive...'
@@ -405,6 +406,9 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
   }
 } else {
     Print-Msg -msg ('...Msys2 found in {0} ...skipping Msys2 installation.' -f $MsysDir)
+
+	Print-Msg -msg 'Starting installation in 5 seconds, this may take a while...'
+	Start-Sleep -s 5
 }
 
 Print-Msg -msg 'Creating shortcuts...'
