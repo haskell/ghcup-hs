@@ -105,6 +105,10 @@ variables:
       - golden
     when: on_failure
 
+# .test_ghcup_scoop:
+  # script:
+    # - cl /O1 scoop-better-shimexe/shim.c
+
 .test_ghcup_version:linux:
   extends:
     - .test_ghcup_version
@@ -183,6 +187,12 @@ variables:
   before_script:
     - set CABAL_DIR="$CI_PROJECT_DIR/cabal"
     - bash ./.gitlab/before_script/windows/install_deps.sh
+
+# .test_ghcup_scoop:windows:
+  # extends:
+    # - .windows
+    # - .test_ghcup_scoop
+    # - .root_cleanup
 
 .release_ghcup:
   script:
@@ -337,6 +347,11 @@ test:windows:recommended:
     GHC_VERSION: "8.10.5"
     CABAL_VERSION: "3.4.0.0"
   needs: []
+
+# test:windows:scoop:
+  # stage: test
+  # extends: .test_ghcup_scoop:windows
+  # needs: []
 
 ######## linux release ########
 
