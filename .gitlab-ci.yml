@@ -21,6 +21,7 @@ variables:
     OS: "LINUX"
     ARCH: "64"
     CABAL_DIR: "$CI_PROJECT_DIR/cabal"
+    CROSS: ""
 
 .alpine:64bit:
   image: "alpine:3.12"
@@ -268,6 +269,24 @@ test:linux:latest:
     CABAL_VERSION: "3.4.0.0"
   needs: []
 
+test:linux:cross-armv7:
+  stage: test
+  extends:
+    - .test_ghcup_version
+    - .debian
+  variables:
+    GHC_VERSION: "8.10.4"
+    GHC_TARGET_VERSION: "8.10.5"
+    CABAL_VERSION: "3.4.0.0"
+    CROSS: "arm-linux-gnueabihf"
+  needs: []
+  when: manual
+  before_script:
+    - ./.gitlab/before_script/linux/install_deps.sh
+  script:
+    - ./.gitlab/script/ghcup_cross.sh
+
+
 ######## linux 32bit test ########
 
 test:linux:recommended:32bit:
@@ -286,6 +305,7 @@ test:linux:recommended:armv7:
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+    CROSS: ""
   when: manual
   needs: []
 
@@ -295,6 +315,7 @@ test:linux:recommended:aarch64:
   variables:
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+    CROSS: ""
   when: manual
   needs: []
 
@@ -394,6 +415,7 @@ release:linux:armv7:
     ARTIFACT: "armv7-linux-ghcup"
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+    CROSS: ""
 
 release:linux:aarch64:
   stage: release
@@ -407,6 +429,7 @@ release:linux:aarch64:
     ARTIFACT: "aarch64-linux-ghcup"
     GHC_VERSION: "8.10.4"
     CABAL_VERSION: "3.4.0.0"
+    CROSS: ""
 
 ######## darwin release ########
 

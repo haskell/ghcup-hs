@@ -9,6 +9,13 @@ mkdir -p "${TMPDIR}"
 sudo apt-get update -y
 sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https
 
+if [ "${CROSS}" = "arm-linux-gnueabihf" ] ; then
+	sudo apt-get install -y autoconf build-essential gcc-arm-linux-gnueabihf
+	sudo dpkg --add-architecture armhf
+	sudo apt-get update -y
+	sudo apt-get install -y libncurses-dev:armhf
+fi
+
 case "${ARCH}" in
 	ARM*)
 		case "${ARCH}" in
@@ -57,9 +64,9 @@ case "${ARCH}" in
 		chmod +x ghcup-bin
 
 		./ghcup-bin upgrade -i -f
-		./ghcup-bin install ${GHC_VERSION}
-		./ghcup-bin set ${GHC_VERSION}
-		./ghcup-bin install-cabal ${CABAL_VERSION}
+		./ghcup-bin install ghc ${GHC_VERSION}
+		./ghcup-bin set ghc ${GHC_VERSION}
+		./ghcup-bin install cabal ${CABAL_VERSION}
 
 		;;
 esac
