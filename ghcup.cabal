@@ -82,7 +82,6 @@ library
     QuasiQuotes
     RecordWildCards
     ScopedTypeVariables
-    Strict
     StrictData
     TupleSections
     TypeApplications
@@ -195,7 +194,6 @@ executable ghcup
     PackageImports
     RecordWildCards
     ScopedTypeVariables
-    Strict
     StrictData
     TupleSections
 
@@ -207,6 +205,7 @@ executable ghcup
     , base                  >=4.13     && <5
     , bytestring            ^>=0.10
     , containers            ^>=0.6
+    , deepseq               ^>=1.4
     , filepath              ^>=1.4.2.1
     , ghcup
     , haskus-utils-variant  >=3.0      && <3.2
@@ -261,7 +260,6 @@ executable ghcup-gen
     QuasiQuotes
     RecordWildCards
     ScopedTypeVariables
-    Strict
     StrictData
     TupleSections
     TypeApplications
@@ -305,6 +303,7 @@ executable ghcup-gen
 test-suite ghcup-test
   type:               exitcode-stdio-1.0
   main-is:            Main.hs
+  build-tool-depends: hspec-discover:hspec-discover -any
   hs-source-dirs:     test
   other-modules:
     GHCup.ArbitraryTypes
@@ -323,8 +322,6 @@ test-suite ghcup-test
   ghc-options:
     -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
     -fwarn-incomplete-record-updates
-
-  build-tool-depends: hspec-discover:hspec-discover
 
   build-depends:
     , base                      >=4.13    && <5

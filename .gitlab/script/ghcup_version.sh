@@ -142,6 +142,11 @@ else
 	fi
 fi
 
+# check that lazy loading works for 'whereis'
+cp "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml" "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml.bak"
+echo '**' > "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml"
+eghcup whereis ghc $(ghc --numeric-version)
+mv -f "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml.bak" "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml"
 
 eghcup rm $(ghc --numeric-version)
 
@@ -152,6 +157,7 @@ if [ "${OS}" = "LINUX" ] ; then
 		eghcup rm cabal 3.4.0.0-rc4
 	fi
 fi
+
 
 eghcup upgrade
 eghcup upgrade -f
