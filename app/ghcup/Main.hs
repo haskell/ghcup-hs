@@ -1244,8 +1244,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -- Getting download and platform info --
           ----------------------------------------
 
+          -- for some commands we want lazy loading
+          let wrapIO = case optCommand of
+                Whereis _ _ -> unsafeInterleaveIO
+                _ -> id
 
-          pfreq <- unsafeInterleaveIO $ (
+          pfreq <- wrapIO $ (
             runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest
             ) >>= \case
                     VRight r -> pure r
@@ -1254,7 +1258,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         ($(logError) $ T.pack $ prettyShow e)
                       exitWith (ExitFailure 2)
 
-          ghcupInfo <- unsafeInterleaveIO $
+          ghcupInfo <- wrapIO $
             ( runLogger
               . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
               $ liftE
