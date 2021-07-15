@@ -1618,11 +1618,11 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
       Right g    -> pure $ Right g
       Left  bver -> pure $ Left ("ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt)
 
-    (bindist, bmk) <- liftE $ runBuildAction
+    (mBindist, bmk) <- liftE $ runBuildAction
       tmpUnpack
       Nothing
       (do
-        b <- compileBindist bghc tver workdir
+        b <- compileBindist bghc tver workdir ghcdir
         bmk <- liftIO $ B.readFile (build_mk workdir)
         pure (b, bmk)
       )
@@ -1630,10 +1630,12 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
     when alreadyInstalled $ do
       lift $ $(logInfo) [i|Deleting existing installation|]
       liftE $ rmGHCVer tver
-    liftE $ installPackedGHC bindist
-                             (Just $ RegexDir "ghc-.*")
-                             ghcdir
-                             (tver ^. tvVersion)
+
+    forM_ mBindist $ \bindist -> do
+      liftE $ installPackedGHC bindist
+                               (Just $ RegexDir "ghc-.*")
+                               ghcdir
+                               (tver ^. tvVersion)
 
     liftIO $ B.writeFile (ghcdir </> ghcUpSrcBuiltFile) bmk
 
@@ -1670,11 +1672,12 @@ HADDOCK_DOCS = YES|]
                  => Either FilePath FilePath
                  -> GHCTargetVersion
                  -> FilePath
+                 -> FilePath
                  -> Excepts
                       '[FileDoesNotExistError, InvalidBuildConfig, PatchFailed, ProcessError, NotFoundInPATH, CopyError]
                       m
-                      FilePath  -- ^ output path of bindist
-  compileBindist bghc tver workdir = do
+                      (Maybe FilePath)  -- ^ output path of bindist, None for cross
+  compileBindist bghc tver workdir ghcdir = do
     lift $ $(logInfo) [i|configuring build|]
     liftE checkBuildConfig
 
@@ -1695,6 +1698,7 @@ HADDOCK_DOCS = YES|]
             ("./configure" :  maybe mempty
                       (\x -> ["--target=" <> T.unpack x])
                       (_tvTarget tver)
+            ++ ["--prefix=" <> ghcdir]
 #if defined(IS_WINDOWS)
             ++ ["--enable-tarballs-autodownload"]
 #endif
@@ -1711,8 +1715,9 @@ HADDOCK_DOCS = YES|]
           ++ maybe mempty
                    (\x -> ["--target=" <> T.unpack x])
                    (_tvTarget tver)
+          ++ ["--prefix=" <> ghcdir]
 #if defined(IS_WINDOWS)
-            ++ ["--enable-tarballs-autodownload"]
+          ++ ["--enable-tarballs-autodownload"]
 #endif
           ++ fmap T.unpack aargs
           )
@@ -1731,30 +1736,35 @@ HADDOCK_DOCS = YES|]
     lift $ $(logInfo) [i|Building (this may take a while)...|]
     lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs) (Just workdir)
 
-    lift $ $(logInfo) [i|Creating bindist...|]
-    lEM $ make ["binary-dist"] (Just workdir)
-    [tar] <- liftIO $ findFiles
-      workdir
-      (makeRegexOpts compExtended
-                     execBlank
-                     ([s|^ghc-.*\.tar\..*$|] :: ByteString)
-      )
-    c       <- liftIO $ BL.readFile (workdir </> tar)
-    cDigest <-
-      fmap (T.take 8)
-      . lift
-      . throwEither
-      . E.decodeUtf8'
-      . B16.encode
-      . SHA256.hashlazy
-      $ c
-    cTime <- liftIO getCurrentTime
-    let tarName = makeValid [i|ghc-#{tVerToText tver}-#{pfReqToString pfreq}-#{iso8601Show cTime}-#{cDigest}.tar#{takeExtension tar}|]
-    let tarPath = cacheDir </> tarName
-    handleIO (throwE . CopyError . show) $ liftIO $ copyFile (workdir </> tar)
-                                                             tarPath
-    lift $ $(logInfo) [i|Copied bindist to #{tarPath}|]
-    pure tarPath
+    if | isCross tver -> do
+          lift $ $(logInfo) [i|Installing cross toolchain...|]
+          lEM $ make ["install"] (Just workdir)
+          pure Nothing
+       | otherwise -> do
+          lift $ $(logInfo) [i|Creating bindist...|]
+          lEM $ make ["binary-dist"] (Just workdir)
+          [tar] <- liftIO $ findFiles
+            workdir
+            (makeRegexOpts compExtended
+                           execBlank
+                           ([s|^ghc-.*\.tar\..*$|] :: ByteString)
+            )
+          c       <- liftIO $ BL.readFile (workdir </> tar)
+          cDigest <-
+            fmap (T.take 8)
+            . lift
+            . throwEither
+            . E.decodeUtf8'
+            . B16.encode
+            . SHA256.hashlazy
+            $ c
+          cTime <- liftIO getCurrentTime
+          let tarName = makeValid [i|ghc-#{tVerToText tver}-#{pfReqToString pfreq}-#{iso8601Show cTime}-#{cDigest}.tar#{takeExtension tar}|]
+          let tarPath = cacheDir </> tarName
+          handleIO (throwE . CopyError . show) $ liftIO $ copyFile (workdir </> tar)
+                                                                   tarPath
+          lift $ $(logInfo) [i|Copied bindist to #{tarPath}|]
+          pure $ Just tarPath
 
   build_mk workdir = workdir </> "mk" </> "build.mk"
 
@@ -1780,6 +1790,9 @@ HADDOCK_DOCS = YES|]
           [s|Cross compiling needs to be a Stage1 build, add "Stage1Only = YES" to your config!|]
         )
       _ -> pure ()
+
+  isCross :: GHCTargetVersion -> Bool
+  isCross = isJust . _tvTarget
 
 
 
