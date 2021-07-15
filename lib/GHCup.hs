@@ -1929,7 +1929,7 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
       whenM (lift $ fmap not $ ghcInstalled ver)
         $ throwE (NotInstalled GHC ver)
       bdir <- lift $ ghcupGHCDir ver
-      pure (bdir </> "bin" </> "ghc" <> exeExt)
+      pure (bdir </> "bin" </> ghcBinaryName ver)
     Cabal -> do
       whenM (lift $ fmap not $ cabalInstalled _tvVersion)
         $ throwE (NotInstalled Cabal (GHCTargetVersion Nothing _tvVersion))

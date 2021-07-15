@@ -1093,3 +1093,16 @@ ensureDirectories dirs = do
   createDirRecursive' logsDir
   createDirRecursive' confDir
   pure ()
+
+
+-- | For ghc without arch triple, this is:
+--
+--    - ghc-<ver> (e.g. ghc-8.10.4)
+--
+-- For ghc with arch triple:
+--
+--    - <triple>-ghc-<ver> (e.g. arm-linux-gnueabihf-ghc-8.10.4)
+ghcBinaryName :: GHCTargetVersion -> String
+ghcBinaryName (GHCTargetVersion (Just t) v') = T.unpack (t <> "-ghc-" <> prettyVer v' <> T.pack exeExt)
+ghcBinaryName (GHCTargetVersion Nothing  v') = T.unpack ("ghc-" <> prettyVer v' <> T.pack exeExt)
+
