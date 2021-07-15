@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                   #-}
+{-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -42,6 +43,7 @@ import           GHCup.Version
 import           Codec.Archive                  ( ArchiveResult )
 #endif
 import           Control.Applicative
+import           Control.DeepSeq                ( force )
 import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
@@ -1393,20 +1395,22 @@ rmGhcupDirs = do
     rmEnvFile :: (MonadCatch m, MonadLogger m, MonadIO m) => FilePath -> m ()
     rmEnvFile enFilePath = do
       $logInfo "Removing Ghcup Environment File"
-      hideError doesNotExistErrorType $ liftIO $ deleteFile enFilePath
+      liftIO $ deleteFile enFilePath
 
     rmConfFile :: (MonadCatch m, MonadLogger m, MonadIO m) => FilePath -> m ()
     rmConfFile confFilePath = do
       $logInfo "removing Ghcup Config File"
-      hideError doesNotExistErrorType $ liftIO $ deleteFile confFilePath
+      liftIO $ deleteFile confFilePath
 
     rmDir :: (MonadLogger m, MonadIO m, MonadCatch m) => FilePath -> m ()
-    rmDir dir = do
-      $logInfo [i|removing #{dir}|]
-      contents <- hideErrorDef [doesNotExistErrorType] []
-        $ liftIO
-        (getDirectoryContentsRecursive dir >>= evaluate)
-      forM_ contents (liftIO . deleteFile . (dir </>))
+    rmDir dir =
+      -- 'getDirectoryContentsRecursive' is lazy IO. In case
+      -- an error leaks through, we catch it here as well,
+      -- althought 'deleteFile' should already handle it.
+      hideErrorDef [doesNotExistErrorType] () $ do
+        $logInfo [i|removing #{dir}|]
+        contents <- liftIO $ getDirectoryContentsRecursive dir
+        forM_ contents (liftIO . deleteFile . (dir </>))
 
     rmBinDir :: (MonadCatch m, MonadIO m) => FilePath -> m ()
     rmBinDir binDir = do
@@ -1421,7 +1425,9 @@ rmGhcupDirs = do
 
     reportRemainingFiles :: MonadIO m => FilePath -> m [FilePath]
     reportRemainingFiles dir = do
-      remainingFiles <- liftIO $ getDirectoryContentsRecursive dir
+      -- force the files so the errors don't leak
+      (force -> !remainingFiles) <- liftIO
+        (getDirectoryContentsRecursive dir >>= evaluate)
       let normalizedFilePaths = fmap normalise remainingFiles
       let sortedByDepthRemainingFiles = sortBy (flip compareFn) normalizedFilePaths
       let remainingFilesAbsolute = fmap (dir </>) sortedByDepthRemainingFiles
@@ -1448,7 +1454,8 @@ rmGhcupDirs = do
 
     deleteFile :: FilePath -> IO ()
     deleteFile filepath = do
-      hideError InappropriateType $ rmFile filepath
+      hideError doesNotExistErrorType
+        $ hideError InappropriateType $ rmFile filepath
 
     removeDirIfEmptyOrIsSymlink :: (MonadCatch m, MonadIO m) => FilePath -> m ()
     removeDirIfEmptyOrIsSymlink filepath =

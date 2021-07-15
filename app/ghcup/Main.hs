@@ -33,6 +33,8 @@ import           GHCup.Version
 import           Codec.Archive
 #endif
 import           Control.Concurrent
+import           Control.DeepSeq                ( force )
+import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -64,6 +66,7 @@ import           System.Environment
 import           System.Exit
 import           System.FilePath
 import           System.IO               hiding ( appendFile )
+import           System.IO.Unsafe               ( unsafeInterleaveIO )
 import           Text.Read               hiding ( lift )
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           URI.ByteString
@@ -1237,7 +1240,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let runLogger = myLoggerT loggerConfig
           let siletRunLogger = myLoggerT loggerConfig { colorOutter = \_ -> pure () }
 
-          pfreq <- (
+          ----------------------------------------
+          -- Getting download and platform info --
+          ----------------------------------------
+
+
+          pfreq <- unsafeInterleaveIO $ (
             runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest
             ) >>= \case
                     VRight r -> pure r
@@ -1246,13 +1254,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         ($(logError) $ T.pack $ prettyShow e)
                       exitWith (ExitFailure 2)
 
-
-
-          ----------------------------------------
-          -- Getting download and platform info --
-          ----------------------------------------
-
-          ghcupInfo <-
+          ghcupInfo <- unsafeInterleaveIO $
             ( runLogger
               . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
               $ liftE
@@ -1265,12 +1267,25 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         ($(logError) $ T.pack $ prettyShow e)
                       exitWith (ExitFailure 2)
 
+
+
+          -------------------------
+          -- Setting up appstate --
+          -------------------------
+
+
           let appstate@AppState{dirs = Dirs{..}
-                               , ghcupInfo = GHCupInfo { _ghcupDownloads = dls, .. }
+                               , ghcupInfo = ~GHCupInfo { _ghcupDownloads = dls, .. }
                                } = AppState settings dirs keybindings ghcupInfo pfreq
+
+
+          ---------------------------
+          -- Running startup tasks --
+          ---------------------------
 
           case optCommand of
             Upgrade _ _ -> pure ()
+            Whereis _ _ -> pure ()
             _ -> do
               lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
                 Nothing -> runLogger $ flip runReaderT appstate $ checkForUpdates
@@ -1278,12 +1293,15 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
 
           -- ensure global tools
-          (siletRunLogger $ flip runReaderT appstate $ runE ensureGlobalTools) >>= \case
-            VRight _ -> pure ()
-            VLeft e -> do
-              runLogger
-                ($(logError) $ T.pack $ prettyShow e)
-              exitWith (ExitFailure 30)
+          case optCommand of
+            Whereis _ _ -> pure ()
+            _ -> do
+              (siletRunLogger $ flip runReaderT appstate $ runE ensureGlobalTools) >>= \case
+                VRight _ -> pure ()
+                VLeft e -> do
+                  runLogger
+                    ($(logError) $ T.pack $ prettyShow e)
+                  exitWith (ExitFailure 30)
 
 
           -------------------------
@@ -1771,13 +1789,13 @@ Make sure to clean up #{tmpdir} afterwards.|])
                         runLogger $ $(logError) $ T.pack $ prettyShow e
                         pure $ ExitFailure 30
 
-            Upgrade uOpts force -> do
+            Upgrade uOpts force' -> do
               target <- case uOpts of
                 UpgradeInplace  -> Just <$> liftIO getExecutablePath
                 (UpgradeAt p)   -> pure $ Just p
                 UpgradeGHCupDir -> pure (Just (binDir </> "ghcup" <> exeExt))
 
-              runUpgrade (liftE $ upgradeGHCup target force) >>= \case
+              runUpgrade (liftE $ upgradeGHCup target force') >>= \case
                 VRight v' -> do
                   let pretty_v = prettyVer v'
                   let vi = fromJust $ snd <$> getLatest dls GHCup
@@ -1849,6 +1867,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
 
             Nuke ->
               runRm (do
+                   void $ liftIO $ evaluate $ force appstate
                    lift $ $logWarn "WARNING: This will remove GHCup and all installed components from your system."
                    lift $ $logWarn "Waiting 10 seconds before commencing, if you want to cancel it, now would be the time."
                    liftIO $ threadDelay 10000000  -- wait 10s
@@ -1899,7 +1918,7 @@ fromVersion' SetRecommended tool = do
   (\(x, y) -> (mkTVer x, Just y)) <$> getRecommended dls tool
     ?? TagNotFound Recommended tool
 fromVersion' (SetToolVersion v) tool = do
-  AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  ~AppState { ghcupInfo = ~GHCupInfo { _ghcupDownloads = dls }} <- lift ask
   let vi = getVersionInfo (_tvVersion v) tool dls
   case pvp $ prettyVer (_tvVersion v) of
     Left _ -> pure (v, vi)

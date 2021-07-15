@@ -1,7 +1,9 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE CPP               #-}
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 {-|
 Module      : GHCup.Types
@@ -21,6 +23,7 @@ module GHCup.Types
   where
 
 import           Control.Applicative
+import           Control.DeepSeq                ( NFData, rnf )
 import           Control.Monad.Logger
 import           Data.Map.Strict                ( Map )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
@@ -60,6 +63,8 @@ data GHCupInfo = GHCupInfo
   }
   deriving (Show, GHC.Generic)
 
+instance NFData GHCupInfo
+
 
 
     -------------------------
@@ -78,6 +83,8 @@ data Requirements = Requirements
   , _notes      :: Text
   }
   deriving (Show, GHC.Generic)
+
+instance NFData Requirements
 
 
 
@@ -105,8 +112,12 @@ data Tool = GHC
           | Stack
   deriving (Eq, GHC.Generic, Ord, Show, Enum, Bounded)
 
+instance NFData Tool
+
 data GlobalTool = ShimGen
   deriving (Eq, GHC.Generic, Ord, Show, Enum, Bounded)
+
+instance NFData GlobalTool
 
 
 -- | All necessary information of a tool version, including
@@ -123,6 +134,8 @@ data VersionInfo = VersionInfo
   }
   deriving (Eq, GHC.Generic, Show)
 
+instance NFData VersionInfo
+
 
 -- | A tag. These are currently attached to a version of a tool.
 data Tag = Latest
@@ -132,6 +145,8 @@ data Tag = Latest
          | Old                -- ^ old version are hidden by default in TUI
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, GHC.Generic, Show) -- FIXME: manual JSON instance
+
+instance NFData Tag
 
 tagToString :: Tag -> String
 tagToString Recommended        = "recommended"
@@ -159,6 +174,8 @@ data Architecture = A_64
                   | A_ARM64
   deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData Architecture
+
 archToString :: Architecture -> String
 archToString A_64 = "x86_64"
 archToString A_32 = "i386"
@@ -180,6 +197,8 @@ data Platform = Linux LinuxDistro
               | Windows
               -- ^ must exit
   deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData Platform
 
 platformToString :: Platform -> String
 platformToString (Linux distro) = "linux-" ++ distroToString distro
@@ -205,6 +224,8 @@ data LinuxDistro = Debian
                  | UnknownLinux
                  -- ^ must exit
   deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData LinuxDistro
 
 distroToString :: LinuxDistro -> String
 distroToString Debian = "debian"
@@ -232,6 +253,7 @@ data DownloadInfo = DownloadInfo
   }
   deriving (Eq, Ord, GHC.Generic, Show)
 
+instance NFData DownloadInfo
 
 
 
@@ -245,6 +267,8 @@ data TarDir = RealDir FilePath
             | RegexDir String     -- ^ will be compiled to regex, the first match will "win"
             deriving (Eq, Ord, GHC.Generic, Show)
 
+instance NFData TarDir
+
 instance Pretty TarDir where
   pPrint (RealDir path) = text path
   pPrint (RegexDir regex) = text regex
@@ -256,6 +280,10 @@ data URLSource = GHCupURL
                | OwnSpec GHCupInfo
                | AddSource (Either GHCupInfo URI) -- ^ merge with GHCupURL
                deriving (GHC.Generic, Show)
+
+instance NFData URLSource
+instance NFData (URIRef Absolute) where
+  rnf (URI !_ !_ !_ !_ !_) = ()
 
 
 data UserSettings = UserSettings
@@ -298,6 +326,9 @@ data KeyBindings = KeyBindings
   }
   deriving (Show, GHC.Generic)
 
+instance NFData KeyBindings
+instance NFData Key
+
 defaultKeyBindings :: KeyBindings
 defaultKeyBindings = KeyBindings
   { bUp = KUp
@@ -315,9 +346,11 @@ data AppState = AppState
   { settings :: Settings
   , dirs :: Dirs
   , keyBindings :: KeyBindings
-  , ghcupInfo :: GHCupInfo
-  , pfreq :: PlatformRequest
-  } deriving (Show)
+  , ghcupInfo :: ~GHCupInfo
+  , pfreq :: ~PlatformRequest
+  } deriving (Show, GHC.Generic)
+
+instance NFData AppState
 
 data Settings = Settings
   { cache      :: Bool
@@ -329,6 +362,8 @@ data Settings = Settings
   }
   deriving (Show, GHC.Generic)
 
+instance NFData Settings
+
 data Dirs = Dirs
   { baseDir  :: FilePath
   , binDir   :: FilePath
@@ -336,19 +371,25 @@ data Dirs = Dirs
   , logsDir  :: FilePath
   , confDir  :: FilePath
   }
-  deriving Show
+  deriving (Show, GHC.Generic)
+
+instance NFData Dirs
 
 data KeepDirs = Always
               | Errors
               | Never
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Show, Ord, GHC.Generic)
+
+instance NFData KeepDirs
 
 data Downloader = Curl
                 | Wget
 #if defined(INTERNAL_DOWNLOADER)
                 | Internal
 #endif
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Show, Ord, GHC.Generic)
+
+instance NFData Downloader
 
 data DebugInfo = DebugInfo
   { diBaseDir  :: FilePath
@@ -371,7 +412,9 @@ data PlatformResult = PlatformResult
   { _platform      :: Platform
   , _distroVersion :: Maybe Versioning
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, GHC.Generic)
+
+instance NFData PlatformResult
 
 platResToString :: PlatformResult -> String
 platResToString PlatformResult { _platform = plat, _distroVersion = Just v' }
@@ -387,7 +430,9 @@ data PlatformRequest = PlatformRequest
   , _rPlatform :: Platform
   , _rVersion  :: Maybe Versioning
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, GHC.Generic)
+
+instance NFData PlatformRequest
 
 pfReqToString :: PlatformRequest -> String
 pfReqToString (PlatformRequest arch plat ver) =
@@ -434,6 +479,8 @@ data VersionCmp = VR_gt Versioning
                 | VR_eq Versioning
   deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData VersionCmp
+
 
 -- | A version range. Supports && and ||, but not  arbitrary
 -- combinations. This is a little simplified.
@@ -441,6 +488,7 @@ data VersionRange = SimpleRange (NonEmpty VersionCmp) -- And
                   | OrRange (NonEmpty VersionCmp) VersionRange
   deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData VersionRange
 
 instance Pretty Versioning where
   pPrint = text . T.unpack . prettyV
