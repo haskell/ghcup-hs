@@ -106,7 +106,10 @@ import Control.Concurrent (threadDelay)
 installGHCBindist :: ( MonadFail m
                      , MonadMask m
                      , MonadCatch m
-                     , MonadReader AppState m
+                     , MonadReader env m
+                     , HasDirs env
+                     , HasSettings env
+                     , HasPlatformReq env
                      , MonadLogger m
                      , MonadResource m
                      , MonadIO m
@@ -130,7 +133,8 @@ installGHCBindist :: ( MonadFail m
                        m
                        ()
 installGHCBindist dlinfo ver = do
-  AppState { dirs , settings } <- lift ask
+  dirs <- lift getDirs
+  settings <- lift getSettings
 
   let tver = mkTVer ver
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
@@ -163,7 +167,10 @@ installGHCBindist dlinfo ver = do
 -- build system and nothing else.
 installPackedGHC :: ( MonadMask m
                     , MonadCatch m
-                    , MonadReader AppState m
+                    , MonadReader env m
+                    , HasDirs env
+                    , HasPlatformReq env
+                    , HasSettings env
                     , MonadThrow m
                     , MonadLogger m
                     , MonadIO m
@@ -182,7 +189,7 @@ installPackedGHC :: ( MonadMask m
 #endif
                        ] m ()
 installPackedGHC dl msubdir inst ver = do
-  AppState { pfreq = PlatformRequest {..} } <- lift ask
+  PlatformRequest {..} <- lift getPlatformReq
 
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
@@ -201,7 +208,10 @@ installPackedGHC dl msubdir inst ver = do
 
 -- | Install an unpacked GHC distribution. This only deals with the GHC
 -- build system and nothing else.
-installUnpackedGHC :: ( MonadReader AppState m
+installUnpackedGHC :: ( MonadReader env m
+                      , HasPlatformReq env
+                      , HasDirs env
+                      , HasSettings env
                       , MonadThrow m
                       , MonadLogger m
                       , MonadIO m
@@ -218,7 +228,7 @@ installUnpackedGHC path inst _ = do
   liftIO $ copyDirectoryRecursive path inst
 #else
 installUnpackedGHC path inst ver = do
-  AppState { pfreq = PlatformRequest {..} } <- lift ask
+  PlatformRequest {..} <- lift getPlatformReq
 
   let alpineArgs
        | ver >= [vver|8.2.2|], Linux Alpine <- _rPlatform
@@ -250,7 +260,11 @@ installUnpackedGHC path inst ver = do
 installGHCBin :: ( MonadFail m
                  , MonadMask m
                  , MonadCatch m
-                 , MonadReader AppState m
+                 , MonadReader env m
+                 , HasPlatformReq env
+                 , HasGHCupInfo env
+                 , HasDirs env
+                 , HasSettings env
                  , MonadLogger m
                  , MonadResource m
                  , MonadIO m
@@ -273,8 +287,8 @@ installGHCBin :: ( MonadFail m
                    m
                    ()
 installGHCBin ver = do
-  AppState { pfreq
-           , ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  pfreq <- lift getPlatformReq
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   dlinfo <- lE $ getDownloadInfo GHC ver pfreq dls
   installGHCBindist dlinfo ver
 
@@ -283,7 +297,10 @@ installGHCBin ver = do
 -- argument instead of looking it up from 'GHCupDownloads'.
 installCabalBindist :: ( MonadMask m
                        , MonadCatch m
-                       , MonadReader AppState m
+                       , MonadReader env m
+                       , HasPlatformReq env
+                       , HasDirs env
+                       , HasSettings env
                        , MonadLogger m
                        , MonadResource m
                        , MonadIO m
@@ -310,9 +327,9 @@ installCabalBindist :: ( MonadMask m
 installCabalBindist dlinfo ver = do
   lift $ $(logDebug) [i|Requested to install cabal version #{ver}|]
 
-  AppState { dirs = dirs@Dirs {..}
-           , pfreq = PlatformRequest {..}
-           , settings } <- lift ask
+  PlatformRequest {..} <- lift getPlatformReq
+  dirs@Dirs {..} <- lift getDirs
+  settings <- lift getSettings
 
   whenM
       (lift (cabalInstalled ver) >>= \a -> liftIO $
@@ -364,7 +381,11 @@ installCabalBindist dlinfo ver = do
 -- the latest installed version.
 installCabalBin :: ( MonadMask m
                    , MonadCatch m
-                   , MonadReader AppState m
+                   , MonadReader env m
+                   , HasPlatformReq env
+                   , HasGHCupInfo env
+                   , HasDirs env
+                   , HasSettings env
                    , MonadLogger m
                    , MonadResource m
                    , MonadIO m
@@ -388,8 +409,9 @@ installCabalBin :: ( MonadMask m
                      m
                      ()
 installCabalBin ver = do
-  AppState { pfreq
-           , ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  pfreq <- lift getPlatformReq
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+
   dlinfo <- lE $ getDownloadInfo Cabal ver pfreq dls
   installCabalBindist dlinfo ver
 
@@ -398,7 +420,10 @@ installCabalBin ver = do
 -- argument instead of looking it up from 'GHCupDownloads'.
 installHLSBindist :: ( MonadMask m
                      , MonadCatch m
-                     , MonadReader AppState m
+                     , MonadReader env m
+                     , HasPlatformReq env
+                     , HasDirs env
+                     , HasSettings env
                      , MonadLogger m
                      , MonadResource m
                      , MonadIO m
@@ -425,9 +450,9 @@ installHLSBindist :: ( MonadMask m
 installHLSBindist dlinfo ver = do
   lift $ $(logDebug) [i|Requested to install hls version #{ver}|]
 
-  AppState { dirs = dirs@Dirs {..}
-           , pfreq = PlatformRequest {..}
-           , settings } <- lift ask
+  PlatformRequest {..} <- lift getPlatformReq
+  dirs@Dirs {..} <- lift getDirs
+  settings <- lift getSettings
 
   whenM (lift (hlsInstalled ver))
     (throwE $ AlreadyInstalled HLS ver)
@@ -488,7 +513,11 @@ installHLSBindist dlinfo ver = do
 -- into @~\/.ghcup\/bin/@, as well as @haskell-languager-server-wrapper@.
 installHLSBin :: ( MonadMask m
                  , MonadCatch m
-                 , MonadReader AppState m
+                 , MonadReader env m
+                 , HasPlatformReq env
+                 , HasGHCupInfo env
+                 , HasDirs env
+                 , HasSettings env
                  , MonadLogger m
                  , MonadResource m
                  , MonadIO m
@@ -512,8 +541,9 @@ installHLSBin :: ( MonadMask m
                    m
                    ()
 installHLSBin ver = do
-  AppState { pfreq
-           , ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  pfreq <- lift getPlatformReq
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+
   dlinfo <- lE $ getDownloadInfo HLS ver pfreq dls
   installHLSBindist dlinfo ver
 
@@ -523,7 +553,11 @@ installHLSBin ver = do
 -- the latest installed version.
 installStackBin :: ( MonadMask m
                    , MonadCatch m
-                   , MonadReader AppState m
+                   , MonadReader env m
+                   , HasDirs env
+                   , HasSettings env
+                   , HasPlatformReq env
+                   , HasGHCupInfo env
                    , MonadLogger m
                    , MonadResource m
                    , MonadIO m
@@ -547,7 +581,9 @@ installStackBin :: ( MonadMask m
                      m
                      ()
 installStackBin ver = do
-  AppState { pfreq, ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- lift ask
+  pfreq <- lift getPlatformReq
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+
   dlinfo <- lE $ getDownloadInfo Stack ver pfreq dls
   installStackBindist dlinfo ver
 
@@ -556,7 +592,10 @@ installStackBin ver = do
 -- argument instead of looking it up from 'GHCupDownloads'.
 installStackBindist :: ( MonadMask m
                        , MonadCatch m
-                       , MonadReader AppState m
+                       , MonadReader env m
+                       , HasPlatformReq env
+                       , HasDirs env
+                       , HasSettings env
                        , MonadLogger m
                        , MonadResource m
                        , MonadIO m
@@ -583,10 +622,9 @@ installStackBindist :: ( MonadMask m
 installStackBindist dlinfo ver = do
   lift $ $(logDebug) [i|Requested to install stack version #{ver}|]
 
-  AppState { dirs = dirs@Dirs {..}
-           , pfreq = PlatformRequest {..}
-           , settings
-           } <- lift ask
+  PlatformRequest {..} <- lift getPlatformReq
+  dirs@Dirs {..} <- lift getDirs
+  settings <- lift getSettings
 
   whenM (lift (stackInstalled ver))
     (throwE $ AlreadyInstalled Stack ver)
@@ -644,7 +682,8 @@ installStackBindist dlinfo ver = do
 --
 -- Additionally creates a @~\/.ghcup\/share -> ~\/.ghcup\/ghc\/\<ver\>\/share symlink@
 -- for 'SetGHCOnly' constructor.
-setGHC :: ( MonadReader AppState m
+setGHC :: ( MonadReader env m
+          , HasDirs env
           , MonadLogger m
           , MonadThrow m
           , MonadFail m
@@ -663,7 +702,7 @@ setGHC ver sghc = do
   whenM (lift $ not <$> ghcInstalled ver) (throwE (NotInstalled GHC ver))
 
   -- symlink destination
-  AppState { dirs = Dirs {..} } <- lift ask
+  Dirs {..} <- lift getDirs
 
   -- first delete the old symlinks (this fixes compatibility issues
   -- with old ghcup)
@@ -701,12 +740,15 @@ setGHC ver sghc = do
 
  where
 
-  symlinkShareDir :: (MonadReader AppState m, MonadIO m, MonadLogger m)
+  symlinkShareDir :: ( MonadReader env m
+                     , HasDirs env
+                     , MonadIO m
+                     , MonadLogger m)
                   => FilePath
                   -> String
                   -> m ()
   symlinkShareDir ghcdir ver' = do
-    AppState { dirs = Dirs {..} } <- ask
+    Dirs {..} <- getDirs
     let destdir = baseDir
     case sghc of
       SetGHCOnly -> do
@@ -733,7 +775,8 @@ setGHC ver sghc = do
 
 -- | Set the @~\/.ghcup\/bin\/cabal@ symlink.
 setCabal :: ( MonadMask m
-            , MonadReader AppState m
+            , MonadReader env m
+            , HasDirs env
             , MonadLogger m
             , MonadThrow m
             , MonadFail m
@@ -745,7 +788,7 @@ setCabal ver = do
   let targetFile = "cabal-" <> T.unpack (prettyVer ver) <> exeExt
 
   -- symlink destination
-  AppState {dirs = Dirs {..}} <- lift ask
+  Dirs {..} <- lift getDirs
 
   whenM (liftIO $ not <$> doesFileExist (binDir </> targetFile))
     $ throwE
@@ -764,7 +807,8 @@ setCabal ver = do
 
 -- | Set the haskell-language-server symlinks.
 setHLS :: ( MonadCatch m
-          , MonadReader AppState m
+          , MonadReader env m
+          , HasDirs env
           , MonadLogger m
           , MonadThrow m
           , MonadFail m
@@ -775,7 +819,7 @@ setHLS :: ( MonadCatch m
        => Version
        -> Excepts '[NotInstalled] m ()
 setHLS ver = do
-  AppState { dirs = Dirs {..} } <- lift ask
+  Dirs {..} <- lift getDirs
 
   -- Delete old symlinks, since these might have different ghc versions than the
   -- selected version, so we could end up with stray or incorrect symlinks.
@@ -804,7 +848,8 @@ setHLS ver = do
 
 -- | Set the @~\/.ghcup\/bin\/stack@ symlink.
 setStack :: ( MonadMask m
-            , MonadReader AppState m
+            , MonadReader env m
+            , HasDirs env
             , MonadLogger m
             , MonadThrow m
             , MonadFail m
@@ -817,7 +862,7 @@ setStack ver = do
   let targetFile = "stack-" <> T.unpack (prettyVer ver) <> exeExt
 
   -- symlink destination
-  AppState {dirs = Dirs {..}} <- lift ask
+  Dirs {..} <- lift getDirs
 
   whenM (liftIO $ not <$> doesFileExist (binDir </> targetFile))
     $ throwE
@@ -872,7 +917,10 @@ listVersions :: ( MonadCatch m
                 , MonadThrow m
                 , MonadLogger m
                 , MonadIO m
-                , MonadReader AppState m
+                , MonadReader env m
+                , HasDirs env
+                , HasPlatformReq env
+                , HasGHCupInfo env
                 )
              => Maybe Tool
              -> Maybe ListCriteria
@@ -891,7 +939,7 @@ listVersions lt' criteria = do
   go lt cSet cabals hlsSet' hlses sSet stacks = do
     case lt of
       Just t -> do
-        AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
+        GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
         -- get versions from GHCupDownloads
         let avTools = availableToolVersions dls t
         lr <- filter' <$> forM (Map.toList avTools) (toListResult t cSet cabals hlsSet' hlses sSet stacks)
@@ -917,7 +965,13 @@ listVersions lt' criteria = do
         ghcupvers <- go (Just GHCup) cSet cabals hlsSet' hlses sSet stacks
         stackvers <- go (Just Stack) cSet cabals hlsSet' hlses sSet stacks
         pure (ghcvers <> cabalvers <> hlsvers <> stackvers <> ghcupvers)
-  strayGHCs :: (MonadCatch m, MonadReader AppState m, MonadThrow m, MonadLogger m, MonadIO m)
+  strayGHCs :: ( MonadCatch m
+               , MonadReader env m
+               , HasDirs env
+               , MonadThrow m
+               , MonadLogger m
+               , MonadIO m
+               )
             => Map.Map Version [Tag]
             -> m [ListResult]
   strayGHCs avTools = do
@@ -959,7 +1013,13 @@ listVersions lt' criteria = do
           [i|Could not parse version of stray directory #{e}|]
         pure Nothing
 
-  strayCabals :: (MonadReader AppState m, MonadCatch m, MonadThrow m, MonadLogger m, MonadIO m)
+  strayCabals :: ( MonadReader env m
+                 , HasDirs env
+                 , MonadCatch m
+                 , MonadThrow m
+                 , MonadLogger m
+                 , MonadIO m
+                 )
             => Map.Map Version [Tag]
             -> Maybe Version
             -> [Either FilePath Version]
@@ -988,7 +1048,12 @@ listVersions lt' criteria = do
           [i|Could not parse version of stray directory #{e}|]
         pure Nothing
 
-  strayHLS :: (MonadReader AppState m, MonadCatch m, MonadThrow m, MonadLogger m, MonadIO m)
+  strayHLS :: ( MonadReader env m
+              , HasDirs env
+              , MonadCatch m
+              , MonadThrow m
+              , MonadLogger m
+              , MonadIO m)
            => Map.Map Version [Tag]
            -> m [ListResult]
   strayHLS avTools = do
@@ -1016,7 +1081,13 @@ listVersions lt' criteria = do
           [i|Could not parse version of stray directory #{e}|]
         pure Nothing
 
-  strayStacks :: (MonadReader AppState m, MonadCatch m, MonadThrow m, MonadLogger m, MonadIO m)
+  strayStacks :: ( MonadReader env m
+                 , HasDirs env
+                 , MonadCatch m
+                 , MonadThrow m
+                 , MonadLogger m
+                 , MonadIO m
+                 )
               => Map.Map Version [Tag]
               -> m [ListResult]
   strayStacks avTools = do
@@ -1045,7 +1116,14 @@ listVersions lt' criteria = do
         pure Nothing
 
   -- NOTE: this are not cross ones, because no bindists
-  toListResult :: (MonadLogger m, MonadReader AppState m, MonadIO m, MonadCatch m)
+  toListResult :: ( MonadLogger m
+                  , MonadReader env m
+                  , HasDirs env
+                  , HasGHCupInfo env
+                  , HasPlatformReq env
+                  , MonadIO m
+                  , MonadCatch m
+                  )
                => Tool
                -> Maybe Version
                -> [Either FilePath Version]
@@ -1056,8 +1134,8 @@ listVersions lt' criteria = do
                -> (Version, [Tag])
                -> m ListResult
   toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, tags) = do
-    AppState { pfreq
-             , ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
+    pfreq <- getPlatformReq
+    GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
 
     case t of
       GHC -> do
@@ -1140,7 +1218,8 @@ listVersions lt' criteria = do
 -- This may leave GHCup without a "set" version.
 -- Will try to fix the ghc-x.y symlink after removal (e.g. to an
 -- older version).
-rmGHCVer :: ( MonadReader AppState m
+rmGHCVer :: ( MonadReader env m
+            , HasDirs env
             , MonadThrow m
             , MonadLogger m
             , MonadIO m
@@ -1181,7 +1260,7 @@ rmGHCVer ver = do
   forM_ v' $ \(mj, mi) -> lift (getGHCForMajor mj mi (_tvTarget ver))
     >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
 
-  AppState { dirs = Dirs {..} } <- lift ask
+  Dirs {..} <- lift getDirs
 
   liftIO
     $ hideError doesNotExistErrorType
@@ -1191,7 +1270,8 @@ rmGHCVer ver = do
 -- | Delete a cabal version. Will try to fix the @cabal@ symlink
 -- after removal (e.g. setting it to an older version).
 rmCabalVer :: ( MonadMask m
-              , MonadReader AppState m
+              , MonadReader env m
+              , HasDirs env
               , MonadThrow m
               , MonadLogger m
               , MonadIO m
@@ -1206,7 +1286,7 @@ rmCabalVer ver = do
 
   cSet      <- lift cabalSet
 
-  AppState {dirs = Dirs {..}} <- lift ask
+  Dirs {..} <- lift getDirs
 
   let cabalFile = "cabal-" <> T.unpack (prettyVer ver) <> exeExt
   liftIO $ hideError doesNotExistErrorType $ rmFile (binDir </> cabalFile)
@@ -1221,7 +1301,8 @@ rmCabalVer ver = do
 -- | Delete a hls version. Will try to fix the hls symlinks
 -- after removal (e.g. setting it to an older version).
 rmHLSVer :: ( MonadMask m
-            , MonadReader AppState m
+            , MonadReader env m
+            , HasDirs env
             , MonadThrow m
             , MonadLogger m
             , MonadIO m
@@ -1236,7 +1317,7 @@ rmHLSVer ver = do
 
   isHlsSet      <- lift hlsSet
 
-  AppState {dirs = Dirs {..}} <- lift ask
+  Dirs {..} <- lift getDirs
 
   bins <- lift $ hlsAllBinaries ver
   forM_ bins $ \f -> liftIO $ rmFile (binDir </> f)
@@ -1258,7 +1339,8 @@ rmHLSVer ver = do
 -- | Delete a stack version. Will try to fix the @stack@ symlink
 -- after removal (e.g. setting it to an older version).
 rmStackVer :: ( MonadMask m
-              , MonadReader AppState m
+              , MonadReader env m
+              , HasDirs env
               , MonadThrow m
               , MonadLogger m
               , MonadIO m
@@ -1273,7 +1355,7 @@ rmStackVer ver = do
 
   sSet      <- lift stackSet
 
-  AppState {dirs = Dirs {..}} <- lift ask
+  Dirs {..} <- lift getDirs
 
   let stackFile = "stack-" <> T.unpack (prettyVer ver) <> exeExt
   liftIO $ hideError doesNotExistErrorType $ rmFile (binDir </> stackFile)
@@ -1286,15 +1368,15 @@ rmStackVer ver = do
 
 
 -- assuming the current scheme of having just 1 ghcup bin, no version info is required.
-rmGhcup :: ( MonadReader AppState m
+rmGhcup :: ( MonadReader env m
+           , HasDirs env
            , MonadIO m
            , MonadCatch m
            , MonadLogger m
            )
         => m ()
-
 rmGhcup = do
-  AppState {dirs = Dirs {binDir}} <- ask
+  Dirs {binDir} <- getDirs
   let ghcupFilename = "ghcup" <> exeExt
   let ghcupFilepath = binDir </> ghcupFilename
 
@@ -1338,14 +1420,14 @@ rmGhcup = do
       <> path <>
       "\n you may have to uninstall it manually."
 
-rmTool :: ( MonadReader AppState m
-           , MonadLogger m
-           , MonadFail m
-           , MonadMask m
-           , MonadUnliftIO m)
-           => ListResult
-           -> Excepts '[NotInstalled ] m ()
-
+rmTool :: ( MonadReader env m
+          , HasDirs env
+          , MonadLogger m
+          , MonadFail m
+          , MonadMask m
+          , MonadUnliftIO m)
+          => ListResult
+          -> Excepts '[NotInstalled ] m ()
 rmTool ListResult {lVer, lTool, lCross} = do
   case lTool of
     GHC ->
@@ -1357,7 +1439,8 @@ rmTool ListResult {lVer, lTool, lCross} = do
     GHCup -> lift rmGhcup
 
 
-rmGhcupDirs :: ( MonadReader AppState m
+rmGhcupDirs :: ( MonadReader env m
+               , HasDirs env
                , MonadIO m
                , MonadLogger m
                , MonadCatch m
@@ -1369,7 +1452,7 @@ rmGhcupDirs = do
     , binDir
     , logsDir
     , cacheDir
-    } <- asks dirs
+    } <- getDirs
 
   let envFilePath = baseDir </> "env"
 
@@ -1477,13 +1560,20 @@ rmGhcupDirs = do
     ------------------
 
 
-getDebugInfo :: (Alternative m, MonadFail m, MonadReader AppState m, MonadLogger m, MonadCatch m, MonadIO m)
+getDebugInfo :: ( Alternative m
+                , MonadFail m
+                , MonadReader env m
+                , HasDirs env
+                , MonadLogger m
+                , MonadCatch m
+                , MonadIO m
+                )
              => Excepts
                   '[NoCompatiblePlatform , NoCompatibleArch , DistroNotFound]
                   m
                   DebugInfo
 getDebugInfo = do
-  AppState {dirs = Dirs {..}} <- lift ask
+  Dirs {..} <- lift getDirs
   let diBaseDir  = baseDir
   let diBinDir   = binDir
   diGHCDir       <- lift ghcupGHCBaseDir
@@ -1503,7 +1593,11 @@ getDebugInfo = do
 -- | Compile a GHC from source. This behaves wrt symlinks and installation
 -- the same as 'installGHCBin'.
 compileGHC :: ( MonadMask m
-              , MonadReader AppState m
+              , MonadReader env m
+              , HasDirs env
+              , HasPlatformReq env
+              , HasGHCupInfo env
+              , HasSettings env
               , MonadThrow m
               , MonadResource m
               , MonadLogger m
@@ -1538,10 +1632,11 @@ compileGHC :: ( MonadMask m
                 GHCTargetVersion
 compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
   = do
-    AppState { pfreq = PlatformRequest {..}
-             , ghcupInfo = GHCupInfo { _ghcupDownloads = dls }
-             , settings
-             , dirs } <- lift ask
+    PlatformRequest { .. } <- lift getPlatformReq
+    GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+    settings <- lift getSettings
+    dirs <- lift getDirs
+
     (workdir, tmpUnpack, tver) <- case targetGhc of
       -- unpack from version tarball
       Left tver -> do
@@ -1662,7 +1757,10 @@ BUILD_SPHINX_HTML = NO
 BUILD_SPHINX_PDF = NO
 HADDOCK_DOCS = YES|]
 
-  compileBindist :: ( MonadReader AppState m
+  compileBindist :: ( MonadReader env m
+                    , HasDirs env
+                    , HasSettings env
+                    , HasPlatformReq env
                     , MonadThrow m
                     , MonadCatch m
                     , MonadLogger m
@@ -1680,8 +1778,9 @@ HADDOCK_DOCS = YES|]
   compileBindist bghc tver workdir ghcdir = do
     lift $ $(logInfo) [i|configuring build|]
     liftE checkBuildConfig
-
-    AppState { dirs = Dirs {..}, pfreq } <- lift ask
+    
+    Dirs {..} <- lift getDirs
+    pfreq <- lift getPlatformReq
 
     forM_ patchdir $ \dir -> liftE $ applyPatches dir workdir
 
@@ -1805,7 +1904,11 @@ HADDOCK_DOCS = YES|]
 -- | Upgrade ghcup and place it in @~\/.ghcup\/bin\/ghcup@,
 -- if no path is provided.
 upgradeGHCup :: ( MonadMask m
-                , MonadReader AppState m
+                , MonadReader env m
+                , HasDirs env
+                , HasPlatformReq env
+                , HasGHCupInfo env
+                , HasSettings env
                 , MonadCatch m
                 , MonadLogger m
                 , MonadThrow m
@@ -1826,10 +1929,11 @@ upgradeGHCup :: ( MonadMask m
                   m
                   Version
 upgradeGHCup mtarget force' = do
-  AppState { dirs = Dirs {..}
-           , pfreq
-           , ghcupInfo = GHCupInfo { _ghcupDownloads = dls }
-           , settings } <- lift ask
+  Dirs {..} <- lift getDirs
+  pfreq <- lift getPlatformReq
+  settings <- lift getSettings
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+
   lift $ $(logInfo) [i|Upgrading GHCup...|]
   let latestVer = fromJust $ fst <$> getLatest dls GHCup
   when (not force' && (latestVer <= pvpToVersion ghcUpVer)) $ throwE NoUpdate
@@ -1878,7 +1982,8 @@ upgradeGHCup mtarget force' = do
 
 -- | Creates @ghc-x.y.z@ and @ghc-x.y@ symlinks. This is used for
 -- both installing from source and bindist.
-postGHCInstall :: ( MonadReader AppState m
+postGHCInstall :: ( MonadReader env m
+                  , HasDirs env
                   , MonadLogger m
                   , MonadThrow m
                   , MonadFail m
@@ -1909,7 +2014,8 @@ postGHCInstall ver@GHCTargetVersion {..} = do
 --   * for hls, this reports @~\/.ghcup\/bin\/haskell-language-server-wrapper-\<ver\>@
 --   * for stack, this reports @~\/.ghcup\/bin\/stack-\<ver\>@
 --   * for ghcup, this reports the location of the currently running executable
-whereIsTool :: ( MonadReader AppState m
+whereIsTool :: ( MonadReader env m
+               , HasDirs env
                , MonadLogger m
                , MonadThrow m
                , MonadFail m
@@ -1922,7 +2028,7 @@ whereIsTool :: ( MonadReader AppState m
             -> GHCTargetVersion
             -> Excepts '[NotInstalled] m FilePath
 whereIsTool tool ver@GHCTargetVersion {..} = do
-  AppState { dirs } <- lift ask
+  dirs <- lift getDirs
 
   case tool of
     GHC -> do
@@ -1946,3 +2052,6 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
     GHCup -> do
       currentRunningExecPath <- liftIO getExecutablePath
       liftIO $ canonicalizePath currentRunningExecPath
+
+
+
