@@ -19,6 +19,7 @@ import {-# SOURCE #-} GHCup.Utils ( getLinkTarget, pathIsLink )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.File.Common
 import           GHCup.Types
+import           GHCup.Types.Optics
 
 import           Control.Concurrent
 import           Control.DeepSeq

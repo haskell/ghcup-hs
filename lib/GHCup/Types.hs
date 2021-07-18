@@ -297,11 +297,12 @@ data UserSettings = UserSettings
   , uDownloader  :: Maybe Downloader
   , uKeyBindings :: Maybe UserKeyBindings
   , uUrlSource   :: Maybe URLSource
+  , uNoNetwork   :: Maybe Bool
   }
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 data UserKeyBindings = UserKeyBindings
   { kUp        :: Maybe Key
@@ -353,13 +354,16 @@ data AppState = AppState
   , pfreq :: PlatformRequest
   } deriving (Show, GHC.Generic)
 
+instance NFData AppState
+
 data LeanAppState = LeanAppState
   { settings :: Settings
   , dirs :: Dirs
   , keyBindings :: KeyBindings
   } deriving (Show, GHC.Generic)
 
-instance NFData AppState
+instance NFData LeanAppState
+
 
 data Settings = Settings
   { cache      :: Bool
@@ -368,6 +372,7 @@ data Settings = Settings
   , downloader :: Downloader
   , verbose    :: Bool
   , urlSource  :: URLSource
+  , noNetwork  :: Bool
   }
   deriving (Show, GHC.Generic)
 

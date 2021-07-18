@@ -91,6 +91,7 @@ data Options = Options
   , optNoVerify  :: Maybe Bool
   , optKeepDirs  :: Maybe KeepDirs
   , optsDownloader :: Maybe Downloader
+  , optNoNetwork :: Maybe Bool
   -- commands
   , optCommand   :: Command
   }
@@ -277,6 +278,7 @@ opts =
 #endif
           <> hidden
           ))
+    <*> invertableSwitch "offline" 'o' False (help "Don't do any network calls, trying cached assets and failing if missing.")
     <*> com
  where
   parseUri s' =
@@ -943,13 +945,19 @@ versionArgument criteria tool = argument (eitherReader tVersionEither) (metavar 
 tagCompleter :: Tool -> [String] -> Completer
 tagCompleter tool add = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
+  let appState = LeanAppState
+        (Settings True False Never Curl False GHCupURL True)
+        dirs'
+        defaultKeyBindings
+
   let loggerConfig = LoggerConfig
         { lcPrintDebug = False
         , colorOutter  = mempty
         , rawOutter    = mempty
         }
   let runLogger = myLoggerT loggerConfig
-  mGhcUpInfo <- runLogger . runE $ readFromCache dirs'
+
+  mGhcUpInfo <- runLogger . flip runReaderT appState . runE $ getDownloadsF
   case mGhcUpInfo of
     VRight ghcupInfo -> do
       let allTags = filter (\t -> t /= Old)
@@ -969,12 +977,17 @@ versionCompleter criteria tool = listIOCompleter $ do
         , rawOutter    = mempty
         }
   let runLogger = myLoggerT loggerConfig
-  mGhcUpInfo <- runLogger . runE $ readFromCache dirs'
-  mpFreq <- runLogger . runE $ platformRequest
-  forFold mpFreq $ \pfreq ->
+      settings = Settings True False Never Curl False GHCupURL True
+  let leanAppState = LeanAppState
+                   settings
+                   dirs'
+                   defaultKeyBindings
+  mpFreq <- runLogger . flip runReaderT leanAppState . runE $ platformRequest
+  mGhcUpInfo <- runLogger . flip runReaderT leanAppState . runE $ getDownloadsF
+  forFold mpFreq $ \pfreq -> do
     forFold mGhcUpInfo $ \ghcupInfo -> do
       let appState = AppState
-            (Settings True False Never Curl False GHCupURL)
+            settings
             dirs'
             defaultKeyBindings
             ghcupInfo
@@ -1123,6 +1136,7 @@ toSettings options = do
          downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
          urlSource   = maybe (fromMaybe GHCupURL uUrlSource) OwnSource optUrlSource
+         noNetwork   = fromMaybe (fromMaybe False uNoNetwork) optNoNetwork
      in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
@@ -1168,7 +1182,9 @@ describe_result = $( LitE . StringL <$>
                      runIO (do
                              CapturedProcess{..} <-  do
                               dirs <- liftIO getAllDirs
-                              let settings = AppState (Settings True False Never Curl False GHCupURL) dirs defaultKeyBindings
+                              let settings = AppState (Settings True False Never Curl False GHCupURL False)
+                                               dirs
+                                               defaultKeyBindings
                               flip runReaderT settings $ executeOut "git" ["describe"] Nothing
                              case _exitCode of
                                ExitSuccess   -> pure . T.unpack . decUTF8Safe' $ _stdOut
@@ -1259,9 +1275,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
                 ghcupInfo <-
                   ( runLogger
+                    . flip runReaderT leanAppstate
                     . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
                     $ liftE
-                    $ getDownloadsF settings dirs
+                    $ getDownloadsF
                     )
                     >>= \case
                           VRight r -> pure r
@@ -1285,7 +1302,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 pure s'
 
 
+#if defined(IS_WINDOWS)
+              -- FIXME: windows needs 'ensureGlobalTools', which requires
+              -- full appstate
+              runLeanAppState = runAppState
+#else
               runLeanAppState = flip runReaderT leanAppstate
+#endif
               runAppState action' = do
                 s' <- liftIO appState
                 flip runReaderT s' action'
@@ -1299,7 +1322,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let runInstTool' appstate' mInstPlatform =
                 runLogger
-                  . flip runReaderT (maybe appstate' (\x -> appstate'{ pfreq = x }) mInstPlatform)
+                  . flip runReaderT (maybe appstate' (\x -> appstate'{ pfreq = x } :: AppState) mInstPlatform)
                   . runResourceT
                   . runE
                     @'[ AlreadyInstalled
@@ -1733,7 +1756,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           res <- case optCommand of
 #if defined(BRICK)
             Interactive -> do
-              liftIO $ brickMain appstate loggerConfig ghcupInfo >> pure ExitSuccess
+              s' <- appState
+              liftIO $ brickMain s' loggerConfig >> pure ExitSuccess
 #endif
             Install (Right iopts) -> do
               runLogger ($(logWarn) [i|This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.|])

@@ -133,15 +133,12 @@ installGHCBindist :: ( MonadFail m
                        m
                        ()
 installGHCBindist dlinfo ver = do
-  dirs <- lift getDirs
-  settings <- lift getSettings
-
   let tver = mkTVer ver
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
   whenM (lift $ ghcInstalled tver) (throwE $ AlreadyInstalled GHC ver)
 
   -- download (or use cached version)
-  dl                           <- liftE $ downloadCached settings dirs dlinfo Nothing
+  dl <- liftE $ downloadCached dlinfo Nothing
 
   -- prepare paths
   ghcdir <- lift $ ghcupGHCDir tver
@@ -328,8 +325,7 @@ installCabalBindist dlinfo ver = do
   lift $ $(logDebug) [i|Requested to install cabal version #{ver}|]
 
   PlatformRequest {..} <- lift getPlatformReq
-  dirs@Dirs {..} <- lift getDirs
-  settings <- lift getSettings
+  Dirs {..} <- lift getDirs
 
   whenM
       (lift (cabalInstalled ver) >>= \a -> liftIO $
@@ -341,10 +337,10 @@ installCabalBindist dlinfo ver = do
       (throwE $ AlreadyInstalled Cabal ver)
 
   -- download (or use cached version)
-  dl                           <- liftE $ downloadCached settings dirs dlinfo Nothing
+  dl <- liftE $ downloadCached dlinfo Nothing
 
   -- unpack
-  tmpUnpack                    <- lift withGHCupTmpDir
+  tmpUnpack <- lift withGHCupTmpDir
   liftE $ unpackToDir tmpUnpack dl
   void $ lift $ darwinNotarization _rPlatform tmpUnpack
 
@@ -451,17 +447,16 @@ installHLSBindist dlinfo ver = do
   lift $ $(logDebug) [i|Requested to install hls version #{ver}|]
 
   PlatformRequest {..} <- lift getPlatformReq
-  dirs@Dirs {..} <- lift getDirs
-  settings <- lift getSettings
+  Dirs {..} <- lift getDirs
 
   whenM (lift (hlsInstalled ver))
     (throwE $ AlreadyInstalled HLS ver)
 
   -- download (or use cached version)
-  dl                           <- liftE $ downloadCached settings dirs dlinfo Nothing
+  dl <- liftE $ downloadCached dlinfo Nothing
 
   -- unpack
-  tmpUnpack                    <- lift withGHCupTmpDir
+  tmpUnpack <- lift withGHCupTmpDir
   liftE $ unpackToDir tmpUnpack dl
   void $ lift $ darwinNotarization _rPlatform tmpUnpack
 
@@ -623,17 +618,16 @@ installStackBindist dlinfo ver = do
   lift $ $(logDebug) [i|Requested to install stack version #{ver}|]
 
   PlatformRequest {..} <- lift getPlatformReq
-  dirs@Dirs {..} <- lift getDirs
-  settings <- lift getSettings
+  Dirs {..} <- lift getDirs
 
   whenM (lift (stackInstalled ver))
     (throwE $ AlreadyInstalled Stack ver)
 
   -- download (or use cached version)
-  dl                           <- liftE $ downloadCached settings dirs dlinfo Nothing
+  dl <- liftE $ downloadCached dlinfo Nothing
 
   -- unpack
-  tmpUnpack                    <- lift withGHCupTmpDir
+  tmpUnpack <- lift withGHCupTmpDir
   liftE $ unpackToDir tmpUnpack dl
   void $ lift $ darwinNotarization _rPlatform tmpUnpack
 
@@ -1634,8 +1628,6 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-    settings <- lift getSettings
-    dirs <- lift getDirs
 
     (workdir, tmpUnpack, tver) <- case targetGhc of
       -- unpack from version tarball
@@ -1646,7 +1638,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
         dlInfo <-
           preview (ix GHC % ix (tver ^. tvVersion) % viSourceDL % _Just) dls
             ?? NoDownload
-        dl        <- liftE $ downloadCached settings dirs dlInfo Nothing
+        dl <- liftE $ downloadCached dlInfo Nothing
 
         -- unpack
         tmpUnpack <- lift mkGhcupTmpDir
@@ -1931,7 +1923,6 @@ upgradeGHCup :: ( MonadMask m
 upgradeGHCup mtarget force' = do
   Dirs {..} <- lift getDirs
   pfreq <- lift getPlatformReq
-  settings <- lift getSettings
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
   lift $ $(logInfo) [i|Upgrading GHCup...|]
@@ -1940,7 +1931,7 @@ upgradeGHCup mtarget force' = do
   dli   <- lE $ getDownloadInfo GHCup latestVer pfreq dls
   tmp   <- lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt
-  p <- liftE $ download settings dli tmp (Just fn)
+  p <- liftE $ download dli tmp (Just fn)
   let destDir = takeDirectory destFile
       destFile = fromMaybe (binDir </> fn <> exeExt) mtarget
   lift $ $(logDebug) [i|mkdir -p #{destDir}|]

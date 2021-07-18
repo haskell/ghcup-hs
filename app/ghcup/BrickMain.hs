@@ -13,7 +13,7 @@ module BrickMain where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
-import           GHCup.Types
+import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
 import           GHCup.Utils.Prelude ( decUTF8Safe )
 import           GHCup.Utils.File
@@ -52,8 +52,6 @@ import           System.Exit
 import           System.IO.Unsafe
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           URI.ByteString
-
-import qualified GHCup.Types                   as GT
 
 import qualified Data.Text                     as T
 import qualified Graphics.Vty                  as Vty
@@ -550,13 +548,14 @@ changelog' _ (_, ListResult {..}) = do
 settings' :: IORef AppState
 {-# NOINLINE settings' #-}
 settings' = unsafePerformIO $ do
-  dirs <- getDirs
+  dirs <- getAllDirs
   newIORef $ AppState (Settings { cache      = True
                                 , noVerify   = False
                                 , keepDirs   = Never
                                 , downloader = Curl
                                 , verbose    = False
                                 , urlSource  = GHCupURL
+                                , noNetwork  = False
                                 , ..
                                 })
                       dirs
@@ -578,9 +577,8 @@ logger' = unsafePerformIO
 
 brickMain :: AppState
           -> LoggerConfig
-          -> GHCupInfo
           -> IO ()
-brickMain s l gi = do
+brickMain s l = do
   writeIORef settings' s
   -- logger interpreter
   writeIORef logger'   l
@@ -588,7 +586,7 @@ brickMain s l gi = do
 
   no_color <- isJust <$> lookupEnv "NO_COLOR"
 
-  eAppData <- getAppData (Just gi)
+  eAppData <- getAppData (Just $ ghcupInfo s)
   case eAppData of
     Right ad ->
       defaultMain
@@ -596,7 +594,7 @@ brickMain s l gi = do
           (BrickState ad
                     defaultAppSettings
                     (constructList ad defaultAppSettings Nothing)
-                    (keyBindings s)
+                    (keyBindings (s :: AppState))
 
           )
         $> ()
@@ -620,7 +618,7 @@ getGHCupInfo = do
     . flip runReaderT settings
     . runE @'[JSONError , DownloadFailed , FileDoesNotExistError]
     $ liftE
-    $ getDownloadsF (GT.settings settings) (GT.dirs settings)
+    $ getDownloadsF
 
   case r of
     VRight a -> pure $ Right a
