@@ -191,6 +191,15 @@ ghcupLogsDir = do
 #endif
 
 
+-- | Defaults to '~/.ghcup/tmp.
+--
+-- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_DATA_HOME/ghcup/tmp' as per xdg spec.
+ghcupTmpDir :: IO FilePath
+ghcupTmpDir = ghcupBaseDir <&> (</> "tmp")
+
+
+
 getAllDirs :: IO Dirs
 getAllDirs = do
   baseDir  <- ghcupBaseDir
@@ -198,6 +207,7 @@ getAllDirs = do
   cacheDir <- ghcupCacheDir
   logsDir  <- ghcupLogsDir
   confDir  <- ghcupConfigDir
+  tmpDir   <- ghcupTmpDir
   pure Dirs { .. }
 
 

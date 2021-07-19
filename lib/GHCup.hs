@@ -77,6 +77,9 @@ import           System.Directory        hiding ( findFiles )
 import           System.Environment
 import           System.FilePath
 import           System.IO.Error
+#if defined(IS_WINDOWS)
+import           System.IO.Temp
+#endif
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 
@@ -249,6 +252,22 @@ installPackedGHC :: ( MonadMask m
 #endif
                        ] m ()
 installPackedGHC dl msubdir inst ver = do
+#if defined(IS_WINDOWS)
+  lift $ $(logInfo) "Installing GHC (this may take a while)"
+
+  Dirs { tmpDir } <- lift getDirs
+  unpackDir <- liftIO $ emptyTempFile tmpDir "ghc"
+  liftIO $ rmFile unpackDir
+
+  liftE $ unpackToDir unpackDir dl
+
+  d <- case msubdir of
+    Just td -> liftE $ intoSubdir unpackDir td
+    Nothing -> pure unpackDir
+
+  liftIO $ Win32.moveFileEx d (Just inst) 0
+  liftIO $ rmPath unpackDir
+#else
   PlatformRequest {..} <- lift getPlatformReq
 
   -- unpack
@@ -264,6 +283,7 @@ installPackedGHC dl msubdir inst ver = do
   liftE $ runBuildAction tmpUnpack
                          (Just inst)
                          (installUnpackedGHC workdir inst ver)
+#endif
 
 
 -- | Install an unpacked GHC distribution. This only deals with the GHC
@@ -280,13 +300,6 @@ installUnpackedGHC :: ( MonadReader env m
                    -> FilePath      -- ^ Path to install to
                    -> Version       -- ^ The GHC version
                    -> Excepts '[ProcessError] m ()
-#if defined(IS_WINDOWS)
-installUnpackedGHC path inst _ = do
-  lift $ $(logInfo) "Installing GHC (this may take a while)"
-  -- windows bindists are relocatable and don't need
-  -- to run configure
-  liftIO $ copyDirectoryRecursive path inst
-#else
 installUnpackedGHC path inst ver = do
   PlatformRequest {..} <- lift getPlatformReq
 
@@ -309,7 +322,6 @@ installUnpackedGHC path inst ver = do
                    Nothing
   lEM $ make ["install"] (Just path)
   pure ()
-#endif
 
 
 -- | Installs GHC into @~\/.ghcup\/ghc/\<ver\>@ and places the
@@ -1495,6 +1507,7 @@ rmGhcupDirs = do
     , binDir
     , logsDir
     , cacheDir
+    , tmpDir
     } <- getDirs
 
   let envFilePath = baseDir </> "env"
@@ -1506,6 +1519,7 @@ rmGhcupDirs = do
   rmDir cacheDir
   rmDir logsDir
   rmBinDir   binDir
+  rmDir tmpDir
 #if defined(IS_WINDOWS)
   rmDir (baseDir </> "msys64")
 #endif
