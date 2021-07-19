@@ -26,11 +26,6 @@ git describe --always
 
 ecabal update
 
-(
-	cd /tmp
-	ecabal install -w ghc-${GHC_VERSION} --installdir="$CI_PROJECT_DIR"/.local/bin hspec-discover
-)
-
 if [ "${OS}" = "DARWIN" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} -ftui
 	ecabal test -w ghc-${GHC_VERSION} -ftui ghcup-test
@@ -83,10 +78,10 @@ ghcup-gen check -f ghcup-${JSON_VERSION}.yaml
 
 eghcup --numeric-version
 
-eghcup install ${GHC_VERSION}
+eghcup install ghc ${GHC_VERSION}
 [ `$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version` = "${GHC_VERSION}" ]
-eghcup set ${GHC_VERSION}
-eghcup install-cabal ${CABAL_VERSION}
+eghcup set ghc ${GHC_VERSION}
+eghcup install cabal ${CABAL_VERSION}
 [ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
 
 cabal --version
@@ -112,17 +107,19 @@ else
 	# test installing new ghc doesn't mess with currently set GHC
 	# https://gitlab.haskell.org/haskell/ghcup-hs/issues/7
 	if [ "${OS}" = "LINUX" ] ; then
-		eghcup --downloader=wget install 8.10.3
+		eghcup --downloader=wget prefetch ghc 8.10.3
+		eghcup --offline install ghc 8.10.3
 	else # test wget a bit
-		eghcup install 8.10.3
+		eghcup prefetch ghc 8.10.3
+		eghcup --offline install ghc 8.10.3
 	fi
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
-	eghcup set 8.10.3
+	eghcup --offline set 8.10.3
 	eghcup set 8.10.3
 	[ "$(ghc --numeric-version)" = "8.10.3" ]
 	eghcup set ${GHC_VERSION}
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
-	eghcup rm 8.10.3
+	eghcup --offline rm 8.10.3
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 
 	if [ "${OS}" = "DARWIN" ] ; then

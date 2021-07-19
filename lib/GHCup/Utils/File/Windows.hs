@@ -19,6 +19,7 @@ import {-# SOURCE #-} GHCup.Utils ( getLinkTarget, pathIsLink )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.File.Common
 import           GHCup.Types
+import           GHCup.Types.Optics
 
 import           Control.Concurrent
 import           Control.DeepSeq
@@ -146,7 +147,11 @@ executeOut path args chdir = do
   pure $ CapturedProcess exit out err
 
 
-execLogged :: (MonadReader AppState m, MonadIO m, MonadThrow m)
+execLogged :: ( MonadReader env m
+              , HasDirs env
+              , HasSettings env
+              , MonadIO m
+              , MonadThrow m)
            => FilePath         -- ^ thing to execute
            -> [String]         -- ^ args for the thing
            -> Maybe FilePath   -- ^ optionally chdir into this
@@ -154,7 +159,7 @@ execLogged :: (MonadReader AppState m, MonadIO m, MonadThrow m)
            -> Maybe [(String, String)] -- ^ optional environment
            -> m (Either ProcessError ())
 execLogged exe args chdir lfile env = do
-  AppState { dirs = Dirs {..} } <- ask
+  Dirs {..} <- getDirs
   let stdoutLogfile = logsDir </> lfile <> ".stdout.log"
       stderrLogfile = logsDir </> lfile <> ".stderr.log"
   cp <- createProcessWithMingwPath ((proc exe args)

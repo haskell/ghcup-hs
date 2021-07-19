@@ -16,7 +16,7 @@ Stability   : experimental
 Portability : portable
 -}
 module GHCup.Utils.Dirs
-  ( getDirs
+  ( getAllDirs
   , ghcupBaseDir
   , ghcupConfigFile
   , ghcupCacheDir
@@ -37,6 +37,7 @@ where
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
+import           GHCup.Types.Optics
 import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 
@@ -190,8 +191,8 @@ ghcupLogsDir = do
 #endif
 
 
-getDirs :: IO Dirs
-getDirs = do
+getAllDirs :: IO Dirs
+getAllDirs = do
   baseDir  <- ghcupBaseDir
   binDir   <- ghcupBinDir
   cacheDir <- ghcupCacheDir
@@ -226,9 +227,9 @@ ghcupConfigFile = do
 
 
 -- | ~/.ghcup/ghc by default.
-ghcupGHCBaseDir :: (MonadReader AppState m) => m FilePath
+ghcupGHCBaseDir :: (MonadReader env m, HasDirs env) => m FilePath
 ghcupGHCBaseDir = do
-  AppState { dirs = Dirs {..} } <- ask
+  Dirs {..}  <- getDirs
   pure (baseDir </> "ghc")
 
 
@@ -236,7 +237,7 @@ ghcupGHCBaseDir = do
 -- The dir may be of the form
 --   * armv7-unknown-linux-gnueabihf-8.8.3
 --   * 8.8.4
-ghcupGHCDir :: (MonadReader AppState m, MonadThrow m)
+ghcupGHCDir :: (MonadReader env m, HasDirs env, MonadThrow m)
             => GHCTargetVersion
             -> m FilePath
 ghcupGHCDir ver = do

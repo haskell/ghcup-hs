@@ -233,6 +233,13 @@ instance Pretty NoToolVersionSet where
   pPrint (NoToolVersionSet tool) =
     text [i|No version is set for tool "#{tool}".|]
 
+data NoNetwork = NoNetwork
+  deriving Show
+
+instance Pretty NoNetwork where
+  pPrint NoNetwork =
+    text [i|A download was required or requested, but '--offline' was specified.|]
+
 
     -------------------------
     --[ High-level errors ]--

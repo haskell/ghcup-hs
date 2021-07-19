@@ -1,4 +1,9 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE AllowAmbiguousTypes   #-}
 
 {-|
 Module      : GHCup.Types.Optics
@@ -13,6 +18,7 @@ module GHCup.Types.Optics where
 
 import           GHCup.Types
 
+import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
 import           Optics
 import           URI.ByteString
@@ -58,3 +64,82 @@ pathL' = lensVL pathL
 
 queryL' :: Lens' (URIRef a) Query
 queryL' = lensVL queryL
+
+
+
+    ----------------------
+    --[ Lens utilities ]--
+    ----------------------
+
+
+gets :: forall f a env m . (MonadReader env m, LabelOptic' f A_Lens env a)
+     => m a
+gets = asks (^. labelOptic @f)
+
+
+getAppState :: MonadReader AppState m => m AppState
+getAppState = ask
+
+
+getLeanAppState :: ( MonadReader env m
+                   , LabelOptic' "settings"    A_Lens env Settings
+                   , LabelOptic' "dirs"        A_Lens env Dirs
+                   , LabelOptic' "keyBindings" A_Lens env KeyBindings
+                   )
+                => m LeanAppState
+getLeanAppState = do
+  s <- gets @"settings"
+  d <- gets @"dirs"
+  k <- gets @"keyBindings"
+  pure (LeanAppState s d k)
+
+
+getSettings :: ( MonadReader env m
+               , LabelOptic' "settings" A_Lens env Settings
+               )
+            => m Settings
+getSettings = gets @"settings"
+
+
+getDirs :: ( MonadReader env m
+           , LabelOptic' "dirs" A_Lens env Dirs
+           )
+        => m Dirs
+getDirs = gets @"dirs"
+
+
+getKeyBindings :: ( MonadReader env m
+                  , LabelOptic' "keyBindings" A_Lens env KeyBindings
+                  )
+               => m KeyBindings
+getKeyBindings = gets @"keyBindings"
+
+
+getGHCupInfo :: ( MonadReader env m
+                , LabelOptic' "ghcupInfo" A_Lens env GHCupInfo
+                )
+             => m GHCupInfo
+getGHCupInfo = gets @"ghcupInfo"
+
+
+getPlatformReq :: ( MonadReader env m
+                  , LabelOptic' "pfreq" A_Lens env PlatformRequest
+                  )
+               => m PlatformRequest
+getPlatformReq = gets @"pfreq"
+
+
+type HasSettings env = (LabelOptic' "settings" A_Lens env Settings)
+type HasDirs env = (LabelOptic' "dirs" A_Lens env Dirs)
+type HasKeyBindings env = (LabelOptic' "keyBindings" A_Lens env KeyBindings)
+type HasGHCupInfo env = (LabelOptic' "ghcupInfo" A_Lens env GHCupInfo)
+type HasPlatformReq env = (LabelOptic' "pfreq" A_Lens env PlatformRequest)
+
+
+getCache :: (MonadReader env m, HasSettings env) => m Bool
+getCache = getSettings <&> cache
+
+
+getDownloader :: (MonadReader env m, HasSettings env) => m Downloader
+getDownloader = getSettings <&> downloader
+

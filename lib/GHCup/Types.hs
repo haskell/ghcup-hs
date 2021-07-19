@@ -1,9 +1,12 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE BangPatterns      #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 {-|
 Module      : GHCup.Types
@@ -294,11 +297,12 @@ data UserSettings = UserSettings
   , uDownloader  :: Maybe Downloader
   , uKeyBindings :: Maybe UserKeyBindings
   , uUrlSource   :: Maybe URLSource
+  , uNoNetwork   :: Maybe Bool
   }
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 data UserKeyBindings = UserKeyBindings
   { kUp        :: Maybe Key
@@ -346,11 +350,20 @@ data AppState = AppState
   { settings :: Settings
   , dirs :: Dirs
   , keyBindings :: KeyBindings
-  , ghcupInfo :: ~GHCupInfo
-  , pfreq :: ~PlatformRequest
+  , ghcupInfo :: GHCupInfo
+  , pfreq :: PlatformRequest
   } deriving (Show, GHC.Generic)
 
 instance NFData AppState
+
+data LeanAppState = LeanAppState
+  { settings :: Settings
+  , dirs :: Dirs
+  , keyBindings :: KeyBindings
+  } deriving (Show, GHC.Generic)
+
+instance NFData LeanAppState
+
 
 data Settings = Settings
   { cache      :: Bool
@@ -359,6 +372,7 @@ data Settings = Settings
   , downloader :: Downloader
   , verbose    :: Bool
   , urlSource  :: URLSource
+  , noNetwork  :: Bool
   }
   deriving (Show, GHC.Generic)
 
@@ -506,5 +520,4 @@ instance (Monad m, Alternative m) => Alternative (LoggingT m) where
 
 instance MonadLogger m => MonadLogger (Excepts e m) where
   monadLoggerLog a b c d = Trans.lift $ monadLoggerLog a b c d
-
 

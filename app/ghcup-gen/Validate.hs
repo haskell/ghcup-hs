@@ -12,7 +12,7 @@ import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Platform
-import           GHCup.Types
+import           GHCup.Types                  hiding ( LeanAppState (..) )
 import           GHCup.Types.Optics
 import           GHCup.Utils
 import           GHCup.Utils.Logger
@@ -226,7 +226,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
                                      , rawOutter    = \_ -> pure ()
                                      }
   downloadAll dli = do
-    dirs <- liftIO getDirs
+    dirs <- liftIO getAllDirs
 
     pfreq <- (
       runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest
@@ -237,7 +237,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
                   ($(logError) $ T.pack $ prettyShow e)
                 liftIO $ exitWith (ExitFailure 2)
 
-    let appstate = AppState (Settings True False Never Curl False GHCupURL) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq
+    let appstate = AppState (Settings True False Never Curl False GHCupURL False) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq
 
     r <-
       runLogger
@@ -256,17 +256,17 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
         case etool of
           Right (Just GHCup) -> do
             tmpUnpack <- lift mkGhcupTmpDir
-            _ <- liftE $ download (settings appstate) dli tmpUnpack Nothing
+            _ <- liftE $ download dli tmpUnpack Nothing
             pure Nothing
           Right _ -> do
-            p <- liftE $ downloadCached (settings appstate) dirs dli Nothing
+            p <- liftE $ downloadCached dli Nothing
             fmap (Just . head . splitDirectories . head)
               . liftE
               . getArchiveFiles
               $ p
           Left ShimGen -> do
             tmpUnpack <- lift mkGhcupTmpDir
-            _ <- liftE $ download (settings appstate) dli tmpUnpack Nothing
+            _ <- liftE $ download dli tmpUnpack Nothing
             pure Nothing
     case r of
       VRight (Just basePath) -> do
