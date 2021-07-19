@@ -107,17 +107,19 @@ else
 	# test installing new ghc doesn't mess with currently set GHC
 	# https://gitlab.haskell.org/haskell/ghcup-hs/issues/7
 	if [ "${OS}" = "LINUX" ] ; then
-		eghcup --downloader=wget install 8.10.3
+		eghcup --downloader=wget prefetch ghc 8.10.3
+		eghcup --offline install ghc 8.10.3
 	else # test wget a bit
-		eghcup install 8.10.3
+		eghcup prefetch ghc 8.10.3
+		eghcup --offline install ghc 8.10.3
 	fi
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
-	eghcup set 8.10.3
+	eghcup --offline set 8.10.3
 	eghcup set 8.10.3
 	[ "$(ghc --numeric-version)" = "8.10.3" ]
 	eghcup set ${GHC_VERSION}
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
-	eghcup rm 8.10.3
+	eghcup --offline rm 8.10.3
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 
 	if [ "${OS}" = "DARWIN" ] ; then

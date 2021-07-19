@@ -299,39 +299,46 @@ getBase uri = do
     setModificationTime path utctime
 
 
-getDownloadInfo :: Tool
+getDownloadInfo :: ( MonadReader env m
+                   , HasPlatformReq env
+                   , HasGHCupInfo env
+                   )
+                => Tool
                 -> Version
                 -- ^ tool version
-                -> PlatformRequest
-                -> GHCupDownloads
-                -> Either NoDownload DownloadInfo
-getDownloadInfo t v (PlatformRequest a p mv) dls = maybe
-  (Left NoDownload)
-  Right
-  (case p of
-    -- non-musl won't work on alpine
-    Linux Alpine -> with_distro <|> without_distro_ver
-    _            -> with_distro <|> without_distro_ver <|> without_distro
-  )
+                -> Excepts
+                     '[NoDownload]
+                     m
+                     DownloadInfo
+getDownloadInfo t v = do
+  (PlatformRequest a p mv) <- lift getPlatformReq
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
- where
-  with_distro        = distro_preview id id
-  without_distro_ver = distro_preview id (const Nothing)
-  without_distro     = distro_preview (set _Linux UnknownLinux) (const Nothing)
+  let distro_preview f g =
+        let platformVersionSpec =
+              preview (ix t % ix v % viArch % ix a % ix (f p)) dls
+            mv' = g mv
+        in  fmap snd
+              .   find
+                    (\(mverRange, _) -> maybe
+                      (isNothing mv')
+                      (\range -> maybe False (`versionRange` range) mv')
+                      mverRange
+                    )
+              .   M.toList
+              =<< platformVersionSpec
+      with_distro        = distro_preview id id
+      without_distro_ver = distro_preview id (const Nothing)
+      without_distro     = distro_preview (set _Linux UnknownLinux) (const Nothing)
 
-  distro_preview f g =
-    let platformVersionSpec =
-          preview (ix t % ix v % viArch % ix a % ix (f p)) dls
-        mv' = g mv
-    in  fmap snd
-          .   find
-                (\(mverRange, _) -> maybe
-                  (isNothing mv')
-                  (\range -> maybe False (`versionRange` range) mv')
-                  mverRange
-                )
-          .   M.toList
-          =<< platformVersionSpec
+  maybe
+    (throwE NoDownload)
+    pure
+    (case p of
+      -- non-musl won't work on alpine
+      Linux Alpine -> with_distro <|> without_distro_ver
+      _            -> with_distro <|> without_distro_ver <|> without_distro
+    )
 
 
 -- | Tries to download from the given http or https url
@@ -431,7 +438,7 @@ downloadCached :: ( MonadReader env m
 downloadCached dli mfn = do
   Settings{ cache } <- lift getSettings
   case cache of
-    True -> downloadCached' dli mfn
+    True -> downloadCached' dli mfn Nothing
     False -> do
       tmp <- lift withGHCupTmpDir
       liftE $ download dli tmp mfn
@@ -448,17 +455,19 @@ downloadCached' :: ( MonadReader env m
                    )
                 => DownloadInfo
                 -> Maybe FilePath  -- ^ optional filename
+                -> Maybe FilePath  -- ^ optional destination dir (default: cacheDir)
                 -> Excepts '[DigestError , DownloadFailed] m FilePath
-downloadCached' dli mfn = do
+downloadCached' dli mfn mDestDir = do
   Dirs { cacheDir } <- lift getDirs
+  let destDir = fromMaybe cacheDir mDestDir
   let fn = fromMaybe ((T.unpack . decUTF8Safe) $ urlBaseName $ view (dlUri % pathL') dli) mfn
-  let cachfile = cacheDir </> fn
+  let cachfile = destDir </> fn
   fileExists <- liftIO $ doesFileExist cachfile
   if
     | fileExists -> do
       liftE $ checkDigest dli cachfile
       pure cachfile
-    | otherwise -> liftE $ download dli cacheDir mfn
+    | otherwise -> liftE $ download dli destDir mfn
 
 
 

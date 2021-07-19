@@ -95,6 +95,69 @@ import GHCup.Utils.MegaParsec
 import Control.Concurrent (threadDelay)
 
 
+    ---------------------
+    --[ Tool fetching ]--
+    ---------------------
+
+
+fetchToolBindist :: ( MonadFail m
+                    , MonadMask m
+                    , MonadCatch m
+                    , MonadReader env m
+                    , HasDirs env
+                    , HasSettings env
+                    , HasPlatformReq env
+                    , HasGHCupInfo env
+                    , MonadLogger m
+                    , MonadResource m
+                    , MonadIO m
+                    , MonadUnliftIO m
+                    )
+                 => Version
+                 -> Tool
+                 -> Maybe FilePath
+                 -> Excepts
+                      '[ DigestError
+                       , DownloadFailed
+                       , NoDownload
+                       ]
+                      m
+                      FilePath
+fetchToolBindist v t mfp = do
+  dlinfo <- liftE $ getDownloadInfo t v
+  liftE $ downloadCached' dlinfo Nothing mfp
+
+
+fetchGHCSrc :: ( MonadFail m
+               , MonadMask m
+               , MonadCatch m
+               , MonadReader env m
+               , HasDirs env
+               , HasSettings env
+               , HasPlatformReq env
+               , HasGHCupInfo env
+               , MonadLogger m
+               , MonadResource m
+               , MonadIO m
+               , MonadUnliftIO m
+               )
+            => Version
+            -> Maybe FilePath
+            -> Excepts
+                 '[ DigestError
+                  , DownloadFailed
+                  , NoDownload
+                  ]
+                 m
+                 FilePath
+fetchGHCSrc v mfp = do
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  dlInfo <-
+    preview (ix GHC % ix v % viSourceDL % _Just) dls
+      ?? NoDownload
+  liftE $ downloadCached' dlInfo Nothing mfp
+
+
 
     -------------------------
     --[ Tool installation ]--
@@ -284,9 +347,7 @@ installGHCBin :: ( MonadFail m
                    m
                    ()
 installGHCBin ver = do
-  pfreq <- lift getPlatformReq
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  dlinfo <- lE $ getDownloadInfo GHC ver pfreq dls
+  dlinfo <- liftE $ getDownloadInfo GHC ver
   installGHCBindist dlinfo ver
 
 
@@ -405,10 +466,7 @@ installCabalBin :: ( MonadMask m
                      m
                      ()
 installCabalBin ver = do
-  pfreq <- lift getPlatformReq
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-
-  dlinfo <- lE $ getDownloadInfo Cabal ver pfreq dls
+  dlinfo <- liftE $ getDownloadInfo Cabal ver
   installCabalBindist dlinfo ver
 
 
@@ -536,10 +594,7 @@ installHLSBin :: ( MonadMask m
                    m
                    ()
 installHLSBin ver = do
-  pfreq <- lift getPlatformReq
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-
-  dlinfo <- lE $ getDownloadInfo HLS ver pfreq dls
+  dlinfo <- liftE $ getDownloadInfo HLS ver
   installHLSBindist dlinfo ver
 
 
@@ -576,10 +631,7 @@ installStackBin :: ( MonadMask m
                      m
                      ()
 installStackBin ver = do
-  pfreq <- lift getPlatformReq
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-
-  dlinfo <- lE $ getDownloadInfo Stack ver pfreq dls
+  dlinfo <- liftE $ getDownloadInfo Stack ver
   installStackBindist dlinfo ver
 
 
@@ -1128,12 +1180,9 @@ listVersions lt' criteria = do
                -> (Version, [Tag])
                -> m ListResult
   toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, tags) = do
-    pfreq <- getPlatformReq
-    GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
-
     case t of
       GHC -> do
-        let lNoBindist = isLeft $ getDownloadInfo GHC v pfreq dls
+        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo GHC v
         let tver = mkTVer v
         lSet       <- fmap (maybe False (\(GHCTargetVersion _ v') -> v' == v)) $ ghcSet Nothing
         lInstalled <- ghcInstalled tver
@@ -1141,7 +1190,7 @@ listVersions lt' criteria = do
         hlsPowered <- fmap (elem v) hlsGHCVersions
         pure ListResult { lVer = v, lCross = Nothing , lTag = tags, lTool = t, lStray = False, .. }
       Cabal -> do
-        let lNoBindist = isLeft $ getDownloadInfo Cabal v pfreq dls
+        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo Cabal v
         let lSet = cSet == Just v
         let lInstalled = elem v $ rights cabals
         pure ListResult { lVer    = v
@@ -1167,7 +1216,7 @@ listVersions lt' criteria = do
                         , ..
                         }
       HLS -> do
-        let lNoBindist = isLeft $ getDownloadInfo HLS v pfreq dls
+        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo HLS v
         let lSet = hlsSet' == Just v
         let lInstalled = elem v $ rights hlses
         pure ListResult { lVer    = v
@@ -1180,7 +1229,7 @@ listVersions lt' criteria = do
                         , ..
                         }
       Stack -> do
-        let lNoBindist = isLeft $ getDownloadInfo Stack v pfreq dls
+        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo Stack v
         let lSet = stackSet' == Just v
         let lInstalled = elem v $ rights stacks
         pure ListResult { lVer    = v
@@ -1922,13 +1971,12 @@ upgradeGHCup :: ( MonadMask m
                   Version
 upgradeGHCup mtarget force' = do
   Dirs {..} <- lift getDirs
-  pfreq <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
   lift $ $(logInfo) [i|Upgrading GHCup...|]
   let latestVer = fromJust $ fst <$> getLatest dls GHCup
   when (not force' && (latestVer <= pvpToVersion ghcUpVer)) $ throwE NoUpdate
-  dli   <- lE $ getDownloadInfo GHCup latestVer pfreq dls
+  dli   <- liftE $ getDownloadInfo GHCup latestVer
   tmp   <- lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt
   p <- liftE $ download dli tmp (Just fn)

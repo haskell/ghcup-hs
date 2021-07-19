@@ -112,6 +112,7 @@ data Command
 #if defined(BRICK)
   | Interactive
 #endif
+  | Prefetch PrefetchCommand
 
 data ToolVersion = ToolVersion GHCTargetVersion -- target is ignored for cabal
                  | ToolTag Tag
@@ -199,6 +200,21 @@ data WhereisCommand = WhereisTool Tool (Maybe ToolVersion)
 
 data WhereisOptions = WhereisOptions {
    directory :: Bool
+}
+
+data PrefetchOptions = PrefetchOptions {
+  pfCacheDir :: Maybe FilePath
+}
+
+data PrefetchCommand = PrefetchGHC PrefetchGHCOptions (Maybe ToolVersion)
+                     | PrefetchCabal PrefetchOptions (Maybe ToolVersion)
+                     | PrefetchHLS PrefetchOptions (Maybe ToolVersion)
+                     | PrefetchStack PrefetchOptions (Maybe ToolVersion)
+                     | PrefetchMetadata
+
+data PrefetchGHCOptions = PrefetchGHCOptions {
+    pfGHCSrc :: Bool
+  , pfGHCCacheDir :: Maybe FilePath
 }
 
 
@@ -359,6 +375,16 @@ com =
              (progDesc "Find a tools location"
              <> footerDoc ( Just $ text whereisFooter ))
            )
+      <> command
+           "prefetch"
+            (info
+             (   (Prefetch
+                     <$> prefetchP
+                 ) <**> helper
+             )
+             (progDesc "Prefetch assets"
+             <> footerDoc ( Just $ text prefetchFooter ))
+           )
       <> commandGroup "Main commands:"
       )
     <|> subparser
@@ -441,6 +467,17 @@ Examples:
   ghcup whereis cabal 3.4.0.0
   # outputs ~/.ghcup/bin/
   ghcup whereis --directory cabal 3.4.0.0|]
+
+  prefetchFooter :: String
+  prefetchFooter = [s|Discussion:
+  Prefetches tools or assets into "~/.ghcup/cache" directory. This can
+  be then combined later with '--offline' flag, ensuring all assets that
+  are required for offline use have been prefetched.
+
+Examples:
+  ghcup prefetch metadata
+  ghcup prefetch ghc 8.10.5
+  ghcup --offline install ghc 8.10.5|]
 
 
 installCabalFooter :: String
@@ -825,6 +862,55 @@ Examples:
   ghcup whereis stack 2.7.1
   # outputs ~/.ghcup/bin/
   ghcup whereis --directory stack 2.7.1|]
+
+
+prefetchP :: Parser PrefetchCommand
+prefetchP = subparser
+  (  command
+      "ghc"
+      (info 
+        (PrefetchGHC
+          <$> (PrefetchGHCOptions
+                <$> ( switch (short 's' <> long "source" <> help "Download source tarball instead of bindist") <**> helper )
+                <*> optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)")))
+          <*> ( optional (toolVersionArgument Nothing (Just GHC)) ))
+        ( progDesc "Download GHC assets for installation")
+      )
+      <>
+     command
+      "cabal"
+      (info 
+        (PrefetchCabal
+          <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)")))
+          <*> ( optional (toolVersionArgument Nothing (Just Cabal)) <**> helper ))
+        ( progDesc "Download cabal assets for installation")
+      )
+      <>
+     command
+      "hls"
+      (info 
+        (PrefetchHLS
+          <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)")))
+          <*> ( optional (toolVersionArgument Nothing (Just HLS)) <**> helper ))
+        ( progDesc "Download HLS assets for installation")
+      )
+      <>
+     command
+      "stack"
+      (info 
+        (PrefetchStack
+          <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)")))
+          <*> ( optional (toolVersionArgument Nothing (Just Stack)) <**> helper ))
+        ( progDesc "Download stack assets for installation")
+      )
+      <>
+     command
+      "metadata"
+      (const PrefetchMetadata <$> info
+        helper
+        ( progDesc "Download ghcup's metadata, needed for various operations")
+      )
+  )
 
 
 ghcCompileOpts :: Parser GHCCompileOptions
@@ -1478,6 +1564,21 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , DownloadFailed
                       ]
 
+          let runPrefetch =
+                runLogger
+                  . runAppState
+                  . runResourceT
+                  . runE
+                    @'[ TagNotFound
+                      , NextVerNotFound
+                      , NoToolVersionSet
+                      , NoDownload
+                      , DigestError
+                      , DownloadFailed
+                      , JSONError
+                      , FileDoesNotExistError
+                      ]
+
 
           -----------------------
           -- Command functions --
@@ -1991,6 +2092,37 @@ Make sure to clean up #{tmpdir} afterwards.|])
                                   forM_ leftOverFiles putStrLn
                                   pure ExitSuccess
 
+                            VLeft e -> do
+                              runLogger $ $(logError) $ T.pack $ prettyShow e
+                              pure $ ExitFailure 15
+            Prefetch pfCom ->
+              runPrefetch (do
+                case pfCom of
+                  PrefetchGHC
+                    (PrefetchGHCOptions pfGHCSrc pfCacheDir) mt -> do
+                      forM_ pfCacheDir (liftIO . createDirRecursive')
+                      (v, _) <- liftE $ fromVersion mt GHC
+                      if pfGHCSrc
+                      then liftE $ fetchGHCSrc (_tvVersion v) pfCacheDir
+                      else liftE $ fetchToolBindist (_tvVersion v) GHC pfCacheDir
+                  PrefetchCabal (PrefetchOptions {pfCacheDir}) mt   -> do
+                    forM_ pfCacheDir (liftIO . createDirRecursive')
+                    (v, _) <- liftE $ fromVersion mt Cabal
+                    liftE $ fetchToolBindist (_tvVersion v) Cabal pfCacheDir
+                  PrefetchHLS (PrefetchOptions {pfCacheDir}) mt   -> do
+                    forM_ pfCacheDir (liftIO . createDirRecursive')
+                    (v, _) <- liftE $ fromVersion mt HLS
+                    liftE $ fetchToolBindist (_tvVersion v) HLS pfCacheDir
+                  PrefetchStack (PrefetchOptions {pfCacheDir}) mt   -> do
+                    forM_ pfCacheDir (liftIO . createDirRecursive')
+                    (v, _) <- liftE $ fromVersion mt Stack
+                    liftE $ fetchToolBindist (_tvVersion v) Stack pfCacheDir
+                  PrefetchMetadata -> do
+                    _ <- liftE $ getDownloadsF
+                    pure ""
+                   ) >>= \case
+                            VRight _ -> do
+                                  pure ExitSuccess
                             VLeft e -> do
                               runLogger $ $(logError) $ T.pack $ prettyShow e
                               pure $ ExitFailure 15
