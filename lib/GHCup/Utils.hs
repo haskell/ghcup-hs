@@ -1071,7 +1071,7 @@ ensureGlobalTools = do
   dirs <- lift getDirs
   shimDownload <- liftE $ lE @_ @'[NoDownload]
     $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
-  let dl = downloadCached' shimDownload (Just "gs.exe")
+  let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
   void $ (\(DigestError _ _) -> do
       lift $ $(logWarn) [i|Digest doesn't match, redownloading gs.exe...|]
       lift $ $(logDebug) [i|rm -f #{shimDownload}|]
