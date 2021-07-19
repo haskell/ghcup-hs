@@ -1533,7 +1533,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           let
             runLeanWhereIs =
               runLogger
-                . runLeanAppState
+                -- Don't use runLeanAppState here, which is disabled on windows.
+                -- This is the only command on all platforms that doesn't need full appstate.
+                . flip runReaderT leanAppstate
                 . runE
                   @'[ NotInstalled
                     , NoToolVersionSet
