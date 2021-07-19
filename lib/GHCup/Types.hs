@@ -384,6 +384,7 @@ data Dirs = Dirs
   , cacheDir :: FilePath
   , logsDir  :: FilePath
   , confDir  :: FilePath
+  , tmpDir   :: FilePath
   }
   deriving (Show, GHC.Generic)
 

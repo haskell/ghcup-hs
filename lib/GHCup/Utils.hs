@@ -1086,19 +1086,14 @@ ensureGlobalTools = do
 
 -- | Ensure ghcup directory structure exists.
 ensureDirectories :: Dirs -> IO ()
-ensureDirectories dirs = do
-  let Dirs
-        { baseDir
-        , binDir
-        , cacheDir
-        , logsDir
-        , confDir
-        } = dirs
+ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir tmpDir) = do
   createDirRecursive' baseDir
+  createDirRecursive' (baseDir </> "ghc")
   createDirRecursive' binDir
   createDirRecursive' cacheDir
   createDirRecursive' logsDir
   createDirRecursive' confDir
+  createDirRecursive' tmpDir
   pure ()
 
 
