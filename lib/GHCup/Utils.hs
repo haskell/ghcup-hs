@@ -78,6 +78,7 @@ import           System.Win32.Console
 import           System.Win32.File     hiding ( copyFile )
 import           System.Win32.Types
 #endif
+import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           Text.Regex.Posix
 import           URI.ByteString
 
@@ -882,7 +883,7 @@ getChangeLog dls tool (Right tag) =
 --
 --   1. the build directory, depending on the KeepDirs setting
 --   2. the install destination, depending on whether the build failed
-runBuildAction :: (Show (V e), MonadReader env m, HasDirs env, HasSettings env, MonadIO m, MonadMask m)
+runBuildAction :: (Pretty (V e), Show (V e), MonadReader env m, HasDirs env, HasSettings env, MonadIO m, MonadMask m)
                => FilePath          -- ^ build directory (cleaned up depending on Settings)
                -> Maybe FilePath  -- ^ dir to *always* clean up on exception
                -> Excepts e m a

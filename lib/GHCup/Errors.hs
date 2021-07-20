@@ -31,8 +31,8 @@ import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           Haskus.Utils.Variant
-import           Text.PrettyPrint
-import           Text.PrettyPrint.HughesPJClass
+import           Text.PrettyPrint               hiding ( (<>) )
+import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           URI.ByteString
 
 
@@ -240,6 +240,13 @@ instance Pretty NoNetwork where
   pPrint NoNetwork =
     text [i|A download was required or requested, but '--offline' was specified.|]
 
+data HadrianNotFound = HadrianNotFound
+  deriving Show
+
+instance Pretty HadrianNotFound where
+  pPrint HadrianNotFound =
+    text [i|Could not find Hadrian build files. Does this GHC version support Hadrian builds?|]
+
 
     -------------------------
     --[ High-level errors ]--
@@ -256,11 +263,11 @@ deriving instance Show DownloadFailed
 
 
 -- | A build failed.
-data BuildFailed = forall es . Show (V es) => BuildFailed FilePath (V es)
+data BuildFailed = forall es . (Pretty (V es), Show (V es)) => BuildFailed FilePath (V es)
 
 instance Pretty BuildFailed where
   pPrint (BuildFailed path reason) =
-    text [i|BuildFailed failed in dir "#{path}": #{reason}|]
+    text [i|BuildFailed failed in dir "#{path}": |] <> pPrint reason
 
 deriving instance Show BuildFailed
 

@@ -281,10 +281,30 @@ test:linux:cross-armv7:
     CROSS: "arm-linux-gnueabihf"
   needs: []
   when: manual
+  allow_failure: true
   before_script:
     - ./.gitlab/before_script/linux/install_deps.sh
   script:
     - ./.gitlab/script/ghcup_cross.sh
+
+test:linux:git:hadrian:
+  stage: test
+  extends:
+    - .test_ghcup_version
+    - .debian
+  variables:
+    GHC_VERSION: "8.10.5"
+    GHC_GIT_TAG: "ghc-9.0.1-release"
+    GHC_GIT_VERSION: "9.0.1"
+    CABAL_VERSION: "3.4.0.0"
+    CROSS: ""
+  needs: []
+  when: manual
+  allow_failure: true
+  before_script:
+    - ./.gitlab/before_script/linux/install_deps.sh
+  script:
+    - ./.gitlab/script/ghcup_git.sh
 
 
 ######## linux 32bit test ########
