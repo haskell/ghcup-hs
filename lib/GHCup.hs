@@ -1667,10 +1667,11 @@ compileGHC :: ( MonadMask m
            => Either GHCTargetVersion GitBranch          -- ^ version to install
            -> Maybe Version            -- ^ overwrite version
            -> Either Version FilePath  -- ^ version to bootstrap with
-           -> Maybe Int                  -- ^ jobs
+           -> Maybe Int                -- ^ jobs
            -> Maybe FilePath           -- ^ build config
            -> Maybe FilePath           -- ^ patch directory
-           -> [Text]                     -- ^ additional args to ./configure
+           -> [Text]                   -- ^ additional args to ./configure
+           -> Maybe String             -- ^ build flavour
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
@@ -1689,7 +1690,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
+compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -1806,13 +1807,19 @@ BUILD_MAN = NO
 BUILD_SPHINX_HTML = NO
 BUILD_SPHINX_PDF = NO
 HADDOCK_DOCS = NO
+ifneq "$(BuildFlavour)" ""
+include mk/flavours/$(BuildFlavour).mk
+endif
 Stage1Only = YES|]
     _ -> [s|
 V=0
 BUILD_MAN = NO
 BUILD_SPHINX_HTML = NO
 BUILD_SPHINX_PDF = NO
-HADDOCK_DOCS = YES|]
+HADDOCK_DOCS = YES
+ifneq "$(BuildFlavour)" ""
+include mk/flavours/$(BuildFlavour).mk
+endif|]
 
   compileBindist :: ( MonadReader env m
                     , HasDirs env
@@ -1834,7 +1841,6 @@ HADDOCK_DOCS = YES|]
                       (Maybe FilePath)  -- ^ output path of bindist, None for cross
   compileBindist bghc tver workdir ghcdir = do
     lift $ $(logInfo) [i|configuring build|]
-    liftE checkBuildConfig
     
     Dirs {..} <- lift getDirs
     pfreq <- lift getPlatformReq
@@ -1887,7 +1893,9 @@ HADDOCK_DOCS = YES|]
         (FileDoesNotExistError bc)
         (liftIO $ copyFile bc (build_mk workdir))
       Nothing ->
-        liftIO $ B.writeFile (build_mk workdir) defaultConf
+        liftIO $ B.writeFile (build_mk workdir) (addBuildFlavourToConf defaultConf)
+
+    liftE $ checkBuildConfig (build_mk workdir)
 
     lift $ $(logInfo) [i|Building (this may take a while)...|]
     lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs) (Just workdir)
@@ -1924,19 +1932,17 @@ HADDOCK_DOCS = YES|]
 
   build_mk workdir = workdir </> "mk" </> "build.mk"
 
-  checkBuildConfig :: (MonadCatch m, MonadIO m)
-                   => Excepts
+  checkBuildConfig :: (MonadCatch m, MonadIO m, MonadLogger m)
+                   => FilePath
+                   -> Excepts
                         '[FileDoesNotExistError, InvalidBuildConfig]
                         m
                         ()
-  checkBuildConfig = do
-    c <- case mbuildConfig of
-      Just bc -> do
-        liftIOException
-          doesNotExistErrorType
-          (FileDoesNotExistError bc)
-          (liftIO $ B.readFile bc)
-      Nothing -> pure defaultConf
+  checkBuildConfig bc = do
+    c <- liftIOException
+           doesNotExistErrorType
+           (FileDoesNotExistError bc)
+           (liftIO $ B.readFile bc)
     let lines' = fmap T.strip . T.lines $ decUTF8Safe c
 
    -- for cross, we need Stage1Only
@@ -1946,6 +1952,16 @@ HADDOCK_DOCS = YES|]
           [s|Cross compiling needs to be a Stage1 build, add "Stage1Only = YES" to your config!|]
         )
       _ -> pure ()
+
+    forM_ buildFlavour $ \bf ->
+      when ([i|BuildFlavour = #{bf}|] `notElem` lines') $ do
+        lift $ $(logWarn) [i|Customly specified build config overwrites --flavour=#{bf} switch! Waiting 5 seconds...|]
+        liftIO $ threadDelay 5000000
+
+  addBuildFlavourToConf bc = case buildFlavour of
+    Just bf -> [i|BuildFlavour = #{bf}
+#{bc}|]
+    Nothing -> bc
 
   isCross :: GHCTargetVersion -> Bool
   isCross = isJust . _tvTarget

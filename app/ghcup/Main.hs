@@ -182,6 +182,7 @@ data GHCCompileOptions = GHCCompileOptions
   , addConfArgs  :: [Text]
   , setCompile   :: Bool
   , ovewrwiteVer :: Maybe Version
+  , buildFlavour :: Maybe String
   }
 
 data UpgradeOpts = UpgradeInplace
@@ -985,6 +986,13 @@ ghcCompileOpts =
             )
             (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION" <> help
               "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
+            )
+          )
+    <*> optional
+          (option
+            str
+            (short 'f' <> long "flavour" <> metavar "BUILD_FLAVOUR" <> help
+              "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
             )
           )
 
@@ -1926,6 +1934,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             buildConfig
                             patchDir
                             addConfArgs
+                            buildFlavour
                 GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
                 let vi = getVersionInfo (_tvVersion targetVer) GHC dls
                 when setCompile $ void $ liftE $
