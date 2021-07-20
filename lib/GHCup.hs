@@ -1010,10 +1010,10 @@ listVersions lt' criteria = do
             slr <- strayCabals avTools cSet cabals
             pure (sort (slr ++ lr))
           HLS -> do
-            slr <- strayHLS avTools
+            slr <- strayHLS avTools hlsSet' hlses
             pure (sort (slr ++ lr))
           Stack -> do
-            slr <- strayStacks avTools
+            slr <- strayStacks avTools sSet stacks
             pure (sort (slr ++ lr))
           GHCup -> pure lr
       Nothing -> do
@@ -1113,15 +1113,16 @@ listVersions lt' criteria = do
               , MonadLogger m
               , MonadIO m)
            => Map.Map Version [Tag]
+           -> Maybe Version
+           -> [Either FilePath Version]
            -> m [ListResult]
-  strayHLS avTools = do
-    hlss <- getInstalledHLSs
+  strayHLS avTools hlsSet' hlss = do
     fmap catMaybes $ forM hlss $ \case
       Right ver ->
         case Map.lookup ver avTools of
           Just _  -> pure Nothing
           Nothing -> do
-            lSet    <- fmap (== Just ver) hlsSet
+            let lSet = hlsSet' == Just ver
             pure $ Just $ ListResult
               { lTool      = HLS
               , lVer       = ver
@@ -1147,15 +1148,16 @@ listVersions lt' criteria = do
                  , MonadIO m
                  )
               => Map.Map Version [Tag]
+              -> Maybe Version
+              -> [Either FilePath Version]
               -> m [ListResult]
-  strayStacks avTools = do
-    stacks <- getInstalledStacks
+  strayStacks avTools stackSet' stacks = do
     fmap catMaybes $ forM stacks $ \case
       Right ver ->
         case Map.lookup ver avTools of
           Just _  -> pure Nothing
           Nothing -> do
-            lSet    <- fmap (== Just ver) hlsSet
+            let lSet = stackSet' == Just ver
             pure $ Just $ ListResult
               { lTool      = Stack
               , lVer       = ver
