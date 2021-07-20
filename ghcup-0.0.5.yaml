@@ -2155,14 +2155,13 @@ ghcupDownloads:
             unknown_versioning: *stack-251-64
     2.7.1:
       viTags:
-        - Recommended
-        - Latest
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v271
       viPostInstall: *stack-post
       viArch:
         A_64:
           Linux_UnknownLinux:
-            unknown_versioning: &stack-64
+            unknown_versioning: &stack-271-64
               dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.1/stack-2.7.1-linux-x86_64.tar.gz
               dlHash: 2bc47749ee4be5eccb52a2d4a6a00b0f3b28b92517742b40c675836d7db2777d
               dlSubdir:
@@ -2180,5 +2179,33 @@ ghcupDownloads:
               dlSubdir:
                 RegexDir: "stack-.*"
           Linux_Alpine:
-            unknown_versioning: *stack-64
+            unknown_versioning: *stack-271-64
+    2.7.3:
+      viTags:
+        - Latest
+        - Recommended
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v273
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-273-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.3/stack-2.7.3-linux-x86_64.tar.gz
+              dlHash: a6c090555fa1c64aa61c29aa4449765a51d79e870cf759cde192937cd614e72b
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.3/stack-2.7.3-osx-x86_64.tar.gz
+              dlHash: 42e5000a00af44a7b26852421ac63ce75f510ad1a97742cb131107088ee9fe30
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.3/stack-2.7.3-windows-x86_64.tar.gz
+              dlHash: e6ba12e0ecabf0df2567d88a0d247da238bc114bcccfca4195f5e86472c9330c
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-273-64
 
