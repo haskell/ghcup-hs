@@ -1010,10 +1010,10 @@ listVersions lt' criteria = do
             slr <- strayCabals avTools cSet cabals
             pure (sort (slr ++ lr))
           HLS -> do
-            slr <- strayHLS avTools
+            slr <- strayHLS avTools hlsSet' hlses
             pure (sort (slr ++ lr))
           Stack -> do
-            slr <- strayStacks avTools
+            slr <- strayStacks avTools sSet stacks
             pure (sort (slr ++ lr))
           GHCup -> pure lr
       Nothing -> do
@@ -1113,15 +1113,16 @@ listVersions lt' criteria = do
               , MonadLogger m
               , MonadIO m)
            => Map.Map Version [Tag]
+           -> Maybe Version
+           -> [Either FilePath Version]
            -> m [ListResult]
-  strayHLS avTools = do
-    hlss <- getInstalledHLSs
+  strayHLS avTools hlsSet' hlss = do
     fmap catMaybes $ forM hlss $ \case
       Right ver ->
         case Map.lookup ver avTools of
           Just _  -> pure Nothing
           Nothing -> do
-            lSet    <- fmap (== Just ver) hlsSet
+            let lSet = hlsSet' == Just ver
             pure $ Just $ ListResult
               { lTool      = HLS
               , lVer       = ver
@@ -1147,15 +1148,16 @@ listVersions lt' criteria = do
                  , MonadIO m
                  )
               => Map.Map Version [Tag]
+              -> Maybe Version
+              -> [Either FilePath Version]
               -> m [ListResult]
-  strayStacks avTools = do
-    stacks <- getInstalledStacks
+  strayStacks avTools stackSet' stacks = do
     fmap catMaybes $ forM stacks $ \case
       Right ver ->
         case Map.lookup ver avTools of
           Just _  -> pure Nothing
           Nothing -> do
-            lSet    <- fmap (== Just ver) hlsSet
+            let lSet = stackSet' == Just ver
             pure $ Just $ ListResult
               { lTool      = Stack
               , lVer       = ver
@@ -1665,10 +1667,12 @@ compileGHC :: ( MonadMask m
            => Either GHCTargetVersion GitBranch          -- ^ version to install
            -> Maybe Version            -- ^ overwrite version
            -> Either Version FilePath  -- ^ version to bootstrap with
-           -> Maybe Int                  -- ^ jobs
+           -> Maybe Int                -- ^ jobs
            -> Maybe FilePath           -- ^ build config
            -> Maybe FilePath           -- ^ patch directory
-           -> [Text]                     -- ^ additional args to ./configure
+           -> [Text]                   -- ^ additional args to ./configure
+           -> Maybe String             -- ^ build flavour
+           -> Bool
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
@@ -1687,7 +1691,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
+compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour hadrian
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -1772,8 +1776,10 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs
       tmpUnpack
       Nothing
       (do
-        b <- compileBindist bghc tver workdir ghcdir
-        bmk <- liftIO $ B.readFile (build_mk workdir)
+        b <- if hadrian
+             then compileHadrianBindist bghc tver workdir ghcdir
+             else compileMakeBindist bghc tver workdir ghcdir
+        bmk <- liftIO $ handleIO (\_ -> pure "") $ B.readFile (build_mk workdir)
         pure (b, bmk)
       )
 
@@ -1804,40 +1810,238 @@ BUILD_MAN = NO
 BUILD_SPHINX_HTML = NO
 BUILD_SPHINX_PDF = NO
 HADDOCK_DOCS = NO
+ifneq "$(BuildFlavour)" ""
+include mk/flavours/$(BuildFlavour).mk
+endif
 Stage1Only = YES|]
     _ -> [s|
 V=0
 BUILD_MAN = NO
 BUILD_SPHINX_HTML = NO
 BUILD_SPHINX_PDF = NO
-HADDOCK_DOCS = YES|]
+HADDOCK_DOCS = YES
+ifneq "$(BuildFlavour)" ""
+include mk/flavours/$(BuildFlavour).mk
+endif|]
 
-  compileBindist :: ( MonadReader env m
-                    , HasDirs env
-                    , HasSettings env
-                    , HasPlatformReq env
-                    , MonadThrow m
-                    , MonadCatch m
-                    , MonadLogger m
-                    , MonadIO m
-                    , MonadFail m
-                    )
-                 => Either FilePath FilePath
-                 -> GHCTargetVersion
-                 -> FilePath
-                 -> FilePath
-                 -> Excepts
-                      '[FileDoesNotExistError, InvalidBuildConfig, PatchFailed, ProcessError, NotFoundInPATH, CopyError]
-                      m
-                      (Maybe FilePath)  -- ^ output path of bindist, None for cross
-  compileBindist bghc tver workdir ghcdir = do
-    lift $ $(logInfo) [i|configuring build|]
-    liftE checkBuildConfig
-    
+  compileHadrianBindist :: ( MonadReader env m
+                           , HasDirs env
+                           , HasSettings env
+                           , HasPlatformReq env
+                           , MonadThrow m
+                           , MonadCatch m
+                           , MonadLogger m
+                           , MonadIO m
+                           , MonadFail m
+                           )
+                        => Either FilePath FilePath
+                        -> GHCTargetVersion
+                        -> FilePath
+                        -> FilePath
+                        -> Excepts
+                             '[ FileDoesNotExistError
+                              , HadrianNotFound
+                              , InvalidBuildConfig
+                              , PatchFailed
+                              , ProcessError
+                              , NotFoundInPATH
+                              , CopyError]
+                             m
+                             (Maybe FilePath)  -- ^ output path of bindist, None for cross
+  compileHadrianBindist bghc tver workdir ghcdir = do
+    lEM $ execLogged "python3" ["./boot"] (Just workdir) "ghc-bootstrap" Nothing
+
+    liftE $ configureBindist bghc tver workdir ghcdir
+
+    lift $ $(logInfo) [i|Building (this may take a while)...|]
+    hadrian_build <- liftE $ findHadrianFile workdir
+    lEM $ execLogged hadrian_build
+                          ( maybe [] (\j  -> [[i|-j#{j}|]]         ) jobs
+                         ++ maybe [] (\bf -> [[i|--flavour=#{bf}|]]) buildFlavour
+                         ++ ["binary-dist"]
+                          )
+                          (Just workdir) "ghc-make" Nothing
+    [tar] <- liftIO $ findFiles
+      (workdir </> "_build" </> "bindist")
+      (makeRegexOpts compExtended
+                     execBlank
+                     ([s|^ghc-.*\.tar\..*$|] :: ByteString)
+      )
+    liftE $ fmap Just $ copyBindist tver tar (workdir </> "_build" </> "bindist")
+
+  findHadrianFile :: (MonadIO m)
+                  => FilePath
+                  -> Excepts
+                       '[HadrianNotFound]
+                       m
+                       FilePath
+  findHadrianFile workdir = do
+#if defined(IS_WINDOWS)
+    let possible_files = ((workdir </> "hadrian") </>) <$> ["build.bat"]
+#else   
+    let possible_files = ((workdir </> "hadrian") </>) <$> ["build", "build.sh"]
+#endif
+    exsists <- forM possible_files (\f -> liftIO (doesFileExist f) <&> (,f))
+    case filter fst exsists of
+      [] -> throwE HadrianNotFound
+      ((_, x):_) -> pure x
+
+  compileMakeBindist :: ( MonadReader env m
+                        , HasDirs env
+                        , HasSettings env
+                        , HasPlatformReq env
+                        , MonadThrow m
+                        , MonadCatch m
+                        , MonadLogger m
+                        , MonadIO m
+                        , MonadFail m
+                        )
+                     => Either FilePath FilePath
+                     -> GHCTargetVersion
+                     -> FilePath
+                     -> FilePath
+                     -> Excepts
+                          '[ FileDoesNotExistError
+                           , HadrianNotFound
+                           , InvalidBuildConfig
+                           , PatchFailed
+                           , ProcessError
+                           , NotFoundInPATH
+                           , CopyError]
+                          m
+                       (Maybe FilePath)  -- ^ output path of bindist, None for cross
+  compileMakeBindist bghc tver workdir ghcdir = do
+    liftE $ configureBindist bghc tver workdir ghcdir
+
+    case mbuildConfig of
+      Just bc -> liftIOException
+        doesNotExistErrorType
+        (FileDoesNotExistError bc)
+        (liftIO $ copyFile bc (build_mk workdir))
+      Nothing ->
+        liftIO $ B.writeFile (build_mk workdir) (addBuildFlavourToConf defaultConf)
+
+    liftE $ checkBuildConfig (build_mk workdir)
+
+    lift $ $(logInfo) [i|Building (this may take a while)...|]
+    lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs) (Just workdir)
+
+    if | isCross tver -> do
+          lift $ $(logInfo) [i|Installing cross toolchain...|]
+          lEM $ make ["install"] (Just workdir)
+          pure Nothing
+       | otherwise -> do
+          lift $ $(logInfo) [i|Creating bindist...|]
+          lEM $ make ["binary-dist"] (Just workdir)
+          [tar] <- liftIO $ findFiles
+            workdir
+            (makeRegexOpts compExtended
+                           execBlank
+                           ([s|^ghc-.*\.tar\..*$|] :: ByteString)
+            )
+          liftE $ fmap Just $ copyBindist tver tar workdir
+
+  build_mk workdir = workdir </> "mk" </> "build.mk"
+
+  copyBindist :: ( MonadReader env m
+                 , HasDirs env
+                 , HasSettings env
+                 , HasPlatformReq env
+                 , MonadIO m
+                 , MonadThrow m
+                 , MonadCatch m
+                 , MonadLogger m
+                 )
+              => GHCTargetVersion
+              -> FilePath           -- ^ tar file
+              -> FilePath           -- ^ workdir
+              -> Excepts
+                   '[CopyError]
+                   m
+                   FilePath
+  copyBindist tver tar workdir = do
     Dirs {..} <- lift getDirs
     pfreq <- lift getPlatformReq
+    c       <- liftIO $ BL.readFile (workdir </> tar)
+    cDigest <-
+      fmap (T.take 8)
+      . lift
+      . throwEither
+      . E.decodeUtf8'
+      . B16.encode
+      . SHA256.hashlazy
+      $ c
+    cTime <- liftIO getCurrentTime
+    let tarName = makeValid [i|ghc-#{tVerToText tver}-#{pfReqToString pfreq}-#{iso8601Show cTime}-#{cDigest}.tar#{takeExtension tar}|]
+    let tarPath = cacheDir </> tarName
+    handleIO (throwE . CopyError . show) $ liftIO $ copyFile (workdir </> tar)
+                                                             tarPath
+    lift $ $(logInfo) [i|Copied bindist to #{tarPath}|]
+    pure tarPath
 
-    forM_ patchdir $ \dir -> liftE $ applyPatches dir workdir
+  checkBuildConfig :: (MonadCatch m, MonadIO m, MonadLogger m)
+                   => FilePath
+                   -> Excepts
+                        '[FileDoesNotExistError, InvalidBuildConfig]
+                        m
+                        ()
+  checkBuildConfig bc = do
+    c <- liftIOException
+           doesNotExistErrorType
+           (FileDoesNotExistError bc)
+           (liftIO $ B.readFile bc)
+    let lines' = fmap T.strip . T.lines $ decUTF8Safe c
+
+   -- for cross, we need Stage1Only
+    case targetGhc of
+      Left (GHCTargetVersion (Just _) _) -> when ("Stage1Only = YES" `notElem` lines') $ throwE
+        (InvalidBuildConfig
+          [s|Cross compiling needs to be a Stage1 build, add "Stage1Only = YES" to your config!|]
+        )
+      _ -> pure ()
+
+    forM_ buildFlavour $ \bf ->
+      when ([i|BuildFlavour = #{bf}|] `notElem` lines') $ do
+        lift $ $(logWarn) [i|Customly specified build config overwrites --flavour=#{bf} switch! Waiting 5 seconds...|]
+        liftIO $ threadDelay 5000000
+
+  addBuildFlavourToConf bc = case buildFlavour of
+    Just bf -> [i|BuildFlavour = #{bf}|] <> [s|
+|] <> [i|#{bc}|]
+    Nothing -> bc
+
+  isCross :: GHCTargetVersion -> Bool
+  isCross = isJust . _tvTarget
+
+
+  configureBindist :: ( MonadReader env m
+                      , HasDirs env
+                      , HasSettings env
+                      , HasPlatformReq env
+                      , MonadThrow m
+                      , MonadCatch m
+                      , MonadLogger m
+                      , MonadIO m
+                      , MonadFail m
+                      )
+                   => Either FilePath FilePath
+                   -> GHCTargetVersion
+                   -> FilePath
+                   -> FilePath
+                   -> Excepts
+                        '[ FileDoesNotExistError
+                         , InvalidBuildConfig
+                         , PatchFailed
+                         , ProcessError
+                         , NotFoundInPATH
+                         , CopyError
+                         ]
+                        m
+                        ()
+  configureBindist bghc tver workdir ghcdir = do
+    lift $ $(logInfo) [s|configuring build|]
+    
+    forM_ patchdir (\dir -> liftE $ applyPatches dir workdir)
 
     cEnv <- liftIO getEnvironment
 
@@ -1878,75 +2082,9 @@ HADDOCK_DOCS = YES|]
           (Just workdir)
           "ghc-conf"
           (Just cEnv)
+    pure ()
 
-    case mbuildConfig of
-      Just bc -> liftIOException
-        doesNotExistErrorType
-        (FileDoesNotExistError bc)
-        (liftIO $ copyFile bc (build_mk workdir))
-      Nothing ->
-        liftIO $ B.writeFile (build_mk workdir) defaultConf
 
-    lift $ $(logInfo) [i|Building (this may take a while)...|]
-    lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs) (Just workdir)
-
-    if | isCross tver -> do
-          lift $ $(logInfo) [i|Installing cross toolchain...|]
-          lEM $ make ["install"] (Just workdir)
-          pure Nothing
-       | otherwise -> do
-          lift $ $(logInfo) [i|Creating bindist...|]
-          lEM $ make ["binary-dist"] (Just workdir)
-          [tar] <- liftIO $ findFiles
-            workdir
-            (makeRegexOpts compExtended
-                           execBlank
-                           ([s|^ghc-.*\.tar\..*$|] :: ByteString)
-            )
-          c       <- liftIO $ BL.readFile (workdir </> tar)
-          cDigest <-
-            fmap (T.take 8)
-            . lift
-            . throwEither
-            . E.decodeUtf8'
-            . B16.encode
-            . SHA256.hashlazy
-            $ c
-          cTime <- liftIO getCurrentTime
-          let tarName = makeValid [i|ghc-#{tVerToText tver}-#{pfReqToString pfreq}-#{iso8601Show cTime}-#{cDigest}.tar#{takeExtension tar}|]
-          let tarPath = cacheDir </> tarName
-          handleIO (throwE . CopyError . show) $ liftIO $ copyFile (workdir </> tar)
-                                                                   tarPath
-          lift $ $(logInfo) [i|Copied bindist to #{tarPath}|]
-          pure $ Just tarPath
-
-  build_mk workdir = workdir </> "mk" </> "build.mk"
-
-  checkBuildConfig :: (MonadCatch m, MonadIO m)
-                   => Excepts
-                        '[FileDoesNotExistError, InvalidBuildConfig]
-                        m
-                        ()
-  checkBuildConfig = do
-    c <- case mbuildConfig of
-      Just bc -> do
-        liftIOException
-          doesNotExistErrorType
-          (FileDoesNotExistError bc)
-          (liftIO $ B.readFile bc)
-      Nothing -> pure defaultConf
-    let lines' = fmap T.strip . T.lines $ decUTF8Safe c
-
-   -- for cross, we need Stage1Only
-    case targetGhc of
-      Left (GHCTargetVersion (Just _) _) -> when ("Stage1Only = YES" `notElem` lines') $ throwE
-        (InvalidBuildConfig
-          [s|Cross compiling needs to be a Stage1 build, add "Stage1Only = YES" to your config!|]
-        )
-      _ -> pure ()
-
-  isCross :: GHCTargetVersion -> Bool
-  isCross = isJust . _tvTarget
 
 
 
