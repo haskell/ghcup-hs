@@ -137,6 +137,7 @@ data InstallOptions = InstallOptions
   , instPlatform :: Maybe PlatformRequest
   , instBindist  :: Maybe URI
   , instSet      :: Bool
+  , isolateDir   :: Maybe FilePath
   }
 
 data SetCommand = SetGHC SetOptions
@@ -571,7 +572,7 @@ Examples:
 
 installOpts :: Maybe Tool -> Parser InstallOptions
 installOpts tool =
-  (\p (u, v) b -> InstallOptions v p u b)
+  (\p (u, v) b is -> InstallOptions v p u b is)
     <$> optional
           (option
             (eitherReader platformParser)
@@ -599,6 +600,15 @@ installOpts tool =
           True
           (long "set" <> help
             "Set as active version after install"
+          )
+    <*> optional
+          (option
+           (eitherReader isolateParser)
+           (  short 'i'
+           <> long "isolate"
+           <> metavar "DIR"
+           <> help "install in an isolated dir instead of the default one"
+           )
           )
 
 
@@ -1201,6 +1211,10 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
 bindistParser :: String -> Either String URI
 bindistParser = first show . parseURI strictURIParserOptions . UTF8.fromString
 
+isolateParser :: FilePath -> Either String FilePath
+isolateParser f = case isValid f of
+              True -> Right $ normalise f
+              False -> Left "Please enter a valid filepath for isolate dir."
 
 toSettings :: Options -> IO (Settings, KeyBindings)
 toSettings options = do
