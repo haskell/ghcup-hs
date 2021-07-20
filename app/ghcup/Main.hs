@@ -1930,14 +1930,15 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 let vi = getVersionInfo (_tvVersion targetVer) GHC dls
                 when setCompile $ void $ liftE $
                   setGHC targetVer SetGHCOnly
-                pure vi
+                pure (vi, targetVer)
                 )
                 >>= \case
-                      VRight vi -> do
+                      VRight (vi, tv) -> do
                         runLogger $ $(logInfo)
                           "GHC successfully compiled and installed"
                         forM_ (_viPostInstall =<< vi) $ \msg ->
                           runLogger $ $(logInfo) msg
+                        putStr (T.unpack $ tVerToText tv)
                         pure ExitSuccess
                       VLeft (V (AlreadyInstalled _ v)) -> do
                         runLogger $ $(logWarn)
