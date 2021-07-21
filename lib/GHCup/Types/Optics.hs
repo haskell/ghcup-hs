@@ -1,9 +1,11 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE AllowAmbiguousTypes   #-}
+{-# LANGUAGE MultiParamTypeClasses   #-}
 
 {-|
 Module      : GHCup.Types.Optics
@@ -143,3 +145,6 @@ getCache = getSettings <&> cache
 getDownloader :: (MonadReader env m, HasSettings env) => m Downloader
 getDownloader = getSettings <&> downloader
 
+
+instance LabelOptic "dirs" A_Lens Dirs Dirs Dirs Dirs where
+  labelOptic = lens id (\_ d -> d)

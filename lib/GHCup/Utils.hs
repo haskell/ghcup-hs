@@ -123,6 +123,7 @@ rmMinorSymlinks :: ( MonadReader env m
                    , MonadLogger m
                    , MonadThrow m
                    , MonadFail m
+                   , MonadMask m
                    )
                 => GHCTargetVersion
                 -> Excepts '[NotInstalled] m ()
@@ -134,7 +135,7 @@ rmMinorSymlinks tv@GHCTargetVersion{..} = do
     let f_xyz = f <> "-" <> T.unpack (prettyVer _tvVersion) <> exeExt
     let fullF = binDir </> f_xyz
     lift $ $(logDebug) [i|rm -f #{fullF}|]
-    liftIO $ hideError doesNotExistErrorType $ rmLink fullF
+    lift $ hideError doesNotExistErrorType $ rmLink fullF
 
 
 -- | Removes the set ghc version for the given target, if any.
@@ -144,6 +145,7 @@ rmPlain :: ( MonadReader env m
            , MonadThrow m
            , MonadFail m
            , MonadIO m
+           , MonadMask m
            )
         => Maybe Text -- ^ target
         -> Excepts '[NotInstalled] m ()
@@ -155,11 +157,11 @@ rmPlain target = do
     forM_ files $ \f -> do
       let fullF = binDir </> f <> exeExt
       lift $ $(logDebug) [i|rm -f #{fullF}|]
-      liftIO $ hideError doesNotExistErrorType $ rmLink fullF
+      lift $ hideError doesNotExistErrorType $ rmLink fullF
     -- old ghcup
     let hdc_file = binDir </> "haddock-ghc" <> exeExt
     lift $ $(logDebug) [i|rm -f #{hdc_file}|]
-    liftIO $ hideError doesNotExistErrorType $ rmLink hdc_file
+    lift $ hideError doesNotExistErrorType $ rmLink hdc_file
 
 
 -- | Remove the major GHC symlink, e.g. ghc-8.6.
@@ -169,6 +171,7 @@ rmMajorSymlinks :: ( MonadReader env m
                    , MonadLogger m
                    , MonadThrow m
                    , MonadFail m
+                   , MonadMask m
                    )
                 => GHCTargetVersion
                 -> Excepts '[NotInstalled] m ()
@@ -182,7 +185,7 @@ rmMajorSymlinks tv@GHCTargetVersion{..} = do
     let f_xy = f <> "-" <> T.unpack v' <> exeExt
     let fullF = binDir </> f_xy
     lift $ $(logDebug) [i|rm -f #{fullF}|]
-    liftIO $ hideError doesNotExistErrorType $ rmLink fullF
+    lift $ hideError doesNotExistErrorType $ rmLink fullF
 
 
 
@@ -892,11 +895,11 @@ runBuildAction bdir instdir action = do
   Settings {..} <- lift getSettings
   let exAction = do
         forM_ instdir $ \dir ->
-          liftIO $ hideError doesNotExistErrorType $ rmPath dir
+          lift $ hideError doesNotExistErrorType $ rmPathForcibly dir
         when (keepDirs == Never)
-          $ liftIO
+          $ lift
           $ hideError doesNotExistErrorType
-          $ rmPath bdir
+          $ rmPathForcibly bdir
   v <-
     flip onException exAction
     $ catchAllE
@@ -905,7 +908,7 @@ runBuildAction bdir instdir action = do
           throwE (BuildFailed bdir es)
         ) action
 
-  when (keepDirs == Never || keepDirs == Errors) $ liftIO $ rmPath bdir
+  when (keepDirs == Never || keepDirs == Errors) $ lift $ rmPathForcibly bdir
   pure v
 
 
@@ -995,13 +998,13 @@ pathIsLink = pathIsSymbolicLink
 #endif
 
 
-rmLink :: FilePath -> IO ()
+rmLink :: (MonadReader env m, HasDirs env, MonadIO m, MonadMask m) => FilePath -> m ()
 #if defined(IS_WINDOWS)
 rmLink fp = do
-  hideError doesNotExistErrorType . liftIO . rmFile $ fp
-  hideError doesNotExistErrorType . liftIO . rmFile $ (dropExtension fp <.> "shim")
+  hideError doesNotExistErrorType . rmFile $ fp
+  hideError doesNotExistErrorType . rmFile $ (dropExtension fp <.> "shim")
 #else
-rmLink = hideError doesNotExistErrorType . liftIO . rmFile
+rmLink = hideError doesNotExistErrorType . rmFile
 #endif
 
 
@@ -1039,14 +1042,14 @@ createLink link exe = do
       shimContents = "path = " <> fullLink
 
   $(logDebug) [i|rm -f #{exe}|]
-  liftIO $ rmLink exe
+  rmLink exe
 
   $(logDebug) [i|ln -s #{fullLink} #{exe}|]
   liftIO $ copyFile shimGen exe
   liftIO $ writeFile shim shimContents
 #else
   $(logDebug) [i|rm -f #{exe}|]
-  liftIO $ hideError doesNotExistErrorType $ rmFile exe
+  hideError doesNotExistErrorType $ rmFile exe
 
   $(logDebug) [i|ln -s #{link} #{exe}|]
   liftIO $ createFileLink link exe
@@ -1068,7 +1071,6 @@ ensureGlobalTools :: ( MonadMask m
 ensureGlobalTools = do
 #if defined(IS_WINDOWS)
   (GHCupInfo _ _ gTools) <- lift getGHCupInfo
-  settings <- lift getSettings
   dirs <- lift getDirs
   shimDownload <- liftE $ lE @_ @'[NoDownload]
     $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
@@ -1076,7 +1078,7 @@ ensureGlobalTools = do
   void $ (\(DigestError _ _) -> do
       lift $ $(logWarn) [i|Digest doesn't match, redownloading gs.exe...|]
       lift $ $(logDebug) [i|rm -f #{shimDownload}|]
-      liftIO $ hideError doesNotExistErrorType $ rmFile (cacheDir dirs </> "gs.exe")
+      lift $ hideError doesNotExistErrorType $ rmFile (cacheDir dirs </> "gs.exe")
       liftE @'[DigestError , DownloadFailed] $ dl
     ) `catchE` (liftE @'[DigestError , DownloadFailed] dl)
   pure ()

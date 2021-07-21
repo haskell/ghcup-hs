@@ -202,6 +202,7 @@ executable ghcup
     -fwarn-incomplete-record-updates -threaded
 
   build-depends:
+    , async                 ^>=2.2.3
     , base                  >=4.13     && <5
     , bytestring            ^>=0.10
     , containers            ^>=0.6

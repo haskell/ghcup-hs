@@ -34,6 +34,7 @@ import           GHCup.Version
 import           Codec.Archive
 #endif
 import           Control.Concurrent
+import           Control.Concurrent.Async
 import           Control.DeepSeq                ( force )
 import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
@@ -1342,7 +1343,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           (settings, keybindings) <- toSettings opt
 
           -- logger interpreter
-          logfile <- initGHCupFileLogging logsDir
+          logfile <- flip runReaderT dirs $ initGHCupFileLogging
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = verbose settings
                 , colorOutter  = B.hPut stderr
@@ -1385,6 +1386,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                               ($(logError) $ T.pack $ prettyShow e)
                             exitWith (ExitFailure 2)
                 let s' = AppState settings dirs keybindings ghcupInfo pfreq
+
+                race_ (liftIO $ runLogger $ flip runReaderT dirs $ cleanupGHCupTmp)
+                      (threadDelay 5000000 >> runLogger ($(logWarn) [i|Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in #{tmpDir} manually|]))
 
                 lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
                   Nothing -> runLogger $ flip runReaderT s' $ checkForUpdates

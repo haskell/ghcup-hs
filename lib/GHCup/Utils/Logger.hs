@@ -14,12 +14,16 @@ Here we define our main logger.
 -}
 module GHCup.Utils.Logger where
 
+import           GHCup.Types
+import           GHCup.Types.Optics
 import           GHCup.Utils.File
 import           GHCup.Utils.String.QQ
 
+import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
+import           Control.Monad.Reader
 import           Data.Char               ( ord )
 import           Prelude                 hiding ( appendFile )
 import           System.Console.Pretty
@@ -79,17 +83,21 @@ myLoggerT LoggerConfig {..} loggingt = runLoggingT loggingt mylogger
     rawOutter outr
 
 
-initGHCupFileLogging :: (MonadIO m) => FilePath -> m FilePath
-initGHCupFileLogging logsDir = do
+initGHCupFileLogging :: ( MonadReader env m
+                        , HasDirs env
+                        , MonadIO m
+                        , MonadMask m
+                        ) => m FilePath
+initGHCupFileLogging = do
+  Dirs { logsDir } <- getDirs
   let logfile = logsDir </> "ghcup.log"
-  liftIO $ do
-    logFiles <- findFiles
-      logsDir
-      (makeRegexOpts compExtended
-                     execBlank
-                     ([s|^.*\.log$|] :: B.ByteString)
-      )
-    forM_ logFiles $ hideError doesNotExistErrorType . rmFile . (logsDir </>)
+  logFiles <- liftIO $ findFiles
+    logsDir
+    (makeRegexOpts compExtended
+                   execBlank
+                   ([s|^.*\.log$|] :: B.ByteString)
+    )
+  forM_ logFiles $ hideError doesNotExistErrorType . rmFile . (logsDir </>)
 
-    writeFile logfile ""
-    pure logfile
+  liftIO $ writeFile logfile ""
+  pure logfile

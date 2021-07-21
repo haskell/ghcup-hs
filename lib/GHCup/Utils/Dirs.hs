@@ -30,6 +30,7 @@ module GHCup.Utils.Dirs
 #if !defined(IS_WINDOWS)
   , useXDG
 #endif
+  , cleanupGHCupTmp
   )
 where
 
@@ -53,9 +54,7 @@ import           Data.String.Interpolate
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
-#if !defined(IS_WINDOWS)
 import           System.Directory                                                
-#endif
 import           System.DiskSpace                                                
 import           System.Environment
 import           System.FilePath
@@ -262,8 +261,20 @@ parseGHCupGHCDir (T.pack -> fp) =
   throwEither $ MP.parse ghcTargetVerP "" fp
 
 
-mkGhcupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadThrow m, MonadIO m) => m FilePath
+mkGhcupTmpDir :: ( MonadReader env m
+                 , HasDirs env
+                 , MonadUnliftIO m
+                 , MonadLogger m
+                 , MonadCatch m
+                 , MonadThrow m
+                 , MonadMask m
+                 , MonadIO m)
+              => m FilePath
 mkGhcupTmpDir = do
+#if defined(IS_WINDOWS)
+  Dirs { tmpDir } <- getDirs
+  liftIO $ createTempDirectory tmpDir "ghcup"
+#else
   tmpdir <- liftIO getCanonicalTemporaryDirectory
 
   let minSpace = 5000 -- a rough guess, aight?
@@ -281,10 +292,20 @@ mkGhcupTmpDir = do
   truncate' :: Double -> Int -> Double
   truncate' x n = fromIntegral (floor (x * t) :: Integer) / t
       where t = 10^n
+#endif
 
 
-withGHCupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadResource m, MonadThrow m, MonadIO m) => m FilePath
-withGHCupTmpDir = snd <$> withRunInIO (\run -> run $ allocate (run mkGhcupTmpDir) rmPath)
+withGHCupTmpDir :: ( MonadReader env m
+                   , HasDirs env
+                   , MonadUnliftIO m
+                   , MonadLogger m
+                   , MonadCatch m
+                   , MonadResource m
+                   , MonadThrow m
+                   , MonadMask m
+                   , MonadIO m)
+                => m FilePath
+withGHCupTmpDir = snd <$> withRunInIO (\run -> run $ allocate (run mkGhcupTmpDir) (run . rmPathForcibly))
 
 
 
@@ -312,3 +333,18 @@ relativeSymlink p1 p2 =
         <> joinPath ([pathSeparator] : drop (length common) d2)
 
 
+cleanupGHCupTmp :: ( MonadIO m
+                   , MonadMask m
+                   , MonadLogger m
+                   , MonadReader env m
+                   , HasDirs env
+                   )
+                => m ()
+cleanupGHCupTmp = do
+  Dirs { tmpDir } <- getDirs
+  contents <- liftIO $ listDirectory tmpDir
+  if null contents
+  then pure ()
+  else do
+    $(logWarn) [i|Removing leftover files in #{tmpDir}|]
+    forM_ contents (\fp -> liftIO $ removePathForcibly (tmpDir </> fp))

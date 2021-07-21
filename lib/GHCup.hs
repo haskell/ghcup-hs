@@ -257,7 +257,7 @@ installPackedGHC dl msubdir inst ver = do
 
   Dirs { tmpDir } <- lift getDirs
   unpackDir <- liftIO $ emptyTempFile tmpDir "ghc"
-  liftIO $ rmFile unpackDir
+  lift $ rmFile unpackDir
 
   liftE $ unpackToDir unpackDir dl
 
@@ -266,7 +266,7 @@ installPackedGHC dl msubdir inst ver = do
     Nothing -> pure unpackDir
 
   liftIO $ Win32.moveFileEx d (Just inst) 0
-  liftIO $ rmPath unpackDir
+  lift $ rmPathForcibly unpackDir
 #else
   PlatformRequest {..} <- lift getPlatformReq
 
@@ -801,7 +801,10 @@ setGHC ver sghc = do
   symlinkShareDir :: ( MonadReader env m
                      , HasDirs env
                      , MonadIO m
-                     , MonadLogger m)
+                     , MonadLogger m
+                     , MonadCatch m
+                     , MonadMask m
+                     )
                   => FilePath
                   -> String
                   -> m ()
@@ -816,7 +819,7 @@ setGHC ver sghc = do
           let fullF   = destdir </> sharedir
           let targetF = "." </> "ghc" </> ver' </> sharedir
           $(logDebug) [i|rm -f #{fullF}|]
-          liftIO $ hideError doesNotExistErrorType $ removeDirectoryLink fullF
+          hideError doesNotExistErrorType $ rmDirectoryLink fullF
           $(logDebug) [i|ln -s #{targetF} #{fullF}|]
           liftIO
 #if defined(IS_WINDOWS)
@@ -884,7 +887,7 @@ setHLS ver = do
   oldSyms <- lift hlsSymlinks
   forM_ oldSyms $ \f -> do
     lift $ $(logDebug) [i|rm #{binDir </> f}|]
-    liftIO $ rmLink (binDir </> f)
+    lift $ rmLink (binDir </> f)
 
   -- set haskell-language-server-<ghcver> symlinks
   bins <- lift $ hlsServerBinaries ver
@@ -1307,7 +1310,7 @@ rmGHCVer ver = do
   -- then fix them (e.g. with an earlier version)
 
   lift $ $(logInfo) [i|Removing directory recursively: #{dir}|]
-  liftIO $ rmPath dir
+  lift $ rmPathForcibly dir
 
   v' <-
     handle
@@ -1319,7 +1322,7 @@ rmGHCVer ver = do
 
   Dirs {..} <- lift getDirs
 
-  liftIO
+  lift
     $ hideError doesNotExistErrorType
     $ rmFile (baseDir </> "share")
 
@@ -1346,13 +1349,13 @@ rmCabalVer ver = do
   Dirs {..} <- lift getDirs
 
   let cabalFile = "cabal-" <> T.unpack (prettyVer ver) <> exeExt
-  liftIO $ hideError doesNotExistErrorType $ rmFile (binDir </> cabalFile)
+  lift $ hideError doesNotExistErrorType $ rmFile (binDir </> cabalFile)
 
   when (Just ver == cSet) $ do
     cVers <- lift $ fmap rights getInstalledCabals
     case headMay . reverse . sort $ cVers of
       Just latestver -> setCabal latestver
-      Nothing        -> liftIO $ rmLink (binDir </> "cabal" <> exeExt)
+      Nothing        -> lift $ rmLink (binDir </> "cabal" <> exeExt)
 
 
 -- | Delete a hls version. Will try to fix the hls symlinks
@@ -1377,7 +1380,7 @@ rmHLSVer ver = do
   Dirs {..} <- lift getDirs
 
   bins <- lift $ hlsAllBinaries ver
-  forM_ bins $ \f -> liftIO $ rmFile (binDir </> f)
+  forM_ bins $ \f -> lift $ rmFile (binDir </> f)
 
   when (Just ver == isHlsSet) $ do
     -- delete all set symlinks
@@ -1385,7 +1388,7 @@ rmHLSVer ver = do
     forM_ oldSyms $ \f -> do
       let fullF = binDir </> f
       lift $ $(logDebug) [i|rm #{fullF}|]
-      liftIO $ rmLink fullF
+      lift $ rmLink fullF
     -- set latest hls
     hlsVers <- lift $ fmap rights getInstalledHLSs
     case headMay . reverse . sort $ hlsVers of
@@ -1415,13 +1418,13 @@ rmStackVer ver = do
   Dirs {..} <- lift getDirs
 
   let stackFile = "stack-" <> T.unpack (prettyVer ver) <> exeExt
-  liftIO $ hideError doesNotExistErrorType $ rmFile (binDir </> stackFile)
+  lift $ hideError doesNotExistErrorType $ rmFile (binDir </> stackFile)
 
   when (Just ver == sSet) $ do
     sVers <- lift $ fmap rights getInstalledStacks
     case headMay . reverse . sort $ sVers of
       Just latestver -> setStack latestver
-      Nothing        -> liftIO $ rmLink (binDir </> "stack" <> exeExt)
+      Nothing        -> lift $ rmLink (binDir </> "stack" <> exeExt)
 
 
 -- assuming the current scheme of having just 1 ghcup bin, no version info is required.
@@ -1430,10 +1433,11 @@ rmGhcup :: ( MonadReader env m
            , MonadIO m
            , MonadCatch m
            , MonadLogger m
+           , MonadMask m
            )
         => m ()
 rmGhcup = do
-  Dirs {binDir} <- getDirs
+  Dirs { .. } <- getDirs
   let ghcupFilename = "ghcup" <> exeExt
   let ghcupFilepath = binDir </> ghcupFilename
 
@@ -1457,14 +1461,13 @@ rmGhcup = do
 #if defined(IS_WINDOWS)
   -- since it doesn't seem possible to delete a running exec in windows
   -- we move it to temp dir, to be deleted at next reboot
-  tempDir <- liftIO $ getTemporaryDirectory
-  let tempFilepath = tempDir </> ghcupFilename
+  let tempFilepath = tmpDir </> ghcupFilename
   hideError UnsupportedOperation $
             liftIO $ hideError NoSuchThing $
             Win32.moveFileEx ghcupFilepath (Just tempFilepath) Win32.mOVEFILE_REPLACE_EXISTING
 #else
   -- delete it.
-  hideError doesNotExistErrorType $ liftIO $ rmFile ghcupFilepath
+  hideError doesNotExistErrorType $ rmFile ghcupFilepath
 #endif
 
   where
@@ -1526,7 +1529,7 @@ rmGhcupDirs = do
   rmDir (baseDir </> "msys64")
 #endif
 
-  liftIO $ removeEmptyDirsRecursive baseDir
+  removeEmptyDirsRecursive baseDir
 
   -- report files in baseDir that are left-over after
   -- the standard location deletions above
@@ -1534,17 +1537,17 @@ rmGhcupDirs = do
 
   where
 
-    rmEnvFile :: (MonadCatch m, MonadLogger m, MonadIO m) => FilePath -> m ()
+    rmEnvFile :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmEnvFile enFilePath = do
       $logInfo "Removing Ghcup Environment File"
-      liftIO $ deleteFile enFilePath
+      deleteFile enFilePath
 
-    rmConfFile :: (MonadCatch m, MonadLogger m, MonadIO m) => FilePath -> m ()
+    rmConfFile :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmConfFile confFilePath = do
       $logInfo "removing Ghcup Config File"
-      liftIO $ deleteFile confFilePath
+      deleteFile confFilePath
 
-    rmDir :: (MonadLogger m, MonadIO m, MonadCatch m) => FilePath -> m ()
+    rmDir :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmDir dir =
       -- 'getDirectoryContentsRecursive' is lazy IO. In case
       -- an error leaks through, we catch it here as well,
@@ -1552,9 +1555,9 @@ rmGhcupDirs = do
       hideErrorDef [doesNotExistErrorType] () $ do
         $logInfo [i|removing #{dir}|]
         contents <- liftIO $ getDirectoryContentsRecursive dir
-        forM_ contents (liftIO . deleteFile . (dir </>))
+        forM_ contents (deleteFile . (dir </>))
 
-    rmBinDir :: (MonadCatch m, MonadIO m) => FilePath -> m ()
+    rmBinDir :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmBinDir binDir = do
 #if !defined(IS_WINDOWS)
       isXDGStyle <- liftIO useXDG
@@ -1583,9 +1586,9 @@ rmGhcupDirs = do
         compareFn :: FilePath -> FilePath -> Ordering
         compareFn fp1 fp2 = compare (calcDepth fp1) (calcDepth fp2)
 
-    removeEmptyDirsRecursive :: FilePath -> IO ()
+    removeEmptyDirsRecursive :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     removeEmptyDirsRecursive fp = do
-      cs <- listDirectory fp >>= filterM doesDirectoryExist . fmap (fp </>)
+      cs <- liftIO $ listDirectory fp >>= filterM doesDirectoryExist . fmap (fp </>)
       forM_ cs removeEmptyDirsRecursive
       hideError InappropriateType $ removeDirIfEmptyOrIsSymlink fp
         
@@ -1594,22 +1597,22 @@ rmGhcupDirs = do
     -- we report remaining files/dirs later,
     -- hence the force/quiet mode in these delete functions below.
 
-    deleteFile :: FilePath -> IO ()
+    deleteFile :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m) => FilePath -> m ()
     deleteFile filepath = do
       hideError doesNotExistErrorType
         $ hideError InappropriateType $ rmFile filepath
 
-    removeDirIfEmptyOrIsSymlink :: (MonadCatch m, MonadIO m) => FilePath -> m ()
+    removeDirIfEmptyOrIsSymlink :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     removeDirIfEmptyOrIsSymlink filepath =
       hideError UnsatisfiedConstraints $
       handleIO' InappropriateType
             (handleIfSym filepath)
-            (liftIO $ removeDirectory filepath)
+            (liftIO $ rmPath filepath)
       where
         handleIfSym fp e = do
           isSym <- liftIO $ pathIsSymbolicLink fp
           if isSym
-          then liftIO $ deleteFile fp
+          then deleteFile fp
           else liftIO $ ioError e
 
 
@@ -2137,8 +2140,8 @@ upgradeGHCup mtarget force' = do
   lift $ $(logDebug) [i|mkdir -p #{destDir}|]
   liftIO $ createDirRecursive' destDir
 #if defined(IS_WINDOWS)
-  let tempGhcup = cacheDir </> "ghcup.old"
-  liftIO $ hideError NoSuchThing $ rmFile tempGhcup
+  let tempGhcup = tmpDir </> "ghcup.old"
+  lift $ hideError NoSuchThing $ rmFile tempGhcup
 
   lift $ $(logDebug) [i|mv #{destFile} #{tempGhcup}|]
   -- NoSuchThing may be raised when we're updating ghcup from
@@ -2149,7 +2152,7 @@ upgradeGHCup mtarget force' = do
                                                            destFile
 #else
   lift $ $(logDebug) [i|rm -f #{destFile}|]
-  liftIO $ hideError NoSuchThing $ rmFile destFile
+  lift $ hideError NoSuchThing $ rmFile destFile
   lift $ $(logDebug) [i|cp #{p} #{destFile}|]
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                            destFile
