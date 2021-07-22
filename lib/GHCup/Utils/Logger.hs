@@ -97,7 +97,7 @@ initGHCupFileLogging = do
                    execBlank
                    ([s|^.*\.log$|] :: B.ByteString)
     )
-  forM_ logFiles $ hideError doesNotExistErrorType . rmFile . (logsDir </>)
+  forM_ logFiles $ hideError doesNotExistErrorType . recycleFile . (logsDir </>)
 
   liftIO $ writeFile logfile ""
   pure logfile

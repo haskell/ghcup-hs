@@ -30,7 +30,7 @@ module GHCup.Utils.Dirs
 #if !defined(IS_WINDOWS)
   , useXDG
 #endif
-  , cleanupGHCupTmp
+  , cleanupTrash
   )
 where
 
@@ -190,23 +190,21 @@ ghcupLogsDir = do
 #endif
 
 
--- | Defaults to '~/.ghcup/tmp.
---
--- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
--- then uses 'XDG_DATA_HOME/ghcup/tmp' as per xdg spec.
-ghcupTmpDir :: IO FilePath
-ghcupTmpDir = ghcupBaseDir <&> (</> "tmp")
+-- | '~/.ghcup/trash'.
+-- Mainly used on windows to improve file removal operations
+ghcupRecycleDir :: IO FilePath
+ghcupRecycleDir = ghcupBaseDir <&> (</> "trash")
 
 
 
 getAllDirs :: IO Dirs
 getAllDirs = do
-  baseDir  <- ghcupBaseDir
-  binDir   <- ghcupBinDir
-  cacheDir <- ghcupCacheDir
-  logsDir  <- ghcupLogsDir
-  confDir  <- ghcupConfigDir
-  tmpDir   <- ghcupTmpDir
+  baseDir    <- ghcupBaseDir
+  binDir     <- ghcupBinDir
+  cacheDir   <- ghcupCacheDir
+  logsDir    <- ghcupLogsDir
+  confDir    <- ghcupConfigDir
+  recycleDir <- ghcupRecycleDir
   pure Dirs { .. }
 
 
@@ -271,10 +269,6 @@ mkGhcupTmpDir :: ( MonadReader env m
                  , MonadIO m)
               => m FilePath
 mkGhcupTmpDir = do
-#if defined(IS_WINDOWS)
-  Dirs { tmpDir } <- getDirs
-  liftIO $ createTempDirectory tmpDir "ghcup"
-#else
   tmpdir <- liftIO getCanonicalTemporaryDirectory
 
   let minSpace = 5000 -- a rough guess, aight?
@@ -292,7 +286,6 @@ mkGhcupTmpDir = do
   truncate' :: Double -> Int -> Double
   truncate' x n = fromIntegral (floor (x * t) :: Integer) / t
       where t = 10^n
-#endif
 
 
 withGHCupTmpDir :: ( MonadReader env m
@@ -305,7 +298,15 @@ withGHCupTmpDir :: ( MonadReader env m
                    , MonadMask m
                    , MonadIO m)
                 => m FilePath
-withGHCupTmpDir = snd <$> withRunInIO (\run -> run $ allocate (run mkGhcupTmpDir) (run . rmPathForcibly))
+withGHCupTmpDir = snd <$> withRunInIO (\run ->
+  run
+    $ allocate
+        (run mkGhcupTmpDir)
+        (\fp ->
+            handleIO (\e -> run
+                $ $(logDebug) [i|Resource cleanup failed for "#{fp}", error was: #{displayException e}|])
+            . rmPathForcibly
+            $ fp))
 
 
 
@@ -333,18 +334,21 @@ relativeSymlink p1 p2 =
         <> joinPath ([pathSeparator] : drop (length common) d2)
 
 
-cleanupGHCupTmp :: ( MonadIO m
-                   , MonadMask m
-                   , MonadLogger m
-                   , MonadReader env m
-                   , HasDirs env
-                   )
-                => m ()
-cleanupGHCupTmp = do
-  Dirs { tmpDir } <- getDirs
-  contents <- liftIO $ listDirectory tmpDir
+cleanupTrash :: ( MonadIO m
+                , MonadMask m
+                , MonadLogger m
+                , MonadReader env m
+                , HasDirs env
+                )
+             => m ()
+cleanupTrash = do
+  Dirs { recycleDir } <- getDirs
+  contents <- liftIO $ listDirectory recycleDir
   if null contents
   then pure ()
   else do
-    $(logWarn) [i|Removing leftover files in #{tmpDir}|]
-    forM_ contents (\fp -> liftIO $ removePathForcibly (tmpDir </> fp))
+    $(logWarn) [i|Removing leftover files in #{recycleDir}|]
+    forM_ contents (\fp -> handleIO (\e ->
+        $(logDebug) [i|Resource cleanup failed for "#{fp}", error was: #{displayException e}|]
+      ) $ liftIO $ removePathForcibly (recycleDir </> fp))
+

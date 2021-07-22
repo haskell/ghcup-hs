@@ -54,6 +54,9 @@ import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
+#if defined(IS_WINDOWS)
+import           Control.Monad.IO.Unlift        ( MonadUnliftIO( withRunInIO ) )
+#endif
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.List
@@ -252,22 +255,6 @@ installPackedGHC :: ( MonadMask m
 #endif
                        ] m ()
 installPackedGHC dl msubdir inst ver = do
-#if defined(IS_WINDOWS)
-  lift $ $(logInfo) "Installing GHC (this may take a while)"
-
-  Dirs { tmpDir } <- lift getDirs
-  unpackDir <- liftIO $ emptyTempFile tmpDir "ghc"
-  lift $ rmFile unpackDir
-
-  liftE $ unpackToDir unpackDir dl
-
-  d <- case msubdir of
-    Just td -> liftE $ intoSubdir unpackDir td
-    Nothing -> pure unpackDir
-
-  liftIO $ Win32.moveFileEx d (Just inst) 0
-  lift $ rmPathForcibly unpackDir
-#else
   PlatformRequest {..} <- lift getPlatformReq
 
   -- unpack
@@ -283,7 +270,6 @@ installPackedGHC dl msubdir inst ver = do
   liftE $ runBuildAction tmpUnpack
                          (Just inst)
                          (installUnpackedGHC workdir inst ver)
-#endif
 
 
 -- | Install an unpacked GHC distribution. This only deals with the GHC
@@ -295,13 +281,29 @@ installUnpackedGHC :: ( MonadReader env m
                       , MonadThrow m
                       , MonadLogger m
                       , MonadIO m
+                      , MonadUnliftIO m
+                      , MonadMask m
                       )
                    => FilePath      -- ^ Path to the unpacked GHC bindist (where the configure script resides)
                    -> FilePath      -- ^ Path to install to
                    -> Version       -- ^ The GHC version
                    -> Excepts '[ProcessError] m ()
 installUnpackedGHC path inst ver = do
+#if defined(IS_WINDOWS)
+  lift $ $(logInfo) "Installing GHC (this may take a while)"
+  -- Windows bindists are relocatable and don't need
+  -- to run configure.
+  -- We also must make sure to preserve mtime to not confuse ghc-pkg.
+  lift $ withRunInIO $ \run -> flip onException (run $ recyclePathForcibly inst) $ copyDirectoryRecursive path inst $ \source dest -> do
+    mtime <- getModificationTime source
+    Win32.moveFile source dest
+    setModificationTime dest mtime
+#else
   PlatformRequest {..} <- lift getPlatformReq
+  liftIO $ copyDirectoryRecursive path inst $ \source dest -> do
+    mtime <- getModificationTime source
+    copyFile source dest
+    setModificationTime dest mtime
 
   let alpineArgs
        | ver >= [vver|8.2.2|], Linux Alpine <- _rPlatform
@@ -312,9 +314,6 @@ installUnpackedGHC path inst ver = do
   lift $ $(logInfo) "Installing GHC (this may take a while)"
   lEM $ execLogged "sh"
                    ("./configure" : ("--prefix=" <> inst) 
-#if defined(IS_WINDOWS)
-                    : "--enable-tarballs-autodownload"
-#endif
                     : alpineArgs
                    )
                    (Just path)
@@ -322,6 +321,7 @@ installUnpackedGHC path inst ver = do
                    Nothing
   lEM $ make ["install"] (Just path)
   pure ()
+#endif
 
 
 -- | Installs GHC into @~\/.ghcup\/ghc/\<ver\>@ and places the
@@ -1310,7 +1310,7 @@ rmGHCVer ver = do
   -- then fix them (e.g. with an earlier version)
 
   lift $ $(logInfo) [i|Removing directory recursively: #{dir}|]
-  lift $ rmPathForcibly dir
+  lift $ recyclePathForcibly dir
 
   v' <-
     handle
@@ -1322,9 +1322,7 @@ rmGHCVer ver = do
 
   Dirs {..} <- lift getDirs
 
-  lift
-    $ hideError doesNotExistErrorType
-    $ rmFile (baseDir </> "share")
+  lift $ hideError doesNotExistErrorType $ rmDirectoryLink (baseDir </> "share")
 
 
 -- | Delete a cabal version. Will try to fix the @cabal@ symlink
@@ -1349,7 +1347,7 @@ rmCabalVer ver = do
   Dirs {..} <- lift getDirs
 
   let cabalFile = "cabal-" <> T.unpack (prettyVer ver) <> exeExt
-  lift $ hideError doesNotExistErrorType $ rmFile (binDir </> cabalFile)
+  lift $ hideError doesNotExistErrorType $ recycleFile (binDir </> cabalFile)
 
   when (Just ver == cSet) $ do
     cVers <- lift $ fmap rights getInstalledCabals
@@ -1380,7 +1378,7 @@ rmHLSVer ver = do
   Dirs {..} <- lift getDirs
 
   bins <- lift $ hlsAllBinaries ver
-  forM_ bins $ \f -> lift $ rmFile (binDir </> f)
+  forM_ bins $ \f -> lift $ recycleFile (binDir </> f)
 
   when (Just ver == isHlsSet) $ do
     -- delete all set symlinks
@@ -1418,7 +1416,7 @@ rmStackVer ver = do
   Dirs {..} <- lift getDirs
 
   let stackFile = "stack-" <> T.unpack (prettyVer ver) <> exeExt
-  lift $ hideError doesNotExistErrorType $ rmFile (binDir </> stackFile)
+  lift $ hideError doesNotExistErrorType $ recycleFile (binDir </> stackFile)
 
   when (Just ver == sSet) $ do
     sVers <- lift $ fmap rights getInstalledStacks
@@ -1434,6 +1432,7 @@ rmGhcup :: ( MonadReader env m
            , MonadCatch m
            , MonadLogger m
            , MonadMask m
+           , MonadUnliftIO m
            )
         => m ()
 rmGhcup = do
@@ -1459,12 +1458,12 @@ rmGhcup = do
   unless areEqualPaths $ $logWarn $ nonStandardInstallLocationMsg currentRunningExecPath
 
 #if defined(IS_WINDOWS)
-  -- since it doesn't seem possible to delete a running exec in windows
+  -- since it doesn't seem possible to delete a running exe on windows
   -- we move it to temp dir, to be deleted at next reboot
-  let tempFilepath = tmpDir </> ghcupFilename
+  tempFilepath <- mkGhcupTmpDir
   hideError UnsupportedOperation $
             liftIO $ hideError NoSuchThing $
-            Win32.moveFileEx ghcupFilepath (Just tempFilepath) Win32.mOVEFILE_REPLACE_EXISTING
+            Win32.moveFileEx ghcupFilepath (Just (tempFilepath </> "ghcup")) 0
 #else
   -- delete it.
   hideError doesNotExistErrorType $ rmFile ghcupFilepath
@@ -1512,30 +1511,34 @@ rmGhcupDirs = do
     , binDir
     , logsDir
     , cacheDir
-    , tmpDir
+    , recycleDir
     } <- getDirs
 
   let envFilePath = baseDir </> "env"
 
   confFilePath <- getConfigFilePath
 
-  rmEnvFile  envFilePath
-  rmConfFile confFilePath
-  rmDir cacheDir
-  rmDir logsDir
-  rmBinDir   binDir
-  rmDir tmpDir
+  handleRm $ rmEnvFile  envFilePath
+  handleRm $ rmConfFile confFilePath
+  handleRm $ rmDir cacheDir
+  handleRm $ rmDir logsDir
+  handleRm $ rmBinDir binDir
+  handleRm $ rmDir recycleDir
 #if defined(IS_WINDOWS)
-  rmDir (baseDir </> "msys64")
+  $logInfo [i|removing #{(baseDir </> "msys64")}|]
+  handleRm $ rmPathForcibly (baseDir </> "msys64")
 #endif
 
-  removeEmptyDirsRecursive baseDir
+  handleRm $ removeEmptyDirsRecursive baseDir
 
   -- report files in baseDir that are left-over after
   -- the standard location deletions above
   hideErrorDef [doesNotExistErrorType] [] $ reportRemainingFiles baseDir
 
   where
+    handleRm :: (MonadCatch m, MonadLogger m)  => m () -> m ()
+    handleRm = handleIO (\e -> $logWarn [i|Part of the cleanup action failed with error: #{displayException e}
+continuing regardless...|])
 
     rmEnvFile :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmEnvFile enFilePath = do
@@ -1607,7 +1610,7 @@ rmGhcupDirs = do
       hideError UnsatisfiedConstraints $
       handleIO' InappropriateType
             (handleIfSym filepath)
-            (liftIO $ rmPath filepath)
+            (liftIO $ rmDirectory filepath)
       where
         handleIfSym fp e = do
           isSym <- liftIO $ pathIsSymbolicLink fp
@@ -2136,27 +2139,14 @@ upgradeGHCup mtarget force' = do
   let fn = "ghcup" <> exeExt
   p <- liftE $ download dli tmp (Just fn)
   let destDir = takeDirectory destFile
-      destFile = fromMaybe (binDir </> fn <> exeExt) mtarget
+      destFile = fromMaybe (binDir </> fn) mtarget
   lift $ $(logDebug) [i|mkdir -p #{destDir}|]
   liftIO $ createDirRecursive' destDir
-#if defined(IS_WINDOWS)
-  let tempGhcup = tmpDir </> "ghcup.old"
-  lift $ hideError NoSuchThing $ rmFile tempGhcup
-
-  lift $ $(logDebug) [i|mv #{destFile} #{tempGhcup}|]
-  -- NoSuchThing may be raised when we're updating ghcup from
-  -- a non-standard location
-  liftIO $ hideError NoSuchThing $ Win32.moveFileEx destFile (Just tempGhcup) 0
-  lift $ $(logDebug) [i|cp #{p} #{destFile}|]
-  handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
-                                                           destFile
-#else
   lift $ $(logDebug) [i|rm -f #{destFile}|]
-  lift $ hideError NoSuchThing $ rmFile destFile
+  lift $ hideError NoSuchThing $ recycleFile destFile
   lift $ $(logDebug) [i|cp #{p} #{destFile}|]
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                            destFile
-#endif
   lift $ chmod_755 destFile
 
   liftIO (isInPath destFile) >>= \b -> unless b $

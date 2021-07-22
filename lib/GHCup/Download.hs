@@ -265,7 +265,7 @@ getBase uri = do
       pure bs
     dlWithoutMod json_file = do
       bs <- liftE $ downloadBS uri'
-      lift $ hideError doesNotExistErrorType $ rmFile json_file
+      lift $ hideError doesNotExistErrorType $ recycleFile json_file
       liftIO $ L.writeFile json_file bs
       liftIO $ setModificationTime json_file (posixSecondsToUTCTime (fromIntegral @Int 0))
       pure bs
@@ -388,10 +388,10 @@ download dli dest mfn
 
     -- download
     flip onException
-         (lift $ hideError doesNotExistErrorType $ rmFile destFile)
+         (lift $ hideError doesNotExistErrorType $ recycleFile destFile)
      $ catchAllE @_ @'[ProcessError, DownloadFailed, UnsupportedScheme]
           (\e ->
-            lift (hideError doesNotExistErrorType $ rmFile destFile)
+            lift (hideError doesNotExistErrorType $ recycleFile destFile)
               >> (throwE . DownloadFailed $ e)
           ) $ do
               Settings{ downloader, noNetwork } <- lift getSettings
