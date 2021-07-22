@@ -290,7 +290,16 @@ ask_bashrc() {
 
 			read -r bashrc_answer </dev/tty
 		else
-			return 1
+			# On windows .bashrc isn't an important user config, so we adjust it
+			# always. On other platforms, let's be a bit more conservative.
+			case "${plat}" in
+					MSYS*|MINGW*)
+						return 1
+						;;
+					*)
+						return 0
+						;;
+			esac
 		fi
 		case $bashrc_answer in
 			[Pp]* | "")
@@ -326,7 +335,7 @@ adjust_bashrc() {
 			;;
 		2)
 			cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
-				export PATH="\$HOME/.cabal/bin:\$PATH:${GHCUP_BIN}"
+				export PATH="\$PATH:\$HOME/.cabal/bin:${GHCUP_BIN}"
 				EOF
 			;;
 		*) ;;
@@ -335,7 +344,10 @@ adjust_bashrc() {
 	case $1 in
 		1 | 2)
 			case $MY_SHELL in
-				"") break ;;
+				"")
+					warn_path "Couldn't figure out login shell!"
+					return
+					;;
 				fish)
 					mkdir -p "${GHCUP_PROFILE_FILE%/*}"
 					sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
@@ -365,13 +377,28 @@ adjust_bashrc() {
 					echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 					break ;;
 			esac
+			echo
+			echo "==============================================================================="
+			echo
 			warn "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
 			warn "or type \"source ${GHCUP_DIR}/env\" to apply them in your current terminal session."
 			return
 			;;
 		*)
+			warn_path
 			;;
 	esac
+}
+
+warn_path() {
+	echo
+	echo "==============================================================================="
+	echo
+	[ -n "$1" ] && warn "$1"
+	yellow "In order to run ghc and cabal, you need to adjust your PATH variable."
+	yellow "To do so, you may want run 'source $GHCUP_DIR/env' in your current terminal"
+	yellow "session as well as your shell configuration (e.g. ~/.bashrc)."
+
 }
 
 adjust_cabal_config() {
@@ -615,36 +642,8 @@ case $ask_stack_answer in
 esac
 
 
+adjust_bashrc $ask_bashrc_answer
 
-# short-circuit script based on platform
-case "${plat}" in
-        MSYS*|MINGW*)
-			# For windows we always adjust bashrc, since it's inside msys2
-			adjust_bashrc $adjust_bashrc_answer
-			;;
-		*)
-        	if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
-				case $ask_bashrc_answer in
-					1 | 2)
-						echo
-						echo "==============================================================================="
-						echo
-						yellow "In order to run ghc and cabal, start a new shell or"
-						yellow "run 'source $GHCUP_DIR/env' in your current shell session."
-						adjust_bashrc $adjust_bashrc_answer
-						;;
-					*)
-						echo
-						echo "==============================================================================="
-						echo
-						yellow "In order to run ghc and cabal, you need to adjust your PATH variable."
-						yellow "You may want to source '$GHCUP_DIR/env' in your shell"
-						yellow "configuration to do so (e.g. ~/.bashrc)."
-						;;
-				esac
-			fi
-			;;
-esac
 
 _done
 
