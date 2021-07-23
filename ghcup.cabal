@@ -233,7 +233,7 @@ executable ghcup
     cpp-options:   -DBRICK
     other-modules: BrickMain
     build-depends:
-      , brick         >=0.5    && <0.62
+      , brick         >=0.5    && <0.64
       , transformers  ^>=0.5
       , vector        ^>=0.12
       , vty           >=5.28.2 && <5.34

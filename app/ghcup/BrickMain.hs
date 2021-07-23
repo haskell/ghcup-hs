@@ -169,7 +169,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
           | elem Latest lTag && not lInstalled =
               withAttr "hooray"
           | otherwise = id
-        active = if b then forceAttr "active" else id
+        active = if b then putCursor "GHCup" (Location (0,0)) . forceAttr "active" else id
     in  hooray $ active $ dim
           (   marks
           <+> padLeft (Pad 2)
@@ -257,7 +257,7 @@ app attrs dimAttrs =
   , appHandleEvent  = eventHandler
   , appStartEvent   = return
   , appAttrMap      = const attrs
-  , appChooseCursor = neverShowCursor
+  , appChooseCursor = showFirstCursor
   }
 
 defaultAttributes :: Bool -> AttrMap
