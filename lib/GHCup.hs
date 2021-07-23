@@ -854,23 +854,23 @@ installStackBindist dlinfo ver = do
   let lInstStack = headMay . reverse . sort $ sVers
   when (maybe True (ver >=) lInstStack) $ liftE $ setStack ver
 
- where
-  -- | Install an unpacked stack distribution.
-  installStack' :: (MonadLogger m, MonadCatch m, MonadIO m)
-                => FilePath      -- ^ Path to the unpacked stack bindist (where the executable resides)
-                -> FilePath      -- ^ Path to install to
-                -> Excepts '[CopyError] m ()
-  installStack' path inst = do
-    lift $ $(logInfo) "Installing stack"
-    let stackFile = "stack"
-    liftIO $ createDirRecursive' inst
-    let destFileName = stackFile <> "-" <> T.unpack (prettyVer ver) <> exeExt
-    let destPath = inst </> destFileName
-    handleIO (throwE . CopyError . show) $ liftIO $ copyFile
-      (path </> stackFile <> exeExt)
-      destPath
-    lift $ chmod_755 destPath
 
+-- | Install an unpacked stack distribution.
+installStack' :: (MonadLogger m, MonadCatch m, MonadIO m)
+              => FilePath      -- ^ Path to the unpacked stack bindist (where the executable resides)
+              -> FilePath      -- ^ Path to install to
+              -> Version
+              -> Excepts '[CopyError] m ()
+installStack' path inst ver = do
+  lift $ $(logInfo) "Installing stack"
+  let stackFile = "stack"
+  liftIO $ createDirRecursive' inst
+  let destFileName = stackFile <> "-" <> T.unpack (prettyVer ver) <> exeExt
+  let destPath = inst </> destFileName
+  handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+    (path </> stackFile <> exeExt)
+    destPath
+  lift $ chmod_755 destPath
 
 
 
