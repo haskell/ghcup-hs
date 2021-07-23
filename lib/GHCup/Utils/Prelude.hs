@@ -19,11 +19,16 @@ GHCup specific prelude. Lots of Excepts functionality.
 -}
 module GHCup.Utils.Prelude where
 
+#if defined(IS_WINDOWS)
+import           GHCup.Types
+#endif
+import           GHCup.Types.Optics
+
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Class      ( lift )
+import           Control.Monad.Reader
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
 import           Data.List                      ( nub )
@@ -35,6 +40,9 @@ import           Data.Word8
 import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
 import           System.IO.Error
+#if defined(IS_WINDOWS)
+import           System.IO.Temp
+#endif
 import           System.IO.Unsafe
 import           System.Directory
 import           System.FilePath
@@ -54,6 +62,9 @@ import qualified Data.Text.Lazy                as TL
 import qualified Data.Text.Lazy.Builder        as B
 import qualified Data.Text.Lazy.Builder.Int    as B
 import qualified Data.Text.Lazy.Encoding       as TLE
+#if defined(IS_WINDOWS)
+import qualified System.Win32.File             as Win32
+#endif
 
 
 
@@ -312,17 +323,16 @@ createDirRecursive' p =
 -- | Recursively copy the contents of one directory to another path.
 --
 -- This is a rip-off of Cabal library.
-copyDirectoryRecursive :: FilePath -> FilePath -> IO ()
-copyDirectoryRecursive srcDir destDir = do
+copyDirectoryRecursive :: FilePath -> FilePath -> (FilePath -> FilePath -> IO ()) -> IO ()
+copyDirectoryRecursive srcDir destDir doCopy = do
   srcFiles <- getDirectoryContentsRecursive srcDir
-  copyFilesWith copyFile destDir [ (srcDir, f)
-                                   | f <- srcFiles ]
+  copyFilesWith destDir [ (srcDir, f)
+                          | f <- srcFiles ]
   where
     -- | Common implementation of 'copyFiles', 'installOrdinaryFiles',
     -- 'installExecutableFiles' and 'installMaybeExecutableFiles'.
-    copyFilesWith :: (FilePath -> FilePath -> IO ())
-                  -> FilePath -> [(FilePath, FilePath)] -> IO ()
-    copyFilesWith doCopy targetDir srcFiles = do
+    copyFilesWith :: FilePath -> [(FilePath, FilePath)] -> IO ()
+    copyFilesWith targetDir srcFiles = do
 
       -- Create parent directories for everything
       let dirs = map (targetDir </>) . nub . map (takeDirectory . snd) $ srcFiles
@@ -367,39 +377,134 @@ getDirectoryContentsRecursive topdir = recurseDirectories [""]
         ignore ['.', '.'] = True
         ignore _          = False
 
+
 -- https://github.com/haskell/directory/issues/110
 -- https://github.com/haskell/directory/issues/96
 -- https://www.sqlite.org/src/info/89f1848d7f
-rmPath :: (MonadIO m, MonadMask m)
-      => FilePath
-      -> m ()
-rmPath fp =
+recyclePathForcibly :: ( MonadIO m
+                       , MonadReader env m
+                       , HasDirs env
+                       , MonadMask m
+                       )
+                    => FilePath
+                    -> m ()
+recyclePathForcibly fp = do
+#if defined(IS_WINDOWS)
+  Dirs { recycleDir } <- getDirs
+  tmp <- liftIO $ createTempDirectory recycleDir "recyclePathForcibly"
+  let dest = tmp </> takeFileName fp
+  liftIO (Win32.moveFileEx fp (Just dest) 0)
+      `catch`
+      (\e -> if isPermissionError e {- EXDEV on windows -} then recover (liftIO $ removePathForcibly fp) else throwIO e)
+      `finally`
+        (liftIO $ handleIO (\_ -> pure ()) $ removePathForcibly tmp)
+#else
+  liftIO $ removePathForcibly fp
+#endif
+
+
+rmPathForcibly :: ( MonadIO m
+                  , MonadMask m
+                  )
+               => FilePath
+               -> m ()
+rmPathForcibly fp =
+#if defined(IS_WINDOWS)
+  recovering (fullJitterBackoff 25000 <> limitRetries 10)
+    [\_ -> Handler (\e -> pure $ isPermissionError e)
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
+    ]
+    (\_ -> liftIO $ removePathForcibly fp)
+#else
+  liftIO $ removePathForcibly fp
+#endif
+
+
+rmDirectory :: (MonadIO m, MonadMask m)
+            => FilePath
+            -> m ()
+rmDirectory fp =
 #if defined(IS_WINDOWS)
   recovering (fullJitterBackoff 25000 <> limitRetries 10)
     [\_ -> Handler (\e -> pure $ isPermissionError e)
     ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
     ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
     ]
-    (\_ -> liftIO $ removePathForcibly fp)
+    (\_ -> liftIO $ removeDirectory fp)
 #else
-  liftIO $ removeDirectoryRecursive fp
+  liftIO $ removeDirectory fp
 #endif
 
 
 -- https://www.sqlite.org/src/info/89f1848d7f
 -- https://github.com/haskell/directory/issues/96
-rmFile :: (MonadIO m, MonadMask m)
+recycleFile :: ( MonadIO m
+               , MonadMask m
+               , MonadReader env m
+               , HasDirs env
+               )
+            => FilePath
+            -> m ()
+recycleFile fp = do
+#if defined(IS_WINDOWS)
+  Dirs { recycleDir } <- getDirs
+  liftIO $ whenM (doesDirectoryExist fp) $ ioError (IOError Nothing InappropriateType "recycleFile" "" Nothing (Just fp))
+  tmp <- liftIO $ createTempDirectory recycleDir "recycleFile"
+  let dest = tmp </> takeFileName fp
+  liftIO (Win32.moveFileEx fp (Just dest) 0)
+    `catch`
+      (\e -> if isPermissionError e {- EXDEV on windows -} then recover (liftIO $ removePathForcibly fp) else throwIO e)
+    `finally`
+      (liftIO $ handleIO (\_ -> pure ()) $ removePathForcibly tmp)
+#else
+  liftIO $ removeFile fp
+#endif
+
+
+rmFile :: ( MonadIO m
+          , MonadMask m
+          )
       => FilePath
       -> m ()
 rmFile fp =
 #if defined(IS_WINDOWS)
   recovering (fullJitterBackoff 25000 <> limitRetries 10)
     [\_ -> Handler (\e -> pure $ isPermissionError e)
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
     ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
     ]
     (\_ -> liftIO $ removeFile fp)
 #else
   liftIO $ removeFile fp
+#endif
+
+
+rmDirectoryLink :: (MonadIO m, MonadMask m, MonadReader env m, HasDirs env)
+                => FilePath
+                -> m ()
+rmDirectoryLink fp = 
+#if defined(IS_WINDOWS)
+  recovering (fullJitterBackoff 25000 <> limitRetries 10)
+    [\_ -> Handler (\e -> pure $ isPermissionError e)
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
+    ]
+    (\_ -> liftIO $ removeDirectoryLink fp)
+#else
+  liftIO $ removeDirectoryLink fp
+#endif
+
+
+#if defined(IS_WINDOWS)
+recover :: (MonadIO m, MonadMask m) => m a -> m a
+recover action = 
+  recovering (fullJitterBackoff 25000 <> limitRetries 10)
+    [\_ -> Handler (\e -> pure $ isPermissionError e)
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
+    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
+    ]
+    (\_ -> action)
 #endif
 
 

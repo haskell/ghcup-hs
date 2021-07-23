@@ -34,6 +34,7 @@ import           GHCup.Version
 import           Codec.Archive
 #endif
 import           Control.Concurrent
+import           Control.Concurrent.Async
 import           Control.DeepSeq                ( force )
 import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
@@ -1342,7 +1343,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           (settings, keybindings) <- toSettings opt
 
           -- logger interpreter
-          logfile <- initGHCupFileLogging logsDir
+          logfile <- flip runReaderT dirs $ initGHCupFileLogging
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = verbose settings
                 , colorOutter  = B.hPut stderr
@@ -1386,6 +1387,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             exitWith (ExitFailure 2)
                 let s' = AppState settings dirs keybindings ghcupInfo pfreq
 
+                race_ (liftIO $ runLogger $ flip runReaderT dirs $ cleanupTrash)
+                      (threadDelay 5000000 >> runLogger ($(logWarn) [i|Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in #{recycleDir} manually|]))
+
                 lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
                   Nothing -> runLogger $ flip runReaderT s' $ checkForUpdates
                   Just _ -> pure ()
@@ -1417,6 +1421,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -------------------------
           -- Effect interpreters --
           -------------------------
+
 
           let runInstTool' appstate' mInstPlatform =
                 runLogger
@@ -1514,6 +1519,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           let runRm =
                 runLogger . runAppState . runE @'[NotInstalled]
+
+          let runNuke s' =
+                runLogger . flip runReaderT s' . runE @'[NotInstalled]
 
           let runDebugInfo =
                 runLogger
@@ -2063,7 +2071,8 @@ Make sure to clean up #{tmpdir} afterwards.|])
                     )
                   pure ExitSuccess
                 Just uri -> do
-                  pfreq <- runAppState getPlatformReq
+                  s' <- appState
+                  pfreq <- flip runReaderT s' getPlatformReq
                   let uri' = T.unpack . decUTF8Safe . serializeURIRef' $ uri
                       cmd = case _rPlatform pfreq of
                               Darwin  -> "open"
@@ -2073,7 +2082,6 @@ Make sure to clean up #{tmpdir} afterwards.|])
 
                   if clOpen
                     then do
-                      s' <- appState
                       flip runReaderT s' $
                         exec cmd
                              [T.unpack $ decUTF8Safe $ serializeURIRef' uri]
@@ -2085,10 +2093,10 @@ Make sure to clean up #{tmpdir} afterwards.|])
                                   >> pure (ExitFailure 13)
                     else putStrLn uri' >> pure ExitSuccess
 
-            Nuke ->
-              runRm (do
-                   s' <- liftIO appState
-                   void $ liftIO $ evaluate $ force s'
+            Nuke -> do
+              s' <- liftIO appState
+              void $ liftIO $ evaluate $ force s'
+              runNuke s' (do
                    lift $ $logWarn "WARNING: This will remove GHCup and all installed components from your system."
                    lift $ $logWarn "Waiting 10 seconds before commencing, if you want to cancel it, now would be the time."
                    liftIO $ threadDelay 10000000  -- wait 10s

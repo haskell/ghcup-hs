@@ -115,6 +115,7 @@ getDownloadsF :: ( FromJSONKey Tool
                  , MonadLogger m
                  , MonadThrow m
                  , MonadFail m
+                 , MonadMask m
                  )
               => Excepts
                    '[JSONError , DownloadFailed , FileDoesNotExistError]
@@ -170,6 +171,7 @@ getBase :: ( MonadReader env m
            , MonadIO m
            , MonadCatch m
            , MonadLogger m
+           , MonadMask m
            )
         => URI
         -> Excepts '[JSONError , FileDoesNotExistError] m GHCupInfo
@@ -208,6 +210,7 @@ getBase uri = do
              , MonadIO m1
              , MonadFail m1
              , MonadLogger m1
+             , MonadMask m1
              )
           => URI
           -> Excepts
@@ -262,7 +265,7 @@ getBase uri = do
       pure bs
     dlWithoutMod json_file = do
       bs <- liftE $ downloadBS uri'
-      liftIO $ hideError doesNotExistErrorType $ rmFile json_file
+      lift $ hideError doesNotExistErrorType $ recycleFile json_file
       liftIO $ L.writeFile json_file bs
       liftIO $ setModificationTime json_file (posixSecondsToUTCTime (fromIntegral @Int 0))
       pure bs
@@ -385,10 +388,10 @@ download dli dest mfn
 
     -- download
     flip onException
-         (liftIO $ hideError doesNotExistErrorType $ rmFile destFile)
+         (lift $ hideError doesNotExistErrorType $ recycleFile destFile)
      $ catchAllE @_ @'[ProcessError, DownloadFailed, UnsupportedScheme]
           (\e ->
-            liftIO (hideError doesNotExistErrorType $ rmFile destFile)
+            lift (hideError doesNotExistErrorType $ recycleFile destFile)
               >> (throwE . DownloadFailed $ e)
           ) $ do
               Settings{ downloader, noNetwork } <- lift getSettings

@@ -30,6 +30,7 @@ module GHCup.Utils.Dirs
 #if !defined(IS_WINDOWS)
   , useXDG
 #endif
+  , cleanupTrash
   )
 where
 
@@ -53,9 +54,7 @@ import           Data.String.Interpolate
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
-#if !defined(IS_WINDOWS)
 import           System.Directory                                                
-#endif
 import           System.DiskSpace                                                
 import           System.Environment
 import           System.FilePath
@@ -191,23 +190,21 @@ ghcupLogsDir = do
 #endif
 
 
--- | Defaults to '~/.ghcup/tmp.
---
--- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
--- then uses 'XDG_DATA_HOME/ghcup/tmp' as per xdg spec.
-ghcupTmpDir :: IO FilePath
-ghcupTmpDir = ghcupBaseDir <&> (</> "tmp")
+-- | '~/.ghcup/trash'.
+-- Mainly used on windows to improve file removal operations
+ghcupRecycleDir :: IO FilePath
+ghcupRecycleDir = ghcupBaseDir <&> (</> "trash")
 
 
 
 getAllDirs :: IO Dirs
 getAllDirs = do
-  baseDir  <- ghcupBaseDir
-  binDir   <- ghcupBinDir
-  cacheDir <- ghcupCacheDir
-  logsDir  <- ghcupLogsDir
-  confDir  <- ghcupConfigDir
-  tmpDir   <- ghcupTmpDir
+  baseDir    <- ghcupBaseDir
+  binDir     <- ghcupBinDir
+  cacheDir   <- ghcupCacheDir
+  logsDir    <- ghcupLogsDir
+  confDir    <- ghcupConfigDir
+  recycleDir <- ghcupRecycleDir
   pure Dirs { .. }
 
 
@@ -262,7 +259,15 @@ parseGHCupGHCDir (T.pack -> fp) =
   throwEither $ MP.parse ghcTargetVerP "" fp
 
 
-mkGhcupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadThrow m, MonadIO m) => m FilePath
+mkGhcupTmpDir :: ( MonadReader env m
+                 , HasDirs env
+                 , MonadUnliftIO m
+                 , MonadLogger m
+                 , MonadCatch m
+                 , MonadThrow m
+                 , MonadMask m
+                 , MonadIO m)
+              => m FilePath
 mkGhcupTmpDir = do
   tmpdir <- liftIO getCanonicalTemporaryDirectory
 
@@ -283,8 +288,25 @@ mkGhcupTmpDir = do
       where t = 10^n
 
 
-withGHCupTmpDir :: (MonadUnliftIO m, MonadLogger m, MonadCatch m, MonadResource m, MonadThrow m, MonadIO m) => m FilePath
-withGHCupTmpDir = snd <$> withRunInIO (\run -> run $ allocate (run mkGhcupTmpDir) rmPath)
+withGHCupTmpDir :: ( MonadReader env m
+                   , HasDirs env
+                   , MonadUnliftIO m
+                   , MonadLogger m
+                   , MonadCatch m
+                   , MonadResource m
+                   , MonadThrow m
+                   , MonadMask m
+                   , MonadIO m)
+                => m FilePath
+withGHCupTmpDir = snd <$> withRunInIO (\run ->
+  run
+    $ allocate
+        (run mkGhcupTmpDir)
+        (\fp ->
+            handleIO (\e -> run
+                $ $(logDebug) [i|Resource cleanup failed for "#{fp}", error was: #{displayException e}|])
+            . rmPathForcibly
+            $ fp))
 
 
 
@@ -311,4 +333,22 @@ relativeSymlink p1 p2 =
   in  joinPath (replicate (length cPrefix) "..")
         <> joinPath ([pathSeparator] : drop (length common) d2)
 
+
+cleanupTrash :: ( MonadIO m
+                , MonadMask m
+                , MonadLogger m
+                , MonadReader env m
+                , HasDirs env
+                )
+             => m ()
+cleanupTrash = do
+  Dirs { recycleDir } <- getDirs
+  contents <- liftIO $ listDirectory recycleDir
+  if null contents
+  then pure ()
+  else do
+    $(logWarn) [i|Removing leftover files in #{recycleDir}|]
+    forM_ contents (\fp -> handleIO (\e ->
+        $(logDebug) [i|Resource cleanup failed for "#{fp}", error was: #{displayException e}|]
+      ) $ liftIO $ removePathForcibly (recycleDir </> fp))
 
