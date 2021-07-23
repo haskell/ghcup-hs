@@ -873,6 +873,60 @@ installStack' path inst ver = do
   lift $ chmod_755 destPath
 
 
+-- | Installs stack into an isolated location sepcified by the user,
+-- also, doesn't make any symlinks.
+
+installStackBinIsolated :: ( MonadMask m
+                           , MonadCatch m
+                           , MonadReader env m
+                           , HasDirs env
+                           , HasSettings env
+                           , HasPlatformReq env
+                           , HasGHCupInfo env
+                           , MonadLogger m
+                           , MonadResource m
+                           , MonadIO m
+                           , MonadUnliftIO m
+                           , MonadFail m
+                           )
+                        => FilePath
+                        -> Version
+                        -> Excepts
+                             '[ AlreadyInstalled
+                              , CopyError
+                              , DigestError
+                              , DownloadFailed
+                              , NoDownload
+                              , NotInstalled
+                              , UnknownArchive
+                              , TarDirDoesNotExist
+#if !defined(TAR)
+                              , ArchiveResult
+#endif
+                              ]
+                             m
+                             ()
+installStackBinIsolated isoDir ver = do
+  dlinfo <- liftE $ getDownloadInfo Stack ver
+
+  lift $ $(logDebug) [i|Requested to install stack version #{ver}|]
+
+  PlatformRequest {_rPlatform} <- lift getPlatformReq
+
+  -- download (or use cached version)
+  dl <- liftE $ downloadCached dlinfo Nothing
+
+  -- unpack
+  tmpUnpack <- lift withGHCupTmpDir
+  liftE $ unpackToDir tmpUnpack dl
+  void $ lift $ darwinNotarization _rPlatform tmpUnpack
+
+  -- the subdir of the archive where we do the work
+  workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
+
+  lift $ $(logInfo) [i|isolated installing Stack to #{isoDir}|]
+
+  liftE $ installStack' workdir isoDir ver
 
     ---------------------
     --[ Set GHC/cabal ]--
