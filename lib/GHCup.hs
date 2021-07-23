@@ -847,7 +847,7 @@ installStackBindist dlinfo ver = do
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
 
-  liftE $ installStack' workdir binDir
+  liftE $ installStack' workdir binDir ver
 
   -- create symlink if this is the latest version
   sVers <- lift $ fmap rights getInstalledStacks
