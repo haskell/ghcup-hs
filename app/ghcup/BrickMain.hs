@@ -59,7 +59,7 @@ import qualified Data.Vector                   as V
 
 
 hiddenTools :: [Tool]
-hiddenTools = [Stack]
+hiddenTools = []
 
 
 data BrickData = BrickData
