@@ -266,6 +266,8 @@ installGHCBinIsolated isoDir ver = do
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
 
+  lift $ $(logInfo) [i|isolated installing GHC to #{isoDir}|]
+
   liftE $ installPackedGHC dl (view dlSubdir dlinfo) isoDir ver
 
 
