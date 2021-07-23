@@ -634,39 +634,38 @@ installHLSBindist dlinfo ver = do
   let lInstHLS = headMay . reverse . sort $ hlsVers
   when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
 
- where
-  -- | Install an unpacked hls distribution.
-  installHLS' :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
-                => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
-                -> FilePath      -- ^ Path to install to
-                -> Excepts '[CopyError] m ()
-  installHLS' path inst = do
-    lift $ $(logInfo) "Installing HLS"
-    liftIO $ createDirRecursive' inst
+-- | Install an unpacked hls distribution.
+installHLS' :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
+              => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
+              -> FilePath      -- ^ Path to install to
+              -> Version
+              -> Excepts '[CopyError] m ()
+installHLS' path inst ver = do
+  lift $ $(logInfo) "Installing HLS"
+  liftIO $ createDirRecursive' inst
 
-    -- install haskell-language-server-<ghcver>
-    bins@(_:_) <- liftIO $ findFiles
-      path
-      (makeRegexOpts compExtended
-                     execBlank
-                     ([s|^haskell-language-server-[0-9].*$|] :: ByteString)
-      )
-    forM_ bins $ \f -> do
-      let toF = dropSuffix exeExt f
-                <> "~" <> T.unpack (prettyVer ver) <> exeExt
-      handleIO (throwE . CopyError . show) $ liftIO $ copyFile
-        (path </> f)
-        (inst </> toF)
-      lift $ chmod_755 (inst </> toF)
-
-    -- install haskell-language-server-wrapper
-    let wrapper = "haskell-language-server-wrapper"
-        toF = wrapper <> "-" <> T.unpack (prettyVer ver) <> exeExt
+  -- install haskell-language-server-<ghcver>
+  bins@(_:_) <- liftIO $ findFiles
+    path
+    (makeRegexOpts compExtended
+                   execBlank
+                   ([s|^haskell-language-server-[0-9].*$|] :: ByteString)
+    )
+  forM_ bins $ \f -> do
+    let toF = dropSuffix exeExt f
+              <> "~" <> T.unpack (prettyVer ver) <> exeExt
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
-      (path </> wrapper <> exeExt)
+      (path </> f)
       (inst </> toF)
     lift $ chmod_755 (inst </> toF)
 
+  -- install haskell-language-server-wrapper
+  let wrapper = "haskell-language-server-wrapper"
+      toF = wrapper <> "-" <> T.unpack (prettyVer ver) <> exeExt
+  handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+    (path </> wrapper <> exeExt)
+    (inst </> toF)
+  lift $ chmod_755 (inst </> toF)
 
 -- | Installs hls binaries @haskell-language-server-\<ghcver\>@
 -- into @~\/.ghcup\/bin/@, as well as @haskell-languager-server-wrapper@.
