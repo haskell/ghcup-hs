@@ -627,7 +627,7 @@ installHLSBindist dlinfo ver = do
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
 
-  liftE $ installHLS' workdir binDir
+  liftE $ installHLS' workdir binDir ver
 
   -- create symlink if this is the latest version
   hlsVers <- lift $ fmap rights getInstalledHLSs
