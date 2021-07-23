@@ -470,22 +470,22 @@ installCabalBindist dlinfo ver = do
   let lInstCabal = headMay . reverse . sort $ cVers
   when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
 
- where
-  -- | Install an unpacked cabal distribution.
-  installCabal' :: (MonadLogger m, MonadCatch m, MonadIO m)
-                => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
-                -> FilePath      -- ^ Path to install to
-                -> Excepts '[CopyError] m ()
-  installCabal' path inst = do
-    lift $ $(logInfo) "Installing cabal"
-    let cabalFile = "cabal"
-    liftIO $ createDirRecursive' inst
-    let destFileName = cabalFile <> "-" <> T.unpack (prettyVer ver) <> exeExt
-    let destPath = inst </> destFileName
-    handleIO (throwE . CopyError . show) $ liftIO $ copyFile
-      (path </> cabalFile <> exeExt)
-      destPath
-    lift $ chmod_755 destPath
+-- | Install an unpacked cabal distribution.
+installCabal' :: (MonadLogger m, MonadCatch m, MonadIO m)
+              => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
+              -> FilePath      -- ^ Path to install to
+              -> Version
+              -> Excepts '[CopyError] m ()
+installCabal' path inst ver = do
+  lift $ $(logInfo) "Installing cabal"
+  let cabalFile = "cabal"
+  liftIO $ createDirRecursive' inst
+  let destFileName = cabalFile <> "-" <> T.unpack (prettyVer ver) <> exeExt
+  let destPath = inst </> destFileName
+  handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+    (path </> cabalFile <> exeExt)
+    destPath
+  lift $ chmod_755 destPath
 
 
 -- | Installs cabal into @~\/.ghcup\/bin/cabal-\<ver\>@ and
