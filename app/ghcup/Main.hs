@@ -1688,19 +1688,26 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 4
 
           let installHLS InstallOptions{..} =
-                (case instBindist of
-                   Nothing -> runInstTool instPlatform $ do
-                     (v, vi) <- liftE $ fromVersion instVer HLS
-                     liftE $ installHLSBin (_tvVersion v)
-                     pure vi
-                   Just uri -> do
-                     s' <- appState
-                     runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
-                       (v, vi) <- liftE $ fromVersion instVer HLS
-                       liftE $ installHLSBindist
-                           (DownloadInfo uri Nothing "")
-                           (_tvVersion v)
-                       pure vi
+                (case isolateDir of
+                  Just isoDir -> runInstTool instPlatform $ do
+                         (v, vi) <- liftE $ fromVersion instVer HLS
+                         let hlsVersion = (_tvVersion v)
+                         liftE $ installHLSBinIsolated isoDir hlsVersion
+                         pure vi
+                  Nothing ->
+                    case instBindist of
+                       Nothing -> runInstTool instPlatform $ do
+                         (v, vi) <- liftE $ fromVersion instVer HLS
+                         liftE $ installHLSBin (_tvVersion v)
+                         pure vi
+                       Just uri -> do
+                         s' <- appState
+                         runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
+                           (v, vi) <- liftE $ fromVersion instVer HLS
+                           liftE $ installHLSBindist
+                               (DownloadInfo uri Nothing "")
+                               (_tvVersion v)
+                           pure vi
                   )
                   >>= \case
                         VRight vi -> do
