@@ -12,6 +12,10 @@ ecabal() {
 	cabal "$@"
 }
 
+raw_eghcup() {
+	ghcup -v -c "$@"
+}
+
 eghcup() {
 	if [ "${OS}" = "WINDOWS" ] ; then
 		ghcup -v -c -s file:/$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml "$@"
@@ -19,6 +23,12 @@ eghcup() {
 		ghcup -v -c -s file://$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml "$@"
 	fi
 }
+
+if [ "${OS}" = "WINDOWS" ] ; then
+	GHCUP_DIR="${GHCUP_INSTALL_BASE_PREFIX}"/ghcup
+else
+	GHCUP_DIR="${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
+fi
 
 git describe --always
 
@@ -65,11 +75,7 @@ fi
 
 ### cleanup
 
-if [ "${OS}" = "WINDOWS" ] ; then
-	rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/ghcup
-else
-	rm -rf "${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
-fi
+rm -rf "${GHCUP_DIR}"
 
 ### manual cli based testing
 
@@ -88,6 +94,7 @@ cabal --version
 
 eghcup debug-info
 
+# also test etags
 eghcup list
 eghcup list -t ghc
 eghcup list -t cabal
@@ -155,6 +162,40 @@ if [ "${OS}" = "LINUX" ] ; then
 	fi
 fi
 
+sha_sum() {
+	if [ "${OS}" = "FREEBSD" ] ; then
+		sha256 "$@"
+	else
+		sha256sum "$@"
+	fi
+
+}
+
+# test etags
+rm -f "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml"
+raw_eghcup -s https://www.haskell.org/ghcup/data/ghcup-${JSON_VERSION}.yaml list
+# snapshot yaml and etags file
+etag=$(cat "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml.etags")
+sha=$(sha_sum "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml")
+# invalidate access time timer, which is 5minutes, so we re-download
+touch -a -m -t '199901010101' "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml"
+# redownload same file with some newlines added
+raw_eghcup -s https://www.haskell.org/ghcup/exp/ghcup-${JSON_VERSION}.yaml list
+# snapshot new yaml and etags file
+etag2=$(cat "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml.etags")
+sha2=$(sha_sum "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml")
+# compare
+[ "${etag}" != "${etag2}" ]
+[ "${sha}" != "${sha2}" ]
+# invalidate access time timer, which is 5minutes, but don't expect a re-download
+touch -a -m -t '199901010101' "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml"
+# this time, we expect the same hash and etag
+raw_eghcup -s https://www.haskell.org/ghcup/exp/ghcup-${JSON_VERSION}.yaml list
+etag3=$(cat "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml.etags")
+sha3=$(sha_sum "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml")
+[ "${etag2}" = "${etag3}" ]
+[ "${sha2}" = "${sha3}" ]
+
 
 eghcup upgrade
 eghcup upgrade -f
@@ -162,8 +203,4 @@ eghcup upgrade -f
 
 # nuke
 eghcup nuke
-if [ "${OS}" = "WINDOWS" ] ; then
-	[ ! -e "${GHCUP_INSTALL_BASE_PREFIX}/ghcup" ]
-else
-	[ ! -e "${GHCUP_INSTALL_BASE_PREFIX}/.ghcup" ]
-fi
+[ ! -e "${GHCUP_DIR}" ]

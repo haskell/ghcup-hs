@@ -209,6 +209,20 @@ exec exe args chdir env = do
   pure $ toProcessError exe args exit_code
 
 
+-- | Thin wrapper around `executeFile`.
+execShell :: MonadIO m
+          => FilePath       -- ^ thing to execute
+          -> [FilePath]     -- ^ args for the thing
+          -> Maybe FilePath   -- ^ optionally chdir into this
+          -> Maybe [(String, String)] -- ^ optional environment
+          -> m (Either ProcessError ())
+execShell exe args chdir env = do
+  let cmd = exe <> " " <> concatMap (' ':) args
+  cp <- createProcessWithMingwPath ((shell cmd) { cwd = chdir, env = env })
+  exit_code <- liftIO $ withCreateProcess cp $ \_ _ _ p -> waitForProcess p
+  pure $ toProcessError cmd [] exit_code
+
+
 chmod_755 :: MonadIO m => FilePath -> m ()
 chmod_755 fp =
   let perm = setOwnerWritable True emptyPermissions

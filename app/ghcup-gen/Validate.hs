@@ -256,7 +256,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
         case etool of
           Right (Just GHCup) -> do
             tmpUnpack <- lift mkGhcupTmpDir
-            _ <- liftE $ download dli tmpUnpack Nothing
+            _ <- liftE $ download (_dlUri dli) (Just (_dlHash dli)) tmpUnpack Nothing False
             pure Nothing
           Right _ -> do
             p <- liftE $ downloadCached dli Nothing
@@ -266,7 +266,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
               $ p
           Left ShimGen -> do
             tmpUnpack <- lift mkGhcupTmpDir
-            _ <- liftE $ download dli tmpUnpack Nothing
+            _ <- liftE $ download (_dlUri dli) (Just (_dlHash dli)) tmpUnpack Nothing False
             pure Nothing
     case r of
       VRight (Just basePath) -> do
