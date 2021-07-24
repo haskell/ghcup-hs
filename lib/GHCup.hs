@@ -2137,7 +2137,7 @@ upgradeGHCup mtarget force' = do
   dli   <- liftE $ getDownloadInfo GHCup latestVer
   tmp   <- lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt
-  p <- liftE $ download dli tmp (Just fn)
+  p <- liftE $ download (_dlUri dli) (Just (_dlHash dli)) tmp (Just fn) False
   let destDir = takeDirectory destFile
       destFile = fromMaybe (binDir </> fn) mtarget
   lift $ $(logDebug) [i|mkdir -p #{destDir}|]

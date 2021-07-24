@@ -27,6 +27,8 @@ import           Codec.Archive
 import qualified Codec.Archive.Tar             as Tar
 #endif
 import           Control.Exception.Safe
+import           Data.ByteString                ( ByteString )
+import           Data.CaseInsensitive           ( CI )
 import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
@@ -34,6 +36,8 @@ import           Haskus.Utils.Variant
 import           Text.PrettyPrint               hiding ( (<>) )
 import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           URI.ByteString
+
+import qualified Data.Map.Strict               as M
 
 
 
@@ -180,12 +184,20 @@ instance Pretty DigestError where
     text [i|Digest error: expected "#{expectedDigest}", but got "#{currentDigest}"|]
 
 -- | Unexpected HTTP status.
-data HTTPStatusError = HTTPStatusError Int
+data HTTPStatusError = HTTPStatusError Int (M.Map (CI ByteString) ByteString)
   deriving Show
 
 instance Pretty HTTPStatusError where
-  pPrint (HTTPStatusError status) =
+  pPrint (HTTPStatusError status _) =
     text [i|Unexpected HTTP status: #{status}|]
+
+-- | Unexpected HTTP status.
+data HTTPNotModified = HTTPNotModified Text
+  deriving Show
+
+instance Pretty HTTPNotModified where
+  pPrint (HTTPNotModified etag) =
+    text [i|Remote resource not modifed, etag was: #{etag}|]
 
 -- | The 'Location' header was expected during a 3xx redirect, but not found.
 data NoLocationHeader = NoLocationHeader

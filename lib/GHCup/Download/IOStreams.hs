@@ -9,9 +9,7 @@ module GHCup.Download.IOStreams where
 
 import           GHCup.Download.Utils
 import           GHCup.Errors
-import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.File
 import           GHCup.Utils.Prelude
 
 import           Control.Applicative
@@ -20,7 +18,7 @@ import           Control.Monad
 import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
 import           Data.ByteString.Builder
-import           Data.CaseInsensitive           ( CI )
+import           Data.CaseInsensitive           ( CI, original, mk )
 import           Data.IORef
 import           Data.Maybe
 import           Data.Text.Read
@@ -32,7 +30,6 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.ProgressBar
-import           System.IO
 import           URI.ByteString
 
 import qualified Data.ByteString               as BS
@@ -67,7 +64,7 @@ downloadBS' :: MonadIO m
 downloadBS' https host path port = do
   bref <- liftIO $ newIORef (mempty :: Builder)
   let stepper bs = modifyIORef bref (<> byteString bs)
-  downloadInternal False https host path port stepper
+  void $ downloadInternal False https host path port stepper (pure ()) mempty
   liftIO (readIORef bref <&> toLazyByteString)
 
 
@@ -77,12 +74,17 @@ downloadToFile :: (MonadMask m, MonadIO m)
                -> ByteString       -- ^ path (e.g. "/my/file") including query
                -> Maybe Int        -- ^ optional port (e.g. 3000)
                -> FilePath         -- ^ destination file to create and write to
-               -> Excepts '[DownloadFailed] m ()
-downloadToFile https host fullPath port destFile = do
-  fd <- liftIO $ openFile destFile WriteMode
-  let stepper = BS.hPut fd
-  flip finally (liftIO $ hClose fd)
-    $ reThrowAll DownloadFailed $ downloadInternal True https host fullPath port stepper
+               -> (M.Map (CI ByteString) ByteString) -- ^ additional headers
+               -> Excepts '[DownloadFailed, HTTPNotModified] m Response
+downloadToFile https host fullPath port destFile addHeaders = do
+  let stepper = BS.appendFile destFile
+      setup = BS.writeFile destFile mempty
+  catchAllE (\case
+              (V (HTTPStatusError i headers))
+                | i == 304
+                , Just e <- M.lookup (mk "etag") headers -> throwE $ HTTPNotModified (decUTF8Safe e)
+              v -> throwE $ DownloadFailed v
+            ) $ downloadInternal True https host fullPath port stepper setup addHeaders
 
 
 downloadInternal :: MonadIO m
@@ -92,6 +94,8 @@ downloadInternal :: MonadIO m
                  -> ByteString  -- ^ path with query
                  -> Maybe Int   -- ^ optional port
                  -> (ByteString -> IO a)   -- ^ the consuming step function
+                 -> IO a                   -- ^ setup action
+                 -> (M.Map (CI ByteString) ByteString) -- ^ additional headers
                  -> Excepts
                       '[ HTTPStatusError
                        , URIParseError
@@ -100,19 +104,21 @@ downloadInternal :: MonadIO m
                        , TooManyRedirs
                        ]
                       m
-                      ()
+                      Response
 downloadInternal = go (5 :: Int)
 
  where
-  go redirs progressBar https host path port consumer = do
+  go redirs progressBar https host path port consumer setup addHeaders = do
     r <- liftIO $ withConnection' https host port action
     veitherToExcepts r >>= \case
-      Just r' ->
+      Right r' ->
         if redirs > 0 then followRedirectURL r' else throwE TooManyRedirs
-      Nothing -> pure ()
+      Left res -> pure res
    where
     action c = do
-      let q = buildRequest1 $ http GET path
+      let q = buildRequest1 $ do
+                http GET path
+                flip M.traverseWithKey addHeaders $ \key val -> setHeader (original key) val
 
       sendRequest c q emptyBody
 
@@ -121,28 +127,30 @@ downloadInternal = go (5 :: Int)
         (\r i' -> runE $ do
           let scode = getStatusCode r
           if
-            | scode >= 200 && scode < 300 -> downloadStream r i' >> pure Nothing
+            | scode >= 200 && scode < 300 -> liftIO $ downloadStream r i' >> pure (Left r)
+            | scode == 304 -> throwE $ HTTPStatusError scode (getHeaderMap r)
             | scode >= 300 && scode < 400 -> case getHeader r "Location" of
-              Just r' -> pure $ Just r'
+              Just r' -> pure $ Right r'
               Nothing -> throwE NoLocationHeader
-            | otherwise -> throwE $ HTTPStatusError scode
+            | otherwise -> throwE $ HTTPStatusError scode (getHeaderMap r)
         )
 
     followRedirectURL bs = case parseURI strictURIParserOptions bs of
       Right uri' -> do
         (https', host', fullPath', port') <- liftE $ uriToQuadruple uri'
-        go (redirs - 1) progressBar https' host' fullPath' port' consumer
+        go (redirs - 1) progressBar https' host' fullPath' port' consumer setup addHeaders
       Left e -> throwE e
 
     downloadStream r i' = do
+      void setup
       let size = case getHeader r "Content-Length" of
             Just x' -> case decimal $ decUTF8Safe x' of
               Left  _       -> 0
               Right (r', _) -> r'
             Nothing -> 0
 
-      mpb <- if progressBar
-        then Just <$> liftIO (newProgressBar defStyle 10 (Progress 0 size ()))
+      (mpb :: Maybe (ProgressBar ())) <- if progressBar
+        then Just <$> newProgressBar defStyle 10 (Progress 0 size ())
         else pure Nothing
 
       outStream <- liftIO $ Streams.makeOutputStream
@@ -154,79 +162,6 @@ downloadInternal = go (5 :: Int)
         )
       liftIO $ Streams.connect i' outStream
 
-
-getHead :: (MonadCatch m, MonadIO m)
-        => URI
-        -> Excepts
-             '[ HTTPStatusError
-              , URIParseError
-              , UnsupportedScheme
-              , NoLocationHeader
-              , TooManyRedirs
-              , ProcessError
-              ]
-             m
-             (M.Map (CI ByteString) ByteString)
-getHead uri' | scheme == "https" = head' True
-             | scheme == "http"  = head' False
-             | otherwise         = throwE UnsupportedScheme
-
- where
-  scheme = view (uriSchemeL' % schemeBSL') uri'
-  head' https = do
-    (_, host', fullPath', port') <- liftE $ uriToQuadruple uri'
-    liftE $ headInternal https host' fullPath' port'
-
-
-headInternal :: MonadIO m
-             => Bool        -- ^ https?
-             -> ByteString  -- ^ host
-             -> ByteString  -- ^ path with query
-             -> Maybe Int   -- ^ optional port
-             -> Excepts
-                  '[ HTTPStatusError
-                   , URIParseError
-                   , UnsupportedScheme
-                   , TooManyRedirs
-                   , NoLocationHeader
-                   ]
-                  m
-                  (M.Map (CI ByteString) ByteString)
-headInternal = go (5 :: Int)
-
- where
-  go redirs https host path port = do
-    r <- liftIO $ withConnection' https host port action
-    veitherToExcepts r >>= \case
-      Left r' ->
-        if redirs > 0 then followRedirectURL r' else throwE TooManyRedirs
-      Right hs -> pure hs
-   where
-
-    action c = do
-      let q = buildRequest1 $ http HEAD path
-
-      sendRequest c q emptyBody
-
-      unsafeReceiveResponse
-        c
-        (\r _ -> runE $ do
-          let scode = getStatusCode r
-          if
-            | scode >= 200 && scode < 300 -> do
-              let headers = getHeaderMap r
-              pure $ Right headers
-            | scode >= 300 && scode < 400 -> case getHeader r "Location" of
-              Just r' -> pure $ Left r'
-              Nothing -> throwE NoLocationHeader
-            | otherwise -> throwE $ HTTPStatusError scode
-        )
-
-    followRedirectURL bs = case parseURI strictURIParserOptions bs of
-      Right uri' -> do
-        (https', host', fullPath', port') <- liftE $ uriToQuadruple uri'
-        go (redirs - 1) https' host' fullPath' port'
-      Left e -> throwE e
 
 
 withConnection' :: Bool
