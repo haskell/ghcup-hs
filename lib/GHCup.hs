@@ -707,6 +707,7 @@ installStackBindist :: ( MonadMask m
                        )
                     => DownloadInfo
                     -> Version
+                    -> Maybe FilePath
                     -> Excepts
                          '[ AlreadyInstalled
                           , CopyError
@@ -722,13 +723,16 @@ installStackBindist :: ( MonadMask m
                           ]
                          m
                          ()
-installStackBindist dlinfo ver = do
+installStackBindist dlinfo ver isoFilepath = do
   lift $ $(logDebug) [i|Requested to install stack version #{ver}|]
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-  whenM (lift (stackInstalled ver))
+  let isIsolatedInstall = isJust isoFilepath
+
+  when (not isIsolatedInstall) $ 
+    whenM (lift (stackInstalled ver))
     (throwE $ AlreadyInstalled Stack ver)
 
   -- download (or use cached version)
@@ -742,12 +746,20 @@ installStackBindist dlinfo ver = do
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
 
-  liftE $ installStack' workdir binDir ver
+  let isoDir = fromJust isoFilepath
 
-  -- create symlink if this is the latest version
-  sVers <- lift $ fmap rights getInstalledStacks
-  let lInstStack = headMay . reverse . sort $ sVers
-  when (maybe True (ver >=) lInstStack) $ liftE $ setStack ver
+  if isIsolatedInstall
+  then do
+    lift $ $(logInfo) [i|isolated installing Stack to #{isoDir}|]
+    liftE $ installStack' workdir isoDir ver
+  else do
+    liftE $ installStack' workdir binDir ver
+  
+  -- create symlink if this is the latest version and a regular install
+  whenM (pure $ not isIsolatedInstall) $ do
+    sVers <- lift $ fmap rights getInstalledStacks
+    let lInstStack = headMay . reverse . sort $ sVers
+    when (maybe True (ver >=) lInstStack) $ liftE $ setStack ver
 
 
 -- | Install an unpacked stack distribution.
