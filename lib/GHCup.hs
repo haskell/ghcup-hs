@@ -689,6 +689,7 @@ installHLSBin :: ( MonadMask m
                  , MonadFail m
                  )
               => Version
+              -> Maybe FilePath
               -> Excepts
                    '[ AlreadyInstalled
                     , CopyError
@@ -704,9 +705,9 @@ installHLSBin :: ( MonadMask m
                     ]
                    m
                    ()
-installHLSBin ver = do
+installHLSBin ver isoFilepath = do
   dlinfo <- liftE $ getDownloadInfo HLS ver
-  installHLSBindist dlinfo ver
+  installHLSBindist dlinfo ver isoFilepath
 
 
 -- | Installs stack into @~\/.ghcup\/bin/stack-\<ver\>@ and
