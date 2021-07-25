@@ -448,9 +448,9 @@ installCabalBindist dlinfo ver isoFilepath = do
   if isIsolatedInstall
   then do
     lift $ $(logInfo) [i|isolated installing Cabal to #{isoDir}|]
-    liftE $ installCabal' workdir isoDir ver
+    liftE $ installCabalUnpacked workdir isoDir ver
   else do
-    liftE $ installCabal' workdir binDir ver
+    liftE $ installCabalUnpacked workdir binDir ver
 
   -- create symlink if this is the latest version
   -- not applicable for isolated installs  
@@ -460,12 +460,12 @@ installCabalBindist dlinfo ver isoFilepath = do
     when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
 
 -- | Install an unpacked cabal distribution.
-installCabal' :: (MonadLogger m, MonadCatch m, MonadIO m)
+installCabalUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Version
               -> Excepts '[CopyError] m ()
-installCabal' path inst ver = do
+installCabalUnpacked path inst ver = do
   lift $ $(logInfo) "Installing cabal"
   let cabalFile = "cabal"
   liftIO $ createDirRecursive' inst
@@ -574,9 +574,9 @@ installHLSBindist dlinfo ver isoFilepath = do
   if isIsolatedInstall
   then do
     lift $ $(logInfo) [i|isolated installing HLS to #{isoDir}|]
-    liftE $ installHLS' workdir isoDir ver
+    liftE $ installHLSUnpacked workdir isoDir ver
   else do
-    liftE $ installHLS' workdir binDir ver
+    liftE $ installHLSUnpacked workdir binDir ver
 
   -- create symlink if this is the latest version in a regular install
   whenM (pure $ not isIsolatedInstall) $ do
@@ -585,12 +585,12 @@ installHLSBindist dlinfo ver isoFilepath = do
     when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
 
 -- | Install an unpacked hls distribution.
-installHLS' :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
+installHLSUnpacked :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Version
               -> Excepts '[CopyError] m ()
-installHLS' path inst ver = do
+installHLSUnpacked path inst ver = do
   lift $ $(logInfo) "Installing HLS"
   liftIO $ createDirRecursive' inst
 
@@ -752,9 +752,9 @@ installStackBindist dlinfo ver isoFilepath = do
   if isIsolatedInstall
   then do
     lift $ $(logInfo) [i|isolated installing Stack to #{isoDir}|]
-    liftE $ installStack' workdir isoDir ver
+    liftE $ installStackUnpacked workdir isoDir ver
   else do
-    liftE $ installStack' workdir binDir ver
+    liftE $ installStackUnpacked workdir binDir ver
   
   -- create symlink if this is the latest version and a regular install
   whenM (pure $ not isIsolatedInstall) $ do
@@ -764,12 +764,12 @@ installStackBindist dlinfo ver isoFilepath = do
 
 
 -- | Install an unpacked stack distribution.
-installStack' :: (MonadLogger m, MonadCatch m, MonadIO m)
+installStackUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked stack bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Version
               -> Excepts '[CopyError] m ()
-installStack' path inst ver = do
+installStackUnpacked path inst ver = do
   lift $ $(logInfo) "Installing stack"
   let stackFile = "stack"
   liftIO $ createDirRecursive' inst
