@@ -128,7 +128,10 @@
         <div>
           <p>
             If you are running Windows,<br/>run the following in a powershell session (as a non-admin user).
-			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
+			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
+			</div>
+				<p class="other-help">If you want to run a non-interactive installation, change <span class='code'>$true</span> to <span class='code'>$false</span> at the end of the script.</p>
+			</div>
           </p>
         </div>
 
