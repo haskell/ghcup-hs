@@ -96,6 +96,7 @@ toolRequirements:
       Linux_Alpine:
         unknown_versioning:
           distroPKGs:
+          - binutils-gold
           - curl
           - gcc
           - g++
