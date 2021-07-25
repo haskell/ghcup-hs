@@ -530,6 +530,7 @@ installHLSBindist :: ( MonadMask m
                      )
                   => DownloadInfo
                   -> Version
+                  -> Maybe FilePath -- ^ isolated install path, if user passed any
                   -> Excepts
                        '[ AlreadyInstalled
                         , CopyError
@@ -545,13 +546,17 @@ installHLSBindist :: ( MonadMask m
                         ]
                        m
                        ()
-installHLSBindist dlinfo ver = do
+installHLSBindist dlinfo ver isoFilepath = do
   lift $ $(logDebug) [i|Requested to install hls version #{ver}|]
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-  whenM (lift (hlsInstalled ver))
+  let isIsolatedInstall = isJust isoFilepath
+
+  -- we only check for already installed in regular (non-isolated) installs
+  when (not isIsolatedInstall) $
+    whenM (lift (hlsInstalled ver))
     (throwE $ AlreadyInstalled HLS ver)
 
   -- download (or use cached version)
@@ -564,13 +569,20 @@ installHLSBindist dlinfo ver = do
 
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
+  let isoDir = fromJust isoFilepath
 
-  liftE $ installHLS' workdir binDir ver
+  if isIsolatedInstall
+  then do
+    lift $ $(logInfo) [i|isolated installing HLS to #{isoDir}|]
+    liftE $ installHLS' workdir isoDir ver
+  else do
+    liftE $ installHLS' workdir binDir ver
 
-  -- create symlink if this is the latest version
-  hlsVers <- lift $ fmap rights getInstalledHLSs
-  let lInstHLS = headMay . reverse . sort $ hlsVers
-  when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
+  -- create symlink if this is the latest version in a regular install
+  whenM (pure $ not isIsolatedInstall) $ do
+    hlsVers <- lift $ fmap rights getInstalledHLSs
+    let lInstHLS = headMay . reverse . sort $ hlsVers
+    when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
 
 -- | Install an unpacked hls distribution.
 installHLS' :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
