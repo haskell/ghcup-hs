@@ -1643,27 +1643,20 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
 
           let installCabal InstallOptions{..} =
-                (case isolateDir of
-                  Just isoDir ->
-                    runInstTool instPlatform $ do
-                    (v, vi) <- liftE $ fromVersion instVer Cabal
-                    let cabalVersion = (_tvVersion v)
-                    liftE $ installCabalBinIsolated isoDir cabalVersion
-                    pure vi
-                  Nothing ->
-                    case instBindist of
-                       Nothing -> runInstTool instPlatform $ do
-                         (v, vi) <- liftE $ fromVersion instVer Cabal
-                         liftE $ installCabalBin (_tvVersion v)
-                         pure vi
-                       Just uri -> do
-                         s' <- appState
-                         runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
-                           (v, vi) <- liftE $ fromVersion instVer Cabal
-                           liftE $ installCabalBindist
-                               (DownloadInfo uri Nothing "")
-                               (_tvVersion v)
-                           pure vi
+                (case instBindist of
+                   Nothing -> runInstTool instPlatform $ do
+                     (v, vi) <- liftE $ fromVersion instVer Cabal
+                     liftE $ installCabalBin (_tvVersion v) isolateDir
+                     pure vi
+                   Just uri -> do
+                     s' <- appState
+                     runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
+                       (v, vi) <- liftE $ fromVersion instVer Cabal
+                       liftE $ installCabalBindist
+                           (DownloadInfo uri Nothing "")
+                           (_tvVersion v)
+                           isolateDir
+                       pure vi
                   )
                   >>= \case
                         VRight vi -> do
