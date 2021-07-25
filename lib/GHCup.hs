@@ -545,6 +545,7 @@ installCabalBin :: ( MonadMask m
                    , MonadFail m
                    )
                 => Version
+                -> Maybe FilePath -- isolated install Path, if user provided any
                 -> Excepts
                      '[ AlreadyInstalled
                       , CopyError
@@ -560,9 +561,9 @@ installCabalBin :: ( MonadMask m
                       ]
                      m
                      ()
-installCabalBin ver = do
+installCabalBin ver isoFilepath = do
   dlinfo <- liftE $ getDownloadInfo Cabal ver
-  installCabalBindist dlinfo ver
+  installCabalBindist dlinfo ver isoFilepath
 
 
 -- | Like 'installHLSBin, except takes the 'DownloadInfo' as
