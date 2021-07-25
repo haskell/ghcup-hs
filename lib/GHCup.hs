@@ -397,6 +397,7 @@ installCabalBindist :: ( MonadMask m
                        )
                     => DownloadInfo
                     -> Version
+                    -> Maybe FilePath -- ^ isolated install filepath, if user provides any.
                     -> Excepts
                          '[ AlreadyInstalled
                           , CopyError
@@ -412,13 +413,17 @@ installCabalBindist :: ( MonadMask m
                           ]
                          m
                          ()
-installCabalBindist dlinfo ver = do
+installCabalBindist dlinfo ver isoFilepath = do
   lift $ $(logDebug) [i|Requested to install cabal version #{ver}|]
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-  whenM
+  let isIsolatedInstall = isJust isoFilepath
+
+  -- check if cabal already installed in regular (non-isolated) installs
+  when (not isIsolatedInstall) $
+    whenM
       (lift (cabalInstalled ver) >>= \a -> liftIO $
         handleIO (\_ -> pure False)
           $ fmap (\x -> a && x)
@@ -438,12 +443,21 @@ installCabalBindist dlinfo ver = do
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
 
-  liftE $ installCabal' workdir binDir ver
+  let isoDir = fromJust isoFilepath
+
+  if isIsolatedInstall
+  then do
+    lift $ $(logInfo) [i|isolated installing Cabal to #{isoDir}|]
+    liftE $ installCabal' workdir isoDir ver
+  else do
+    liftE $ installCabal' workdir binDir ver
 
   -- create symlink if this is the latest version
-  cVers <- lift $ fmap rights getInstalledCabals
-  let lInstCabal = headMay . reverse . sort $ cVers
-  when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
+  -- not applicable for isolated installs  
+  whenM (pure $ not isIsolatedInstall) $ do
+    cVers <- lift $ fmap rights getInstalledCabals
+    let lInstCabal = headMay . reverse . sort $ cVers
+    when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
 
 -- | Install an unpacked cabal distribution.
 installCabal' :: (MonadLogger m, MonadCatch m, MonadIO m)
