@@ -671,6 +671,7 @@ installStackBin :: ( MonadMask m
                    , MonadFail m
                    )
                 => Version
+                -> Maybe FilePath
                 -> Excepts
                      '[ AlreadyInstalled
                       , CopyError
@@ -686,9 +687,9 @@ installStackBin :: ( MonadMask m
                       ]
                      m
                      ()
-installStackBin ver = do
+installStackBin ver isoFilepath = do
   dlinfo <- liftE $ getDownloadInfo Stack ver
-  installStackBindist dlinfo ver
+  installStackBindist dlinfo ver isoFilepath
 
 
 -- | Like 'installStackBin', except takes the 'DownloadInfo' as
