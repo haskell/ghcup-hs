@@ -186,6 +186,7 @@ installGHCBindist :: ( MonadFail m
                      )
                   => DownloadInfo    -- ^ where/how to download
                   -> Version         -- ^ the version to install
+                  -> Maybe FilePath  -- ^ isolated filepath if user passed any
                   -> Excepts
                        '[ AlreadyInstalled
                         , BuildFailed
@@ -201,10 +202,16 @@ installGHCBindist :: ( MonadFail m
                         ]
                        m
                        ()
-installGHCBindist dlinfo ver = do
+installGHCBindist dlinfo ver isoFilepath = do
   let tver = mkTVer ver
+  let isIsolatedInstall = isJust isoFilepath
+
+
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
-  whenM (lift $ ghcInstalled tver) (throwE $ AlreadyInstalled GHC ver)
+
+  -- we only care for already installed errors in regular (non-isolated) installs
+  when (not isIsolatedInstall) $
+    whenM (lift $ ghcInstalled tver) (throwE $ AlreadyInstalled GHC ver)
 
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
@@ -212,11 +219,21 @@ installGHCBindist dlinfo ver = do
   -- prepare paths
   ghcdir <- lift $ ghcupGHCDir tver
 
-  toolchainSanityChecks
-  
-  liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver
+  let isoDir = if isIsolatedInstall
+               then fromJust isoFilepath
+               else mempty :: FilePath
 
-  liftE $ postGHCInstall tver
+  if isIsolatedInstall
+  then do
+    lift $ $(logInfo) [i|isolated installing GHC to #{isoDir}|]
+    liftE $ installPackedGHC dl (view dlSubdir dlinfo) isoDir ver
+  else do
+    toolchainSanityChecks
+    liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver
+
+  -- make symlinks & stuff when regular install,
+  -- don't make any for isolated installs.
+  whenM (pure $ not isIsolatedInstall) (liftE $ postGHCInstall tver)
 
  where
   toolchainSanityChecks = do
