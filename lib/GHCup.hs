@@ -405,6 +405,7 @@ installGHCBin :: ( MonadFail m
                  , MonadUnliftIO m
                  )
               => Version         -- ^ the version to install
+              -> Maybe FilePath  -- ^ isolated install filepath, if user passed any
               -> Excepts
                    '[ AlreadyInstalled
                     , BuildFailed
@@ -420,9 +421,9 @@ installGHCBin :: ( MonadFail m
                     ]
                    m
                    ()
-installGHCBin ver = do
+installGHCBin ver isoFilepath = do
   dlinfo <- liftE $ getDownloadInfo GHC ver
-  installGHCBindist dlinfo ver
+  installGHCBindist dlinfo ver isoFilepath
 
 
 -- | Like 'installCabalBin', except takes the 'DownloadInfo' as

@@ -1601,28 +1601,22 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -----------------------
 
           let installGHC InstallOptions{..} =
-                (case isolateDir of
-                   Just isoDir -> runInstTool instPlatform $ do
-                    (v, vi) <- liftE $ fromVersion instVer GHC
-                    let ghcVersion = _tvVersion v
-                    liftE $ installGHCBinIsolated isoDir ghcVersion
-                    pure vi
-                   Nothing ->
-                     case instBindist of
-                       Nothing -> runInstTool instPlatform $ do
-                         (v, vi) <- liftE $ fromVersion instVer GHC
-                         liftE $ installGHCBin (_tvVersion v)
-                         when instSet $ void $ liftE $ setGHC v SetGHCOnly
-                         pure vi
-                       Just uri -> do
-                         s' <- liftIO appState
-                         runInstTool' s'{ settings = settings {noVerify = True}} instPlatform $ do
-                           (v, vi) <- liftE $ fromVersion instVer GHC
-                           liftE $ installGHCBindist
-                             (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
-                             (_tvVersion v)
-                           when instSet $ void $ liftE $ setGHC v SetGHCOnly
-                           pure vi
+                (case instBindist of
+                   Nothing -> runInstTool instPlatform $ do
+                     (v, vi) <- liftE $ fromVersion instVer GHC
+                     liftE $ installGHCBin (_tvVersion v) isolateDir
+                     when instSet $ void $ liftE $ setGHC v SetGHCOnly
+                     pure vi
+                   Just uri -> do
+                     s' <- liftIO appState
+                     runInstTool' s'{ settings = settings {noVerify = True}} instPlatform $ do
+                       (v, vi) <- liftE $ fromVersion instVer GHC
+                       liftE $ installGHCBindist
+                         (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
+                         (_tvVersion v)
+                         isolateDir
+                       when instSet $ void $ liftE $ setGHC v SetGHCOnly
+                       pure vi
                   )
                     >>= \case
                           VRight vi -> do
