@@ -1707,26 +1707,20 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 4
 
           let installStack InstallOptions{..} =
-                (case isolateDir of
-                  Just isoDir -> runInstTool instPlatform $ do
-                         (v, vi) <- liftE $ fromVersion instVer Stack
-                         let stackVersion = (_tvVersion v)
-                         liftE $ installStackBinIsolated isoDir stackVersion
-                         pure vi
-                  Nothing ->
-                    case instBindist of
-                       Nothing -> runInstTool instPlatform $ do
-                         (v, vi) <- liftE $ fromVersion instVer Stack
-                         liftE $ installStackBin (_tvVersion v)
-                         pure vi
-                       Just uri -> do
-                         s' <- appState
-                         runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
-                           (v, vi) <- liftE $ fromVersion instVer Stack
-                           liftE $ installStackBindist
-                               (DownloadInfo uri Nothing "")
-                               (_tvVersion v)
-                           pure vi
+                 (case instBindist of
+                    Nothing -> runInstTool instPlatform $ do
+                      (v, vi) <- liftE $ fromVersion instVer Stack
+                      liftE $ installStackBin (_tvVersion v) isolateDir
+                      pure vi
+                    Just uri -> do
+                      s' <- appState
+                      runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
+                        (v, vi) <- liftE $ fromVersion instVer Stack
+                        liftE $ installStackBindist
+                            (DownloadInfo uri Nothing "")
+                            (_tvVersion v)
+                            isolateDir
+                        pure vi
                   )
                   >>= \case
                         VRight vi -> do

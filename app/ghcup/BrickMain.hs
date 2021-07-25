@@ -460,7 +460,7 @@ install' _ (_, ListResult {..}) = do
           liftE $ installHLSBin lVer Nothing $> vi
         Stack -> do
           let vi = getVersionInfo lVer Stack dls
-          liftE $ installStackBin lVer $> vi
+          liftE $ installStackBin lVer Nothing $> vi
     )
     >>= \case
           VRight vi                         -> do
