@@ -1537,7 +1537,7 @@ rmGhcupDirs = do
 
   where
     handleRm :: (MonadCatch m, MonadLogger m)  => m () -> m ()
-    handleRm = handleIO (\e -> $logWarn [i|Part of the cleanup action failed with error: #{displayException e}
+    handleRm = handleIO (\e -> $logDebug [i|Part of the cleanup action failed with error: #{displayException e}
 continuing regardless...|])
 
     rmEnvFile :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
