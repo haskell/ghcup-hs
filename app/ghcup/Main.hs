@@ -2125,7 +2125,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                                   runLogger $ $logInfo "Nuclear Annihilation complete!"
                                   pure ExitSuccess
                               | otherwise -> do
-                                  runLogger $ $logWarn "These Files have survived Nuclear Annihilation, you may remove them manually."
+                                  runLogger $ $logError "These Files have survived Nuclear Annihilation, you may remove them manually."
                                   forM_ leftOverFiles putStrLn
                                   pure ExitSuccess
 
