@@ -204,14 +204,13 @@ installGHCBindist :: ( MonadFail m
                        ()
 installGHCBindist dlinfo ver isoFilepath = do
   let tver = mkTVer ver
-  let isIsolatedInstall = isJust isoFilepath
-
 
   lift $ $(logDebug) [i|Requested to install GHC with #{ver}|]
 
-  -- we only care for already installed errors in regular (non-isolated) installs
-  when (not isIsolatedInstall) $
-    whenM (lift $ ghcInstalled tver) (throwE $ AlreadyInstalled GHC ver)
+  case isoFilepath of
+    -- we only care for already installed errors in regular (non-isolated) installs
+    Nothing -> whenM (lift $ ghcInstalled tver) (throwE $ AlreadyInstalled GHC ver)
+    _ -> pure ()
 
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
@@ -219,21 +218,16 @@ installGHCBindist dlinfo ver isoFilepath = do
   -- prepare paths
   ghcdir <- lift $ ghcupGHCDir tver
 
-  let isoDir = if isIsolatedInstall
-               then fromJust isoFilepath
-               else mempty :: FilePath
+  case isoFilepath of
+    Just isoDir -> do                        -- isolated install
+      lift $ $(logInfo) [i|isolated installing GHC to #{isoDir}|]
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) isoDir ver
+    Nothing -> do                            -- regular install
+      toolchainSanityChecks
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver
 
-  if isIsolatedInstall
-  then do
-    lift $ $(logInfo) [i|isolated installing GHC to #{isoDir}|]
-    liftE $ installPackedGHC dl (view dlSubdir dlinfo) isoDir ver
-  else do
-    toolchainSanityChecks
-    liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver
-
-  -- make symlinks & stuff when regular install,
-  -- don't make any for isolated installs.
-  whenM (pure $ not isIsolatedInstall) (liftE $ postGHCInstall tver)
+      -- make symlinks & stuff when regular install,
+      liftE $ postGHCInstall tver
 
  where
   toolchainSanityChecks = do
@@ -419,18 +413,18 @@ installCabalBindist dlinfo ver isoFilepath = do
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-  let isIsolatedInstall = isJust isoFilepath
+  case isoFilepath of
+    Nothing -> -- for regular install check if any previous versions installed
+      whenM
+        (lift (cabalInstalled ver) >>= \a -> liftIO $
+          handleIO (\_ -> pure False)
+            $ fmap (\x -> a && x)
+            -- ignore when the installation is a legacy cabal (binary, not symlink)
+            $ pathIsLink (binDir </> "cabal" <> exeExt)
+        )
+        (throwE $ AlreadyInstalled Cabal ver)
 
-  -- check if cabal already installed in regular (non-isolated) installs
-  when (not isIsolatedInstall) $
-    whenM
-      (lift (cabalInstalled ver) >>= \a -> liftIO $
-        handleIO (\_ -> pure False)
-          $ fmap (\x -> a && x)
-          -- ignore when the installation is a legacy cabal (binary, not symlink)
-          $ pathIsLink (binDir </> "cabal" <> exeExt)
-      )
-      (throwE $ AlreadyInstalled Cabal ver)
+    _ -> pure () -- check isn't required in isolated installs
 
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
@@ -443,21 +437,18 @@ installCabalBindist dlinfo ver isoFilepath = do
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
 
-  let isoDir = fromJust isoFilepath
+  case isoFilepath of
+    Just isoDir -> do             -- isolated install
+      lift $ $(logInfo) [i|isolated installing Cabal to #{isoDir}|]
+      liftE $ installCabalUnpacked workdir isoDir ver
 
-  if isIsolatedInstall
-  then do
-    lift $ $(logInfo) [i|isolated installing Cabal to #{isoDir}|]
-    liftE $ installCabalUnpacked workdir isoDir ver
-  else do
-    liftE $ installCabalUnpacked workdir binDir ver
+    Nothing -> do                 -- regular install
+      liftE $ installCabalUnpacked workdir binDir ver
 
-  -- create symlink if this is the latest version
-  -- not applicable for isolated installs  
-  whenM (pure $ not isIsolatedInstall) $ do
-    cVers <- lift $ fmap rights getInstalledCabals
-    let lInstCabal = headMay . reverse . sort $ cVers
-    when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
+      -- create symlink if this is the latest version for regular installs
+      cVers <- lift $ fmap rights getInstalledCabals
+      let lInstCabal = headMay . reverse . sort $ cVers
+      when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
 
 -- | Install an unpacked cabal distribution.
 installCabalUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
@@ -552,12 +543,13 @@ installHLSBindist dlinfo ver isoFilepath = do
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-  let isIsolatedInstall = isJust isoFilepath
+  case isoFilepath of
+    Nothing ->
+      -- we only check for already installed in regular (non-isolated) installs
+      whenM (lift (hlsInstalled ver))
+      (throwE $ AlreadyInstalled HLS ver)
 
-  -- we only check for already installed in regular (non-isolated) installs
-  when (not isIsolatedInstall) $
-    whenM (lift (hlsInstalled ver))
-    (throwE $ AlreadyInstalled HLS ver)
+    _ -> pure ()
 
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
@@ -569,20 +561,20 @@ installHLSBindist dlinfo ver isoFilepath = do
 
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
-  let isoDir = fromJust isoFilepath
 
-  if isIsolatedInstall
-  then do
-    lift $ $(logInfo) [i|isolated installing HLS to #{isoDir}|]
-    liftE $ installHLSUnpacked workdir isoDir ver
-  else do
-    liftE $ installHLSUnpacked workdir binDir ver
+  case isoFilepath of
+    Just isoDir -> do
+      lift $ $(logInfo) [i|isolated installing HLS to #{isoDir}|]
+      liftE $ installHLSUnpacked workdir isoDir ver
 
-  -- create symlink if this is the latest version in a regular install
-  whenM (pure $ not isIsolatedInstall) $ do
-    hlsVers <- lift $ fmap rights getInstalledHLSs
-    let lInstHLS = headMay . reverse . sort $ hlsVers
-    when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
+    Nothing -> do
+      liftE $ installHLSUnpacked workdir binDir ver
+
+      -- create symlink if this is the latest version in a regular install
+      hlsVers <- lift $ fmap rights getInstalledHLSs
+      let lInstHLS = headMay . reverse . sort $ hlsVers
+      when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
+
 
 -- | Install an unpacked hls distribution.
 installHLSUnpacked :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
@@ -730,11 +722,12 @@ installStackBindist dlinfo ver isoFilepath = do
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-  let isIsolatedInstall = isJust isoFilepath
+  case isoFilepath of
+    Nothing ->             -- check previous versions in case of regular installs
+      whenM (lift (stackInstalled ver))
+      (throwE $ AlreadyInstalled Stack ver)
 
-  when (not isIsolatedInstall) $ 
-    whenM (lift (stackInstalled ver))
-    (throwE $ AlreadyInstalled Stack ver)
+    _ -> pure ()           -- don't do shit for isolates
 
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
@@ -747,20 +740,17 @@ installStackBindist dlinfo ver isoFilepath = do
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
 
-  let isoDir = fromJust isoFilepath
+  case isoFilepath of
+    Just isoDir -> do                 -- isolated install
+      lift $ $(logInfo) [i|isolated installing Stack to #{isoDir}|]
+      liftE $ installStackUnpacked workdir isoDir ver
+    Nothing -> do                     -- regular install
+      liftE $ installStackUnpacked workdir binDir ver
 
-  if isIsolatedInstall
-  then do
-    lift $ $(logInfo) [i|isolated installing Stack to #{isoDir}|]
-    liftE $ installStackUnpacked workdir isoDir ver
-  else do
-    liftE $ installStackUnpacked workdir binDir ver
-  
-  -- create symlink if this is the latest version and a regular install
-  whenM (pure $ not isIsolatedInstall) $ do
-    sVers <- lift $ fmap rights getInstalledStacks
-    let lInstStack = headMay . reverse . sort $ sVers
-    when (maybe True (ver >=) lInstStack) $ liftE $ setStack ver
+      -- create symlink if this is the latest version and a regular install
+      sVers <- lift $ fmap rights getInstalledStacks
+      let lInstStack = headMay . reverse . sort $ sVers
+      when (maybe True (ver >=) lInstStack) $ liftE $ setStack ver
 
 
 -- | Install an unpacked stack distribution.
