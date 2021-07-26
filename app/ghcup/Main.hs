@@ -1390,9 +1390,18 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 race_ (liftIO $ runLogger $ flip runReaderT dirs $ cleanupTrash)
                       (threadDelay 5000000 >> runLogger ($(logWarn) [i|Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in #{recycleDir} manually|]))
 
-                lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
-                  Nothing -> runLogger $ flip runReaderT s' $ checkForUpdates
-                  Just _ -> pure ()
+                case optCommand of
+                  Nuke -> pure ()
+                  Whereis _ _ -> pure ()
+                  DInfo -> pure ()
+                  ToolRequirements -> pure ()
+                  ChangeLog _ -> pure ()
+#if defined(BRICK)
+                  Interactive -> pure ()
+#endif
+                  _ -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
+                         Nothing -> runLogger $ flip runReaderT s' $ checkForUpdates
+                         Just _ -> pure ()
 
                 -- TODO: always run for windows
                 (siletRunLogger $ flip runReaderT s' $ runE ensureGlobalTools) >>= \case
