@@ -766,49 +766,22 @@ ghcToolFiles ver = do
   whenM (fmap not $ liftIO $ doesDirectoryExist ghcdir)
         (throwE (NotInstalled GHC ver))
 
-  files    <- liftIO $ listDirectory bindir
-  -- figure out the <ver> suffix, because this might not be `Version` for
-  -- alpha/rc releases, but x.y.a.somedate.
+  files <- liftIO (listDirectory bindir >>= filterM (doesFileExist . (bindir </>)))
+  pure (getUniqueTools . groupToolFiles . fmap (dropSuffix exeExt) $ files)
 
-  ghcIsHadrian    <- liftIO $ isHadrian bindir
-  onlyUnversioned <- case ghcIsHadrian of
-    Right () -> pure id
-    Left (fmap (dropSuffix exeExt) -> [ghc, ghc_ver])
-      | (Just symver) <- stripPrefix (ghc <> "-") ghc_ver
-      , not (null symver) -> pure $ filter (\x -> not $ symver `isInfixOf` x)
-    _ -> fail "Fatal: Could not find internal GHC version"
-
-  pure $ onlyUnversioned $ fmap (dropSuffix exeExt) files
  where
-  isNotAnyInfix xs t = foldr (\a b -> not (a `isInfixOf` t) && b) True xs
-    -- GHC is moving some builds to Hadrian for bindists,
-    -- which doesn't create versioned binaries.
-    -- https://gitlab.haskell.org/haskell/ghcup-hs/issues/31
-  isHadrian :: FilePath -- ^ ghcbin path
-            -> IO (Either [String] ()) -- ^ Right for Hadrian
-  isHadrian dir = do
-    -- Non-hadrian has e.g. ["ghc", "ghc-8.10.4"]
-    -- which also requires us to discover the internal version
-    -- to filter the correct tool files.
-    -- We can't use the symlink on windows, so we fall back to some
-    -- more complicated logic.
-    fs <- fmap
-         -- regex over-matches
-         (filter (isNotAnyInfix ["haddock", "ghc-pkg", "ghci"]))
-       $ liftIO $ findFiles
-      dir
-      (makeRegexOpts compExtended
-                     execBlank
-                     -- for cross, this won't be "ghc", but e.g.
-                     -- "armv7-unknown-linux-gnueabihf-ghc"
-                     ([s|^([a-zA-Z0-9_-]*[a-zA-Z0-9_]-)?ghc.*$|] :: ByteString)
-      )
-    if | length fs == 1 -> pure $ Right ()        -- hadrian
-       | length fs == 2 -> pure $ Left
-                              (sortOn length fs)  -- legacy make, result should
-                                                  -- be ["ghc", "ghc-8.10.4"]
-       | otherwise      -> fail "isHadrian failed!"
 
+  groupToolFiles :: [FilePath] -> [[(FilePath, String)]]
+  groupToolFiles = groupBy (\(a, _) (b, _) -> a == b) . fmap (splitOnPVP "-")
+
+  getUniqueTools :: [[(FilePath, String)]] -> [String]
+  getUniqueTools = filter (isNotAnyInfix blackListedTools) . nub . fmap fst . filter ((== "") . snd) . concat
+
+  blackListedTools :: [String]
+  blackListedTools = ["haddock-ghc"]
+
+  isNotAnyInfix :: [String] -> String -> Bool
+  isNotAnyInfix xs t = foldr (\a b -> not (a `isInfixOf` t) && b) True xs
 
 
 -- | This file, when residing in @~\/.ghcup\/ghc\/\<ver\>\/@ signals that
