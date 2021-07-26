@@ -410,12 +410,7 @@ rmPathForcibly :: ( MonadIO m
                -> m ()
 rmPathForcibly fp =
 #if defined(IS_WINDOWS)
-  recovering (fullJitterBackoff 25000 <> limitRetries 10)
-    [\_ -> Handler (\e -> pure $ isPermissionError e)
-    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
-    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
-    ]
-    (\_ -> liftIO $ removePathForcibly fp)
+  recover (liftIO $ removePathForcibly fp)
 #else
   liftIO $ removePathForcibly fp
 #endif
@@ -426,12 +421,7 @@ rmDirectory :: (MonadIO m, MonadMask m)
             -> m ()
 rmDirectory fp =
 #if defined(IS_WINDOWS)
-  recovering (fullJitterBackoff 25000 <> limitRetries 10)
-    [\_ -> Handler (\e -> pure $ isPermissionError e)
-    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
-    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
-    ]
-    (\_ -> liftIO $ removeDirectory fp)
+  recover (liftIO $ removeDirectory fp)
 #else
   liftIO $ removeDirectory fp
 #endif
@@ -469,12 +459,7 @@ rmFile :: ( MonadIO m
       -> m ()
 rmFile fp =
 #if defined(IS_WINDOWS)
-  recovering (fullJitterBackoff 25000 <> limitRetries 10)
-    [\_ -> Handler (\e -> pure $ isPermissionError e)
-    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
-    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
-    ]
-    (\_ -> liftIO $ removeFile fp)
+  recover (liftIO $ removeFile fp)
 #else
   liftIO $ removeFile fp
 #endif
@@ -485,12 +470,7 @@ rmDirectoryLink :: (MonadIO m, MonadMask m, MonadReader env m, HasDirs env)
                 -> m ()
 rmDirectoryLink fp = 
 #if defined(IS_WINDOWS)
-  recovering (fullJitterBackoff 25000 <> limitRetries 10)
-    [\_ -> Handler (\e -> pure $ isPermissionError e)
-    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))
-    ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
-    ]
-    (\_ -> liftIO $ removeDirectoryLink fp)
+  recover (liftIO $ removeDirectoryLink fp)
 #else
   liftIO $ removeDirectoryLink fp
 #endif
@@ -523,6 +503,14 @@ stripNewline s
   | null s               = []
   | head s `elem` "\n\r" = stripNewline (tail s)
   | otherwise            = head s : stripNewline (tail s)
+
+
+-- | Strip @\\r@ and @\\n@ from 'ByteString's
+stripNewline' :: T.Text -> T.Text
+stripNewline' s
+  | T.null s               = mempty
+  | T.head s `elem` "\n\r" = stripNewline' (T.tail s)
+  | otherwise              = T.singleton (T.head s) <> stripNewline' (T.tail s)
 
 
 isNewLine :: Word8 -> Bool
