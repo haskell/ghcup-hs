@@ -1543,12 +1543,12 @@ continuing regardless...|])
     rmEnvFile :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmEnvFile enFilePath = do
       $logInfo "Removing Ghcup Environment File"
-      deleteFile enFilePath
+      hideErrorDef [permissionErrorType] () $ deleteFile enFilePath
 
     rmConfFile :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmConfFile confFilePath = do
       $logInfo "removing Ghcup Config File"
-      deleteFile confFilePath
+      hideErrorDef [permissionErrorType] () $ deleteFile confFilePath
 
     rmDir :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmDir dir =
