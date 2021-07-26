@@ -276,7 +276,7 @@ if ($CabalDir) {
   while ($true) {
 
     $defaultCabalDir = ('{0}\cabal' -f $GhcupBasePrefix)
-    Print-Msg -color Magenta -msg ('Specify Cabal directory (this is where haskell packages end up). Press enter to accept the default [{0}]:' -f $defaultCabalDir)
+    Print-Msg -color Magenta -msg ('Specify Cabal directory (this is where haskell packages end up){1}Press enter to accept the default [{0}]:' -f $defaultCabalDir, "`n")
     $CabalDirPrompt = Read-Host
     $CabDirEnv = ($defaultCabalDir,$CabalDirPrompt)[[bool]$CabalDirPrompt]
 
@@ -383,7 +383,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     while ($true) {
       if ($GhcupMsys2) {
         $defaultMsys2Dir = $GhcupMsys2
-        Print-Msg -color Magenta -msg ('Input existing MSys2 toolchain directory. Press enter to accept the default [{0}]:' -f $defaultMsys2Dir)
+        Print-Msg -color Magenta -msg ('Input existing MSys2 toolchain directory.{1}Press enter to accept the default [{0}]:' -f $defaultMsys2Dir, "`n")
         $MsysDirPrompt = Read-Host
         $MsysDir = ($defaultMsys2Dir,$MsysDirPrompt)[[bool]$MsysDirPrompt]
       } else {
@@ -413,6 +413,15 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 
 Print-Msg -msg 'Creating shortcuts...'
 $uninstallShortCut = @'
+$decision = $Host.UI.PromptForChoice('Uninstall Haskell'
+, 'Do you want to uninstall all of the haskell toolchain, including GHC, Cabal, Stack and GHCup itself?'
+, [System.Management.Automation.Host.ChoiceDescription[]] @('&Uninstall'
+    '&Abort'), 0)
+
+if ($decision -eq 1) {
+  Exit 0
+}
+
 Write-Host 'Removing ghcup toolchain' -ForegroundColor Green
 ghcup nuke
 
