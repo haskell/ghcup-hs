@@ -965,9 +965,9 @@ data ListResult = ListResult
 
 
 -- | Extract all available tool versions and their tags.
-availableToolVersions :: GHCupDownloads -> Tool -> Map.Map Version [Tag]
+availableToolVersions :: GHCupDownloads -> Tool -> Map.Map Version VersionInfo
 availableToolVersions av tool = view
-  (at tool % non Map.empty % to (fmap _viTags))
+  (at tool % non Map.empty)
   av
 
 
@@ -1018,7 +1018,9 @@ listVersions lt' criteria = do
           Stack -> do
             slr <- strayStacks avTools sSet stacks
             pure (sort (slr ++ lr))
-          GHCup -> pure lr
+          GHCup -> do
+            let cg = currentGHCup avTools
+            pure (sort (cg : lr))
       Nothing -> do
         ghcvers   <- go (Just GHC) cSet cabals hlsSet' hlses sSet stacks
         cabalvers <- go (Just Cabal) cSet cabals hlsSet' hlses sSet stacks
@@ -1033,7 +1035,7 @@ listVersions lt' criteria = do
                , MonadLogger m
                , MonadIO m
                )
-            => Map.Map Version [Tag]
+            => Map.Map Version VersionInfo
             -> m [ListResult]
   strayGHCs avTools = do
     ghcs <- getInstalledGHCs
@@ -1081,7 +1083,7 @@ listVersions lt' criteria = do
                  , MonadLogger m
                  , MonadIO m
                  )
-            => Map.Map Version [Tag]
+            => Map.Map Version VersionInfo
             -> Maybe Version
             -> [Either FilePath Version]
             -> m [ListResult]
@@ -1115,7 +1117,7 @@ listVersions lt' criteria = do
               , MonadThrow m
               , MonadLogger m
               , MonadIO m)
-           => Map.Map Version [Tag]
+           => Map.Map Version VersionInfo
            -> Maybe Version
            -> [Either FilePath Version]
            -> m [ListResult]
@@ -1150,7 +1152,7 @@ listVersions lt' criteria = do
                  , MonadLogger m
                  , MonadIO m
                  )
-              => Map.Map Version [Tag]
+              => Map.Map Version VersionInfo
               -> Maybe Version
               -> [Either FilePath Version]
               -> m [ListResult]
@@ -1178,6 +1180,25 @@ listVersions lt' criteria = do
           [i|Could not parse version of stray directory #{e}|]
         pure Nothing
 
+  currentGHCup :: Map.Map Version VersionInfo -> ListResult
+  currentGHCup av =
+    let currentVer = pvpToVersion ghcUpVer
+        listVer    = Map.lookup currentVer av
+        latestVer  = fst <$> headOf (getTagged Latest) av
+        recommendedVer = fst <$> headOf (getTagged Latest) av
+        isOld  = maybe True (> currentVer) latestVer && maybe True (> currentVer) recommendedVer
+    in ListResult { lVer    = currentVer
+                  , lTag    = maybe (if isOld then [Old] else []) _viTags listVer
+                  , lCross  = Nothing
+                  , lTool   = GHCup
+                  , fromSrc = False
+                  , lStray  = isNothing listVer
+                  , lSet    = True
+                  , lInstalled = True
+                  , lNoBindist = False
+                  , hlsPowered = False
+                  }
+
   -- NOTE: this are not cross ones, because no bindists
   toListResult :: ( MonadLogger m
                   , MonadReader env m
@@ -1194,9 +1215,9 @@ listVersions lt' criteria = do
                -> [Either FilePath Version]
                -> Maybe Version
                -> [Either FilePath Version]
-               -> (Version, [Tag])
+               -> (Version, VersionInfo)
                -> m ListResult
-  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, tags) = do
+  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, _viTags -> tags) = do
     case t of
       GHC -> do
         lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo GHC v

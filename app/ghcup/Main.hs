@@ -1061,6 +1061,7 @@ tagCompleter tool add = listIOCompleter $ do
     VRight ghcupInfo -> do
       let allTags = filter (\t -> t /= Old)
             $ join
+            $ fmap _viTags
             $ M.elems
             $ availableToolVersions (_ghcupDownloads ghcupInfo) tool
       pure $ nub $ (add ++) $ fmap tagToString allTags
