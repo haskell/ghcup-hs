@@ -1,8 +1,23 @@
 # Revision history for ghcup
 
-## 0.1.16 -- ????-??-??
+## 0.1.16 -- 2021-07-28
 
 * Add 'nuke' subcommand wrt [#135](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/135), implemented by Arjun Kathuria
+* Add uninstallation powershell script on windows wrt [#150](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/150)
+* Improve logging
+* Fix building GHC cross compiler wrt [#180](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/180)
+* Allow to use hadrian as build system (for git based versions only) wrt [#35](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/35)
+* Allow passing `--flavor` to `ghcup compile ghc`
+* Support new GHC `bin/` directory format wrt [ghc/ghc#20074](https://gitlab.haskell.org/ghc/ghc/-/issues/20074#note_363720)
+* Implement `whereis` subcommand wrt [#173](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/173)
+* Add `--offline` switch and `prefetch` subcommand wrt [#186](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/186)
+* Implement ETAGs hashing for metadata downloads to speed up `ghcup list` wrt [#193](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/193)
+* Avoid unnecessary fetching of ghcup metadata in some commands
+* Avoid unnecessary update checks for some commands
+* Preserve mtimes on unpacked GHC tarballs on windows wrt [#187](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/187), fixing issues with `ghc-pkg`
+* Fix lesser bug in `ghcup list` for stray stack versions wrt [#183](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/183)
+* Major redo on how file removal on windows works, avoiding partial removals etc, wrt [#165](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/165)
+* Improve ghcup tui for screen readers wrt [github/#4](https://github.com/haskell/ghcup-hs/pull/4), thanks to Mario Lang
 
 ## 0.1.15.2 -- 2021-06-13
 
