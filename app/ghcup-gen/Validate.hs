@@ -126,7 +126,7 @@ validate dls _ = do
         _ -> lift $ $(logWarn) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]
 
   checkUniqueTags tool = do
-    let allTags = join $ M.elems $ availableToolVersions dls tool
+    let allTags = join $ fmap _viTags $ M.elems $ availableToolVersions dls tool
     let nonUnique =
           fmap fst
             .   filter (\(_, b) -> not b)
@@ -164,7 +164,7 @@ validate dls _ = do
 
   -- a tool must have at least one of each mandatory tags
   checkMandatoryTags tool = do
-    let allTags = join $ M.elems $ availableToolVersions dls tool
+    let allTags = join $ fmap _viTags $ M.elems $ availableToolVersions dls tool
     forM_ [Latest, Recommended] $ \t -> case elem t allTags of
       False -> do
         lift $ $(logError) [i|Tag #{t} missing from #{tool}|]
@@ -174,7 +174,7 @@ validate dls _ = do
   -- all GHC versions must have a base tag
   checkGHCHasBaseVersion = do
     let allTags = M.toList $ availableToolVersions dls GHC
-    forM allTags $ \(ver, tags) -> case any isBase tags of
+    forM allTags $ \(ver, _viTags -> tags) -> case any isBase tags of
       False -> do
         lift $ $(logError) [i|Base tag missing from GHC ver #{ver}|]
         addError

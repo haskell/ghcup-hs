@@ -2076,7 +2076,10 @@ ghcupDownloads:
     1.1.0:
       viTags: []
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#110
-      viPostInstall: "This is just the server part of your LSP configuration. Consult the README on how to configure HLS, your project and your LSP client in your editor: https://github.com/haskell/haskell-language-server/blob/master/README.md"
+      viPostInstall: &hls-post-install |
+        This is just the server part of your LSP configuration. Consult the README on how to
+        configure HLS, your project and your LSP client in your editor:
+          https://github.com/haskell/haskell-language-server/blob/master/README.md
       viArch:
         A_64:
           Linux_UnknownLinux:
@@ -2098,7 +2101,7 @@ ghcupDownloads:
         - Recommended
         - Latest
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#120
-      viPostInstall: "This is just the server part of your LSP configuration. Consult the README on how to configure HLS, your project and your LSP client in your editor: https://github.com/haskell/haskell-language-server/blob/master/README.md"
+      viPostInstall: *hls-post-install
       viArch:
         A_64:
           Linux_UnknownLinux:
