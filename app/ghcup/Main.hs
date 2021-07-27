@@ -2026,22 +2026,25 @@ Make sure to clean up #{tmpdir} afterwards.|])
                 (UpgradeAt p)   -> pure $ Just p
                 UpgradeGHCupDir -> pure (Just (binDir </> "ghcup" <> exeExt))
 
-              runUpgrade (liftE $ upgradeGHCup target force') >>= \case
-                VRight v' -> do
-                  GHCupInfo { _ghcupDownloads = dls } <- runAppState getGHCupInfo
-                  let pretty_v = prettyVer v'
-                  let vi = fromJust $ snd <$> getLatest dls GHCup
-                  runLogger $ $(logInfo)
-                    [i|Successfully upgraded GHCup to version #{pretty_v}|]
-                  forM_ (_viPostInstall vi) $ \msg ->
-                    runLogger $ $(logInfo) msg
-                  pure ExitSuccess
-                VLeft (V NoUpdate) -> do
-                  runLogger $ $(logWarn) [i|No GHCup update available|]
-                  pure ExitSuccess
-                VLeft e -> do
-                  runLogger $ $(logError) $ T.pack $ prettyShow e
-                  pure $ ExitFailure 11
+              runUpgrade (do
+                v' <- liftE $ upgradeGHCup target force'
+                GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+                pure (v', dls)
+                ) >>= \case
+                  VRight (v', dls) -> do
+                    let pretty_v = prettyVer v'
+                    let vi = fromJust $ snd <$> getLatest dls GHCup
+                    runLogger $ $(logInfo)
+                      [i|Successfully upgraded GHCup to version #{pretty_v}|]
+                    forM_ (_viPostInstall vi) $ \msg ->
+                      runLogger $ $(logInfo) msg
+                    pure ExitSuccess
+                  VLeft (V NoUpdate) -> do
+                    runLogger $ $(logWarn) [i|No GHCup update available|]
+                    pure ExitSuccess
+                  VLeft e -> do
+                    runLogger $ $(logError) $ T.pack $ prettyShow e
+                    pure $ ExitFailure 11
 
             ToolRequirements -> do
               s' <- appState
