@@ -104,6 +104,7 @@ variables:
     expire_in: 2 week
     paths:
       - golden
+      - dist-newstyle/cache/
     when: on_failure
 
 # .test_ghcup_scoop:
@@ -202,6 +203,7 @@ variables:
     expire_in: 2 week
     paths:
       - out
+      - dist-newstyle/cache/
   only:
     - tags
   variables:
