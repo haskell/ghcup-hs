@@ -1187,18 +1187,18 @@ listVersions lt' criteria = do
         latestVer  = fst <$> headOf (getTagged Latest) av
         recommendedVer = fst <$> headOf (getTagged Latest) av
         isOld  = maybe True (> currentVer) latestVer && maybe True (> currentVer) recommendedVer
-    in if | currentVer == listVer -> Nothing
-          | otherwise -> ListResult { lVer    = currentVer
-                                    , lTag    = maybe (if isOld then [Old] else []) _viTags listVer
-                                    , lCross  = Nothing
-                                    , lTool   = GHCup
-                                    , fromSrc = False
-                                    , lStray  = isNothing listVer
-                                    , lSet    = True
-                                    , lInstalled = True
-                                    , lNoBindist = False
-                                    , hlsPowered = False
-                                    }
+    in if | Map.member currentVer av -> Nothing
+          | otherwise -> Just $ ListResult { lVer    = currentVer
+                                           , lTag    = maybe (if isOld then [Old] else []) _viTags listVer
+                                           , lCross  = Nothing
+                                           , lTool   = GHCup
+                                           , fromSrc = False
+                                           , lStray  = isNothing listVer
+                                           , lSet    = True
+                                           , lInstalled = True
+                                           , lNoBindist = False
+                                           , hlsPowered = False
+                                           }
 
   -- NOTE: this are not cross ones, because no bindists
   toListResult :: ( MonadLogger m
