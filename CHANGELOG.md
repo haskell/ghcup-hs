@@ -1,6 +1,6 @@
 # Revision history for ghcup
 
-## 0.1.16 -- 2021-07-28
+## 0.1.16.1 -- 2021-07-29
 
 * Add 'nuke' subcommand wrt [#135](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/135), implemented by Arjun Kathuria
 * Add uninstallation powershell script on windows wrt [#150](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/150)

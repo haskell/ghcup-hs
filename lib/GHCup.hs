@@ -1019,8 +1019,8 @@ listVersions lt' criteria = do
             slr <- strayStacks avTools sSet stacks
             pure (sort (slr ++ lr))
           GHCup -> do
-            let cg = currentGHCup avTools
-            pure (sort (cg : lr))
+            let cg = maybeToList $ currentGHCup avTools
+            pure (sort (cg ++ lr))
       Nothing -> do
         ghcvers   <- go (Just GHC) cSet cabals hlsSet' hlses sSet stacks
         cabalvers <- go (Just Cabal) cSet cabals hlsSet' hlses sSet stacks
@@ -1180,24 +1180,25 @@ listVersions lt' criteria = do
           [i|Could not parse version of stray directory #{e}|]
         pure Nothing
 
-  currentGHCup :: Map.Map Version VersionInfo -> ListResult
+  currentGHCup :: Map.Map Version VersionInfo -> Maybe ListResult
   currentGHCup av =
     let currentVer = pvpToVersion ghcUpVer
         listVer    = Map.lookup currentVer av
         latestVer  = fst <$> headOf (getTagged Latest) av
         recommendedVer = fst <$> headOf (getTagged Latest) av
         isOld  = maybe True (> currentVer) latestVer && maybe True (> currentVer) recommendedVer
-    in ListResult { lVer    = currentVer
-                  , lTag    = maybe (if isOld then [Old] else []) _viTags listVer
-                  , lCross  = Nothing
-                  , lTool   = GHCup
-                  , fromSrc = False
-                  , lStray  = isNothing listVer
-                  , lSet    = True
-                  , lInstalled = True
-                  , lNoBindist = False
-                  , hlsPowered = False
-                  }
+    in if | currentVer == listVer -> Nothing
+          | otherwise -> ListResult { lVer    = currentVer
+                                    , lTag    = maybe (if isOld then [Old] else []) _viTags listVer
+                                    , lCross  = Nothing
+                                    , lTool   = GHCup
+                                    , fromSrc = False
+                                    , lStray  = isNothing listVer
+                                    , lSet    = True
+                                    , lInstalled = True
+                                    , lNoBindist = False
+                                    , hlsPowered = False
+                                    }
 
   -- NOTE: this are not cross ones, because no bindists
   toListResult :: ( MonadLogger m
