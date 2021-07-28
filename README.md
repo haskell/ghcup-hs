@@ -230,6 +230,29 @@ to figure out whether you have the correct toolchain and
 the correct dependencies. Refer to [the official docs](https://ghc.haskell.org/trac/ghc/wiki/Building/Preparation/Linux)
 on how to prepare your environment for building GHC.
 
+### Stack support
+
+There may be a number of bugs when trying to make ghcup installed GHC versions work with stack,
+such as:
+
+- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/188
+
+Further, stack's upgrade procedure may break/confuse ghcup. There are a number of integration
+issues discussed here:
+
+- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/153
+
+### Windows support
+
+Windows support is in early stages. Since windows doesn't support symbolic links properly,
+ghcup uses a [shimgen wrapper](https://github.com/71/scoop-better-shimexe). It seems to work
+well, but there may be unknown issues with that approach.
+
+Windows 7 and Powershell 2.0 aren't well supported at the moment, also see:
+
+- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/140
+- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/197
+
 ## FAQ
 
 1. Why reimplement stack?
@@ -242,4 +265,10 @@ We do.
 
 3. Why the haskell reimplementation?
 
-:-)
+ghcup started as a portable posix shell script of maybe 50 LOC. GHC installation itself can be carried out in
+about ~3 lines of shell code (download, unpack , configure+make install). However, much convenient functionality
+has been added since, as well as ensuring that all operations are safe and correct. The shell script ended up with
+over 2k LOC, which was very hard to maintain.
+The main concern when switching from a portable shell script to haskell was platform/architecture support.
+However, ghcup now re-uses GHCs CI infrastructure and as such is perfectly in sync with all platforms that
+GHC supports.
