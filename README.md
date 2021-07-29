@@ -260,7 +260,21 @@ Windows 7 and Powershell 2.0 aren't well supported at the moment, also see:
 GHCup is not a reimplementation of stack. The only common part is automatic installation of GHC,
 but even that differs in scope and design.
 
-### Why does ghcup now use stack code?
+### Why should I use ghcup over stack?
+
+GHCup is not a replacement for stack. Instead, it supports installing and managing stack versions.
+It does the same for cabal, GHC and HLS. As such, It doesn't make a workflow choice for you.
+
+### Why should I let ghcup manage stack?
+
+You don't need to. However, some users seem to prefer to have a central tool that manages cabal and stack
+at the same time. Additionally, it can allow better sharing of GHC installation across these tools.
+Also see:
+
+* https://docs.haskellstack.org/en/stable/yaml_configuration/#system-ghc
+* https://github.com/commercialhaskell/stack/pull/5585
+
+### Why does ghcup not use stack code?
 
 Oddly, this question has been asked a couple of times. For the curious, here are a few reasons:
 
@@ -300,20 +314,6 @@ While unification sounds like a simplification of the ecosystem, it also takes a
 Take `curl` and `wget` as an example.
 
 How bad do we need this?
-
-### Why should I use ghcup over stack?
-
-GHCup is not a replacement for stack. Instead, it supports installing and managing stack versions.
-It does the same for cabal, GHC and HLS. As such, It doesn't make a workflow choice for you.
-
-### Why should I let ghcup manage stack?
-
-You don't need to. However, some users seem to prefer to have a central tool that manages cabal and stack
-at the same time. Additionally, it can allow better sharing of GHC installation across these tools.
-Also see:
-
-* https://docs.haskellstack.org/en/stable/yaml_configuration/#system-ghc
-* https://github.com/commercialhaskell/stack/pull/5585
 
 ### Why not support windows?
 
