@@ -1542,8 +1542,11 @@ rmGhcupDirs = do
 
   handleRm $ rmEnvFile  envFilePath
   handleRm $ rmConfFile confFilePath
-  handleRm $ rmDir cacheDir
+  
+  -- for xdg dirs, the order matters here
   handleRm $ rmDir logsDir
+  handleRm $ rmDir cacheDir
+
   handleRm $ rmBinDir binDir
   handleRm $ rmDir recycleDir
 #if defined(IS_WINDOWS)
