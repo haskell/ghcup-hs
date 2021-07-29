@@ -280,9 +280,9 @@ Oddly, this question has been asked a couple of times. For the curious, here are
 
 1. GHCup started as a shell script. At the time of rewriting it in Haskell, the authors didn't even know that stack exposes *some* of its [installation API](https://hackage.haskell.org/package/stack-2.5.1.1/docs/Stack-Setup.html)
 2. Even if they did, it doesn't seem it would have satisfied their needs
-  - it didn't support cabal installation, which was the main motivation behind GHCup back then
-  - depending on a codebase as big as stack for a central part of one's application without having a short contribution pipeline would likely have caused stagnation or resulted in simply copy-pasting the relevant code in order to adjust it
-  - it's nor clear how GHCup would have been implemented with the provided API. It seems the codebases are fairly different. GHCup does a lot of symlink handling to expose a central `bin/` directory that users can easily put in PATH, without having to worry about anything more. It also provides explicit removal functionality, GHC cross-compilation, a TUI, etc etc.
+	  - it didn't support cabal installation, which was the main motivation behind GHCup back then
+	  - depending on a codebase as big as stack for a central part of one's application without having a short contribution pipeline would likely have caused stagnation or resulted in simply copy-pasting the relevant code in order to adjust it
+	  - it's not clear how GHCup would have been implemented with the provided API. It seems the codebases are fairly different. GHCup does a lot of symlink handling to expose a central `bin/` directory that users can easily put in PATH, without having to worry about anything more. It also provides explicit removal functionality, GHC cross-compilation, a TUI, etc etc.
 3. GHCup is built around unix principles and supposed to be simple.
 
 ### Why not unify...
