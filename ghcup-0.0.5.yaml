@@ -2025,7 +2025,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-armv7-linux-bootstrapped.tar.xz
               dlHash: 16c0d1eaba24bed14f3e152970179a45d9f9bb5cc839b2c210ad06eb7d4826ed
   GHCup:
-    0.1.16:
+    0.1.16.1:
       viTags:
       - Recommended
       - Latest
@@ -2035,43 +2035,43 @@ ghcupDownloads:
         A_64:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-64
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.16/x86_64-linux-ghcup-0.1.16
-              dlHash: 70e5303e2174b3029cbf4c7e4234a2542542cd5dee84ff200897531ac58c0340
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.16.1/x86_64-linux-ghcup-0.1.16.1
+              dlHash: c3505d929722e245b22ec7a05267f1ae8e04089e139bbb470783eb9a1b648f83
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.16/x86_64-apple-darwin-ghcup-0.1.16
-              dlHash: af5ef80192d9f6adf2224827e2a5b10793852e2048f12d7ea8b2055b4a42f746
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.16.1/x86_64-apple-darwin-ghcup-0.1.16.1
+              dlHash: 7edde6bb42323232d28495abbe630321d7eb8e3827e200438a9ae4c41e531e71
           FreeBSD:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.16/x86_64-portbld-freebsd-ghcup-0.1.16
-              dlHash: 5275bce9254323f1ee402a7357971bbffc8113693441b9aa116085ed632e981a
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.16.1/x86_64-portbld-freebsd-ghcup-0.1.16.1
+              dlHash: 6b7fc3a52e859f186d30b04c823fd0c5997179222fe9aa510a33435f41599f5c
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.16/x86_64-mingw64-ghcup-0.1.16.exe
-              dlHash: 8a4e09b58d3fd77c5c9c66b5e6d88882bb455bb900b686692409a0e0a6d1c49d
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.16.1/x86_64-mingw64-ghcup-0.1.16.1.exe
+              dlHash: 62439b45c7bcbc1395afe948393cb8e10bbe4f3af9b1fc58ac78660c2ad616d5
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-32
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.16/i386-linux-ghcup-0.1.16
-              dlHash: 90735a34164af1a0808a3606cd9605dbdf0c64262055cb7c377336691a87a7ae
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.16.1/i386-linux-ghcup-0.1.16.1
+              dlHash: 93ca5d77247b6ecac01be75e9ef5454adbb503b7957b8e9c59a5abd2046aef3c
           Linux_Alpine:
             unknown_versioning: *ghcup-32
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.16/aarch64-linux-ghcup-0.1.16
-              dlHash: d74456a1e9fe4e6a4c97c70b5434161d383266bb9256a4fca09c3506c2904378
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.16.1/aarch64-linux-ghcup-0.1.16.1
+              dlHash: 31fecbb704e9e2474804f42817ab17bfac28e32e5aeba93ae3f4c77fbc105706
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.16/aarch64-apple-darwin-ghcup-0.1.16
-              dlHash: 526f663f1c0d751bf78190eff248c364846cd05e259d43960d5be7c93e1668c8
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.16.1/aarch64-apple-darwin-ghcup-0.1.16.1
+              dlHash: 52eb69a5693abf6c18f95a3b9bf4dac59696299d690c6397bd22a9091e76d40e
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.16/armv7-linux-ghcup-0.1.16
-              dlHash: 45ee40965f800d49c2ca4a87a4a9333dbe12b96d529b94f769dd3dc925a6f529
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.16.1/armv7-linux-ghcup-0.1.16.1
+              dlHash: 795dd2032f0f4e4ea9688cd49393aba4c40c9eae84c8dea3477f5f440f750767
   HLS:
     1.1.0:
       viTags: []
