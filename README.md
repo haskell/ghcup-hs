@@ -18,6 +18,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [XDG support](#xdg-support)
      * [Env variables](#env-variables)
      * [Installing custom bindists](#installing-custom-bindists)
+     * [Tips and tricks](#tips-and-tricks)
    * [Design goals](#design-goals)
    * [How](#how)
    * [Known users](#known-users)
@@ -153,6 +154,53 @@ Since the version parser is pretty lax, `8.10.2-eff` and `head` are both valid v
 and produce the binaries `ghc-8.10.2-eff` and `ghc-head` respectively.
 GHCup always needs to know which version the bindist corresponds to (this is not automatically
 detected).
+
+### Tips and tricks
+
+#### with_ghc wrapper (e.g. for HLS)
+
+Due to some HLS [bugs](https://github.com/mpickering/hie-bios/issues/194) it's necessary that the `ghc` in PATH
+is the one defined in `cabal.project`. With some simple shell functions, we can start our editor with the appropriate
+path prepended.
+
+For bash, in e.g. `~/.bashrc` define:
+
+```sh
+with_ghc() {
+  local np=$(ghcup --offline whereis -d ghc $1 || { ghcup --cache install ghc $1 && ghcup whereis -d ghc $1 ;})
+  if [ -e "${np}" ] ; then
+    shift
+    PATH="$np:$PATH" "$@"
+  else
+    >&2 echo "Cannot find or install GHC version $1"
+    return 1
+  fi
+}
+```
+
+For fish shell, in e.g. `~/.config/fish/config.fish` define:
+
+```fish
+function with_ghc
+  set --local np (ghcup --offline whereis -d ghc $argv[1] ; or begin ghcup --cache install ghc $argv[1] ; and ghcup whereis -d ghc $argv[1] ; end)
+  if test -e "$np"
+    PATH="$np:$PATH" $argv[2..-1]
+  else
+    echo "Cannot find or install GHC version $argv[1]" 1>&2
+    return 1
+  end
+end
+```
+
+Then start a new shell and issue:
+
+```sh
+# replace 'code' with your editor
+with_ghc 8.10.5 code path/to/haskell/source
+```
+
+Cabal and HLS will now see `8.10.5` as the primary GHC, without the need to
+run `ghcup set` all the time when switching between projects.
 
 ## Design goals
 
