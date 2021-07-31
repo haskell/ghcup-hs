@@ -2083,7 +2083,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_UnknownLinux:
-            unknown_versioning: &hls-64
+            unknown_versioning: &hls-110-64
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.1.0/haskell-language-server-Linux-1.1.0.tar.gz
               dlHash: 0f0dadb0e9a08273658f565fd71c636801959b954be2737f38f2a1aac522208f
           Darwin:
@@ -2095,17 +2095,15 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/hls/1.1.0/haskell-language-server-Windows-1.1.0.tar.gz
               dlHash: a1d3f451e64a041aa527a25da29e4716a2de6ae347cef4ef9312fc7611e168cc
           Linux_Alpine:
-            unknown_versioning: *hls-64
+            unknown_versioning: *hls-110-64
     1.2.0:
-      viTags:
-        - Recommended
-        - Latest
+      viTags: []
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#120
       viPostInstall: *hls-post-install
       viArch:
         A_64:
           Linux_UnknownLinux:
-            unknown_versioning: &hls-64
+            unknown_versioning: &hls-120-64
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-Linux-1.2.0.tar.gz
               dlHash: d29ee22f7bd706da2e2a1bd7640e25bb9736adeafb34eef47d29ea143b0fa927
           Darwin:
@@ -2117,7 +2115,29 @@ ghcupDownloads:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-Windows-1.2.0.tar.gz
               dlHash: 961c6ff12c9a9c7a4609f239c5ac70d7d16753cdb8c10348a6a51feeaa0b6aea
           Linux_Alpine:
-            unknown_versioning: *hls-64
+            unknown_versioning: *hls-120-64
+    1.3.0:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#130
+      viPostInstall: *hls-post-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &hls-130-64
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.3.0/haskell-language-server-Linux-1.3.0.tar.gz
+              dlHash: d29ee22f7bd706da2e2a1bd7640e25bb9736adeafb34eef47d29ea143b0fa927
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.3.0/haskell-language-server-macOS-1.3.0.tar.gz
+              dlHash: a310d8a3e9c5c4218210f750682c74a0f82ad0f59995adde0dbe775115b1e357
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.3.0/haskell-language-server-Windows-1.3.0.tar.gz
+              dlHash: 961c6ff12c9a9c7a4609f239c5ac70d7d16753cdb8c10348a6a51feeaa0b6aea
+          Linux_Alpine:
+            unknown_versioning: *hls-130-64
   Stack:
     2.5.1:
       viTags:
