@@ -186,6 +186,7 @@ data GHCCompileOptions = GHCCompileOptions
   , ovewrwiteVer :: Maybe Version
   , buildFlavour :: Maybe String
   , hadrian      :: Bool
+  , isolateDir   :: Maybe FilePath
   }
 
 data UpgradeOpts = UpgradeInplace
@@ -1010,6 +1011,15 @@ ghcCompileOpts =
     <*> switch
           (long "hadrian" <> help "Use the hadrian build system instead of make (only git versions seem to be properly supported atm)"
           )
+    <*> optional
+          (option
+            (eitherReader isolateParser)
+            (  short 'i'
+            <> long "isolate"
+            <> metavar "DIR"
+            <> help "install in an isolated directory instead of the default one, no symlinks to this installation will be made"
+            )
+           )
 
 
 toolVersionParser :: Parser ToolVersion
@@ -1979,6 +1989,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             addConfArgs
                             buildFlavour
                             hadrian
+                            isolateDir
                 GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
                 let vi = getVersionInfo (_tvVersion targetVer) GHC dls
                 when setCompile $ void $ liftE $

@@ -1750,6 +1750,7 @@ compileGHC :: ( MonadMask m
            -> [Text]                   -- ^ additional args to ./configure
            -> Maybe String             -- ^ build flavour
            -> Bool
+           -> Maybe FilePath           -- ^ isolate dir
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
@@ -1768,7 +1769,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour hadrian
+compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour hadrian isolateDir
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -1838,12 +1839,18 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     alreadyInstalled <- lift $ ghcInstalled installVer
     alreadySet <- fmap (== Just tver) $ lift $ ghcSet (_tvTarget tver)
     when alreadyInstalled $ do
-      lift $ $(logWarn) [i|GHC #{prettyShow tver} already installed. Will overwrite existing version.|]
+      case isolateDir of
+        Just isoDir ->
+          lift $ $(logWarn) [i|GHC #{prettyShow tver} already installed. Isolate installing to #{isoDir} |]
+        Nothing ->
+          lift $ $(logWarn) [i|GHC #{prettyShow tver} already installed. Will overwrite existing version.|]
       lift $ $(logWarn)
         "...waiting for 10 seconds before continuing, you can still abort..."
       liftIO $ threadDelay 10000000 -- give the user a sec to intervene
 
-    ghcdir         <- lift $ ghcupGHCDir installVer
+    ghcdir <- case isolateDir of
+      Just isoDir -> pure isoDir
+      Nothing -> lift $ ghcupGHCDir installVer
 
     bghc <- case bstrap of
       Right g    -> pure $ Right g
@@ -1860,9 +1867,14 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
         pure (b, bmk)
       )
 
-    when alreadyInstalled $ do
-      lift $ $(logInfo) [i|Deleting existing installation|]
-      liftE $ rmGHCVer tver
+    case isolateDir of
+      Nothing ->
+        -- only remove old ghc in regular installs
+        when alreadyInstalled $ do
+          lift $ $(logInfo) [i|Deleting existing installation|]
+          liftE $ rmGHCVer tver
+          
+      _ -> pure ()
 
     forM_ mBindist $ \bindist -> do
       liftE $ installPackedGHC bindist
@@ -1871,11 +1883,15 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                                (tver ^. tvVersion)
 
     liftIO $ B.writeFile (ghcdir </> ghcUpSrcBuiltFile) bmk
-
-    reThrowAll GHCupSetError $ postGHCInstall tver
-
-    -- restore
-    when alreadySet $ liftE $ void $ setGHC tver SetGHCOnly
+    
+    case isolateDir of
+      -- set and make symlinks for regular (non-isolated) installs
+      Nothing -> do
+        reThrowAll GHCupSetError $ postGHCInstall tver
+        -- restore
+        when alreadySet $ liftE $ void $ setGHC tver SetGHCOnly
+        
+      _ -> pure ()
 
     pure tver
 
