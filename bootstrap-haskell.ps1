@@ -29,6 +29,8 @@ param (
     [switch]$InBash,
     # Whether to install stack as well
     [switch]$InstallStack,
+    # Whether to install stack hooks as well
+    [switch]$InstallStackHook,
     # Whether to install hls as well
     [switch]$InstallHLS,
     # Skip adjusting cabal.config with mingw paths
@@ -223,6 +225,7 @@ $null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $Ghcu
 
 
 $GhcupDir = ('{0}\ghcup' -f $GhcupBasePrefix)
+$StackDir = ('{0}\sr' -f $GhcupBasePrefix)
 $MsysDir = ('{0}\msys64' -f $GhcupDir)
 $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
 if (!($BootstrapUrl)) {
@@ -310,15 +313,28 @@ if (!($InstallHLS)) {
 }
 
 # ask whether to install stack
+$InstallStackDoc = @'
+Do you want to install stack and stack hooks?
+
+Stack is a haskell build tool similar to cabal that is used by some projects.
+Also see https://docs.haskellstack.org/
+
+Stack hooks allow stack to use ghcup for GHC installation (usually stack handles
+installation itself, leading to possibly duplicated GHC versions).
+'@
 if (!($InstallStack)) {
   if (!($Silent)) {
     $StackDecision = $Host.UI.PromptForChoice('Install stack'
-      , 'Do you want to install stack as well?'
-      , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
+      , $InstallStackDoc
+      , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes, with hooks'
+          '&Light install, without hooks'
           '&No'
-          '&Abort'), 1)
+          '&Abort'), 2)
 
     if ($StackDecision -eq 0) {
+      $InstallStack = $true
+	  $InstallStackHook = $true
+    } elseif ($StackDecision -eq 1) {
       $InstallStack = $true
     } elseif ($StackDecision -eq 2) {
       Exit 0
@@ -499,6 +515,11 @@ $SilentExport = 'export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 ;'
 
 if ($InstallStack) {
   $StackInstallExport = 'export BOOTSTRAP_HASKELL_INSTALL_STACK=1 ;'
+  $null = [Environment]::SetEnvironmentVariable("STACK_ROOT", $StackDir, [System.EnvironmentVariableTarget]::User)
+}
+
+if ($InstallStackHook) {
+  $StackInstallHookExport = 'export BOOTSTRAP_HASKELL_INSTALL_STACK_HOOK=1 ;'
 }
 
 if ($InstallHLS) {
@@ -510,9 +531,9 @@ if (!($NoAdjustCabalConfig)) {
 }
 
 if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBash) {
-  Exec "$Bash" '-lc' ('{4} {6} {7} {8} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport)
+  Exec "$Bash" '-lc' ('{4} {6} {7} {8} {9} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; export STACK_ROOT=$(cygpath -m ''{10}/'') ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $StackInstallHookExport, $StackDir)
 } else {
-  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} {6} {7} {8} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport)
+  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} {6} {7} {8} {9} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; export STACK_ROOT=$(cygpath -m ''{10}/'') ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $StackInstallHookExport, $StackDir)
 }
 
 

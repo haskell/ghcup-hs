@@ -2206,8 +2206,7 @@ ghcupDownloads:
             unknown_versioning: *stack-271-64
     2.7.3:
       viTags:
-        - Latest
-        - Recommended
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v273
       viPostInstall: *stack-post
       viArch:
@@ -2232,4 +2231,65 @@ ghcupDownloads:
                 RegexDir: "stack-.*"
           Linux_Alpine:
             unknown_versioning: *stack-273-64
+    2.7.3.1:
+      viTags:
+        - Latest
+        - Recommended
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v273
+      viPostInstall: &stack-post-new |
+        Stack manages GHC versions internally by default. It can also use hooks to automatically
+        install and locate GHC versions utilizing GHCup:
+          https://gitlab.haskell.org/haskell/ghcup-hs#stack-hooks
 
+        Alternatively, you can also tell stack to use the system GHC version (whatever is in PATH):
+          stack config set system-ghc  true  --global
+
+        If you want stack to use GHCup's provided MSys2, follow the instructions here (not recommended):
+          https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/stack-fork#sharing-msys2-between-stack-and-ghcup
+
+        Also check out: https://docs.haskellstack.org/en/stable/yaml_configuration
+
+        !!! GHCup ships a patched version of stack. Before reporting bugs to stack developers !!!
+        !!! make sure it is reproducible with the original stack version:                     !!!
+        !!!   https://docs.haskellstack.org/en/stable/install_and_upgrade/                    !!!
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-2731-64
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3.1/stack-2.7.3.1-linux-x86_64.tar.gz
+              dlSubdir:
+                RegexDir: "stack-.*"
+              dlHash: 7c10090d568651208b6d6c003c8d78ef79099f4b472aea5ca800f3e4a7a1c6ce
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3.1/stack-2.7.3.1-osx-x86_64.tar.gz
+              dlSubdir:
+                RegexDir: "stack-.*"
+              dlHash: 23030868be377d62ed324332d239ddd915b12f7a64c887f297e1b60a3f65894f
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3.1/stack-2.7.3.1-windows-x86_64.tar.bz2
+              dlHash: 983ac24219370cdf220f47f9edb17d0aeb831a1253fd777d322fd1bff358c511
+          Linux_Alpine:
+            unknown_versioning: *stack-2731-64
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3.1/stack-2.7.3.1-freebsd-x86_64.tar.gz
+              dlHash: b6b1eb59981b8c1d3a04b061f03296b1540ecbadbc34cbd4fe712a575a155ee9
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-2731-32
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3.1/stack-2.7.3.1-linux-i386.tar.gz
+              dlHash: da2081d84517d16a8216e929582dd39caa19643c819b77c6f68f138bd177a758
+          Linux_Alpine:
+            unknown_versioning: *stack-2731-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3.1/stack-2.7.3.1-linux-aarch64.tar.gz
+              dlHash: 0e1789852a476dd87f495fa0b481309398b2bafc00cf7c8d980c91977b39d9a6
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3.1/stack-2.7.3.1-linux-armv7.tar.gz
+              dlHash: 13d61616c169615d80381ea0c84e13540410b736a553565cd48d10b4d2bd7f23

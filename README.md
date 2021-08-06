@@ -19,6 +19,8 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Env variables](#env-variables)
      * [Installing custom bindists](#installing-custom-bindists)
      * [Tips and tricks](#tips-and-tricks)
+     * [Stack hooks](#stack-hooks)
+     * [Sharing MSys2 between stack and ghcup](#sharing-msys2-between-stack-and-ghcup)
    * [Design goals](#design-goals)
    * [How](#how)
    * [Known users](#known-users)
@@ -139,6 +141,10 @@ This is the complete list of env variables that change GHCup behavior:
 * `GHCUP_SKIP_UPDATE_CHECK`: Skip the (possibly annoying) update check when you run a command
 * `CC`/`LD` etc.: full environment is passed to the build system when compiling GHC via GHCup
 
+On windows, there are additional variables:
+
+* `GHCUP_MSYS2`: where to find msys2, so we can invoke shells and other cool stuff
+
 ### Installing custom bindists
 
 There are a couple of good use cases to install custom bindists:
@@ -201,6 +207,36 @@ with_ghc 8.10.5 code path/to/haskell/source
 
 Cabal and HLS will now see `8.10.5` as the primary GHC, without the need to
 run `ghcup set` all the time when switching between projects.
+
+### Stack hooks
+
+GHCup distributes a patched Stack, which has support for custom installation hooks, see:
+
+* https://github.com/commercialhaskell/stack/pull/5585
+
+Usually, the bootstrap script will already install a hook for you. If not,
+download it [here](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/hooks/stack/ghc-install.sh),
+place it in `~/.stack/hooks/ghc-install.sh` and make sure it's executable.
+
+Hooks aren't run when `system-ghc: true` is set in `stack.yaml`. If you want stack
+to never fall back to its own installation logic if ghcup fails, run the following command:
+
+```sh
+stack config set install-ghc false --global
+```
+
+### Sharing MSys2 between stack and ghcup
+
+You can tell stack to use GHCup's MSys2 installation. Add the following lines to `~/.stack/config.yaml`:
+
+```yml
+skip-msys: true
+extra-path:
+  - "C:\\ghcup\\msys64\\usr\\bin"
+  - "C:\\ghcup\\msys64\\mingw64\\bin"
+extra-include-dirs: "C:\\ghcup\\msys64\\mingw64\\include"
+extra-lib-dirs: "C:\\ghcup\\msys64\\mingw64\\lib"
+```
 
 ## Design goals
 
@@ -277,18 +313,6 @@ wrapper around the build system. It makes no effort in trying
 to figure out whether you have the correct toolchain and
 the correct dependencies. Refer to [the official docs](https://ghc.haskell.org/trac/ghc/wiki/Building/Preparation/Linux)
 on how to prepare your environment for building GHC.
-
-### Stack support
-
-There may be a number of bugs when trying to make ghcup installed GHC versions work with stack,
-such as:
-
-- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/188
-
-Further, stack's upgrade procedure may break/confuse ghcup. There are a number of integration
-issues discussed here:
-
-- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/153
 
 ### Windows support
 

@@ -8,6 +8,7 @@
 #   * BOOTSTRAP_HASKELL_GHC_VERSION - the ghc version to install
 #   * BOOTSTRAP_HASKELL_CABAL_VERSION - the cabal version to install
 #   * BOOTSTRAP_HASKELL_INSTALL_STACK - whether to install latest stack
+#   * BOOTSTRAP_HASKELL_INSTALL_STACK_HOOK - whether to install stack hook as well
 #   * BOOTSTRAP_HASKELL_INSTALL_HLS - whether to install latest hls
 #   * BOOTSTRAP_HASKELL_ADJUST_BASHRC - whether to adjust PATH in bashrc (prepend)
 #   * BOOTSTRAP_HASKELL_ADJUST_CABAL_CONFIG - whether to adjust mingw paths in cabal.config on windows
@@ -508,17 +509,25 @@ ask_hls() {
 
 ask_stack() {
 	if [ -n "${BOOTSTRAP_HASKELL_INSTALL_STACK}" ] ; then
-		return 1
+		if [ -n "${BOOTSTRAP_HASKELL_INSTALL_STACK_HOOK}" ] ; then
+			return 2
+		else
+			return 1
+		fi
 	fi
 
 	if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 		echo "-------------------------------------------------------------------------------"
 
-		warn "Do you want to install stack?"
+		warn "Do you want to install stack and stack hooks?"
+		warn ""
 		warn "Stack is a haskell build tool similar to cabal that is used by some projects."
 		warn "Also see https://docs.haskellstack.org/"
 		warn ""
-		warn "[Y] Yes  [N] No  [?] Help (default is \"N\")."
+		warn "Stack hooks allow stack to use ghcup for GHC installation (usually stack handles"
+		warn "installation itself, leading to possibly duplicated GHC versions)."
+		warn ""
+		warn "[Y] Yes, with hooks  [L] Yes, no hooks  [N] No  [?] Help (default is \"N\")."
 		warn ""
 
 		while true; do
@@ -526,13 +535,16 @@ ask_stack() {
 
 			case $stack_answer in
 				[Yy]*)
+					return 2 ;;
+				[Ll]*)
 					return 1 ;;
 				[Nn]* | "")
 					return 0 ;;
 				*)
 					echo "Possible choices are:"
 					echo
-					echo "Y - Yes, install stack"
+					echo "Y - Yes, install stack with hooks"
+					echo "L - Yes, install stack without hooks"
 					echo "N - No, don't install anything more (default)"
 					echo
 					echo "Please make your choice and press ENTER."
@@ -636,7 +648,27 @@ esac
 
 case $ask_stack_answer in
 	1)
-		_eghcup --cache install stack || warn "Stack installation failed, continuing anyway"
+		{
+			_eghcup --cache install stack
+			edo stack update
+		} || warn "Stack installation failed, continuing anyway"
+		;;
+	2)
+		{
+			_eghcup --cache install stack
+		    edo stack update
+			if [ -n "${STACK_ROOT}" ] ; then
+				stack_root=$STACK_ROOT
+			else
+				stack_root=${HOME}/.stack
+			fi
+			edo mkdir -p "${stack_root}/hooks/"
+			edo curl -Lf "https://www.haskell.org/ghcup/sh/hooks/stack/ghc-install.sh" > "${stack_root}/hooks/ghc-install.sh"
+			edo chmod +x "${stack_root}/hooks/ghc-install.sh"
+			edo stack config set system-ghc  false --global
+			edo stack config set install-ghc false --global
+
+		} || warn "Stack installation failed, continuing anyway"
 		;;
 	*) ;;
 esac
