@@ -321,7 +321,22 @@ download uri eDigest dest mfn etags
     -- destination dir must exist
     liftIO $ createDirRecursive' dest
     let fromFile = T.unpack . decUTF8Safe $ path
-    liftIO $ copyFile fromFile destFile
+
+    -- clean up etags file
+    liftIO $ hideError doesNotExistErrorType $ rmFile (etagsFile destFile)
+
+    -- check if source and dest are the same and skip in that case
+    fromFileNormalized <- handleIO
+                            (\_ -> pure $ normalise fromFile)
+                            (liftIO $ canonicalizePath fromFile)
+    destFileNormalized <- handleIO
+                            (\_ -> pure $ normalise destFile)
+                            (liftIO $ canonicalizePath destFile)
+    if | fromFileNormalized /= destFileNormalized -> do
+          lift $ $(logDebug) [i|cp #{fromFile} #{destFile}|]
+          liftIO $ copyFile fromFile destFile
+       | otherwise -> lift $ $(logDebug) [i|destination and source match, skipping: #{destFile}|]
+
     pure destFile
   dl = do
     let uri' = decUTF8Safe (serializeURIRef' uri)
