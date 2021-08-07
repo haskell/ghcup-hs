@@ -320,11 +320,12 @@ download uri eDigest dest mfn etags
     -- destination dir must exist
     liftIO $ createDirRecursive' dest
     let fromFile = T.unpack . decUTF8Safe $ path
+    destFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile
     liftIO $ copyFile fromFile destFile
     pure destFile
   dl = do
-    let uri' = decUTF8Safe (serializeURIRef' uri)
-    lift $ $(logInfo) [i|downloading: #{uri'}|]
+    destFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile
+    lift $ $(logInfo) [i|downloading: #{uri'} as file #{destFile}|]
 
     -- destination dir must exist
     liftIO $ createDirRecursive' dest
@@ -366,7 +367,7 @@ download uri eDigest dest mfn etags
                             _ -> liftE $ throwE @_ @'[DownloadFailed] (DownloadFailed (toVariantAt @0 (MalformedHeaders headers)
                               :: V '[MalformedHeaders]))
 
-                          writeEtags (parseEtags headers)
+                          writeEtags destFile (parseEtags headers)
                     else
                       liftE $ lEM @_ @'[ProcessError] $ exec "curl" 
                         (o' ++ ["-fL", "-o", destFile, T.unpack uri']) Nothing Nothing
@@ -383,13 +384,13 @@ download uri eDigest dest mfn etags
                         case _exitCode of
                           ExitSuccess -> do
                             liftIO $ copyFile destFileTemp destFile
-                            writeEtags (parseEtags (decUTF8Safe' _stdErr))
+                            writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
                           ExitFailure i'
                             | i' == 8
                             , Just _ <- find (T.pack "304 Not Modified" `T.isInfixOf`) . T.lines . decUTF8Safe' $ _stdErr
                                      -> do
                                           $logDebug "Not modified, skipping download"
-                                          writeEtags (parseEtags (decUTF8Safe' _stdErr))
+                                          writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
                             | otherwise -> throwE (NonZeroExit i' "wget" opts)
                       else do
                         let opts = o' ++ ["-O", destFileTemp , T.unpack uri']
@@ -404,10 +405,10 @@ download uri eDigest dest mfn etags
                       let addHeaders = maybe mempty (\etag -> M.fromList [ (mk . E.encodeUtf8 . T.pack $ "If-None-Match"
                                                                          , E.encodeUtf8 etag)]) metag
                       liftE
-                        $ catchE @HTTPNotModified @'[DownloadFailed] @'[] (\(HTTPNotModified etag) -> lift $ writeEtags (pure $ Just etag))
+                        $ catchE @HTTPNotModified @'[DownloadFailed] @'[] (\(HTTPNotModified etag) -> lift $ writeEtags destFile (pure $ Just etag))
                         $ do
                           r <- downloadToFile https host fullPath port destFile addHeaders
-                          writeEtags (pure $ decUTF8Safe <$> getHeader r "etag")
+                          writeEtags destFile (pure $ decUTF8Safe <$> getHeader r "etag")
                     else void $ liftE $ catchE @HTTPNotModified
                                         @'[DownloadFailed]
                                    (\e@(HTTPNotModified _) ->
@@ -420,12 +421,18 @@ download uri eDigest dest mfn etags
 
 
   -- Manage to find a file we can write the body into.
-  destFile :: FilePath
-  destFile = maybe (dest </> T.unpack (decUTF8Safe (urlBaseName path)))
-                  (dest </>)
-                  mfn
+  getDestFile :: Monad m => Excepts '[NoUrlBase] m FilePath
+  getDestFile = 
+    case mfn of
+        Just fn -> pure (dest </> fn)
+        Nothing
+          | let urlBase = T.unpack (decUTF8Safe (urlBaseName path))
+          , not (null urlBase) -> pure (dest </> urlBase)
+          -- TODO: remove this once we use hpath again
+          | otherwise -> throwE $ NoUrlBase uri'
 
   path = view pathL' uri
+  uri' = decUTF8Safe (serializeURIRef' uri)
 
   parseEtags :: (MonadLogger m, MonadIO m, MonadThrow m) => T.Text -> m (Maybe T.Text)
   parseEtags stderr = do
@@ -444,8 +451,8 @@ download uri eDigest dest mfn etags
         $logDebug "No etags header found"
         pure Nothing
 
-  writeEtags :: (MonadLogger m, MonadIO m, MonadThrow m) => m (Maybe T.Text) -> m ()
-  writeEtags getTags = do
+  writeEtags :: (MonadLogger m, MonadIO m, MonadThrow m) => FilePath -> m (Maybe T.Text) -> m ()
+  writeEtags destFile getTags = do
     getTags >>= \case
       Just t -> do
         $logDebug [i|Writing etagsFile #{(etagsFile destFile)}|]

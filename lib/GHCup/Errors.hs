@@ -327,6 +327,15 @@ instance Pretty UnexpectedListLength where
 
 instance Exception UnexpectedListLength
 
+data NoUrlBase = NoUrlBase Text
+  deriving Show
+
+instance Pretty NoUrlBase where
+  pPrint (NoUrlBase url) =
+    text [i|Couldn't get a base filename from url #{url}|]
+
+instance Exception NoUrlBase
+
 
 
     ------------------------

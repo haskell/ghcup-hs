@@ -237,7 +237,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
                   ($(logError) $ T.pack $ prettyShow e)
                 liftIO $ exitWith (ExitFailure 2)
 
-    let appstate = AppState (Settings True False Never Curl False GHCupURL False) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq
+    let appstate = AppState (Settings True False Never Curl True GHCupURL False) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq
 
     r <-
       runLogger
