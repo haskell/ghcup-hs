@@ -176,7 +176,7 @@ getBase uri = do
   -- try to download yaml... usually this writes it into cache dir,
   -- but in some cases not (e.g. when using file://), so we honour
   -- the return filepath, if any
-  mYaml <- if noNetwork
+  mYaml <- if noNetwork && view (uriSchemeL' % schemeBSL') uri /= "file" -- for file://, let it fall through
            then pure Nothing
            else handleIO (\e -> warnCache (displayException e) >> pure Nothing)
                . catchE @_ @_ @'[] (\e@(DownloadFailed _) -> warnCache (prettyShow e) >> pure Nothing)
