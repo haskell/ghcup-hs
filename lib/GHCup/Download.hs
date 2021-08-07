@@ -172,21 +172,31 @@ getBase :: ( MonadReader env m
         -> Excepts '[JSONError] m GHCupInfo
 getBase uri = do
   Settings { noNetwork } <- lift getSettings
-  yaml <- lift $ yamlFromCache uri
-  unless noNetwork $
-    handleIO (\e -> warnCache (displayException e))
-      . catchE @_ @_ @'[] (\e@(DownloadFailed _) -> warnCache (prettyShow e))
-      . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed
-      . smartDl
-      $ uri
+
+  -- try to download yaml... usually this writes it into cache dir,
+  -- but in some cases not (e.g. when using file://), so we honour
+  -- the return filepath, if any
+  mYaml <- if noNetwork && view (uriSchemeL' % schemeBSL') uri /= "file" -- for file://, let it fall through
+           then pure Nothing
+           else handleIO (\e -> warnCache (displayException e) >> pure Nothing)
+               . catchE @_ @_ @'[] (\e@(DownloadFailed _) -> warnCache (prettyShow e) >> pure Nothing)
+               . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed
+               . fmap Just
+               . smartDl
+               $ uri
+
+  -- if we didn't get a filepath from the download, use the cached yaml
+  actualYaml <- maybe (lift $ yamlFromCache uri) pure mYaml
+  lift $ $(logDebug) [i|Decoding yaml at: #{actualYaml}|]
+
   liftE
-    . onE_ (onError yaml)
+    . onE_ (onError actualYaml)
     . lEM' @_ @_ @'[JSONError] JSONDecodeError
     . fmap (first (\e -> [i|#{displayException e}
-Consider removing "#{yaml}" manually.|]))
+Consider removing "#{actualYaml}" manually.|]))
     . liftIO
     . Y.decodeFileEither
-    $ yaml
+    $ actualYaml
  where
   -- On error, remove the etags file and set access time to 0. This should ensure the next invocation
   -- may re-download and succeed.
@@ -221,28 +231,32 @@ Consider removing "#{yaml}" manually.|]))
                 , DigestError
                 ]
                m1
-               ()
+               FilePath
   smartDl uri' = do
     json_file <- lift $ yamlFromCache uri'
+    let scheme = view (uriSchemeL' % schemeBSL') uri'
     e <- liftIO $ doesFileExist json_file
     currentTime <- liftIO getCurrentTime
-    if e
-      then do
-        accessTime <- liftIO $ getAccessTime json_file
+    Dirs { cacheDir } <- lift getDirs
 
-        -- access time won't work on most linuxes, but we can try regardless
-        when ((utcTimeToPOSIXSeconds currentTime - utcTimeToPOSIXSeconds accessTime) > 300) $
-          -- no access in last 5 minutes, re-check upstream mod time
-          dlWithMod currentTime json_file
-      else
-        dlWithMod currentTime json_file
+       -- for local files, let's short-circuit and ignore access time
+    if | scheme == "file" -> liftE $ download uri' Nothing cacheDir Nothing True
+       | e -> do
+          accessTime <- liftIO $ getAccessTime json_file
+
+          -- access time won't work on most linuxes, but we can try regardless
+          if | ((utcTimeToPOSIXSeconds currentTime - utcTimeToPOSIXSeconds accessTime) > 300) ->
+                -- no access in last 5 minutes, re-check upstream mod time
+                dlWithMod currentTime json_file
+             | otherwise -> pure json_file
+       | otherwise -> dlWithMod currentTime json_file
    where
     dlWithMod modTime json_file = do
       let (dir, fn) = splitFileName json_file
       f <- liftE $ download uri' Nothing dir (Just fn) True
       liftIO $ setModificationTime f modTime
       liftIO $ setAccessTime f modTime
- 
+      pure f
 
 
 getDownloadInfo :: ( MonadReader env m
@@ -304,25 +318,22 @@ download :: ( MonadReader env m
             )
          => URI
          -> Maybe T.Text      -- ^ expected hash
-         -> FilePath          -- ^ destination dir
+         -> FilePath          -- ^ destination dir (ignored for file:// scheme)
          -> Maybe FilePath    -- ^ optional filename
          -> Bool              -- ^ whether to read an write etags
          -> Excepts '[DigestError , DownloadFailed] m FilePath
 download uri eDigest dest mfn etags
   | scheme == "https" = dl
   | scheme == "http"  = dl
-  | scheme == "file"  = cp
+  | scheme == "file"  = do
+      let destFile' = T.unpack . decUTF8Safe $ path
+      lift $ $(logDebug) [i|using local file: #{destFile'}|]
+      forM_ eDigest (liftE . flip checkDigest destFile')
+      pure destFile'
   | otherwise = throwE $ DownloadFailed (variantFromValue UnsupportedScheme)
 
  where
   scheme = view (uriSchemeL' % schemeBSL') uri
-  cp     = do
-    -- destination dir must exist
-    liftIO $ createDirRecursive' dest
-    let fromFile = T.unpack . decUTF8Safe $ path
-    destFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile
-    liftIO $ copyFile fromFile destFile
-    pure destFile
   dl = do
     destFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile
     lift $ $(logInfo) [i|downloading: #{uri'} as file #{destFile}|]
