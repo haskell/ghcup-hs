@@ -224,18 +224,19 @@ Consider removing "#{yaml}" manually.|]))
                ()
   smartDl uri' = do
     json_file <- lift $ yamlFromCache uri'
+    let scheme = view (uriSchemeL' % schemeBSL') uri'
     e <- liftIO $ doesFileExist json_file
     currentTime <- liftIO getCurrentTime
-    if e
-      then do
-        accessTime <- liftIO $ getAccessTime json_file
 
-        -- access time won't work on most linuxes, but we can try regardless
-        when ((utcTimeToPOSIXSeconds currentTime - utcTimeToPOSIXSeconds accessTime) > 300) $
-          -- no access in last 5 minutes, re-check upstream mod time
-          dlWithMod currentTime json_file
-      else
-        dlWithMod currentTime json_file
+    if | scheme == "file" -> dlWithMod currentTime json_file
+       | e -> do
+          accessTime <- liftIO $ getAccessTime json_file
+
+          -- access time won't work on most linuxes, but we can try regardless
+          when ((utcTimeToPOSIXSeconds currentTime - utcTimeToPOSIXSeconds accessTime) > 300) $
+            -- no access in last 5 minutes, re-check upstream mod time
+            dlWithMod currentTime json_file
+       | otherwise -> dlWithMod currentTime json_file
    where
     dlWithMod modTime json_file = do
       let (dir, fn) = splitFileName json_file
