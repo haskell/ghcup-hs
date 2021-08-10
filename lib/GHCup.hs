@@ -300,10 +300,6 @@ installUnpackedGHC path inst ver = do
     setModificationTime dest mtime
 #else
   PlatformRequest {..} <- lift getPlatformReq
-  liftIO $ copyDirectoryRecursive path inst $ \source dest -> do
-    mtime <- getModificationTime source
-    copyFile source dest
-    setModificationTime dest mtime
 
   let alpineArgs
        | ver >= [vver|8.2.2|], Linux Alpine <- _rPlatform
