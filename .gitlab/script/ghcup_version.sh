@@ -116,7 +116,20 @@ else
 	if [ "${OS}" = "LINUX" ] ; then
 		eghcup --downloader=wget prefetch ghc 8.10.3
 		eghcup --offline install ghc 8.10.3
-	else # test wget a bit
+		if [ "${ARCH}" = "64" ] ; then
+			expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghc-8.10.3-linux.files" | sort)
+			actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find | sort)
+			[ "${actual}" = "${expected}" ]
+			unset actual expected
+		fi
+	elif [ "${OS}" = "WINDOWS" ] ; then
+		eghcup prefetch ghc 8.10.3
+		eghcup --offline install ghc 8.10.3
+		expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghc-8.10.3-windows.files" | sort)
+		actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find | sort)
+		[ "${actual}" = "${expected}" ]
+		unset actual expected
+	else
 		eghcup prefetch ghc 8.10.3
 		eghcup --offline install ghc 8.10.3
 	fi
