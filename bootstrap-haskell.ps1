@@ -371,7 +371,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
 
     Print-Msg -msg 'Installing Dependencies...'
-    Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed curl mingw-w64-x86_64-pkgconf'
+    Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed curl autoconf mingw-w64-x86_64-pkgconf'
 
     Print-Msg -msg 'Updating SSL root certificate authorities...'
     Exec "$Bash" '-lc' 'pacman --noconfirm -S ca-certificates'
