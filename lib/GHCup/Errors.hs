@@ -134,6 +134,14 @@ instance Pretty AlreadyInstalled where
   pPrint (AlreadyInstalled tool ver') =
     text [i|#{tool}-#{prettyShow ver'} is already installed|]
 
+-- | The Directory for isolated install already exists and is not empty
+-- | This is done to prevent any overwriting
+data IsolatedDirNotEmpty = IsolatedDirNotEmpty {path :: FilePath}
+
+instance Pretty IsolatedDirNotEmpty where
+  pPrint (IsolatedDirNotEmpty path) = do
+    text [i| The directory for isolated install already exists and is NOT EMPTY : #{path}|]
+
 -- | The tool is not installed. Some operations rely on a tool
 -- to be installed (such as setting the current GHC version).
 data NotInstalled = NotInstalled Tool GHCTargetVersion
