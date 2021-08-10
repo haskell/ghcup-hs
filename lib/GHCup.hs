@@ -218,12 +218,13 @@ installGHCBindist dlinfo ver isoFilepath = do
   -- prepare paths
   ghcdir <- lift $ ghcupGHCDir tver
 
+  toolchainSanityChecks
+  
   case isoFilepath of
     Just isoDir -> do                        -- isolated install
       lift $ $(logInfo) [i|isolated installing GHC to #{isoDir}|]
       liftE $ installPackedGHC dl (view dlSubdir dlinfo) isoDir ver
     Nothing -> do                            -- regular install
-      toolchainSanityChecks
       liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver
 
       -- make symlinks & stuff when regular install,
