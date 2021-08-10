@@ -2251,6 +2251,28 @@ upgradeGHCup mtarget force' = do
     --[ Other ]--
     -------------
 
+-- | Does basic checks for isolated installs
+-- Isolated Directory:
+--   1. if it doesn't exist -> proceed
+--   2. if it exists and is empty -> proceed
+--   3. if it exists and is non-empty -> panic and leave the house
+
+isolatedInstallSanityCheck :: ( MonadIO m
+                              , MonadThrow m
+                              ) =>
+                              FilePath ->
+                              Excepts '[IsolatedDirNotEmpty] m ()
+isolatedInstallSanityCheck isoDir = do
+  dirExists <- liftIO $ doesDirectoryExist isoDir
+  if not dirExists
+  then pure ()
+  else do
+    len <- liftIO $ length <$> listDirectory isoDir
+    let isDirEmpty = len == 0
+    if isDirEmpty
+    then pure ()
+    else (throwE $ IsolatedDirNotEmpty isoDir)
+
 
 -- | Creates @ghc-x.y.z@ and @ghc-x.y@ symlinks. This is used for
 -- both installing from source and bindist.
