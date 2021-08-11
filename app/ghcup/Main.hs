@@ -1317,16 +1317,10 @@ toSettings options = do
          , bShowAllTools = fromMaybe bShowAllTools kShowAllTools
          }
 
-updateSettings :: UTF8.ByteString -> Settings -> IO Settings
+updateSettings :: Monad m => UTF8.ByteString -> Settings -> Excepts '[JSONError] m Settings
 updateSettings config settings = do
-  settings' <- runE @'[JSONError] $ lE' JSONDecodeError . first show . Y.decodeEither' $ config
-
-  case settings' of
-    VRight r -> pure $ mergeConf r settings
-    VLeft (V (JSONDecodeError e)) -> do
-      B.hPut stderr ("Error decoding config: " <> (E.encodeUtf8 . T.pack . show $ e))
-      die ""
-    _ -> die "Unexpected error!"
+  settings' <- lE' JSONDecodeError . first show . Y.decodeEither' $ config
+  pure $ mergeConf settings' settings
   where
    mergeConf :: UserSettings -> Settings -> Settings
    mergeConf UserSettings{..} Settings{..} =
@@ -1372,11 +1366,10 @@ describe_result = $( LitE . StringL <$>
                      )
                    )
 
-formatConfig :: Settings -> KeyBindings -> String
-formatConfig settings keybindings = unlines [formatSettings, formatKeybindings]
+formatConfig :: UserSettings -> String
+formatConfig settings
+  = UTF8.toString . YP.encodePretty yamlConfig $ settings
  where
-  formatKeybindings = unlines . ("key-bindings:":) . map ("  "++) . lines . UTF8.toString . YP.encodePretty yamlConfig $ keybindings
-  formatSettings = UTF8.toString . YP.encodePretty yamlConfig $ settings
   yamlConfig = YP.setConfCompare compare YP.defConfig
 
 main :: IO ()
@@ -2087,25 +2080,34 @@ Make sure to clean up #{tmpdir} afterwards.|])
 
             Config InitConfig -> do
               path <- getConfigFilePath
-              writeFile path $ formatConfig settings keybindings
+              writeFile path $ formatConfig $ fromSettings settings (Just keybindings)
               runLogger $ $(logDebug) [i|"config.yaml initialized at #{path}|]
               pure ExitSuccess
 
             Config ShowConfig -> do
-              putStrLn $ formatConfig settings keybindings
+              putStrLn $ formatConfig $ fromSettings settings (Just keybindings)
               pure ExitSuccess
 
             Config (SetConfig k v) -> do
               case v of
-                "" -> die "Empty values are not allowed."
+                "" -> do
+                  runLogger $ $(logError) "Empty values are not allowed"
+                  pure $ ExitFailure 55
                 _  -> do
-                  settings' <- updateSettings [i|#{k}: #{v}\n|] settings
-                  runLogger $ $(logDebug) $ T.pack $ show settings'
+                  r <- runE @'[JSONError] $ do
+                    settings' <- updateSettings [i|#{k}: #{v}\n|] settings
+                    path <- liftIO getConfigFilePath
+                    liftIO $ writeFile path $ formatConfig $ fromSettings settings' (Just keybindings)
+                    runLogger $ $(logDebug) $ T.pack $ show settings'
+                    pure ()
 
-                  path <- getConfigFilePath
-                  writeFile path $ formatConfig settings' keybindings
-
-                  pure ExitSuccess
+                  case r of
+                      VRight _ -> pure ExitSuccess
+                      VLeft (V (JSONDecodeError e)) -> do
+                        runLogger $ $(logError)
+                          [i|Error decoding config: #{e}|]
+                        pure $ ExitFailure 65
+                      VLeft _ -> pure $ ExitFailure 65
 
             Whereis WhereisOptions{..} (WhereisTool tool (Just (ToolVersion v))) ->
               runLeanWhereIs (do

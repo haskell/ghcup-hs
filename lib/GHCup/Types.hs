@@ -304,6 +304,41 @@ data UserSettings = UserSettings
 defaultUserSettings :: UserSettings
 defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
+fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
+fromSettings Settings{..} Nothing =
+  UserSettings {
+      uCache = Just cache
+    , uNoVerify = Just noVerify
+    , uVerbose = Just verbose
+    , uKeepDirs = Just keepDirs
+    , uDownloader = Just downloader
+    , uNoNetwork = Just noNetwork
+    , uKeyBindings = Nothing
+    , uUrlSource = Just urlSource
+  }
+fromSettings Settings{..} (Just KeyBindings{..}) =
+  let ukb = UserKeyBindings
+            { kUp           = Just bUp        
+            , kDown         = Just bDown      
+            , kQuit         = Just bQuit      
+            , kInstall      = Just bInstall   
+            , kUninstall    = Just bUninstall 
+            , kSet          = Just bSet       
+            , kChangelog    = Just bChangelog 
+            , kShowAll      = Just bShowAllVersions
+            , kShowAllTools = Just bShowAllTools
+            }
+  in UserSettings {
+      uCache = Just cache
+    , uNoVerify = Just noVerify
+    , uVerbose = Just verbose
+    , uKeepDirs = Just keepDirs
+    , uDownloader = Just downloader
+    , uNoNetwork = Just noNetwork
+    , uKeyBindings = Just ukb
+    , uUrlSource = Just urlSource
+  }
+
 data UserKeyBindings = UserKeyBindings
   { kUp        :: Maybe Key
   , kDown      :: Maybe Key
