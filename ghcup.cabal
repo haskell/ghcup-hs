@@ -226,6 +226,7 @@ executable ghcup
     , uri-bytestring        ^>=0.3.2.2
     , utf8-string           ^>=1.0
     , versions              >=4.0.1    && <5.1
+    , yaml                  ^>=0.11.4.0
 
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER

@@ -316,3 +316,6 @@ deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "u-") . T.pack . kebab $ str' } ''UserSettings
+
+deriveToJSON defaultOptions { fieldLabelModifier = kebab } ''Settings
+deriveToJSON defaultOptions { fieldLabelModifier = drop 2 . kebab } ''KeyBindings -- move under key-bindings key

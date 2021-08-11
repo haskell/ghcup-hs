@@ -78,6 +78,8 @@ import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
+import qualified Data.Yaml                     as Y
+import qualified Data.Yaml.Pretty              as YP
 import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
 
@@ -105,6 +107,7 @@ data Command
   | Rm (Either RmCommand RmOptions)
   | DInfo
   | Compile CompileCommand
+  | Config ConfigCommand
   | Whereis WhereisOptions WhereisCommand
   | Upgrade UpgradeOpts Bool
   | ToolRequirements
@@ -173,6 +176,8 @@ data RmOptions = RmOptions
 
 
 data CompileCommand = CompileGHC GHCCompileOptions
+
+data ConfigCommand = ShowConfig | SetConfig String String | InitConfig
 
 data GHCCompileOptions = GHCCompileOptions
   { targetGhc    :: Either Version GitBranch
@@ -410,6 +415,12 @@ com =
                   <> footerDoc (Just $ text changeLogFooter)
                   )
                )
+          <> command
+               "config"
+               (   Config
+               <$> info (configP <**> helper)
+                        (progDesc "Show or set config" <> footerDoc (Just $ text configFooter))
+               )
           <> commandGroup "Other commands:"
           <> hidden
           )
@@ -484,6 +495,17 @@ Examples:
   ghcup prefetch ghc 8.10.5
   ghcup --offline install ghc 8.10.5|]
 
+configFooter :: String
+configFooter = [s|Examples:
+
+# show current config
+ghcup config
+
+# initialize config
+ghcup config init
+
+# set <key> <value> configuration pair
+ghcup config <key> <value>|]
 
 installCabalFooter :: String
 installCabalFooter = [s|Discussion:
@@ -797,6 +819,19 @@ Examples:
   # build cross compiler
   ghcup compile ghc -j 4 -v 8.4.2 -b 8.2.2 -x armv7-unknown-linux-gnueabihf --config $(pwd)/build.mk -- --enable-unregisterised|]
 
+configP :: Parser ConfigCommand
+configP = subparser
+      (  command "init" initP
+      <> command "set"  setP -- [set] KEY VALUE at help lhs
+      <> command "show" showP
+      )
+    <|> argsP -- add show for a single option
+    <|> pure ShowConfig
+ where
+  initP = info (pure InitConfig) (progDesc "Write default config to ~/.ghcup/config.yaml")
+  showP = info (pure ShowConfig) (progDesc "Show current config (default)")
+  setP  = info argsP (progDesc "Set config KEY to VALUE")
+  argsP = SetConfig <$> argument str (metavar "KEY") <*> argument str (metavar "VALUE")
 
 whereisP :: Parser WhereisCommand
 whereisP = subparser
@@ -1282,6 +1317,27 @@ toSettings options = do
          , bShowAllTools = fromMaybe bShowAllTools kShowAllTools
          }
 
+updateSettings :: UTF8.ByteString -> Settings -> IO Settings
+updateSettings config settings = do
+  settings' <- runE @'[JSONError] $ lE' JSONDecodeError . first show . Y.decodeEither' $ config
+
+  case settings' of
+    VRight r -> pure $ mergeConf r settings
+    VLeft (V (JSONDecodeError e)) -> do
+      B.hPut stderr ("Error decoding config: " <> (E.encodeUtf8 . T.pack . show $ e))
+      die ""
+    _ -> die "Unexpected error!"
+  where
+   mergeConf :: UserSettings -> Settings -> Settings
+   mergeConf UserSettings{..} Settings{..} =
+     let cache'      = fromMaybe cache uCache
+         noVerify'   = fromMaybe noVerify uNoVerify
+         keepDirs'   = fromMaybe keepDirs uKeepDirs
+         downloader' = fromMaybe downloader uDownloader
+         verbose'    = fromMaybe verbose uVerbose
+         urlSource'  = fromMaybe urlSource uUrlSource
+         noNetwork'  = fromMaybe noNetwork uNoNetwork
+     in Settings cache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork'
 
 upgradeOptsP :: Parser UpgradeOpts
 upgradeOptsP =
@@ -1316,6 +1372,12 @@ describe_result = $( LitE . StringL <$>
                      )
                    )
 
+formatConfig :: Settings -> KeyBindings -> String
+formatConfig settings keybindings = unlines [formatSettings, formatKeybindings]
+ where
+  formatKeybindings = unlines . ("key-bindings:":) . map ("  "++) . lines . UTF8.toString . YP.encodePretty yamlConfig $ keybindings
+  formatSettings = UTF8.toString . YP.encodePretty yamlConfig $ settings
+  yamlConfig = YP.setConfCompare compare YP.defConfig
 
 main :: IO ()
 main = do
@@ -2022,6 +2084,28 @@ Make sure to clean up #{tmpdir} afterwards.|])
                       VLeft e -> do
                         runLogger $ $(logError) $ T.pack $ prettyShow e
                         pure $ ExitFailure 9
+
+            Config InitConfig -> do
+              path <- getConfigFilePath
+              writeFile path $ formatConfig settings keybindings
+              runLogger $ $(logDebug) [i|"config.yaml initialized at #{path}|]
+              pure ExitSuccess
+
+            Config ShowConfig -> do
+              putStrLn $ formatConfig settings keybindings
+              pure ExitSuccess
+
+            Config (SetConfig k v) -> do
+              case v of
+                "" -> die "Empty values are not allowed."
+                _  -> do
+                  settings' <- updateSettings [i|#{k}: #{v}\n|] settings
+                  runLogger $ $(logDebug) $ T.pack $ show settings'
+
+                  path <- getConfigFilePath
+                  writeFile path $ formatConfig settings' keybindings
+
+                  pure ExitSuccess
 
             Whereis WhereisOptions{..} (WhereisTool tool (Just (ToolVersion v))) ->
               runLeanWhereIs (do
