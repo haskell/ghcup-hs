@@ -442,6 +442,7 @@ install' _ (_, ListResult {..}) = do
               , DownloadFailed
               , NoUpdate
               , TarDirDoesNotExist
+              , FileAlreadyExistsError
               ]
 
   run (do

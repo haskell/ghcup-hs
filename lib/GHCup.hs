@@ -405,6 +405,7 @@ installCabalBindist :: ( MonadMask m
 #if !defined(TAR)
                           , ArchiveResult
 #endif
+                          , FileAlreadyExistsError
                           ]
                          m
                          ()
@@ -456,13 +457,16 @@ installCabalUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Version
-              -> Excepts '[CopyError] m ()
+              -> Excepts '[CopyError, FileAlreadyExistsError] m ()
 installCabalUnpacked path inst ver = do
   lift $ $(logInfo) "Installing cabal"
   let cabalFile = "cabal"
   liftIO $ createDirRecursive' inst
   let destFileName = cabalFile <> "-" <> T.unpack (prettyVer ver) <> exeExt
   let destPath = inst </> destFileName
+  whenM
+    (liftIO $ doesFileExist destPath)
+    (throwE $ FileAlreadyExistsError destPath)
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> cabalFile <> exeExt)
     destPath
@@ -498,6 +502,7 @@ installCabalBin :: ( MonadMask m
 #if !defined(TAR)
                       , ArchiveResult
 #endif
+                      , FileAlreadyExistsError
                       ]
                      m
                      ()
