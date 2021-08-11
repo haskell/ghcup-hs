@@ -176,6 +176,16 @@ instance Pretty FileDoesNotExistError where
   pPrint (FileDoesNotExistError file) =
     text [i|File "#{file}" does not exist.|]
 
+-- | The file already exists
+-- (e.g. when we use isolated installs with the same path).
+-- (e.g. This is done to prevent any overwriting)
+data FileAlreadyExistsError = FileAlreadyExistsError FilePath
+  deriving Show
+
+instance Pretty FileAlreadyExistsError where
+  pPrint (FileAlreadyExistsError file) =
+    text [i|File "#{file}" Already exists.|]
+
 data TarDirDoesNotExist = TarDirDoesNotExist TarDir
   deriving Show
 
