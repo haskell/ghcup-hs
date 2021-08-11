@@ -1,5 +1,14 @@
 # Revision history for ghcup
 
+## 0.1.16.2 -- 2021-08-12
+
+* Add isolated installations wrt [#141](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/141) by Arjun Kathuria
+* Implement config cli MVP wrt [#134](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/134) by Oleksii Dorozhkin
+* Fix `ghcup compile ghc --flavor`
+* Fix minor installation bug causing increased disk space wrt [#139](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/139)
+* Improved error handling wrt [#136](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/136)
+* Various improvements to metadata download when using `file://` and `--offline` wrt [#137](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/137)
+
 ## 0.1.16.1 -- 2021-07-29
 
 * Add 'nuke' subcommand wrt [#135](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/135), implemented by Arjun Kathuria
