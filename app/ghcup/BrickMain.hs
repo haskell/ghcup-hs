@@ -442,25 +442,26 @@ install' _ (_, ListResult {..}) = do
               , DownloadFailed
               , NoUpdate
               , TarDirDoesNotExist
+              , FileAlreadyExistsError
               ]
 
   run (do
       case lTool of
         GHC   -> do
           let vi = getVersionInfo lVer GHC dls
-          liftE $ installGHCBin lVer $> vi
+          liftE $ installGHCBin lVer Nothing $> vi
         Cabal -> do
           let vi = getVersionInfo lVer Cabal dls
-          liftE $ installCabalBin lVer $> vi
+          liftE $ installCabalBin lVer Nothing $> vi
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
           liftE $ upgradeGHCup Nothing False $> vi
         HLS   -> do
           let vi = getVersionInfo lVer HLS dls
-          liftE $ installHLSBin lVer $> vi
+          liftE $ installHLSBin lVer Nothing $> vi
         Stack -> do
           let vi = getVersionInfo lVer Stack dls
-          liftE $ installStackBin lVer $> vi
+          liftE $ installStackBin lVer Nothing $> vi
     )
     >>= \case
           VRight vi                         -> do

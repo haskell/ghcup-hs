@@ -138,6 +138,7 @@ data InstallOptions = InstallOptions
   , instPlatform :: Maybe PlatformRequest
   , instBindist  :: Maybe URI
   , instSet      :: Bool
+  , isolateDir   :: Maybe FilePath
   }
 
 data SetCommand = SetGHC SetOptions
@@ -185,6 +186,7 @@ data GHCCompileOptions = GHCCompileOptions
   , ovewrwiteVer :: Maybe Version
   , buildFlavour :: Maybe String
   , hadrian      :: Bool
+  , isolateDir   :: Maybe FilePath
   }
 
 data UpgradeOpts = UpgradeInplace
@@ -574,7 +576,7 @@ Examples:
 
 installOpts :: Maybe Tool -> Parser InstallOptions
 installOpts tool =
-  (\p (u, v) b -> InstallOptions v p u b)
+  (\p (u, v) b is -> InstallOptions v p u b is)
     <$> optional
           (option
             (eitherReader platformParser)
@@ -602,6 +604,15 @@ installOpts tool =
           True
           (long "set" <> help
             "Set as active version after install"
+          )
+    <*> optional
+          (option
+           (eitherReader isolateParser)
+           (  short 'i'
+           <> long "isolate"
+           <> metavar "DIR"
+           <> help "install in an isolated dir instead of the default one"
+           )
           )
 
 
@@ -1000,6 +1011,15 @@ ghcCompileOpts =
     <*> switch
           (long "hadrian" <> help "Use the hadrian build system instead of make (only git versions seem to be properly supported atm)"
           )
+    <*> optional
+          (option
+            (eitherReader isolateParser)
+            (  short 'i'
+            <> long "isolate"
+            <> metavar "DIR"
+            <> help "install in an isolated directory instead of the default one, no symlinks to this installation will be made"
+            )
+           )
 
 
 toolVersionParser :: Parser ToolVersion
@@ -1215,6 +1235,10 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
 bindistParser :: String -> Either String URI
 bindistParser = first show . parseURI strictURIParserOptions . UTF8.fromString
 
+isolateParser :: FilePath -> Either String FilePath
+isolateParser f = case isValid f of
+              True -> Right $ normalise f
+              False -> Left "Please enter a valid filepath for isolate dir."
 
 toSettings :: Options -> IO (Settings, KeyBindings)
 toSettings options = do
@@ -1454,6 +1478,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , TarDirDoesNotExist
                       , NextVerNotFound
                       , NoToolVersionSet
+                      , FileAlreadyExistsError
                       ]
 
           let runInstTool mInstPlatform action' = do
@@ -1617,22 +1642,23 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -----------------------
 
           let installGHC InstallOptions{..} =
-                  (case instBindist of
-                     Nothing -> runInstTool instPlatform $ do
+                (case instBindist of
+                   Nothing -> runInstTool instPlatform $ do
+                     (v, vi) <- liftE $ fromVersion instVer GHC
+                     liftE $ installGHCBin (_tvVersion v) isolateDir
+                     when instSet $ void $ liftE $ setGHC v SetGHCOnly
+                     pure vi
+                   Just uri -> do
+                     s' <- liftIO appState
+                     runInstTool' s'{ settings = settings {noVerify = True}} instPlatform $ do
                        (v, vi) <- liftE $ fromVersion instVer GHC
-                       liftE $ installGHCBin (_tvVersion v)
+                       liftE $ installGHCBindist
+                         (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
+                         (_tvVersion v)
+                         isolateDir
                        when instSet $ void $ liftE $ setGHC v SetGHCOnly
                        pure vi
-                     Just uri -> do
-                       s' <- liftIO appState
-                       runInstTool' s'{ settings = settings {noVerify = True}} instPlatform $ do
-                         (v, vi) <- liftE $ fromVersion instVer GHC
-                         liftE $ installGHCBindist
-                           (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
-                           (_tvVersion v)
-                         when instSet $ void $ liftE $ setGHC v SetGHCOnly
-                         pure vi
-                    )
+                  )
                     >>= \case
                           VRight vi -> do
                             runLogger $ $(logInfo) "GHC installation successful"
@@ -1661,7 +1687,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 (case instBindist of
                    Nothing -> runInstTool instPlatform $ do
                      (v, vi) <- liftE $ fromVersion instVer Cabal
-                     liftE $ installCabalBin (_tvVersion v)
+                     liftE $ installCabalBin (_tvVersion v) isolateDir
                      pure vi
                    Just uri -> do
                      s' <- appState
@@ -1670,6 +1696,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                        liftE $ installCabalBindist
                            (DownloadInfo uri Nothing "")
                            (_tvVersion v)
+                           isolateDir
                        pure vi
                   )
                   >>= \case
@@ -1689,10 +1716,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 4
 
           let installHLS InstallOptions{..} =
-                (case instBindist of
+                 (case instBindist of
                    Nothing -> runInstTool instPlatform $ do
                      (v, vi) <- liftE $ fromVersion instVer HLS
-                     liftE $ installHLSBin (_tvVersion v)
+                     liftE $ installHLSBin (_tvVersion v) isolateDir
                      pure vi
                    Just uri -> do
                      s' <- appState
@@ -1701,6 +1728,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                        liftE $ installHLSBindist
                            (DownloadInfo uri Nothing "")
                            (_tvVersion v)
+                           isolateDir
                        pure vi
                   )
                   >>= \case
@@ -1720,19 +1748,20 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure $ ExitFailure 4
 
           let installStack InstallOptions{..} =
-                (case instBindist of
-                   Nothing -> runInstTool instPlatform $ do
-                     (v, vi) <- liftE $ fromVersion instVer Stack
-                     liftE $ installStackBin (_tvVersion v)
-                     pure vi
-                   Just uri -> do
-                     s' <- appState
-                     runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
-                       (v, vi) <- liftE $ fromVersion instVer Stack
-                       liftE $ installStackBindist
-                           (DownloadInfo uri Nothing "")
-                           (_tvVersion v)
-                       pure vi
+                 (case instBindist of
+                    Nothing -> runInstTool instPlatform $ do
+                      (v, vi) <- liftE $ fromVersion instVer Stack
+                      liftE $ installStackBin (_tvVersion v) isolateDir
+                      pure vi
+                    Just uri -> do
+                      s' <- appState
+                      runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
+                        (v, vi) <- liftE $ fromVersion instVer Stack
+                        liftE $ installStackBindist
+                            (DownloadInfo uri Nothing "")
+                            (_tvVersion v)
+                            isolateDir
+                        pure vi
                   )
                   >>= \case
                         VRight vi -> do
@@ -1961,6 +1990,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             addConfArgs
                             buildFlavour
                             hadrian
+                            isolateDir
                 GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
                 let vi = getVersionInfo (_tvVersion targetVer) GHC dls
                 when setCompile $ void $ liftE $

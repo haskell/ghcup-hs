@@ -134,6 +134,14 @@ instance Pretty AlreadyInstalled where
   pPrint (AlreadyInstalled tool ver') =
     text [i|#{tool}-#{prettyShow ver'} is already installed|]
 
+-- | The Directory for isolated install already exists and is not empty
+-- | This is done to prevent any overwriting
+data IsolatedDirNotEmpty = IsolatedDirNotEmpty {path :: FilePath}
+
+instance Pretty IsolatedDirNotEmpty where
+  pPrint (IsolatedDirNotEmpty path) = do
+    text [i| The directory for isolated install already exists and is NOT EMPTY : #{path}|]
+
 -- | The tool is not installed. Some operations rely on a tool
 -- to be installed (such as setting the current GHC version).
 data NotInstalled = NotInstalled Tool GHCTargetVersion
@@ -167,6 +175,16 @@ data FileDoesNotExistError = FileDoesNotExistError FilePath
 instance Pretty FileDoesNotExistError where
   pPrint (FileDoesNotExistError file) =
     text [i|File "#{file}" does not exist.|]
+
+-- | The file already exists
+-- (e.g. when we use isolated installs with the same path).
+-- (e.g. This is done to prevent any overwriting)
+data FileAlreadyExistsError = FileAlreadyExistsError FilePath
+  deriving Show
+
+instance Pretty FileAlreadyExistsError where
+  pPrint (FileAlreadyExistsError file) =
+    text [i|File "#{file}" Already exists.|]
 
 data TarDirDoesNotExist = TarDirDoesNotExist TarDir
   deriving Show
