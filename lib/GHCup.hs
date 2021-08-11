@@ -2127,7 +2127,7 @@ endif|]
         liftIO $ threadDelay 5000000
 
   addBuildFlavourToConf bc = case buildFlavour of
-    Just bf -> [i|BuildFlavour = #{bf}|] <> [s|
+    Just bf -> [i|BuildFlavour = #{bf}
 |] <> [i|#{bc}|]
     Nothing -> bc
 
