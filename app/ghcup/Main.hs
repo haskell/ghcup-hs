@@ -1478,7 +1478,6 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , TarDirDoesNotExist
                       , NextVerNotFound
                       , NoToolVersionSet
-                      , IsolatedDirNotEmpty
                       ]
 
           let runInstTool mInstPlatform action' = do

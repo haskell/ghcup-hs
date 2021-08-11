@@ -405,7 +405,6 @@ installCabalBindist :: ( MonadMask m
 #if !defined(TAR)
                           , ArchiveResult
 #endif
-                          , IsolatedDirNotEmpty
                           ]
                          m
                          ()
@@ -426,8 +425,7 @@ installCabalBindist dlinfo ver isoFilepath = do
         )
         (throwE $ AlreadyInstalled Cabal ver)
 
-    Just isoDir ->
-      liftE $ isolatedInstallSanityCheck isoDir
+    _ -> pure () -- check isn't required in isolated installs
 
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
@@ -500,7 +498,6 @@ installCabalBin :: ( MonadMask m
 #if !defined(TAR)
                       , ArchiveResult
 #endif
-                      , IsolatedDirNotEmpty
                       ]
                      m
                      ()
