@@ -440,6 +440,7 @@ install' _ (_, ListResult {..}) = do
               , TagNotFound
               , DigestError
               , DownloadFailed
+              , DirNotEmpty
               , NoUpdate
               , TarDirDoesNotExist
               , FileAlreadyExistsError

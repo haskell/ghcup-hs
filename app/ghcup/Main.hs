@@ -1469,6 +1469,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 #endif
                       , FileDoesNotExistError
                       , CopyError
+                      , NotInstalled
+                      , DirNotEmpty
                       , NoDownload
                       , NotInstalled
                       , BuildFailed
@@ -1580,6 +1582,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , UnknownArchive
                       , TarDirDoesNotExist
                       , NotInstalled
+                      , DirNotEmpty
 #if !defined(TAR)
                       , ArchiveResult
 #endif

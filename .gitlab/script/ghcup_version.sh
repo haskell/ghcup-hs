@@ -209,6 +209,21 @@ sha3=$(sha_sum "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml")
 [ "${etag2}" = "${etag3}" ]
 [ "${sha2}" = "${sha3}" ]
 
+# test isolated installs
+eghcup install ghc -i "$(pwd)/isolated" 8.10.5
+[ "$(isolated/bin/ghc --numeric-version)" = "8.10.5" ]
+! eghcup install ghc -i "$(pwd)/isolated" 8.10.5
+if [ "${ARCH}" = "64" ] ; then
+	if [ "${OS}" = "LINUX" ] || [ "${OS}" = "WINDOWS" ] ; then
+		eghcup install cabal -i "$(pwd)/isolated" 3.4.0.0
+		[ "$(isolated/cabal --numeric-version)" = "3.4.0.0" ]
+		eghcup install stack -i "$(pwd)/isolated" 2.7.3
+		[ "$(isolated/stack --numeric-version)" = "2.7.3" ]
+		eghcup install hls -i "$(pwd)/isolated" 1.3.0
+		[ "$(isolated/haskell-language-server-wrapper --numeric-version)" = "1.3.0" ] ||
+			[ "$(isolated/haskell-language-server-wrapper --numeric-version)" = "1.3.0.0" ]
+	fi
+fi
 
 eghcup upgrade
 eghcup upgrade -f

@@ -196,6 +196,7 @@ installGHCBindist :: ( MonadFail m
                         , NotInstalled
                         , UnknownArchive
                         , TarDirDoesNotExist
+                        , DirNotEmpty
 #if !defined(TAR)
                         , ArchiveResult
 #endif
@@ -262,12 +263,15 @@ installPackedGHC :: ( MonadMask m
                       '[ BuildFailed
                        , UnknownArchive
                        , TarDirDoesNotExist
+                       , DirNotEmpty
 #if !defined(TAR)
                        , ArchiveResult
 #endif
                        ] m ()
 installPackedGHC dl msubdir inst ver = do
   PlatformRequest {..} <- lift getPlatformReq
+
+  liftE $ installDestSanityCheck inst
 
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
@@ -282,6 +286,22 @@ installPackedGHC dl msubdir inst ver = do
   liftE $ runBuildAction tmpUnpack
                          (Just inst)
                          (installUnpackedGHC workdir inst ver)
+ where
+  -- | Does basic checks for isolated installs
+  -- Isolated Directory:
+  --   1. if it doesn't exist -> proceed
+  --   2. if it exists and is empty -> proceed
+  --   3. if it exists and is non-empty -> panic and leave the house
+  installDestSanityCheck :: ( MonadIO m
+                            , MonadCatch m
+                            ) =>
+                            FilePath ->
+                            Excepts '[DirNotEmpty] m ()
+  installDestSanityCheck isoDir = do
+    hideErrorDef [doesNotExistErrorType] () $ do
+      contents <- liftIO $ getDirectoryContentsRecursive isoDir
+      unless (null contents) (throwE $ DirNotEmpty isoDir)
+
 
 
 -- | Install an unpacked GHC distribution. This only deals with the GHC
@@ -361,6 +381,7 @@ installGHCBin :: ( MonadFail m
                     , NotInstalled
                     , UnknownArchive
                     , TarDirDoesNotExist
+                    , DirNotEmpty
 #if !defined(TAR)
                     , ArchiveResult
 #endif
@@ -438,10 +459,10 @@ installCabalBindist dlinfo ver isoFilepath = do
   case isoFilepath of
     Just isoDir -> do             -- isolated install
       lift $ $(logInfo) [i|isolated installing Cabal to #{isoDir}|]
-      liftE $ installCabalUnpacked workdir isoDir ver
+      liftE $ installCabalUnpacked workdir isoDir Nothing
 
     Nothing -> do                 -- regular install
-      liftE $ installCabalUnpacked workdir binDir ver
+      liftE $ installCabalUnpacked workdir binDir (Just ver)
 
       -- create symlink if this is the latest version for regular installs
       cVers <- lift $ fmap rights getInstalledCabals
@@ -452,17 +473,16 @@ installCabalBindist dlinfo ver isoFilepath = do
 installCabalUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
-              -> Version
+              -> Maybe Version -- ^ Nothing for isolated install
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
-installCabalUnpacked path inst ver = do
+installCabalUnpacked path inst mver' = do
   lift $ $(logInfo) "Installing cabal"
   let cabalFile = "cabal"
   liftIO $ createDirRecursive' inst
-  let destFileName = cabalFile <> "-" <> T.unpack (prettyVer ver) <> exeExt
+  let destFileName = cabalFile
+        <> maybe "" (("-" <>) . T.unpack . prettyVer) mver'
+        <> exeExt
   let destPath = inst </> destFileName
-  whenM
-    (liftIO $ doesFileExist destPath)
-    (throwE $ FileAlreadyExistsError destPath)
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> cabalFile <> exeExt)
     destPath
@@ -567,10 +587,10 @@ installHLSBindist dlinfo ver isoFilepath = do
   case isoFilepath of
     Just isoDir -> do
       lift $ $(logInfo) [i|isolated installing HLS to #{isoDir}|]
-      liftE $ installHLSUnpacked workdir isoDir ver
+      liftE $ installHLSUnpacked workdir isoDir Nothing
 
     Nothing -> do
-      liftE $ installHLSUnpacked workdir binDir ver
+      liftE $ installHLSUnpacked workdir binDir (Just ver)
 
       -- create symlink if this is the latest version in a regular install
       hlsVers <- lift $ fmap rights getInstalledHLSs
@@ -582,9 +602,9 @@ installHLSBindist dlinfo ver isoFilepath = do
 installHLSUnpacked :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
-              -> Version
+              -> Maybe Version -- ^ Nothing for isolated install
               -> Excepts '[CopyError] m ()
-installHLSUnpacked path inst ver = do
+installHLSUnpacked path inst mver' = do
   lift $ $(logInfo) "Installing HLS"
   liftIO $ createDirRecursive' inst
 
@@ -597,7 +617,8 @@ installHLSUnpacked path inst ver = do
     )
   forM_ bins $ \f -> do
     let toF = dropSuffix exeExt f
-              <> "~" <> T.unpack (prettyVer ver) <> exeExt
+              <> maybe "" (("~" <>) . T.unpack . prettyVer) mver'
+              <> exeExt
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
       (path </> f)
       (inst </> toF)
@@ -605,7 +626,9 @@ installHLSUnpacked path inst ver = do
 
   -- install haskell-language-server-wrapper
   let wrapper = "haskell-language-server-wrapper"
-      toF = wrapper <> "-" <> T.unpack (prettyVer ver) <> exeExt
+      toF = wrapper
+            <> maybe "" (("-" <>) . T.unpack . prettyVer) mver'
+            <> exeExt
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> wrapper <> exeExt)
     (inst </> toF)
@@ -745,9 +768,9 @@ installStackBindist dlinfo ver isoFilepath = do
   case isoFilepath of
     Just isoDir -> do                 -- isolated install
       lift $ $(logInfo) [i|isolated installing Stack to #{isoDir}|]
-      liftE $ installStackUnpacked workdir isoDir ver
+      liftE $ installStackUnpacked workdir isoDir Nothing
     Nothing -> do                     -- regular install
-      liftE $ installStackUnpacked workdir binDir ver
+      liftE $ installStackUnpacked workdir binDir (Just ver)
 
       -- create symlink if this is the latest version and a regular install
       sVers <- lift $ fmap rights getInstalledStacks
@@ -759,13 +782,15 @@ installStackBindist dlinfo ver isoFilepath = do
 installStackUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked stack bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
-              -> Version
+              -> Maybe Version -- ^ Nothing for isolated installs
               -> Excepts '[CopyError] m ()
-installStackUnpacked path inst ver = do
+installStackUnpacked path inst mver' = do
   lift $ $(logInfo) "Installing stack"
   let stackFile = "stack"
   liftIO $ createDirRecursive' inst
-  let destFileName = stackFile <> "-" <> T.unpack (prettyVer ver) <> exeExt
+  let destFileName = stackFile
+                     <> maybe "" (("-" <>) .  T.unpack . prettyVer) mver'
+                     <> exeExt
   let destPath = inst </> destFileName
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> stackFile <> exeExt)
@@ -1765,6 +1790,7 @@ compileGHC :: ( MonadMask m
                  , UnknownArchive
                  , TarDirDoesNotExist
                  , NotInstalled
+                 , DirNotEmpty
 #if !defined(TAR)
                  , ArchiveResult
 #endif
@@ -2252,27 +2278,6 @@ upgradeGHCup mtarget force' = do
     --[ Other ]--
     -------------
 
--- | Does basic checks for isolated installs
--- Isolated Directory:
---   1. if it doesn't exist -> proceed
---   2. if it exists and is empty -> proceed
---   3. if it exists and is non-empty -> panic and leave the house
-
-isolatedInstallSanityCheck :: ( MonadIO m
-                              , MonadThrow m
-                              ) =>
-                              FilePath ->
-                              Excepts '[IsolatedDirNotEmpty] m ()
-isolatedInstallSanityCheck isoDir = do
-  dirExists <- liftIO $ doesDirectoryExist isoDir
-  if not dirExists
-  then pure ()
-  else do
-    len <- liftIO $ length <$> listDirectory isoDir
-    let isDirEmpty = len == 0
-    if isDirEmpty
-    then pure ()
-    else (throwE $ IsolatedDirNotEmpty isoDir)
 
 
 -- | Creates @ghc-x.y.z@ and @ghc-x.y@ symlinks. This is used for
