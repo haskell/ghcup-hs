@@ -1383,6 +1383,7 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://oleg.fi/cabal-install-3.4.0.0-rc4/cabal-install-3.4.0.0-x86_64-freebsd-12.1-release.tar.xz
               dlHash: 9705e16d03497b46be4ad477e6c64d10890af853eafa8a9adf6dba89aa9e05f7
+  GHCup:
     0.1.16.2:
       viTags:
       - Recommended
