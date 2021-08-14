@@ -43,6 +43,7 @@
 
   # unconditionally add the MacOSX.sdk and TargetConditional.h
   export NIX_CFLAGS_COMPILE+=" -isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"
+  export NIX_LDFLAGS="-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib $NIX_LDFLAGS"
 
   '';
 
