@@ -158,6 +158,26 @@ $ErrorActionPreference = 'Stop'
 
 $GhcupBasePrefixEnv = [System.Environment]::GetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'user')
 
+if (Get-Command -Name 'chocolatey.exe' -ErrorAction SilentlyContinue) {
+  if (!($Silent)) {
+    Print-Msg -color Magenta -msg (@'
+Chocolatey was detected on your system. It is capable of installing the Haskell toolchain as well.
+If you want to rather use that instead of ghcup, abort the installation and run the following at an
+elevated command prompt:
+    choco install haskell-dev
+    refreshenv
+
+'@)
+    $decision = $Host.UI.PromptForChoice(''
+    , 'Continue with GHCup installation?'
+    , [System.Management.Automation.Host.ChoiceDescription[]] @('&Continue'
+        '&Abort'), 0)
+    if ($decision -eq 1) {
+      Exit 0
+    }
+  }
+}
+
 if ($GhcupBasePrefixEnv) {
   $defaultGhcupBasePrefix = $GhcupBasePrefixEnv
 } else {
