@@ -9,7 +9,7 @@ mkdir -p "${TMPDIR}" "${CABAL_DIR}"
 mkdir -p "$GHCUP_INSTALL_BASE_PREFIX/ghcup/bin"
 
 CI_PROJECT_DIR=$(pwd)
-curl -o ghcup.exe https://downloads.haskell.org/~ghcup/0.1.15.1/x86_64-mingw64-ghcup-0.1.15.1.exe
+curl -o ghcup.exe https://downloads.haskell.org/~ghcup/x86_64-mingw64-ghcup.exe
 chmod +x ghcup.exe
 
 ./ghcup.exe install ${GHC_VERSION}
