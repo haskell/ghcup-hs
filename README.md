@@ -23,6 +23,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [XDG support](#xdg-support)
      * [Env variables](#env-variables)
      * [Installing custom bindists](#installing-custom-bindists)
+     * [Isolated Installs](#isolated-installs)
      * [Tips and tricks](#tips-and-tricks)
    * [Design goals](#design-goals)
    * [How](#how)
@@ -160,6 +161,36 @@ and produce the binaries `ghc-8.10.2-eff` and `ghc-head` respectively.
 GHCup always needs to know which version the bindist corresponds to (this is not automatically
 detected).
 
+### Isolated installs
+
+Ghcup also enables you to install a tool (GHC, Cabal, HLS, Stack) at an isolated location of your choosing.
+These installs, as the name suggests, are separate from your main installs and DO NOT conflict with them.
+
+
+- No symlinks are made to these isolated installed tools, you'd have to manually point to them wherever you intend to use them.
+
+- These installs, can also NOT be deleted from ghcup, you'd have to go and manually delete these.
+
+You need to use the `--isolate` or `-i` flag followed by the directory path.
+
+Examples:-
+
+1. install an isolated GHC version at location /home/user/isolated_dir/ghc/  
+   - `ghcup install ghc 8.10.5 --isolate /home/user/isolated_dir/ghc`
+
+2. isolated install Cabal at a location you desire  
+   - `ghcup install cabal --isolate /home/username/my_isolated_dir/`
+
+3. do an isolated install with a custom bindist  
+   - `ghcup install ghc --isolate /home/username/my_isolated_dir/ -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
+
+4. isolated install HLS  
+   - `ghcup install hls --isolate /home/username/dir/hls/`
+
+5. you can even compile ghc to an isolated location.  
+   - `ghcup compile ghc -j 4 -v 9.0.1 -b 8.10.5 -i /home/username/my/dir/ghc` 
+   ---  
+   
 ### Tips and tricks
 
 #### with_ghc wrapper (e.g. for HLS)
