@@ -19,6 +19,18 @@ toolRequirements:
           - libncurses5
           - libtinfo5
           notes: ''
+        ">= 11":
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi7
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
       Linux_Ubuntu:
         unknown_versioning:
           distroPKGs:

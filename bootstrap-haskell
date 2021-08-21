@@ -275,6 +275,8 @@ find_shell() {
 ask_bashrc() {
 	if [ -n "${BOOTSTRAP_HASKELL_ADJUST_BASHRC}" ] ; then
 		return 1
+	elif [ -z "${MY_SHELL}" ] ; then
+		return 0
 	fi
 
 	while true; do
