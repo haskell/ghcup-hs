@@ -368,7 +368,7 @@ download uri eDigest dest mfn etags
 
                           -- this nonsense is necessary, because some older versions of curl would overwrite
                           -- the destination file when 304 is returned
-                          case fmap T.words . listToMaybe . fmap T.strip . T.lines $ headers of
+                          case fmap T.words . listToMaybe . fmap T.strip . T.lines . getLastHeader $ headers of
                             Just (http':sc:_)
                               | sc == "304"
                               , T.pack "HTTP" `T.isPrefixOf` http' -> $logDebug [i|Status code was 304, not overwriting|]
@@ -447,7 +447,7 @@ download uri eDigest dest mfn etags
 
   parseEtags :: (MonadLogger m, MonadIO m, MonadThrow m) => T.Text -> m (Maybe T.Text)
   parseEtags stderr = do
-    let mEtag = find (\line -> T.pack "etag:" `T.isPrefixOf` T.toLower line) . fmap T.strip . T.lines $ stderr
+    let mEtag = find (\line -> T.pack "etag:" `T.isPrefixOf` T.toLower line) . fmap T.strip . T.lines . getLastHeader $ stderr
     case T.words <$> mEtag of
       (Just []) -> do
         $logDebug "Couldn't parse etags, no input: "
@@ -585,7 +585,21 @@ getWgetOpts =
     Nothing -> pure []
 
 
+-- | Get the url base name.
+--
+-- >>> urlBaseName "/foo/bar/baz"
+-- "baz"
 urlBaseName :: ByteString  -- ^ the url path (without scheme and host)
             -> ByteString
 urlBaseName = snd . B.breakEnd (== _slash) . urlDecode False
 
+
+-- | Curl saves all intermediate connect headers as well, not just the last one, so we make an effort to take the
+-- last HTTP block only. Passing '--suppress-connect-headers' would be better, but it isn't supported by all versions,
+-- also see:
+--   https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/213
+--
+-- >>> getLastHeader "\n\nHTTP/1.0 200 Connection established\n\nHTTP/1.1 304 Not Modified\n"
+-- "HTTP/1.1 304 Not Modified\n"
+getLastHeader :: T.Text -> T.Text
+getLastHeader = T.unlines . lastDef [] . filter (\x -> not (null x)) . splitOn [""] . fmap T.stripEnd . T.lines
