@@ -68,6 +68,14 @@ import qualified System.Win32.File             as Win32
 #endif
 
 
+-- $setup
+-- >>> import Data.ByteString.Internal (c2w, w2c)
+-- >>> import Test.QuickCheck
+-- >>> import Data.Word8
+-- >>> import Data.Word8
+-- >>> import qualified Data.Text as T
+-- >>> instance Arbitrary T.Text where arbitrary = T.pack <$> arbitrary
+
 
 fS :: IsString a => String -> a
 fS = fromString
@@ -489,7 +497,14 @@ recover action =
 #endif
 
 
--- Gathering monoidal values
+-- | Gathering monoidal values
+--
+-- >>> traverseFold (pure . (:["0"])) ["1","2"]
+-- ["1","0","2","0"]
+-- >>> traverseFold Just ["1","2","3","4","5"]
+-- Just "12345"
+--
+-- prop> \t -> traverseFold Just t === Just (mconcat t)
 traverseFold :: (Foldable t, Applicative m, Monoid b) => (a -> m b) -> t a -> m b
 traverseFold f = foldl (\mb a -> (<>) <$> mb <*> f a) (pure mempty)
 
@@ -499,6 +514,16 @@ forFold = \t -> (`traverseFold` t)
 
 
 -- | Strip @\\r@ and @\\n@ from 'ByteString's
+--
+-- >>> stripNewline "foo\n\n\n"
+-- "foo"
+-- >>> stripNewline "foo\r"
+-- "foo"
+-- >>> stripNewline "foo"
+-- "foo"
+--
+-- prop> \t -> stripNewline (t <> "\n") === stripNewline t
+-- prop> \t -> not (any (isNewLine . c2w) t) ==> stripNewline t == t
 stripNewline :: String -> String
 stripNewline s
   | null s               = []
@@ -507,6 +532,16 @@ stripNewline s
 
 
 -- | Strip @\\r@ and @\\n@ from 'ByteString's
+--
+-- >>> stripNewline' "foo\n\n\n"
+-- "foo"
+-- >>> stripNewline' "foo\r"
+-- "foo"
+-- >>> stripNewline' "foo"
+-- "foo"
+--
+-- prop> \t -> stripNewline' (t <> "\n") === stripNewline' t
+-- prop> \t -> not (T.any (isNewLine . c2w) t) ==> stripNewline' t == t
 stripNewline' :: T.Text -> T.Text
 stripNewline' s
   | T.null s               = mempty
@@ -514,6 +549,14 @@ stripNewline' s
   | otherwise              = T.singleton (T.head s) <> stripNewline' (T.tail s)
 
 
+-- | Is the word8 a newline?
+--
+-- >>> isNewLine (c2w '\n')
+-- True
+-- >>> isNewLine (c2w '\r')
+-- True
+--
+-- prop> \w -> w /= _lf && w /= _cr ==> not (isNewLine w)
 isNewLine :: Word8 -> Bool
 isNewLine w
   | w == _lf = True
@@ -523,8 +566,10 @@ isNewLine w
 
 -- | Split on a PVP suffix.
 --
--- >>> splitOnPVP "-" "ghc-iserv-dyn-9.3.20210706" == ("ghc-iserv-dyn", "9.3.20210706")
--- >>> splitOnPVP "-" "ghc-iserv-dyn"              == ("ghc-iserv-dyn", "")
+-- >>> splitOnPVP "-" "ghc-iserv-dyn-9.3.20210706"
+-- ("ghc-iserv-dyn","9.3.20210706")
+-- >>> splitOnPVP "-" "ghc-iserv-dyn"
+-- ("ghc-iserv-dyn","")
 splitOnPVP :: String -> String -> (String, String)
 splitOnPVP c s = case Split.splitOn c s of
   []  -> def
