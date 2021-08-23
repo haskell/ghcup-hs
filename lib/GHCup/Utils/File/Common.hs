@@ -104,3 +104,6 @@ findFiles path regex = do
   contents <- listDirectory path
   pure $ filter (match regex) contents
 
+
+checkFileAlreadyExists :: (MonadIO m) => FilePath -> m Bool
+checkFileAlreadyExists fp = liftIO $ doesFileExist fp
