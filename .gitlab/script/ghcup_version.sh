@@ -49,6 +49,15 @@ elif [ "${OS}" = "LINUX" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui ghcup-test
 		ecabal haddock -w ghc-${GHC_VERSION} -finternal-downloader -ftui
+
+		# doctest
+		curl -sL https://github.com/phadej/cabal-extras/releases/download/cabal-docspec-0.0.0.20210111/cabal-docspec-0.0.0.20210111.xz > cabal-docspec.xz
+		echo '0829bd034fba901cbcfe491d98ed8b28fd54f9cb5c91fa8e1ac62dc4413c9562  cabal-docspec.xz' | sha256sum -c -
+		xz -d < cabal-docspec.xz > "$CI_PROJECT_DIR"/.local/bin/cabal-docspec
+		rm -f cabal-docspec.xz
+		chmod a+x "$CI_PROJECT_DIR"/.local/bin/cabal-docspec
+
+		cabal-docspec -XCPP -XTypeSynonymInstances -XOverloadedStrings -XPackageImports --check-properties
 	fi
 elif [ "${OS}" = "FREEBSD" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui --constraint="zip +disable-zstd"
