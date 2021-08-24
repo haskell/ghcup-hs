@@ -83,7 +83,7 @@ import           System.IO.Error
 #if defined(IS_WINDOWS)
 import           System.IO.Temp
 #endif
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
+import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
 import           Text.Regex.Posix
 
 import qualified Crypto.Hash.SHA256            as SHA256
@@ -276,7 +276,7 @@ installPackedGHC dl msubdir inst ver = do
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
   liftE $ unpackToDir tmpUnpack dl
-  void $ lift $ darwinNotarization _rPlatform tmpUnpack
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack)
@@ -451,7 +451,7 @@ installCabalBindist dlinfo ver isoFilepath = do
   -- unpack
   tmpUnpack <- lift withGHCupTmpDir
   liftE $ unpackToDir tmpUnpack dl
-  void $ lift $ darwinNotarization _rPlatform tmpUnpack
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
@@ -579,7 +579,7 @@ installHLSBindist dlinfo ver isoFilepath = do
   -- unpack
   tmpUnpack <- lift withGHCupTmpDir
   liftE $ unpackToDir tmpUnpack dl
-  void $ lift $ darwinNotarization _rPlatform tmpUnpack
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
@@ -760,7 +760,7 @@ installStackBindist dlinfo ver isoFilepath = do
   -- unpack
   tmpUnpack <- lift withGHCupTmpDir
   liftE $ unpackToDir tmpUnpack dl
-  void $ lift $ darwinNotarization _rPlatform tmpUnpack
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
@@ -1816,7 +1816,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
         -- unpack
         tmpUnpack <- lift mkGhcupTmpDir
         liftE $ unpackToDir tmpUnpack dl
-        void $ lift $ darwinNotarization _rPlatform tmpUnpack
+        liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
         workdir <- maybe (pure tmpUnpack)
                          (liftE . intoSubdir tmpUnpack)
@@ -1856,7 +1856,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
             ExitSuccess -> throwEither . MP.parse ghcProjectVersion "" . decUTF8Safe' $ _stdOut
             ExitFailure c -> fail ("Could not figure out GHC project version. Exit code was: " <> show c <> ". Error was: " <> T.unpack (decUTF8Safe' _stdErr))
 
-        void $ lift $ darwinNotarization _rPlatform tmpUnpack
+        liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
         lift $ $(logInfo) [i|Git version #{ref} corresponds to GHC version #{prettyVer tver}|]
 
         pure (tmpUnpack, tmpUnpack, GHCTargetVersion Nothing tver)
@@ -2352,6 +2352,5 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
     GHCup -> do
       currentRunningExecPath <- liftIO getExecutablePath
       liftIO $ canonicalizePath currentRunningExecPath
-
 
 
