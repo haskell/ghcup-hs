@@ -10,9 +10,7 @@ extra-deps:
   - git: https://github.com/Bodigrim/tar
     commit: ac197ec7ea4838dc2b4e22b9b888b080cedf29cf
 
-  - git: https://github.com/jtdaugherty/brick.git
-    commit: b3b96cfe66dfd398d338e3feb2b6855e66a35190
-
+  - brick-0.64@sha256:f03fa14607c22cf48af99e24c44f79a0fb073f7ec229f15e969fed9ff73c93f6,16530
   - IfElse-0.85@sha256:6939b94acc6a55f545f63a168a349dd2fbe4b9a7cca73bf60282db5cc6aa47d2,445
   - ascii-string-1.0.1.4@sha256:fa34f1d9ba57e8e89c0d4c9cef5e01ba32cb2d4373d13f92dcc0b531a6c6749b,2582
   - base16-bytestring-0.1.1.7@sha256:0021256a9628971c08da95cb8f4d0d72192f3bb8a7b30b55c080562d17c43dd3,2231
