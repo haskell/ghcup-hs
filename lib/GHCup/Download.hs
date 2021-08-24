@@ -601,5 +601,7 @@ urlBaseName = snd . B.breakEnd (== _slash) . urlDecode False
 --
 -- >>> getLastHeader "\n\nHTTP/1.0 200 Connection established\n\nHTTP/1.1 304 Not Modified\n"
 -- "HTTP/1.1 304 Not Modified\n"
+-- >>> getLastHeader "HTTP/1.1 304 Not Modified\n"
+-- "HTTP/1.1 304 Not Modified\n"
 getLastHeader :: T.Text -> T.Text
 getLastHeader = T.unlines . lastDef [] . filter (\x -> not (null x)) . splitOn [""] . fmap T.stripEnd . T.lines
