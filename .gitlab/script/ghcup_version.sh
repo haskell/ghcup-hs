@@ -51,10 +51,11 @@ elif [ "${OS}" = "LINUX" ] ; then
 		ecabal haddock -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 
 		# doctest
-		curl -sL https://github.com/phadej/cabal-extras/releases/download/cabal-docspec-0.0.0.20210111/cabal-docspec-0.0.0.20210111.xz > cabal-docspec.xz
-		echo '0829bd034fba901cbcfe491d98ed8b28fd54f9cb5c91fa8e1ac62dc4413c9562  cabal-docspec.xz' | sha256sum -c -
-		xz -d < cabal-docspec.xz > "$CI_PROJECT_DIR"/.local/bin/cabal-docspec
-		rm -f cabal-docspec.xz
+		curl -sL https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-docspec/cabal-docspec-0.0.0.20210228_p1.tar.bz2 > cabal-docspec.tar.bz2
+		echo '3a10f6fec16dbd18efdd331b1cef5d2d342082da42f5b520726d1fa6a3990d12  cabal-docspec.tar.bz2' | sha256sum -c -
+		tar -xjf cabal-docspec.tar.bz2 cabal-docspec
+		mv cabal-docspec "$CI_PROJECT_DIR"/.local/bin/cabal-docspec
+		rm -f cabal-docspec.tar.bz2
 		chmod a+x "$CI_PROJECT_DIR"/.local/bin/cabal-docspec
 
 		cabal-docspec -XCPP -XTypeSynonymInstances -XOverloadedStrings -XPackageImports --check-properties
