@@ -42,23 +42,25 @@ if [ "${OS}" = "DARWIN" ] ; then
 	ecabal haddock -w ghc-${GHC_VERSION} -ftui
 elif [ "${OS}" = "LINUX" ] ; then
 	if [ "${ARCH}" = "32" ] ; then
-		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar
-		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar ghcup-test
-		ecabal haddock -w ghc-${GHC_VERSION} -finternal-downloader -ftui -ftar
+		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
+		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui ghcup-test
+		ecabal haddock -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 	else
 		ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 		ecabal test -w ghc-${GHC_VERSION} -finternal-downloader -ftui ghcup-test
 		ecabal haddock -w ghc-${GHC_VERSION} -finternal-downloader -ftui
 
-		# doctest
-		curl -sL https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-docspec/cabal-docspec-0.0.0.20210228_p1.tar.bz2 > cabal-docspec.tar.bz2
-		echo '3a10f6fec16dbd18efdd331b1cef5d2d342082da42f5b520726d1fa6a3990d12  cabal-docspec.tar.bz2' | sha256sum -c -
-		tar -xjf cabal-docspec.tar.bz2 cabal-docspec
-		mv cabal-docspec "$CI_PROJECT_DIR"/.local/bin/cabal-docspec
-		rm -f cabal-docspec.tar.bz2
-		chmod a+x "$CI_PROJECT_DIR"/.local/bin/cabal-docspec
+		if [ "${ARCH}" = "64" ] ; then
+			# doctest
+			curl -sL https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-docspec/cabal-docspec-0.0.0.20210228_p1.tar.bz2 > cabal-docspec.tar.bz2
+			echo '3a10f6fec16dbd18efdd331b1cef5d2d342082da42f5b520726d1fa6a3990d12  cabal-docspec.tar.bz2' | sha256sum -c -
+			tar -xjf cabal-docspec.tar.bz2 cabal-docspec
+			mv cabal-docspec "$CI_PROJECT_DIR"/.local/bin/cabal-docspec
+			rm -f cabal-docspec.tar.bz2
+			chmod a+x "$CI_PROJECT_DIR"/.local/bin/cabal-docspec
 
-		cabal-docspec -XCPP -XTypeSynonymInstances -XOverloadedStrings -XPackageImports --check-properties
+			cabal-docspec -XCPP -XTypeSynonymInstances -XOverloadedStrings -XPackageImports --check-properties
+		fi
 	fi
 elif [ "${OS}" = "FREEBSD" ] ; then
 	ecabal build -w ghc-${GHC_VERSION} -finternal-downloader -ftui --constraint="zip +disable-zstd"

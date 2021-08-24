@@ -18,11 +18,7 @@ import           GHCup.Utils
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Version.QQ
 
-#if defined(TAR)
-import qualified Codec.Archive.Tar             as Tar
-#else
 import           Codec.Archive
-#endif
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
@@ -246,11 +242,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
       . runE @'[DigestError
                , DownloadFailed
                , UnknownArchive
-#if defined(TAR)
-               , Tar.FormatError
-#else
                , ArchiveResult
-#endif
                ]
       $ do
         case etool of

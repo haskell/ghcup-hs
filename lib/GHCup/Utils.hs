@@ -39,9 +39,7 @@ import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 
-#if !defined(TAR)
 import           Codec.Archive           hiding ( Directory )
-#endif
 import           Codec.Archive.Zip
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -83,9 +81,6 @@ import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           Text.Regex.Posix
 import           URI.ByteString
 
-#if defined(TAR)
-import qualified Codec.Archive.Tar             as Tar
-#endif
 import qualified Codec.Compression.BZip        as BZip
 import qualified Codec.Compression.GZip        as GZip
 import qualified Codec.Compression.Lzma        as Lzma
@@ -603,27 +598,17 @@ unpackToDir :: (MonadLogger m, MonadIO m, MonadThrow m)
             => FilePath       -- ^ destination dir
             -> FilePath       -- ^ archive path
             -> Excepts '[UnknownArchive
-#if !defined(TAR)
                         , ArchiveResult
-#endif
                         ] m ()
 unpackToDir dfp av = do
   let fn = takeFileName av
   lift $ $(logInfo) [i|Unpacking: #{fn} to #{dfp}|]
 
-#if defined(TAR)
-  let untar :: MonadIO m => BL.ByteString -> Excepts '[] m ()
-      untar = liftIO . Tar.unpack dfp . Tar.read
-
-      rf :: MonadIO m => FilePath -> Excepts '[] m BL.ByteString
-      rf = liftIO . BL.readFile
-#else
   let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
       untar = lEM . liftIO . runArchiveM . unpackToDirLazy dfp
 
       rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
       rf = liftIO . BL.readFile
-#endif
 
   -- extract, depending on file extension
   if
@@ -644,34 +629,16 @@ unpackToDir dfp av = do
 getArchiveFiles :: (MonadLogger m, MonadIO m, MonadThrow m)
                 => FilePath       -- ^ archive path
                 -> Excepts '[UnknownArchive
-#if defined(TAR)
-                            , Tar.FormatError
-#else
                             , ArchiveResult
-#endif
                             ] m [FilePath]
 getArchiveFiles av = do
   let fn = takeFileName av
 
-#if defined(TAR)
-  let entries :: Monad m => BL.ByteString -> Excepts '[Tar.FormatError] m [FilePath]
-      entries =
-          lE @Tar.FormatError
-          . Tar.foldEntries
-            (\e x -> fmap (Tar.entryPath e :) x)
-            (Right [])
-            (\e -> Left e)
-          . Tar.read
-
-      rf :: MonadIO m => FilePath -> Excepts '[Tar.FormatError] m BL.ByteString
-      rf = liftIO . BL.readFile
-#else
   let entries :: Monad m => BL.ByteString -> Excepts '[ArchiveResult] m [FilePath]
       entries = (fmap . fmap) filepath . lE . readArchiveBSL
 
       rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
       rf = liftIO . BL.readFile
-#endif
 
   -- extract, depending on file extension
   if

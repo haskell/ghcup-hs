@@ -30,9 +30,7 @@ import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 import           GHCup.Version
 
-#if !defined(TAR)
 import           Codec.Archive
-#endif
 import           Control.Concurrent
 import           Control.Concurrent.Async
 import           Control.DeepSeq                ( force )
@@ -1519,9 +1517,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   . runE
                     @'[ AlreadyInstalled
                       , UnknownArchive
-#if !defined(TAR)
                       , ArchiveResult
-#endif
                       , FileDoesNotExistError
                       , CopyError
                       , NotInstalled
@@ -1638,9 +1634,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , TarDirDoesNotExist
                       , NotInstalled
                       , DirNotEmpty
-#if !defined(TAR)
                       , ArchiveResult
-#endif
                       ]
 
           let
