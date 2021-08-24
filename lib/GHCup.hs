@@ -484,8 +484,7 @@ installCabalUnpacked path inst mver' = do
         <> exeExt
   let destPath = inst </> destFileName
 
-  whenM (checkFileAlreadyExists destPath)
-    (throwE $ FileAlreadyExistsError destPath)
+  liftE $ throwIfFileAlreadyExists destPath
     
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> cabalFile <> exeExt)
@@ -627,9 +626,8 @@ installHLSUnpacked path inst mver' = do
 
     let srcPath = path </> f
     let destPath = inst </> toF
-    
-    whenM (checkFileAlreadyExists destPath)
-      (throwE $ FileAlreadyExistsError destPath)
+
+    liftE $ throwIfFileAlreadyExists destPath
       
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
       srcPath
@@ -644,8 +642,7 @@ installHLSUnpacked path inst mver' = do
       srcWrapperPath = path </> wrapper <> exeExt
       destWrapperPath = inst </> toF
 
-  whenM (checkFileAlreadyExists destWrapperPath)
-    (throwE $ FileAlreadyExistsError destWrapperPath)
+  liftE $ throwIfFileAlreadyExists destWrapperPath
       
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     srcWrapperPath
@@ -815,8 +812,7 @@ installStackUnpacked path inst mver' = do
                      <> exeExt
       destPath = inst </> destFileName
 
-  whenM (checkFileAlreadyExists destPath)
-    (throwE $ FileAlreadyExistsError destPath)
+  liftE $ throwIfFileAlreadyExists destPath
       
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> stackFile <> exeExt)
@@ -2380,4 +2376,10 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
       liftIO $ canonicalizePath currentRunningExecPath
 
 
+throwIfFileAlreadyExists :: ( MonadIO m ) =>
+                            FilePath ->
+                            Excepts '[FileAlreadyExistsError] m ()
+
+throwIfFileAlreadyExists fp = whenM (checkFileAlreadyExists fp)
+                                (throwE $ FileAlreadyExistsError fp)
 
