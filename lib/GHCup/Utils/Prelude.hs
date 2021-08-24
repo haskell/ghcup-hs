@@ -5,6 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 {-|
 Module      : GHCup.Utils.Prelude
@@ -29,6 +30,7 @@ import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
+import           Control.Monad.Logger
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
 import           Data.List                      ( nub, intercalate )
@@ -39,6 +41,7 @@ import           Data.Versions
 import           Data.Word8
 import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
+import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
 import           System.IO.Error
 #if defined(IS_WINDOWS)
 import           System.IO.Temp
@@ -169,6 +172,10 @@ lEM' :: forall e' e es a m
      -> m (Either e' a)
      -> Excepts es m a
 lEM' f em = lift em >>= lE . first f
+
+-- for some obscure reason... this won't type-check if we move it to a different module
+catchWarn :: forall es m . (Pretty (V es), MonadLogger m, Monad m) => Excepts es m () -> Excepts '[] m ()
+catchWarn = catchAllE @_ @es (\v -> lift $ $(logWarn) (T.pack . prettyShow $ v))
 
 fromEither :: Either a b -> VEither '[a] b
 fromEither = either (VLeft . V) VRight
