@@ -9,6 +9,9 @@ extra-deps:
   - git: https://github.com/hasufell/libarchive
     commit: 024a7e8ab7b4d3848dc64dca1e70a04831eedc99
 
+  - git: https://github.com/hasufell/libarchive
+    commit: 8587aab78dd515928024ecd82c8f215e06db85cd
+
   - brick-0.64@sha256:f03fa14607c22cf48af99e24c44f79a0fb073f7ec229f15e969fed9ff73c93f6,16530
   - IfElse-0.85@sha256:6939b94acc6a55f545f63a168a349dd2fbe4b9a7cca73bf60282db5cc6aa47d2,445
   - ascii-string-1.0.1.4@sha256:fa34f1d9ba57e8e89c0d4c9cef5e01ba32cb2d4373d13f92dcc0b531a6c6749b,2582
@@ -41,7 +44,6 @@ extra-deps:
   - streamly-posix-0.1.0.1@sha256:5d89b806281035d34020387ed99dde1ddab282c7ed66df3b7cd010b38fd3517b,2138
   - strict-base-0.4.0.0@sha256:2ff4e43cb95eedf2995558d7fc34d19362846413dd39e6aa6a5b3ea8228fef9f,1248
   - xor-0.0.1.0@sha256:f8362b4a68562b9afbcd727ff64c1a303970df3a032e0033d2f4c094c3501df3,2243
-  - zip-1.7.1@sha256:0ce03d0fbffba47c1ab6fbb9166f8ba5373d828d78587df21b7e9d7bb150f929,3918
 
 flags:
   http-io-streams:

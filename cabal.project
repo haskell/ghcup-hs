@@ -16,7 +16,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/hasufell/libarchive
-    tag: 024a7e8ab7b4d3848dc64dca1e70a04831eedc99
+    tag: 8587aab78dd515928024ecd82c8f215e06db85cd
 
 constraints: http-io-streams -brotli
 
