@@ -21,6 +21,7 @@ extra-doc-files:
   ghcup-0.0.4.yaml
   ghcup-0.0.5.yaml
   ghcup-0.0.6.yaml
+  ghcup-0.0.7.yaml
   HACKING.md
   README.md
   RELEASING.md
