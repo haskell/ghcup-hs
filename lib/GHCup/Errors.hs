@@ -4,7 +4,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TypeOperators           #-}
 {-# LANGUAGE FlexibleInstances           #-}
 
@@ -25,7 +24,6 @@ import           Codec.Archive
 import           Control.Exception.Safe
 import           Data.ByteString                ( ByteString )
 import           Data.CaseInsensitive           ( CI )
-import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           Haskus.Utils.Variant
@@ -34,6 +32,7 @@ import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           URI.ByteString
 
 import qualified Data.Map.Strict               as M
+import qualified Data.Text                     as T
 
 
 
@@ -88,7 +87,7 @@ data UnknownArchive = UnknownArchive FilePath
 
 instance Pretty UnknownArchive where
   pPrint (UnknownArchive file) =
-    text [i|The archive format is unknown. We don't know how to extract the file "#{file}"|]
+    text $ "The archive format is unknown. We don't know how to extract the file " <> file
 
 -- | The scheme is not supported (such as ftp).
 data UnsupportedScheme = UnsupportedScheme
@@ -111,7 +110,7 @@ data TagNotFound = TagNotFound Tag Tool
 
 instance Pretty TagNotFound where
   pPrint (TagNotFound tag tool) =
-    text "Unable to find tag" <+> pPrint tag <+> text [i|of tool "#{tool}"|]
+    text "Unable to find tag" <+> pPrint tag <+> text "of tool" <+> pPrint tool
 
 -- | Unable to find the next version of a tool (the one after the currently
 -- set one).
@@ -120,7 +119,7 @@ data NextVerNotFound = NextVerNotFound Tool
 
 instance Pretty NextVerNotFound where
   pPrint (NextVerNotFound tool) =
-    text [i|Unable to find next (the one after the currently set one) version of tool "#{tool}"|]
+    text "Unable to find next (the one after the currently set one) version of tool" <+> pPrint tool
 
 -- | The tool (such as GHC) is already installed with that version.
 data AlreadyInstalled = AlreadyInstalled Tool Version
@@ -128,14 +127,14 @@ data AlreadyInstalled = AlreadyInstalled Tool Version
 
 instance Pretty AlreadyInstalled where
   pPrint (AlreadyInstalled tool ver') =
-    text [i|#{tool}-#{prettyShow ver'} is already installed|]
+    pPrint tool <+> text "-" <+> pPrint ver' <+> text "is already installed"
 
 -- | The Directory is supposed to be empty, but wasn't.
 data DirNotEmpty = DirNotEmpty {path :: FilePath}
 
 instance Pretty DirNotEmpty where
   pPrint (DirNotEmpty path) = do
-    text [i|The directory was expected to be empty, but isn't: #{path}|]
+    text $ "The directory was expected to be empty, but isn't: " <> path
 
 -- | The tool is not installed. Some operations rely on a tool
 -- to be installed (such as setting the current GHC version).
@@ -144,7 +143,7 @@ data NotInstalled = NotInstalled Tool GHCTargetVersion
 
 instance Pretty NotInstalled where
   pPrint (NotInstalled tool ver) =
-    text [i|The version "#{prettyShow ver}" of the tool "#{tool}" is not installed.|]
+    text "The version" <+> pPrint ver <+> text "of the tool" <+> pPrint tool <+> text "is not installed."
 
 -- | An executable was expected to be in PATH, but was not found.
 data NotFoundInPATH = NotFoundInPATH FilePath
@@ -152,7 +151,7 @@ data NotFoundInPATH = NotFoundInPATH FilePath
 
 instance Pretty NotFoundInPATH where
   pPrint (NotFoundInPATH exe) =
-    text [i|The exe "#{exe}" was not found in PATH.|]
+    text $ "The exe " <> exe <> " was not found in PATH."
 
 -- | JSON decoding failed.
 data JSONError = JSONDecodeError String
@@ -160,7 +159,7 @@ data JSONError = JSONDecodeError String
 
 instance Pretty JSONError where
   pPrint (JSONDecodeError err) =
-    text [i|JSON decoding failed with: #{err}|]
+    text $ "JSON decoding failed with: " <> err
 
 -- | A file that is supposed to exist does not exist
 -- (e.g. when we use file scheme to "download" something).
@@ -169,7 +168,7 @@ data FileDoesNotExistError = FileDoesNotExistError FilePath
 
 instance Pretty FileDoesNotExistError where
   pPrint (FileDoesNotExistError file) =
-    text [i|File "#{file}" does not exist.|]
+    text $ "File " <> file <> " does not exist."
 
 -- | The file already exists
 -- (e.g. when we use isolated installs with the same path).
@@ -179,7 +178,7 @@ data FileAlreadyExistsError = FileAlreadyExistsError FilePath
 
 instance Pretty FileAlreadyExistsError where
   pPrint (FileAlreadyExistsError file) =
-    text [i|File "#{file}" Already exists.|]
+    text $ "File " <> file <> " Already exists."
 
 data TarDirDoesNotExist = TarDirDoesNotExist TarDir
   deriving Show
@@ -194,7 +193,7 @@ data DigestError = DigestError Text Text
 
 instance Pretty DigestError where
   pPrint (DigestError currentDigest expectedDigest) =
-    text [i|Digest error: expected "#{expectedDigest}", but got "#{currentDigest}"|]
+    text "Digest error: expected" <+> text (T.unpack expectedDigest) <+> text "but got" <+> pPrint currentDigest
 
 -- | Unexpected HTTP status.
 data HTTPStatusError = HTTPStatusError Int (M.Map (CI ByteString) ByteString)
@@ -202,7 +201,7 @@ data HTTPStatusError = HTTPStatusError Int (M.Map (CI ByteString) ByteString)
 
 instance Pretty HTTPStatusError where
   pPrint (HTTPStatusError status _) =
-    text [i|Unexpected HTTP status: #{status}|]
+    text "Unexpected HTTP status:" <+> pPrint status
 
 -- | Malformed headers.
 data MalformedHeaders = MalformedHeaders Text
@@ -210,7 +209,7 @@ data MalformedHeaders = MalformedHeaders Text
 
 instance Pretty MalformedHeaders where
   pPrint (MalformedHeaders h) =
-    text [i|Headers are malformed: #{h}|]
+    text "Headers are malformed: " <+> pPrint h
 
 -- | Unexpected HTTP status.
 data HTTPNotModified = HTTPNotModified Text
@@ -218,7 +217,7 @@ data HTTPNotModified = HTTPNotModified Text
 
 instance Pretty HTTPNotModified where
   pPrint (HTTPNotModified etag) =
-    text [i|Remote resource not modifed, etag was: #{etag}|]
+    text "Remote resource not modifed, etag was:" <+> pPrint etag
 
 -- | The 'Location' header was expected during a 3xx redirect, but not found.
 data NoLocationHeader = NoLocationHeader
@@ -226,7 +225,7 @@ data NoLocationHeader = NoLocationHeader
 
 instance Pretty NoLocationHeader where
   pPrint NoLocationHeader =
-    text [i|The 'Location' header was expected during a 3xx redirect, but not found.|]
+    text "The 'Location' header was expected during a 3xx redirect, but not found."
 
 -- | Too many redirects.
 data TooManyRedirs = TooManyRedirs
@@ -234,7 +233,7 @@ data TooManyRedirs = TooManyRedirs
 
 instance Pretty TooManyRedirs where
   pPrint TooManyRedirs =
-    text [i|Too many redirections.|]
+    text "Too many redirections."
 
 -- | A patch could not be applied.
 data PatchFailed = PatchFailed
@@ -242,7 +241,7 @@ data PatchFailed = PatchFailed
 
 instance Pretty PatchFailed where
   pPrint PatchFailed =
-    text [i|A patch could not be applied.|]
+    text "A patch could not be applied."
 
 -- | The tool requirements could not be found.
 data NoToolRequirements = NoToolRequirements
@@ -250,35 +249,35 @@ data NoToolRequirements = NoToolRequirements
 
 instance Pretty NoToolRequirements where
   pPrint NoToolRequirements =
-    text [i|The Tool requirements could not be found.|]
+    text "The Tool requirements could not be found."
 
 data InvalidBuildConfig = InvalidBuildConfig Text
   deriving Show
 
 instance Pretty InvalidBuildConfig where
   pPrint (InvalidBuildConfig reason) =
-    text [i|The build config is invalid. Reason was: #{reason}|]
+    text "The build config is invalid. Reason was:" <+> pPrint reason
 
 data NoToolVersionSet = NoToolVersionSet Tool
   deriving Show
 
 instance Pretty NoToolVersionSet where
   pPrint (NoToolVersionSet tool) =
-    text [i|No version is set for tool "#{tool}".|]
+    text "No version is set for tool" <+> pPrint tool <+> text "."
 
 data NoNetwork = NoNetwork
   deriving Show
 
 instance Pretty NoNetwork where
   pPrint NoNetwork =
-    text [i|A download was required or requested, but '--offline' was specified.|]
+    text "A download was required or requested, but '--offline' was specified."
 
 data HadrianNotFound = HadrianNotFound
   deriving Show
 
 instance Pretty HadrianNotFound where
   pPrint HadrianNotFound =
-    text [i|Could not find Hadrian build files. Does this GHC version support Hadrian builds?|]
+    text "Could not find Hadrian build files. Does this GHC version support Hadrian builds?"
 
 
     -------------------------
@@ -300,17 +299,17 @@ data BuildFailed = forall es . (Pretty (V es), Show (V es)) => BuildFailed FileP
 
 instance Pretty BuildFailed where
   pPrint (BuildFailed path reason) =
-    text [i|BuildFailed failed in dir "#{path}": |] <> pPrint reason
+    text "BuildFailed failed in dir" <+> text (path <> ":") <+> pPrint reason
 
 deriving instance Show BuildFailed
 
 
 -- | Setting the current GHC version failed.
-data GHCupSetError = forall es . Show (V es) => GHCupSetError (V es)
+data GHCupSetError = forall es . (Show (V es), Pretty (V es)) => GHCupSetError (V es)
 
 instance Pretty GHCupSetError where
   pPrint (GHCupSetError reason) =
-    text [i|Setting the current GHC version failed: #{reason}|]
+    text "Setting the current GHC version failed:" <+> pPrint reason
 
 deriving instance Show GHCupSetError
 
@@ -326,7 +325,7 @@ data ParseError = ParseError String
 
 instance Pretty ParseError where
   pPrint (ParseError reason) =
-    text [i|Parsing failed: #{reason}|]
+    text "Parsing failed:" <+> pPrint reason
 
 instance Exception ParseError
 
@@ -336,7 +335,7 @@ data UnexpectedListLength = UnexpectedListLength String
 
 instance Pretty UnexpectedListLength where
   pPrint (UnexpectedListLength reason) =
-    text [i|List length unexpected: #{reason}|]
+    text "List length unexpected:" <+> pPrint reason
 
 instance Exception UnexpectedListLength
 
@@ -345,7 +344,7 @@ data NoUrlBase = NoUrlBase Text
 
 instance Pretty NoUrlBase where
   pPrint (NoUrlBase url) =
-    text [i|Couldn't get a base filename from url #{url}|]
+    text "Couldn't get a base filename from url" <+> pPrint url
 
 instance Exception NoUrlBase
 
@@ -370,21 +369,21 @@ instance
 
 instance Pretty URIParseError where
   pPrint (MalformedScheme reason) =
-    text [i|Failed to parse URI. Malformed scheme: #{reason}|]
+    text "Failed to parse URI. Malformed scheme:" <+> text (show reason)
   pPrint MalformedUserInfo =
-    text [i|Failed to parse URI. Malformed user info.|]
+    text "Failed to parse URI. Malformed user info."
   pPrint MalformedQuery =
-    text [i|Failed to parse URI. Malformed query.|]
+    text "Failed to parse URI. Malformed query."
   pPrint MalformedFragment =
-    text [i|Failed to parse URI. Malformed fragment.|]
+    text "Failed to parse URI. Malformed fragment."
   pPrint MalformedHost =
-    text [i|Failed to parse URI. Malformed host.|]
+    text "Failed to parse URI. Malformed host."
   pPrint MalformedPort =
-    text [i|Failed to parse URI. Malformed port.|]
+    text "Failed to parse URI. Malformed port."
   pPrint MalformedPath =
-    text [i|Failed to parse URI. Malformed path.|]
+    text "Failed to parse URI. Malformed path."
   pPrint (OtherError err) =
-    text [i|Failed to parse URI: #{err}|]
+    text "Failed to parse URI:" <+> pPrint err
 
 instance Pretty ArchiveResult where
   pPrint ArchiveFatal = text "Archive result: fatal"
@@ -393,3 +392,6 @@ instance Pretty ArchiveResult where
   pPrint ArchiveRetry = text "Archive result: retry"
   pPrint ArchiveOk = text "Archive result: Ok"
   pPrint ArchiveEOF = text "Archive result: EOF"
+
+instance Pretty T.Text where
+  pPrint = text . T.unpack

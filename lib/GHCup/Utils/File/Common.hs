@@ -1,4 +1,3 @@
-{-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -11,7 +10,6 @@ import           GHCup.Utils.Prelude
 import           Control.Monad.Extra
 import           Control.Monad.Reader
 import           Data.Maybe
-import           Data.String.Interpolate
 import           GHC.IO.Exception
 import           Optics                  hiding ((<|), (|>))
 import           System.Directory
@@ -31,13 +29,13 @@ data ProcessError = NonZeroExit Int FilePath [String]
 
 instance Pretty ProcessError where
   pPrint (NonZeroExit e exe args) =
-    text [i|Process "#{exe}" with arguments #{args} failed with exit code #{e}.|]
+    text "Process " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text " failed with exit code " <+> text (show e) <+> "."
   pPrint (PTerminated exe args) =
-    text [i|Process "#{exe}" with arguments #{args} terminated.|]
+    text "Process " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text " terminated."
   pPrint (PStopped exe args) =
-    text [i|Process "#{exe}" with arguments #{args} stopped.|]
+    text "Process " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text " stopped."
   pPrint (NoSuchPid exe args) =
-    text [i|Could not find PID for process running "#{exe}" with arguments #{args}.|]
+    text "Could not find PID for process running " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text "."
 
 data CapturedProcess = CapturedProcess
   { _exitCode :: ExitCode

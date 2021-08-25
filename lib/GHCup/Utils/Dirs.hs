@@ -50,7 +50,6 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource hiding (throwM)
 import           Data.Bifunctor
 import           Data.Maybe
-import           Data.String.Interpolate
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
@@ -274,7 +273,13 @@ mkGhcupTmpDir = do
   let minSpace = 5000 -- a rough guess, aight?
   space <- handleIO (\_ -> pure Nothing) $ fmap Just $ liftIO $ getAvailSpace tmpdir
   when (maybe False (toBytes minSpace >) space) $ do
-    $(logWarn) [i|Possibly insufficient disk space on #{tmpdir}. At least #{minSpace} MB are recommended, but only #{toMB (fromJust space)} are free. Consider freeing up disk space or setting TMPDIR env variable.|]
+    $(logWarn) ("Possibly insufficient disk space on "
+      <> T.pack tmpdir
+      <> ". At least "
+      <> T.pack (show minSpace)
+      <> " MB are recommended, but only "
+      <> toMB (fromJust space)
+      <> " are free. Consider freeing up disk space or setting TMPDIR env variable.")
     $(logWarn)
       "...waiting for 10 seconds before continuing anyway, you can still abort..."
     liftIO $ threadDelay 10000000 -- give the user a sec to intervene
@@ -282,7 +287,7 @@ mkGhcupTmpDir = do
   liftIO $ createTempDirectory tmpdir "ghcup"
  where
   toBytes mb = mb * 1024 * 1024
-  toMB b = show (truncate' (fromIntegral b / (1024 * 1024) :: Double) 2)
+  toMB b = T.pack $ show (truncate' (fromIntegral b / (1024 * 1024) :: Double) 2)
   truncate' :: Double -> Int -> Double
   truncate' x n = fromIntegral (floor (x * t) :: Integer) / t
       where t = 10^n
@@ -304,7 +309,7 @@ withGHCupTmpDir = snd <$> withRunInIO (\run ->
         (run mkGhcupTmpDir)
         (\fp ->
             handleIO (\e -> run
-                $ $(logDebug) [i|Resource cleanup failed for "#{fp}", error was: #{displayException e}|])
+                $ $(logDebug) ("Resource cleanup failed for " <> T.pack fp <> ", error was: " <> T.pack (displayException e)))
             . rmPathForcibly
             $ fp))
 
@@ -347,8 +352,8 @@ cleanupTrash = do
   if null contents
   then pure ()
   else do
-    $(logWarn) [i|Removing leftover files in #{recycleDir}|]
+    $(logWarn) ("Removing leftover files in " <> T.pack recycleDir)
     forM_ contents (\fp -> handleIO (\e ->
-        $(logDebug) [i|Resource cleanup failed for "#{fp}", error was: #{displayException e}|]
+        $(logDebug) ("Resource cleanup failed for " <> T.pack fp <> ", error was: " <> T.pack (displayException e))
       ) $ liftIO $ removePathForcibly (recycleDir </> fp))
 

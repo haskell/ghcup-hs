@@ -1,14 +1,13 @@
-resolver: lts-18.2
+resolver: lts-18.7
 
 packages:
   - .
 
 extra-deps:
-  - git: https://github.com/hasufell/text-conversions.git
-    commit: 9abf0e5e5664a3178367597c32db19880477a53c
-
-  - git: https://github.com/Bodigrim/tar
-    commit: ac197ec7ea4838dc2b4e22b9b888b080cedf29cf
+  - git: https://github.com/bgamari/terminal-size
+    commit: 34ea816bd63f75f800eedac12c6908c6f3736036
+  - git: https://github.com/hasufell/libarchive
+    commit: 024a7e8ab7b4d3848dc64dca1e70a04831eedc99
 
   - brick-0.64@sha256:f03fa14607c22cf48af99e24c44f79a0fb073f7ec229f15e969fed9ff73c93f6,16530
   - IfElse-0.85@sha256:6939b94acc6a55f545f63a168a349dd2fbe4b9a7cca73bf60282db5cc6aa47d2,445
@@ -29,7 +28,6 @@ extra-deps:
   - hspec-discover-2.7.10@sha256:d08bf5dd785629f589571477d9beb7cd91529471bd89f39517c1cb4b9b38160f,2184
   - hspec-golden-aeson-0.9.0.0@sha256:aa17274114026661ba4dfc9c60c230673c8f408bd86482fd611d2d5cb6aff996,2179
   - http-io-streams-0.1.6.0@sha256:53f5bab177efb52cd65ec396fd04ed59b93e5f919fb3700cd7dacd6cfce6f06d,3582
-  - libarchive-3.0.2.1@sha256:40ebf2a278e585802427bc58826867208bb33822f63d56107a1fcc3ca04d691d,10990
   - lzma-static-5.2.5.3@sha256:2758ee58c35992fcf7db78e98684c357a16a82fa2a4e7c352a6c210c08c555d8,7308
   - os-release-1.0.1@sha256:1281c62081f438fc3f0874d3bae6a4887d5964ac25261ba06e29d368ab173467,2716
   - optics-0.4@sha256:9fb69bf0195b8d8f1f8cd0098000946868b8a3c3ffb51e5b64f79fc600c3eb4c,6568

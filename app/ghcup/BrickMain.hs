@@ -38,7 +38,6 @@ import           Data.Functor
 import           Data.List
 import           Data.Maybe
 import           Data.IORef
-import           Data.String.Interpolate
 import           Data.Vector                    ( Vector
                                                 , (!?)
                                                 )
@@ -467,8 +466,8 @@ install' _ (_, ListResult {..}) = do
             pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
           VLeft (V NoUpdate) -> pure $ Right ()
-          VLeft e -> pure $ Left [i|#{prettyShow e}
-Also check the logs in ~/.ghcup/logs|]
+          VLeft e -> pure $ Left $ prettyShow e <> "\n"
+            <> "Also check the logs in ~/.ghcup/logs"
 
 
 set' :: BrickState -> (Int, ListResult) -> IO (Either String ())
@@ -530,8 +529,8 @@ changelog' :: (MonadReader AppState m, MonadIO m)
 changelog' _ (_, ListResult {..}) = do
   AppState { pfreq, ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
   case getChangeLog dls lTool (Left lVer) of
-    Nothing -> pure $ Left
-      [i|Could not find ChangeLog for #{lTool}, version #{prettyVer lVer}|]
+    Nothing -> pure $ Left $
+      "Could not find ChangeLog for " <> prettyShow lTool <> ", version " <> T.unpack (prettyVer lVer)
     Just uri -> do
       let cmd = case _rPlatform pfreq of
             Darwin  -> "open"
@@ -597,7 +596,7 @@ brickMain s l = do
           )
         $> ()
     Left e -> do
-      runLogger ($(logError) [i|Error building app state: #{show e}|])
+      runLogger ($(logError) $ "Error building app state: " <> T.pack (show e))
       exitWith $ ExitFailure 2
 
 
