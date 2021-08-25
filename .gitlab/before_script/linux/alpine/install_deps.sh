@@ -52,3 +52,7 @@ apk add --no-cache \
 	xz-dev \
 	ncurses-static
 
+if [ "${ARCH}" = "32" ] ; then
+	apk add --no-cache \
+		bsd-compat-headers
+fi

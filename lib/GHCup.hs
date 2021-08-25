@@ -39,9 +39,7 @@ import           GHCup.Utils.String.QQ
 import           GHCup.Utils.Version.QQ
 import           GHCup.Version
 
-#if !defined(TAR)
 import           Codec.Archive                  ( ArchiveResult )
-#endif
 import           Control.Applicative
 import           Control.DeepSeq                ( force )
 import           Control.Exception              ( evaluate )
@@ -83,7 +81,7 @@ import           System.IO.Error
 #if defined(IS_WINDOWS)
 import           System.IO.Temp
 #endif
-import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 
 import qualified Crypto.Hash.SHA256            as SHA256
@@ -197,9 +195,7 @@ installGHCBindist :: ( MonadFail m
                         , UnknownArchive
                         , TarDirDoesNotExist
                         , DirNotEmpty
-#if !defined(TAR)
                         , ArchiveResult
-#endif
                         ]
                        m
                        ()
@@ -264,9 +260,7 @@ installPackedGHC :: ( MonadMask m
                        , UnknownArchive
                        , TarDirDoesNotExist
                        , DirNotEmpty
-#if !defined(TAR)
                        , ArchiveResult
-#endif
                        ] m ()
 installPackedGHC dl msubdir inst ver = do
   PlatformRequest {..} <- lift getPlatformReq
@@ -382,9 +376,7 @@ installGHCBin :: ( MonadFail m
                     , UnknownArchive
                     , TarDirDoesNotExist
                     , DirNotEmpty
-#if !defined(TAR)
                     , ArchiveResult
-#endif
                     ]
                    m
                    ()
@@ -419,9 +411,7 @@ installCabalBindist :: ( MonadMask m
                           , NotInstalled
                           , UnknownArchive
                           , TarDirDoesNotExist
-#if !defined(TAR)
                           , ArchiveResult
-#endif
                           , FileAlreadyExistsError
                           ]
                          m
@@ -515,9 +505,7 @@ installCabalBin :: ( MonadMask m
                       , NotInstalled
                       , UnknownArchive
                       , TarDirDoesNotExist
-#if !defined(TAR)
                       , ArchiveResult
-#endif
                       , FileAlreadyExistsError
                       ]
                      m
@@ -553,9 +541,7 @@ installHLSBindist :: ( MonadMask m
                         , NotInstalled
                         , UnknownArchive
                         , TarDirDoesNotExist
-#if !defined(TAR)
                         , ArchiveResult
-#endif
                         ]
                        m
                        ()
@@ -660,9 +646,7 @@ installHLSBin :: ( MonadMask m
                     , NotInstalled
                     , UnknownArchive
                     , TarDirDoesNotExist
-#if !defined(TAR)
                     , ArchiveResult
-#endif
                     ]
                    m
                    ()
@@ -698,9 +682,7 @@ installStackBin :: ( MonadMask m
                       , NotInstalled
                       , UnknownArchive
                       , TarDirDoesNotExist
-#if !defined(TAR)
                       , ArchiveResult
-#endif
                       ]
                      m
                      ()
@@ -735,9 +717,7 @@ installStackBindist :: ( MonadMask m
                           , NotInstalled
                           , UnknownArchive
                           , TarDirDoesNotExist
-#if !defined(TAR)
                           , ArchiveResult
-#endif
                           ]
                          m
                          ()
@@ -1791,9 +1771,7 @@ compileGHC :: ( MonadMask m
                  , TarDirDoesNotExist
                  , NotInstalled
                  , DirNotEmpty
-#if !defined(TAR)
                  , ArchiveResult
-#endif
                  ]
                 m
                 GHCTargetVersion

@@ -27,9 +27,7 @@ import           Brick.Widgets.List             ( listSelectedFocusedAttr
                                                 , listSelectedAttr
                                                 , listAttr
                                                 )
-#if !defined(TAR)
 import           Codec.Archive
-#endif
 import           Control.Exception.Safe
 import           Control.Monad.Logger
 import           Control.Monad.Reader
@@ -428,9 +426,7 @@ install' _ (_, ListResult {..}) = do
           . runResourceT
           . runE
             @'[ AlreadyInstalled
-#if !defined(TAR)
               , ArchiveResult
-#endif
               , UnknownArchive
               , FileDoesNotExistError
               , CopyError

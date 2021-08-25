@@ -18,7 +18,7 @@ ecabal update
 
 if [ "${OS}" = "LINUX" ] ; then
 	if [ "${ARCH}" = "32" ] ; then
-		ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections -optl-static' -ftui -ftar
+		ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections -optl-static' -ftui
 	elif [ "${ARCH}" = "64" ] ; then
 		ecabal build -w ghc-${GHC_VERSION} --ghc-options='-split-sections -optl-static' -ftui
 	else
