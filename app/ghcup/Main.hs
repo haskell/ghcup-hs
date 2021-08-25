@@ -49,7 +49,6 @@ import           Data.Functor
 import           Data.List                      ( intercalate, nub, sort, sortBy )
 import           Data.List.NonEmpty             (NonEmpty ((:|)))
 import           Data.Maybe
-import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions           hiding ( str )
 import           Data.Void
@@ -1087,7 +1086,7 @@ setVersionArgument criteria tool =
     <|> second SetToolVersion (tVersionEither s')
   parseSet s' = case fmap toLower s' of
                   "next" -> Right SetNext
-                  other  -> Left [i|Unknown tag/version #{other}|]
+                  other  -> Left $ "Unknown tag/version " <> other
 
 
 versionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
@@ -1170,8 +1169,8 @@ tagEither s' = case fmap toLower s' of
   "latest"      -> Right Latest
   ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
                                   Right x -> Right (Base x)
-                                  Left  _ -> Left [i|Invalid PVP version for base #{ver'}|]
-  other         -> Left [i|Unknown tag #{other}|]
+                                  Left  _ -> Left $ "Invalid PVP version for base " <> ver'
+  other         -> Left $ "Unknown tag " <> other
 
 
 tVersionEither :: String -> Either String GHCTargetVersion
@@ -1466,7 +1465,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 let s' = AppState settings dirs keybindings ghcupInfo pfreq
 
                 race_ (liftIO $ runLogger $ flip runReaderT dirs $ cleanupTrash)
-                      (threadDelay 5000000 >> runLogger ($(logWarn) [i|Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in #{recycleDir} manually|]))
+                      (threadDelay 5000000 >> runLogger ($(logWarn) $ "Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in " <> T.pack recycleDir <> " manually"))
 
                 case optCommand of
                   Nuke -> pure ()
@@ -1718,20 +1717,20 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                               runLogger $ $(logInfo) msg
                             pure ExitSuccess
                           VLeft (V (AlreadyInstalled _ v)) -> do
-                            runLogger $ $(logWarn)
-                              [i|GHC ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
+                            runLogger $ $(logWarn) $
+                              "GHC ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm ghc " <> prettyVer v <> "' first"
                             pure ExitSuccess
                           VLeft err@(V (BuildFailed tmpdir _)) -> do
                             case keepDirs settings of
                               Never -> myLoggerT loggerConfig $ ($(logError) $ T.pack $ prettyShow err)
-                              _ -> myLoggerT loggerConfig $ ($(logError) [i|#{prettyShow err}
-    Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
-    Make sure to clean up #{tmpdir} afterwards.|])
+                              _ -> myLoggerT loggerConfig $ ($(logError) $ T.pack (prettyShow err) <> "\n" <>
+                                "Check the logs at " <> T.pack logsDir <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
+                                "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                             pure $ ExitFailure 3
                           VLeft e -> do
                             runLogger $ do
                               $(logError) $ T.pack $ prettyShow e
-                              $(logError) [i|Also check the logs in #{logsDir}|]
+                              $(logError) $ "Also check the logs in " <> T.pack logsDir
                             pure $ ExitFailure 3
 
 
@@ -1758,13 +1757,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
-                          runLogger $ $(logWarn)
-                            [i|Cabal ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm cabal #{prettyVer v}' first|]
+                          runLogger $ $(logWarn) $
+                            "Cabal ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm cabal " <> prettyVer v <> "' first"
                           pure ExitSuccess
                         VLeft e -> do
                           runLogger $ do
                             $(logError) $ T.pack $ prettyShow e
-                            $(logError) [i|Also check the logs in #{logsDir}|]
+                            $(logError) $ "Also check the logs in " <> T.pack logsDir
                           pure $ ExitFailure 4
 
           let installHLS InstallOptions{..} =
@@ -1790,13 +1789,17 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
-                          runLogger $ $(logWarn)
-                            [i|HLS ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm hls #{prettyVer v}' first|]
+                          runLogger $ $(logWarn) $
+                              "HLS ver "
+                            <> prettyVer v
+                            <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm hls "
+                            <> prettyVer v
+                            <> "' first"
                           pure ExitSuccess
                         VLeft e -> do
                           runLogger $ do
                             $(logError) $ T.pack $ prettyShow e
-                            $(logError) [i|Also check the logs in #{logsDir}|]
+                            $(logError) $ "Also check the logs in " <> T.pack logsDir
                           pure $ ExitFailure 4
 
           let installStack InstallOptions{..} =
@@ -1822,13 +1825,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             runLogger $ $(logInfo) msg
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
-                          runLogger $ $(logWarn)
-                            [i|Stack ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm stack #{prettyVer v}' first|]
+                          runLogger $ $(logWarn) $
+                            "Stack ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm stack " <> prettyVer v <> "' first"
                           pure ExitSuccess
                         VLeft e -> do
                           runLogger $ do
                             $(logError) $ T.pack $ prettyShow e
-                            $(logError) [i|Also check the logs in #{logsDir}|]
+                            $(logError) $ "Also check the logs in " <> T.pack logsDir
                           pure $ ExitFailure 4
 
 
@@ -1842,8 +1845,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   >>= \case
                         VRight GHCTargetVersion{..} -> do
                           runLogger
-                            $ $(logInfo)
-                                [i|GHC #{prettyVer _tvVersion} successfully set as default version#{maybe "" (" for cross target " <>) _tvTarget}|]
+                            $ $(logInfo) $
+                                "GHC " <> prettyVer _tvVersion <> " successfully set as default version" <> maybe "" (" for cross target " <>) _tvTarget
                           pure ExitSuccess
                         VLeft e -> do
                           runLogger $ $(logError) $ T.pack $ prettyShow e
@@ -1860,8 +1863,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   >>= \case
                         VRight GHCTargetVersion{..} -> do
                           runLogger
-                            $ $(logInfo)
-                                [i|Cabal #{prettyVer _tvVersion} successfully set as default version|]
+                            $ $(logInfo) $
+                                "Cabal " <> prettyVer _tvVersion <> " successfully set as default version"
                           pure ExitSuccess
                         VLeft  e -> do
                           runLogger $ $(logError) $ T.pack $ prettyShow e
@@ -1878,8 +1881,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   >>= \case
                         VRight GHCTargetVersion{..} -> do
                           runLogger
-                            $ $(logInfo)
-                                [i|HLS #{prettyVer _tvVersion} successfully set as default version|]
+                            $ $(logInfo) $
+                                "HLS " <> prettyVer _tvVersion <> " successfully set as default version"
                           pure ExitSuccess
                         VLeft  e -> do
                           runLogger $ $(logError) $ T.pack $ prettyShow e
@@ -1896,8 +1899,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   >>= \case
                         VRight GHCTargetVersion{..} -> do
                           runLogger
-                            $ $(logInfo)
-                                [i|Stack #{prettyVer _tvVersion} successfully set as default version|]
+                            $ $(logInfo) $
+                                "Stack " <> prettyVer _tvVersion <> " successfully set as default version"
                           pure ExitSuccess
                         VLeft  e -> do
                           runLogger $ $(logError) $ T.pack $ prettyShow e
@@ -1974,18 +1977,18 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
               liftIO $ brickMain s' loggerConfig >> pure ExitSuccess
 #endif
             Install (Right iopts) -> do
-              runLogger ($(logWarn) [i|This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.|])
+              runLogger ($(logWarn) "This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.")
               installGHC iopts
             Install (Left (InstallGHC iopts)) -> installGHC iopts
             Install (Left (InstallCabal iopts)) -> installCabal iopts
             Install (Left (InstallHLS iopts)) -> installHLS iopts
             Install (Left (InstallStack iopts)) -> installStack iopts
             InstallCabalLegacy iopts -> do
-              runLogger ($(logWarn) [i|This is an old-style command for installing cabal. Use 'ghcup install cabal' instead.|])
+              runLogger ($(logWarn) "This is an old-style command for installing cabal. Use 'ghcup install cabal' instead.")
               installCabal iopts
 
             Set (Right sopts) -> do
-              runLogger ($(logWarn) [i|This is an old-style command for setting GHC. Use 'ghcup set ghc' instead.|])
+              runLogger ($(logWarn) "This is an old-style command for setting GHC. Use 'ghcup set ghc' instead.")
               setGHC' sopts
             Set (Left (SetGHC sopts)) -> setGHC' sopts
             Set (Left (SetCabal sopts)) -> setCabal' sopts
@@ -2000,7 +2003,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 )
 
             Rm (Right rmopts) -> do
-              runLogger ($(logWarn) [i|This is an old-style command for removing GHC. Use 'ghcup rm ghc' instead.|])
+              runLogger ($(logWarn) "This is an old-style command for removing GHC. Use 'ghcup rm ghc' instead.")
               rmGHC' rmopts
             Rm (Left (RmGHC rmopts)) -> rmGHC' rmopts
             Rm (Left (RmCabal rmopts)) -> rmCabal' rmopts
@@ -2058,15 +2061,16 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         putStr (T.unpack $ tVerToText tv)
                         pure ExitSuccess
                       VLeft (V (AlreadyInstalled _ v)) -> do
-                        runLogger $ $(logWarn)
-                          [i|GHC ver #{prettyVer v} already installed; if you really want to reinstall it, you may want to run 'ghcup rm ghc #{prettyVer v}' first|]
+                        runLogger $ $(logWarn) $
+                          "GHC ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm ghc " <> prettyVer v <> "' first"
                         pure ExitSuccess
                       VLeft err@(V (BuildFailed tmpdir _)) -> do
                         case keepDirs settings of
                           Never -> myLoggerT loggerConfig $ $(logError) $ T.pack $ prettyShow err
-                          _ -> myLoggerT loggerConfig $ ($(logError) [i|#{prettyShow err}
-Check the logs at #{logsDir} and the build directory #{tmpdir} for more clues.
-Make sure to clean up #{tmpdir} afterwards.|])
+                          _ -> myLoggerT loggerConfig $ ($(logError) $ T.pack (prettyShow err) <> "\n" <>
+                                "Check the logs at " <> T.pack logsDir <> " and the build directory "
+                                <> T.pack tmpdir <> " for more clues." <> "\n" <>
+                                "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                         pure $ ExitFailure 9
                       VLeft e -> do
                         runLogger $ $(logError) $ T.pack $ prettyShow e
@@ -2075,7 +2079,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
             Config InitConfig -> do
               path <- getConfigFilePath
               writeFile path $ formatConfig $ fromSettings settings (Just keybindings)
-              runLogger $ $(logDebug) [i|"config.yaml initialized at #{path}|]
+              runLogger $ $(logDebug) $ "config.yaml initialized at " <> T.pack path
               pure ExitSuccess
 
             Config ShowConfig -> do
@@ -2089,7 +2093,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   pure $ ExitFailure 55
                 _  -> do
                   r <- runE @'[JSONError] $ do
-                    settings' <- updateSettings [i|#{k}: #{v}\n|] settings
+                    settings' <- updateSettings (UTF8.fromString (k <> ": " <> v <> "\n")) settings
                     path <- liftIO getConfigFilePath
                     liftIO $ writeFile path $ formatConfig $ fromSettings settings' (Just keybindings)
                     runLogger $ $(logDebug) $ T.pack $ show settings'
@@ -2098,8 +2102,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   case r of
                       VRight _ -> pure ExitSuccess
                       VLeft (V (JSONDecodeError e)) -> do
-                        runLogger $ $(logError)
-                          [i|Error decoding config: #{e}|]
+                        runLogger $ $(logError) $ "Error decoding config: " <> T.pack e
                         pure $ ExitFailure 65
                       VLeft _ -> pure $ ExitFailure 65
 
@@ -2148,13 +2151,13 @@ Make sure to clean up #{tmpdir} afterwards.|])
                   VRight (v', dls) -> do
                     let pretty_v = prettyVer v'
                     let vi = fromJust $ snd <$> getLatest dls GHCup
-                    runLogger $ $(logInfo)
-                      [i|Successfully upgraded GHCup to version #{pretty_v}|]
+                    runLogger $ $(logInfo) $
+                      "Successfully upgraded GHCup to version " <> pretty_v
                     forM_ (_viPostInstall vi) $ \msg ->
                       runLogger $ $(logInfo) msg
                     pure ExitSuccess
                   VLeft (V NoUpdate) -> do
-                    runLogger $ $(logWarn) [i|No GHCup update available|]
+                    runLogger $ $(logWarn) "No GHCup update available"
                     pure ExitSuccess
                   VLeft e -> do
                     runLogger $ $(logError) $ T.pack $ prettyShow e
@@ -2192,8 +2195,8 @@ Make sure to clean up #{tmpdir} afterwards.|])
               case muri of
                 Nothing -> do
                   runLogger
-                    ($(logWarn)
-                      [i|Could not find ChangeLog for #{tool}, version #{either (T.unpack . prettyVer) show ver'}|]
+                    ($(logWarn) $
+                      "Could not find ChangeLog for " <> T.pack (prettyShow tool) <> ", version " <> either prettyVer (T.pack . show) ver'
                     )
                   pure ExitSuccess
                 Just uri -> do
@@ -2215,7 +2218,7 @@ Make sure to clean up #{tmpdir} afterwards.|])
                              Nothing
                           >>= \case
                                 Right _ -> pure ExitSuccess
-                                Left  e -> runLogger ($(logError) [i|#{e}|])
+                                Left  e -> runLogger ($(logError) (T.pack $ prettyShow e))
                                   >> pure (ExitFailure 13)
                     else putStrLn uri' >> pure ExitSuccess
 
@@ -2568,46 +2571,46 @@ checkForUpdates = do
   forM_ (getLatest dls GHCup) $ \(l, _) -> do
     (Right ghc_ver) <- pure $ version $ prettyPVP ghcUpVer
     when (l > ghc_ver)
-      $ $(logWarn)
-          [i|New GHCup version available: #{prettyVer l}. To upgrade, run 'ghcup upgrade'|]
+      $ $(logWarn) $
+          "New GHCup version available: " <> prettyVer l <> ". To upgrade, run 'ghcup upgrade'"
 
   forM_ (getLatest dls GHC) $ \(l, _) -> do
     let mghc_ver = latestInstalled GHC
     forM mghc_ver $ \ghc_ver ->
       when (l > ghc_ver)
-        $ $(logWarn)
-            [i|New GHC version available: #{prettyVer l}. To upgrade, run 'ghcup install ghc #{prettyVer l}'|]
+        $ $(logWarn) $
+          "New GHC version available: " <> prettyVer l <> ". To upgrade, run 'ghcup install ghc " <> prettyVer l <> "'"
 
   forM_ (getLatest dls Cabal) $ \(l, _) -> do
     let mcabal_ver = latestInstalled Cabal
     forM mcabal_ver $ \cabal_ver ->
       when (l > cabal_ver)
-        $ $(logWarn)
-            [i|New Cabal version available: #{prettyVer l}. To upgrade, run 'ghcup install cabal #{prettyVer l}'|]
+        $ $(logWarn) $
+          "New Cabal version available: " <> prettyVer l <> ". To upgrade, run 'ghcup install cabal " <> prettyVer l <> "'"
 
   forM_ (getLatest dls HLS) $ \(l, _) -> do
     let mhls_ver = latestInstalled HLS
     forM mhls_ver $ \hls_ver ->
       when (l > hls_ver)
-        $ $(logWarn)
-            [i|New HLS version available: #{prettyVer l}. To upgrade, run 'ghcup install hls #{prettyVer l}'|]
+        $ $(logWarn) $
+          "New HLS version available: " <> prettyVer l <> ". To upgrade, run 'ghcup install hls " <> prettyVer l <> "'"
 
   forM_ (getLatest dls Stack) $ \(l, _) -> do
     let mstack_ver = latestInstalled Stack
     forM mstack_ver $ \stack_ver ->
       when (l > stack_ver)
-        $ $(logWarn)
-            [i|New Stack version available: #{prettyVer l}. To upgrade, run 'ghcup install stack #{prettyVer l}'|]
+        $ $(logWarn) $
+          "New Stack version available: " <> prettyVer l <> ". To upgrade, run 'ghcup install stack " <> prettyVer l <> "'"
 
 
 prettyDebugInfo :: DebugInfo -> String
-prettyDebugInfo DebugInfo {..} = [i|Debug Info
-==========
-GHCup base dir: #{diBaseDir}
-GHCup bin dir: #{diBinDir}
-GHCup GHC directory: #{diGHCDir}
-GHCup cache directory: #{diCacheDir}
-Architecture: #{prettyShow diArch}
-Platform: #{prettyShow diPlatform}
-Version: #{describe_result}|]
+prettyDebugInfo DebugInfo {..} = "Debug Info" <> "\n" <>
+  "==========" <> "\n" <>
+  "GHCup base dir: " <> diBaseDir <> "\n" <>
+  "GHCup bin dir: " <> diBinDir <> "\n" <>
+  "GHCup GHC directory: " <> diGHCDir <> "\n" <>
+  "GHCup cache directory: " <> diCacheDir <> "\n" <>
+  "Architecture: " <> prettyShow diArch <> "\n" <>
+  "Platform: " <> prettyShow diPlatform <> "\n" <>
+  "Version: " <> describe_result
 
