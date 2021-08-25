@@ -33,7 +33,6 @@ import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
 import           Data.Foldable
 import           Data.Maybe
-import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           Haskus.Utils.Variant.Excepts
@@ -108,7 +107,7 @@ getPlatform = do
       pure $ PlatformResult { _platform = FreeBSD, _distroVersion = ver }
     "mingw32" -> pure PlatformResult { _platform = Windows, _distroVersion = Nothing }
     what -> throwE $ NoCompatiblePlatform what
-  lift $ $(logDebug) [i|Identified Platform as: #{prettyShow pfr}|]
+  lift $ $(logDebug) $ "Identified Platform as: " <> T.pack (prettyShow pfr)
   pure pfr
  where
   getFreeBSDVersion = lift $ fmap _stdOut $ executeOut "freebsd-version" [] Nothing

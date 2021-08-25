@@ -115,6 +115,13 @@ data Tool = GHC
           | Stack
   deriving (Eq, GHC.Generic, Ord, Show, Enum, Bounded)
 
+instance Pretty Tool where
+  pPrint GHC = text "ghc"
+  pPrint Cabal = text "cabal"
+  pPrint GHCup = text "ghcup"
+  pPrint HLS = text "hls"
+  pPrint Stack = text "stack"
+
 instance NFData Tool
 
 data GlobalTool = ShimGen

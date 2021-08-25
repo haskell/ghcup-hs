@@ -5,6 +5,7 @@
 {-# LANGUAGE TemplateHaskell  #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Validate where
 
@@ -33,7 +34,6 @@ import           Control.Monad.Trans.Resource   ( runResourceT
 import           Data.Containers.ListUtils      ( nubOrd )
 import           Data.IORef
 import           Data.List
-import           Data.String.Interpolate
 import           Data.Versions
 import           Haskus.Utils.Variant.Excepts
 import           Optics
@@ -89,24 +89,23 @@ validate dls _ = do
     if e > 0
       then pure $ ExitFailure e
       else do
-        lift $ $(logInfo) [i|All good|]
+        lift $ $(logInfo) "All good"
         pure ExitSuccess
  where
   checkHasRequiredPlatforms t v tags arch pspecs = do
     let v' = prettyVer v
         arch' = prettyShow arch
     when (notElem (Linux UnknownLinux) pspecs) $ do
-      lift $ $(logError)
-        [i|Linux UnknownLinux missing for for #{t} #{v'} #{arch'}|]
+      lift $ $(logError) $
+        "Linux UnknownLinux missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
       addError
     when ((notElem Darwin pspecs) && arch == A_64) $ do
-      lift $ $(logError) [i|Darwin missing for #{t} #{v'} #{arch'}|]
+      lift $ $(logError) $ "Darwin missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
       addError
-    when ((notElem FreeBSD pspecs) && arch == A_64) $ lift $ $(logWarn)
-      [i|FreeBSD missing for #{t} #{v'} #{arch'}|]
+    when ((notElem FreeBSD pspecs) && arch == A_64) $ lift $ $(logWarn) $
+      "FreeBSD missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
     when (notElem Windows pspecs && arch == A_64) $ do
-      lift $ $(logError)
-        [i|Windows missing for for #{t} #{v'} #{arch'}|]
+      lift $ $(logError) $ "Windows missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
       addError
 
     -- alpine needs to be set explicitly, because
@@ -114,12 +113,12 @@ validate dls _ = do
     -- (although it could be static)
     when (notElem (Linux Alpine) pspecs) $
       case t of
-        GHCup | arch `elem` [A_64, A_32] -> lift ($(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch}|]) >> addError
+        GHCup | arch `elem` [A_64, A_32] -> lift ($(logError) $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)) >> addError
         Cabal | v > [vver|2.4.1.0|]
-              , arch `elem` [A_64, A_32] -> lift ($(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]) >> addError
+              , arch `elem` [A_64, A_32] -> lift ($(logError) $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)) >> addError
         GHC | Latest `elem` tags || Recommended `elem` tags
-            , arch `elem` [A_64, A_32] -> lift ($(logError) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|])
-        _ -> lift $ $(logWarn) [i|Linux Alpine missing for #{t} #{v'} #{arch'}|]
+            , arch `elem` [A_64, A_32] -> lift ($(logError) $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch))
+        _ -> lift $ $(logWarn) $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)
 
   checkUniqueTags tool = do
     let allTags = join $ fmap _viTags $ M.elems $ availableToolVersions dls tool
@@ -139,7 +138,7 @@ validate dls _ = do
     case join nonUnique of
       [] -> pure ()
       xs -> do
-        lift $ $(logError) [i|Tags not unique for #{tool}: #{xs}|]
+        lift $ $(logError) $ "Tags not unique for " <> T.pack (prettyShow tool) <> ": " <> T.pack (prettyShow xs)
         addError
    where
     isUniqueTag Latest         = True
@@ -155,7 +154,7 @@ validate dls _ = do
       case [ x | (x,"") <- readP_to_S V.parseVersion (T.unpack . prettyVer $ v) ] of
         [_] -> pure ()
         _   -> do
-          lift $ $(logError) [i|GHC version #{v} is not valid |]
+          lift $ $(logError) $ "GHC version " <> prettyVer v <> " is not valid"
           addError
 
   -- a tool must have at least one of each mandatory tags
@@ -163,7 +162,7 @@ validate dls _ = do
     let allTags = join $ fmap _viTags $ M.elems $ availableToolVersions dls tool
     forM_ [Latest, Recommended] $ \t -> case elem t allTags of
       False -> do
-        lift $ $(logError) [i|Tag #{t} missing from #{tool}|]
+        lift $ $(logError) $ "Tag " <> T.pack (prettyShow t) <> " missing from " <> T.pack (prettyShow tool)
         addError
       True -> pure ()
 
@@ -172,7 +171,7 @@ validate dls _ = do
     let allTags = M.toList $ availableToolVersions dls GHC
     forM allTags $ \(ver, _viTags -> tags) -> case any isBase tags of
       False -> do
-        lift $ $(logError) [i|Base tag missing from GHC ver #{ver}|]
+        lift $ $(logError) $ "Base tag missing from GHC ver " <> prettyVer ver
         addError
       True -> pure ()
 
@@ -205,7 +204,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
     let dlis = either (const []) (\tool -> nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool) %> each %& indices (matchTest versionRegex . T.unpack . prettyVer) % (viSourceDL % _Just `summing` viArch % each % each % each)) etool
     let gdlis = nubOrd $ gt ^.. each
     let allDls = either (const gdlis) (const dlis) etool
-    when (null allDls) $ $(logError) [i|no tarballs selected by filter|] *> addError
+    when (null allDls) $ $(logError) "no tarballs selected by filter" *> addError
     forM_ allDls downloadAll
 
     -- exit
@@ -213,7 +212,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
     if e > 0
       then pure $ ExitFailure e
       else do
-        lift $ $(logInfo) [i|All good|]
+        lift $ $(logInfo) "All good"
         pure ExitSuccess
 
  where
@@ -265,25 +264,25 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
         case _dlSubdir dli of
           Just (RealDir prel) -> do
             lift $ $(logInfo)
-              [i|verifying subdir: #{prel}|]
+              $ " verifying subdir: " <> T.pack prel
             when (basePath /= prel) $ do
-              lift $ $(logError)
-                [i|Subdir doesn't match: expected "#{prel}", got "#{basePath}"|]
+              lift $ $(logError) $
+                "Subdir doesn't match: expected " <> T.pack prel <> ", got " <> T.pack basePath
               addError
           Just (RegexDir regexString) -> do
-            lift $ $(logInfo)
-              [i|verifying subdir (regex): #{regexString}|]
+            lift $ $(logInfo) $
+              "verifying subdir (regex): " <> T.pack regexString
             let regex = makeRegexOpts
                   compIgnoreCase
                   execBlank
                   regexString
             when (not (match regex basePath)) $ do
-              lift $ $(logError)
-                [i|Subdir doesn't match: expected regex "#{regexString}", got "#{basePath}"|]
+              lift $ $(logError) $
+                "Subdir doesn't match: expected regex " <> T.pack regexString <> ", got " <> T.pack basePath
               addError
           Nothing -> pure ()
       VRight Nothing -> pure ()
       VLeft  e -> do
-        lift $ $(logError)
-          [i|Could not download (or verify hash) of #{dli}, Error was: #{prettyShow e}|]
+        lift $ $(logError) $
+          "Could not download (or verify hash) of " <> T.pack (show dli) <> ", Error was: " <> T.pack (prettyShow e)
         addError

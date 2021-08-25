@@ -62,7 +62,6 @@ import           Data.List
 import           Data.List.Extra
 import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
 import           Data.Maybe
-import           Data.String.Interpolate
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           GHC.IO.Exception
@@ -130,7 +129,7 @@ rmMinorSymlinks tv@GHCTargetVersion{..} = do
   forM_ files $ \f -> do
     let f_xyz = f <> "-" <> T.unpack (prettyVer _tvVersion) <> exeExt
     let fullF = binDir </> f_xyz
-    lift $ $(logDebug) [i|rm -f #{fullF}|]
+    lift $ $(logDebug) ("rm -f " <> T.pack fullF)
     lift $ hideError doesNotExistErrorType $ rmLink fullF
 
 
@@ -152,11 +151,11 @@ rmPlain target = do
     files <- liftE $ ghcToolFiles tv
     forM_ files $ \f -> do
       let fullF = binDir </> f <> exeExt
-      lift $ $(logDebug) [i|rm -f #{fullF}|]
+      lift $ $(logDebug) ("rm -f " <> T.pack fullF)
       lift $ hideError doesNotExistErrorType $ rmLink fullF
     -- old ghcup
     let hdc_file = binDir </> "haddock-ghc" <> exeExt
-    lift $ $(logDebug) [i|rm -f #{hdc_file}|]
+    lift $ $(logDebug) ("rm -f " <> T.pack hdc_file)
     lift $ hideError doesNotExistErrorType $ rmLink hdc_file
 
 
@@ -180,7 +179,7 @@ rmMajorSymlinks tv@GHCTargetVersion{..} = do
   forM_ files $ \f -> do
     let f_xy = f <> "-" <> T.unpack v' <> exeExt
     let fullF = binDir </> f_xy
-    lift $ $(logDebug) [i|rm -f #{fullF}|]
+    lift $ $(logDebug) "rm -f #{fullF}"
     lift $ hideError doesNotExistErrorType $ rmLink fullF
 
 
@@ -296,7 +295,11 @@ cabalSet = do
         case linkVersion =<< link of
           Right v -> pure $ Just v
           Left err -> do
-            $(logWarn) [i|Failed to parse cabal symlink target with: "#{err}". The symlink #{cabalbin} needs to point to valid cabal binary, such as 'cabal-3.4.0.0'.|]
+            $(logWarn) $ "Failed to parse cabal symlink target with: "
+              <> T.pack (displayException err)
+              <> ". The symlink "
+              <> T.pack cabalbin
+              <> " needs to point to valid cabal binary, such as 'cabal-3.4.0.0'."
             pure Nothing
  where
   -- We try to be extra permissive with link destination parsing,
@@ -380,7 +383,11 @@ stackSet = do
         case linkVersion =<< link of
           Right v -> pure $ Just v
           Left err -> do
-            $(logWarn) [i|Failed to parse stack symlink target with: "#{err}". The symlink #{stackBin} needs to point to valid stack binary, such as 'stack-2.7.1'.|]
+            $(logWarn) $ "Failed to parse stack symlink target with: "
+              <> T.pack (displayException err)
+              <> ". The symlink "
+              <> T.pack stackBin
+              <> " needs to point to valid stack binary, such as 'stack-2.7.1'."
             pure Nothing
  where
   linkVersion :: MonadThrow m => FilePath -> m Version
@@ -602,7 +609,7 @@ unpackToDir :: (MonadLogger m, MonadIO m, MonadThrow m)
                         ] m ()
 unpackToDir dfp av = do
   let fn = takeFileName av
-  lift $ $(logInfo) [i|Unpacking: #{fn} to #{dfp}|]
+  lift $ $(logInfo) $ "Unpacking: " <> T.pack fn <> " to " <> T.pack dfp
 
   let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
       untar = lEM . liftIO . runArchiveM . unpackToDirLazy dfp
@@ -793,7 +800,7 @@ applyPatches :: (MonadReader env m, HasDirs env, MonadLogger m, MonadIO m)
 applyPatches pdir ddir = do
   patches <- (fmap . fmap) (pdir </>) $ liftIO $ listDirectory pdir
   forM_ (sort patches) $ \patch' -> do
-    lift $ $(logInfo) [i|Applying patch #{patch'}|]
+    lift $ $(logInfo) $ "Applying patch " <> T.pack patch'
     fmap (either (const Nothing) Just)
          (exec
            "patch"
@@ -864,8 +871,8 @@ runBuildAction bdir instdir action = do
 -- printing other errors without crashing.
 rmBDir :: (MonadLogger m, MonadUnliftIO m, MonadIO m) => FilePath -> m ()
 rmBDir dir = withRunInIO (\run -> run $
-           liftIO $ handleIO (\e -> run $ $(logWarn)
-               [i|Couldn't remove build dir #{dir}, error was: #{displayException e}|])
+           liftIO $ handleIO (\e -> run $ $(logWarn) $
+               "Couldn't remove build dir " <> T.pack dir <> ", error was: " <> T.pack (displayException e))
            $ hideError doesNotExistErrorType
            $ rmPathForcibly dir)
 
@@ -999,17 +1006,17 @@ createLink link exe = do
       fullLink = takeDirectory exe </> link
       shimContents = "path = " <> fullLink
 
-  $(logDebug) [i|rm -f #{exe}|]
+  $(logDebug) $ "rm -f " <> T.pack exe
   rmLink exe
 
-  $(logDebug) [i|ln -s #{fullLink} #{exe}|]
+  $(logDebug) $ "ln -s " <> T.pack fullLink <> " " <> T.pack exe
   liftIO $ copyFile shimGen exe
   liftIO $ writeFile shim shimContents
 #else
-  $(logDebug) [i|rm -f #{exe}|]
+  $(logDebug) $ "rm -f " <> T.pack exe
   hideError doesNotExistErrorType $ recycleFile exe
 
-  $(logDebug) [i|ln -s #{link} #{exe}|]
+  $(logDebug) $ "ln -s " <> T.pack link <> " " <> T.pack exe
   liftIO $ createFileLink link exe
 #endif
 
@@ -1034,8 +1041,8 @@ ensureGlobalTools = do
     $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
   let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
   void $ (\(DigestError _ _) -> do
-      lift $ $(logWarn) [i|Digest doesn't match, redownloading gs.exe...|]
-      lift $ $(logDebug) [i|rm -f #{shimDownload}|]
+      lift $ $(logWarn) "Digest doesn't match, redownloading gs.exe..."
+      lift $ $(logDebug) "rm -f #{shimDownload}"
       lift $ hideError doesNotExistErrorType $ recycleFile (cacheDir dirs </> "gs.exe")
       liftE @'[DigestError , DownloadFailed] $ dl
     ) `catchE` (liftE @'[DigestError , DownloadFailed] dl)

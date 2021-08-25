@@ -35,7 +35,6 @@ import           Data.ByteString                ( ByteString )
 import           Data.Foldable
 import           Data.IORef
 import           Data.Sequence                  ( Seq, (|>) )
-import           Data.String.Interpolate
 import           Data.List
 import           Data.Word8
 import           GHC.IO.Exception
@@ -362,7 +361,7 @@ chmod_755 fp = do
             `unionFileModes` groupReadMode
             `unionFileModes` otherExecuteMode
             `unionFileModes` otherReadMode
-  $(logDebug) [i|chmod 755 #{fp}|]
+  $(logDebug) ("chmod 755 " <> T.pack fp)
   liftIO $ setFileMode fp exe_mode
 
 
