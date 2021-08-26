@@ -545,6 +545,7 @@ installHLSBindist :: ( MonadMask m
                         , UnknownArchive
                         , TarDirDoesNotExist
                         , ArchiveResult
+                        , FileAlreadyExistsError
                         ]
                        m
                        ()
@@ -592,7 +593,7 @@ installHLSUnpacked :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated install
-              -> Excepts '[CopyError] m ()
+              -> Excepts '[CopyError, FileAlreadyExistsError] m ()
 installHLSUnpacked path inst mver' = do
   lift $ $(logInfo) "Installing HLS"
   liftIO $ createDirRecursive' inst
@@ -662,6 +663,7 @@ installHLSBin :: ( MonadMask m
                     , UnknownArchive
                     , TarDirDoesNotExist
                     , ArchiveResult
+                    , FileAlreadyExistsError
                     ]
                    m
                    ()
@@ -698,6 +700,7 @@ installStackBin :: ( MonadMask m
                       , UnknownArchive
                       , TarDirDoesNotExist
                       , ArchiveResult
+                      , FileAlreadyExistsError
                       ]
                      m
                      ()
@@ -733,6 +736,7 @@ installStackBindist :: ( MonadMask m
                           , UnknownArchive
                           , TarDirDoesNotExist
                           , ArchiveResult
+                          , FileAlreadyExistsError
                           ]
                          m
                          ()
