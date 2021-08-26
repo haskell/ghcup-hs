@@ -473,6 +473,9 @@ installCabalUnpacked path inst mver' = do
         <> maybe "" (("-" <>) . T.unpack . prettyVer) mver'
         <> exeExt
   let destPath = inst </> destFileName
+
+  liftE $ throwIfFileAlreadyExists destPath
+    
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> cabalFile <> exeExt)
     destPath
@@ -605,20 +608,32 @@ installHLSUnpacked path inst mver' = do
     let toF = dropSuffix exeExt f
               <> maybe "" (("~" <>) . T.unpack . prettyVer) mver'
               <> exeExt
+
+    let srcPath = path </> f
+    let destPath = inst </> toF
+
+    liftE $ throwIfFileAlreadyExists destPath
+      
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
-      (path </> f)
-      (inst </> toF)
-    lift $ chmod_755 (inst </> toF)
+      srcPath
+      destPath
+    lift $ chmod_755 destPath
 
   -- install haskell-language-server-wrapper
   let wrapper = "haskell-language-server-wrapper"
       toF = wrapper
             <> maybe "" (("-" <>) . T.unpack . prettyVer) mver'
             <> exeExt
+      srcWrapperPath = path </> wrapper <> exeExt
+      destWrapperPath = inst </> toF
+
+  liftE $ throwIfFileAlreadyExists destWrapperPath
+      
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
-    (path </> wrapper <> exeExt)
-    (inst </> toF)
-  lift $ chmod_755 (inst </> toF)
+    srcWrapperPath
+    destWrapperPath
+    
+  lift $ chmod_755 destWrapperPath
 
 -- | Installs hls binaries @haskell-language-server-\<ghcver\>@
 -- into @~\/.ghcup\/bin/@, as well as @haskell-languager-server-wrapper@.
@@ -763,7 +778,7 @@ installStackUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked stack bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated installs
-              -> Excepts '[CopyError] m ()
+              -> Excepts '[CopyError, FileAlreadyExistsError] m ()
 installStackUnpacked path inst mver' = do
   lift $ $(logInfo) "Installing stack"
   let stackFile = "stack"
@@ -771,7 +786,10 @@ installStackUnpacked path inst mver' = do
   let destFileName = stackFile
                      <> maybe "" (("-" <>) .  T.unpack . prettyVer) mver'
                      <> exeExt
-  let destPath = inst </> destFileName
+      destPath = inst </> destFileName
+
+  liftE $ throwIfFileAlreadyExists destPath
+      
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> stackFile <> exeExt)
     destPath
@@ -2347,4 +2365,11 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
       currentRunningExecPath <- liftIO getExecutablePath
       liftIO $ canonicalizePath currentRunningExecPath
 
+
+throwIfFileAlreadyExists :: ( MonadIO m ) =>
+                            FilePath ->
+                            Excepts '[FileAlreadyExistsError] m ()
+
+throwIfFileAlreadyExists fp = whenM (checkFileAlreadyExists fp)
+                                (throwE $ FileAlreadyExistsError fp)
 
