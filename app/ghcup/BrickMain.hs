@@ -448,7 +448,7 @@ install' _ (_, ListResult {..}) = do
           liftE $ installGHCBin lVer Nothing $> vi
         Cabal -> do
           let vi = getVersionInfo lVer Cabal dls
-          liftE $ installCabalBin lVer Nothing $> vi
+          liftE $ installCabalBin lVer Nothing False $> vi
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
           liftE $ upgradeGHCup Nothing False $> vi

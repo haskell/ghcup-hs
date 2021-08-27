@@ -1742,16 +1742,17 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 (case instBindist of
                    Nothing -> runInstTool instPlatform $ do
                      (v, vi) <- liftE $ fromVersion instVer Cabal
-                     liftE $ installCabalBin (_tvVersion v) isolateDir
+                     liftE $ installCabalBin (_tvVersion v) isolateDir forceInstall
                      pure vi
                    Just uri -> do
                      s' <- appState
                      runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
                        (v, vi) <- liftE $ fromVersion instVer Cabal
-                       liftE $ installCabalBindist
+                       liftE $ installCabalBindist 
                            (DownloadInfo uri Nothing "")
                            (_tvVersion v)
                            isolateDir
+                           forceInstall
                        pure vi
                   )
                   >>= \case

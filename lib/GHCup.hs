@@ -402,6 +402,7 @@ installCabalBindist :: ( MonadMask m
                     => DownloadInfo
                     -> Version
                     -> Maybe FilePath -- ^ isolated install filepath, if user provides any.
+                    -> Bool           -- ^ Force install 
                     -> Excepts
                          '[ AlreadyInstalled
                           , CopyError
@@ -416,25 +417,32 @@ installCabalBindist :: ( MonadMask m
                           ]
                          m
                          ()
-installCabalBindist dlinfo ver isoFilepath = do
+installCabalBindist dlinfo ver isoFilepath forceInstall = do
   lift $ $(logDebug) $ "Requested to install cabal version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-  case isoFilepath of
-    Nothing -> -- for regular install check if any previous versions installed
-      whenM
-        (lift (cabalInstalled ver) >>= \a -> liftIO $
-          handleIO (\_ -> pure False)
-            $ fmap (\x -> a && x)
-            -- ignore when the installation is a legacy cabal (binary, not symlink)
-            $ pathIsLink (binDir </> "cabal" <> exeExt)
-        )
-        (throwE $ AlreadyInstalled Cabal ver)
+    -- check if we already have a regular cabal already installed
+  regularCabalInstalled <- checkIfCabalInstalled ver binDir exeExt
+  
+  case forceInstall of
+    True -> case isoFilepath of
+              Nothing ->                           -- force install and a regular install
+                when (regularCabalInstalled)
+                  (do
+                      lift $ $(logInfo) $ "Removing the currently installed version first!"
+                      liftE $ rmCabalVer ver)
+                
+              _ -> pure ()                         -- force install and an isolated install (checks done later while unpacking)
 
-    _ -> pure () -- check isn't required in isolated installs
-
+    False -> case isoFilepath of
+               Nothing ->
+                when (regularCabalInstalled)
+                   (throwE $ AlreadyInstalled Cabal ver)
+                 
+               _ -> pure ()
+               
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
 
@@ -449,23 +457,34 @@ installCabalBindist dlinfo ver isoFilepath = do
   case isoFilepath of
     Just isoDir -> do             -- isolated install
       lift $ $(logInfo) $ "isolated installing Cabal to " <> T.pack isoDir
-      liftE $ installCabalUnpacked workdir isoDir Nothing
+      liftE $ installCabalUnpacked workdir isoDir Nothing forceInstall
 
     Nothing -> do                 -- regular install
-      liftE $ installCabalUnpacked workdir binDir (Just ver)
+      liftE $ installCabalUnpacked workdir binDir (Just ver) forceInstall
 
       -- create symlink if this is the latest version for regular installs
       cVers <- lift $ fmap rights getInstalledCabals
       let lInstCabal = headMay . reverse . sort $ cVers
       when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
+      
+  where
+
+    checkIfCabalInstalled ver binDir exeExt = (lift (cabalInstalled ver) >>= \a -> liftIO $
+          handleIO (\_ -> pure False)
+            $ fmap (\x -> a && x)
+            -- ignore when the installation is a legacy cabal (binary, not symlink)
+            $ pathIsLink (binDir </> "cabal" <> exeExt)
+        )
+
 
 -- | Install an unpacked cabal distribution.
 installCabalUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated install
+              -> Bool          -- ^ Force Install
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
-installCabalUnpacked path inst mver' = do
+installCabalUnpacked path inst mver' forceInstall = do
   lift $ $(logInfo) "Installing cabal"
   let cabalFile = "cabal"
   liftIO $ createDirRecursive' inst
@@ -474,7 +493,8 @@ installCabalUnpacked path inst mver' = do
         <> exeExt
   let destPath = inst </> destFileName
 
-  liftE $ throwIfFileAlreadyExists destPath
+  unless forceInstall          -- Overwrite it when it IS a force install
+    (liftE $ throwIfFileAlreadyExists destPath)
     
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> cabalFile <> exeExt)
@@ -499,6 +519,7 @@ installCabalBin :: ( MonadMask m
                    )
                 => Version
                 -> Maybe FilePath -- isolated install Path, if user provided any
+                -> Bool           -- force install
                 -> Excepts
                      '[ AlreadyInstalled
                       , CopyError
@@ -513,9 +534,9 @@ installCabalBin :: ( MonadMask m
                       ]
                      m
                      ()
-installCabalBin ver isoFilepath = do
+installCabalBin ver isoFilepath forceInstall = do
   dlinfo <- liftE $ getDownloadInfo Cabal ver
-  installCabalBindist dlinfo ver isoFilepath
+  installCabalBindist dlinfo ver isoFilepath forceInstall
 
 
 -- | Like 'installHLSBin, except takes the 'DownloadInfo' as
