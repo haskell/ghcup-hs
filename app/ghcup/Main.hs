@@ -139,6 +139,7 @@ data InstallOptions = InstallOptions
   , instBindist  :: Maybe URI
   , instSet      :: Bool
   , isolateDir   :: Maybe FilePath
+  , forceInstall :: Bool
   }
 
 data SetCommand = SetGHC SetOptions
@@ -595,7 +596,7 @@ Examples:
 
 installOpts :: Maybe Tool -> Parser InstallOptions
 installOpts tool =
-  (\p (u, v) b is -> InstallOptions v p u b is)
+  (\p (u, v) b is f -> InstallOptions v p u b is f)
     <$> optional
           (option
             (eitherReader platformParser)
@@ -633,6 +634,9 @@ installOpts tool =
            <> help "install in an isolated dir instead of the default one"
            )
           )
+    <*> switch
+          (short 'f' <> long "force" <> help "Force install")
+          
 
 
 setParser :: Parser (Either SetCommand SetOptions)
