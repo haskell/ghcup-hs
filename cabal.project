@@ -23,4 +23,10 @@ constraints: http-io-streams -brotli
 package libarchive
   flags: -system-libarchive
 
+package aeson-pretty
+  flags: +lib-only
+
+package cabal-plan
+  flags: -exe
+
 allow-newer: base, ghc-prim, template-haskell, language-c
