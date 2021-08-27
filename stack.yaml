@@ -53,6 +53,12 @@ flags:
   regex-posix:
     _regex-posix-clib: true
 
+  aeson-pretty:
+    lib-only: true
+
+  cabal-plan:
+    exe: false
+
 ghc-options:
   "$locals": -O2
   streamly: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16

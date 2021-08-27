@@ -30,6 +30,7 @@ import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 import           GHCup.Version
 
+import           Cabal.Plan ( findPlanJson, SearchPlanJson(..) )
 import           Codec.Archive
 import           Control.Concurrent
 import           Control.Concurrent.Async
@@ -42,6 +43,8 @@ import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
+import           Data.Aeson                     ( decodeStrict', Value )
+import           Data.Aeson.Encode.Pretty       ( encodePretty )
 import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
@@ -1363,6 +1366,16 @@ describe_result = $( LitE . StringL <$>
                      )
                    )
 
+plan_json :: String
+plan_json = $( LitE . StringL <$>
+                     runIO (handleIO (\_ -> pure "") $ do
+                             fp <- findPlanJson (ProjectRelativeToDir ".")
+                             c <- B.readFile fp
+                             (Just res) <- pure $ decodeStrict' @Value c
+                             pure $ T.unpack $ decUTF8Safe' $ encodePretty res
+                     )
+                   )
+
 formatConfig :: UserSettings -> String
 formatConfig settings
   = UTF8.toString . YP.encodePretty yamlConfig $ settings
@@ -1381,6 +1394,9 @@ main = do
           (head . lines $ describe_result)
         )
         (long "version" <> help "Show version" <> hidden)
+  let planJson = infoOption
+        plan_json
+        (long "plan-json" <> help "Show the build-time configuration" <> internal)
   let numericVersionHelp = infoOption
         numericVer
         (  long "numeric-version"
@@ -1408,7 +1424,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
   customExecParser
       (prefs showHelpOnError)
-      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp <**> listCommands)
+      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp <**> planJson <**> listCommands)
             (footerDoc (Just $ text main_footer))
       )
     >>= \opt@Options {..} -> do
