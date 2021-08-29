@@ -152,7 +152,7 @@ data Tag = Latest
          | Recommended
          | Prerelease
          | Base PVP
-         | Old                -- ^ old version are hidden by default in TUI
+         | Old                -- ^ old versions are hidden by default in TUI
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, GHC.Generic, Show) -- FIXME: manual JSON instance
 
@@ -241,7 +241,7 @@ instance NFData LinuxDistro
 distroToString :: LinuxDistro -> String
 distroToString Debian = "debian"
 distroToString Ubuntu = "ubuntu"
-distroToString Mint= "mint"
+distroToString Mint = "mint"
 distroToString Fedora = "fedora"
 distroToString CentOS = "centos"
 distroToString RedHat = "redhat"

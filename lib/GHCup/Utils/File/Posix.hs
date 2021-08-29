@@ -131,7 +131,7 @@ execLogged exe args chdir lfile env = do
       pure e
 
   tee :: Fd -> Fd -> IO ()
-  tee fileFd fdIn = readTilEOF lineAction fdIn
+  tee fileFd = readTilEOF lineAction
 
    where
     lineAction :: ByteString -> IO ()

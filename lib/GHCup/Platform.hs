@@ -142,9 +142,7 @@ getLinuxDistro = do
         | otherwise                -> UnknownLinux
   pure (distro, parsedVer)
  where
-  hasWord t matches = foldr (\x y -> match (regex x) (T.unpack t) || y)
-                            False
-                            matches
+  hasWord t = any (\x -> match (regex x) (T.unpack t))
    where
     regex x = makeRegexOpts compIgnoreCase execBlank ([s|\<|] ++ x ++ [s|\>|])
 

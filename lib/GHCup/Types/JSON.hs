@@ -42,7 +42,7 @@ import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
 
 
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } { fieldLabelModifier = removeLensFieldLabel } ''Architecture
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Architecture
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''LinuxDistro
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VSep
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VUnit

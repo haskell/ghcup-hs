@@ -75,7 +75,6 @@ import qualified System.Win32.File             as Win32
 -- >>> import Data.ByteString.Internal (c2w, w2c)
 -- >>> import Test.QuickCheck
 -- >>> import Data.Word8
--- >>> import Data.Word8
 -- >>> import qualified Data.Text as T
 -- >>> instance Arbitrary T.Text where arbitrary = T.pack <$> arbitrary
 
@@ -520,7 +519,7 @@ forFold :: (Foldable t, Applicative m, Monoid b) => t a -> (a -> m b) -> m b
 forFold = \t -> (`traverseFold` t)
 
 
--- | Strip @\\r@ and @\\n@ from 'ByteString's
+-- | Strip @\\r@ and @\\n@ from 'String's
 --
 -- >>> stripNewline "foo\n\n\n"
 -- "foo"
@@ -532,13 +531,10 @@ forFold = \t -> (`traverseFold` t)
 -- prop> \t -> stripNewline (t <> "\n") === stripNewline t
 -- prop> \t -> not (any (isNewLine . c2w) t) ==> stripNewline t == t
 stripNewline :: String -> String
-stripNewline s
-  | null s               = []
-  | head s `elem` "\n\r" = stripNewline (tail s)
-  | otherwise            = head s : stripNewline (tail s)
+stripNewline = filter (`notElem` "\n\r")
 
 
--- | Strip @\\r@ and @\\n@ from 'ByteString's
+-- | Strip @\\r@ and @\\n@ from 'Text's
 --
 -- >>> stripNewline' "foo\n\n\n"
 -- "foo"
@@ -550,10 +546,7 @@ stripNewline s
 -- prop> \t -> stripNewline' (t <> "\n") === stripNewline' t
 -- prop> \t -> not (T.any (isNewLine . c2w) t) ==> stripNewline' t == t
 stripNewline' :: T.Text -> T.Text
-stripNewline' s
-  | T.null s               = mempty
-  | T.head s `elem` "\n\r" = stripNewline' (T.tail s)
-  | otherwise              = T.singleton (T.head s) <> stripNewline' (T.tail s)
+stripNewline' = T.filter (`notElem` "\n\r")
 
 
 -- | Is the word8 a newline?
