@@ -44,15 +44,14 @@ import           Language.Haskell.TH.Quote
 -- The pattern portion is undefined.
 s :: QuasiQuoter
 s = QuasiQuoter
-  (\s' -> case and $ fmap isAscii s' of
+  (\s' -> case all isAscii s' of
     True  -> (\a -> [|fromString a|]) . trimLeadingNewline . removeCRs $ s'
     False -> fail "Not ascii"
   )
-  (error "Cannot use q as a pattern")
-  (error "Cannot use q as a type")
-  (error "Cannot use q as a dec")
+  (error "Cannot use s as a pattern")
+  (error "Cannot use s as a type")
+  (error "Cannot use s as a dec")
  where
   removeCRs = filter (/= '\r')
   trimLeadingNewline ('\n' : xs) = xs
   trimLeadingNewline xs          = xs
-

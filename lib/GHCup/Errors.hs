@@ -50,7 +50,7 @@ instance Pretty NoCompatiblePlatform where
   pPrint (NoCompatiblePlatform str') =
     text ("Could not find a compatible platform. Got: " ++ str')
 
--- | Unable to find a download for the requested versio/distro.
+-- | Unable to find a download for the requested version/distro.
 data NoDownload = NoDownload
   deriving Show
 

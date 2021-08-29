@@ -66,7 +66,7 @@ instance Arbitrary ByteString where
     ---------------------
 
 instance Arbitrary Scheme where
-  arbitrary = oneof [ pure (Scheme "http"), pure (Scheme "https") ]
+  arbitrary = elements [ Scheme "http", Scheme "https" ]
 
 instance Arbitrary Host where
   arbitrary = genericArbitrary
