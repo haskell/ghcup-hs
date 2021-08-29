@@ -58,7 +58,6 @@ import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.Foldable
 import           Data.List
-import           Data.List.Extra
 import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
 import           Data.Maybe
 import           Data.Text                      ( Text )

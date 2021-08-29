@@ -58,7 +58,6 @@ import           Control.Monad.IO.Unlift        ( MonadUnliftIO( withRunInIO ) )
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.List
-import           Data.List.Extra
 import           Data.Maybe
 import           Data.String                    ( fromString )
 import           Data.Text                      ( Text )
