@@ -31,4 +31,4 @@ package cabal-plan
 
 allow-newer: base, ghc-prim, template-haskell, language-c
 
-with-compiler: ghc-9.0.1
+with-compiler: ghc-8.10.7
