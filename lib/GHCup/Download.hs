@@ -57,8 +57,8 @@ import           Data.ByteString                ( ByteString )
 #if defined(INTERNAL_DOWNLOADER)
 import           Data.CaseInsensitive           ( mk )
 #endif
-import           Data.List.Extra
 import           Data.Maybe
+import           Data.List
 import           Data.Time.Clock
 import           Data.Time.Clock.POSIX
 import           Data.Versions
@@ -72,6 +72,7 @@ import           Prelude                 hiding ( abs
                                                 , readFile
                                                 , writeFile
                                                 )
+import           Safe
 import           System.Directory
 import           System.Environment
 import           System.Exit

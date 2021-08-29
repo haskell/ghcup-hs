@@ -33,7 +33,8 @@ import           Control.Monad.Reader
 import           Control.Monad.Logger
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
-import           Data.List                      ( nub, intercalate )
+import           Data.List                      ( nub, intercalate, stripPrefix, isPrefixOf )
+import           Data.Maybe
 import           Data.Foldable
 import           Data.String
 import           Data.Text                      ( Text )
@@ -76,6 +77,8 @@ import qualified System.Win32.File             as Win32
 -- >>> import Test.QuickCheck
 -- >>> import Data.Word8
 -- >>> import qualified Data.Text as T
+-- >>> import qualified Data.Char as C
+-- >>> import Data.List
 -- >>> instance Arbitrary T.Text where arbitrary = T.pack <$> arbitrary
 
 
@@ -580,3 +583,117 @@ splitOnPVP c s = case Split.splitOn c s of
     | otherwise -> def
  where
   def = (s, "")
+
+
+
+-- | Like 'find', but where the test can be monadic.
+--
+-- >>> findM (Just . C.isUpper) "teST"
+-- Just (Just 'S')
+-- >>> findM (Just . C.isUpper) "test"
+-- Just Nothing
+-- >>> findM (Just . const True) ["x",undefined]
+-- Just (Just "x")
+findM :: Monad m => (a -> m Bool) -> [a] -> m (Maybe a)
+findM ~p = foldr (\x -> ifM (p x) (pure $ Just x)) (pure Nothing)
+
+
+-- | Drops the given suffix from a list.
+--   It returns the original sequence if the sequence doesn't end with the given suffix.
+--
+-- >>> dropSuffix "!" "Hello World!"
+-- "Hello World"
+-- >>> dropSuffix "!" "Hello World!!"
+-- "Hello World!"
+-- >>> dropSuffix "!" "Hello World."
+-- "Hello World."
+dropSuffix :: Eq a => [a] -> [a] -> [a]
+dropSuffix a b = fromMaybe b $ stripSuffix a b
+
+-- | Return the prefix of the second list if its suffix
+--   matches the entire first list.
+--
+-- >>> stripSuffix "bar" "foobar"
+-- Just "foo"
+-- >>> stripSuffix ""    "baz"
+-- Just "baz"
+-- >>> stripSuffix "foo" "quux"
+-- Nothing
+stripSuffix :: Eq a => [a] -> [a] -> Maybe [a]
+stripSuffix a b = reverse <$> stripPrefix (reverse a) (reverse b)
+
+
+-- | Drops the given prefix from a list.
+--   It returns the original sequence if the sequence doesn't start with the given prefix.
+--
+-- >>> dropPrefix "Mr. " "Mr. Men"
+-- "Men"
+-- >>> dropPrefix "Mr. " "Dr. Men"
+-- "Dr. Men"
+dropPrefix :: Eq a => [a] -> [a] -> [a]
+dropPrefix a b = fromMaybe b $ stripPrefix a b
+
+
+
+-- | Break a list into pieces separated by the first
+-- list argument, consuming the delimiter. An empty delimiter is
+-- invalid, and will cause an error to be raised.
+--
+-- >>> splitOn "\r\n" "a\r\nb\r\nd\r\ne"
+-- ["a","b","d","e"]
+-- >>> splitOn "aaa"  "aaaXaaaXaaaXaaa"
+-- ["","X","X","X",""]
+-- >>> splitOn "x"    "x"
+-- ["",""]
+-- >>> splitOn "x"    ""
+-- [""]
+--
+-- prop> \s x -> s /= "" ==> intercalate s (splitOn s x) == x
+-- prop> \c x -> splitOn [c] x                           == split (==c) x
+splitOn :: Eq a => [a] -> [a] -> [[a]]
+splitOn [] _ = error "splitOn, needle may not be empty"
+splitOn _ [] = [[]]
+splitOn needle haystack = a : if null b then [] else splitOn needle $ drop (length needle) b
+    where (a,b) = breakOn needle haystack
+
+
+-- | Splits a list into components delimited by separators,
+-- where the predicate returns True for a separator element.  The
+-- resulting components do not contain the separators.  Two adjacent
+-- separators result in an empty component in the output.
+--
+-- >>> split (== 'a') "aabbaca"
+-- ["","","bb","c",""]
+-- >>> split (== 'a') ""
+-- [""]
+-- >>> split (== ':') "::xyz:abc::123::"
+-- ["","","xyz","abc","","123","",""]
+-- >>> split (== ',') "my,list,here"
+-- ["my","list","here"]
+split :: (a -> Bool) -> [a] -> [[a]]
+split _ [] = [[]]
+split f (x:xs)
+  | f x = [] : split f xs
+  | y:ys <- split f xs = (x:y) : ys
+  | otherwise = [[]]
+
+
+-- | Find the first instance of @needle@ in @haystack@.
+-- The first element of the returned tuple
+-- is the prefix of @haystack@ before @needle@ is matched.  The second
+-- is the remainder of @haystack@, starting with the match.
+-- If you want the remainder /without/ the match, use 'stripInfix'.
+--
+-- >>> breakOn "::" "a::b::c"
+-- ("a","::b::c")
+-- >>> breakOn "/" "foobar"
+-- ("foobar","")
+--
+-- prop> \needle haystack -> let (prefix,match) = breakOn needle haystack in prefix ++ match == haystack
+breakOn :: Eq a => [a] -> [a] -> ([a], [a])
+breakOn needle haystack | needle `isPrefixOf` haystack = ([], haystack)
+breakOn _ [] = ([], [])
+breakOn needle (x:xs) = first (x:) $ breakOn needle xs
+
+
+

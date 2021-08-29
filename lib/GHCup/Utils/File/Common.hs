@@ -7,7 +7,6 @@ module GHCup.Utils.File.Common where
 
 import           GHCup.Utils.Prelude
 
-import           Control.Monad.Extra
 import           Control.Monad.Reader
 import           Data.Maybe
 import           GHC.IO.Exception

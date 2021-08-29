@@ -40,7 +40,6 @@ import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 
 import           Codec.Archive           hiding ( Directory )
-import           Codec.Archive.Zip
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
@@ -59,7 +58,6 @@ import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.Foldable
 import           Data.List
-import           Data.List.Extra
 import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
 import           Data.Maybe
 import           Data.Text                      ( Text )
@@ -628,8 +626,7 @@ unpackToDir dfp av = do
     | ".tar.bz2" `isSuffixOf` fn ->
       liftE (untar . BZip.decompress =<< rf av)
     | ".tar" `isSuffixOf` fn -> liftE (untar =<< rf av)
-    | ".zip" `isSuffixOf` fn ->
-      withArchive av (unpackInto dfp)
+    | ".zip" `isSuffixOf` fn -> liftE (untar =<< rf av)
     | otherwise -> throwE $ UnknownArchive fn
 
 
@@ -658,10 +655,7 @@ getArchiveFiles av = do
     | ".tar.bz2" `isSuffixOf` fn ->
       liftE (entries . BZip.decompress =<< rf av)
     | ".tar" `isSuffixOf` fn -> liftE (entries =<< rf av)
-    | ".zip" `isSuffixOf` fn ->
-      withArchive av $ do
-        entries' <- getEntries
-        pure $ fmap unEntrySelector $ Map.keys entries'
+    | ".zip" `isSuffixOf` fn -> liftE (entries =<< rf av)
     | otherwise -> throwE $ UnknownArchive fn
 
 
