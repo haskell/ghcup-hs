@@ -422,9 +422,6 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-    -- check if we already have a regular cabal already installed
-  regularCabalInstalled <- checkIfCabalInstalled ver binDir exeExt
-  
   -- check if we already have a regular cabal already installed
   regularCabalInstalled <- lift $ checkIfToolInstalled Cabal ver
 
@@ -467,18 +464,29 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
       let lInstCabal = headMay . reverse . sort $ cVers
       when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
       
-  where
+checkIfToolInstalled :: ( MonadIO m
+                        , MonadLogger m
+                        , MonadReader env m
+                        , HasDirs env
+                        , MonadCatch m) =>
+                        Tool ->
+                        Version ->
+                        m Bool
 
-    checkIfCabalInstalled ver binDir exeExt = (lift (cabalInstalled ver) >>= \a -> liftIO $
-          handleIO (\_ -> pure False)
-            $ fmap (\x -> a && x)
-            -- ignore when the installation is a legacy cabal (binary, not symlink)
-            $ pathIsLink (binDir </> "cabal" <> exeExt)
-        )
+checkIfToolInstalled tool ver = do
+  Dirs { binDir } <- getDirs
 
+  case tool of
+    Cabal -> do
+      v <- cabalInstalled ver
+      liftIO $ handleIO (\_ -> pure False)
+             $ fmap (\x -> v && x)
+             $ pathIsLink (binDir </> "cabal" <> exeExt)
 
--- | Install an unpacked cabal distribution.
-installCabalUnpacked :: (MonadReader env m, HasLog env, MonadCatch m, MonadIO m)
+    _ -> pure False
+
+-- | Install an unpacked cabal distribution.Symbol
+installCabalUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated install
