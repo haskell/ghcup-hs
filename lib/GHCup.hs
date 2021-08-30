@@ -425,22 +425,23 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
     -- check if we already have a regular cabal already installed
   regularCabalInstalled <- checkIfCabalInstalled ver binDir exeExt
   
-  case forceInstall of
-    True -> case isoFilepath of
-              Nothing ->                           -- force install and a regular install
-                when (regularCabalInstalled)
-                  (do
-                      lift $ $(logInfo) $ "Removing the currently installed version first!"
-                      liftE $ rmCabalVer ver)
-                
-              _ -> pure ()                         -- force install and an isolated install (checks done later while unpacking)
+  -- check if we already have a regular cabal already installed
+  regularCabalInstalled <- lift $ checkIfToolInstalled Cabal ver
 
-    False -> case isoFilepath of
-               Nothing ->
-                when (regularCabalInstalled)
-                   (throwE $ AlreadyInstalled Cabal ver)
-                 
-               _ -> pure ()
+  if
+    | forceInstall
+    , regularCabalInstalled
+    , Nothing <- isoFilepath -> do
+        lift $ $(logInfo) $ "Removing the currently installed version first!"
+        liftE $ rmCabalVer ver
+
+    | not forceInstall
+    , regularCabalInstalled
+    ,  Nothing <- isoFilepath -> do
+        throwE $ AlreadyInstalled Cabal ver
+
+    | otherwise -> pure ()
+
                
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
