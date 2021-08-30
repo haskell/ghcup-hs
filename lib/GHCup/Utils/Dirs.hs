@@ -2,9 +2,7 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE ViewPatterns          #-}
-{-# LANGUAGE TemplateHaskell       #-}
 
 {-|
 Module      : GHCup.Utils.Dirs
@@ -45,7 +43,6 @@ import           GHCup.Utils.Prelude
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Unlift
-import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource hiding (throwM)
 import           Data.Bifunctor
@@ -61,7 +58,7 @@ import           System.IO.Temp
 
 import qualified Data.ByteString               as BS
 import qualified Data.Text                     as T
-import qualified Data.Yaml                     as Y
+import qualified Data.YAML.Aeson               as Y
 import qualified Text.Megaparsec               as MP
 import Control.Concurrent (threadDelay)
 
@@ -224,7 +221,7 @@ ghcupConfigFile = do
   contents <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> BS.readFile filepath
   case contents of
       Nothing -> pure defaultUserSettings
-      Just contents' -> lE' JSONDecodeError . first show . Y.decodeEither' $ contents'
+      Just contents' -> lE' JSONDecodeError . first snd . Y.decode1Strict $ contents'
 
 
     -------------------------
@@ -261,7 +258,7 @@ parseGHCupGHCDir (T.pack -> fp) =
 mkGhcupTmpDir :: ( MonadReader env m
                  , HasDirs env
                  , MonadUnliftIO m
-                 , MonadLogger m
+                 , HasLog env
                  , MonadCatch m
                  , MonadThrow m
                  , MonadMask m
@@ -273,14 +270,14 @@ mkGhcupTmpDir = do
   let minSpace = 5000 -- a rough guess, aight?
   space <- handleIO (\_ -> pure Nothing) $ fmap Just $ liftIO $ getAvailSpace tmpdir
   when (maybe False (toBytes minSpace >) space) $ do
-    $(logWarn) ("Possibly insufficient disk space on "
+    logWarn ("Possibly insufficient disk space on "
       <> T.pack tmpdir
       <> ". At least "
       <> T.pack (show minSpace)
       <> " MB are recommended, but only "
       <> toMB (fromJust space)
       <> " are free. Consider freeing up disk space or setting TMPDIR env variable.")
-    $(logWarn)
+    logWarn
       "...waiting for 10 seconds before continuing anyway, you can still abort..."
     liftIO $ threadDelay 10000000 -- give the user a sec to intervene
 
@@ -295,8 +292,9 @@ mkGhcupTmpDir = do
 
 withGHCupTmpDir :: ( MonadReader env m
                    , HasDirs env
+                   , HasLog env
+                   , HasSettings env
                    , MonadUnliftIO m
-                   , MonadLogger m
                    , MonadCatch m
                    , MonadResource m
                    , MonadThrow m
@@ -309,7 +307,7 @@ withGHCupTmpDir = snd <$> withRunInIO (\run ->
         (run mkGhcupTmpDir)
         (\fp ->
             handleIO (\e -> run
-                $ $(logDebug) ("Resource cleanup failed for " <> T.pack fp <> ", error was: " <> T.pack (displayException e)))
+                $ logDebug ("Resource cleanup failed for " <> T.pack fp <> ", error was: " <> T.pack (displayException e)))
             . rmPathForcibly
             $ fp))
 
@@ -341,9 +339,10 @@ relativeSymlink p1 p2 =
 
 cleanupTrash :: ( MonadIO m
                 , MonadMask m
-                , MonadLogger m
                 , MonadReader env m
+                , HasLog env
                 , HasDirs env
+                , HasSettings env
                 )
              => m ()
 cleanupTrash = do
@@ -352,8 +351,8 @@ cleanupTrash = do
   if null contents
   then pure ()
   else do
-    $(logWarn) ("Removing leftover files in " <> T.pack recycleDir)
+    logWarn ("Removing leftover files in " <> T.pack recycleDir)
     forM_ contents (\fp -> handleIO (\e ->
-        $(logDebug) ("Resource cleanup failed for " <> T.pack fp <> ", error was: " <> T.pack (displayException e))
+        logDebug ("Resource cleanup failed for " <> T.pack fp <> ", error was: " <> T.pack (displayException e))
       ) $ liftIO $ removePathForcibly (recycleDir </> fp))
 

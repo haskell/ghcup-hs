@@ -1,8 +1,5 @@
-{-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 {-|
 Module      : GHCup.Utils.File.Posix
@@ -28,7 +25,6 @@ import           Control.Concurrent.Async
 import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
-import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.State.Strict
 import           Data.ByteString                ( ByteString )
@@ -350,7 +346,7 @@ toProcessError exe args mps = case mps of
 
 
 
-chmod_755 :: (MonadLogger m, MonadIO m) => FilePath -> m ()
+chmod_755 :: (MonadReader env m, HasLog env, MonadIO m) => FilePath -> m ()
 chmod_755 fp = do
   let exe_mode =
           nullFileMode
@@ -361,7 +357,7 @@ chmod_755 fp = do
             `unionFileModes` groupReadMode
             `unionFileModes` otherExecuteMode
             `unionFileModes` otherReadMode
-  $(logDebug) ("chmod 755 " <> T.pack fp)
+  logDebug ("chmod 755 " <> T.pack fp)
   liftIO $ setFileMode fp exe_mode
 
 

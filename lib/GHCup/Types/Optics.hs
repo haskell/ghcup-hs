@@ -6,6 +6,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE MultiParamTypeClasses   #-}
+{-# LANGUAGE OverloadedStrings   #-}
 
 {-|
 Module      : GHCup.Types.Optics
@@ -21,9 +22,13 @@ module GHCup.Types.Optics where
 import           GHCup.Types
 
 import           Control.Monad.Reader
-import           Data.ByteString                ( ByteString )
+import           Data.ByteString         ( ByteString )
+import           Data.Text               ( Text )
 import           Optics
 import           URI.ByteString
+import           System.Console.Pretty
+
+import qualified Data.Text                     as T
 
 makePrisms ''Tool
 makePrisms ''Architecture
@@ -87,13 +92,15 @@ getLeanAppState :: ( MonadReader env m
                    , LabelOptic' "settings"    A_Lens env Settings
                    , LabelOptic' "dirs"        A_Lens env Dirs
                    , LabelOptic' "keyBindings" A_Lens env KeyBindings
+                   , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
                    )
                 => m LeanAppState
 getLeanAppState = do
   s <- gets @"settings"
   d <- gets @"dirs"
   k <- gets @"keyBindings"
-  pure (LeanAppState s d k)
+  l <- gets @"loggerConfig"
+  pure (LeanAppState s d k l)
 
 
 getSettings :: ( MonadReader env m
@@ -108,6 +115,87 @@ getDirs :: ( MonadReader env m
            )
         => m Dirs
 getDirs = gets @"dirs"
+
+
+logInfo :: ( MonadReader env m
+           , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
+           , MonadIO m
+           )
+        => Text
+        -> m ()
+logInfo = logInternal Info
+
+logWarn :: ( MonadReader env m
+           , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
+           , MonadIO m
+           )
+        => Text
+        -> m ()
+logWarn = logInternal Warn
+
+logDebug :: ( MonadReader env m
+            , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
+            , MonadIO m
+            )
+         => Text
+         -> m ()
+logDebug = logInternal Debug
+
+logError :: ( MonadReader env m
+            , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
+            , MonadIO m
+            )
+         => Text
+         -> m ()
+logError = logInternal Error
+
+
+logInternal :: ( MonadReader env m
+               , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
+               , MonadIO m
+               ) => LogLevel
+                 -> Text
+                 -> m ()
+logInternal logLevel msg = do
+  LoggerConfig {..} <- gets @"loggerConfig"
+  let style' = case logLevel of
+        Debug   -> style Bold . color Blue
+        Info    -> style Bold . color Green
+        Warn    -> style Bold . color Yellow
+        Error   -> style Bold . color Red
+  let l = case logLevel of
+        Debug   -> style' "[ Debug ]"
+        Info    -> style' "[ Info  ]"
+        Warn    -> style' "[ Warn  ]"
+        Error   -> style' "[ Error ]"
+  let strs = T.split (== '\n') msg
+  let out = case strs of
+              [] -> T.empty
+              (x:xs) -> 
+                  foldr (\a b -> a <> "\n" <> b) mempty
+                . ((l <> " " <> x) :)
+                . fmap (\line' -> style' "[ ...   ] " <> line' )
+                $ xs
+
+  when (lcPrintDebug || (not lcPrintDebug && (logLevel /= Debug)))
+    $ liftIO $ colorOutter out
+
+  -- raw output
+  let lr = case logLevel of
+        Debug   -> "Debug:"
+        Info    -> "Info:"
+        Warn    -> "Warn:"
+        Error   -> "Error:"
+  let outr = lr <> " " <> msg <> "\n"
+  liftIO $ rawOutter outr
+
+
+
+getLogCleanup :: ( MonadReader env m
+                 , LabelOptic' "logCleanup" A_Lens env (IO ())
+                 )
+              => m (IO ())
+getLogCleanup = gets @"logCleanup"
 
 
 getKeyBindings :: ( MonadReader env m
@@ -136,6 +224,7 @@ type HasDirs env = (LabelOptic' "dirs" A_Lens env Dirs)
 type HasKeyBindings env = (LabelOptic' "keyBindings" A_Lens env KeyBindings)
 type HasGHCupInfo env = (LabelOptic' "ghcupInfo" A_Lens env GHCupInfo)
 type HasPlatformReq env = (LabelOptic' "pfreq" A_Lens env PlatformRequest)
+type HasLog env = (LabelOptic' "loggerConfig" A_Lens env LoggerConfig)
 
 
 getCache :: (MonadReader env m, HasSettings env) => m Bool

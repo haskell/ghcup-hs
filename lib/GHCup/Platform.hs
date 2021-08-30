@@ -20,6 +20,7 @@ module GHCup.Platform where
 
 import           GHCup.Errors
 import           GHCup.Types
+import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.File
 import           GHCup.Utils.Prelude
@@ -28,7 +29,6 @@ import           GHCup.Utils.String.QQ
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
-import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
 import           Data.Foldable
@@ -57,7 +57,7 @@ import qualified Data.Text.IO                  as T
 
 
 -- | Get the full platform request, consisting of architecture, distro, ...
-platformRequest :: (Alternative m, MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
+platformRequest :: (MonadReader env m, Alternative m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
                 => Excepts
                      '[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound]
                      m
@@ -82,7 +82,7 @@ getArchitecture = case arch of
   what          -> Left (NoCompatibleArch what)
 
 
-getPlatform :: (Alternative m, MonadLogger m, MonadCatch m, MonadIO m, MonadFail m)
+getPlatform :: (Alternative m, MonadReader env m, HasLog env, MonadCatch m, MonadIO m, MonadFail m)
             => Excepts
                  '[NoCompatiblePlatform, DistroNotFound]
                  m
@@ -107,7 +107,7 @@ getPlatform = do
       pure $ PlatformResult { _platform = FreeBSD, _distroVersion = ver }
     "mingw32" -> pure PlatformResult { _platform = Windows, _distroVersion = Nothing }
     what -> throwE $ NoCompatiblePlatform what
-  lift $ $(logDebug) $ "Identified Platform as: " <> T.pack (prettyShow pfr)
+  lift $ logDebug $ "Identified Platform as: " <> T.pack (prettyShow pfr)
   pure pfr
  where
   getFreeBSDVersion = lift $ fmap _stdOut $ executeOut "freebsd-version" [] Nothing

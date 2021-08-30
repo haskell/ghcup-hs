@@ -11,22 +11,31 @@
 module Main where
 
 import           GHCup.Types
+import           GHCup.Types.Optics
+import           GHCup.Errors
+import           GHCup.Platform
+import           GHCup.Utils.Dirs
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.Logger
 
+import           Control.Monad.Trans.Reader     ( runReaderT )
+import           Control.Monad.IO.Class
 import           Data.Char                      ( toLower )
 #if !MIN_VERSION_base(4,13,0)
 import           Data.Semigroup                 ( (<>) )
 #endif
 import           Options.Applicative     hiding ( style )
+import           Haskus.Utils.Variant.Excepts
 import           System.Console.Pretty
 import           System.Exit
-import           System.IO                      ( stdout )
+import           System.IO                      ( stderr )
 import           Text.Regex.Posix
 import           Validate
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
+import qualified Data.Text.IO                  as T
+import qualified Data.Text                     as T
 import qualified Data.ByteString               as B
-import qualified Data.Yaml                     as Y
+import qualified Data.YAML.Aeson               as Y
 
 
 data Options = Options
@@ -105,10 +114,27 @@ com = subparser
 
 main :: IO ()
 main = do
+  let loggerConfig = LoggerConfig { lcPrintDebug = True
+                                  , colorOutter  = T.hPutStr stderr
+                                  , rawOutter    = \_ -> pure ()
+                                  }
+  dirs <- liftIO getAllDirs
+  let leanAppstate = LeanAppState (Settings True False Never Curl True GHCupURL False) dirs defaultKeyBindings loggerConfig
+
+  pfreq <- (
+    flip runReaderT leanAppstate . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] $ platformRequest
+    ) >>= \case
+            VRight r -> pure r
+            VLeft e -> do
+              flip runReaderT leanAppstate $ logError $ T.pack $ prettyShow e
+              liftIO $ exitWith (ExitFailure 2)
+
+  let appstate = AppState (Settings True False Never Curl True GHCupURL False) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq loggerConfig
+
   _ <- customExecParser (prefs showHelpOnError) (info (opts <**> helper) idm)
     >>= \Options {..} -> case optCommand of
-          ValidateYAML vopts -> withValidateYamlOpts vopts validate
-          ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (validateTarballs tarballFilter)
+          ValidateYAML vopts -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ validate dl m)
+          ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ validateTarballs tarballFilter dl m)
   pure ()
 
  where
@@ -120,8 +146,8 @@ main = do
     ValidateYAMLOpts { vInput = Just (FileInput file) } ->
       B.readFile file >>= valAndExit f
   valAndExit f contents = do
-    (GHCupInfo _ av gt) <- case Y.decodeEither' contents of
+    (GHCupInfo _ av gt) <- case Y.decode1Strict contents of
       Right r -> pure r
-      Left  e -> die (color Red $ show e)
-    myLoggerT (LoggerConfig True (B.hPut stdout) (\_ -> pure ())) (f av gt)
+      Left  (_, e) -> die (color Red $ show e)
+    f av gt
       >>= exitWith
