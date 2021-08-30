@@ -46,7 +46,6 @@ import           Control.Monad
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
-import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
@@ -113,7 +112,7 @@ ghcLinkDestination tool ver = do
 rmMinorSymlinks :: ( MonadReader env m
                    , HasDirs env
                    , MonadIO m
-                   , MonadLogger m
+                   , HasLog env
                    , MonadThrow m
                    , MonadFail m
                    , MonadMask m
@@ -127,14 +126,14 @@ rmMinorSymlinks tv@GHCTargetVersion{..} = do
   forM_ files $ \f -> do
     let f_xyz = f <> "-" <> T.unpack (prettyVer _tvVersion) <> exeExt
     let fullF = binDir </> f_xyz
-    lift $ $(logDebug) ("rm -f " <> T.pack fullF)
+    lift $ logDebug ("rm -f " <> T.pack fullF)
     lift $ hideError doesNotExistErrorType $ rmLink fullF
 
 
 -- | Removes the set ghc version for the given target, if any.
 rmPlain :: ( MonadReader env m
            , HasDirs env
-           , MonadLogger m
+           , HasLog env
            , MonadThrow m
            , MonadFail m
            , MonadIO m
@@ -149,11 +148,11 @@ rmPlain target = do
     files <- liftE $ ghcToolFiles tv
     forM_ files $ \f -> do
       let fullF = binDir </> f <> exeExt
-      lift $ $(logDebug) ("rm -f " <> T.pack fullF)
+      lift $ logDebug ("rm -f " <> T.pack fullF)
       lift $ hideError doesNotExistErrorType $ rmLink fullF
     -- old ghcup
     let hdc_file = binDir </> "haddock-ghc" <> exeExt
-    lift $ $(logDebug) ("rm -f " <> T.pack hdc_file)
+    lift $ logDebug ("rm -f " <> T.pack hdc_file)
     lift $ hideError doesNotExistErrorType $ rmLink hdc_file
 
 
@@ -161,7 +160,7 @@ rmPlain target = do
 rmMajorSymlinks :: ( MonadReader env m
                    , HasDirs env
                    , MonadIO m
-                   , MonadLogger m
+                   , HasLog env
                    , MonadThrow m
                    , MonadFail m
                    , MonadMask m
@@ -177,7 +176,7 @@ rmMajorSymlinks tv@GHCTargetVersion{..} = do
   forM_ files $ \f -> do
     let f_xy = f <> "-" <> T.unpack v' <> exeExt
     let fullF = binDir </> f_xy
-    lift $ $(logDebug) "rm -f #{fullF}"
+    lift $ logDebug "rm -f #{fullF}"
     lift $ hideError doesNotExistErrorType $ rmLink fullF
 
 
@@ -249,9 +248,9 @@ getInstalledGHCs = do
 
 
 -- | Get all installed cabals, by matching on @~\/.ghcup\/bin/cabal-*@.
-getInstalledCabals :: ( MonadLogger m
-                      , MonadReader env m
+getInstalledCabals :: ( MonadReader env m
                       , HasDirs env
+                      , HasLog env
                       , MonadIO m
                       , MonadCatch m
                       )
@@ -269,14 +268,14 @@ getInstalledCabals = do
 
 
 -- | Whether the given cabal version is installed.
-cabalInstalled :: (MonadLogger m, MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
+cabalInstalled :: (HasLog env, MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
 cabalInstalled ver = do
   vers <- fmap rights getInstalledCabals
   pure $ elem ver vers
 
 
 -- Return the currently set cabal version, if any.
-cabalSet :: (MonadLogger m, MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
+cabalSet :: (HasLog env, MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
 cabalSet = do
   Dirs {..}  <- getDirs
   let cabalbin = binDir </> "cabal" <> exeExt
@@ -293,7 +292,7 @@ cabalSet = do
         case linkVersion =<< link of
           Right v -> pure $ Just v
           Left err -> do
-            $(logWarn) $ "Failed to parse cabal symlink target with: "
+            logWarn $ "Failed to parse cabal symlink target with: "
               <> T.pack (displayException err)
               <> ". The symlink "
               <> T.pack cabalbin
@@ -364,7 +363,7 @@ getInstalledStacks = do
 
 -- Return the currently set stack version, if any.
 -- TODO: there's a lot of code duplication here :>
-stackSet :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m, MonadLogger m) => m (Maybe Version)
+stackSet :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m, HasLog env) => m (Maybe Version)
 stackSet = do
   Dirs {..}  <- getDirs
   let stackBin = binDir </> "stack" <> exeExt
@@ -381,7 +380,7 @@ stackSet = do
         case linkVersion =<< link of
           Right v -> pure $ Just v
           Left err -> do
-            $(logWarn) $ "Failed to parse stack symlink target with: "
+            logWarn $ "Failed to parse stack symlink target with: "
               <> T.pack (displayException err)
               <> ". The symlink "
               <> T.pack stackBin
@@ -599,7 +598,7 @@ getLatestGHCFor major' minor' dls =
 
 
 -- | Unpack an archive to a temporary directory and return that path.
-unpackToDir :: (MonadLogger m, MonadIO m, MonadThrow m)
+unpackToDir :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m)
             => FilePath       -- ^ destination dir
             -> FilePath       -- ^ archive path
             -> Excepts '[UnknownArchive
@@ -607,7 +606,7 @@ unpackToDir :: (MonadLogger m, MonadIO m, MonadThrow m)
                         ] m ()
 unpackToDir dfp av = do
   let fn = takeFileName av
-  lift $ $(logInfo) $ "Unpacking: " <> T.pack fn <> " to " <> T.pack dfp
+  lift $ logInfo $ "Unpacking: " <> T.pack fn <> " to " <> T.pack dfp
 
   let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
       untar = lEM . liftIO . runArchiveM . unpackToDirLazy dfp
@@ -630,7 +629,7 @@ unpackToDir dfp av = do
     | otherwise -> throwE $ UnknownArchive fn
 
 
-getArchiveFiles :: (MonadLogger m, MonadIO m, MonadThrow m)
+getArchiveFiles :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m)
                 => FilePath       -- ^ archive path
                 -> Excepts '[UnknownArchive
                             , ArchiveResult
@@ -659,7 +658,7 @@ getArchiveFiles av = do
     | otherwise -> throwE $ UnknownArchive fn
 
 
-intoSubdir :: (MonadLogger m, MonadIO m, MonadThrow m, MonadCatch m)
+intoSubdir :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m, MonadCatch m)
            => FilePath       -- ^ unpacked tar dir
            -> TarDir         -- ^ how to descend
            -> Excepts '[TarDirDoesNotExist] m FilePath
@@ -787,14 +786,14 @@ makeOut args workdir = do
 
 -- | Try to apply patches in order. Fails with 'PatchFailed'
 -- on first failure.
-applyPatches :: (MonadReader env m, HasDirs env, MonadLogger m, MonadIO m)
+applyPatches :: (MonadReader env m, HasDirs env, HasLog env, MonadIO m)
              => FilePath   -- ^ dir containing patches
              -> FilePath   -- ^ dir to apply patches in
              -> Excepts '[PatchFailed] m ()
 applyPatches pdir ddir = do
   patches <- (fmap . fmap) (pdir </>) $ liftIO $ listDirectory pdir
   forM_ (sort patches) $ \patch' -> do
-    lift $ $(logInfo) $ "Applying patch " <> T.pack patch'
+    lift $ logInfo $ "Applying patch " <> T.pack patch'
     fmap (either (const Nothing) Just)
          (exec
            "patch"
@@ -835,7 +834,7 @@ runBuildAction :: ( Pretty (V e)
                   , HasSettings env
                   , MonadIO m
                   , MonadMask m
-                  , MonadLogger m
+                  , HasLog env
                   , MonadUnliftIO m
                   )
                => FilePath        -- ^ build directory (cleaned up depending on Settings)
@@ -863,9 +862,9 @@ runBuildAction bdir instdir action = do
 
 -- | Remove a build directory, ignoring if it doesn't exist and gracefully
 -- printing other errors without crashing.
-rmBDir :: (MonadLogger m, MonadUnliftIO m, MonadIO m) => FilePath -> m ()
+rmBDir :: (MonadReader env m, HasLog env, MonadUnliftIO m, MonadIO m) => FilePath -> m ()
 rmBDir dir = withRunInIO (\run -> run $
-           liftIO $ handleIO (\e -> run $ $(logWarn) $
+           liftIO $ handleIO (\e -> run $ logWarn $
                "Couldn't remove build dir " <> T.pack dir <> ", error was: " <> T.pack (displayException e))
            $ hideError doesNotExistErrorType
            $ rmPathForcibly dir)
@@ -978,7 +977,7 @@ rmLink = hideError doesNotExistErrorType . recycleFile
 -- On windows, this requires that 'ensureGlobalTools' was run beforehand.
 createLink :: ( MonadMask m
               , MonadThrow m
-              , MonadLogger m
+              , HasLog env
               , MonadIO m
               , MonadReader env m
               , HasDirs env
@@ -1000,24 +999,24 @@ createLink link exe = do
       fullLink = takeDirectory exe </> link
       shimContents = "path = " <> fullLink
 
-  $(logDebug) $ "rm -f " <> T.pack exe
+  logDebug $ "rm -f " <> T.pack exe
   rmLink exe
 
-  $(logDebug) $ "ln -s " <> T.pack fullLink <> " " <> T.pack exe
+  logDebug $ "ln -s " <> T.pack fullLink <> " " <> T.pack exe
   liftIO $ copyFile shimGen exe
   liftIO $ writeFile shim shimContents
 #else
-  $(logDebug) $ "rm -f " <> T.pack exe
+  logDebug $ "rm -f " <> T.pack exe
   hideError doesNotExistErrorType $ recycleFile exe
 
-  $(logDebug) $ "ln -s " <> T.pack link <> " " <> T.pack exe
+  logDebug $ "ln -s " <> T.pack link <> " " <> T.pack exe
   liftIO $ createFileLink link exe
 #endif
 
 
 ensureGlobalTools :: ( MonadMask m
                      , MonadThrow m
-                     , MonadLogger m
+                     , HasLog env
                      , MonadIO m
                      , MonadReader env m
                      , HasDirs env
@@ -1035,8 +1034,8 @@ ensureGlobalTools = do
     $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
   let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
   void $ (\(DigestError _ _) -> do
-      lift $ $(logWarn) "Digest doesn't match, redownloading gs.exe..."
-      lift $ $(logDebug) "rm -f #{shimDownload}"
+      lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
+      lift $ logDebug "rm -f #{shimDownload}"
       lift $ hideError doesNotExistErrorType $ recycleFile (cacheDir dirs </> "gs.exe")
       liftE @'[DigestError , DownloadFailed] $ dl
     ) `catchE` (liftE @'[DigestError , DownloadFailed] dl)

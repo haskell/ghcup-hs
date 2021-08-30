@@ -48,7 +48,6 @@ import           Control.Monad
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
-import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
@@ -111,7 +110,7 @@ fetchToolBindist :: ( MonadFail m
                     , HasSettings env
                     , HasPlatformReq env
                     , HasGHCupInfo env
-                    , MonadLogger m
+                    , HasLog env
                     , MonadResource m
                     , MonadIO m
                     , MonadUnliftIO m
@@ -139,7 +138,7 @@ fetchGHCSrc :: ( MonadFail m
                , HasSettings env
                , HasPlatformReq env
                , HasGHCupInfo env
-               , MonadLogger m
+               , HasLog env
                , MonadResource m
                , MonadIO m
                , MonadUnliftIO m
@@ -176,7 +175,7 @@ installGHCBindist :: ( MonadFail m
                      , HasDirs env
                      , HasSettings env
                      , HasPlatformReq env
-                     , MonadLogger m
+                     , HasLog env
                      , MonadResource m
                      , MonadIO m
                      , MonadUnliftIO m
@@ -201,7 +200,7 @@ installGHCBindist :: ( MonadFail m
 installGHCBindist dlinfo ver isoFilepath = do
   let tver = mkTVer ver
 
-  lift $ $(logDebug) $ "Requested to install GHC with " <> prettyVer ver
+  lift $ logDebug $ "Requested to install GHC with " <> prettyVer ver
 
   case isoFilepath of
     -- we only care for already installed errors in regular (non-isolated) installs
@@ -218,7 +217,7 @@ installGHCBindist dlinfo ver isoFilepath = do
   
   case isoFilepath of
     Just isoDir -> do                        -- isolated install
-      lift $ $(logInfo) $ "isolated installing GHC to " <> T.pack isoDir
+      lift $ logInfo $ "isolated installing GHC to " <> T.pack isoDir
       liftE $ installPackedGHC dl (view dlSubdir dlinfo) isoDir ver
     Nothing -> do                            -- regular install
       liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver
@@ -232,9 +231,9 @@ installGHCBindist dlinfo ver isoFilepath = do
     case catMaybes r of
       [] -> pure ()
       _ -> do
-        lift $ $(logWarn) "CC/LD environment variable is set. This will change the compiler/linker"
-        lift $ $(logWarn) "GHC uses internally and can cause defunct GHC in some cases (e.g. in Anaconda"
-        lift $ $(logWarn) "environments). If you encounter problems, unset CC and LD and reinstall."
+        lift $ logWarn $ "CC/LD environment variable is set. This will change the compiler/linker"
+         <> "\n" <> "GHC uses internally and can cause defunct GHC in some cases (e.g. in Anaconda"
+         <> "\n" <> "environments). If you encounter problems, unset CC and LD and reinstall."
 
 
 -- | Install a packed GHC distribution. This only deals with unpacking and the GHC
@@ -246,7 +245,7 @@ installPackedGHC :: ( MonadMask m
                     , HasPlatformReq env
                     , HasSettings env
                     , MonadThrow m
-                    , MonadLogger m
+                    , HasLog env
                     , MonadIO m
                     , MonadUnliftIO m
                     )
@@ -304,7 +303,7 @@ installUnpackedGHC :: ( MonadReader env m
                       , HasDirs env
                       , HasSettings env
                       , MonadThrow m
-                      , MonadLogger m
+                      , HasLog env
                       , MonadIO m
                       , MonadUnliftIO m
                       , MonadMask m
@@ -315,7 +314,7 @@ installUnpackedGHC :: ( MonadReader env m
                    -> Excepts '[ProcessError] m ()
 installUnpackedGHC path inst ver = do
 #if defined(IS_WINDOWS)
-  lift $ $(logInfo) "Installing GHC (this may take a while)"
+  lift $ logInfo "Installing GHC (this may take a while)"
   -- Windows bindists are relocatable and don't need
   -- to run configure.
   -- We also must make sure to preserve mtime to not confuse ghc-pkg.
@@ -332,7 +331,7 @@ installUnpackedGHC path inst ver = do
        | otherwise
        = []
 
-  lift $ $(logInfo) "Installing GHC (this may take a while)"
+  lift $ logInfo "Installing GHC (this may take a while)"
   lEM $ execLogged "sh"
                    ("./configure" : ("--prefix=" <> inst) 
                     : alpineArgs
@@ -358,7 +357,7 @@ installGHCBin :: ( MonadFail m
                  , HasGHCupInfo env
                  , HasDirs env
                  , HasSettings env
-                 , MonadLogger m
+                 , HasLog env
                  , MonadResource m
                  , MonadIO m
                  , MonadUnliftIO m
@@ -392,7 +391,7 @@ installCabalBindist :: ( MonadMask m
                        , HasPlatformReq env
                        , HasDirs env
                        , HasSettings env
-                       , MonadLogger m
+                       , HasLog env
                        , MonadResource m
                        , MonadIO m
                        , MonadUnliftIO m
@@ -416,7 +415,7 @@ installCabalBindist :: ( MonadMask m
                          m
                          ()
 installCabalBindist dlinfo ver isoFilepath = do
-  lift $ $(logDebug) $ "Requested to install cabal version " <> prettyVer ver
+  lift $ logDebug $ "Requested to install cabal version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
@@ -447,7 +446,7 @@ installCabalBindist dlinfo ver isoFilepath = do
 
   case isoFilepath of
     Just isoDir -> do             -- isolated install
-      lift $ $(logInfo) $ "isolated installing Cabal to " <> T.pack isoDir
+      lift $ logInfo $ "isolated installing Cabal to " <> T.pack isoDir
       liftE $ installCabalUnpacked workdir isoDir Nothing
 
     Nothing -> do                 -- regular install
@@ -459,13 +458,13 @@ installCabalBindist dlinfo ver isoFilepath = do
       when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
 
 -- | Install an unpacked cabal distribution.
-installCabalUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
+installCabalUnpacked :: (MonadReader env m, HasLog env, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated install
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
 installCabalUnpacked path inst mver' = do
-  lift $ $(logInfo) "Installing cabal"
+  lift $ logInfo "Installing cabal"
   let cabalFile = "cabal"
   liftIO $ createDirRecursive' inst
   let destFileName = cabalFile
@@ -490,7 +489,7 @@ installCabalBin :: ( MonadMask m
                    , HasGHCupInfo env
                    , HasDirs env
                    , HasSettings env
-                   , MonadLogger m
+                   , HasLog env
                    , MonadResource m
                    , MonadIO m
                    , MonadUnliftIO m
@@ -525,7 +524,7 @@ installHLSBindist :: ( MonadMask m
                      , HasPlatformReq env
                      , HasDirs env
                      , HasSettings env
-                     , MonadLogger m
+                     , HasLog env
                      , MonadResource m
                      , MonadIO m
                      , MonadUnliftIO m
@@ -549,7 +548,7 @@ installHLSBindist :: ( MonadMask m
                        m
                        ()
 installHLSBindist dlinfo ver isoFilepath = do
-  lift $ $(logDebug) $ "Requested to install hls version " <> prettyVer ver
+  lift $ logDebug $ "Requested to install hls version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
@@ -575,7 +574,7 @@ installHLSBindist dlinfo ver isoFilepath = do
 
   case isoFilepath of
     Just isoDir -> do
-      lift $ $(logInfo) $ "isolated installing HLS to " <> T.pack isoDir
+      lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
       liftE $ installHLSUnpacked workdir isoDir Nothing
 
     Nothing -> do
@@ -588,13 +587,13 @@ installHLSBindist dlinfo ver isoFilepath = do
 
 
 -- | Install an unpacked hls distribution.
-installHLSUnpacked :: (MonadFail m, MonadLogger m, MonadCatch m, MonadIO m)
+installHLSUnpacked :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated install
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
 installHLSUnpacked path inst mver' = do
-  lift $ $(logInfo) "Installing HLS"
+  lift $ logInfo "Installing HLS"
   liftIO $ createDirRecursive' inst
 
   -- install haskell-language-server-<ghcver>
@@ -644,7 +643,7 @@ installHLSBin :: ( MonadMask m
                  , HasGHCupInfo env
                  , HasDirs env
                  , HasSettings env
-                 , MonadLogger m
+                 , HasLog env
                  , MonadResource m
                  , MonadIO m
                  , MonadUnliftIO m
@@ -681,7 +680,7 @@ installStackBin :: ( MonadMask m
                    , HasSettings env
                    , HasPlatformReq env
                    , HasGHCupInfo env
-                   , MonadLogger m
+                   , HasLog env
                    , MonadResource m
                    , MonadIO m
                    , MonadUnliftIO m
@@ -716,7 +715,7 @@ installStackBindist :: ( MonadMask m
                        , HasPlatformReq env
                        , HasDirs env
                        , HasSettings env
-                       , MonadLogger m
+                       , HasLog env
                        , MonadResource m
                        , MonadIO m
                        , MonadUnliftIO m
@@ -740,7 +739,7 @@ installStackBindist :: ( MonadMask m
                          m
                          ()
 installStackBindist dlinfo ver isoFilepath = do
-  lift $ $(logDebug) $ "Requested to install stack version " <> prettyVer ver
+  lift $ logDebug $ "Requested to install stack version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
@@ -765,7 +764,7 @@ installStackBindist dlinfo ver isoFilepath = do
 
   case isoFilepath of
     Just isoDir -> do                 -- isolated install
-      lift $ $(logInfo) $ "isolated installing Stack to " <> T.pack isoDir
+      lift $ logInfo $ "isolated installing Stack to " <> T.pack isoDir
       liftE $ installStackUnpacked workdir isoDir Nothing
     Nothing -> do                     -- regular install
       liftE $ installStackUnpacked workdir binDir (Just ver)
@@ -777,13 +776,13 @@ installStackBindist dlinfo ver isoFilepath = do
 
 
 -- | Install an unpacked stack distribution.
-installStackUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
+installStackUnpacked :: (MonadReader env m, HasLog env, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked stack bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated installs
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
 installStackUnpacked path inst mver' = do
-  lift $ $(logInfo) "Installing stack"
+  lift $ logInfo "Installing stack"
   let stackFile = "stack"
   liftIO $ createDirRecursive' inst
   let destFileName = stackFile
@@ -816,7 +815,7 @@ installStackUnpacked path inst mver' = do
 -- for 'SetGHCOnly' constructor.
 setGHC :: ( MonadReader env m
           , HasDirs env
-          , MonadLogger m
+          , HasLog env
           , MonadThrow m
           , MonadFail m
           , MonadIO m
@@ -850,7 +849,7 @@ setGHC ver sghc = do
       SetGHCOnly -> pure $ Just file
       SetGHC_XY  -> do
         handle
-            (\(e :: ParseError) -> lift $ $(logWarn) (T.pack $ displayException e) >> pure Nothing)
+            (\(e :: ParseError) -> lift $ logWarn (T.pack $ displayException e) >> pure Nothing)
           $ do 
             (mj, mi) <- getMajorMinorV (_tvVersion ver)
             let major' = intToText mj <> "." <> intToText mi
@@ -875,7 +874,7 @@ setGHC ver sghc = do
   symlinkShareDir :: ( MonadReader env m
                      , HasDirs env
                      , MonadIO m
-                     , MonadLogger m
+                     , HasLog env
                      , MonadCatch m
                      , MonadMask m
                      )
@@ -892,9 +891,9 @@ setGHC ver sghc = do
         whenM (liftIO $ doesDirectoryExist fullsharedir) $ do
           let fullF   = destdir </> sharedir
           let targetF = "." </> "ghc" </> ver' </> sharedir
-          $(logDebug) $ "rm -f " <> T.pack fullF
+          logDebug $ "rm -f " <> T.pack fullF
           hideError doesNotExistErrorType $ rmDirectoryLink fullF
-          $(logDebug) $ "ln -s " <> T.pack targetF <> " " <> T.pack fullF
+          logDebug $ "ln -s " <> T.pack targetF <> " " <> T.pack fullF
           liftIO
 #if defined(IS_WINDOWS)
             -- On windows we need to be more permissive
@@ -912,7 +911,7 @@ setGHC ver sghc = do
 setCabal :: ( MonadMask m
             , MonadReader env m
             , HasDirs env
-            , MonadLogger m
+            , HasLog env
             , MonadThrow m
             , MonadFail m
             , MonadIO m
@@ -944,7 +943,7 @@ setCabal ver = do
 setHLS :: ( MonadCatch m
           , MonadReader env m
           , HasDirs env
-          , MonadLogger m
+          , HasLog env
           , MonadThrow m
           , MonadFail m
           , MonadIO m
@@ -960,7 +959,7 @@ setHLS ver = do
   -- selected version, so we could end up with stray or incorrect symlinks.
   oldSyms <- lift hlsSymlinks
   forM_ oldSyms $ \f -> do
-    lift $ $(logDebug) $ "rm " <> T.pack (binDir </> f)
+    lift $ logDebug $ "rm " <> T.pack (binDir </> f)
     lift $ rmLink (binDir </> f)
 
   -- set haskell-language-server-<ghcver> symlinks
@@ -985,7 +984,7 @@ setHLS ver = do
 setStack :: ( MonadMask m
             , MonadReader env m
             , HasDirs env
-            , MonadLogger m
+            , HasLog env
             , MonadThrow m
             , MonadFail m
             , MonadIO m
@@ -1048,9 +1047,9 @@ availableToolVersions av tool = view
 -- | List all versions from the download info, as well as stray
 -- versions.
 listVersions :: ( MonadCatch m
-                , MonadLogger m
+                , HasLog env
                 , MonadThrow m
-                , MonadLogger m
+                , HasLog env
                 , MonadIO m
                 , MonadReader env m
                 , HasDirs env
@@ -1106,7 +1105,7 @@ listVersions lt' criteria = do
                , MonadReader env m
                , HasDirs env
                , MonadThrow m
-               , MonadLogger m
+               , HasLog env
                , MonadIO m
                )
             => Map.Map Version VersionInfo
@@ -1146,7 +1145,7 @@ listVersions lt' criteria = do
           , ..
           }
       Left e -> do
-        $(logWarn)
+        logWarn
           $ "Could not parse version of stray directory" <> T.pack e
         pure Nothing
 
@@ -1154,7 +1153,7 @@ listVersions lt' criteria = do
                  , HasDirs env
                  , MonadCatch m
                  , MonadThrow m
-                 , MonadLogger m
+                 , HasLog env
                  , MonadIO m
                  )
             => Map.Map Version VersionInfo
@@ -1181,7 +1180,7 @@ listVersions lt' criteria = do
               , ..
               }
       Left e -> do
-        $(logWarn)
+        logWarn
           $ "Could not parse version of stray directory" <> T.pack e
         pure Nothing
 
@@ -1189,7 +1188,7 @@ listVersions lt' criteria = do
               , HasDirs env
               , MonadCatch m
               , MonadThrow m
-              , MonadLogger m
+              , HasLog env
               , MonadIO m)
            => Map.Map Version VersionInfo
            -> Maybe Version
@@ -1215,7 +1214,7 @@ listVersions lt' criteria = do
               , ..
               }
       Left e -> do
-        $(logWarn)
+        logWarn
           $ "Could not parse version of stray directory" <> T.pack e
         pure Nothing
 
@@ -1223,7 +1222,7 @@ listVersions lt' criteria = do
                  , HasDirs env
                  , MonadCatch m
                  , MonadThrow m
-                 , MonadLogger m
+                 , HasLog env
                  , MonadIO m
                  )
               => Map.Map Version VersionInfo
@@ -1250,7 +1249,7 @@ listVersions lt' criteria = do
               , ..
               }
       Left e -> do
-        $(logWarn)
+        logWarn
           $ "Could not parse version of stray directory" <> T.pack e
         pure Nothing
 
@@ -1275,7 +1274,7 @@ listVersions lt' criteria = do
                                            }
 
   -- NOTE: this are not cross ones, because no bindists
-  toListResult :: ( MonadLogger m
+  toListResult :: ( HasLog env
                   , MonadReader env m
                   , HasDirs env
                   , HasGHCupInfo env
@@ -1377,7 +1376,7 @@ listVersions lt' criteria = do
 rmGHCVer :: ( MonadReader env m
             , HasDirs env
             , MonadThrow m
-            , MonadLogger m
+            , HasLog env
             , MonadIO m
             , MonadFail m
             , MonadCatch m
@@ -1394,23 +1393,23 @@ rmGHCVer ver = do
 
   -- this isn't atomic, order matters
   when isSetGHC $ do
-    lift $ $(logInfo) "Removing ghc symlinks"
+    lift $ logInfo "Removing ghc symlinks"
     liftE $ rmPlain (_tvTarget ver)
 
-  lift $ $(logInfo) "Removing ghc-x.y.z symlinks"
+  lift $ logInfo "Removing ghc-x.y.z symlinks"
   liftE $ rmMinorSymlinks ver
 
-  lift $ $(logInfo) "Removing/rewiring ghc-x.y symlinks"
+  lift $ logInfo "Removing/rewiring ghc-x.y symlinks"
   -- first remove
   handle (\(_ :: ParseError) -> pure ()) $ liftE $ rmMajorSymlinks ver
   -- then fix them (e.g. with an earlier version)
 
-  lift $ $(logInfo) $ "Removing directory recursively: " <> T.pack dir
+  lift $ logInfo $ "Removing directory recursively: " <> T.pack dir
   lift $ recyclePathForcibly dir
 
   v' <-
     handle
-      (\(e :: ParseError) -> lift $ $(logWarn) (T.pack $ displayException e) >> pure Nothing)
+      (\(e :: ParseError) -> lift $ logWarn (T.pack $ displayException e) >> pure Nothing)
     $ fmap Just
     $ getMajorMinorV (_tvVersion ver)
   forM_ v' $ \(mj, mi) -> lift (getGHCForMajor mj mi (_tvTarget ver))
@@ -1427,7 +1426,7 @@ rmCabalVer :: ( MonadMask m
               , MonadReader env m
               , HasDirs env
               , MonadThrow m
-              , MonadLogger m
+              , HasLog env
               , MonadIO m
               , MonadFail m
               , MonadCatch m
@@ -1458,7 +1457,7 @@ rmHLSVer :: ( MonadMask m
             , MonadReader env m
             , HasDirs env
             , MonadThrow m
-            , MonadLogger m
+            , HasLog env
             , MonadIO m
             , MonadFail m
             , MonadCatch m
@@ -1481,7 +1480,7 @@ rmHLSVer ver = do
     oldSyms <- lift hlsSymlinks
     forM_ oldSyms $ \f -> do
       let fullF = binDir </> f
-      lift $ $(logDebug) $ "rm " <> T.pack fullF
+      lift $ logDebug $ "rm " <> T.pack fullF
       lift $ rmLink fullF
     -- set latest hls
     hlsVers <- lift $ fmap rights getInstalledHLSs
@@ -1496,7 +1495,7 @@ rmStackVer :: ( MonadMask m
               , MonadReader env m
               , HasDirs env
               , MonadThrow m
-              , MonadLogger m
+              , HasLog env
               , MonadIO m
               , MonadFail m
               , MonadCatch m
@@ -1526,7 +1525,7 @@ rmGhcup :: ( MonadReader env m
            , HasDirs env
            , MonadIO m
            , MonadCatch m
-           , MonadLogger m
+           , HasLog env
            , MonadMask m
            , MonadUnliftIO m
            )
@@ -1551,7 +1550,7 @@ rmGhcup = do
 
   let areEqualPaths = equalFilePath p1 p2
 
-  unless areEqualPaths $ $logWarn $ nonStandardInstallLocationMsg currentRunningExecPath
+  unless areEqualPaths $ logWarn $ nonStandardInstallLocationMsg currentRunningExecPath
 
 #if defined(IS_WINDOWS)
   -- since it doesn't seem possible to delete a running exe on windows
@@ -1567,7 +1566,7 @@ rmGhcup = do
 
   where
     handlePathNotPresent fp _err = do
-      $logDebug $ "Error: The path does not exist, " <> T.pack fp
+      logDebug $ "Error: The path does not exist, " <> T.pack fp
       pure fp
 
     nonStandardInstallLocationMsg path = T.pack $
@@ -1577,7 +1576,7 @@ rmGhcup = do
 
 rmTool :: ( MonadReader env m
           , HasDirs env
-          , MonadLogger m
+          , HasLog env
           , MonadFail m
           , MonadMask m
           , MonadUnliftIO m)
@@ -1597,7 +1596,7 @@ rmTool ListResult {lVer, lTool, lCross} = do
 rmGhcupDirs :: ( MonadReader env m
                , HasDirs env
                , MonadIO m
-               , MonadLogger m
+               , HasLog env
                , MonadCatch m
                , MonadMask m )
             => m [FilePath]
@@ -1624,7 +1623,7 @@ rmGhcupDirs = do
   handleRm $ rmBinDir binDir
   handleRm $ rmDir recycleDir
 #if defined(IS_WINDOWS)
-  $logInfo $ "removing " <> T.pack (baseDir </> "msys64")
+  logInfo $ "removing " <> T.pack (baseDir </> "msys64")
   handleRm $ rmPathForcibly (baseDir </> "msys64")
 #endif
 
@@ -1635,27 +1634,27 @@ rmGhcupDirs = do
   hideErrorDef [doesNotExistErrorType] [] $ reportRemainingFiles baseDir
 
   where
-    handleRm :: (MonadCatch m, MonadLogger m)  => m () -> m ()
-    handleRm = handleIO (\e -> $logDebug $ "Part of the cleanup action failed with error: " <> T.pack (displayException e) <> "\n"
+    handleRm :: (MonadReader env m, MonadCatch m, HasLog env, MonadIO m)  => m () -> m ()
+    handleRm = handleIO (\e -> logDebug $ "Part of the cleanup action failed with error: " <> T.pack (displayException e) <> "\n"
                                 <> "continuing regardless...")
 
-    rmEnvFile :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
+    rmEnvFile :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmEnvFile enFilePath = do
-      $logInfo "Removing Ghcup Environment File"
+      logInfo "Removing Ghcup Environment File"
       hideErrorDef [permissionErrorType] () $ deleteFile enFilePath
 
-    rmConfFile :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
+    rmConfFile :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmConfFile confFilePath = do
-      $logInfo "removing Ghcup Config File"
+      logInfo "removing Ghcup Config File"
       hideErrorDef [permissionErrorType] () $ deleteFile confFilePath
 
-    rmDir :: (MonadLogger m, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
+    rmDir :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmDir dir =
       -- 'getDirectoryContentsRecursive' is lazy IO. In case
       -- an error leaks through, we catch it here as well,
       -- althought 'deleteFile' should already handle it.
       hideErrorDef [doesNotExistErrorType] () $ do
-        $logInfo $ "removing " <> T.pack dir
+        logInfo $ "removing " <> T.pack dir
         contents <- liftIO $ getDirectoryContentsRecursive dir
         forM_ contents (deleteFile . (dir </>))
 
@@ -1728,7 +1727,7 @@ getDebugInfo :: ( Alternative m
                 , MonadFail m
                 , MonadReader env m
                 , HasDirs env
-                , MonadLogger m
+                , HasLog env
                 , MonadCatch m
                 , MonadIO m
                 )
@@ -1764,7 +1763,7 @@ compileGHC :: ( MonadMask m
               , HasSettings env
               , MonadThrow m
               , MonadResource m
-              , MonadLogger m
+              , HasLog env
               , MonadIO m
               , MonadUnliftIO m
               , MonadFail m
@@ -1804,7 +1803,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     (workdir, tmpUnpack, tver) <- case targetGhc of
       -- unpack from version tarball
       Left tver -> do
-        lift $ $(logDebug) $ "Requested to compile: " <> tVerToText tver <> " with " <> either prettyVer T.pack bstrap
+        lift $ logDebug $ "Requested to compile: " <> tVerToText tver <> " with " <> either prettyVer T.pack bstrap
 
         -- download source tarball
         dlInfo <-
@@ -1829,7 +1828,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
         let git args = execLogged "git" ("--no-pager":args) (Just tmpUnpack) "git" Nothing
         tver <- reThrowAll @_ @'[ProcessError] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
-          lift $ $(logInfo) $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
+          lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
           lEM $ git [ "init" ]
           lEM $ git [ "remote"
                     , "add"
@@ -1856,7 +1855,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
             ExitFailure c -> fail ("Could not figure out GHC project version. Exit code was: " <> show c <> ". Error was: " <> T.unpack (decUTF8Safe' _stdErr))
 
         liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
-        lift $ $(logInfo) $ "Git version " <> T.pack ref <> " corresponds to GHC version " <> prettyVer tver
+        lift $ logInfo $ "Git version " <> T.pack ref <> " corresponds to GHC version " <> prettyVer tver
 
         pure (tmpUnpack, tmpUnpack, GHCTargetVersion Nothing tver)
     -- the version that's installed may differ from the
@@ -1868,10 +1867,10 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     when alreadyInstalled $ do
       case isolateDir of
         Just isoDir ->
-          lift $ $(logWarn) $ "GHC " <> T.pack (prettyShow tver) <> " already installed. Isolate installing to " <> T.pack isoDir
+          lift $ logWarn $ "GHC " <> T.pack (prettyShow tver) <> " already installed. Isolate installing to " <> T.pack isoDir
         Nothing ->
-          lift $ $(logWarn) $ "GHC " <> T.pack (prettyShow tver) <> " already installed. Will overwrite existing version."
-      lift $ $(logWarn)
+          lift $ logWarn $ "GHC " <> T.pack (prettyShow tver) <> " already installed. Will overwrite existing version."
+      lift $ logWarn
         "...waiting for 10 seconds before continuing, you can still abort..."
       liftIO $ threadDelay 10000000 -- give the user a sec to intervene
 
@@ -1898,7 +1897,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
       Nothing ->
         -- only remove old ghc in regular installs
         when alreadyInstalled $ do
-          lift $ $(logInfo) "Deleting existing installation"
+          lift $ logInfo "Deleting existing installation"
           liftE $ rmGHCVer tver
           
       _ -> pure ()
@@ -1950,7 +1949,7 @@ endif|]
                            , HasPlatformReq env
                            , MonadThrow m
                            , MonadCatch m
-                           , MonadLogger m
+                           , HasLog env
                            , MonadIO m
                            , MonadFail m
                            )
@@ -1973,7 +1972,7 @@ endif|]
 
     liftE $ configureBindist bghc tver workdir ghcdir
 
-    lift $ $(logInfo) "Building (this may take a while)..."
+    lift $ logInfo "Building (this may take a while)..."
     hadrian_build <- liftE $ findHadrianFile workdir
     lEM $ execLogged hadrian_build
                           ( maybe [] (\j  -> ["-j" <> show j]         ) jobs
@@ -2012,7 +2011,7 @@ endif|]
                         , HasPlatformReq env
                         , MonadThrow m
                         , MonadCatch m
-                        , MonadLogger m
+                        , HasLog env
                         , MonadIO m
                         , MonadFail m
                         )
@@ -2043,15 +2042,15 @@ endif|]
 
     liftE $ checkBuildConfig (build_mk workdir)
 
-    lift $ $(logInfo) "Building (this may take a while)..."
+    lift $ logInfo "Building (this may take a while)..."
     lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs) (Just workdir)
 
     if | isCross tver -> do
-          lift $ $(logInfo) "Installing cross toolchain..."
+          lift $ logInfo "Installing cross toolchain..."
           lEM $ make ["install"] (Just workdir)
           pure Nothing
        | otherwise -> do
-          lift $ $(logInfo) "Creating bindist..."
+          lift $ logInfo "Creating bindist..."
           lEM $ make ["binary-dist"] (Just workdir)
           [tar] <- liftIO $ findFiles
             workdir
@@ -2070,7 +2069,7 @@ endif|]
                  , MonadIO m
                  , MonadThrow m
                  , MonadCatch m
-                 , MonadLogger m
+                 , HasLog env
                  )
               => GHCTargetVersion
               -> FilePath           -- ^ tar file
@@ -2105,10 +2104,10 @@ endif|]
     let tarPath = cacheDir </> tarName
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile (workdir </> tar)
                                                              tarPath
-    lift $ $(logInfo) $ "Copied bindist to " <> T.pack tarPath
+    lift $ logInfo $ "Copied bindist to " <> T.pack tarPath
     pure tarPath
 
-  checkBuildConfig :: (MonadCatch m, MonadIO m, MonadLogger m)
+  checkBuildConfig :: (MonadReader env m, MonadCatch m, MonadIO m, HasLog env)
                    => FilePath
                    -> Excepts
                         '[FileDoesNotExistError, InvalidBuildConfig]
@@ -2131,7 +2130,7 @@ endif|]
 
     forM_ buildFlavour $ \bf ->
       when (T.pack ("BuildFlavour = " <> bf) `notElem` lines') $ do
-        lift $ $(logWarn) $ "Customly specified build config overwrites --flavour=" <> T.pack bf <> " switch! Waiting 5 seconds..."
+        lift $ logWarn $ "Customly specified build config overwrites --flavour=" <> T.pack bf <> " switch! Waiting 5 seconds..."
         liftIO $ threadDelay 5000000
 
   addBuildFlavourToConf bc = case buildFlavour of
@@ -2148,7 +2147,7 @@ endif|]
                       , HasPlatformReq env
                       , MonadThrow m
                       , MonadCatch m
-                      , MonadLogger m
+                      , HasLog env
                       , MonadIO m
                       , MonadFail m
                       )
@@ -2167,7 +2166,7 @@ endif|]
                         m
                         ()
   configureBindist bghc tver workdir ghcdir = do
-    lift $ $(logInfo) [s|configuring build|]
+    lift $ logInfo [s|configuring build|]
     
     forM_ patchdir (\dir -> liftE $ applyPatches dir workdir)
 
@@ -2231,7 +2230,7 @@ upgradeGHCup :: ( MonadMask m
                 , HasGHCupInfo env
                 , HasSettings env
                 , MonadCatch m
-                , MonadLogger m
+                , HasLog env
                 , MonadThrow m
                 , MonadResource m
                 , MonadIO m
@@ -2253,7 +2252,7 @@ upgradeGHCup mtarget force' = do
   Dirs {..} <- lift getDirs
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
-  lift $ $(logInfo) "Upgrading GHCup..."
+  lift $ logInfo "Upgrading GHCup..."
   let latestVer = fromJust $ fst <$> getLatest dls GHCup
   when (not force' && (latestVer <= pvpToVersion ghcUpVer)) $ throwE NoUpdate
   dli   <- liftE $ getDownloadInfo GHCup latestVer
@@ -2262,20 +2261,20 @@ upgradeGHCup mtarget force' = do
   p <- liftE $ download (_dlUri dli) (Just (_dlHash dli)) tmp (Just fn) False
   let destDir = takeDirectory destFile
       destFile = fromMaybe (binDir </> fn) mtarget
-  lift $ $(logDebug) $ "mkdir -p " <> T.pack destDir
+  lift $ logDebug $ "mkdir -p " <> T.pack destDir
   liftIO $ createDirRecursive' destDir
-  lift $ $(logDebug) $ "rm -f " <> T.pack destFile
+  lift $ logDebug $ "rm -f " <> T.pack destFile
   lift $ hideError NoSuchThing $ recycleFile destFile
-  lift $ $(logDebug) $ "cp " <> T.pack p <> " " <> T.pack destFile
+  lift $ logDebug $ "cp " <> T.pack p <> " " <> T.pack destFile
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
                                                            destFile
   lift $ chmod_755 destFile
 
   liftIO (isInPath destFile) >>= \b -> unless b $
-    lift $ $(logWarn) $ T.pack (takeFileName destFile) <> " is not in PATH! You have to add it in order to use ghcup."
+    lift $ logWarn $ T.pack (takeFileName destFile) <> " is not in PATH! You have to add it in order to use ghcup."
   liftIO (isShadowed destFile) >>= \case
     Nothing -> pure ()
-    Just pa -> lift $ $(logWarn) $ "ghcup is shadowed by "
+    Just pa -> lift $ logWarn $ "ghcup is shadowed by "
       <> T.pack pa
       <> ". The upgrade will not be in effect, unless you remove "
       <> T.pack pa
@@ -2299,7 +2298,7 @@ upgradeGHCup mtarget force' = do
 -- both installing from source and bindist.
 postGHCInstall :: ( MonadReader env m
                   , HasDirs env
-                  , MonadLogger m
+                  , HasLog env
                   , MonadThrow m
                   , MonadFail m
                   , MonadIO m
@@ -2315,7 +2314,7 @@ postGHCInstall ver@GHCTargetVersion {..} = do
   -- Create ghc-x.y symlinks. This may not be the current
   -- version, create it regardless.
   v' <-
-    handle (\(e :: ParseError) -> lift $ $(logWarn) (T.pack $ displayException e) >> pure Nothing)
+    handle (\(e :: ParseError) -> lift $ logWarn (T.pack $ displayException e) >> pure Nothing)
     $ fmap Just
     $ getMajorMinorV _tvVersion
   forM_ v' $ \(mj, mi) -> lift (getGHCForMajor mj mi _tvTarget)
@@ -2331,7 +2330,7 @@ postGHCInstall ver@GHCTargetVersion {..} = do
 --   * for ghcup, this reports the location of the currently running executable
 whereIsTool :: ( MonadReader env m
                , HasDirs env
-               , MonadLogger m
+               , HasLog env
                , MonadThrow m
                , MonadFail m
                , MonadIO m

@@ -1,10 +1,7 @@
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE QuasiQuotes           #-}
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 
@@ -34,8 +31,8 @@ import           GHCup.Download.Utils
 #endif
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
+import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.File
 import           GHCup.Utils.Prelude
@@ -47,7 +44,6 @@ import           Control.Monad
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
-import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
@@ -112,7 +108,7 @@ getDownloadsF :: ( FromJSONKey Tool
                  , HasDirs env
                  , MonadIO m
                  , MonadCatch m
-                 , MonadLogger m
+                 , HasLog env
                  , MonadThrow m
                  , MonadFail m
                  , MonadMask m
@@ -165,7 +161,7 @@ getBase :: ( MonadReader env m
            , MonadFail m
            , MonadIO m
            , MonadCatch m
-           , MonadLogger m
+           , HasLog env
            , MonadMask m
            )
         => URI
@@ -187,7 +183,7 @@ getBase uri = do
 
   -- if we didn't get a filepath from the download, use the cached yaml
   actualYaml <- maybe (lift $ yamlFromCache uri) pure mYaml
-  lift $ $(logDebug) $ "Decoding yaml at: " <> T.pack actualYaml
+  lift $ logDebug $ "Decoding yaml at: " <> T.pack actualYaml
 
   liftE
     . onE_ (onError actualYaml)
@@ -200,15 +196,15 @@ getBase uri = do
  where
   -- On error, remove the etags file and set access time to 0. This should ensure the next invocation
   -- may re-download and succeed.
-  onError :: (MonadLogger m, MonadMask m, MonadCatch m, MonadIO m) => FilePath -> m ()
+  onError :: (MonadReader env m, HasLog env, MonadMask m, MonadCatch m, MonadIO m) => FilePath -> m ()
   onError fp = do
     let efp = etagsFile fp
-    handleIO (\e -> $(logWarn) $ "Couldn't remove file " <> T.pack efp <> ", error was: " <> T.pack (displayException e))
+    handleIO (\e -> logWarn $ "Couldn't remove file " <> T.pack efp <> ", error was: " <> T.pack (displayException e))
       (hideError doesNotExistErrorType $ rmFile efp)
     liftIO $ hideError doesNotExistErrorType $ setAccessTime fp (posixSecondsToUTCTime (fromIntegral @Int 0))
   warnCache s = do
-    lift $ $(logWarn) "Could not get download info, trying cached version (this may not be recent!)"
-    lift $ $(logDebug) $ "Error was: " <> T.pack s
+    lift $ logWarn "Could not get download info, trying cached version (this may not be recent!)"
+    lift $ logDebug $ "Error was: " <> T.pack s
 
   -- First check if the json file is in the ~/.ghcup/cache dir
   -- and check it's access time. If it has been accessed within the
@@ -222,7 +218,7 @@ getBase uri = do
              , MonadCatch m1
              , MonadIO m1
              , MonadFail m1
-             , MonadLogger m1
+             , HasLog env1
              , MonadMask m1
              )
           => URI
@@ -313,7 +309,7 @@ download :: ( MonadReader env m
             , HasDirs env
             , MonadMask m
             , MonadThrow m
-            , MonadLogger m
+            , HasLog env
             , MonadIO m
             )
          => URI
@@ -327,7 +323,7 @@ download uri eDigest dest mfn etags
   | scheme == "http"  = dl
   | scheme == "file"  = do
       let destFile' = T.unpack . decUTF8Safe $ path
-      lift $ $(logDebug) $ "using local file: " <> T.pack destFile'
+      lift $ logDebug $ "using local file: " <> T.pack destFile'
       forM_ eDigest (liftE . flip checkDigest destFile')
       pure destFile'
   | otherwise = throwE $ DownloadFailed (variantFromValue UnsupportedScheme)
@@ -336,7 +332,7 @@ download uri eDigest dest mfn etags
   scheme = view (uriSchemeL' % schemeBSL') uri
   dl = do
     destFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile
-    lift $ $(logInfo) $ "downloading: " <> uri' <> " as file " <> T.pack destFile
+    lift $ logInfo $ "downloading: " <> uri' <> " as file " <> T.pack destFile
 
     -- destination dir must exist
     liftIO $ createDirRecursive' dest
@@ -359,7 +355,7 @@ download uri eDigest dest mfn etags
                       dh <- liftIO $ emptySystemTempFile "curl-header"
                       flip finally (try @_ @SomeException $ rmFile dh) $
                         flip finally (try @_ @SomeException $ rmFile (destFile <.> "tmp")) $ do
-                          metag <- readETag destFile
+                          metag <- lift $ readETag destFile
                           liftE $ lEM @_ @'[ProcessError] $ exec "curl"
                               (o' ++ (if etags then ["--dump-header", dh] else [])
                                   ++ maybe [] (\t -> ["-H", "If-None-Match: " <> T.unpack t]) metag
@@ -371,14 +367,14 @@ download uri eDigest dest mfn etags
                           case fmap T.words . listToMaybe . fmap T.strip . T.lines . getLastHeader $ headers of
                             Just (http':sc:_)
                               | sc == "304"
-                              , T.pack "HTTP" `T.isPrefixOf` http' -> $logDebug "Status code was 304, not overwriting"
+                              , T.pack "HTTP" `T.isPrefixOf` http' -> lift $ logDebug "Status code was 304, not overwriting"
                               | T.pack "HTTP" `T.isPrefixOf` http' -> do
-                                  $logDebug $ "Status code was " <> sc <> ", overwriting"
+                                  lift $ logDebug $ "Status code was " <> sc <> ", overwriting"
                                   liftIO $ copyFile (destFile <.> "tmp") destFile
                             _ -> liftE $ throwE @_ @'[DownloadFailed] (DownloadFailed (toVariantAt @0 (MalformedHeaders headers)
                               :: V '[MalformedHeaders]))
 
-                          writeEtags destFile (parseEtags headers)
+                          lift $ writeEtags destFile (parseEtags headers)
                     else
                       liftE $ lEM @_ @'[ProcessError] $ exec "curl" 
                         (o' ++ ["-fL", "-o", destFile, T.unpack uri']) Nothing Nothing
@@ -388,20 +384,20 @@ download uri eDigest dest mfn etags
                     o' <- liftIO getWgetOpts
                     if etags
                       then do
-                        metag <- readETag destFile
+                        metag <- lift $ readETag destFile
                         let opts = o' ++ maybe [] (\t -> ["--header", "If-None-Match: " <> T.unpack t]) metag
                                       ++ ["-q", "-S", "-O", destFileTemp , T.unpack uri']
                         CapturedProcess {_exitCode, _stdErr} <- lift $ executeOut "wget" opts Nothing
                         case _exitCode of
                           ExitSuccess -> do
                             liftIO $ copyFile destFileTemp destFile
-                            writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
+                            lift $ writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
                           ExitFailure i'
                             | i' == 8
                             , Just _ <- find (T.pack "304 Not Modified" `T.isInfixOf`) . T.lines . decUTF8Safe' $ _stdErr
                                      -> do
-                                          $logDebug "Not modified, skipping download"
-                                          writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
+                                          lift $ logDebug "Not modified, skipping download"
+                                          lift $ writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
                             | otherwise -> throwE (NonZeroExit i' "wget" opts)
                       else do
                         let opts = o' ++ ["-O", destFileTemp , T.unpack uri']
@@ -412,14 +408,14 @@ download uri eDigest dest mfn etags
                   (https, host, fullPath, port) <- liftE $ uriToQuadruple uri
                   if etags
                     then do
-                      metag <- readETag destFile
+                      metag <- lift $ readETag destFile
                       let addHeaders = maybe mempty (\etag -> M.fromList [ (mk . E.encodeUtf8 . T.pack $ "If-None-Match"
                                                                          , E.encodeUtf8 etag)]) metag
                       liftE
                         $ catchE @HTTPNotModified @'[DownloadFailed] @'[] (\(HTTPNotModified etag) -> lift $ writeEtags destFile (pure $ Just etag))
                         $ do
                           r <- downloadToFile https host fullPath port destFile addHeaders
-                          writeEtags destFile (pure $ decUTF8Safe <$> getHeader r "etag")
+                          lift $ writeEtags destFile (pure $ decUTF8Safe <$> getHeader r "etag")
                     else void $ liftE $ catchE @HTTPNotModified
                                         @'[DownloadFailed]
                                    (\e@(HTTPNotModified _) ->
@@ -445,33 +441,33 @@ download uri eDigest dest mfn etags
   path = view pathL' uri
   uri' = decUTF8Safe (serializeURIRef' uri)
 
-  parseEtags :: (MonadLogger m, MonadIO m, MonadThrow m) => T.Text -> m (Maybe T.Text)
+  parseEtags :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m) => T.Text -> m (Maybe T.Text)
   parseEtags stderr = do
     let mEtag = find (\line -> T.pack "etag:" `T.isPrefixOf` T.toLower line) . fmap T.strip . T.lines . getLastHeader $ stderr
     case T.words <$> mEtag of
       (Just []) -> do
-        $logDebug "Couldn't parse etags, no input: "
+        logDebug "Couldn't parse etags, no input: "
         pure Nothing
       (Just [_, etag']) -> do
-        $logDebug $ "Parsed etag: " <> etag'
+        logDebug $ "Parsed etag: " <> etag'
         pure (Just etag')
       (Just xs) -> do
-        $logDebug ("Couldn't parse etags, unexpected input: " <> T.unwords xs)
+        logDebug ("Couldn't parse etags, unexpected input: " <> T.unwords xs)
         pure Nothing
       Nothing -> do
-        $logDebug "No etags header found"
+        logDebug "No etags header found"
         pure Nothing
 
-  writeEtags :: (MonadLogger m, MonadIO m, MonadThrow m) => FilePath -> m (Maybe T.Text) -> m ()
+  writeEtags :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m) => FilePath -> m (Maybe T.Text) -> m ()
   writeEtags destFile getTags = do
     getTags >>= \case
       Just t -> do
-        $logDebug $ "Writing etagsFile " <> T.pack (etagsFile destFile)
+        logDebug $ "Writing etagsFile " <> T.pack (etagsFile destFile)
         liftIO $ T.writeFile (etagsFile destFile) t
       Nothing ->
-        $logDebug "No etags files written"
+        logDebug "No etags files written"
 
-  readETag :: (MonadLogger m, MonadCatch m, MonadIO m) => FilePath -> m (Maybe T.Text)
+  readETag :: (MonadReader env m, HasLog env, MonadCatch m, MonadIO m) => FilePath -> m (Maybe T.Text)
   readETag fp = do
     e <- liftIO $ doesFileExist fp
     if e
@@ -479,13 +475,13 @@ download uri eDigest dest mfn etags
       rE <- try @_ @SomeException $ liftIO $ fmap stripNewline' $ T.readFile (etagsFile fp)
       case rE of
         (Right et) -> do
-          $logDebug $ "Read etag: " <> et
+          logDebug $ "Read etag: " <> et
           pure (Just et)
         (Left _) -> do
-          $logDebug "Etag file doesn't exist (yet)"
+          logDebug "Etag file doesn't exist (yet)"
           pure Nothing
     else do
-      $logDebug $ "Skipping and deleting etags file because destination file " <> T.pack fp <> " doesn't exist"
+      logDebug $ "Skipping and deleting etags file because destination file " <> T.pack fp <> " doesn't exist"
       liftIO $ hideError doesNotExistErrorType $ rmFile (etagsFile fp)
       pure Nothing
 
@@ -498,7 +494,7 @@ downloadCached :: ( MonadReader env m
                   , MonadMask m
                   , MonadResource m
                   , MonadThrow m
-                  , MonadLogger m
+                  , HasLog env
                   , MonadIO m
                   , MonadUnliftIO m
                   )
@@ -519,7 +515,7 @@ downloadCached' :: ( MonadReader env m
                    , HasSettings env
                    , MonadMask m
                    , MonadThrow m
-                   , MonadLogger m
+                   , HasLog env
                    , MonadIO m
                    , MonadUnliftIO m
                    )
@@ -553,7 +549,7 @@ checkDigest :: ( MonadReader env m
                , HasSettings env
                , MonadIO m
                , MonadThrow m
-               , MonadLogger m
+               , HasLog env
                )
             => T.Text     -- ^ the hash
             -> FilePath
@@ -563,7 +559,7 @@ checkDigest eDigest file = do
   let verify = not noVerify
   when verify $ do
     let p' = takeFileName file
-    lift $ $(logInfo) $ "verifying digest of: " <> T.pack p'
+    lift $ logInfo $ "verifying digest of: " <> T.pack p'
     c <- liftIO $ L.readFile file
     cDigest <- throwEither . E.decodeUtf8' . B16.encode . SHA256.hashlazy $ c
     when ((cDigest /= eDigest) && verify) $ throwE (DigestError cDigest eDigest)

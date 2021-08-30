@@ -5,7 +5,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
-{-# LANGUAGE TemplateHaskell     #-}
 
 {-|
 Module      : GHCup.Utils.Prelude
@@ -30,7 +29,6 @@ import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
-import           Control.Monad.Logger
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
 import           Data.List                      ( nub, intercalate, stripPrefix, isPrefixOf )
@@ -176,8 +174,12 @@ lEM' :: forall e' e es a m
 lEM' f em = lift em >>= lE . first f
 
 -- for some obscure reason... this won't type-check if we move it to a different module
-catchWarn :: forall es m . (Pretty (V es), MonadLogger m, Monad m) => Excepts es m () -> Excepts '[] m ()
-catchWarn = catchAllE @_ @es (\v -> lift $ $(logWarn) (T.pack . prettyShow $ v))
+catchWarn :: forall es m env . ( Pretty (V es)
+                             , MonadReader env m
+                             , HasLog env
+                             , MonadIO m
+                             , Monad m) => Excepts es m () -> Excepts '[] m ()
+catchWarn = catchAllE @_ @es (\v -> lift $ logWarn (T.pack . prettyShow $ v))
 
 fromEither :: Either a b -> VEither '[a] b
 fromEither = either (VLeft . V) VRight

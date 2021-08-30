@@ -25,21 +25,17 @@ module GHCup.Types
   )
   where
 
-import           Control.Applicative
 import           Control.DeepSeq                ( NFData, rnf )
-import           Control.Monad.Logger
 import           Data.Map.Strict                ( Map )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           Haskus.Utils.Variant.Excepts
 import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text)
 import           URI.ByteString
 #if defined(BRICK)
 import           Graphics.Vty                   ( Key(..) )
 #endif
 
-import qualified Control.Monad.Trans.Class     as Trans
 import qualified Data.Text                     as T
 import qualified GHC.Generics                  as GHC
 
@@ -396,6 +392,7 @@ data AppState = AppState
   , keyBindings :: KeyBindings
   , ghcupInfo :: GHCupInfo
   , pfreq :: PlatformRequest
+  , loggerConfig :: LoggerConfig
   } deriving (Show, GHC.Generic)
 
 instance NFData AppState
@@ -404,6 +401,7 @@ data LeanAppState = LeanAppState
   { settings :: Settings
   , dirs :: Dirs
   , keyBindings :: KeyBindings
+  , loggerConfig :: LoggerConfig
   } deriving (Show, GHC.Generic)
 
 instance NFData LeanAppState
@@ -555,14 +553,25 @@ instance Pretty Versioning where
 instance Pretty Version where
   pPrint = text . T.unpack . prettyVer
 
+instance Show (a -> b) where
+  show _ = "<function>"
 
-instance (Monad m, Alternative m) => Alternative (LoggingT m) where
-    empty   = Trans.lift empty
-    {-# INLINE empty #-}
-    m <|> n = LoggingT $ \ r -> runLoggingT m r <|> runLoggingT n r
-    {-# INLINE (<|>) #-}
+instance Show (IO ()) where
+  show _ = "<io>"
 
 
-instance MonadLogger m => MonadLogger (Excepts e m) where
-  monadLoggerLog a b c d = Trans.lift $ monadLoggerLog a b c d
+data LogLevel = Warn
+              | Info
+              | Debug
+              | Error
+  deriving (Eq, Ord, Show)
 
+data LoggerConfig = LoggerConfig
+  { lcPrintDebug :: Bool                  -- ^ whether to print debug in colorOutter
+  , colorOutter  :: T.Text -> IO () -- ^ how to write the color output
+  , rawOutter    :: T.Text -> IO () -- ^ how to write the full raw output
+  }
+  deriving Show
+
+instance NFData LoggerConfig where
+  rnf (LoggerConfig !lcPrintDebug !_ !_) = rnf lcPrintDebug

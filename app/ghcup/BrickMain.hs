@@ -13,11 +13,11 @@ module BrickMain where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
+import           GHCup.Types.Optics  hiding ( getGHCupInfo )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
 import           GHCup.Utils.Prelude ( decUTF8Safe )
 import           GHCup.Utils.File
-import           GHCup.Utils.Logger
 
 import           Brick
 import           Brick.Widgets.Border
@@ -29,7 +29,6 @@ import           Brick.Widgets.List             ( listSelectedFocusedAttr
                                                 )
 import           Codec.Archive
 import           Control.Exception.Safe
-import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Resource
@@ -417,12 +416,8 @@ install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, Monad
 install' _ (_, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
 
-  l        <- liftIO $ readIORef logger'
-  let runLogger = myLoggerT l
-
   let run =
-        runLogger
-          . runResourceT
+        runResourceT
           . runE
             @'[ AlreadyInstalled
               , ArchiveResult
@@ -462,7 +457,7 @@ install' _ (_, ListResult {..}) = do
     >>= \case
           VRight vi                         -> do
             forM_ (_viPostInstall =<< vi) $ \msg ->
-              myLoggerT l $ $(logInfo) msg
+              logInfo msg
             pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
           VLeft (V NoUpdate) -> pure $ Right ()
@@ -473,12 +468,9 @@ install' _ (_, ListResult {..}) = do
 set' :: BrickState -> (Int, ListResult) -> IO (Either String ())
 set' _ (_, ListResult {..}) = do
   settings <- readIORef settings'
-  l        <- readIORef logger'
-  let runLogger = myLoggerT l
 
   let run =
-        runLogger
-          . flip runReaderT settings
+        flip runReaderT settings
           . runE @'[FileDoesNotExistError , NotInstalled , TagNotFound]
 
   run (do
@@ -501,9 +493,7 @@ del' :: (MonadReader AppState m, MonadIO m, MonadFail m, MonadMask m, MonadUnlif
 del' _ (_, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
 
-  l <- liftIO $ readIORef logger'
-  let runLogger = myLoggerT l
-  let run = myLoggerT l . runE @'[NotInstalled]
+  let run = runE @'[NotInstalled]
 
   run (do
       let vi = getVersionInfo lVer lTool dls
@@ -517,7 +507,7 @@ del' _ (_, ListResult {..}) = do
     >>= \case
           VRight vi -> do
             forM_ (join $ fmap _viPostRemove vi) $ \msg ->
-              runLogger $ $(logInfo) msg
+              logInfo msg
             pure $ Right ()
           VLeft  e -> pure $ Left (prettyShow e)
 
@@ -546,6 +536,10 @@ settings' :: IORef AppState
 {-# NOINLINE settings' #-}
 settings' = unsafePerformIO $ do
   dirs <- getAllDirs
+  let loggerConfig = LoggerConfig { lcPrintDebug = False
+                                  , colorOutter  = \_ -> pure ()
+                                  , rawOutter    = \_ -> pure ()
+                                  }
   newIORef $ AppState (Settings { cache      = True
                                 , noVerify   = False
                                 , keepDirs   = Never
@@ -559,27 +553,14 @@ settings' = unsafePerformIO $ do
                       defaultKeyBindings
                       (GHCupInfo mempty mempty mempty)
                       (PlatformRequest A_64 Darwin Nothing)
+                      loggerConfig
 
-
-
-logger' :: IORef LoggerConfig
-{-# NOINLINE logger' #-}
-logger' = unsafePerformIO
-  (newIORef $ LoggerConfig { lcPrintDebug = False
-                           , colorOutter  = \_ -> pure ()
-                           , rawOutter    = \_ -> pure ()
-                           }
-  )
 
 
 brickMain :: AppState
-          -> LoggerConfig
           -> IO ()
-brickMain s l = do
+brickMain s = do
   writeIORef settings' s
-  -- logger interpreter
-  writeIORef logger'   l
-  let runLogger = myLoggerT l
 
   no_color <- isJust <$> lookupEnv "NO_COLOR"
 
@@ -596,7 +577,7 @@ brickMain s l = do
           )
         $> ()
     Left e -> do
-      runLogger ($(logError) $ "Error building app state: " <> T.pack (show e))
+      flip runReaderT s $ logError $ "Error building app state: " <> T.pack (show e)
       exitWith $ ExitFailure 2
 
 
@@ -607,12 +588,9 @@ defaultAppSettings = BrickSettings { showAllVersions = False, showAllTools = Fal
 getGHCupInfo :: IO (Either String GHCupInfo)
 getGHCupInfo = do
   settings <- readIORef settings'
-  l        <- readIORef logger'
-  let runLogger = myLoggerT l
 
   r <-
-    runLogger
-    . flip runReaderT settings
+    flip runReaderT settings
     . runE @'[JSONError , DownloadFailed , FileDoesNotExistError]
     $ liftE
     $ getDownloadsF
@@ -625,14 +603,11 @@ getGHCupInfo = do
 getAppData :: Maybe GHCupInfo
            -> IO (Either String BrickData)
 getAppData mgi = runExceptT $ do
-  l        <- liftIO $ readIORef logger'
-  let runLogger = myLoggerT l
-
   r <- ExceptT $ maybe getGHCupInfo (pure . Right) mgi
   liftIO $ modifyIORef settings' (\s -> s { ghcupInfo = r })
   settings <- liftIO $ readIORef settings'
 
-  runLogger . flip runReaderT settings $ do
+  flip runReaderT settings $ do
     lV <- listVersions Nothing Nothing
     pure $ BrickData (reverse lV)
 
