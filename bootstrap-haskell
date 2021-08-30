@@ -3,6 +3,7 @@
 # Main settings:
 #   * BOOTSTRAP_HASKELL_NONINTERACTIVE - any nonzero value for noninteractive installation
 #   * BOOTSTRAP_HASKELL_NO_UPGRADE - any nonzero value to not trigger the upgrade
+#   * BOOTSTRAP_HASKELL_MINIMAL - any nonzero value to only install ghcup
 #   * GHCUP_USE_XDG_DIRS - any nonzero value to respect The XDG Base Directory Specification
 #   * BOOTSTRAP_HASKELL_VERBOSE - any nonzero value for more verbose installation
 #   * BOOTSTRAP_HASKELL_GHC_VERSION - the ghc version to install
@@ -591,10 +592,12 @@ ask_bashrc
 ask_bashrc_answer=$?
 ask_cabal_config_init
 ask_cabal_config_init_answer=$?
-ask_hls
-ask_hls_answer=$?
-ask_stack
-ask_stack_answer=$?
+if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
+	ask_hls
+	ask_hls_answer=$?
+	ask_stack
+	ask_stack_answer=$?
+fi
 
 edo mkdir -p "${GHCUP_BIN}"
 
@@ -620,14 +623,30 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
     read -r answer </dev/tty
 fi
 
-eghcup --cache install ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
+if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
+	eghcup --cache install ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
 
-eghcup set ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
-eghcup --cache install cabal "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
+	eghcup set ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
+	eghcup --cache install cabal "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
 
-do_cabal_config_init $ask_cabal_config_init_answer
+	do_cabal_config_init $ask_cabal_config_init_answer
 
-edo cabal new-update
+	edo cabal new-update
+else # don't install ghc and cabal
+	case "${plat}" in
+			MSYS*|MINGW*)
+				# need to bootstrap cabal to initialize config on windows
+				# we'll remove it afterwards
+				tmp_dir="$(mktemp -d)"
+				eghcup --cache install cabal -i "${tmp_dir}" "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
+				PATH="${tmp_dir}:$PATH" do_cabal_config_init $ask_cabal_config_init_answer
+				rm "${tmp_dir}/cabal"
+				unset tmp_dir
+				;;
+			*)
+				;;
+	esac
+fi
 
 case $ask_hls_answer in
 	1)
