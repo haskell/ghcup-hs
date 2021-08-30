@@ -15,6 +15,8 @@
 param (
     # Run an interactive installation
     [switch]$Interactive,
+    # Do minimal installation of ghcup and msys2 only
+    [switch]$Minimal,
     # Specify the install root (default: 'C:\')
     [string]$InstallDir,
     # Instead of installing a new MSys2, use an existing installation
@@ -32,9 +34,7 @@ param (
     # Whether to install hls as well
     [switch]$InstallHLS,
     # Skip adjusting cabal.config with mingw paths
-    [switch]$NoAdjustCabalConfig,
-    # Do minimal installation of ghcup and msys2 only
-    [switch]$Minimal
+    [switch]$NoAdjustCabalConfig
 )
 
 $Silent = !$Interactive
