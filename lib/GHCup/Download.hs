@@ -86,7 +86,7 @@ import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
-import qualified Data.Yaml                     as Y
+import qualified Data.YAML.Aeson               as Y
 
 
 
@@ -183,16 +183,15 @@ getBase uri = do
 
   -- if we didn't get a filepath from the download, use the cached yaml
   actualYaml <- maybe (lift $ yamlFromCache uri) pure mYaml
+  yamlContents <- liftIO $ L.readFile actualYaml
   lift $ logDebug $ "Decoding yaml at: " <> T.pack actualYaml
 
   liftE
     . onE_ (onError actualYaml)
-    . lEM' @_ @_ @'[JSONError] JSONDecodeError
-    . fmap (first (\e -> unlines [displayException e
-                                 ,"Consider removing " <> actualYaml <> " manually."]))
-    . liftIO
-    . Y.decodeFileEither
-    $ actualYaml
+    . lE' @_ @_ @'[JSONError] JSONDecodeError
+    . first (\(_, e) -> unlines [e, "Consider removing " <> actualYaml <> " manually."])
+    . Y.decode1
+    $ yamlContents
  where
   -- On error, remove the etags file and set access time to 0. This should ensure the next invocation
   -- may re-download and succeed.

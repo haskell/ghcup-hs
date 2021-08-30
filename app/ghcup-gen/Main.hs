@@ -35,7 +35,7 @@ import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import qualified Data.Text.IO                  as T
 import qualified Data.Text                     as T
 import qualified Data.ByteString               as B
-import qualified Data.Yaml                     as Y
+import qualified Data.YAML.Aeson               as Y
 
 
 data Options = Options
@@ -146,8 +146,8 @@ main = do
     ValidateYAMLOpts { vInput = Just (FileInput file) } ->
       B.readFile file >>= valAndExit f
   valAndExit f contents = do
-    (GHCupInfo _ av gt) <- case Y.decodeEither' contents of
+    (GHCupInfo _ av gt) <- case Y.decode1Strict contents of
       Right r -> pure r
-      Left  e -> die (color Red $ show e)
+      Left  (_, e) -> die (color Red $ show e)
     f av gt
       >>= exitWith

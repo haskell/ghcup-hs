@@ -77,8 +77,7 @@ import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
-import qualified Data.Yaml                     as Y
-import qualified Data.Yaml.Pretty              as YP
+import qualified Data.YAML.Aeson               as Y
 import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
 
@@ -1318,7 +1317,7 @@ toSettings options = do
 
 updateSettings :: Monad m => UTF8.ByteString -> Settings -> Excepts '[JSONError] m Settings
 updateSettings config settings = do
-  settings' <- lE' JSONDecodeError . first show . Y.decodeEither' $ config
+  settings' <- lE' JSONDecodeError . first snd . Y.decode1Strict $ config
   pure $ mergeConf settings' settings
   where
    mergeConf :: UserSettings -> Settings -> Settings
@@ -1377,9 +1376,7 @@ plan_json = $( LitE . StringL <$>
 
 formatConfig :: UserSettings -> String
 formatConfig settings
-  = UTF8.toString . YP.encodePretty yamlConfig $ settings
- where
-  yamlConfig = YP.setConfCompare compare YP.defConfig
+  = UTF8.toString . Y.encode1Strict $ settings
 
 main :: IO ()
 main = do
