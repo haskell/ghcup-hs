@@ -17,24 +17,24 @@ param (
     [switch]$Interactive,
     # Do minimal installation of ghcup and msys2 only
     [switch]$Minimal,
+    # Run the final bootstrap script via 'bash' instead of a full newly spawned msys2 shell
+    [switch]$InBash,
+    # Overwrite (or rather backup) a previous install
+    [switch]$Overwrite,
+    # Skip adjusting cabal.config with mingw paths
+    [switch]$NoAdjustCabalConfig,
+    # Whether to install stack as well
+    [switch]$InstallStack,
+    # Whether to install hls as well
+    [switch]$InstallHLS,
+    # Specify the bootstrap url (default: 'https://www.haskell.org/ghcup/sh/bootstrap-haskell')
+    [string]$BootstrapUrl,
     # Specify the install root (default: 'C:\')
     [string]$InstallDir,
     # Instead of installing a new MSys2, use an existing installation
     [string]$ExistingMsys2Dir,
     # Specify the cabal root directory (default: '$InstallDir\cabal')
-    [string]$CabalDir,
-    # Overwrite (or rather backup) a previous install
-    [switch]$Overwrite,
-    # Specify the bootstrap url (default: 'https://www.haskell.org/ghcup/sh/bootstrap-haskell')
-    [string]$BootstrapUrl,
-    # Run the final bootstrap script via 'bash' instead of a full newly spawned msys2 shell
-    [switch]$InBash,
-    # Whether to install stack as well
-    [switch]$InstallStack,
-    # Whether to install hls as well
-    [switch]$InstallHLS,
-    # Skip adjusting cabal.config with mingw paths
-    [switch]$NoAdjustCabalConfig
+    [string]$CabalDir
 )
 
 $Silent = !$Interactive
