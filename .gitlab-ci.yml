@@ -14,7 +14,7 @@ variables:
 ############################################################
 
 .debian:
-  image: "registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb9:$DOCKER_REV"
+  image: "registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb10:$DOCKER_REV"
   tags:
     - x86_64-linux
   variables:
