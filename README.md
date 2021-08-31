@@ -24,6 +24,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Env variables](#env-variables)
      * [Installing custom bindists](#installing-custom-bindists)
      * [Isolated Installs](#isolated-installs)
+     * [CI](#ci)
      * [Tips and tricks](#tips-and-tricks)
    * [Design goals](#design-goals)
    * [How](#how)
@@ -190,6 +191,126 @@ Examples:-
 5. you can even compile ghc to an isolated location.  
    - `ghcup compile ghc -j 4 -v 9.0.1 -b 8.10.5 -i /home/username/my/dir/ghc` 
    ---  
+
+### CI
+
+On windows, ghcup can be installed automatically on a CI runner like so:
+
+```ps
+Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false,$true,$true,$false,$false,$false,$false,"C:\"
+```
+
+On linux/darwin/freebsd, run the following on your runner:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
+```
+
+This will just install `ghcup` and on windows additionally `msys2`.
+
+#### Example github workflow
+
+On github workflows you can use https://github.com/haskell/actions/
+
+If you want to install ghcup manually though, here's an example config:
+
+```yml
+name: Haskell CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-cabal:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+        ghc: ['8.10.7', '9.0.1']
+        cabal: ['3.4.0.0']
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - if: matrix.os == 'windows-latest'
+      name: Install ghcup on windows
+      run: Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false,$true,$true,$false,$false,$false,$false,"C:\"
+
+    - if: matrix.os != 'windows-latest'
+      name: Install ghcup on non-windows
+      run: curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
+
+    - if: matrix.os == 'windows-latest'
+      run: echo "/c/ghcup/bin" >> $GITHUB_PATH
+      shell: bash
+
+    - name: Install ghc/cabal
+      run: |
+        ghcup install ghc ${{ matrix.ghc }}
+        ghcup install cabal ${{ matrix.cabal }}
+      shell: bash
+
+    - name: Update cabal index
+      run: cabal update
+      shell: bash
+
+    - name: Build
+      run: cabal build --enable-tests --enable-benchmarks
+      shell: bash
+
+    - name: Run tests
+      run: cabal test
+      shell: bash
+
+    - name: Run benches
+      run: cabal bench
+      shell: bash
+
+  build-stack:
+    name: Stack ${{ matrix.stack }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+        stack: ['latest']
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - if: matrix.os == 'windows-latest'
+      name: Install ghcup on windows
+      run: Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false,$true,$true,$false,$false,$false,$false,"C:\"
+
+    - if: matrix.os != 'windows-latest'
+      name: Install ghcup on non-windows
+      run: curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
+
+    - if: matrix.os == 'windows-latest'
+      run: echo "/c/ghcup/bin" >> $GITHUB_PATH
+      shell: bash
+
+    - name: Install stack
+      run: ghcup install stack ${{ matrix.stack }}
+      shell: bash
+
+    - name: Build
+      run: stack build
+      shell: bash
+
+    - name: Run tests
+      run: stack test
+      shell: bash
+
+    - name: Run benches
+      run: stack bench
+      shell: bash
+```
    
 ### Tips and tricks
 
