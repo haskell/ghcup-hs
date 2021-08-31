@@ -527,15 +527,9 @@ release:windows:
 hlint:
   stage: hlint
   extends:
-    - .alpine:64bit
-  before_script:
-    - ./.gitlab/before_script/linux/alpine/install_deps.sh
+    - .debian
   script:
-    - ./.gitlab/script/hlint.sh
-  variables:
-    GHC_VERSION: "8.10.6"
-    CABAL_VERSION: "3.4.0.0"
-    JSON_VERSION: "0.0.4"
+    - curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s -- -r lib/ test/
   allow_failure: true
   artifacts:
     expire_in: 2 week
