@@ -413,6 +413,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 
     Print-Msg -msg 'Setting default home directory...'
     Exec "$Bash" '-lc' "sed -i -e 's/db_home:.*$/db_home: windows/' /etc/nsswitch.conf"
+
   } elseif ($msys2Decision -eq 1) {
     Print-Msg -color Yellow -msg 'Skipping MSys2 installation.'
     while ($true) {
