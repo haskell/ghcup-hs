@@ -182,7 +182,7 @@ elevated command prompt:
 
 if ($GhcupBasePrefixEnv) {
   $defaultGhcupBasePrefix = $GhcupBasePrefixEnv
-} else {
+} elseif (!($InstallDir)) {
   $partitions = Get-CimInstance win32_logicaldisk
   $defaultGhcupBasePrefix = $null
   foreach ($p in $partitions){
@@ -211,10 +211,10 @@ if ($Silent -and !($InstallDir)) {
   $GhcupBasePrefix = $defaultGhcupBasePrefix
 } elseif ($InstallDir) {
   if (!(Test-Path -LiteralPath ('{0}' -f $InstallDir) -IsValid)) {
-    Print-Msg -color Red -msg "Not a valid directory!"
+    Print-Msg -color Red -msg "Not a valid directory! (InstallDir)"
     Exit 1
   } elseif (!(Split-Path -IsAbsolute -Path "$InstallDir")) {
-    Print-Msg -color Red -msg "Non-absolute Path specified!"
+    Print-Msg -color Red -msg "Non-absolute Path specified! (InstallDir)"
     Exit 1
   } else {
     $GhcupBasePrefix = $InstallDir
@@ -245,7 +245,20 @@ $null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $Ghcu
 
 
 $GhcupDir = ('{0}\ghcup' -f $GhcupBasePrefix)
-$MsysDir = ('{0}\msys64' -f $GhcupDir)
+if ($ExistingMsys2Dir) {
+  if (!(Test-Path -LiteralPath ('{0}' -f $ExistingMsys2Dir) -IsValid)) {
+    Print-Msg -color Red -msg "Not a valid directory! (ExistingMsys2Dir)"
+    Exit 1
+  } elseif (!(Split-Path -IsAbsolute -Path "$ExistingMsys2Dir")) {
+    Print-Msg -color Red -msg "Non-absolute Path specified! (ExistingMsys2Dir)"
+    Exit 1
+  } else {
+	$MsysDir = $ExistingMsys2Dir
+  }
+} else {
+	$MsysDir = ('{0}\msys64' -f $GhcupDir)
+}
+
 $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
 if (!($BootstrapUrl)) {
   $BootstrapUrl = 'https://www.haskell.org/ghcup/sh/bootstrap-haskell'
