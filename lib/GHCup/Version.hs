@@ -24,6 +24,9 @@ import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
 
 -- | This reflects the API version of the YAML.
+--
+-- Note that when updating this, CI requires that the file exsists AND the same file exists at
+-- 'https://www.haskell.org/ghcup/exp/ghcup-<ver>.yaml' with some newlines added.
 ghcupURL :: URI
 ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.7.yaml|]
 
