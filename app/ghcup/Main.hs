@@ -205,6 +205,11 @@ data ChangeLogOptions = ChangeLogOptions
 
 
 data WhereisCommand = WhereisTool Tool (Maybe ToolVersion)
+                    | WhereisBaseDir
+                    | WhereisBinDir
+                    | WhereisCacheDir
+                    | WhereisLogsDir
+                    | WhereisConfDir
 
 data WhereisOptions = WhereisOptions {
    directory :: Bool
@@ -833,7 +838,8 @@ configP = subparser
 
 whereisP :: Parser WhereisCommand
 whereisP = subparser
-  (  command
+  (commandGroup "Tools locations:" <> 
+    command
       "ghc"
       (WhereisTool GHC <$> info
         ( optional (toolVersionArgument Nothing (Just GHC)) <**> helper )
@@ -868,6 +874,37 @@ whereisP = subparser
      command
       "ghcup"
       (WhereisTool GHCup <$> info ( (pure Nothing) <**> helper ) ( progDesc "Get ghcup location" ))
+    ) <|> subparser ( commandGroup "Directory locations:"
+      <>
+     command
+      "basedir"
+      (info (pure WhereisBaseDir <**> helper)
+            ( progDesc "Get ghcup base directory location" )
+      )
+      <>
+     command
+      "bindir"
+      (info (pure WhereisBinDir <**> helper)
+            ( progDesc "Get ghcup binary directory location" )
+      )
+      <>
+     command
+      "cachedir"
+      (info (pure WhereisCacheDir <**> helper)
+            ( progDesc "Get ghcup cache directory location" )
+      )
+      <>
+     command
+      "logsdir"
+      (info (pure WhereisLogsDir <**> helper)
+            ( progDesc "Get ghcup logs directory location" )
+      )
+      <>
+     command
+      "confdir"
+      (info (pure WhereisConfDir <**> helper)
+            ( progDesc "Get ghcup config directory location" )
+      )
   )
  where
   whereisGHCFooter = [s|Discussion:
@@ -2135,6 +2172,26 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       VLeft e -> do
                         runLogger $ logError $ T.pack $ prettyShow e
                         pure $ ExitFailure 30
+
+            Whereis _ WhereisBaseDir -> do
+              putStr baseDir
+              pure ExitSuccess
+
+            Whereis _ WhereisBinDir -> do
+              putStr binDir
+              pure ExitSuccess
+
+            Whereis _ WhereisCacheDir -> do
+              putStr cacheDir
+              pure ExitSuccess
+
+            Whereis _ WhereisLogsDir -> do
+              putStr logsDir
+              pure ExitSuccess
+
+            Whereis _ WhereisConfDir -> do
+              putStr confDir
+              pure ExitSuccess
 
             Upgrade uOpts force' -> do
               target <- case uOpts of
