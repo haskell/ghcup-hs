@@ -241,13 +241,14 @@ jobs:
       name: Install ghcup on windows
       run: Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false,$true,$true,$false,$false,$false,$false,"C:\"
 
+    - if: matrix.os == 'windows-latest'
+      name: Add ghcup to PATH
+      run: echo "/c/ghcup/bin" >> $GITHUB_PATH
+      shell: bash
+
     - if: matrix.os != 'windows-latest'
       name: Install ghcup on non-windows
       run: curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
-
-    - if: matrix.os == 'windows-latest'
-      run: echo "/c/ghcup/bin" >> $GITHUB_PATH
-      shell: bash
 
     - name: Install ghc/cabal
       run: |
@@ -265,50 +266,6 @@ jobs:
 
     - name: Run tests
       run: cabal test
-      shell: bash
-
-    - name: Run benches
-      run: cabal bench
-      shell: bash
-
-  build-stack:
-    name: Stack ${{ matrix.stack }} ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
-        stack: ['latest']
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - if: matrix.os == 'windows-latest'
-      name: Install ghcup on windows
-      run: Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false,$true,$true,$false,$false,$false,$false,"C:\"
-
-    - if: matrix.os != 'windows-latest'
-      name: Install ghcup on non-windows
-      run: curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
-
-    - if: matrix.os == 'windows-latest'
-      run: echo "/c/ghcup/bin" >> $GITHUB_PATH
-      shell: bash
-
-    - name: Install stack
-      run: ghcup install stack ${{ matrix.stack }}
-      shell: bash
-
-    - name: Build
-      run: stack build
-      shell: bash
-
-    - name: Run tests
-      run: stack test
-      shell: bash
-
-    - name: Run benches
-      run: stack bench
       shell: bash
 ```
    
