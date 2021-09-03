@@ -176,7 +176,7 @@ rmMajorSymlinks tv@GHCTargetVersion{..} = do
   forM_ files $ \f -> do
     let f_xy = f <> "-" <> T.unpack v' <> exeExt
     let fullF = binDir </> f_xy
-    lift $ logDebug "rm -f #{fullF}"
+    lift $ logDebug ("rm -f " <> T.pack fullF)
     lift $ hideError doesNotExistErrorType $ rmLink fullF
 
 
@@ -1035,7 +1035,7 @@ ensureGlobalTools = do
   let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
   void $ (\(DigestError _ _) -> do
       lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
-      lift $ logDebug "rm -f #{shimDownload}"
+      lift $ logDebug ("rm -f " <> T.pack shimDownload)
       lift $ hideError doesNotExistErrorType $ recycleFile (cacheDir dirs </> "gs.exe")
       liftE @'[DigestError , DownloadFailed] $ dl
     ) `catchE` (liftE @'[DigestError , DownloadFailed] dl)
