@@ -344,8 +344,13 @@ In addition this script can also install `cabal-install`.
 
 ## Known users
 
-* Github action [haskell/actions/setup](https://github.com/haskell/actions/tree/main/setup)
-* [vabal](https://github.com/Franciman/vabal)
+* Github actions:
+	- [actions/virtual-environments](https://github.com/actions/virtual-environments)
+	- [haskell/actions/setup](https://github.com/haskell/actions/tree/main/setup)
+* mirrors:
+	- [sjtug](https://mirror.sjtu.edu.cn/docs/ghcup)
+* tools:
+	- [vabal](https://github.com/Franciman/vabal)
 
 ## Known problems
 
