@@ -117,6 +117,7 @@ for a list of all available options.
 If you need to overwrite the existing `build.mk`, check the default files
 in [data/build_mk](./data/build_mk), copy them somewhere, adjust them and
 pass `--config path/to/build.mk` to `ghcup compile ghc`.
+Common `build.mk` options are explained [here](https://gitlab.haskell.org/ghc/ghc/-/wikis/building/using#build-configuration).
 
 Make sure your system meets all the [prerequisites](https://gitlab.haskell.org/ghc/ghc/-/wikis/building/preparation).
 
