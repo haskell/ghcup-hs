@@ -1045,7 +1045,7 @@ ghcCompileOpts =
           (option
             str
             (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
-              "Absolute path to patch directory (applied in order, uses -p1)"
+              "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
             )
           )
     <*> optional
