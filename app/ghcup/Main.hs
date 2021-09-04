@@ -57,6 +57,7 @@ import           Data.Void
 import           GHC.IO.Encoding
 import           Haskus.Utils.Variant.Excepts
 import           Language.Haskell.TH
+import           Language.Haskell.TH.Syntax     ( Quasi(qAddDependentFile) )
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
@@ -1405,6 +1406,7 @@ plan_json :: String
 plan_json = $( LitE . StringL <$>
                      runIO (handleIO (\_ -> pure "") $ do
                              fp <- findPlanJson (ProjectRelativeToDir ".")
+                             qAddDependentFile fp
                              c <- B.readFile fp
                              (Just res) <- pure $ decodeStrict' @Value c
                              pure $ T.unpack $ decUTF8Safe' $ encodePretty res
