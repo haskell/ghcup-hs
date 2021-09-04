@@ -6,7 +6,7 @@
 
 3. Add ChangeLog entry
 
-4. Add/fix downloads in `ghcup-<ver>.yaml`, then verify with `ghcup-gen check -f ghcup-<ver>.yaml` and possibly (example only) `ghcup-gen check-tarballs -f ghcup-<ver>.yaml -u 'ghc-8.10.7'`. Generally, new GHC/cabal/stack/hls versions are only added to the latest yaml file. New GHCup versions are added to all (great care must be taken here to not break the parser... e.g. ARM platforms don't parse in all older formats).
+4. Add/fix downloads in `ghcup-<ver>.yaml` (under `data/metadata`), then verify with `ghcup-gen check -f ghcup-<ver>.yaml` and possibly (example only) `ghcup-gen check-tarballs -f ghcup-<ver>.yaml -u 'ghc-8.10.7'`. Generally, new GHC/cabal/stack/hls versions are only added to the latest yaml file. New GHCup versions are added to all (great care must be taken here to not break the parser... e.g. ARM platforms don't parse in all older formats).
 
 5. Commit and git push with tag. Wait for tests to succeed and release artifacts to build.
 

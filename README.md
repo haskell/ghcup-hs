@@ -91,7 +91,7 @@ handles your haskell packages and can demand that [a specific version](https://c
 ### Configuration
 
 A configuration file can be put in `~/.ghcup/config.yaml`. The default config file
-explaining all possible configurations can be found in this repo: [config.yaml](./config.yaml).
+explaining all possible configurations can be found in this repo: [config.yaml](./data/config.yaml).
 
 Partial configuration is fine. Command line options always override the config file settings.
 
@@ -102,7 +102,7 @@ For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man`
 
 ### Shell-completion
 
-Shell completions are in `shell-completions`.
+Shell completions are in [scripts/shell-completions](./scripts/shell-completions) directory of this repository.
 
 For bash: install `shell-completions/bash`
 as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
