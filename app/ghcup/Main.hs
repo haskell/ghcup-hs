@@ -1403,15 +1403,14 @@ describe_result = $( LitE . StringL <$>
                    )
 
 plan_json :: String
-plan_json = $( LitE . StringL <$>
-                     runIO (handleIO (\_ -> pure "") $ do
+plan_json = $( do
+                (fp, c) <- runIO (handleIO (\_ -> pure ("", "")) $ do
                              fp <- findPlanJson (ProjectRelativeToDir ".")
-                             qAddDependentFile fp
                              c <- B.readFile fp
                              (Just res) <- pure $ decodeStrict' @Value c
-                             pure $ T.unpack $ decUTF8Safe' $ encodePretty res
-                     )
-                   )
+                             pure (fp, T.unpack $ decUTF8Safe' $ encodePretty res))
+                when (not . null $ fp ) $ qAddDependentFile fp
+                pure . LitE . StringL $ c)
 
 formatConfig :: UserSettings -> String
 formatConfig settings

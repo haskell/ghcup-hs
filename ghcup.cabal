@@ -26,6 +26,10 @@ extra-doc-files:
   data/metadata/ghcup-0.0.6.yaml
   data/metadata/ghcup-0.0.7.yaml
 
+extra-source-files:
+  data/build_mk/default
+  data/build_mk/cross
+
 source-repository head
   type:     git
   location: https://gitlab.haskell.org/haskell/ghcup-hs.git
