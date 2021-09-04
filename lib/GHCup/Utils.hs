@@ -791,7 +791,12 @@ applyPatches :: (MonadReader env m, HasDirs env, HasLog env, MonadIO m)
              -> FilePath   -- ^ dir to apply patches in
              -> Excepts '[PatchFailed] m ()
 applyPatches pdir ddir = do
-  patches <- (fmap . fmap) (pdir </>) $ liftIO $ listDirectory pdir
+  patches <- (fmap . fmap) (pdir </>) $ liftIO $ findFiles
+      pdir
+      (makeRegexOpts compExtended
+                     execBlank
+                     ([s|.+\.(patch|diff)$|] :: ByteString)
+      )
   forM_ (sort patches) $ \patch' -> do
     lift $ logInfo $ "Applying patch " <> T.pack patch'
     fmap (either (const Nothing) Just)
