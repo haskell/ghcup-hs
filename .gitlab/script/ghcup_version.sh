@@ -18,9 +18,9 @@ raw_eghcup() {
 
 eghcup() {
 	if [ "${OS}" = "WINDOWS" ] ; then
-		ghcup -v -c -s file:/$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml "$@"
+		ghcup -v -c -s file:/$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
 	else
-		ghcup -v -c -s file://$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml "$@"
+		ghcup -v -c -s file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
 	fi
 }
 
@@ -92,7 +92,7 @@ rm -rf "${GHCUP_DIR}"
 ### manual cli based testing
 
 
-ghcup-gen check -f ghcup-${JSON_VERSION}.yaml
+ghcup-gen check -f data/metadata/ghcup-${JSON_VERSION}.yaml
 
 eghcup --numeric-version
 
@@ -172,10 +172,10 @@ else
 fi
 
 # check that lazy loading works for 'whereis'
-cp "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml" "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml.bak"
-echo '**' > "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml"
+cp "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml" "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml.bak"
+echo '**' > "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml"
 eghcup whereis ghc $(ghc --numeric-version)
-mv -f "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml.bak" "$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml"
+mv -f "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml.bak" "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml"
 
 eghcup rm $(ghc --numeric-version)
 

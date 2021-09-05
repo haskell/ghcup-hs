@@ -1,0 +1,9 @@
+V=0
+BUILD_MAN = NO
+BUILD_SPHINX_HTML = NO
+BUILD_SPHINX_PDF = NO
+HADDOCK_DOCS = NO
+ifneq "$(BuildFlavour)" ""
+include mk/flavours/$(BuildFlavour).mk
+endif
+Stage1Only = YES

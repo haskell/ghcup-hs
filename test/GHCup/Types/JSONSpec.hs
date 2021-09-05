@@ -13,4 +13,5 @@ import           Test.Hspec
 
 spec :: Spec
 spec = do
-  roundtripAndGoldenSpecs (Proxy @GHCupInfo)
+  roundtripAndGoldenSpecsWithSettings (defaultSettings { goldenDirectoryOption = CustomDirectoryName "test/golden" }) (Proxy @GHCupInfo)
+

@@ -19,7 +19,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Configuration](#configuration)
      * [Manpages](#manpages)
      * [Shell-completion](#shell-completion)
-     * [Cross support](#cross-support)
+     * [Compiling from sourc](#compiling-from-source)
      * [XDG support](#xdg-support)
      * [Env variables](#env-variables)
      * [Installing custom bindists](#installing-custom-bindists)
@@ -91,7 +91,7 @@ handles your haskell packages and can demand that [a specific version](https://c
 ### Configuration
 
 A configuration file can be put in `~/.ghcup/config.yaml`. The default config file
-explaining all possible configurations can be found in this repo: [config.yaml](./config.yaml).
+explaining all possible configurations can be found in this repo: [config.yaml](./data/config.yaml).
 
 Partial configuration is fine. Command line options always override the config file settings.
 
@@ -102,14 +102,26 @@ For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man`
 
 ### Shell-completion
 
-Shell completions are in `shell-completions`.
+Shell completions are in [scripts/shell-completions](./scripts/shell-completions) directory of this repository.
 
 For bash: install `shell-completions/bash`
 as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
 and make sure your bashrc sources the startup script
 (`/usr/share/bash-completion/bash_completion` on some distros).
 
-### Cross support
+### Compiling from source
+
+Compiling from source is supported for both source tarballs and arbitrary git refs. See `ghcup compile ghc --help`
+for a list of all available options.
+
+If you need to overwrite the existing `build.mk`, check the default files
+in [data/build_mk](./data/build_mk), copy them somewhere, adjust them and
+pass `--config path/to/build.mk` to `ghcup compile ghc`.
+Common `build.mk` options are explained [here](https://gitlab.haskell.org/ghc/ghc/-/wikis/building/using#build-configuration).
+
+Make sure your system meets all the [prerequisites](https://gitlab.haskell.org/ghc/ghc/-/wikis/building/preparation).
+
+#### Cross support
 
 ghcup can compile and install a cross GHC for any target. However, this
 requires that the build host has a complete cross toolchain and various

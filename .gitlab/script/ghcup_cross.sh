@@ -13,7 +13,7 @@ ecabal() {
 }
 
 eghcup() {
-	ghcup -v -c -s file://$CI_PROJECT_DIR/ghcup-${JSON_VERSION}.yaml "$@"
+	ghcup -v -c -s file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
 }
 
 git describe --always

@@ -65,9 +65,10 @@ import           Data.Time.Format.ISO8601
 import           Data.Versions
 import           GHC.IO.Exception
 import           Haskus.Utils.Variant.Excepts
+import           Language.Haskell.TH
+import           Language.Haskell.TH.Syntax     ( Quasi(qAddDependentFile) )
 import           Optics
 import           Prelude                 hiding ( abs
-                                                , readFile
                                                 , writeFile
                                                 )
 import           Safe                    hiding ( at )
@@ -1922,26 +1923,12 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     pure tver
 
  where
-  defaultConf = case targetGhc of
-    Left (GHCTargetVersion (Just _) _) -> [s|
-V=0
-BUILD_MAN = NO
-BUILD_SPHINX_HTML = NO
-BUILD_SPHINX_PDF = NO
-HADDOCK_DOCS = NO
-ifneq "$(BuildFlavour)" ""
-include mk/flavours/$(BuildFlavour).mk
-endif
-Stage1Only = YES|]
-    _ -> [s|
-V=0
-BUILD_MAN = NO
-BUILD_SPHINX_HTML = NO
-BUILD_SPHINX_PDF = NO
-HADDOCK_DOCS = YES
-ifneq "$(BuildFlavour)" ""
-include mk/flavours/$(BuildFlavour).mk
-endif|]
+  defaultConf = 
+    let cross_mk = $(LitE . StringL <$> (qAddDependentFile "data/build_mk/cross" >> runIO (readFile "data/build_mk/cross")))
+        default_mk = $(LitE . StringL <$> (qAddDependentFile "data/build_mk/default" >> runIO (readFile "data/build_mk/default")))
+    in case targetGhc of
+         Left (GHCTargetVersion (Just _) _) -> cross_mk
+         _ -> default_mk
 
   compileHadrianBindist :: ( MonadReader env m
                            , HasDirs env

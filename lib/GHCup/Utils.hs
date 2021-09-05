@@ -791,7 +791,12 @@ applyPatches :: (MonadReader env m, HasDirs env, HasLog env, MonadIO m)
              -> FilePath   -- ^ dir to apply patches in
              -> Excepts '[PatchFailed] m ()
 applyPatches pdir ddir = do
-  patches <- (fmap . fmap) (pdir </>) $ liftIO $ listDirectory pdir
+  patches <- (fmap . fmap) (pdir </>) $ liftIO $ findFiles
+      pdir
+      (makeRegexOpts compExtended
+                     execBlank
+                     ([s|.+\.(patch|diff)$|] :: ByteString)
+      )
   forM_ (sort patches) $ \patch' -> do
     lift $ logInfo $ "Applying patch " <> T.pack patch'
     fmap (either (const Nothing) Just)
@@ -1035,7 +1040,7 @@ ensureGlobalTools = do
   let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
   void $ (\(DigestError _ _) -> do
       lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
-      lift $ logDebug ("rm -f " <> T.pack shimDownload)
+      lift $ logDebug ("rm -f " <> T.pack (cacheDir dirs </> "gs.exe"))
       lift $ hideError doesNotExistErrorType $ recycleFile (cacheDir dirs </> "gs.exe")
       liftE @'[DigestError , DownloadFailed] $ dl
     ) `catchE` (liftE @'[DigestError , DownloadFailed] dl)

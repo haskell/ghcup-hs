@@ -24,7 +24,7 @@ export BOOTSTRAP_HASKELL_NONINTERACTIVE=yes
 export BOOTSTRAP_HASKELL_GHC_VERSION=$GHC_VERSION
 export BOOTSTRAP_HASKELL_CABAL_VERSION=$CABAL_VERSION
 
-./bootstrap-haskell
+./scripts/bootstrap/bootstrap-haskell
 
 [ "$(ghc --numeric-version)" = "${GHC_VERSION}" ]
 

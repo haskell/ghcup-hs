@@ -103,7 +103,7 @@ variables:
   artifacts:
     expire_in: 2 week
     paths:
-      - golden
+      - test/golden
       - dist-newstyle/cache/
     when: on_failure
 
@@ -240,7 +240,7 @@ test:linux:bootstrap_script:
 test:windows:bootstrap_powershell_script:
   stage: test
   script:
-    - ./bootstrap-haskell.ps1 -InstallDir $CI_PROJECT_DIR -BootstrapUrl $CI_PROJECT_DIR/bootstrap-haskell -InBash
+    - ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir $CI_PROJECT_DIR -BootstrapUrl $CI_PROJECT_DIR/bootstrap-haskell -InBash
   after_script:
     - "[Environment]::SetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', $null, [System.EnvironmentVariableTarget]::User)"
     - "[Environment]::SetEnvironmentVariable('GHCUP_MSYS2', $null, [System.EnvironmentVariableTarget]::User)"
