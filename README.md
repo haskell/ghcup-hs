@@ -19,7 +19,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Configuration](#configuration)
      * [Manpages](#manpages)
      * [Shell-completion](#shell-completion)
-     * [Compiling from sourc](#compiling-from-source)
+     * [Compiling from source](#compiling-from-source)
      * [XDG support](#xdg-support)
      * [Env variables](#env-variables)
      * [Installing custom bindists](#installing-custom-bindists)
