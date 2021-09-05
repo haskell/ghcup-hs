@@ -19,7 +19,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
      * [Configuration](#configuration)
      * [Manpages](#manpages)
      * [Shell-completion](#shell-completion)
-     * [Compiling from source](#compiling-from-source)
+     * [Compiling GHC from source](#compiling-ghc-from-source)
      * [XDG support](#xdg-support)
      * [Env variables](#env-variables)
      * [Installing custom bindists](#installing-custom-bindists)
@@ -109,7 +109,7 @@ as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
 and make sure your bashrc sources the startup script
 (`/usr/share/bash-completion/bash_completion` on some distros).
 
-### Compiling from source
+### Compiling GHC from source
 
 Compiling from source is supported for both source tarballs and arbitrary git refs. See `ghcup compile ghc --help`
 for a list of all available options.
