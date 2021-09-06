@@ -28,11 +28,11 @@ data ProcessError = NonZeroExit Int FilePath [String]
 
 instance Pretty ProcessError where
   pPrint (NonZeroExit e exe args) =
-    text "Process " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text " failed with exit code " <+> text (show e) <+> "."
+    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "failed with exit code" <+> text (show e <> ".")
   pPrint (PTerminated exe args) =
-    text "Process " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text " terminated."
+    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "terminated."
   pPrint (PStopped exe args) =
-    text "Process " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text " stopped."
+    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "stopped."
   pPrint (NoSuchPid exe args) =
     text "Could not find PID for process running " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text "."
 

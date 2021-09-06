@@ -165,17 +165,17 @@ getBase :: ( MonadReader env m
            , MonadMask m
            )
         => URI
-        -> Excepts '[JSONError] m GHCupInfo
+        -> Excepts '[JSONError, FileDoesNotExistError] m GHCupInfo
 getBase uri = do
-  Settings { noNetwork } <- lift getSettings
+  Settings { noNetwork, downloader } <- lift getSettings
 
   -- try to download yaml... usually this writes it into cache dir,
   -- but in some cases not (e.g. when using file://), so we honour
   -- the return filepath, if any
   mYaml <- if noNetwork && view (uriSchemeL' % schemeBSL') uri /= "file" -- for file://, let it fall through
            then pure Nothing
-           else handleIO (\e -> warnCache (displayException e) >> pure Nothing)
-               . catchE @_ @_ @'[] (\e@(DownloadFailed _) -> warnCache (prettyShow e) >> pure Nothing)
+           else handleIO (\e -> lift (warnCache (displayException e) downloader) >> pure Nothing)
+               . catchE @_ @_ @'[] (\e@(DownloadFailed _) -> lift (warnCache (prettyShow e) downloader) >> pure Nothing)
                . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed
                . fmap Just
                . smartDl
@@ -183,7 +183,7 @@ getBase uri = do
 
   -- if we didn't get a filepath from the download, use the cached yaml
   actualYaml <- maybe (lift $ yamlFromCache uri) pure mYaml
-  yamlContents <- liftIO $ L.readFile actualYaml
+  yamlContents <- liftIOException doesNotExistErrorType (FileDoesNotExistError actualYaml) $ liftIO $ L.readFile actualYaml
   lift $ logDebug $ "Decoding yaml at: " <> T.pack actualYaml
 
   liftE
@@ -201,9 +201,19 @@ getBase uri = do
     handleIO (\e -> logWarn $ "Couldn't remove file " <> T.pack efp <> ", error was: " <> T.pack (displayException e))
       (hideError doesNotExistErrorType $ rmFile efp)
     liftIO $ hideError doesNotExistErrorType $ setAccessTime fp (posixSecondsToUTCTime (fromIntegral @Int 0))
-  warnCache s = do
-    lift $ logWarn "Could not get download info, trying cached version (this may not be recent!)"
-    lift $ logDebug $ "Error was: " <> T.pack s
+
+  warnCache :: (MonadReader env m, HasLog env, MonadMask m, MonadCatch m, MonadIO m) => FilePath -> Downloader -> m ()
+  warnCache s downloader' = do
+    let tryDownloder = case downloader' of
+                         Curl -> "Wget"
+                         Wget -> "Curl"
+#if defined(INTERNAL_DOWNLOADER)
+                         Internal -> "Curl"
+#endif
+    logWarn $ "Could not get download info, trying cached version (this may not be recent!)" <> "\n" <>
+      "If this problem persists, consider switching downloader via: " <> "\n    " <>
+      "ghcup config set downloader " <> tryDownloder
+    logDebug $ "Error was: " <> T.pack s
 
   -- First check if the json file is in the ~/.ghcup/cache dir
   -- and check it's access time. If it has been accessed within the

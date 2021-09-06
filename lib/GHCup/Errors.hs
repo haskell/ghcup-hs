@@ -285,31 +285,37 @@ instance Pretty HadrianNotFound where
     -------------------------
 
 -- | A download failed. The underlying error is encapsulated.
-data DownloadFailed = forall x xs . (Show x, Show (V xs), Pretty x, Pretty (V xs)) => DownloadFailed (V (x ': xs))
+data DownloadFailed = forall xs . (ToVariantMaybe DownloadFailed xs, PopVariant DownloadFailed xs, Show (V xs), Pretty (V xs)) => DownloadFailed (V xs)
 
 instance Pretty DownloadFailed where
   pPrint (DownloadFailed reason) =
-    text "Download failed:" <+> pPrint reason
+    case reason of
+      VMaybe (_ :: DownloadFailed) -> pPrint reason
+      _ -> text "Download failed:" <+> pPrint reason
 
 deriving instance Show DownloadFailed
 
 
 -- | A build failed.
-data BuildFailed = forall es . (Pretty (V es), Show (V es)) => BuildFailed FilePath (V es)
+data BuildFailed = forall es . (ToVariantMaybe BuildFailed es, PopVariant BuildFailed es, Pretty (V es), Show (V es)) => BuildFailed FilePath (V es)
 
 instance Pretty BuildFailed where
   pPrint (BuildFailed path reason) =
-    text "BuildFailed failed in dir" <+> text (path <> ":") <+> pPrint reason
+    case reason of
+      VMaybe (_ :: BuildFailed) -> pPrint reason
+      _ -> text "BuildFailed failed in dir" <+> text (path <> ":") <+> pPrint reason
 
 deriving instance Show BuildFailed
 
 
 -- | Setting the current GHC version failed.
-data GHCupSetError = forall es . (Show (V es), Pretty (V es)) => GHCupSetError (V es)
+data GHCupSetError = forall es . (ToVariantMaybe GHCupSetError es, PopVariant GHCupSetError es, Show (V es), Pretty (V es)) => GHCupSetError (V es)
 
 instance Pretty GHCupSetError where
   pPrint (GHCupSetError reason) =
-    text "Setting the current GHC version failed:" <+> pPrint reason
+    case reason of
+      VMaybe (_ :: GHCupSetError) -> pPrint reason
+      _ -> text "Setting the current GHC version failed:" <+> pPrint reason
 
 deriving instance Show GHCupSetError
 

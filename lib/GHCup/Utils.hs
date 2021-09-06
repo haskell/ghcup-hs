@@ -834,6 +834,8 @@ getChangeLog dls tool (Right tag) =
 --   2. the install destination, depending on whether the build failed
 runBuildAction :: ( Pretty (V e)
                   , Show (V e)
+                  , PopVariant BuildFailed e
+                  , ToVariantMaybe BuildFailed e
                   , MonadReader env m
                   , HasDirs env
                   , HasSettings env
