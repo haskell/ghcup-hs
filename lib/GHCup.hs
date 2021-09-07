@@ -417,7 +417,7 @@ installCabalBindist :: ( MonadMask m
                          m
                          ()
 installCabalBindist dlinfo ver isoFilepath forceInstall = do
-  lift $ $(logDebug) $ "Requested to install cabal version " <> prettyVer ver
+  lift $ logDebug $ "Requested to install cabal version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
@@ -429,7 +429,7 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
     | forceInstall
     , regularCabalInstalled
     , Nothing <- isoFilepath -> do
-        lift $ $(logInfo) $ "Removing the currently installed version first!"
+        lift $ logInfo $ "Removing the currently installed version first!"
         liftE $ rmCabalVer ver
 
     | not forceInstall
@@ -453,7 +453,7 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
 
   case isoFilepath of
     Just isoDir -> do             -- isolated install
-      lift $ $(logInfo) $ "isolated installing Cabal to " <> T.pack isoDir
+      lift $ logInfo $ "isolated installing Cabal to " <> T.pack isoDir
       liftE $ installCabalUnpacked workdir isoDir Nothing forceInstall
 
     Nothing -> do                 -- regular install
@@ -465,7 +465,6 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
       when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
       
 checkIfToolInstalled :: ( MonadIO m
-                        , MonadLogger m
                         , MonadReader env m
                         , HasDirs env
                         , MonadCatch m) =>
@@ -486,14 +485,14 @@ checkIfToolInstalled tool ver = do
     _ -> pure False
 
 -- | Install an unpacked cabal distribution.Symbol
-installCabalUnpacked :: (MonadLogger m, MonadCatch m, MonadIO m)
+installCabalUnpacked :: (MonadCatch m, HasLog env, MonadIO m, MonadReader env m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated install
               -> Bool          -- ^ Force Install
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
 installCabalUnpacked path inst mver' forceInstall = do
-  lift $ $(logInfo) "Installing cabal"
+  lift $ logInfo "Installing cabal"
   let cabalFile = "cabal"
   liftIO $ createDirRecursive' inst
   let destFileName = cabalFile

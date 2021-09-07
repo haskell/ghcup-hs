@@ -250,7 +250,6 @@ getInstalledGHCs = do
 -- | Get all installed cabals, by matching on @~\/.ghcup\/bin/cabal-*@.
 getInstalledCabals :: ( MonadReader env m
                       , HasDirs env
-                      , HasLog env
                       , MonadIO m
                       , MonadCatch m
                       )
@@ -268,7 +267,7 @@ getInstalledCabals = do
 
 
 -- | Whether the given cabal version is installed.
-cabalInstalled :: (HasLog env, MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
+cabalInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
 cabalInstalled ver = do
   vers <- fmap rights getInstalledCabals
   pure $ elem ver vers
