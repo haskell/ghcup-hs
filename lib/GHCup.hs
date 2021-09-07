@@ -476,12 +476,7 @@ checkIfToolInstalled tool ver = do
   Dirs { binDir } <- getDirs
 
   case tool of
-    Cabal -> do
-      v <- cabalInstalled ver
-      liftIO $ handleIO (\_ -> pure False)
-             $ fmap (\x -> v && x)
-             $ pathIsLink (binDir </> "cabal" <> exeExt)
-
+    Cabal -> cabalInstalled ver
     _ -> pure False
 
 -- | Install an unpacked cabal distribution.Symbol
