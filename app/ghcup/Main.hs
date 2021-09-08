@@ -336,7 +336,7 @@ com =
           (   Install
           <$> info
                 (installParser <**> helper)
-                (  progDesc "Install or update GHC/cabal/HLS"
+                (  progDesc "Install or update GHC/cabal/HLS/stack"
                 <> footerDoc (Just $ text installToolFooter)
                 )
           )
@@ -352,7 +352,7 @@ com =
            "rm"
            (info
              (Rm <$> rmParser <**> helper)
-             (  progDesc "Remove a GHC/cabal/HLS version"
+             (  progDesc "Remove a GHC/cabal/HLS/stack version"
              <> footerDoc (Just $ text rmFooter)
              )
            )
@@ -452,20 +452,20 @@ com =
   installToolFooter = [s|Discussion:
   Installs GHC or cabal. When no command is given, installs GHC
   with the specified version/tag.
-  It is recommended to always specify a subcommand (ghc/cabal/hls).|]
+  It is recommended to always specify a subcommand (ghc/cabal/hls/stack).|]
 
   setFooter :: String
   setFooter = [s|Discussion:
   Sets the currently active GHC or cabal version. When no command is given,
   defaults to setting GHC with the specified version/tag (if no tag
   is given, sets GHC to 'recommended' version).
-  It is recommended to always specify a subcommand (ghc/cabal/hls).|]
+  It is recommended to always specify a subcommand (ghc/cabal/hls/stack).|]
 
   rmFooter :: String
   rmFooter = [s|Discussion:
   Remove the given GHC or cabal version. When no command is given,
   defaults to removing GHC with the specified version.
-  It is recommended to always specify a subcommand (ghc/cabal/hls).|]
+  It is recommended to always specify a subcommand (ghc/cabal/hls/stack).|]
 
   changeLogFooter :: String
   changeLogFooter = [s|Discussion:
@@ -546,7 +546,7 @@ installParser =
            (   InstallHLS
            <$> info
                  (installOpts (Just HLS) <**> helper)
-                 (  progDesc "Install haskell-languge-server"
+                 (  progDesc "Install haskell-language-server"
                  <> footerDoc (Just $ text installHLSFooter)
                  )
            )
