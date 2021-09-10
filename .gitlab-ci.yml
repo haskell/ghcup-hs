@@ -77,7 +77,7 @@ variables:
 
 .freebsd:
   tags:
-    - x86_64-freebsd
+    - x86_64-freebsd13
   variables:
     OS: "FREEBSD"
     ARCH: "64"
