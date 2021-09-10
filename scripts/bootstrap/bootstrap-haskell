@@ -293,16 +293,7 @@ ask_bashrc() {
 
 			read -r bashrc_answer </dev/tty
 		else
-			# On windows .bashrc isn't an important user config, so we adjust it
-			# always. On other platforms, let's be a bit more conservative.
-			case "${plat}" in
-					MSYS*|MINGW*)
-						return 1
-						;;
-					*)
-						return 0
-						;;
-			esac
+			return 0
 		fi
 		case $bashrc_answer in
 			[Pp]* | "")
