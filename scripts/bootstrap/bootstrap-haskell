@@ -176,7 +176,15 @@ download_ghcup() {
 					_url=${base_url}/${ghver}/armv7-linux-ghcup-${ghver}
 					;;
 				aarch64|arm64|armv8l)
-					_url=${base_url}/${ghver}/aarch64-linux-ghcup-${ghver}
+					# we could be in a 32bit docker container, in which
+					# case uname doesn't give us what we want
+					if [ "$(getconf LONG_BIT)" = "32" ] ; then
+						_url=${base_url}/${ghver}/armv7-linux-ghcup-${ghver}
+					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
+						_url=${base_url}/${ghver}/aarch64-linux-ghcup-${ghver}
+					else
+						die "Unknown long bit size: $(getconf LONG_BIT)"
+					fi
 					;;
 				*) die "Unknown architecture: ${arch}"
 					;;
