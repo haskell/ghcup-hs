@@ -2301,9 +2301,12 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-x86_64-darwin.tar.xz
               dlHash: 8e1367a4a1fc86ff0fd82ee057320a7b974595ba7999457b42035467ba06190c
           FreeBSD:
-            unknown_versioning:
+            '( >= 12 && < 13 )':
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-x86_64-freebsd.tar.xz
               dlHash: 56b5b37396c16a29f164a6963f24bd88f09e1d37448542ed61a683325f0a868b
+            '( >= 13 )':
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.0.0/cabal-install-3.6.0.0-x86_64-freebsd13.tar.xz
+              dlHash: a283aa498702a3e286aa08e004c2a389538cbb47ec7096a25682fb7d57f6bb7f
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-x86_64-windows.zip
