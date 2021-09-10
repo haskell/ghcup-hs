@@ -2314,6 +2314,15 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-aarch64-linux-deb10.tar.xz
               dlHash: 534f71cd4e1d9758dc73066cc5733c5838874710aeb3aa88541de6c6d042d9ec
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.0.0/cabal-install-3.6.0.0-aarch64-darwin-big-sur.tar.xz
+              dlHash: 7acf740946d996ede835edf68887e6b2f1e16d1b95e94054d266463f38d136d9
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.0.0/cabal-install-3.6.0.0-armv7-linux.tar.xz
+              dlHash: 11b5ca042a8bf45971224f2127a3e9d6b803f09210042ca80a254bea06f01a2e
   GHCup:
     0.1.16.2:
       viTags:
