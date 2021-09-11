@@ -184,6 +184,7 @@ installGHCBindist :: ( MonadFail m
                   => DownloadInfo    -- ^ where/how to download
                   -> Version         -- ^ the version to install
                   -> Maybe FilePath  -- ^ isolated filepath if user passed any
+                  -> Bool            -- ^ Force install
                   -> Excepts
                        '[ AlreadyInstalled
                         , BuildFailed
@@ -198,15 +199,26 @@ installGHCBindist :: ( MonadFail m
                         ]
                        m
                        ()
-installGHCBindist dlinfo ver isoFilepath = do
+installGHCBindist dlinfo ver isoFilepath forceInstall = do
   let tver = mkTVer ver
 
   lift $ logDebug $ "Requested to install GHC with " <> prettyVer ver
 
-  case isoFilepath of
-    -- we only care for already installed errors in regular (non-isolated) installs
-    Nothing -> whenM (lift $ ghcInstalled tver) (throwE $ AlreadyInstalled GHC ver)
-    _ -> pure ()
+  regularGHCInstalled <- lift $ checkIfToolInstalled GHC ver
+  
+  if
+    | not forceInstall
+    , regularGHCInstalled
+    , Nothing <- isoFilepath -> do
+        (throwE $ AlreadyInstalled GHC ver)
+
+    | forceInstall
+    , regularGHCInstalled
+    , Nothing <- isoFilepath -> do
+        lift $ logInfo $ "Removing the currently installed GHC version first!"
+        liftE $ rmGHCVer tver
+
+    | otherwise -> pure ()
 
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
@@ -215,13 +227,13 @@ installGHCBindist dlinfo ver isoFilepath = do
   ghcdir <- lift $ ghcupGHCDir tver
 
   toolchainSanityChecks
-  
+
   case isoFilepath of
     Just isoDir -> do                        -- isolated install
       lift $ logInfo $ "isolated installing GHC to " <> T.pack isoDir
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) isoDir ver
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) isoDir ver forceInstall
     Nothing -> do                            -- regular install
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver forceInstall
 
       -- make symlinks & stuff when regular install,
       liftE $ postGHCInstall tver
@@ -254,6 +266,7 @@ installPackedGHC :: ( MonadMask m
                  -> Maybe TarDir      -- ^ Subdir of the archive
                  -> FilePath          -- ^ Path to install to
                  -> Version           -- ^ The GHC version
+                 -> Bool              -- ^ Force install
                  -> Excepts
                       '[ BuildFailed
                        , UnknownArchive
@@ -261,10 +274,11 @@ installPackedGHC :: ( MonadMask m
                        , DirNotEmpty
                        , ArchiveResult
                        ] m ()
-installPackedGHC dl msubdir inst ver = do
+installPackedGHC dl msubdir inst ver forceInstall = do
   PlatformRequest {..} <- lift getPlatformReq
 
-  liftE $ installDestSanityCheck inst
+  unless forceInstall
+    (liftE $ installDestSanityCheck inst)
 
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
@@ -275,7 +289,7 @@ installPackedGHC dl msubdir inst ver = do
   workdir <- maybe (pure tmpUnpack)
                    (liftE . intoSubdir tmpUnpack)
                    msubdir
-
+  
   liftE $ runBuildAction tmpUnpack
                          (Just inst)
                          (installUnpackedGHC workdir inst ver)
@@ -365,6 +379,7 @@ installGHCBin :: ( MonadFail m
                  )
               => Version         -- ^ the version to install
               -> Maybe FilePath  -- ^ isolated install filepath, if user passed any
+              -> Bool            -- ^ force install
               -> Excepts
                    '[ AlreadyInstalled
                     , BuildFailed
@@ -379,9 +394,9 @@ installGHCBin :: ( MonadFail m
                     ]
                    m
                    ()
-installGHCBin ver isoFilepath = do
+installGHCBin ver isoFilepath forceInstall = do
   dlinfo <- liftE $ getDownloadInfo GHC ver
-  installGHCBindist dlinfo ver isoFilepath
+  installGHCBindist dlinfo ver isoFilepath forceInstall
 
 
 -- | Like 'installCabalBin', except takes the 'DownloadInfo' as
@@ -479,8 +494,9 @@ checkIfToolInstalled tool ver = do
     Cabal -> cabalInstalled ver
     HLS   -> hlsInstalled ver
     Stack -> stackInstalled ver
+    GHC   -> ghcInstalled $ mkTVer ver
     _     -> pure False
-
+    
 -- | Install an unpacked cabal distribution.Symbol
 installCabalUnpacked :: (MonadCatch m, HasLog env, MonadIO m, MonadReader env m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
@@ -1960,6 +1976,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                                (Just $ RegexDir "ghc-.*")
                                ghcdir
                                (tver ^. tvVersion)
+                               False       -- not a force install, since we already overwrite when compiling.
 
     liftIO $ B.writeFile (ghcdir </> ghcUpSrcBuiltFile) bmk
     

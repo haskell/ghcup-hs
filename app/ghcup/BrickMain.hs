@@ -440,7 +440,7 @@ install' _ (_, ListResult {..}) = do
       case lTool of
         GHC   -> do
           let vi = getVersionInfo lVer GHC dls
-          liftE $ installGHCBin lVer Nothing $> vi
+          liftE $ installGHCBin lVer Nothing False $> vi
         Cabal -> do
           let vi = getVersionInfo lVer Cabal dls
           liftE $ installCabalBin lVer Nothing False $> vi

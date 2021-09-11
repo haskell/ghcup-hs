@@ -1737,7 +1737,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 (case instBindist of
                    Nothing -> runInstTool instPlatform $ do
                      (v, vi) <- liftE $ fromVersion instVer GHC
-                     liftE $ installGHCBin (_tvVersion v) isolateDir
+                     liftE $ installGHCBin
+                               (_tvVersion v)
+                               isolateDir
+                               forceInstall
                      when instSet $ void $ liftE $ setGHC v SetGHCOnly
                      pure vi
                    Just uri -> do
@@ -1745,9 +1748,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                      runInstTool' s'{ settings = settings {noVerify = True}} instPlatform $ do
                        (v, vi) <- liftE $ fromVersion instVer GHC
                        liftE $ installGHCBindist
-                         (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
-                         (_tvVersion v)
-                         isolateDir
+                                 (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
+                                 (_tvVersion v)
+                                 isolateDir
+                                 forceInstall
                        when instSet $ void $ liftE $ setGHC v SetGHCOnly
                        pure vi
                   )
