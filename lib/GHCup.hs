@@ -869,7 +869,7 @@ setGHC ver sghc = do
   when (isNothing . _tvTarget $ ver) $ lift $ symlinkShareDir ghcdir verS
 
   case sghc of
-    SetGHCOnly -> lift $ warnAboutHlsCompatibility
+    SetGHCOnly -> lift warnAboutHlsCompatibility
     _          -> return ()
 
   pure ver
@@ -982,7 +982,7 @@ setHLS ver = do
 
   lift $ createLink destL wrapper
 
-  lift $ warnAboutHlsCompatibility
+  lift warnAboutHlsCompatibility
 
   pure ()
 
