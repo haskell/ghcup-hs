@@ -478,6 +478,7 @@ checkIfToolInstalled tool ver = do
   case tool of
     Cabal -> cabalInstalled ver
     HLS   -> hlsInstalled ver
+    Stack -> stackInstalled ver
     _     -> pure False
 
 -- | Install an unpacked cabal distribution.Symbol
@@ -726,7 +727,8 @@ installStackBin :: ( MonadMask m
                    , MonadFail m
                    )
                 => Version
-                -> Maybe FilePath
+                -> Maybe FilePath  -- ^ isolate install Dir (if any)
+                -> Bool            -- ^ Force install
                 -> Excepts
                      '[ AlreadyInstalled
                       , CopyError
@@ -741,9 +743,9 @@ installStackBin :: ( MonadMask m
                       ]
                      m
                      ()
-installStackBin ver isoFilepath = do
+installStackBin ver isoFilepath forceInstall = do
   dlinfo <- liftE $ getDownloadInfo Stack ver
-  installStackBindist dlinfo ver isoFilepath
+  installStackBindist dlinfo ver isoFilepath forceInstall
 
 
 -- | Like 'installStackBin', except takes the 'DownloadInfo' as
@@ -762,7 +764,8 @@ installStackBindist :: ( MonadMask m
                        )
                     => DownloadInfo
                     -> Version
-                    -> Maybe FilePath
+                    -> Maybe FilePath -- ^ isolate install Dir (if any)
+                    -> Bool           -- ^ Force install
                     -> Excepts
                          '[ AlreadyInstalled
                           , CopyError
@@ -777,18 +780,27 @@ installStackBindist :: ( MonadMask m
                           ]
                          m
                          ()
-installStackBindist dlinfo ver isoFilepath = do
+installStackBindist dlinfo ver isoFilepath forceInstall = do
   lift $ logDebug $ "Requested to install stack version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-  case isoFilepath of
-    Nothing ->             -- check previous versions in case of regular installs
-      whenM (lift (stackInstalled ver))
-      (throwE $ AlreadyInstalled Stack ver)
+  regularStackInstalled <- lift $ checkIfToolInstalled Stack ver
 
-    _ -> pure ()           -- don't do shit for isolates
+  if
+    | not forceInstall
+    , regularStackInstalled
+    , Nothing <- isoFilepath -> do
+        throwE $ AlreadyInstalled Stack ver
+
+    | forceInstall
+    , regularStackInstalled
+    , Nothing <- isoFilepath -> do
+        lift $ logInfo $ "Removing the currently installed version of Stack first!"
+        liftE $ rmStackVer ver
+
+    | otherwise -> pure ()
 
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
@@ -804,9 +816,9 @@ installStackBindist dlinfo ver isoFilepath = do
   case isoFilepath of
     Just isoDir -> do                 -- isolated install
       lift $ logInfo $ "isolated installing Stack to " <> T.pack isoDir
-      liftE $ installStackUnpacked workdir isoDir Nothing
+      liftE $ installStackUnpacked workdir isoDir Nothing forceInstall
     Nothing -> do                     -- regular install
-      liftE $ installStackUnpacked workdir binDir (Just ver)
+      liftE $ installStackUnpacked workdir binDir (Just ver) forceInstall
 
       -- create symlink if this is the latest version and a regular install
       sVers <- lift $ fmap rights getInstalledStacks
@@ -819,8 +831,9 @@ installStackUnpacked :: (MonadReader env m, HasLog env, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked stack bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated installs
+              -> Bool          -- ^ Force install
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
-installStackUnpacked path inst mver' = do
+installStackUnpacked path inst mver' forceInstall = do
   lift $ logInfo "Installing stack"
   let stackFile = "stack"
   liftIO $ createDirRecursive' inst
@@ -829,7 +842,8 @@ installStackUnpacked path inst mver' = do
                      <> exeExt
       destPath = inst </> destFileName
 
-  liftE $ throwIfFileAlreadyExists destPath
+  unless forceInstall
+    (liftE $ throwIfFileAlreadyExists destPath)
       
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     (path </> stackFile <> exeExt)
