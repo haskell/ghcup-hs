@@ -477,7 +477,8 @@ checkIfToolInstalled tool ver = do
 
   case tool of
     Cabal -> cabalInstalled ver
-    _ -> pure False
+    HLS   -> hlsInstalled ver
+    _     -> pure False
 
 -- | Install an unpacked cabal distribution.Symbol
 installCabalUnpacked :: (MonadCatch m, HasLog env, MonadIO m, MonadReader env m)
@@ -558,6 +559,7 @@ installHLSBindist :: ( MonadMask m
                   => DownloadInfo
                   -> Version
                   -> Maybe FilePath -- ^ isolated install path, if user passed any
+                  -> Bool           -- ^ Force install
                   -> Excepts
                        '[ AlreadyInstalled
                         , CopyError
@@ -572,20 +574,28 @@ installHLSBindist :: ( MonadMask m
                         ]
                        m
                        ()
-installHLSBindist dlinfo ver isoFilepath = do
+installHLSBindist dlinfo ver isoFilepath forceInstall = do
   lift $ logDebug $ "Requested to install hls version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
   Dirs {..} <- lift getDirs
 
-  case isoFilepath of
-    Nothing ->
-      -- we only check for already installed in regular (non-isolated) installs
-      whenM (lift (hlsInstalled ver))
-      (throwE $ AlreadyInstalled HLS ver)
+  regularHLSInstalled <- lift $ checkIfToolInstalled HLS ver
 
-    _ -> pure ()
+  if
+    | forceInstall
+    , regularHLSInstalled
+    , Nothing <- isoFilepath -> do  -- regular forced install
+        lift $ logInfo "Removing the currently installed version of HLS before force installing!"
+        liftE $ rmHLSVer ver
 
+    | not forceInstall
+    , regularHLSInstalled
+    , Nothing <- isoFilepath -> do  -- regular install
+        throwE $ AlreadyInstalled HLS ver
+
+    | otherwise -> pure ()
+    
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
 
@@ -600,10 +610,10 @@ installHLSBindist dlinfo ver isoFilepath = do
   case isoFilepath of
     Just isoDir -> do
       lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
-      liftE $ installHLSUnpacked workdir isoDir Nothing
+      liftE $ installHLSUnpacked workdir isoDir Nothing forceInstall
 
     Nothing -> do
-      liftE $ installHLSUnpacked workdir binDir (Just ver)
+      liftE $ installHLSUnpacked workdir binDir (Just ver) forceInstall
 
       -- create symlink if this is the latest version in a regular install
       hlsVers <- lift $ fmap rights getInstalledHLSs
@@ -616,8 +626,9 @@ installHLSUnpacked :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m,
               => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
               -> FilePath      -- ^ Path to install to
               -> Maybe Version -- ^ Nothing for isolated install
+              -> Bool          -- ^ is it a force install
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
-installHLSUnpacked path inst mver' = do
+installHLSUnpacked path inst mver' forceInstall = do
   lift $ logInfo "Installing HLS"
   liftIO $ createDirRecursive' inst
 
@@ -636,7 +647,8 @@ installHLSUnpacked path inst mver' = do
     let srcPath = path </> f
     let destPath = inst </> toF
 
-    liftE $ throwIfFileAlreadyExists destPath
+    unless forceInstall   -- if it is a force install, overwrite it.
+      (liftE $ throwIfFileAlreadyExists destPath)
       
     handleIO (throwE . CopyError . show) $ liftIO $ copyFile
       srcPath
@@ -651,7 +663,8 @@ installHLSUnpacked path inst mver' = do
       srcWrapperPath = path </> wrapper <> exeExt
       destWrapperPath = inst </> toF
 
-  liftE $ throwIfFileAlreadyExists destWrapperPath
+  unless forceInstall
+    (liftE $ throwIfFileAlreadyExists destWrapperPath)
       
   handleIO (throwE . CopyError . show) $ liftIO $ copyFile
     srcWrapperPath
@@ -675,7 +688,8 @@ installHLSBin :: ( MonadMask m
                  , MonadFail m
                  )
               => Version
-              -> Maybe FilePath
+              -> Maybe FilePath  -- isolated install Dir (if any)
+              -> Bool            -- force install
               -> Excepts
                    '[ AlreadyInstalled
                     , CopyError
@@ -690,9 +704,9 @@ installHLSBin :: ( MonadMask m
                     ]
                    m
                    ()
-installHLSBin ver isoFilepath = do
+installHLSBin ver isoFilepath forceInstall = do
   dlinfo <- liftE $ getDownloadInfo HLS ver
-  installHLSBindist dlinfo ver isoFilepath
+  installHLSBindist dlinfo ver isoFilepath forceInstall
 
 
 -- | Installs stack into @~\/.ghcup\/bin/stack-\<ver\>@ and

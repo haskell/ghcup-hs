@@ -449,7 +449,7 @@ install' _ (_, ListResult {..}) = do
           liftE $ upgradeGHCup Nothing False $> vi
         HLS   -> do
           let vi = getVersionInfo lVer HLS dls
-          liftE $ installHLSBin lVer Nothing $> vi
+          liftE $ installHLSBin lVer Nothing False $> vi
         Stack -> do
           let vi = getVersionInfo lVer Stack dls
           liftE $ installStackBin lVer Nothing $> vi

@@ -1812,16 +1812,20 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                  (case instBindist of
                    Nothing -> runInstTool instPlatform $ do
                      (v, vi) <- liftE $ fromVersion instVer HLS
-                     liftE $ installHLSBin (_tvVersion v) isolateDir
+                     liftE $ installHLSBin
+                               (_tvVersion v)
+                               isolateDir
+                               forceInstall
                      pure vi
                    Just uri -> do
                      s' <- appState
                      runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
                        (v, vi) <- liftE $ fromVersion instVer HLS
                        liftE $ installHLSBindist
-                           (DownloadInfo uri Nothing "")
-                           (_tvVersion v)
-                           isolateDir
+                                 (DownloadInfo uri Nothing "")
+                                 (_tvVersion v)
+                                 isolateDir
+                                 forceInstall
                        pure vi
                   )
                   >>= \case
