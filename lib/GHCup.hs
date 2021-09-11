@@ -487,9 +487,7 @@ checkIfToolInstalled :: ( MonadIO m
                         Version ->
                         m Bool
 
-checkIfToolInstalled tool ver = do
-  Dirs { binDir } <- getDirs
-
+checkIfToolInstalled tool ver =
   case tool of
     Cabal -> cabalInstalled ver
     HLS   -> hlsInstalled ver
