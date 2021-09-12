@@ -868,8 +868,6 @@ setGHC ver sghc = do
   -- create symlink for share dir
   when (isNothing . _tvTarget $ ver) $ lift $ symlinkShareDir ghcdir verS
 
-  case sghc of
-    SetGHCOnly -> lift warnAboutHlsCompatibility
   when (sghc == SetGHCOnly) $ lift warnAboutHlsCompatibility
 
   pure ver
@@ -1016,8 +1014,8 @@ setStack ver = do
   pure ()
 
 
--- | Warn if the installed and set HLS is not compatible
--- with the installed and set GHC version.
+-- | Warn if the installed and set HLS is not compatible with the installed and
+-- set GHC version.
 warnAboutHlsCompatibility :: ( MonadReader env m
                              , HasDirs env
                              , HasLog env
@@ -1029,12 +1027,12 @@ warnAboutHlsCompatibility :: ( MonadReader env m
 warnAboutHlsCompatibility = do
   supportedGHC <- hlsGHCVersions
   currentGHC   <- fmap _tvVersion <$> ghcSet Nothing
+  currentHLS   <- hlsSet
 
-  case currentGHC of
-    Just v | not (null supportedGHC)
-           , v `notElem` supportedGHC -> do
-      logWarn $ "The current GHC version is not compatible with the "
-        <> "current version of Haskell Language Server."
+  case (currentGHC, currentHLS) of
+    (Just gv, Just hv) | gv `notElem` supportedGHC -> do
+      logWarn $ "GHC " <> T.pack (prettyShow gv) <> " is not compatible with "
+        <> "Haskell Language Server " <> T.pack (prettyShow hv) <> "."
       logWarn $ "Haskell IDE support may not work correctly until this is "
         <> "fixed."
       logWarn $ "Install a different HLS version, or run `ghcup list` to see "
