@@ -870,7 +870,7 @@ setGHC ver sghc = do
 
   case sghc of
     SetGHCOnly -> lift warnAboutHlsCompatibility
-    _          -> return ()
+  when (sghc == SetGHCOnly) $ lift warnAboutHlsCompatibility
 
   pure ver
 
@@ -1016,8 +1016,8 @@ setStack ver = do
   pure ()
 
 
--- | Warn if there's an installed HLS that's not compatible with the installed
--- GHC version.
+-- | Warn if the installed and set HLS is not compatible
+-- with the installed and set GHC version.
 warnAboutHlsCompatibility :: ( MonadReader env m
                              , HasDirs env
                              , HasLog env
@@ -1031,7 +1031,8 @@ warnAboutHlsCompatibility = do
   currentGHC   <- fmap _tvVersion <$> ghcSet Nothing
 
   case currentGHC of
-    Just v | not (null supportedGHC) && v `notElem` supportedGHC -> do
+    Just v | not (null supportedGHC)
+           , v `notElem` supportedGHC -> do
       logWarn $ "The current GHC version is not compatible with the "
         <> "current version of Haskell Language Server."
       logWarn $ "Haskell IDE support may not work correctly until this is "
