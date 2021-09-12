@@ -441,16 +441,16 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
   regularCabalInstalled <- lift $ checkIfToolInstalled Cabal ver
 
   if
+    | not forceInstall
+    , regularCabalInstalled
+    ,  Nothing <- isoFilepath -> do
+        throwE $ AlreadyInstalled Cabal ver
+        
     | forceInstall
     , regularCabalInstalled
     , Nothing <- isoFilepath -> do
         lift $ logInfo $ "Removing the currently installed version first!"
         liftE $ rmCabalVer ver
-
-    | not forceInstall
-    , regularCabalInstalled
-    ,  Nothing <- isoFilepath -> do
-        throwE $ AlreadyInstalled Cabal ver
 
     | otherwise -> pure ()
 
@@ -479,22 +479,6 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
       let lInstCabal = headMay . reverse . sort $ cVers
       when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
       
-checkIfToolInstalled :: ( MonadIO m
-                        , MonadReader env m
-                        , HasDirs env
-                        , MonadCatch m) =>
-                        Tool ->
-                        Version ->
-                        m Bool
-
-checkIfToolInstalled tool ver =
-  case tool of
-    Cabal -> cabalInstalled ver
-    HLS   -> hlsInstalled ver
-    Stack -> stackInstalled ver
-    GHC   -> ghcInstalled $ mkTVer ver
-    _     -> pure False
-    
 -- | Install an unpacked cabal distribution.Symbol
 installCabalUnpacked :: (MonadCatch m, HasLog env, MonadIO m, MonadReader env m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
@@ -598,16 +582,16 @@ installHLSBindist dlinfo ver isoFilepath forceInstall = do
   regularHLSInstalled <- lift $ checkIfToolInstalled HLS ver
 
   if
-    | forceInstall
-    , regularHLSInstalled
-    , Nothing <- isoFilepath -> do  -- regular forced install
-        lift $ logInfo "Removing the currently installed version of HLS before force installing!"
-        liftE $ rmHLSVer ver
-
     | not forceInstall
     , regularHLSInstalled
-    , Nothing <- isoFilepath -> do  -- regular install
+    , Nothing <- isoFilepath -> do      -- regular install
         throwE $ AlreadyInstalled HLS ver
+
+    | forceInstall
+    , regularHLSInstalled
+    , Nothing <- isoFilepath -> do      -- regular forced install
+        lift $ logInfo "Removing the currently installed version of HLS before force installing!"
+        liftE $ rmHLSVer ver
 
     | otherwise -> pure ()
     
@@ -2421,6 +2405,21 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
       currentRunningExecPath <- liftIO getExecutablePath
       liftIO $ canonicalizePath currentRunningExecPath
 
+checkIfToolInstalled :: ( MonadIO m
+                        , MonadReader env m
+                        , HasDirs env
+                        , MonadCatch m) =>
+                        Tool ->
+                        Version ->
+                        m Bool
+
+checkIfToolInstalled tool ver =
+  case tool of
+    Cabal -> cabalInstalled ver
+    HLS   -> hlsInstalled ver
+    Stack -> stackInstalled ver
+    GHC   -> ghcInstalled $ mkTVer ver
+    _     -> pure False
 
 throwIfFileAlreadyExists :: ( MonadIO m ) =>
                             FilePath ->
