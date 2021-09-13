@@ -72,7 +72,6 @@ toolRequirements:
         '( >= 7 && < 8 )':
           distroPKGs:
           - gcc
-          - gcc-c++
           - gmp
           - gmp-devel
           - make
@@ -83,7 +82,6 @@ toolRequirements:
         unknown_versioning:
           distroPKGs:
           - gcc
-          - gcc-c++
           - gmp
           - gmp-devel
           - make
@@ -96,7 +94,6 @@ toolRequirements:
         unknown_versioning:
           distroPKGs:
           - gcc
-          - gcc-c++
           - gmp
           - gmp-devel
           - make
@@ -111,14 +108,15 @@ toolRequirements:
           - binutils-gold
           - curl
           - gcc
-          - g++
           - gmp-dev
-          - ncurses-dev
+          - libc-dev
           - libffi-dev
           - make
-          - xz
-          - tar
+          - musl-dev
+          - ncurses-dev
           - perl
+          - tar
+          - xz
           notes: ''
       Linux_UnknownLinux:
         unknown_versioning:
