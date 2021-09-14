@@ -475,7 +475,7 @@ hlsGHCVersions = do
         . splitOn "~"
         )
       bins
-  pure . rights . concat . maybeToList $ vers
+  pure . sortBy (flip compare) . rights . concat . maybeToList $ vers
 
 
 -- | Get all server binaries for an hls version, if any.

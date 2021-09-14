@@ -1031,11 +1031,13 @@ warnAboutHlsCompatibility = do
 
   case (currentGHC, currentHLS) of
     (Just gv, Just hv) | gv `notElem` supportedGHC -> do
-      logWarn $ "GHC " <> T.pack (prettyShow gv) <> " is not compatible with "
-        <> "Haskell Language Server " <> T.pack (prettyShow hv) <> "."
-      logWarn "Haskell IDE support may not work until this is fixed."
-      logWarn $ "Install a different HLS version, or run `ghcup list` to see "
-        <> "supported GHC versions."
+      logWarn $
+        "GHC " <> T.pack (prettyShow gv) <> " is not compatible with " <>
+        "Haskell Language Server " <> T.pack (prettyShow hv) <> "." <> "\n" <>
+        "Haskell IDE support may not work until this is fixed." <> "\n" <>
+        "Install a different HLS version, or install and set one of the following GHCs:" <> "\n" <>
+        T.pack (prettyShow supportedGHC)
+        
     _ -> return ()
 
     ------------------
