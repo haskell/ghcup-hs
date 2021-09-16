@@ -2318,7 +2318,8 @@ ghcupDownloads:
               dlHash: 983ebb5b584bfa600704216a63f94b40d36a02573834e90ef1042c8472d9ad57
   HLS:
     1.1.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#110
       viPostInstall: &hls-post-install |
         This is just the server part of your LSP configuration. Consult the README on how to
@@ -2341,7 +2342,8 @@ ghcupDownloads:
           Linux_Alpine:
             unknown_versioning: *hls-110-64
     1.2.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#120
       viPostInstall: *hls-post-install
       viArch:
@@ -2396,12 +2398,30 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.4.0/haskell-language-server-macOS-1.4.0.tar.gz
               dlHash: a7f0ac6be93ffb08cc239e5f5fead99b061061825f99566c1be33ee60cab62a4
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.4.0/haskell-language-server-freebsd-1.4.0.tar.gz
+              dlHash: 6b2ad2398ed8c3964dea017e3d5e553b54c10ba1373d7653d2edd019854f4da2
           Windows:
             unknown_versioning:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.4.0/haskell-language-server-Windows-1.4.0.tar.gz
               dlHash: 0ec77cee750037b7a0ede817b46a913a702821f4098c6a858bcb686cb30f7efd
           Linux_Alpine:
             unknown_versioning: *hls-140-64
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.4.0/haskell-language-server-linux-aarch64-1.4.0.tar.gz
+              dlHash: 8ad97e2bf1c538e637edec194e1cd9939019955bb749cb470f34bbe5a067b001
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.4.0/haskell-language-server-macOS-aarch64-1.4.0.tar.gz
+              dlHash: 70c6fe38e987ba44c1e19173486c01f666ffb30a74cd5a7968296a5aba4c2dd0
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.4.0/haskell-language-server-linux-armv7-1.4.0.tar.gz
+              dlHash: 4a921fbca06b02f3b1c0930cec5e65e9362b603e7715680ec7b150f18bd703d6
   Stack:
     2.5.1:
       viTags:
