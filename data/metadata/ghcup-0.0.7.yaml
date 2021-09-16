@@ -1649,6 +1649,11 @@ ghcupDownloads:
         dlHash: f10941f16e4fbd98580ab5241b9271bb0851304560c4d5ca127e3b0e20e3076f
       viPostRemove: *ghc-post-remove
       viPreCompile: *ghc-pre-compile
+      viPostInstall: &ghc-8105-post-install |
+        GHC 8.10.5 and 8.10.6 have several issues on Darwin, e.g.
+          https://gitlab.haskell.org/ghc/ghc/-/issues/19950
+        Consider upgrading to 8.10.7 via
+          ghcup install ghc --set 8.10.7
       viArch:
         A_64:
           Linux_Debian:
@@ -1751,6 +1756,7 @@ ghcupDownloads:
         dlHash: 43afba72a533408b42c1492bd047b5e37e5f7204e41a5cedd3182cc841610ce9
       viPostRemove: *ghc-post-remove
       viPreCompile: *ghc-pre-compile
+      viPostInstall: *ghc-8105-post-install
       viArch:
         A_64:
           Linux_Debian:
