@@ -100,7 +100,7 @@ eghcup() {
 _eghcup() {
 	if [ -n "${BOOTSTRAP_HASKELL_YAML}" ] ; then
 		args="-s ${BOOTSTRAP_HASKELL_YAML}"
-	fi 
+	fi
     if [ -z "${BOOTSTRAP_HASKELL_VERBOSE}" ] ; then
         "${GHCUP_BIN}/ghcup" ${args} "$@"
     else
@@ -405,7 +405,7 @@ warn_path() {
 	echo
 	[ -n "$1" ] && warn "$1"
 	yellow "In order to run ghc and cabal, you need to adjust your PATH variable."
-	yellow "To do so, you may want run 'source $GHCUP_DIR/env' in your current terminal"
+	yellow "To do so, you may want to run 'source $GHCUP_DIR/env' in your current terminal"
 	yellow "session as well as your shell configuration (e.g. ~/.bashrc)."
 
 }
@@ -677,4 +677,3 @@ _done
 )
 
 # vim: tabstop=4 shiftwidth=4 expandtab
-

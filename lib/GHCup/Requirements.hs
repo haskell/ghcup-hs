@@ -60,9 +60,10 @@ getCommonRequirements pr tr =
 prettyRequirements :: Requirements -> T.Text
 prettyRequirements Requirements {..} =
   let d = if not . null $ _distroPKGs
-        then
-          "\n  Please install the following distro packages: "
-            <> T.intercalate " " _distroPKGs
+        then "\n  Please ensure the following distro packages "
+          <> "are installed before continuing (you can exit ghcup "
+          <> "and return at any time): "
+          <> T.intercalate " " _distroPKGs
         else ""
       n = if not . T.null $ _notes then "\n  Note: " <> _notes else ""
   in  "System requirements " <> d <> n
