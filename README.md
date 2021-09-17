@@ -81,10 +81,11 @@ HLS bindists are still experimental. Stack is theoretically supported, but has n
 #### FreeBSD
 
 Lacks some upstream bindists and may need compat libs, since most bindists are built on FreeBSD-12.
+HLS bindists are experimental.
 
 #### Linux ARMv7/AARCH64
 
-Lower availability of bindists. HLS only has experimental ones. Stack now supported currently.
+Lower availability of bindists. HLS only has experimental ones. Stack not supported currently.
 
 ### Simple bootstrap
 
