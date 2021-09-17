@@ -13,6 +13,7 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
 <a href="https://opencollective.com/ghcup#category-CONTRIBUTE"><img src="https://opencollective.com/webpack/donate/button@2x.png?color=blue" alt="Donate" width="150"></a>
 
    * [Installation](#installation)
+     * [Supported platforms](#supported-platforms)
      * [Simple bootstrap](#simple-bootstrap)
      * [Manual install](#manual-install)
      * [Vim integration](#vim-integration)
@@ -34,6 +35,56 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
    * [FAQ](#faq)
 
 ## Installation
+
+### Supported platforms
+
+This list may not be exhaustive and specifies support for bindists only.
+
+| Platform | Architecture | ghcup | GHC | cabal | HLS | stack | 
+| ------ | ------ | ------ | ------ | ------ | ------ | ------ |
+| Windows 7 | amd64 | ❔ | ✅ | ✅ | ✅ | ✅ |
+| Windows 10 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Windows Server 2016 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Windows Server 2019 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Windows Server 2022 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Windows WSL1 | amd64 | ❌ | ❔ | ❔ | ❔ | ❔ |
+| Windows WSL2 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MacOS >=13 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MacOS <13 | amd64 | ❌ | ❔ | ❔ | ❔ | ❔ |
+| MacOS | aarch64 | ✅ | ✅ | ✅ | ⚠️ | ❌ |
+| FreeBSD | amd64 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
+| Linux generic | x86 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Linux generic | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Linux generic | aarch64 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
+| Linux generic | armv7 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
+
+#### Windows 7
+
+May or may not work, several issues:
+
+* https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/140
+* https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/197
+
+#### WSL1
+
+Unsupported. GHC may or may not work. Upgrade to WSL2.
+
+#### MacOS <13
+
+Not supported. Would require separate binaries, since >=13 binaries are incompatible.
+Please upgrade.
+
+#### MacOS aarch64
+
+HLS bindists are still experimental. Stack is theoretically supported, but has no binaries yet.
+
+#### FreeBSD
+
+Lacks some upstream bindists and may need compat libs, since most bindists are built on FreeBSD-12.
+
+#### Linux ARMv7/AARCH64
+
+Lower availability of bindists. HLS only has experimental ones. Stack now supported currently.
 
 ### Simple bootstrap
 
