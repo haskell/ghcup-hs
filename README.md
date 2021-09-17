@@ -14,7 +14,6 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
 
    * [Installation](#installation)
      * [Supported platforms](#supported-platforms)
-     * [Simple bootstrap](#simple-bootstrap)
      * [Manual install](#manual-install)
      * [Vim integration](#vim-integration)
    * [Usage](#usage)
@@ -35,6 +34,9 @@ Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [p
    * [FAQ](#faq)
 
 ## Installation
+
+Most users should follow the instructions at [https://www.haskell.org/ghcup/](https://www.haskell.org/ghcup/).
+Advanced users may want to perform a [manual installation](#manual-install).
 
 ### Supported platforms
 
@@ -86,10 +88,6 @@ HLS bindists are experimental.
 #### Linux ARMv7/AARCH64
 
 Lower availability of bindists. HLS only has experimental ones. Stack not supported currently.
-
-### Simple bootstrap
-
-Follow the instructions at [https://www.haskell.org/ghcup/](https://www.haskell.org/ghcup/)
 
 ### Manual install
 
