@@ -210,12 +210,12 @@ installGHCBindist dlinfo ver isoFilepath forceInstall = do
     | not forceInstall
     , regularGHCInstalled
     , Nothing <- isoFilepath -> do
-        (throwE $ AlreadyInstalled GHC ver)
+        throwE $ AlreadyInstalled GHC ver
 
     | forceInstall
     , regularGHCInstalled
     , Nothing <- isoFilepath -> do
-        lift $ logInfo $ "Removing the currently installed GHC version first!"
+        lift $ logInfo "Removing the currently installed GHC version first!"
         liftE $ rmGHCVer tver
 
     | otherwise -> pure ()
@@ -449,7 +449,7 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
     | forceInstall
     , regularCabalInstalled
     , Nothing <- isoFilepath -> do
-        lift $ logInfo $ "Removing the currently installed version first!"
+        lift $ logInfo "Removing the currently installed version first!"
         liftE $ rmCabalVer ver
 
     | otherwise -> pure ()
@@ -795,7 +795,7 @@ installStackBindist dlinfo ver isoFilepath forceInstall = do
     | forceInstall
     , regularStackInstalled
     , Nothing <- isoFilepath -> do
-        lift $ logInfo $ "Removing the currently installed version of Stack first!"
+        lift $ logInfo "Removing the currently installed version of Stack first!"
         liftE $ rmStackVer ver
 
     | otherwise -> pure ()
