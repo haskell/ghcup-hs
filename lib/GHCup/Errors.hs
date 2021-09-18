@@ -195,6 +195,14 @@ instance Pretty DigestError where
   pPrint (DigestError currentDigest expectedDigest) =
     text "Digest error: expected" <+> text (T.unpack expectedDigest) <+> text "but got" <+> pPrint currentDigest
 
+-- | File digest verification failed.
+data GPGError = forall xs . (ToVariantMaybe DownloadFailed xs, PopVariant DownloadFailed xs, Show (V xs), Pretty (V xs)) => GPGError (V xs)
+
+deriving instance Show GPGError
+
+instance Pretty GPGError where
+  pPrint (GPGError reason) = text "GPG verify failed:" <+> pPrint reason
+
 -- | Unexpected HTTP status.
 data HTTPStatusError = HTTPStatusError Int (M.Map (CI ByteString) ByteString)
   deriving Show

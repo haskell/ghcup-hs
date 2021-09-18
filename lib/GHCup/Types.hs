@@ -303,11 +303,12 @@ data UserSettings = UserSettings
   , uKeyBindings :: Maybe UserKeyBindings
   , uUrlSource   :: Maybe URLSource
   , uNoNetwork   :: Maybe Bool
+  , uGPGSetting  :: Maybe GPGSetting
   }
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
@@ -320,6 +321,7 @@ fromSettings Settings{..} Nothing =
     , uNoNetwork = Just noNetwork
     , uKeyBindings = Nothing
     , uUrlSource = Just urlSource
+    , uGPGSetting = Just gpgSetting
   }
 fromSettings Settings{..} (Just KeyBindings{..}) =
   let ukb = UserKeyBindings
@@ -342,6 +344,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uNoNetwork = Just noNetwork
     , uKeyBindings = Just ukb
     , uUrlSource = Just urlSource
+    , uGPGSetting = Just gpgSetting
   }
 
 data UserKeyBindings = UserKeyBindings
@@ -415,6 +418,7 @@ data Settings = Settings
   , verbose    :: Bool
   , urlSource  :: URLSource
   , noNetwork  :: Bool
+  , gpgSetting :: GPGSetting
   }
   deriving (Show, GHC.Generic)
 
@@ -447,6 +451,13 @@ data Downloader = Curl
   deriving (Eq, Show, Ord, GHC.Generic)
 
 instance NFData Downloader
+
+data GPGSetting = GPGStrict
+                | GPGLax
+                | GPGNone
+  deriving (Eq, Show, Ord, GHC.Generic)
+
+instance NFData GPGSetting
 
 data DebugInfo = DebugInfo
   { diBaseDir  :: FilePath

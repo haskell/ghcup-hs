@@ -1031,7 +1031,7 @@ ensureGlobalTools :: ( MonadMask m
                      , MonadUnliftIO m
                      , MonadFail m
                      )
-                  => Excepts '[DigestError , DownloadFailed, NoDownload] m ()
+                  => Excepts '[GPGError, DigestError , DownloadFailed, NoDownload] m ()
 ensureGlobalTools = do
 #if defined(IS_WINDOWS)
   (GHCupInfo _ _ gTools) <- lift getGHCupInfo
@@ -1043,8 +1043,8 @@ ensureGlobalTools = do
       lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
       lift $ logDebug ("rm -f " <> T.pack (cacheDir dirs </> "gs.exe"))
       lift $ hideError doesNotExistErrorType $ recycleFile (cacheDir dirs </> "gs.exe")
-      liftE @'[DigestError , DownloadFailed] $ dl
-    ) `catchE` (liftE @'[DigestError , DownloadFailed] dl)
+      liftE @'[GPGError, DigestError , DownloadFailed] $ dl
+    ) `catchE` (liftE @'[GPGError, DigestError , DownloadFailed] dl)
   pure ()
 #else
   pure ()

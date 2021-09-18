@@ -54,6 +54,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Tool
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GlobalTool
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''KeepDirs
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downloader
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GPGSetting
 
 instance ToJSON Tag where
   toJSON Latest             = String "Latest"

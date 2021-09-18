@@ -114,7 +114,7 @@ getDownloadsF :: ( FromJSONKey Tool
                  , MonadMask m
                  )
               => Excepts
-                   '[JSONError , DownloadFailed , FileDoesNotExistError]
+                   '[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError]
                    m
                    GHCupInfo
 getDownloadsF = do
@@ -165,7 +165,7 @@ getBase :: ( MonadReader env m
            , MonadMask m
            )
         => URI
-        -> Excepts '[JSONError, FileDoesNotExistError] m GHCupInfo
+        -> Excepts '[GPGError, DigestError, JSONError, FileDoesNotExistError] m GHCupInfo
 getBase uri = do
   Settings { noNetwork, downloader } <- lift getSettings
 
@@ -176,7 +176,6 @@ getBase uri = do
            then pure Nothing
            else handleIO (\e -> lift (warnCache (displayException e) downloader) >> pure Nothing)
                . catchE @_ @_ @'[] (\e@(DownloadFailed _) -> lift (warnCache (prettyShow e) downloader) >> pure Nothing)
-               . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed
                . fmap Just
                . smartDl
                $ uri
@@ -234,6 +233,7 @@ getBase uri = do
           -> Excepts
                '[ DownloadFailed
                 , DigestError
+                , GPGError
                 ]
                m1
                FilePath
@@ -245,7 +245,7 @@ getBase uri = do
     Dirs { cacheDir } <- lift getDirs
 
        -- for local files, let's short-circuit and ignore access time
-    if | scheme == "file" -> liftE $ download uri' Nothing cacheDir Nothing True
+    if | scheme == "file" -> liftE $ download uri' Nothing Nothing cacheDir Nothing True
        | e -> do
           accessTime <- liftIO $ getAccessTime json_file
 
@@ -258,7 +258,7 @@ getBase uri = do
    where
     dlWithMod modTime json_file = do
       let (dir, fn) = splitFileName json_file
-      f <- liftE $ download uri' Nothing dir (Just fn) True
+      f <- liftE $ download uri' (Just $ over pathL' (<> ".sig") uri') Nothing dir (Just fn) True
       liftIO $ setModificationTime f modTime
       liftIO $ setAccessTime f modTime
       pure f
@@ -322,16 +322,17 @@ download :: ( MonadReader env m
             , MonadIO m
             )
          => URI
+         -> Maybe URI         -- ^ URI for gpg sig
          -> Maybe T.Text      -- ^ expected hash
          -> FilePath          -- ^ destination dir (ignored for file:// scheme)
          -> Maybe FilePath    -- ^ optional filename
          -> Bool              -- ^ whether to read an write etags
-         -> Excepts '[DigestError , DownloadFailed] m FilePath
-download uri eDigest dest mfn etags
+         -> Excepts '[DigestError , DownloadFailed, GPGError] m FilePath
+download uri gpgUri eDigest dest mfn etags
   | scheme == "https" = dl
   | scheme == "http"  = dl
   | scheme == "file"  = do
-      let destFile' = T.unpack . decUTF8Safe $ path
+      let destFile' = T.unpack . decUTF8Safe $ view pathL' uri
       lift $ logDebug $ "using local file: " <> T.pack destFile'
       forM_ eDigest (liftE . flip checkDigest destFile')
       pure destFile'
@@ -340,115 +341,179 @@ download uri eDigest dest mfn etags
  where
   scheme = view (uriSchemeL' % schemeBSL') uri
   dl = do
-    destFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile
-    lift $ logInfo $ "downloading: " <> uri' <> " as file " <> T.pack destFile
+    baseDestFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile uri mfn
+    lift $ logInfo $ "downloading: " <> (decUTF8Safe . serializeURIRef') uri <> " as file " <> T.pack baseDestFile
 
     -- destination dir must exist
     liftIO $ createDirRecursive' dest
 
+
     -- download
     flip onException
-         (lift $ hideError doesNotExistErrorType $ recycleFile destFile)
-     $ catchAllE @_ @'[ProcessError, DownloadFailed, UnsupportedScheme]
-          (\e ->
-            lift (hideError doesNotExistErrorType $ recycleFile destFile)
-              >> (throwE . DownloadFailed $ e)
+         (lift $ hideError doesNotExistErrorType $ recycleFile (tmpFile baseDestFile))
+     $ catchAllE @_ @'[GPGError, ProcessError, DownloadFailed, UnsupportedScheme, DigestError] @'[DigestError, DownloadFailed, GPGError]
+          (\e' -> do
+            lift $ hideError doesNotExistErrorType $ recycleFile (tmpFile baseDestFile)
+            case e' of
+              V e@GPGError {} -> throwE e
+              V e@DigestError {} -> throwE e
+              _ -> throwE (DownloadFailed e')
           ) $ do
-              Settings{ downloader, noNetwork } <- lift getSettings
+              Settings{ downloader, noNetwork, gpgSetting } <- lift getSettings
               when noNetwork $ throwE (DownloadFailed (V NoNetwork :: V '[NoNetwork]))
-              case downloader of
-                Curl -> do
-                  o' <- liftIO getCurlOpts
-                  if etags
-                    then do
-                      dh <- liftIO $ emptySystemTempFile "curl-header"
-                      flip finally (try @_ @SomeException $ rmFile dh) $
-                        flip finally (try @_ @SomeException $ rmFile (destFile <.> "tmp")) $ do
-                          metag <- lift $ readETag destFile
-                          liftE $ lEM @_ @'[ProcessError] $ exec "curl"
-                              (o' ++ (if etags then ["--dump-header", dh] else [])
-                                  ++ maybe [] (\t -> ["-H", "If-None-Match: " <> T.unpack t]) metag
-                                  ++ ["-fL", "-o", destFile <.> "tmp", T.unpack uri']) Nothing Nothing
-                          headers <- liftIO $ T.readFile dh
-
-                          -- this nonsense is necessary, because some older versions of curl would overwrite
-                          -- the destination file when 304 is returned
-                          case fmap T.words . listToMaybe . fmap T.strip . T.lines . getLastHeader $ headers of
-                            Just (http':sc:_)
-                              | sc == "304"
-                              , T.pack "HTTP" `T.isPrefixOf` http' -> lift $ logDebug "Status code was 304, not overwriting"
-                              | T.pack "HTTP" `T.isPrefixOf` http' -> do
-                                  lift $ logDebug $ "Status code was " <> sc <> ", overwriting"
-                                  liftIO $ copyFile (destFile <.> "tmp") destFile
-                            _ -> liftE $ throwE @_ @'[DownloadFailed] (DownloadFailed (toVariantAt @0 (MalformedHeaders headers)
-                              :: V '[MalformedHeaders]))
-
-                          lift $ writeEtags destFile (parseEtags headers)
-                    else
-                      liftE $ lEM @_ @'[ProcessError] $ exec "curl" 
-                        (o' ++ ["-fL", "-o", destFile, T.unpack uri']) Nothing Nothing
-                Wget -> do
-                  destFileTemp <- liftIO $ emptySystemTempFile "wget-tmp"
-                  flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do
-                    o' <- liftIO getWgetOpts
-                    if etags
-                      then do
-                        metag <- lift $ readETag destFile
-                        let opts = o' ++ maybe [] (\t -> ["--header", "If-None-Match: " <> T.unpack t]) metag
-                                      ++ ["-q", "-S", "-O", destFileTemp , T.unpack uri']
-                        CapturedProcess {_exitCode, _stdErr} <- lift $ executeOut "wget" opts Nothing
-                        case _exitCode of
-                          ExitSuccess -> do
-                            liftIO $ copyFile destFileTemp destFile
-                            lift $ writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
-                          ExitFailure i'
-                            | i' == 8
-                            , Just _ <- find (T.pack "304 Not Modified" `T.isInfixOf`) . T.lines . decUTF8Safe' $ _stdErr
-                                     -> do
-                                          lift $ logDebug "Not modified, skipping download"
-                                          lift $ writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
-                            | otherwise -> throwE (NonZeroExit i' "wget" opts)
-                      else do
-                        let opts = o' ++ ["-O", destFileTemp , T.unpack uri']
-                        liftE $ lEM @_ @'[ProcessError] $ exec "wget" opts Nothing Nothing
-                        liftIO $ copyFile destFileTemp destFile
+              downloadAction <- case downloader of
+                    Curl -> do
+                      o' <- liftIO getCurlOpts
+                      if etags
+                        then pure $ curlEtagsDL o'
+                        else pure $ curlDL o'
+                    Wget -> do
+                      o' <- liftIO getWgetOpts
+                      if etags
+                        then pure $ wgetEtagsDL o'
+                        else pure $ wgetDL o'
 #if defined(INTERNAL_DOWNLOADER)
-                Internal -> do
-                  (https, host, fullPath, port) <- liftE $ uriToQuadruple uri
-                  if etags
-                    then do
-                      metag <- lift $ readETag destFile
-                      let addHeaders = maybe mempty (\etag -> M.fromList [ (mk . E.encodeUtf8 . T.pack $ "If-None-Match"
-                                                                         , E.encodeUtf8 etag)]) metag
-                      liftE
-                        $ catchE @HTTPNotModified @'[DownloadFailed] @'[] (\(HTTPNotModified etag) -> lift $ writeEtags destFile (pure $ Just etag))
-                        $ do
-                          r <- downloadToFile https host fullPath port destFile addHeaders
-                          lift $ writeEtags destFile (pure $ decUTF8Safe <$> getHeader r "etag")
-                    else void $ liftE $ catchE @HTTPNotModified
-                                        @'[DownloadFailed]
-                                   (\e@(HTTPNotModified _) ->
-                                     throwE @_ @'[DownloadFailed] (DownloadFailed (toVariantAt @0 e :: V '[HTTPNotModified])))
-                               $ downloadToFile https host fullPath port destFile mempty
+                    Internal -> do
+                      if etags
+                        then pure (\fp -> liftE . internalEtagsDL fp)
+                        else pure (\fp -> liftE . internalDL fp)
 #endif
+              liftE $ downloadAction baseDestFile uri
+              case (gpgUri, gpgSetting) of
+                (_, GPGNone) -> pure ()
+                (Just gpgUri', _) -> do
+                  gpgDestFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile gpgUri' Nothing
+                  liftE $ flip onException
+                       (lift $ hideError doesNotExistErrorType $ recycleFile (tmpFile gpgDestFile))
+                   $ catchAllE @_ @'[GPGError, ProcessError, UnsupportedScheme, DownloadFailed] @'[GPGError]
+                        (\e -> if gpgSetting == GPGStrict then throwE (GPGError e) else lift $ logWarn $ T.pack (prettyShow (GPGError e))
+                        ) $ do
+                      o' <- liftIO getGpgOpts
+                      lift $ logDebug $ "downloading: " <> (decUTF8Safe . serializeURIRef') gpgUri' <> " as file " <> T.pack gpgDestFile
+                      liftE $ downloadAction gpgDestFile gpgUri'
+                      lift $ logInfo $ "verifying signature of: " <> T.pack baseDestFile
+                      let args = o' ++ ["--batch", "--verify", "--quiet", "--no-tty", gpgDestFile, baseDestFile]
+                      cp <- lift $ executeOut "gpg" args Nothing
+                      case cp of
+                        CapturedProcess { _exitCode = ExitFailure i, _stdErr } -> do
+                          lift $ logDebug $ decUTF8Safe' _stdErr
+                          throwE (GPGError @'[ProcessError] (V (NonZeroExit i "gpg" args)))
+                        CapturedProcess { _stdErr } -> lift $ logDebug $ decUTF8Safe' _stdErr
+                _ -> pure ()
 
-    forM_ eDigest (liftE . flip checkDigest destFile)
-    pure destFile
+              forM_ eDigest (liftE . flip checkDigest baseDestFile)
+    pure baseDestFile
+
+  curlDL :: (MonadCatch m, MonadMask m, MonadIO m) => [String] -> FilePath -> URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
+  curlDL o' destFile (decUTF8Safe . serializeURIRef' -> uri') = do
+    let destFileTemp = tmpFile destFile
+    flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do
+      liftE $ lEM @_ @'[ProcessError] $ exec "curl"
+        (o' ++ ["-fL", "-o", destFileTemp, T.unpack uri']) Nothing Nothing
+      liftIO $ renameFile destFileTemp destFile
+
+  curlEtagsDL :: (MonadReader env m, HasLog env, MonadCatch m, MonadMask m, MonadIO m)
+              => [String] -> FilePath -> URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
+  curlEtagsDL o' destFile (decUTF8Safe . serializeURIRef' -> uri') = do
+    let destFileTemp = tmpFile destFile
+    dh <- liftIO $ emptySystemTempFile "curl-header"
+    flip finally (try @_ @SomeException $ rmFile dh) $
+      flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do
+        metag <- lift $ readETag destFile
+        liftE $ lEM @_ @'[ProcessError] $ exec "curl"
+            (o' ++ (if etags then ["--dump-header", dh] else [])
+                ++ maybe [] (\t -> ["-H", "If-None-Match: " <> T.unpack t]) metag
+                ++ ["-fL", "-o", destFileTemp, T.unpack uri']) Nothing Nothing
+        headers <- liftIO $ T.readFile dh
+
+        -- this nonsense is necessary, because some older versions of curl would overwrite
+        -- the destination file when 304 is returned
+        case fmap T.words . listToMaybe . fmap T.strip . T.lines . getLastHeader $ headers of
+          Just (http':sc:_)
+            | sc == "304"
+            , T.pack "HTTP" `T.isPrefixOf` http' -> lift $ logDebug "Status code was 304, not overwriting"
+            | T.pack "HTTP" `T.isPrefixOf` http' -> do
+                lift $ logDebug $ "Status code was " <> sc <> ", overwriting"
+                liftIO $ renameFile destFileTemp destFile
+          _ -> liftE $ throwE @_ @'[DownloadFailed] (DownloadFailed (toVariantAt @0 (MalformedHeaders headers)
+            :: V '[MalformedHeaders]))
+
+        lift $ writeEtags destFile (parseEtags headers)
+
+  wgetDL :: (MonadCatch m, MonadMask m, MonadIO m) => [String] -> FilePath -> URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
+  wgetDL o' destFile (decUTF8Safe . serializeURIRef' -> uri') = do
+    let destFileTemp = tmpFile destFile
+    flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do
+      let opts = o' ++ ["-O", destFileTemp , T.unpack uri']
+      liftE $ lEM @_ @'[ProcessError] $ exec "wget" opts Nothing Nothing
+      liftIO $ renameFile destFileTemp destFile
+
+
+  wgetEtagsDL :: (MonadReader env m, HasLog env, MonadCatch m, MonadMask m, MonadIO m)
+              => [String] -> FilePath -> URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
+  wgetEtagsDL o' destFile (decUTF8Safe . serializeURIRef' -> uri') = do
+    let destFileTemp = tmpFile destFile
+    flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do
+      metag <- lift $ readETag destFile
+      let opts = o' ++ maybe [] (\t -> ["--header", "If-None-Match: " <> T.unpack t]) metag
+                    ++ ["-q", "-S", "-O", destFileTemp , T.unpack uri']
+      CapturedProcess {_exitCode, _stdErr} <- lift $ executeOut "wget" opts Nothing
+      case _exitCode of
+        ExitSuccess -> do
+          liftIO $ renameFile destFileTemp destFile
+          lift $ writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
+        ExitFailure i'
+          | i' == 8
+          , Just _ <- find (T.pack "304 Not Modified" `T.isInfixOf`) . T.lines . decUTF8Safe' $ _stdErr
+                   -> do
+                        lift $ logDebug "Not modified, skipping download"
+                        lift $ writeEtags destFile (parseEtags (decUTF8Safe' _stdErr))
+          | otherwise -> throwE (NonZeroExit i' "wget" opts)
+
+#if defined(INTERNAL_DOWNLOADER)
+  internalDL :: (MonadCatch m, MonadMask m, MonadIO m)
+             => FilePath -> URI -> Excepts '[DownloadFailed, UnsupportedScheme] m ()
+  internalDL destFile uri' = do
+    let destFileTemp = tmpFile destFile
+    flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do
+      (https, host, fullPath, port) <- liftE $ uriToQuadruple uri'
+      void $ liftE $ catchE @HTTPNotModified
+                 @'[DownloadFailed]
+            (\e@(HTTPNotModified _) ->
+              throwE @_ @'[DownloadFailed] (DownloadFailed (toVariantAt @0 e :: V '[HTTPNotModified])))
+        $ downloadToFile https host fullPath port destFileTemp mempty
+      liftIO $ renameFile destFileTemp destFile
+
+
+  internalEtagsDL :: (MonadReader env m, HasLog env, MonadCatch m, MonadMask m, MonadIO m)
+                  => FilePath -> URI -> Excepts '[DownloadFailed, UnsupportedScheme] m ()
+  internalEtagsDL destFile uri' = do
+    let destFileTemp = tmpFile destFile
+    flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do
+      (https, host, fullPath, port) <- liftE $ uriToQuadruple uri'
+      metag <- lift $ readETag destFile
+      let addHeaders = maybe mempty (\etag -> M.fromList [ (mk . E.encodeUtf8 . T.pack $ "If-None-Match"
+                                                         , E.encodeUtf8 etag)]) metag
+      liftE
+        $ catchE @HTTPNotModified @'[DownloadFailed] @'[] (\(HTTPNotModified etag) -> lift $ writeEtags destFile (pure $ Just etag))
+        $ do
+          r <- downloadToFile https host fullPath port destFileTemp addHeaders
+          liftIO $ renameFile destFileTemp destFile
+          lift $ writeEtags destFile (pure $ decUTF8Safe <$> getHeader r "etag")
+#endif
 
 
   -- Manage to find a file we can write the body into.
-  getDestFile :: Monad m => Excepts '[NoUrlBase] m FilePath
-  getDestFile = 
-    case mfn of
+  getDestFile :: Monad m => URI -> Maybe FilePath -> Excepts '[NoUrlBase] m FilePath
+  getDestFile uri' mfn' = 
+    let path = view pathL' uri'
+    in case mfn' of
         Just fn -> pure (dest </> fn)
         Nothing
           | let urlBase = T.unpack (decUTF8Safe (urlBaseName path))
           , not (null urlBase) -> pure (dest </> urlBase)
           -- TODO: remove this once we use hpath again
-          | otherwise -> throwE $ NoUrlBase uri'
-
-  path = view pathL' uri
-  uri' = decUTF8Safe (serializeURIRef' uri)
+          | otherwise -> throwE $ NoUrlBase (decUTF8Safe . serializeURIRef' $ uri')
 
   parseEtags :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m) => T.Text -> m (Maybe T.Text)
   parseEtags stderr = do
@@ -509,14 +574,14 @@ downloadCached :: ( MonadReader env m
                   )
                => DownloadInfo
                -> Maybe FilePath  -- ^ optional filename
-               -> Excepts '[DigestError , DownloadFailed] m FilePath
+               -> Excepts '[DigestError , DownloadFailed, GPGError] m FilePath
 downloadCached dli mfn = do
   Settings{ cache } <- lift getSettings
   case cache of
     True -> downloadCached' dli mfn Nothing
     False -> do
       tmp <- lift withGHCupTmpDir
-      liftE $ download (_dlUri dli) (Just (_dlHash dli)) tmp mfn False
+      liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) tmp mfn False
 
 
 downloadCached' :: ( MonadReader env m
@@ -531,7 +596,7 @@ downloadCached' :: ( MonadReader env m
                 => DownloadInfo
                 -> Maybe FilePath  -- ^ optional filename
                 -> Maybe FilePath  -- ^ optional destination dir (default: cacheDir)
-                -> Excepts '[DigestError , DownloadFailed] m FilePath
+                -> Excepts '[DigestError , DownloadFailed, GPGError] m FilePath
 downloadCached' dli mfn mDestDir = do
   Dirs { cacheDir } <- lift getDirs
   let destDir = fromMaybe cacheDir mDestDir
@@ -542,7 +607,7 @@ downloadCached' dli mfn mDestDir = do
     | fileExists -> do
       liftE $ checkDigest (view dlHash dli) cachfile
       pure cachfile
-    | otherwise -> liftE $ download (_dlUri dli) (Just (_dlHash dli)) destDir mfn False
+    | otherwise -> liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) destDir mfn False
 
 
 
@@ -589,6 +654,12 @@ getWgetOpts =
     Just r  -> pure $ splitOn " " r
     Nothing -> pure []
 
+-- | Get additional gpg args from env. This is an undocumented option.
+getGpgOpts :: IO [String]
+getGpgOpts =
+  lookupEnv "GHCUP_GPG_OPTS" >>= \case
+    Just r  -> pure $ splitOn " " r
+    Nothing -> pure []
 
 -- | Get the url base name.
 --
@@ -610,3 +681,7 @@ urlBaseName = snd . B.breakEnd (== _slash) . urlDecode False
 -- "HTTP/1.1 304 Not Modified\n"
 getLastHeader :: T.Text -> T.Text
 getLastHeader = T.unlines . lastDef [] . filter (\x -> not (null x)) . splitOn [""] . fmap T.stripEnd . T.lines
+
+
+tmpFile :: FilePath -> FilePath
+tmpFile = (<.> "tmp")

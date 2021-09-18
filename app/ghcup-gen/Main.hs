@@ -119,7 +119,7 @@ main = do
                                   , rawOutter    = \_ -> pure ()
                                   }
   dirs <- liftIO getAllDirs
-  let leanAppstate = LeanAppState (Settings True False Never Curl True GHCupURL False) dirs defaultKeyBindings loggerConfig
+  let leanAppstate = LeanAppState (Settings True False Never Curl True GHCupURL False GPGNone) dirs defaultKeyBindings loggerConfig
 
   pfreq <- (
     flip runReaderT leanAppstate . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] $ platformRequest
@@ -129,7 +129,7 @@ main = do
               flip runReaderT leanAppstate $ logError $ T.pack $ prettyShow e
               liftIO $ exitWith (ExitFailure 2)
 
-  let appstate = AppState (Settings True False Never Curl True GHCupURL False) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq loggerConfig
+  let appstate = AppState (Settings True False Never Curl True GHCupURL False GPGNone) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq loggerConfig
 
   _ <- customExecParser (prefs showHelpOnError) (info (opts <**> helper) idm)
     >>= \Options {..} -> case optCommand of

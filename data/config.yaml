@@ -8,6 +8,10 @@ verbose: False
 keep-dirs: Errors  # Always | Never | Errors
 # Which downloader to use
 downloader: Curl   # Curl | Wget | Internal
+# whether to run in offline mode
+no-network: False
+# whether/how to do gpg verification
+gpg-setting: GPGNone # GPGStrict | GPGLax | GPGNone
 
 # TUI key bindings,
 # see https://hackage.haskell.org/package/vty-5.31/docs/Graphics-Vty-Input-Events.html#t:Key

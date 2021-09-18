@@ -429,6 +429,7 @@ install' _ (_, ListResult {..}) = do
               , BuildFailed
               , TagNotFound
               , DigestError
+              , GPGError
               , DownloadFailed
               , DirNotEmpty
               , NoUpdate
@@ -547,6 +548,7 @@ settings' = unsafePerformIO $ do
                                 , verbose    = False
                                 , urlSource  = GHCupURL
                                 , noNetwork  = False
+                                , gpgSetting = GPGNone
                                 , ..
                                 })
                       dirs
@@ -591,7 +593,7 @@ getGHCupInfo = do
 
   r <-
     flip runReaderT settings
-    . runE @'[JSONError , DownloadFailed , FileDoesNotExistError]
+    . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError]
     $ liftE
     $ getDownloadsF
 
