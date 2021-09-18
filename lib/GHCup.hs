@@ -2434,6 +2434,7 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
       currentRunningExecPath <- liftIO getExecutablePath
       liftIO $ canonicalizePath currentRunningExecPath
 
+-- | Doesn't work for cross GHC.
 checkIfToolInstalled :: ( MonadIO m
                         , MonadReader env m
                         , HasDirs env

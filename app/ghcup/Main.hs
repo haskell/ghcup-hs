@@ -1763,8 +1763,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             pure ExitSuccess
                           VLeft (V (AlreadyInstalled _ v)) -> do
                             runLogger $ logWarn $
-                              "GHC ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm ghc " <> prettyVer v <> "' first"
+                              "GHC ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install ghc --force " <> prettyVer v <> "'"
                             pure ExitSuccess
+                          VLeft (V (DirNotEmpty fp)) -> do
+                            runLogger $ logWarn $
+                              "Install directory " <> T.pack fp <> " is not empty. Use 'ghcup install ghc --isolate " <> T.pack fp <> " --force ..." <> "' to install regardless."
+                            pure $ ExitFailure 3
                           VLeft err@(V (BuildFailed tmpdir _)) -> do
                             case keepDirs settings of
                               Never -> runLogger $ (logError $ T.pack $ prettyShow err)
@@ -1807,8 +1811,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
                           runLogger $ logWarn $
-                            "Cabal ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm cabal " <> prettyVer v <> "' first"
+                            "Cabal ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install cabal --force " <> prettyVer v <> "'"
                           pure ExitSuccess
+                        VLeft (V (FileAlreadyExistsError fp)) -> do
+                          runLogger $ logWarn $
+                            "File " <> T.pack fp <> " already exists. Use 'ghcup install cabal --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
+                          pure $ ExitFailure 3
                         VLeft e -> do
                           runLogger $ do
                             logError $ T.pack $ prettyShow e
@@ -1845,10 +1853,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           runLogger $ logWarn $
                               "HLS ver "
                             <> prettyVer v
-                            <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm hls "
+                            <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install hls --force "
                             <> prettyVer v
-                            <> "' first"
+                            <> "'"
                           pure ExitSuccess
+                        VLeft (V (FileAlreadyExistsError fp)) -> do
+                          runLogger $ logWarn $
+                            "File " <> T.pack fp <> " already exists. Use 'ghcup install hls --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
+                          pure $ ExitFailure 3
                         VLeft e -> do
                           runLogger $ do
                             logError $ T.pack $ prettyShow e
@@ -1883,8 +1895,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                           pure ExitSuccess
                         VLeft (V (AlreadyInstalled _ v)) -> do
                           runLogger $ logWarn $
-                            "Stack ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm stack " <> prettyVer v <> "' first"
+                            "Stack ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install stack --force " <> prettyVer v <> "'"
                           pure ExitSuccess
+                        VLeft (V (FileAlreadyExistsError fp)) -> do
+                          runLogger $ logWarn $
+                            "File " <> T.pack fp <> " already exists. Use 'ghcup install stack --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
+                          pure $ ExitFailure 3
                         VLeft e -> do
                           runLogger $ do
                             logError $ T.pack $ prettyShow e
@@ -2119,8 +2135,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         pure ExitSuccess
                       VLeft (V (AlreadyInstalled _ v)) -> do
                         runLogger $ logWarn $
-                          "GHC ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup rm ghc " <> prettyVer v <> "' first"
+                          "GHC ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install ghc --force " <> prettyVer v <> "'"
                         pure ExitSuccess
+                      VLeft (V (DirNotEmpty fp)) -> do
+                        runLogger $ logWarn $
+                          "Install directory " <> T.pack fp <> " is not empty. Use 'ghcup install ghc --isolate " <> T.pack fp <> " --force ..." <> "' to install regardless."
+                        pure $ ExitFailure 3
                       VLeft err@(V (BuildFailed tmpdir _)) -> do
                         case keepDirs settings of
                           Never -> runLogger $ logError $ T.pack $ prettyShow err
