@@ -141,6 +141,7 @@ data InstallOptions = InstallOptions
   , instBindist  :: Maybe URI
   , instSet      :: Bool
   , isolateDir   :: Maybe FilePath
+  , forceInstall :: Bool
   }
 
 data SetCommand = SetGHC SetOptions
@@ -602,7 +603,7 @@ Examples:
 
 installOpts :: Maybe Tool -> Parser InstallOptions
 installOpts tool =
-  (\p (u, v) b is -> InstallOptions v p u b is)
+  (\p (u, v) b is f -> InstallOptions v p u b is f)
     <$> optional
           (option
             (eitherReader platformParser)
@@ -640,6 +641,9 @@ installOpts tool =
            <> help "install in an isolated dir instead of the default one"
            )
           )
+    <*> switch
+          (short 'f' <> long "force" <> help "Force install")
+          
 
 
 setParser :: Parser (Either SetCommand SetOptions)
@@ -1733,7 +1737,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 (case instBindist of
                    Nothing -> runInstTool instPlatform $ do
                      (v, vi) <- liftE $ fromVersion instVer GHC
-                     liftE $ installGHCBin (_tvVersion v) isolateDir
+                     liftE $ installGHCBin
+                               (_tvVersion v)
+                               isolateDir
+                               forceInstall
                      when instSet $ void $ liftE $ setGHC v SetGHCOnly
                      pure vi
                    Just uri -> do
@@ -1741,9 +1748,10 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                      runInstTool' s'{ settings = settings {noVerify = True}} instPlatform $ do
                        (v, vi) <- liftE $ fromVersion instVer GHC
                        liftE $ installGHCBindist
-                         (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
-                         (_tvVersion v)
-                         isolateDir
+                                 (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
+                                 (_tvVersion v)
+                                 isolateDir
+                                 forceInstall
                        when instSet $ void $ liftE $ setGHC v SetGHCOnly
                        pure vi
                   )
@@ -1775,16 +1783,20 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 (case instBindist of
                    Nothing -> runInstTool instPlatform $ do
                      (v, vi) <- liftE $ fromVersion instVer Cabal
-                     liftE $ installCabalBin (_tvVersion v) isolateDir
+                     liftE $ installCabalBin
+                               (_tvVersion v)
+                               isolateDir
+                               forceInstall
                      pure vi
                    Just uri -> do
                      s' <- appState
                      runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
                        (v, vi) <- liftE $ fromVersion instVer Cabal
-                       liftE $ installCabalBindist
-                           (DownloadInfo uri Nothing "")
-                           (_tvVersion v)
-                           isolateDir
+                       liftE $ installCabalBindist 
+                                 (DownloadInfo uri Nothing "")
+                                 (_tvVersion v)
+                                 isolateDir
+                                 forceInstall
                        pure vi
                   )
                   >>= \case
@@ -1807,16 +1819,20 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                  (case instBindist of
                    Nothing -> runInstTool instPlatform $ do
                      (v, vi) <- liftE $ fromVersion instVer HLS
-                     liftE $ installHLSBin (_tvVersion v) isolateDir
+                     liftE $ installHLSBin
+                               (_tvVersion v)
+                               isolateDir
+                               forceInstall
                      pure vi
                    Just uri -> do
                      s' <- appState
                      runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
                        (v, vi) <- liftE $ fromVersion instVer HLS
                        liftE $ installHLSBindist
-                           (DownloadInfo uri Nothing "")
-                           (_tvVersion v)
-                           isolateDir
+                                 (DownloadInfo uri Nothing "")
+                                 (_tvVersion v)
+                                 isolateDir
+                                 forceInstall
                        pure vi
                   )
                   >>= \case
@@ -1843,16 +1859,20 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                  (case instBindist of
                     Nothing -> runInstTool instPlatform $ do
                       (v, vi) <- liftE $ fromVersion instVer Stack
-                      liftE $ installStackBin (_tvVersion v) isolateDir
+                      liftE $ installStackBin
+                                (_tvVersion v)
+                                isolateDir
+                                forceInstall
                       pure vi
                     Just uri -> do
                       s' <- appState
                       runInstTool' s'{ settings = settings { noVerify = True}} instPlatform $ do
                         (v, vi) <- liftE $ fromVersion instVer Stack
                         liftE $ installStackBindist
-                            (DownloadInfo uri Nothing "")
-                            (_tvVersion v)
-                            isolateDir
+                                  (DownloadInfo uri Nothing "")
+                                  (_tvVersion v)
+                                  isolateDir
+                                  forceInstall
                         pure vi
                   )
                   >>= \case
