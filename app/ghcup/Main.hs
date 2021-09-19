@@ -187,6 +187,7 @@ data RmOptions = RmOptions
 
 
 data CompileCommand = CompileGHC GHCCompileOptions
+                    | CompileHLS HLSCompileOptions
 
 data ConfigCommand = ShowConfig | SetConfig String String | InitConfig
 
@@ -203,6 +204,16 @@ data GHCCompileOptions = GHCCompileOptions
   , buildFlavour :: Maybe String
   , hadrian      :: Bool
   , isolateDir   :: Maybe FilePath
+  }
+
+data HLSCompileOptions = HLSCompileOptions
+  { targetHLS    :: Either Version GitBranch
+  , jobs         :: Maybe Int
+  , setCompile   :: Bool
+  , ovewrwiteVer :: Maybe Version
+  , isolateDir   :: Maybe FilePath
+  , cabalProject :: Maybe FilePath
+  , targetGHCs   :: [ToolVersion]
   }
 
 data UpgradeOpts = UpgradeInplace
@@ -895,6 +906,15 @@ compileP = subparser
             <> footerDoc (Just $ text compileFooter)
             )
       )
+  <>  command
+      "hls"
+      (   CompileHLS
+      <$> info
+            (hlsCompileOpts <**> helper)
+            (  progDesc "Compile HLS from source"
+            <> footerDoc (Just $ text compileHLSFooter)
+            )
+      )
   )
  where
   compileFooter = [s|Discussion:
@@ -918,6 +938,12 @@ Examples:
   ghcup compile ghc -j 4 -v 8.4.2 -b /usr/bin/ghc-8.2.2
   # build cross compiler
   ghcup compile ghc -j 4 -v 8.4.2 -b 8.2.2 -x armv7-unknown-linux-gnueabihf --config $(pwd)/build.mk -- --enable-unregisterised|]
+
+  compileHLSFooter = [s|Discussion:
+  Compiles and installs the specified HLS version.
+
+Examples:
+  ghcup compile hls -v 1.4.0 -j 12 8.10.5 8.10.7 9.0.1|]
 
 configP :: Parser ConfigCommand
 configP = subparser
@@ -1187,6 +1213,64 @@ ghcCompileOpts =
             <> help "install in an isolated directory instead of the default one, no symlinks to this installation will be made"
             )
            )
+
+hlsCompileOpts :: Parser HLSCompileOptions
+hlsCompileOpts =
+  HLSCompileOptions
+    <$> ((Left <$> option
+          (eitherReader
+            (first (const "Not a valid version") . version . T.pack)
+          )
+          (short 'v' <> long "version" <> metavar "VERSION" <> help
+            "The tool version to compile"
+          )
+          ) <|>
+          (Right <$> (GitBranch <$> option
+          str
+          (short 'g' <> long "git-ref" <> metavar "GIT_REFERENCE" <> help
+            "The git commit/branch/ref to build from"
+          ) <*>
+          optional (option str (short 'r' <> long "repository" <> metavar "GIT_REPOSITORY" <> help "The git repository to build from (defaults to GHC upstream)"))
+          )))
+    <*> optional
+          (option
+            (eitherReader (readEither @Int))
+            (short 'j' <> long "jobs" <> metavar "JOBS" <> help
+              "How many jobs to use for make"
+            )
+          )
+    <*> flag
+          False
+          True
+          (long "set" <> help
+            "Set as active version after install"
+          )
+    <*> optional
+          (option
+            (eitherReader
+              (first (const "Not a valid version") . version . T.pack)
+            )
+            (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION" <> help
+              "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
+            )
+          )
+    <*> optional
+          (option
+            (eitherReader isolateParser)
+            (  short 'i'
+            <> long "isolate"
+            <> metavar "DIR"
+            <> help "install in an isolated directory instead of the default one, no symlinks to this installation will be made"
+            )
+           )
+    <*> optional
+          (option
+            str
+            (short 'p' <> long "projectfile" <> metavar "CABAL_PROJECT_LOCAL" <> help
+              "Absolute path to a cabal.project.local to be used for the build"
+            )
+          )
+    <*> many (toolVersionArgument Nothing (Just GHC))
 
 
 toolVersionParser :: Parser ToolVersion
@@ -1789,6 +1873,29 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , ArchiveResult
                       ]
 
+          let runCompileHLS =
+                  runAppState
+                  . runResourceT
+                  . runE
+                    @'[ AlreadyInstalled
+                      , BuildFailed
+                      , DigestError
+                      , GPGError
+                      , DownloadFailed
+                      , GHCupSetError
+                      , NoDownload
+                      , NotFoundInPATH
+                      , PatchFailed
+                      , UnknownArchive
+                      , TarDirDoesNotExist
+                      , TagNotFound
+                      , NextVerNotFound
+                      , NoToolVersionSet
+                      , NotInstalled
+                      , DirNotEmpty
+                      , ArchiveResult
+                      ]
+
           let
             runLeanWhereIs =
                 -- Don't use runLeanAppState here, which is disabled on windows.
@@ -2224,6 +2331,51 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                         runLogger $ logError $ T.pack $ prettyShow e
                         pure $ ExitFailure 8
 
+            Compile (CompileHLS HLSCompileOptions { .. }) -> do
+              runCompileHLS (do
+                case targetHLS of
+                  Left targetVer -> do
+                    GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+                    let vi = getVersionInfo targetVer HLS dls
+                    forM_ (_viPreCompile =<< vi) $ \msg -> do
+                      lift $ logInfo msg
+                      lift $ logInfo
+                        "...waiting for 5 seconds, you can still abort..."
+                      liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
+                  Right _ -> pure ()
+                ghcs <- liftE $ forM targetGHCs (\ghc -> fmap (_tvVersion . fst) . fromVersion (Just ghc) $ GHC)
+                targetVer <- liftE $ compileHLS
+                            targetHLS
+                            ghcs
+                            jobs
+                            ovewrwiteVer
+                            isolateDir
+                            cabalProject
+                GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+                let vi = getVersionInfo targetVer HLS dls
+                when setCompile $ void $ liftE $
+                  setHLS targetVer
+                pure (vi, targetVer)
+                )
+                >>= \case
+                      VRight (vi, tv) -> do
+                        runLogger $ logInfo
+                          "HLS successfully compiled and installed"
+                        forM_ (_viPostInstall =<< vi) $ \msg ->
+                          runLogger $ logInfo msg
+                        putStr (T.unpack $ prettyVer tv)
+                        pure ExitSuccess
+                      VLeft err@(V (BuildFailed tmpdir _)) -> do
+                        case keepDirs settings of
+                          Never -> runLogger $ logError $ T.pack $ prettyShow err
+                          _ -> runLogger $ (logError $ T.pack (prettyShow err) <> "\n" <>
+                                "Check the logs at " <> T.pack logsDir <> " and the build directory "
+                                <> T.pack tmpdir <> " for more clues." <> "\n" <>
+                                "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
+                        pure $ ExitFailure 9
+                      VLeft e -> do
+                        runLogger $ logError $ T.pack $ prettyShow e
+                        pure $ ExitFailure 9
             Compile (CompileGHC GHCCompileOptions { hadrian = True, crossTarget = Just _ }) -> do
               runLogger $ logError "Hadrian cross compile support is not yet implemented!"
               pure $ ExitFailure 9

@@ -636,7 +636,7 @@ checkDigest eDigest file = do
     lift $ logInfo $ "verifying digest of: " <> T.pack p'
     c <- liftIO $ L.readFile file
     cDigest <- throwEither . E.decodeUtf8' . B16.encode . SHA256.hashlazy $ c
-    when ((cDigest /= eDigest) && verify) $ throwE (DigestError cDigest eDigest)
+    when ((cDigest /= eDigest) && verify) $ throwE (DigestError file cDigest eDigest)
 
 
 -- | Get additional curl args from env. This is an undocumented option.

@@ -263,6 +263,23 @@ test:linux:
     CABAL_VERSION: "3.4.0.0"
   needs: []
 
+test:linux:hls:
+  stage: test
+  extends:
+    - .test_ghcup_version
+    - .debian
+  variables:
+    GHC_VERSION: "8.10.7"
+    HLS_TARGET_VERSION: "1.4.0"
+    CABAL_VERSION: "3.6.0.0"
+  needs: []
+  when: manual
+  allow_failure: true
+  before_script:
+    - ./.gitlab/before_script/linux/install_deps.sh
+  script:
+    - ./.gitlab/script/ghcup_hls.sh
+
 test:linux:cross-armv7:
   stage: test
   extends:

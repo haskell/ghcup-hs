@@ -2388,6 +2388,10 @@ ghcupDownloads:
         - Latest
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#140
       viPostInstall: *hls-post-install
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/ghcup/src/haskell-language-server/1.4.0/haskell-language-server-1.4.0.tar.gz
+        dlSubdir: haskell-language-server-1.4.0
+        dlHash: c5d7dbf7fae9aa3ed2c1184b49e82d8ac623ca786494ef6602cfe11735d28db0
       viArch:
         A_64:
           Linux_UnknownLinux:

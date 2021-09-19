@@ -842,6 +842,8 @@ runBuildAction :: ( Pretty (V e)
                   , MonadMask m
                   , HasLog env
                   , MonadUnliftIO m
+                  , MonadFail m
+                  , MonadCatch m
                   )
                => FilePath        -- ^ build directory (cleaned up depending on Settings)
                -> Maybe FilePath  -- ^ dir to *always* clean up on exception
@@ -1039,7 +1041,7 @@ ensureGlobalTools = do
   shimDownload <- liftE $ lE @_ @'[NoDownload]
     $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
   let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
-  void $ (\(DigestError _ _) -> do
+  void $ (\(DigestError _ _ _) -> do
       lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
       lift $ logDebug ("rm -f " <> T.pack (cacheDir dirs </> "gs.exe"))
       lift $ hideError doesNotExistErrorType $ recycleFile (cacheDir dirs </> "gs.exe")
