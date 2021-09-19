@@ -9,6 +9,8 @@ import           GHCup.Utils.Prelude
 
 import           Control.Monad.Reader
 import           Data.Maybe
+import           Data.Text               ( Text )
+import           Data.Void
 import           GHC.IO.Exception
 import           Optics                  hiding ((<|), (|>))
 import           System.Directory
@@ -16,7 +18,9 @@ import           System.FilePath
 import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           Text.Regex.Posix
 
+import qualified Data.Text                     as T
 import qualified Data.ByteString.Lazy          as BL
+import qualified Text.Megaparsec               as MP
 
 
 
@@ -100,6 +104,11 @@ findFiles :: FilePath -> Regex -> IO [FilePath]
 findFiles path regex = do
   contents <- listDirectory path
   pure $ filter (match regex) contents
+
+findFiles' :: FilePath -> MP.Parsec Void Text a -> IO [FilePath]
+findFiles' path parser = do
+  contents <- listDirectory path
+  pure $ filter (\fp -> either (const False) (const True) $ MP.parse parser "" (T.pack fp)) contents
 
 
 checkFileAlreadyExists :: (MonadIO m) => FilePath -> m Bool
