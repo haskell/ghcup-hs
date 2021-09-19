@@ -103,6 +103,7 @@ data Command
   = Install (Either InstallCommand InstallOptions)
   | InstallCabalLegacy InstallOptions
   | Set (Either SetCommand SetOptions)
+  | UnSet UnsetCommand
   | List ListOptions
   | Rm (Either RmCommand RmOptions)
   | DInfo
@@ -150,6 +151,11 @@ data SetCommand = SetGHC SetOptions
                 | SetHLS SetOptions
                 | SetStack SetOptions
 
+data UnsetCommand = UnsetGHC   UnsetOptions
+                  | UnsetCabal UnsetOptions
+                  | UnsetHLS   UnsetOptions
+                  | UnsetStack UnsetOptions
+
 -- a superset of ToolVersion
 data SetToolVersion = SetToolVersion GHCTargetVersion
                     | SetToolTag Tag
@@ -158,6 +164,10 @@ data SetToolVersion = SetToolVersion GHCTargetVersion
 
 data SetOptions = SetOptions
   { sToolVer :: SetToolVersion
+  }
+
+data UnsetOptions = UnsetOptions
+  { sToolVer :: Maybe Text -- target platform triple
   }
 
 data ListOptions = ListOptions
@@ -358,6 +368,14 @@ com =
              )
            )
       <> command
+           "unset"
+           (info
+             (UnSet <$> unsetParser <**> helper)
+             (  progDesc "Unset currently active GHC/cabal version"
+             <> footerDoc (Just $ text unsetFooter)
+             )
+           )
+      <> command
            "rm"
            (info
              (Rm <$> rmParser <**> helper)
@@ -469,6 +487,10 @@ com =
   defaults to setting GHC with the specified version/tag (if no tag
   is given, sets GHC to 'recommended' version).
   It is recommended to always specify a subcommand (ghc/cabal/hls/stack).|]
+
+  unsetFooter :: String
+  unsetFooter = [s|Discussion:
+  Unsets the currently active GHC or cabal version.|]
 
   rmFooter :: String
   rmFooter = [s|Discussion:
@@ -715,11 +737,73 @@ setParser =
   setHLSFooter = [s|Discussion:
     Sets the the current haskell-language-server version.|]
 
+unsetParser :: Parser UnsetCommand
+unsetParser =
+  (subparser
+      (  command
+          "ghc"
+          (   UnsetGHC
+          <$> info
+                (unsetOpts <**> helper)
+                (  progDesc "Unset GHC version"
+                <> footerDoc (Just $ text unsetGHCFooter)
+                )
+          )
+      <> command
+           "cabal"
+           (   UnsetCabal
+           <$> info
+                (unsetOpts <**> helper)
+                 (  progDesc "Unset Cabal version"
+                 <> footerDoc (Just $ text unsetCabalFooter)
+                 )
+           )
+      <> command
+           "hls"
+           (   UnsetHLS
+           <$> info
+                 (unsetOpts <**> helper)
+                 (  progDesc "Unset haskell-language-server version"
+                 <> footerDoc (Just $ text unsetHLSFooter)
+                 )
+           )
+      <> command
+           "stack"
+           (   UnsetStack
+           <$> info
+                 (unsetOpts <**> helper)
+                 (  progDesc "Unset stack version"
+                 <> footerDoc (Just $ text unsetStackFooter)
+                 )
+           )
+      )
+    )
+ where
+  unsetGHCFooter :: String
+  unsetGHCFooter = [s|Discussion:
+    Unsets the the current GHC version. That means there won't
+    be a ~/.ghcup/bin/ghc anymore.|]
+
+  unsetCabalFooter :: String
+  unsetCabalFooter = [s|Discussion:
+    Unsets the the current Cabal version.|]
+
+  unsetStackFooter :: String
+  unsetStackFooter = [s|Discussion:
+    Unsets the the current Stack version.|]
+
+  unsetHLSFooter :: String
+  unsetHLSFooter = [s|Discussion:
+    Unsets the the current haskell-language-server version.|]
+
 
 setOpts :: Maybe Tool -> Parser SetOptions
 setOpts tool = SetOptions <$>
     (fromMaybe SetRecommended <$>
       optional (setVersionArgument (Just ListInstalled) tool))
+
+unsetOpts :: Parser UnsetOptions
+unsetOpts = UnsetOptions . fmap T.pack <$> optional (argument str (metavar "TRIPLE"))
 
 listOpts :: Parser ListOptions
 listOpts =
@@ -1629,6 +1713,11 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     , NoToolVersionSet
                     ]
 
+            runUnsetGHC =
+                runAppState
+                . runE
+                  @'[ NotInstalled ]
+
           let
             runLeanSetCabal =
                 runLeanAppState
@@ -2088,6 +2177,27 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Set (Left (SetCabal sopts)) -> setCabal' sopts
             Set (Left (SetHLS sopts)) -> setHLS' sopts
             Set (Left (SetStack sopts)) -> setStack' sopts
+
+            UnSet (UnsetGHC (UnsetOptions triple)) -> runUnsetGHC (unsetGHC triple)
+                  >>= \case
+                        VRight _ -> do
+                          runLogger $ logInfo "GHC successfully unset"
+                          pure ExitSuccess
+                        VLeft  e -> do
+                          runLogger $ logError $ T.pack $ prettyShow e
+                          pure $ ExitFailure 14
+            UnSet (UnsetCabal (UnsetOptions _)) -> do
+              runAppState unsetCabal
+              runLogger $ logInfo "Cabal successfully unset"
+              pure ExitSuccess
+            UnSet (UnsetHLS (UnsetOptions _)) -> do
+              runAppState unsetHLS
+              runLogger $ logInfo "HLS successfully unset"
+              pure ExitSuccess
+            UnSet (UnsetStack (UnsetOptions _)) -> do
+              runAppState unsetStack
+              runLogger $ logInfo "Stack successfully unset"
+              pure ExitSuccess
 
             List ListOptions {..} ->
               runListGHC (do

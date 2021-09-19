@@ -968,6 +968,17 @@ setGHC ver sghc = do
             $ createDirectoryLink targetF fullF
       _ -> pure ()
 
+unsetGHC :: ( MonadReader env m
+            , HasDirs env
+            , HasLog env
+            , MonadThrow m
+            , MonadFail m
+            , MonadIO m
+            , MonadMask m
+            )
+         => Maybe Text
+         -> Excepts '[NotInstalled] m ()
+unsetGHC = rmPlain
 
 
 -- | Set the @~\/.ghcup\/bin\/cabal@ symlink.
@@ -975,7 +986,6 @@ setCabal :: ( MonadMask m
             , MonadReader env m
             , HasDirs env
             , HasLog env
-            , MonadThrow m
             , MonadFail m
             , MonadIO m
             , MonadUnliftIO m)
@@ -999,18 +1009,24 @@ setCabal ver = do
 
   pure ()
 
-
+unsetCabal :: ( MonadMask m
+              , MonadReader env m
+              , HasDirs env
+              , MonadIO m)
+           => m ()
+unsetCabal = do
+  Dirs {..} <- getDirs
+  let cabalbin = binDir </> "cabal" <> exeExt
+  hideError doesNotExistErrorType $ rmLink cabalbin
 
 
 -- | Set the haskell-language-server symlinks.
-setHLS :: ( MonadCatch m
-          , MonadReader env m
+setHLS :: ( MonadReader env m
           , HasDirs env
           , HasLog env
-          , MonadThrow m
-          , MonadFail m
           , MonadIO m
           , MonadMask m
+          , MonadFail m
           , MonadUnliftIO m
           )
        => Version
@@ -1045,6 +1061,21 @@ setHLS ver = do
   pure ()
 
 
+unsetHLS :: ( MonadMask m
+            , MonadReader env m
+            , HasDirs env
+            , MonadIO m)
+         => m ()
+unsetHLS = do
+  Dirs {..} <- getDirs
+  let wrapper = binDir </> "haskell-language-server-wrapper" <> exeExt
+  bins   <- liftIO $ handleIO (\_ -> pure []) $ findFiles'
+    binDir
+    (MP.chunk "haskell-language-server-" <* pvp' <* MP.chunk (T.pack exeExt) <* MP.eof)
+  forM_ bins (hideError doesNotExistErrorType . rmLink . (binDir </>))
+  hideError doesNotExistErrorType $ rmLink wrapper
+
+
 -- | Set the @~\/.ghcup\/bin\/stack@ symlink.
 setStack :: ( MonadMask m
             , MonadReader env m
@@ -1072,6 +1103,17 @@ setStack ver = do
   lift $ createLink targetFile stackbin
 
   pure ()
+
+
+unsetStack :: ( MonadMask m
+              , MonadReader env m
+              , HasDirs env
+              , MonadIO m)
+           => m ()
+unsetStack = do
+  Dirs {..} <- getDirs
+  let stackbin = binDir </> "stack" <> exeExt
+  hideError doesNotExistErrorType $ rmLink stackbin
 
 
 -- | Warn if the installed and set HLS is not compatible with the installed and
