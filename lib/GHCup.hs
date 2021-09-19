@@ -63,6 +63,11 @@ import           Data.Text                      ( Text )
 import           Data.Time.Clock
 import           Data.Time.Format.ISO8601
 import           Data.Versions
+import           Distribution.Types.Version   hiding ( Version )
+import           Distribution.Types.PackageId
+import           Distribution.Types.PackageDescription
+import           Distribution.Types.GenericPackageDescription
+import           Distribution.PackageDescription.Parsec
 import           GHC.IO.Exception
 import           Haskus.Utils.Variant.Excepts
 import           Language.Haskell.TH
@@ -83,6 +88,7 @@ import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 
 import qualified Crypto.Hash.SHA256            as SHA256
+import qualified Data.List.NonEmpty            as NE
 import qualified Data.ByteString.Base16        as B16
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as BL
@@ -264,6 +270,7 @@ installPackedGHC :: ( MonadMask m
                     , HasLog env
                     , MonadIO m
                     , MonadUnliftIO m
+                    , MonadFail m
                     )
                  => FilePath          -- ^ Path to the packed GHC bindist
                  -> Maybe TarDir      -- ^ Subdir of the archive
@@ -621,10 +628,7 @@ installHLSBindist dlinfo ver isoFilepath forceInstall = do
     Nothing -> do
       liftE $ installHLSUnpacked workdir binDir (Just ver) forceInstall
 
-      -- create symlink if this is the latest version in a regular install
-      hlsVers <- lift $ fmap rights getInstalledHLSs
-      let lInstHLS = headMay . reverse . sort $ hlsVers
-      when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
+  liftE $ installHLSPostInst isoFilepath ver
 
 
 -- | Install an unpacked hls distribution.
@@ -678,6 +682,21 @@ installHLSUnpacked path inst mver' forceInstall = do
     
   lift $ chmod_755 destWrapperPath
 
+
+installHLSPostInst :: (MonadReader env m, HasDirs env, HasLog env, MonadIO m, MonadCatch m, MonadMask m, MonadFail m, MonadUnliftIO m)
+                   => Maybe FilePath
+                   -> Version
+                   -> Excepts '[NotInstalled] m ()
+installHLSPostInst isoFilepath ver = 
+  case isoFilepath of
+    Just _ -> pure ()
+    Nothing -> do
+      -- create symlink if this is the latest version in a regular install
+      hlsVers <- lift $ fmap rights getInstalledHLSs
+      let lInstHLS = headMay . reverse . sort $ hlsVers
+      when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
+
+
 -- | Installs hls binaries @haskell-language-server-\<ghcver\>@
 -- into @~\/.ghcup\/bin/@, as well as @haskell-languager-server-wrapper@.
 installHLSBin :: ( MonadMask m
@@ -714,6 +733,155 @@ installHLSBin :: ( MonadMask m
 installHLSBin ver isoFilepath forceInstall = do
   dlinfo <- liftE $ getDownloadInfo HLS ver
   installHLSBindist dlinfo ver isoFilepath forceInstall
+
+
+compileHLS :: ( MonadMask m
+              , MonadCatch m
+              , MonadReader env m
+              , HasDirs env
+              , HasSettings env
+              , HasPlatformReq env
+              , HasGHCupInfo env
+              , HasLog env
+              , MonadResource m
+              , MonadIO m
+              , MonadUnliftIO m
+              , MonadFail m
+              )
+           => Either Version GitBranch
+           -> [Version]
+           -> Maybe Int
+           -> Maybe Version
+           -> Maybe FilePath
+           -> Maybe FilePath
+           -> Excepts '[ NoDownload
+                       , GPGError
+                       , DownloadFailed
+                       , DigestError
+                       , UnknownArchive
+                       , TarDirDoesNotExist
+                       , ArchiveResult
+                       , BuildFailed
+                       , NotInstalled
+                       ] m Version
+compileHLS targetHLS ghcs jobs ov isolateDir cabalProject = do
+  PlatformRequest { .. } <- lift getPlatformReq
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  Dirs { .. } <- lift getDirs
+
+  (workdir, tver) <- case targetHLS of
+    -- unpack from version tarball
+    Left tver -> do
+      lift $ logDebug $ "Requested to compile: " <> prettyVer tver
+
+      -- download source tarball
+      dlInfo <-
+        preview (ix HLS % ix tver % viSourceDL % _Just) dls
+          ?? NoDownload
+      dl <- liftE $ downloadCached dlInfo Nothing
+
+      -- unpack
+      tmpUnpack <- lift mkGhcupTmpDir
+      liftE $ unpackToDir tmpUnpack dl
+      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+
+      workdir <- maybe (pure tmpUnpack)
+                       (liftE . intoSubdir tmpUnpack)
+                       (view dlSubdir dlInfo)
+
+      pure (workdir, tver)
+
+    -- clone from git
+    Right GitBranch{..} -> do
+      tmpUnpack <- lift mkGhcupTmpDir
+      let git args = execLogged "git" ("--no-pager":args) (Just tmpUnpack) "git" Nothing
+      tver <- reThrowAll @_ @'[ProcessError] DownloadFailed $ do
+        let rep = fromMaybe "https://github.com/haskell/haskell-language-server.git" repo
+        lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
+        lEM $ git [ "init" ]
+        lEM $ git [ "remote"
+                  , "add"
+                  , "origin"
+                  , fromString rep ]
+
+        let fetch_args = 
+                  [ "fetch"
+                  , "--depth"
+                  , "1"
+                  , "--quiet"
+                  , "origin"
+                  , fromString ref ]
+        lEM $ git fetch_args
+
+        lEM $ git [ "checkout", "FETCH_HEAD" ]
+        (Just gpd) <- parseGenericPackageDescriptionMaybe <$> liftIO (B.readFile (tmpUnpack </> "haskell-language-server.cabal"))
+        pure . (\c -> Version Nothing c [] Nothing)
+          . NE.fromList . fmap (NE.fromList . (:[]) . digits . fromIntegral)
+          . versionNumbers
+          . pkgVersion
+          . package
+          . packageDescription
+          $ gpd
+
+      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+      lift $ logInfo $ "Git version " <> T.pack ref <> " corresponds to HLS version " <> prettyVer tver
+
+      pure (tmpUnpack, tver)
+
+  -- the version that's installed may differ from the
+  -- compiled version, so the user can overwrite it
+  let installVer = fromMaybe tver ov
+
+  liftE $ runBuildAction
+    workdir
+    Nothing
+    (reThrowAll @_ @'[ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed workdir) $ do
+      let installDir = workdir </> "out"
+
+      artifacts <- forM (sort ghcs) $ \ghc -> do
+        let ghcInstallDir = installDir </> T.unpack (prettyVer ghc)
+        liftIO $ createDirRecursive' installDir
+        forM_ cabalProject $ \cp -> handleIO (throwE . CopyError . show) $ liftIO $ copyFile cp (workdir </> "cabal.project.local")
+        lift $ logInfo $ "Building HLS " <> prettyVer installVer <> " for GHC version " <> prettyVer ghc
+        liftE $ lEM @_ @'[ProcessError] $
+          execLogged "cabal" ( [ "v2-install"
+                               , "-w"
+                               , "ghc-" <> T.unpack (prettyVer ghc)
+                               , "--install-method=copy"
+                               ] ++
+                               maybe [] (\j -> ["--jobs=" <> show j]) jobs ++
+                               [ "--overwrite-policy=always"
+                               , "--disable-profiling"
+                               , "--disable-tests"
+                               , "--enable-split-sections"
+                               , "--enable-executable-stripping"
+                               , "--enable-executable-static"
+                               , "--installdir=" <> ghcInstallDir
+                               , "exe:haskell-language-server"
+                               , "exe:haskell-language-server-wrapper"]
+                             )
+          (Just workdir) "cabal" Nothing
+        pure ghcInstallDir
+
+      forM_ artifacts $ \artifact -> do
+        liftIO $ renameFile (artifact </> "haskell-language-server" <.> exeExt)
+          (installDir </> "haskell-language-server-" <> takeFileName artifact <.> exeExt)
+        liftIO $ renameFile (artifact </> "haskell-language-server-wrapper" <.> exeExt)
+          (installDir </> "haskell-language-server-wrapper" <.> exeExt)
+        liftIO $ rmPathForcibly artifact
+
+      case isolateDir of
+        Just isoDir -> do
+          lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
+          liftE $ installHLSUnpacked installDir isoDir Nothing True
+        Nothing -> do
+          liftE $ installHLSUnpacked installDir binDir (Just installVer) True
+    )
+
+  liftE $ installHLSPostInst isolateDir installVer
+
+  pure installVer
+
 
 
 -- | Installs stack into @~\/.ghcup\/bin/stack-\<ver\>@ and

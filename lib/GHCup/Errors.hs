@@ -188,12 +188,14 @@ instance Pretty TarDirDoesNotExist where
     text "Tar directory does not exist:" <+> pPrint dir
 
 -- | File digest verification failed.
-data DigestError = DigestError Text Text
+data DigestError = DigestError FilePath Text Text
   deriving Show
 
 instance Pretty DigestError where
-  pPrint (DigestError currentDigest expectedDigest) =
-    text "Digest error: expected" <+> text (T.unpack expectedDigest) <+> text "but got" <+> pPrint currentDigest
+  pPrint (DigestError fp currentDigest expectedDigest) =
+    text "Digest error for" <+> text (fp <> ": expected")
+      <+> text (T.unpack expectedDigest) <+> text "but got" <+> pPrint currentDigest <+> text
+      "\nConsider removing the file in case it's cached and try again."
 
 -- | File digest verification failed.
 data GPGError = forall xs . (ToVariantMaybe DownloadFailed xs, PopVariant DownloadFailed xs, Show (V xs), Pretty (V xs)) => GPGError (V xs)
