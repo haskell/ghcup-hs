@@ -121,6 +121,7 @@ fetchToolBindist :: ( MonadFail m
                  -> Maybe FilePath
                  -> Excepts
                       '[ DigestError
+                       , GPGError
                        , DownloadFailed
                        , NoDownload
                        ]
@@ -148,6 +149,7 @@ fetchGHCSrc :: ( MonadFail m
             -> Maybe FilePath
             -> Excepts
                  '[ DigestError
+                  , GPGError
                   , DownloadFailed
                   , NoDownload
                   ]
@@ -189,6 +191,7 @@ installGHCBindist :: ( MonadFail m
                        '[ AlreadyInstalled
                         , BuildFailed
                         , DigestError
+                        , GPGError
                         , DownloadFailed
                         , NoDownload
                         , NotInstalled
@@ -384,6 +387,7 @@ installGHCBin :: ( MonadFail m
                    '[ AlreadyInstalled
                     , BuildFailed
                     , DigestError
+                    , GPGError
                     , DownloadFailed
                     , NoDownload
                     , NotInstalled
@@ -421,6 +425,7 @@ installCabalBindist :: ( MonadMask m
                          '[ AlreadyInstalled
                           , CopyError
                           , DigestError
+                          , GPGError
                           , DownloadFailed
                           , NoDownload
                           , NotInstalled
@@ -526,6 +531,7 @@ installCabalBin :: ( MonadMask m
                      '[ AlreadyInstalled
                       , CopyError
                       , DigestError
+                      , GPGError
                       , DownloadFailed
                       , NoDownload
                       , NotInstalled
@@ -563,6 +569,7 @@ installHLSBindist :: ( MonadMask m
                        '[ AlreadyInstalled
                         , CopyError
                         , DigestError
+                        , GPGError
                         , DownloadFailed
                         , NoDownload
                         , NotInstalled
@@ -693,6 +700,7 @@ installHLSBin :: ( MonadMask m
                    '[ AlreadyInstalled
                     , CopyError
                     , DigestError
+                    , GPGError
                     , DownloadFailed
                     , NoDownload
                     , NotInstalled
@@ -731,6 +739,7 @@ installStackBin :: ( MonadMask m
                      '[ AlreadyInstalled
                       , CopyError
                       , DigestError
+                      , GPGError
                       , DownloadFailed
                       , NoDownload
                       , NotInstalled
@@ -768,6 +777,7 @@ installStackBindist :: ( MonadMask m
                          '[ AlreadyInstalled
                           , CopyError
                           , DigestError
+                          , GPGError
                           , DownloadFailed
                           , NoDownload
                           , NotInstalled
@@ -1862,6 +1872,7 @@ compileGHC :: ( MonadMask m
                 '[ AlreadyInstalled
                  , BuildFailed
                  , DigestError
+                 , GPGError
                  , DownloadFailed
                  , GHCupSetError
                  , NoDownload
@@ -2309,6 +2320,8 @@ upgradeGHCup :: ( MonadMask m
              -> Excepts
                   '[ CopyError
                    , DigestError
+                   , GPGError
+                   , GPGError
                    , DownloadFailed
                    , NoDownload
                    , NoUpdate
@@ -2325,7 +2338,7 @@ upgradeGHCup mtarget force' = do
   dli   <- liftE $ getDownloadInfo GHCup latestVer
   tmp   <- lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt
-  p <- liftE $ download (_dlUri dli) (Just (_dlHash dli)) tmp (Just fn) False
+  p <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) tmp (Just fn) False
   let destDir = takeDirectory destFile
       destFile = fromMaybe (binDir </> fn) mtarget
   lift $ logDebug $ "mkdir -p " <> T.pack destDir

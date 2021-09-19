@@ -87,15 +87,16 @@ import qualified Text.Megaparsec.Char          as MPC
 data Options = Options
   {
   -- global options
-    optVerbose   :: Maybe Bool
-  , optCache     :: Maybe Bool
-  , optUrlSource :: Maybe URI
-  , optNoVerify  :: Maybe Bool
-  , optKeepDirs  :: Maybe KeepDirs
+    optVerbose     :: Maybe Bool
+  , optCache       :: Maybe Bool
+  , optUrlSource   :: Maybe URI
+  , optNoVerify    :: Maybe Bool
+  , optKeepDirs    :: Maybe KeepDirs
   , optsDownloader :: Maybe Downloader
-  , optNoNetwork :: Maybe Bool
+  , optNoNetwork   :: Maybe Bool
+  , optGpg         :: Maybe GPGSetting
   -- commands
-  , optCommand   :: Command
+  , optCommand     :: Command
   }
 
 data Command
@@ -310,6 +311,13 @@ opts =
           <> hidden
           ))
     <*> invertableSwitch "offline" 'o' False (help "Don't do any network calls, trying cached assets and failing if missing.")
+    <*> optional (option
+          (eitherReader gpgParser)
+          (  long "gpg"
+          <> metavar "<strict|lax|none>"
+          <> help
+          "GPG verification (default: none)"
+          ))
     <*> com
  where
   parseUri s' =
@@ -1145,7 +1153,7 @@ tagCompleter tool add = listIOCompleter $ do
         , rawOutter    = mempty
         }
   let appState = LeanAppState
-        (Settings True False Never Curl False GHCupURL True)
+        (Settings True False Never Curl False GHCupURL True GPGNone)
         dirs'
         defaultKeyBindings
         loggerConfig
@@ -1170,7 +1178,7 @@ versionCompleter criteria tool = listIOCompleter $ do
         , colorOutter  = mempty
         , rawOutter    = mempty
         }
-  let settings = Settings True False Never Curl False GHCupURL True
+  let settings = Settings True False Never Curl False GHCupURL True GPGNone
   let leanAppState = LeanAppState
                    settings
                    dirs'
@@ -1257,6 +1265,13 @@ downloaderParser s' | t == T.pack "curl"     = Right Curl
                     | otherwise = Left ("Unknown downloader value: " <> s')
   where t = T.toLower (T.pack s')
 
+gpgParser :: String -> Either String GPGSetting
+gpgParser s' | t == T.pack "strict" = Right GPGStrict
+             | t == T.pack "lax"    = Right GPGLax
+             | t == T.pack "none"   = Right GPGNone
+             | otherwise = Left ("Unknown gpg setting value: " <> s')
+  where t = T.toLower (T.pack s')
+
 
 platformParser :: String -> Either String PlatformRequest
 platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
@@ -1336,6 +1351,7 @@ toSettings options = do
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
          urlSource   = maybe (fromMaybe GHCupURL uUrlSource) OwnSource optUrlSource
          noNetwork   = fromMaybe (fromMaybe False uNoNetwork) optNoNetwork
+         gpgSetting  = fromMaybe (fromMaybe GPGNone uGPGSetting) optGpg
      in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
@@ -1371,7 +1387,8 @@ updateSettings config settings = do
          verbose'    = fromMaybe verbose uVerbose
          urlSource'  = fromMaybe urlSource uUrlSource
          noNetwork'  = fromMaybe noNetwork uNoNetwork
-     in Settings cache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork'
+         gpgSetting' = fromMaybe gpgSetting uGPGSetting
+     in Settings cache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting'
 
 upgradeOptsP :: Parser UpgradeOpts
 upgradeOptsP =
@@ -1396,7 +1413,7 @@ describe_result = $( LitE . StringL <$>
                      runIO (do
                              CapturedProcess{..} <-  do
                               dirs <- liftIO getAllDirs
-                              let settings = AppState (Settings True False Never Curl False GHCupURL False)
+                              let settings = AppState (Settings True False Never Curl False GHCupURL False GPGNone)
                                                dirs
                                                defaultKeyBindings
                               flip runReaderT settings $ executeOut "git" ["describe"] Nothing
@@ -1506,7 +1523,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
                 ghcupInfo <-
                   ( flip runReaderT leanAppstate
-                    . runE @'[JSONError , DownloadFailed, FileDoesNotExistError]
+                    . runE @'[DigestError, GPGError, JSONError , DownloadFailed, FileDoesNotExistError]
                     $ liftE
                     $ getDownloadsF
                     )
@@ -1579,6 +1596,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , BuildFailed
                       , TagNotFound
                       , DigestError
+                      , GPGError
                       , DownloadFailed
                       , TarDirDoesNotExist
                       , NextVerNotFound
@@ -1669,6 +1687,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     @'[ AlreadyInstalled
                       , BuildFailed
                       , DigestError
+                      , GPGError
                       , DownloadFailed
                       , GHCupSetError
                       , NoDownload
@@ -1707,6 +1726,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   . runResourceT
                   . runE
                     @'[ DigestError
+                      , GPGError
                       , NoDownload
                       , NoUpdate
                       , FileDoesNotExistError
@@ -1723,6 +1743,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NoToolVersionSet
                       , NoDownload
                       , DigestError
+                      , GPGError
                       , DownloadFailed
                       , JSONError
                       , FileDoesNotExistError
