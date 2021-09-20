@@ -754,6 +754,8 @@ compileHLS :: ( MonadMask m
            -> Maybe Version
            -> Maybe FilePath
            -> Maybe FilePath
+           -> Maybe FilePath
+           -> Maybe FilePath
            -> Excepts '[ NoDownload
                        , GPGError
                        , DownloadFailed
@@ -764,7 +766,7 @@ compileHLS :: ( MonadMask m
                        , BuildFailed
                        , NotInstalled
                        ] m Version
-compileHLS targetHLS ghcs jobs ov isolateDir cabalProject = do
+compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patchdir = do
   PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   Dirs { .. } <- lift getDirs
@@ -835,13 +837,26 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject = do
   liftE $ runBuildAction
     workdir
     Nothing
-    (reThrowAll @_ @'[ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed workdir) $ do
+    (reThrowAll @_ @'[PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed workdir) $ do
       let installDir = workdir </> "out"
+      liftIO $ createDirRecursive' installDir
+
+      -- apply patches
+      forM_ patchdir (\dir -> liftE $ applyPatches dir workdir)
+
+      -- set up project files
+      cp <- case cabalProject of
+        Just cp
+          | isAbsolute cp -> do
+              handleIO (throwE . CopyError . show) $ liftIO $ copyFile cp (workdir </> "cabal.project")
+              pure "cabal.project"
+          | otherwise -> pure (takeFileName cp)
+        Nothing -> pure "cabal.project"
+      forM_ cabalProjectLocal $ \cpl -> handleIO (throwE . CopyError . show) $ liftIO $ copyFile cpl (workdir </> cp <.> "local")
 
       artifacts <- forM (sort ghcs) $ \ghc -> do
         let ghcInstallDir = installDir </> T.unpack (prettyVer ghc)
         liftIO $ createDirRecursive' installDir
-        forM_ cabalProject $ \cp -> handleIO (throwE . CopyError . show) $ liftIO $ copyFile cp (workdir </> "cabal.project.local")
         lift $ logInfo $ "Building HLS " <> prettyVer installVer <> " for GHC version " <> prettyVer ghc
         liftE $ lEM @_ @'[ProcessError] $
           execLogged "cabal" ( [ "v2-install"
@@ -857,6 +872,7 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject = do
                                , "--enable-executable-stripping"
                                , "--enable-executable-static"
                                , "--installdir=" <> ghcInstallDir
+                               , "--project-file=" <> cp
                                , "exe:haskell-language-server"
                                , "exe:haskell-language-server-wrapper"]
                              )
