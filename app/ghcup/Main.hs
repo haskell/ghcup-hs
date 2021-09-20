@@ -941,6 +941,8 @@ Examples:
 
   compileHLSFooter = [s|Discussion:
   Compiles and installs the specified HLS version.
+  The last argument is a list of GHC versions to compile for.
+  These need to be available in PATH prior to compilation.
 
 Examples:
   ghcup compile hls -v 1.4.0 -j 12 8.10.5 8.10.7 9.0.1|]
@@ -1270,7 +1272,7 @@ hlsCompileOpts =
               "Absolute path to a cabal.project.local to be used for the build"
             )
           )
-    <*> many (toolVersionArgument Nothing (Just GHC))
+    <*> some (toolVersionArgument Nothing (Just GHC))
 
 
 toolVersionParser :: Parser ToolVersion
@@ -1287,9 +1289,13 @@ toolVersionParser = verP' <|> toolP
 toolVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
 toolVersionArgument criteria tool =
   argument (eitherReader toolVersionEither)
-    (metavar "VERSION|TAG"
+    (metavar (mv tool)
     <> completer (tagCompleter (fromMaybe GHC tool) [])
     <> foldMap (completer . versionCompleter criteria) tool)
+ where
+  mv (Just GHC) = "GHC_VERSION|TAG"
+  mv (Just HLS) = "HLS_VERSION|TAG"
+  mv _          = "VERSION|TAG"
 
 
 setVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser SetToolVersion
