@@ -1,5 +1,19 @@
 # Revision history for ghcup
 
+## 0.1.17 -- 2021-09-20
+
+* Add `--force` option to install/compile wrt [#210](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/210) by Arjun Kathuria
+* Implement compiling HLS from source wrt [#201](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/201)
+* Implement experimental GPG verification of the metadata file (see README) wrt [#263](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/236)
+* Add `ghcup unset` command wrt [#145](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/145)
+* Add `ghcup whereis bindir` etc wrt [#221](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/221)
+* Greatly reduce dependency footprint wrt [#212](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/212)
+* Add `ghcup --cabal-plan`
+* Improve `--patchdir` option for GHC compilation wrt [#226](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/226)
+* Try to improve logging and failure modes, especially during downloads
+* Add descriptive warnings when HLS and GHC versions are incompatible
+* Improve curl header parsing wrt [#213](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/213)
+
 ## 0.1.16.2 -- 2021-08-12
 
 * Add isolated installations wrt [#141](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/141) by Arjun Kathuria
