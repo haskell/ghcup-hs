@@ -138,7 +138,6 @@ getLinuxDistro = do
         | hasWord name ["exherbo"] -> Exherbo
         | hasWord name ["gentoo"]  -> Gentoo
         | hasWord name ["amazonlinux", "Amazon Linux"] -> AmazonLinux
-        | hasWord name ["solus"]   -> Solus
         | otherwise                -> UnknownLinux
   pure (distro, parsedVer)
  where

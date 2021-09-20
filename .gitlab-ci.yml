@@ -109,7 +109,7 @@ variables:
   script:
     - bash ./.gitlab/script/ghcup_version.sh
   variables:
-    JSON_VERSION: "0.0.7"
+    JSON_VERSION: "0.0.6"
   artifacts:
     expire_in: 2 week
     paths:
@@ -225,7 +225,7 @@ variables:
   only:
     - tags
   variables:
-    JSON_VERSION: "0.0.7"
+    JSON_VERSION: "0.0.6"
 
 ######## stack test ########
 

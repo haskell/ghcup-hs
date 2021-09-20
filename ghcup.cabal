@@ -24,7 +24,6 @@ extra-doc-files:
   data/metadata/ghcup-0.0.4.yaml
   data/metadata/ghcup-0.0.5.yaml
   data/metadata/ghcup-0.0.6.yaml
-  data/metadata/ghcup-0.0.7.yaml
 
 extra-source-files:
   data/build_mk/default

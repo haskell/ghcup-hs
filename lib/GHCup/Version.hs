@@ -28,7 +28,7 @@ import qualified Data.Text                     as T
 -- Note that when updating this, CI requires that the file exsists AND the same file exists at
 -- 'https://www.haskell.org/ghcup/exp/ghcup-<ver>.yaml' with some newlines added.
 ghcupURL :: URI
-ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.7.yaml|]
+ghcupURL = [uri|https://www.haskell.org/ghcup/data/ghcup-0.0.6.yaml|]
 
 -- | The current ghcup version.
 ghcUpVer :: PVP

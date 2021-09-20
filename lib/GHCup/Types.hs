@@ -223,7 +223,6 @@ data LinuxDistro = Debian
                  | RedHat
                  | Alpine
                  | AmazonLinux
-                 | Solus
                  -- rolling
                  | Gentoo
                  | Exherbo
@@ -243,7 +242,6 @@ distroToString CentOS = "centos"
 distroToString RedHat = "redhat"
 distroToString Alpine = "alpine"
 distroToString AmazonLinux = "amazon"
-distroToString Solus = "solus"
 distroToString Gentoo = "gentoo"
 distroToString Exherbo = "exherbo"
 distroToString UnknownLinux = "unknown"
