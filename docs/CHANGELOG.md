@@ -8,7 +8,7 @@
 * Add `ghcup unset` command wrt [#145](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/145)
 * Add `ghcup whereis bindir` etc wrt [#221](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/221)
 * Greatly reduce dependency footprint wrt [#212](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/212)
-* Add `ghcup --cabal-plan`
+* Add `ghcup --plan-json`
 * Improve `--patchdir` option for GHC compilation wrt [#226](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/226)
 * Try to improve logging and failure modes, especially during downloads
 * Add descriptive warnings when HLS and GHC versions are incompatible
