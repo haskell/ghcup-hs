@@ -213,6 +213,8 @@ data HLSCompileOptions = HLSCompileOptions
   , ovewrwiteVer :: Maybe Version
   , isolateDir   :: Maybe FilePath
   , cabalProject :: Maybe FilePath
+  , cabalProjectLocal :: Maybe FilePath
+  , patchDir     :: Maybe FilePath
   , targetGHCs   :: [ToolVersion]
   }
 
@@ -1268,8 +1270,22 @@ hlsCompileOpts =
     <*> optional
           (option
             str
-            (short 'p' <> long "projectfile" <> metavar "CABAL_PROJECT_LOCAL" <> help
-              "Absolute path to a cabal.project.local to be used for the build"
+            (long "cabal-project" <> metavar "CABAL_PROJECT" <> help
+              "If relative, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. If absolute, will copy the file over."
+            )
+          )
+    <*> optional
+          (option
+            (eitherReader absolutePathParser)
+            (long "cabal-project-local" <> metavar "CABAL_PROJECT_LOCAL" <> help
+              "Absolute path to a cabal.project.local to be used for the build. Will be copied over."
+            )
+          )
+    <*> optional
+          (option
+            (eitherReader absolutePathParser)
+            (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
+              "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
             )
           )
     <*> some (toolVersionArgument Nothing (Just GHC))
@@ -1503,6 +1519,11 @@ isolateParser :: FilePath -> Either String FilePath
 isolateParser f = case isValid f of
               True -> Right $ normalise f
               False -> Left "Please enter a valid filepath for isolate dir."
+
+absolutePathParser :: FilePath -> Either String FilePath
+absolutePathParser f = case isValid f && isAbsolute f of
+              True -> Right $ normalise f
+              False -> Left "Please enter a valid absolute filepath."
 
 toSettings :: Options -> IO (Settings, KeyBindings)
 toSettings options = do
@@ -2357,6 +2378,8 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                             ovewrwiteVer
                             isolateDir
                             cabalProject
+                            cabalProjectLocal
+                            patchDir
                 GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
                 let vi = getVersionInfo targetVer HLS dls
                 when setCompile $ void $ liftE $
