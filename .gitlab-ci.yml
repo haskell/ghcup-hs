@@ -49,6 +49,7 @@ variables:
     OS: "LINUX"
     ARCH: "ARM"
     CABAL_DIR: "$CI_PROJECT_DIR/cabal"
+  retry: 2
 
 .linux:aarch64:
   image: "registry.gitlab.haskell.org/ghc/ci-images/aarch64-linux-deb10:$DOCKER_REV"
@@ -98,6 +99,7 @@ variables:
     OS: "WINDOWS"
     ARCH: "64"
     CABAL_DIR: "$CI_PROJECT_DIR/cabal"
+  retry: 2
 
 .root_cleanup:
   after_script:
