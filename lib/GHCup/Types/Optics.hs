@@ -158,11 +158,12 @@ logInternal :: ( MonadReader env m
                  -> m ()
 logInternal logLevel msg = do
   LoggerConfig {..} <- gets @"loggerConfig"
+  let color' c = if fancyColors then color c else id
   let style' = case logLevel of
-        Debug   -> style Bold . color Blue
-        Info    -> style Bold . color Green
-        Warn    -> style Bold . color Yellow
-        Error   -> style Bold . color Red
+        Debug   -> style Bold . color' Blue
+        Info    -> style Bold . color' Green
+        Warn    -> style Bold . color' Yellow
+        Error   -> style Bold . color' Red
   let l = case logLevel of
         Debug   -> style' "[ Debug ]"
         Info    -> style' "[ Info  ]"
@@ -178,7 +179,7 @@ logInternal logLevel msg = do
                 $ xs
 
   when (lcPrintDebug || (not lcPrintDebug && (logLevel /= Debug)))
-    $ liftIO $ colorOutter out
+    $ liftIO $ consoleOutter out
 
   -- raw output
   let lr = case logLevel of
@@ -187,7 +188,7 @@ logInternal logLevel msg = do
         Warn    -> "Warn:"
         Error   -> "Error:"
   let outr = lr <> " " <> msg <> "\n"
-  liftIO $ rawOutter outr
+  liftIO $ fileOutter outr
 
 
 

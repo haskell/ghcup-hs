@@ -576,11 +576,12 @@ data LogLevel = Warn
   deriving (Eq, Ord, Show)
 
 data LoggerConfig = LoggerConfig
-  { lcPrintDebug :: Bool                  -- ^ whether to print debug in colorOutter
-  , colorOutter  :: T.Text -> IO () -- ^ how to write the color output
-  , rawOutter    :: T.Text -> IO () -- ^ how to write the full raw output
+  { lcPrintDebug   :: Bool            -- ^ whether to print debug in colorOutter
+  , consoleOutter  :: T.Text -> IO () -- ^ how to write the console output
+  , fileOutter     :: T.Text -> IO () -- ^ how to write the file output
+  , fancyColors    :: Bool
   }
   deriving Show
 
 instance NFData LoggerConfig where
-  rnf (LoggerConfig !lcPrintDebug !_ !_) = rnf lcPrintDebug
+  rnf (LoggerConfig !lcPrintDebug !_ !_ !fancyColors) = rnf (lcPrintDebug, fancyColors)
