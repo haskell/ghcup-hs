@@ -23,6 +23,7 @@ module GHCup.Utils.Prelude where
 import           GHCup.Types
 #endif
 import           GHCup.Types.Optics
+import {-# SOURCE #-} GHCup.Utils.Logger
 
 import           Control.Applicative
 import           Control.Exception.Safe

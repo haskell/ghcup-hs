@@ -11,10 +11,10 @@
 module Main where
 
 import           GHCup.Types
-import           GHCup.Types.Optics
 import           GHCup.Errors
 import           GHCup.Platform
 import           GHCup.Utils.Dirs
+import           GHCup.Utils.Logger
 import           GHCup.Types.JSON               ( )
 
 import           Control.Monad.Trans.Reader     ( runReaderT )

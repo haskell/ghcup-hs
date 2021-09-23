@@ -34,6 +34,7 @@ import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
 import           GHCup.Utils
 import           GHCup.Utils.File
+import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 import           GHCup.Utils.Version.QQ

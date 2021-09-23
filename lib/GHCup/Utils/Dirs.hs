@@ -38,6 +38,7 @@ import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
 import           GHCup.Utils.MegaParsec
+import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
 
 import           Control.Exception.Safe

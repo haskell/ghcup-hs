@@ -13,9 +13,9 @@ module BrickMain where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
-import           GHCup.Types.Optics  hiding ( getGHCupInfo )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
+import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude ( decUTF8Safe )
 import           GHCup.Utils.File
 
