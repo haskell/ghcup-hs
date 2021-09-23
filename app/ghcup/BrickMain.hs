@@ -13,9 +13,9 @@ module BrickMain where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
-import           GHCup.Types.Optics  hiding ( getGHCupInfo )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
+import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude ( decUTF8Safe )
 import           GHCup.Utils.File
 
@@ -537,9 +537,10 @@ settings' :: IORef AppState
 {-# NOINLINE settings' #-}
 settings' = unsafePerformIO $ do
   dirs <- getAllDirs
-  let loggerConfig = LoggerConfig { lcPrintDebug = False
-                                  , colorOutter  = \_ -> pure ()
-                                  , rawOutter    = \_ -> pure ()
+  let loggerConfig = LoggerConfig { lcPrintDebug  = False
+                                  , consoleOutter = \_ -> pure ()
+                                  , fileOutter    = \_ -> pure ()
+                                  , fancyColors   = True
                                   }
   newIORef $ AppState (Settings { cache      = True
                                 , noVerify   = False

@@ -15,6 +15,7 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
+import           GHCup.Utils.Logger
 import           GHCup.Utils.Version.QQ
 
 import           Codec.Archive

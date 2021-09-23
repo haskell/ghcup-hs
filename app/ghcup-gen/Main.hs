@@ -11,21 +11,23 @@
 module Main where
 
 import           GHCup.Types
-import           GHCup.Types.Optics
 import           GHCup.Errors
 import           GHCup.Platform
 import           GHCup.Utils.Dirs
+import           GHCup.Utils.Logger
 import           GHCup.Types.JSON               ( )
 
 import           Control.Monad.Trans.Reader     ( runReaderT )
 import           Control.Monad.IO.Class
 import           Data.Char                      ( toLower )
+import           Data.Maybe
 #if !MIN_VERSION_base(4,13,0)
 import           Data.Semigroup                 ( (<>) )
 #endif
 import           Options.Applicative     hiding ( style )
 import           Haskus.Utils.Variant.Excepts
 import           System.Console.Pretty
+import           System.Environment
 import           System.Exit
 import           System.IO                      ( stderr )
 import           Text.Regex.Posix
@@ -114,9 +116,11 @@ com = subparser
 
 main :: IO ()
 main = do
-  let loggerConfig = LoggerConfig { lcPrintDebug = True
-                                  , colorOutter  = T.hPutStr stderr
-                                  , rawOutter    = \_ -> pure ()
+  no_color <- isJust <$> lookupEnv "NO_COLOR"
+  let loggerConfig = LoggerConfig { lcPrintDebug  = True
+                                  , consoleOutter = T.hPutStr stderr
+                                  , fileOutter    = \_ -> pure ()
+                                  , fancyColors   = not no_color
                                   }
   dirs <- liftIO getAllDirs
   let leanAppstate = LeanAppState (Settings True False Never Curl True GHCupURL False GPGNone) dirs defaultKeyBindings loggerConfig

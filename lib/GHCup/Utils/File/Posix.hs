@@ -17,6 +17,7 @@ module GHCup.Utils.File.Posix where
 
 import           GHCup.Utils.File.Common
 import           GHCup.Utils.Prelude
+import           GHCup.Utils.Logger
 import           GHCup.Types
 import           GHCup.Types.Optics
 

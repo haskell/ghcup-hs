@@ -35,6 +35,7 @@ import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.File
+import           GHCup.Utils.Logger
 import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ

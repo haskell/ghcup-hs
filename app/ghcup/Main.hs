@@ -1338,9 +1338,10 @@ tagCompleter :: Tool -> [String] -> Completer
 tagCompleter tool add = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
   let loggerConfig = LoggerConfig
-        { lcPrintDebug = False
-        , colorOutter  = mempty
-        , rawOutter    = mempty
+        { lcPrintDebug   = False
+        , consoleOutter  = mempty
+        , fileOutter     = mempty
+        , fancyColors    = False
         }
   let appState = LeanAppState
         (Settings True False Never Curl False GHCupURL True GPGNone)
@@ -1364,9 +1365,10 @@ versionCompleter :: Maybe ListCriteria -> Tool -> Completer
 versionCompleter criteria tool = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
   let loggerConfig = LoggerConfig
-        { lcPrintDebug = False
-        , colorOutter  = mempty
-        , rawOutter    = mempty
+        { lcPrintDebug   = False
+        , consoleOutter  = mempty
+        , fileOutter     = mempty
+        , fancyColors    = False
         }
   let settings = Settings True False Never Curl False GHCupURL True GPGNone
   let leanAppState = LeanAppState
@@ -1688,17 +1690,19 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
           -- logger interpreter
           logfile <- flip runReaderT dirs initGHCupFileLogging
+          no_color <- isJust <$> lookupEnv "NO_COLOR"
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = verbose settings
-                , colorOutter  = T.hPutStr stderr
-                , rawOutter    =
+                , consoleOutter  = T.hPutStr stderr
+                , fileOutter    =
                     case optCommand of
                       Nuke -> \_ -> pure ()
                       _ -> T.appendFile logfile
+                , fancyColors = not no_color
                 }
           let leanAppstate = LeanAppState settings dirs keybindings loggerConfig
           let runLogger = flip runReaderT leanAppstate
-          let siletRunLogger = flip runReaderT (leanAppstate { loggerConfig = loggerConfig { colorOutter = \_ -> pure () } } :: LeanAppState)
+          let siletRunLogger = flip runReaderT (leanAppstate { loggerConfig = loggerConfig { consoleOutter = \_ -> pure () } } :: LeanAppState)
 
 
           -------------------------
@@ -2336,7 +2340,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             List ListOptions {..} ->
               runListGHC (do
                   l <- listVersions loTool lCriteria
-                  liftIO $ printListResult lRawFormat l
+                  liftIO $ printListResult no_color lRawFormat l
                   pure ExitSuccess
                 )
 
@@ -2807,9 +2811,8 @@ fromVersion' (SetToolTag t') tool =
   throwE $ TagNotFound t' tool
 
 
-printListResult :: Bool -> [ListResult] -> IO ()
-printListResult raw lr = do
-  no_color <- isJust <$> lookupEnv "NO_COLOR"
+printListResult :: Bool -> Bool -> [ListResult] -> IO ()
+printListResult no_color raw lr = do
 
   let
     color | raw || no_color = flip const
