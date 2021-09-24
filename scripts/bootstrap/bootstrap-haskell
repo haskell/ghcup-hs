@@ -52,41 +52,57 @@ esac
 
 
 die() {
-    (>&2 printf "\\033[0;31m%s\\033[0m\\n" "$1")
+    if [ -n "${NO_COLOR}" ] ; then
+        (>&2 printf "%s\\n" "$1")
+    else
+        (>&2 printf "\\033[0;31m%s\\033[0m\\n" "$1")
+    fi
     exit 2
 }
 
 warn() {
-	case "${plat}" in
-			MSYS*|MINGW*)
-				echo -e "\\033[0;35m$1\\033[0m"
-				;;
-			*)
-				printf "\\033[0;35m%s\\033[0m\\n" "$1"
-				;;
-	esac
+    if [ -n "${NO_COLOR}" ] ; then
+        printf "%s\\n" "$1"
+    else
+        case "${plat}" in
+                MSYS*|MINGW*)
+                    echo -e "\\033[0;35m$1\\033[0m"
+                    ;;
+                *)
+                    printf "\\033[0;35m%s\\033[0m\\n" "$1"
+                    ;;
+        esac
+    fi
 }
 
 yellow() {
-	case "${plat}" in
-			MSYS*|MINGW*)
-				echo -e "\\033[0;33m$1\\033[0m"
-				;;
-			*)
-				printf "\\033[0;33m%s\\033[0m\\n" "$1"
-				;;
-	esac
+    if [ -n "${NO_COLOR}" ] ; then
+        printf "%s\\n" "$1"
+    else
+        case "${plat}" in
+                MSYS*|MINGW*)
+                    echo -e "\\033[0;33m$1\\033[0m"
+                    ;;
+                *)
+                    printf "\\033[0;33m%s\\033[0m\\n" "$1"
+                    ;;
+        esac
+    fi
 }
 
 green() {
-	case "${plat}" in
-			MSYS*|MINGW*)
-				echo -e "\\033[0;32m$1\\033[0m"
-				;;
-			*)
-				printf "\\033[0;32m%s\\033[0m\\n" "$1"
-				;;
-	esac
+    if [ -n "${NO_COLOR}" ] ; then
+        printf "%s\\n" "$1"
+    else
+        case "${plat}" in
+                MSYS*|MINGW*)
+                    echo -e "\\033[0;32m$1\\033[0m"
+                    ;;
+                *)
+                    printf "\\033[0;32m%s\\033[0m\\n" "$1"
+                    ;;
+        esac
+    fi
 }
 
 edo() {
