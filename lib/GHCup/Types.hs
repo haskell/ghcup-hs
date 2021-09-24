@@ -417,6 +417,7 @@ data Settings = Settings
   , urlSource  :: URLSource
   , noNetwork  :: Bool
   , gpgSetting :: GPGSetting
+  , noColor    :: Bool -- this also exists in LoggerConfig
   }
   deriving (Show, GHC.Generic)
 

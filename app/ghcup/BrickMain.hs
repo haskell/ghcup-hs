@@ -43,7 +43,6 @@ import           Data.Vector                    ( Vector
 import           Data.Versions           hiding ( str )
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
-import           System.Environment
 import           System.Exit
 import           System.IO.Unsafe
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
@@ -550,6 +549,7 @@ settings' = unsafePerformIO $ do
                                 , urlSource  = GHCupURL
                                 , noNetwork  = False
                                 , gpgSetting = GPGNone
+                                , noColor    = False
                                 , ..
                                 })
                       dirs
@@ -565,13 +565,11 @@ brickMain :: AppState
 brickMain s = do
   writeIORef settings' s
 
-  no_color <- isJust <$> lookupEnv "NO_COLOR"
-
   eAppData <- getAppData (Just $ ghcupInfo s)
   case eAppData of
     Right ad ->
       defaultMain
-          (app (defaultAttributes no_color) (dimAttributes no_color))
+          (app (defaultAttributes (noColor $ settings s)) (dimAttributes (noColor $ settings s)))
           (BrickState ad
                     defaultAppSettings
                     (constructList ad defaultAppSettings Nothing)

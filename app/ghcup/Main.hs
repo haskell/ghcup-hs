@@ -1344,7 +1344,7 @@ tagCompleter tool add = listIOCompleter $ do
         , fancyColors    = False
         }
   let appState = LeanAppState
-        (Settings True False Never Curl False GHCupURL True GPGNone)
+        (Settings True False Never Curl False GHCupURL True GPGNone False)
         dirs'
         defaultKeyBindings
         loggerConfig
@@ -1370,7 +1370,7 @@ versionCompleter criteria tool = listIOCompleter $ do
         , fileOutter     = mempty
         , fancyColors    = False
         }
-  let settings = Settings True False Never Curl False GHCupURL True GPGNone
+  let settings = Settings True False Never Curl False GHCupURL True GPGNone False
   let leanAppState = LeanAppState
                    settings
                    dirs'
@@ -1532,6 +1532,7 @@ absolutePathParser f = case isValid f && isAbsolute f of
 
 toSettings :: Options -> IO (Settings, KeyBindings)
 toSettings options = do
+  noColor <- isJust <$> lookupEnv "NO_COLOR"
   userConf <- runE @'[ JSONError ] ghcupConfigFile >>= \case
     VRight r -> pure r
     VLeft (V (JSONDecodeError e)) -> do
@@ -1539,10 +1540,10 @@ toSettings options = do
       pure defaultUserSettings
     _ -> do
       die "Unexpected error!"
-  pure $ mergeConf options userConf
+  pure $ mergeConf options userConf noColor
  where
-   mergeConf :: Options -> UserSettings -> (Settings, KeyBindings)
-   mergeConf Options{..} UserSettings{..} =
+   mergeConf :: Options -> UserSettings -> Bool -> (Settings, KeyBindings)
+   mergeConf Options{..} UserSettings{..} noColor =
      let cache       = fromMaybe (fromMaybe False uCache) optCache
          noVerify    = fromMaybe (fromMaybe False uNoVerify) optNoVerify
          verbose     = fromMaybe (fromMaybe False uVerbose) optVerbose
@@ -1588,7 +1589,7 @@ updateSettings config settings = do
          urlSource'  = fromMaybe urlSource uUrlSource
          noNetwork'  = fromMaybe noNetwork uNoNetwork
          gpgSetting' = fromMaybe gpgSetting uGPGSetting
-     in Settings cache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting'
+     in Settings cache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor
 
 upgradeOptsP :: Parser UpgradeOpts
 upgradeOptsP =
@@ -1613,7 +1614,7 @@ describe_result = $( LitE . StringL <$>
                      runIO (do
                              CapturedProcess{..} <-  do
                               dirs <- liftIO getAllDirs
-                              let settings = AppState (Settings True False Never Curl False GHCupURL False GPGNone)
+                              let settings = AppState (Settings True False Never Curl False GHCupURL False GPGNone False)
                                                dirs
                                                defaultKeyBindings
                               flip runReaderT settings $ executeOut "git" ["describe"] Nothing
