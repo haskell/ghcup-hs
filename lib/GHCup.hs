@@ -1335,6 +1335,7 @@ warnAboutHlsCompatibility = do
 -- | Filter data type for 'listVersions'.
 data ListCriteria = ListInstalled
                   | ListSet
+                  | ListAvailable
                   deriving Show
 
 -- | A list result describes a single tool version
@@ -1677,6 +1678,7 @@ listVersions lt' criteria = do
     Nothing            -> lr
     Just ListInstalled -> filter (\ListResult {..} -> lInstalled) lr
     Just ListSet       -> filter (\ListResult {..} -> lSet) lr
+    Just ListAvailable -> filter (\ListResult {..} -> not lNoBindist) lr
 
 
 
