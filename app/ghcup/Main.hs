@@ -824,7 +824,7 @@ listOpts =
     <$> optional
           (option
             (eitherReader toolParser)
-            (short 't' <> long "tool" <> metavar "<ghc|cabal>" <> help
+            (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|stack>" <> help
               "Tool to list versions for. Default is all"
             )
           )
@@ -833,8 +833,8 @@ listOpts =
             (eitherReader criteriaParser)
             (  short 'c'
             <> long "show-criteria"
-            <> metavar "<installed|set>"
-            <> help "Show only installed or set tool versions"
+            <> metavar "<installed|set|available>"
+            <> help "Show only installed/set/available tool versions"
             )
           )
     <*> switch
@@ -1429,6 +1429,8 @@ toolVersionEither s' =
 toolParser :: String -> Either String Tool
 toolParser s' | t == T.pack "ghc"   = Right GHC
               | t == T.pack "cabal" = Right Cabal
+              | t == T.pack "hls"   = Right HLS
+              | t == T.pack "stack" = Right Stack
               | otherwise           = Left ("Unknown tool: " <> s')
   where t = T.toLower (T.pack s')
 
@@ -1436,6 +1438,7 @@ toolParser s' | t == T.pack "ghc"   = Right GHC
 criteriaParser :: String -> Either String ListCriteria
 criteriaParser s' | t == T.pack "installed" = Right ListInstalled
                   | t == T.pack "set"       = Right ListSet
+                  | t == T.pack "available" = Right ListAvailable
                   | otherwise               = Left ("Unknown criteria: " <> s')
   where t = T.toLower (T.pack s')
 
