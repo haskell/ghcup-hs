@@ -4,9 +4,6 @@ packages:
   - .
 
 extra-deps:
-  - git: https://github.com/bgamari/terminal-size
-    commit: 34ea816bd63f75f800eedac12c6908c6f3736036
-
   - git: https://github.com/hasufell/libarchive
     commit: 8587aab78dd515928024ecd82c8f215e06db85cd
 

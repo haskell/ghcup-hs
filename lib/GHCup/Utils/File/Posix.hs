@@ -35,8 +35,7 @@ import           Data.Sequence                  ( Seq, (|>) )
 import           Data.List
 import           Data.Word8
 import           GHC.IO.Exception
-import           System.Console.Pretty   hiding ( Pretty )
-import           System.Console.Regions
+import           System.Console.Terminal.Common
 import           System.IO.Error
 import           System.FilePath
 import           System.Directory
@@ -52,6 +51,7 @@ import qualified Data.Sequence                 as Sq
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified System.Posix.Process          as SPP
+import qualified System.Console.Terminal.Posix as TP
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as BL
 import qualified "unix-bytestring" System.Posix.IO.ByteString
@@ -88,9 +88,9 @@ execLogged exe args chdir lfile env = do
   let logfile = logsDir </> lfile <> ".log"
   liftIO $ bracket (openFd logfile WriteOnly (Just newFilePerms) defaultFileFlags{ append = True })
                    closeFd
-                   (action verbose)
+                   (action verbose noColor)
  where
-  action verbose fd = do
+  action verbose no_color fd = do
     actionWithPipes $ \(stdoutRead, stdoutWrite) -> do
       -- start the thread that logs to stdout
       pState <- newEmptyMVar
@@ -101,7 +101,7 @@ execLogged exe args chdir lfile env = do
         $ EX.finally
             (if verbose
               then tee fd stdoutRead
-              else printToRegion fd stdoutRead 6 pState
+              else printToRegion fd stdoutRead 6 pState no_color
             )
             (putMVar done ())
 
@@ -138,46 +138,57 @@ execLogged exe args chdir lfile env = do
 
   -- Reads fdIn and logs the output in a continous scrolling area
   -- of 'size' terminal lines. Also writes to a log file.
-  printToRegion :: Fd -> Fd -> Int -> MVar Bool -> IO ()
-  printToRegion fileFd fdIn size pState = do
-    void $ displayConsoleRegions $ do
-      rs <-
-        liftIO
-        . fmap Sq.fromList
-        . sequence
-        . replicate size
-        . openConsoleRegion
-        $ Linear
-      flip runStateT mempty
-        $ handle
-            (\(ex :: SomeException) -> do
-              ps <- liftIO $ takeMVar pState
-              when ps (forM_ rs (liftIO . closeConsoleRegion))
-              throw ex
-            )
-        $ readTilEOF (lineAction rs) fdIn
+  printToRegion :: Fd -> Fd -> Int -> MVar Bool -> Bool -> IO ()
+  printToRegion fileFd fdIn size pState no_color = do
+    -- init region
+    forM_ [1..size] $ \_ -> BS.putStr "\n"
+
+    void $ flip runStateT mempty
+      $ do
+        handle
+          (\(ex :: SomeException) -> do
+            ps <- liftIO $ takeMVar pState
+            when ps (liftIO $ BS.putStr (pos1 <> moveLineUp size <> clearScreen))
+            throw ex
+          ) $ readTilEOF lineAction fdIn
 
    where
+    clearScreen :: ByteString
+    clearScreen = "\x1b[0J"
+    clearLine :: ByteString
+    clearLine = "\x1b[2K"
+    moveLineUp :: Int -> ByteString
+    moveLineUp n = "\x1b[" <> E.encodeUtf8 (T.pack (show n)) <> "A"
+    moveLineDown :: Int -> ByteString
+    moveLineDown n = "\x1b[" <> E.encodeUtf8 (T.pack (show n)) <> "B"
+    pos1 :: ByteString
+    pos1 = "\r"
+    overwriteNthLine :: Int -> ByteString -> ByteString
+    overwriteNthLine n str = pos1 <> moveLineUp n <> clearLine <> str <> moveLineDown n <> pos1
+
+    blue :: ByteString -> ByteString
+    blue bs 
+      | no_color = bs
+      | otherwise = "\x1b[0;34m" <> bs <> "\x1b[0m"
+
     -- action to perform line by line
-    -- TODO: do this with vty for efficiency
     lineAction :: (MonadMask m, MonadIO m)
-               => Seq ConsoleRegion
-               -> ByteString
+               => ByteString
                -> StateT (Seq ByteString) m ()
-    lineAction rs = \bs' -> do
+    lineAction = \bs' -> do
       void $ liftIO $ SPIB.fdWrite fileFd (bs' <> "\n")
       modify (swapRegs bs')
-      regs <- get
-      liftIO $ forM_ (Sq.zip regs rs) $ \(bs, r) -> setConsoleRegion r $ do
-        w <- consoleWidth
-        return
-          . T.pack
-          . color Blue
-          . T.unpack
-          . decUTF8Safe
-          . trim w
-          . (\b -> "[ " <> E.encodeUtf8 (T.pack lfile) <> " ] " <> b)
-          $ bs
+      liftIO TP.size >>= \case
+        Nothing -> pure ()
+        Just (Window _ w) -> do
+          regs <- get
+          liftIO $ forM_ (Sq.zip regs (Sq.fromList [0..(Sq.length regs - 1)])) $ \(bs, i) -> do
+              BS.putStr
+              . overwriteNthLine (size - i)
+              . trim w
+              . blue
+              . (\b -> "[ " <> E.encodeUtf8 (T.pack lfile) <> " ] " <> b)
+              $ bs
 
     swapRegs :: a -> Seq a -> Seq a
     swapRegs bs = \regs -> if
