@@ -824,7 +824,7 @@ listOpts =
     <$> optional
           (option
             (eitherReader toolParser)
-            (short 't' <> long "tool" <> metavar "<ghc|cabal>" <> help
+            (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|stack>" <> help
               "Tool to list versions for. Default is all"
             )
           )
@@ -1429,6 +1429,8 @@ toolVersionEither s' =
 toolParser :: String -> Either String Tool
 toolParser s' | t == T.pack "ghc"   = Right GHC
               | t == T.pack "cabal" = Right Cabal
+              | t == T.pack "hls"   = Right HLS
+              | t == T.pack "stack" = Right Stack
               | otherwise           = Left ("Unknown tool: " <> s')
   where t = T.toLower (T.pack s')
 
