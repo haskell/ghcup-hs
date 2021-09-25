@@ -49,7 +49,6 @@ import           Data.Char
 import           Data.Either
 import           Data.Functor
 import           Data.List                      ( intercalate, nub, sort, sortBy )
-import           Data.List.NonEmpty             (NonEmpty ((:|)))
 import           Data.Maybe
 import           Data.Text                      ( Text )
 import           Data.Versions           hiding ( str )
@@ -2749,13 +2748,15 @@ fromVersion' SetRecommended tool = do
 fromVersion' (SetToolVersion v) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   let vi = getVersionInfo (_tvVersion v) tool dls
-  case pvp $ prettyVer (_tvVersion v) of
+  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
     Left _ -> pure (v, vi)
-    Right (PVP (major' :|[minor'])) ->
-      case getLatestGHCFor (fromIntegral major') (fromIntegral minor') dls of
-        Just (v', vi') -> pure (GHCTargetVersion (_tvTarget v) v', Just vi')
+    Right pvpIn ->
+      lift (getLatestToolFor tool pvpIn dls) >>= \case
+        Just (pvp_, vi') -> do
+          v' <- lift $ pvpToVersion pvp_
+          when (v' /= (_tvVersion v)) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
+          pure (GHCTargetVersion (_tvTarget v) v', Just vi')
         Nothing -> pure (v, vi)
-    Right _ -> pure (v, vi)
 fromVersion' (SetToolTag Latest) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   (\(x, y) -> (mkTVer x, Just y)) <$> getLatest dls tool ?? TagNotFound Latest tool

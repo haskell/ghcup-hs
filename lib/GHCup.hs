@@ -59,6 +59,7 @@ import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.List
 import           Data.Maybe
+import           Data.List.NonEmpty             ( NonEmpty((:|)) )
 import           Data.String                    ( fromString )
 import           Data.Text                      ( Text )
 import           Data.Time.Clock
@@ -1573,7 +1574,7 @@ listVersions lt' criteria = do
 
   currentGHCup :: Map.Map Version VersionInfo -> Maybe ListResult
   currentGHCup av =
-    let currentVer = pvpToVersion ghcUpVer
+    let currentVer = fromJust $ pvpToVersion ghcUpVer
         listVer    = Map.lookup currentVer av
         latestVer  = fst <$> headOf (getTagged Latest) av
         recommendedVer = fst <$> headOf (getTagged Latest) av
@@ -1731,7 +1732,7 @@ rmGHCVer ver = do
       (\(e :: ParseError) -> lift $ logWarn (T.pack $ displayException e) >> pure Nothing)
     $ fmap Just
     $ getMajorMinorV (_tvVersion ver)
-  forM_ v' $ \(mj, mi) -> lift (getGHCForMajor mj mi (_tvTarget ver))
+  forM_ v' $ \(mj, mi) -> lift (getGHCForPVP (PVP (fromIntegral mj :| [fromIntegral mi])) (_tvTarget ver))
     >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
 
   Dirs {..} <- lift getDirs
@@ -2539,6 +2540,7 @@ upgradeGHCup :: ( MonadMask m
                 , MonadCatch m
                 , HasLog env
                 , MonadThrow m
+                , MonadFail m
                 , MonadResource m
                 , MonadIO m
                 , MonadUnliftIO m
@@ -2563,7 +2565,8 @@ upgradeGHCup mtarget force' = do
 
   lift $ logInfo "Upgrading GHCup..."
   let latestVer = fromJust $ fst <$> getLatest dls GHCup
-  when (not force' && (latestVer <= pvpToVersion ghcUpVer)) $ throwE NoUpdate
+  (Just ghcupPVPVer) <- pure $ pvpToVersion ghcUpVer
+  when (not force' && (latestVer <= ghcupPVPVer)) $ throwE NoUpdate
   dli   <- liftE $ getDownloadInfo GHCup latestVer
   tmp   <- lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt
@@ -2626,7 +2629,7 @@ postGHCInstall ver@GHCTargetVersion {..} = do
     handle (\(e :: ParseError) -> lift $ logWarn (T.pack $ displayException e) >> pure Nothing)
     $ fmap Just
     $ getMajorMinorV _tvVersion
-  forM_ v' $ \(mj, mi) -> lift (getGHCForMajor mj mi _tvTarget)
+  forM_ v' $ \(mj, mi) -> lift (getGHCForPVP (PVP (fromIntegral mj :| [fromIntegral mi])) _tvTarget)
     >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
 
 
