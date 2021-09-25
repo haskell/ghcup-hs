@@ -105,6 +105,11 @@ findFiles path regex = do
   contents <- listDirectory path
   pure $ filter (match regex) contents
 
+findFilesDeep :: FilePath -> Regex -> IO [FilePath]
+findFilesDeep path regex = do
+  contents <- getDirectoryContentsRecursive path
+  pure $ filter (match regex) contents
+
 findFiles' :: FilePath -> MP.Parsec Void Text a -> IO [FilePath]
 findFiles' path parser = do
   contents <- listDirectory path
