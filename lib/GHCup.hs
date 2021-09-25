@@ -83,9 +83,7 @@ import           System.Directory        hiding ( findFiles )
 import           System.Environment
 import           System.FilePath
 import           System.IO.Error
-#if defined(IS_WINDOWS)
 import           System.IO.Temp
-#endif
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 
@@ -1230,7 +1228,7 @@ setHLS ver = do
     lift $ rmLink (binDir </> f)
 
   -- set haskell-language-server-<ghcver> symlinks
-  bins <- lift $ hlsServerBinaries ver
+  bins <- lift $ hlsServerBinaries ver Nothing
   when (null bins) $ throwE $ NotInstalled HLS (GHCTargetVersion Nothing ver)
 
   forM_ bins $ \f -> do
@@ -2705,3 +2703,134 @@ throwIfFileAlreadyExists :: ( MonadIO m ) =>
 throwIfFileAlreadyExists fp = whenM (checkFileAlreadyExists fp)
                                 (throwE $ FileAlreadyExistsError fp)
 
+
+
+    --------------------------
+    --[ Garbage collection ]--
+    --------------------------
+
+
+rmOldGHC :: ( MonadReader env m
+            , HasGHCupInfo env
+            , HasDirs env
+            , HasLog env
+            , MonadIO m
+            , MonadFail m
+            , MonadMask m
+            , MonadUnliftIO m
+            )
+         => Excepts '[NotInstalled] m ()
+rmOldGHC = do
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  let oldGHCs = mkTVer <$> toListOf (ix GHC % getTagged Old % to fst) dls
+  ghcs <- lift $ fmap rights getInstalledGHCs
+  forM_ ghcs $ \ghc -> when (ghc `elem` oldGHCs) $ rmGHCVer ghc
+
+
+
+rmProfilingLibs :: ( MonadReader env m
+                   , HasDirs env
+                   , HasLog env
+                   , MonadIO m
+                   , MonadFail m
+                   , MonadMask m
+                   , MonadUnliftIO m
+                   )
+                => m ()
+rmProfilingLibs = do
+  ghcs <- fmap rights getInstalledGHCs
+
+  let regexes :: [ByteString]
+      regexes = [[s|.*_p\.a$|], [s|.*\.p_hi$|]]
+
+  forM_ regexes $ \regex ->
+    forM_ ghcs $ \ghc -> do
+      d <- ghcupGHCDir ghc
+      matches <- liftIO $ handleIO (\_ -> pure []) $ findFilesDeep
+        d
+        (makeRegexOpts compExtended
+                       execBlank
+                       regex
+        )
+      forM_ matches $ \m -> do
+        let p = d </> m
+        logDebug $ "rm " <> T.pack p
+        rmFile p
+
+
+
+rmShareDir :: ( MonadReader env m
+              , HasDirs env
+              , HasLog env
+              , MonadIO m
+              , MonadFail m
+              , MonadMask m
+              , MonadUnliftIO m
+              )
+           => m ()
+rmShareDir = do
+  ghcs <- fmap rights getInstalledGHCs
+  forM_ ghcs $ \ghc -> do
+    d <- ghcupGHCDir ghc
+    let p = d </> "share"
+    logDebug $ "rm -rf " <> T.pack p
+    rmPathForcibly p
+
+
+rmHLSNoGHC :: ( MonadReader env m
+              , HasDirs env
+              , HasLog env
+              , MonadIO m
+              , MonadMask m
+              )
+           => m ()
+rmHLSNoGHC = do
+  Dirs {..} <- getDirs
+  ghcs <- fmap rights getInstalledGHCs
+  hlses <- fmap rights getInstalledHLSs
+  forM_ hlses $ \hls -> do
+    hlsGHCs <- fmap mkTVer <$> hlsGHCVersions' hls
+    forM_ hlsGHCs $ \ghc -> do 
+      when (ghc `notElem` ghcs) $ do
+        bins <- hlsServerBinaries hls (Just $ _tvVersion ghc)
+        forM_ bins $ \bin -> do
+          let f = binDir </> bin
+          logDebug $ "rm " <> T.pack f
+          rmFile f
+
+
+rmCache :: ( MonadReader env m
+           , HasDirs env
+           , HasLog env
+           , MonadIO m
+           , MonadMask m
+           )
+        => m ()
+rmCache = do
+  Dirs {..} <- getDirs
+  contents <- liftIO $ listDirectory cacheDir
+  forM_ contents $ \f -> do
+    let p = cacheDir </> f
+    logDebug $ "rm " <> T.pack p
+    rmFile p
+
+
+rmTmp :: ( MonadReader env m
+         , HasDirs env
+         , HasLog env
+         , MonadIO m
+         , MonadMask m
+         )
+      => m ()
+rmTmp = do
+  tmpdir <- liftIO getCanonicalTemporaryDirectory
+  ghcup_dirs <- liftIO $ handleIO (\_ -> pure []) $ findFiles
+    tmpdir
+    (makeRegexOpts compExtended
+                   execBlank
+                   ([s|^ghcup-.*$|] :: ByteString)
+    )
+  forM_ ghcup_dirs $ \f -> do
+    let p = tmpdir </> f
+    logDebug $ "rm -rf " <> T.pack p
+    rmPathForcibly p

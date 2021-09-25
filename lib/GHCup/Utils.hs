@@ -492,33 +492,50 @@ hlsGHCVersions :: ( MonadReader env m
                   )
                => m [Version]
 hlsGHCVersions = do
-  h                             <- hlsSet
-  vers                          <- forM h $ \h' -> do
-    bins <- hlsServerBinaries h'
-    pure $ fmap
-      (version
-        . T.pack
-        . fromJust
-        . stripPrefix "haskell-language-server-"
-        . head
-        . splitOn "~"
-        )
-      bins
-  pure . sortBy (flip compare) . rights . concat . maybeToList $ vers
+  h <- hlsSet
+  fromMaybe [] <$> forM h hlsGHCVersions'
+
+
+hlsGHCVersions' :: ( MonadReader env m
+                   , HasDirs env
+                   , MonadIO m
+                   , MonadThrow m
+                   , MonadCatch m
+                   )
+                => Version
+                -> m [Version]
+hlsGHCVersions' v' = do
+  bins <- hlsServerBinaries v' Nothing
+  let vers = fmap
+        (version
+          . T.pack
+          . fromJust
+          . stripPrefix "haskell-language-server-"
+          . head
+          . splitOn "~"
+          )
+        bins
+  pure . sortBy (flip compare) . rights $ vers
 
 
 -- | Get all server binaries for an hls version, if any.
 hlsServerBinaries :: (MonadReader env m, HasDirs env, MonadIO m)
                   => Version
+                  -> Maybe Version   -- ^ optional GHC version
                   -> m [FilePath]
-hlsServerBinaries ver = do
+hlsServerBinaries ver mghcVer = do
   Dirs {..}  <- getDirs
   liftIO $ handleIO (\_ -> pure []) $ findFiles
     binDir
     (makeRegexOpts
       compExtended
       execBlank
-      ([s|^haskell-language-server-.*~|] <> escapeVerRex ver <> E.encodeUtf8 (T.pack exeExt) <> [s|$|] :: ByteString
+      ([s|^haskell-language-server-|]
+        <> maybe [s|.*|] escapeVerRex mghcVer
+        <> [s|~|]
+        <> escapeVerRex ver
+        <> E.encodeUtf8 (T.pack exeExt)
+        <> [s|$|] :: ByteString
       )
     )
 
@@ -547,7 +564,7 @@ hlsWrapperBinary ver = do
 -- | Get all binaries for an hls version, if any.
 hlsAllBinaries :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m) => Version -> m [FilePath]
 hlsAllBinaries ver = do
-  hls     <- hlsServerBinaries ver
+  hls     <- hlsServerBinaries ver Nothing
   wrapper <- hlsWrapperBinary ver
   pure (maybeToList wrapper ++ hls)
 
@@ -768,11 +785,10 @@ intoSubdir bdir tardir = case tardir of
 -- | Get the tool version that has this tag. If multiple have it,
 -- picks the greatest version.
 getTagged :: Tag
-          -> AffineFold (Map.Map Version VersionInfo) (Version, VersionInfo)
+          -> Fold (Map.Map Version VersionInfo) (Version, VersionInfo)
 getTagged tag =
-  to (Map.filter (\VersionInfo {..} -> tag `elem` _viTags))
-  % to Map.toDescList
-  % _head
+  to (Map.toDescList . Map.filter (\VersionInfo {..} -> tag `elem` _viTags))
+  % folding id
 
 getLatest :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
 getLatest av tool = headOf (ix tool % getTagged Latest) av
@@ -903,7 +919,7 @@ getChangeLog :: GHCupDownloads -> Tool -> Either Version Tag -> Maybe URI
 getChangeLog dls tool (Left v') =
   preview (ix tool % ix v' % viChangeLog % _Just) dls
 getChangeLog dls tool (Right tag) =
-  preview (ix tool % getTagged tag % to snd % viChangeLog % _Just) dls
+  preview (ix tool % pre (getTagged tag) % to snd % viChangeLog % _Just) dls
 
 
 -- | Execute a build action while potentially cleaning up:

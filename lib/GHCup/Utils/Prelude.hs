@@ -25,7 +25,6 @@ import           GHCup.Types
 import           GHCup.Errors
 import           GHCup.Types.Optics
 import {-# SOURCE #-} GHCup.Utils.Logger
-import           GHCup.Errors
 
 import           Control.Applicative
 import           Control.Exception.Safe
