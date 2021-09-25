@@ -25,6 +25,7 @@ import           GHCup.Types
 import           GHCup.Errors
 import           GHCup.Types.Optics
 import {-# SOURCE #-} GHCup.Utils.Logger
+import           GHCup.Errors
 
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -33,7 +34,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
-import           Data.List                      ( nub, intercalate, stripPrefix, isPrefixOf )
+import           Data.List                      ( nub, intercalate, stripPrefix, isPrefixOf, dropWhileEnd )
 import           Data.Maybe
 import           Data.Foldable
 import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
@@ -528,6 +529,10 @@ recover action =
 #endif
 
 
+copyFileE :: (CopyError :< xs, MonadCatch m, MonadIO m) => FilePath -> FilePath -> Excepts xs m ()
+copyFileE from = handleIO (throwE . CopyError . show) . liftIO . copyFile from
+
+
 -- | Gathering monoidal values
 --
 -- >>> traverseFold (pure . (:["0"])) ["1","2"]
@@ -548,6 +553,8 @@ forFold = \t -> (`traverseFold` t)
 --
 -- >>> stripNewline "foo\n\n\n"
 -- "foo"
+-- >>> stripNewline "foo\n\n\nfoo"
+-- "foofoo"
 -- >>> stripNewline "foo\r"
 -- "foo"
 -- >>> stripNewline "foo"
@@ -559,10 +566,29 @@ stripNewline :: String -> String
 stripNewline = filter (`notElem` "\n\r")
 
 
+-- | Strip @\\r@ and @\\n@ from end of 'String'.
+--
+-- >>> stripNewlineEnd "foo\n\n\n"
+-- "foo"
+-- >>> stripNewlineEnd "foo\n\n\nfoo"
+-- "foo\n\n\nfoo"
+-- >>> stripNewlineEnd "foo\r"
+-- "foo"
+-- >>> stripNewlineEnd "foo"
+-- "foo"
+--
+-- prop> \t -> stripNewlineEnd (t <> "\n") === stripNewlineEnd t
+-- prop> \t -> not (any (isNewLine . c2w) t) ==> stripNewlineEnd t == t
+stripNewlineEnd :: String -> String
+stripNewlineEnd = dropWhileEnd (`elem` "\n\r")
+
+
 -- | Strip @\\r@ and @\\n@ from 'Text's
 --
 -- >>> stripNewline' "foo\n\n\n"
 -- "foo"
+-- >>> stripNewline' "foo\n\n\nfoo"
+-- "foofoo"
 -- >>> stripNewline' "foo\r"
 -- "foo"
 -- >>> stripNewline' "foo"

@@ -512,7 +512,7 @@ installCabalUnpacked path inst mver' forceInstall = do
   unless forceInstall          -- Overwrite it when it IS a force install
     (liftE $ throwIfFileAlreadyExists destPath)
     
-  handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+  copyFileE
     (path </> cabalFile <> exeExt)
     destPath
   lift $ chmod_755 destPath
@@ -662,7 +662,7 @@ installHLSUnpacked path inst mver' forceInstall = do
     unless forceInstall   -- if it is a force install, overwrite it.
       (liftE $ throwIfFileAlreadyExists destPath)
       
-    handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+    copyFileE
       srcPath
       destPath
     lift $ chmod_755 destPath
@@ -678,7 +678,7 @@ installHLSUnpacked path inst mver' forceInstall = do
   unless forceInstall
     (liftE $ throwIfFileAlreadyExists destWrapperPath)
       
-  handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+  copyFileE
     srcWrapperPath
     destWrapperPath
     
@@ -850,35 +850,37 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
       cp <- case cabalProject of
         Just cp
           | isAbsolute cp -> do
-              handleIO (throwE . CopyError . show) $ liftIO $ copyFile cp (workdir </> "cabal.project")
+              copyFileE cp (workdir </> "cabal.project")
               pure "cabal.project"
           | otherwise -> pure (takeFileName cp)
         Nothing -> pure "cabal.project"
-      forM_ cabalProjectLocal $ \cpl -> handleIO (throwE . CopyError . show) $ liftIO $ copyFile cpl (workdir </> cp <.> "local")
+      forM_ cabalProjectLocal $ \cpl -> copyFileE cpl (workdir </> cp <.> "local")
+
+      let targets = ["exe:haskell-language-server", "exe:haskell-language-server-wrapper"]
 
       artifacts <- forM (sort ghcs) $ \ghc -> do
         let ghcInstallDir = installDir </> T.unpack (prettyVer ghc)
-        liftIO $ createDirRecursive' installDir
+        liftIO $ createDirRecursive' ghcInstallDir
         lift $ logInfo $ "Building HLS " <> prettyVer installVer <> " for GHC version " <> prettyVer ghc
         liftE $ lEM @_ @'[ProcessError] $
-          execLogged "cabal" ( [ "v2-install"
+          execLogged "cabal" ( [ "v2-build"
                                , "-w"
                                , "ghc-" <> T.unpack (prettyVer ghc)
-                               , "--install-method=copy"
                                ] ++
                                maybe [] (\j -> ["--jobs=" <> show j]) jobs ++
-                               [ "--overwrite-policy=always"
-                               , "--disable-profiling"
-                               , "--disable-tests"
-                               , "--enable-split-sections"
-                               , "--enable-executable-stripping"
-                               , "--enable-executable-static"
-                               , "--installdir=" <> ghcInstallDir
-                               , "--project-file=" <> cp
-                               , "exe:haskell-language-server"
-                               , "exe:haskell-language-server-wrapper"]
+                               [ "--project-file=" <> cp
+                               ] ++ targets
                              )
           (Just workdir) "cabal" Nothing
+        forM_ targets $ \target -> do
+          let cabal = "cabal"
+              args = ["list-bin", target]
+          CapturedProcess{..} <- lift $ executeOut cabal args  (Just workdir) 
+          case _exitCode of
+            ExitFailure i -> throwE (NonZeroExit i cabal args)
+            _ -> pure ()
+          let cbin = stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
+          copyFileE cbin (ghcInstallDir </> takeFileName cbin)
         pure ghcInstallDir
 
       forM_ artifacts $ \artifact -> do
@@ -1039,7 +1041,7 @@ installStackUnpacked path inst mver' forceInstall = do
   unless forceInstall
     (liftE $ throwIfFileAlreadyExists destPath)
       
-  handleIO (throwE . CopyError . show) $ liftIO $ copyFile
+  copyFileE
     (path </> stackFile <> exeExt)
     destPath
   lift $ chmod_755 destPath
@@ -2410,7 +2412,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                             <> ".tar"
                             <> takeExtension tar)
     let tarPath = cacheDir </> tarName
-    handleIO (throwE . CopyError . show) $ liftIO $ copyFile (workdir </> tar)
+    copyFileE (workdir </> tar)
                                                              tarPath
     lift $ logInfo $ "Copied bindist to " <> T.pack tarPath
     pure tarPath
@@ -2578,7 +2580,7 @@ upgradeGHCup mtarget force' = do
   lift $ logDebug $ "rm -f " <> T.pack destFile
   lift $ hideError NoSuchThing $ recycleFile destFile
   lift $ logDebug $ "cp " <> T.pack p <> " " <> T.pack destFile
-  handleIO (throwE . CopyError . show) $ liftIO $ copyFile p
+  copyFileE p
                                                            destFile
   lift $ chmod_755 destFile
 
