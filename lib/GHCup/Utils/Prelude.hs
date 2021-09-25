@@ -22,6 +22,7 @@ module GHCup.Utils.Prelude where
 #if defined(IS_WINDOWS)
 import           GHCup.Types
 #endif
+import           GHCup.Errors
 import           GHCup.Types.Optics
 import {-# SOURCE #-} GHCup.Utils.Logger
 
@@ -35,10 +36,11 @@ import           Data.ByteString                ( ByteString )
 import           Data.List                      ( nub, intercalate, stripPrefix, isPrefixOf )
 import           Data.Maybe
 import           Data.Foldable
+import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
 import           Data.String
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           Data.Word8
+import           Data.Word8                  hiding ( isDigit )
 import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
 import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
@@ -59,6 +61,7 @@ import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.Strict.Maybe             as S
 import qualified Data.List.Split               as Split
+import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Data.Text.Encoding.Error      as E
@@ -296,12 +299,28 @@ removeLensFieldLabel str' =
   maybe str' T.unpack . T.stripPrefix (T.pack "_") . T.pack $ str'
 
 
-pvpToVersion :: PVP -> Version
+pvpToVersion :: MonadThrow m => PVP -> m Version
 pvpToVersion =
-  either (\_ -> error "Couldn't convert PVP to Version") id
-    . version
-    . prettyPVP
+  either (\_ -> throwM $ ParseError "Couldn't convert PVP to Version") pure . version . prettyPVP
 
+versionToPVP :: MonadThrow m => Version -> m PVP
+versionToPVP v = either (\_ -> alternative v) pure . pvp . prettyVer $ v
+ where
+  alternative :: MonadThrow m => Version -> m PVP
+  alternative v' = case NE.takeWhile isDigit (_vChunks v') of
+    [] -> throwM $ ParseError "Couldn't convert Version to PVP"
+    xs -> pure $ pvpFromList (unsafeDigit <$> xs)
+
+  isDigit :: VChunk -> Bool
+  isDigit (Digits _ :| []) = True
+  isDigit _                = False
+
+  unsafeDigit :: VChunk -> Int
+  unsafeDigit (Digits x :| []) = fromIntegral x
+  unsafeDigit _ = error "unsafeDigit: wrong input"
+
+pvpFromList :: [Int] -> PVP
+pvpFromList = PVP . NE.fromList . fmap fromIntegral
 
 -- | Safe 'decodeUtf8With'. Replaces an invalid input byte with
 -- the Unicode replacement character U+FFFD.

@@ -86,8 +86,37 @@ import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
+import qualified Data.List.NonEmpty            as NE
 
 
+-- $setup
+-- >>> :set -XOverloadedStrings
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeApplications
+-- >>> :set -XQuasiQuotes
+-- >>> import System.Directory
+-- >>> import URI.ByteString
+-- >>> import qualified Data.Text as T
+-- >>> import GHCup.Utils.Prelude
+-- >>> import GHCup.Download
+-- >>> import GHCup.Version
+-- >>> import GHCup.Errors
+-- >>> import GHCup.Types
+-- >>> import GHCup.Types.Optics
+-- >>> import Optics
+-- >>> import GHCup.Utils.Version.QQ
+-- >>> import qualified Data.Text.Encoding as E
+-- >>> import Control.Monad.Reader
+-- >>> import Haskus.Utils.Variant.Excepts
+-- >>> import Text.PrettyPrint.HughesPJClass ( prettyShow )
+-- >>> let lc = LoggerConfig { lcPrintDebug = False, consoleOutter = mempty, fileOutter = mempty, fancyColors = False }
+-- >>> dirs' <- getAllDirs
+-- >>> let installedVersions = [ ([pver|8.10.7|], Nothing), ([pver|8.10.4|], Nothing), ([pver|8.8.4|], Nothing), ([pver|8.8.3|], Nothing) ]
+-- >>> let settings = Settings True False Never Curl False GHCupURL True GPGNone False
+-- >>> let leanAppState = LeanAppState settings dirs' defaultKeyBindings lc
+-- >>> cwd <- getCurrentDirectory
+-- >>> (Right ref) <- pure $ parseURI strictURIParserOptions $ "file://" <> E.encodeUtf8 (T.pack cwd) <> "/data/metadata/" <> (urlBaseName . view pathL' $ ghcupURL)
+-- >>> (VRight r) <- (fmap . fmap) _ghcupDownloads $ flip runReaderT leanAppState . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError] $ liftE $ getBase ref
 
 
 
@@ -559,34 +588,83 @@ matchMajor v' major' minor' = case getMajorMinorV v' of
   Just (x, y) -> x == major' && y == minor'
   Nothing     -> False
 
+-- | Match PVP prefix.
+--
+-- >>> matchPVPrefix [pver|8.8|] [pver|8.8.4|]
+-- True
+-- >>> matchPVPrefix [pver|8|] [pver|8.8.4|]
+-- True
+-- >>> matchPVPrefix [pver|8.10|] [pver|8.8.4|]
+-- False
+-- >>> matchPVPrefix [pver|8.10|] [pver|8.10.7|]
+-- True
+matchPVPrefix :: PVP -> PVP -> Bool
+matchPVPrefix (toL -> prefix) (toL -> full) = and $ zipWith (==) prefix full
 
--- | Get the latest installed full GHC version that satisfies X.Y.
--- This reads `ghcupGHCBaseDir`.
-getGHCForMajor :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m)
-               => Int        -- ^ major version component
-               -> Int        -- ^ minor version component
-               -> Maybe Text -- ^ the target triple
-               -> m (Maybe GHCTargetVersion)
-getGHCForMajor major' minor' mt = do
+toL :: PVP -> [Int]
+toL (PVP inner) = fmap fromIntegral $ NE.toList inner
+
+
+-- | Get the latest installed full GHC version that satisfies the given (possibly partial)
+-- PVP version.
+getGHCForPVP :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m)
+             => PVP
+             -> Maybe Text -- ^ the target triple
+             -> m (Maybe GHCTargetVersion)
+getGHCForPVP pvpIn mt = do
   ghcs <- rights <$> getInstalledGHCs
+  -- we're permissive here... failed parse just means we have no match anyway
+  let ghcs' = catMaybes $ flip fmap ghcs $ \GHCTargetVersion{..} -> do
+        pvp_ <- versionToPVP _tvVersion
+        pure (pvp_, _tvTarget)
 
-  pure
-    . lastMay
-    . sortBy (\x y -> compare (_tvVersion x) (_tvVersion y))
-    . filter
-        (\GHCTargetVersion {..} ->
-          _tvTarget == mt && matchMajor _tvVersion major' minor'
-        )
-    $ ghcs
+  getGHCForPVP' pvpIn ghcs' mt
+
+-- | Like 'getGHCForPVP', except with explicit input parameter.
+--
+-- >>> fmap prettyShow $ getGHCForPVP' [pver|8|] installedVersions Nothing
+-- "Just 8.10.7"
+-- >>> fmap prettyShow $ getGHCForPVP' [pver|8.8|] installedVersions Nothing
+-- "Just 8.8.4"
+-- >>> fmap prettyShow $ getGHCForPVP' [pver|8.10.4|] installedVersions Nothing
+-- "Just 8.10.4"
+getGHCForPVP' :: MonadThrow m
+             => PVP
+             -> [(PVP, Maybe Text)] -- ^ installed GHCs
+             -> Maybe Text          -- ^ the target triple
+             -> m (Maybe GHCTargetVersion)
+getGHCForPVP' pvpIn ghcs' mt = do
+  let mResult = lastMay
+                  . sortBy (\(x, _) (y, _) -> compare x y)
+                  . filter
+                      (\(pvp_, target) ->
+                        target == mt && matchPVPrefix pvp_ pvpIn
+                      )
+                  $ ghcs'
+  forM mResult $ \(pvp_, target) -> do
+    ver' <- pvpToVersion pvp_
+    pure (GHCTargetVersion target ver')
 
 
--- | Get the latest available ghc for X.Y major version.
-getLatestGHCFor :: Int -- ^ major version component
-                -> Int -- ^ minor version component
-                -> GHCupDownloads
-                -> Maybe (Version, VersionInfo)
-getLatestGHCFor major' minor' dls =
-  preview (ix GHC % to Map.toDescList) dls >>= lastMay . filter (\(v, _) -> matchMajor v major' minor')
+-- | Get the latest available ghc for the given PVP version, which
+-- may only contain parts.
+--
+-- >>> (fmap . fmap) fst $ getLatestToolFor GHC [pver|8|] r
+-- Just (PVP {_pComponents = 8 :| [10,7]})
+-- >>> (fmap . fmap) fst $ getLatestToolFor GHC [pver|8.8|] r
+-- Just (PVP {_pComponents = 8 :| [8,4]})
+-- >>> (fmap . fmap) fst $ getLatestToolFor GHC [pver|8.8.4|] r
+-- Just (PVP {_pComponents = 8 :| [8,4]})
+getLatestToolFor :: MonadThrow m
+                 => Tool
+                 -> PVP
+                 -> GHCupDownloads
+                 -> m (Maybe (PVP, VersionInfo))
+getLatestToolFor tool pvpIn dls = do
+  let ls = fromMaybe [] $ preview (ix tool % to Map.toDescList) dls
+  let ps = catMaybes $ fmap (\(v, vi) -> (,vi) <$> versionToPVP v) ls
+  pure . headMay . filter (\(v, _) -> matchPVPrefix pvpIn v) $ ps
+
 
 
 
