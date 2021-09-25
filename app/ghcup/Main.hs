@@ -504,6 +504,7 @@ com =
                (info (pure Nuke <**> helper)
                      (progDesc "Completely remove ghcup from your system"))
            <> commandGroup "Nuclear Commands:"
+           <> hidden
           )
 
  where
