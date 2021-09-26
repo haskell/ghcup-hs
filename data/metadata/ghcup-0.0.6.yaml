@@ -1493,6 +1493,7 @@ ghcupDownloads:
               dlHash: b823b58cae36fbac0741680ca7605180fa4cf4c6ae439123d282184b94d32fd6
     8.10.4:
       viTags:
+      - old
       - base-4.14.1.0
       viChangeLog: https://downloads.haskell.org/~ghc/8.10.4/docs/html/users_guide/8.10.4-notes.html
       viSourceDL:
@@ -1588,6 +1589,7 @@ ghcupDownloads:
               dlHash: 0d18ef83593272f6196a41cc3abdc48dfe5e14372db75d71ea19fe35320c4e81
     8.10.5:
       viTags:
+      - old
       - base-4.14.2.0
       viChangeLog: https://downloads.haskell.org/~ghc/8.10.5/docs/html/users_guide/8.10.5-notes.html
       viSourceDL:
@@ -1693,6 +1695,7 @@ ghcupDownloads:
               dlHash: 56170d1a8450e18b7eb9c23c94723da352815b27ec250bb23742a62f16dcab6c
     8.10.6:
       viTags:
+      - old
       - base-4.14.3.0
       viChangeLog: https://downloads.haskell.org/~ghc/8.10.6/docs/html/users_guide/8.10.6-notes.html
       viSourceDL:
