@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               ghcup
-version:            0.1.17
+version:            0.1.17.1
 license:            LGPL-3.0-only
 license-file:       LICENSE
 copyright:          Julian Ospald 2020

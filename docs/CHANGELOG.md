@@ -1,5 +1,14 @@
 # Revision history for ghcup
 
+## 0.1.17.1 -- 2021-09-26
+
+* Fix `NO_COLOR`
+* Fix `ghcup list -t` for hls/stack, wrt [#244](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/244)
+* Get rid of concurrent-output
+* Improve cli interface with partial versions (e.g. `ghcup install ghc 8`)
+* Fix HLS compilation builds
+* Implement `ghcup gc` (garbage collection) command
+
 ## 0.1.17 -- 2021-09-20
 
 * Add `--force` option to install/compile wrt [#210](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/210) by Arjun Kathuria
