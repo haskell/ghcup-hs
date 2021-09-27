@@ -2121,6 +2121,10 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
+    bghc <- case bstrap of
+      Right g    -> pure $ Right g
+      Left  bver -> pure $ Left ("ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt)
+
     (workdir, tmpUnpack, tver) <- case targetGhc of
       -- unpack from version tarball
       Left tver -> do
@@ -2147,7 +2151,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
       Right GitBranch{..} -> do
         tmpUnpack <- lift mkGhcupTmpDir
         let git args = execLogged "git" ("--no-pager":args) (Just tmpUnpack) "git" Nothing
-        tver <- reThrowAll @_ @'[ProcessError] DownloadFailed $ do
+        tver <- reThrowAll @_ @'[ProcessError, NotFoundInPATH] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
           lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
           lEM $ git [ "init" ]
@@ -2167,8 +2171,9 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
 
           lEM $ git [ "checkout", "FETCH_HEAD" ]
           lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
-          lEM $ execLogged "python3" ["./boot"] (Just tmpUnpack) "ghc-bootstrap" Nothing
-          lEM $ execLogged "sh" ["./configure"] (Just tmpUnpack) "ghc-bootstrap" Nothing
+          env <- liftE $ ghcEnv bghc
+          lEM $ execLogged "python3" ["./boot"] (Just tmpUnpack) "ghc-bootstrap" (Just env)
+          lEM $ execLogged "sh" ["./configure"] (Just tmpUnpack) "ghc-bootstrap" (Just env)
           CapturedProcess {..} <- lift $ makeOut
             ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just tmpUnpack)
           case _exitCode of
@@ -2198,10 +2203,6 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     ghcdir <- case isolateDir of
       Just isoDir -> pure isoDir
       Nothing -> lift $ ghcupGHCDir installVer
-
-    bghc <- case bstrap of
-      Right g    -> pure $ Right g
-      Left  bver -> pure $ Left ("ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt)
 
     (mBindist, bmk) <- liftE $ runBuildAction
       tmpUnpack
@@ -2478,14 +2479,9 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     
     forM_ patchdir (\dir -> liftE $ applyPatches dir workdir)
 
-    cEnv <- liftIO getEnvironment
 
     if | _tvVersion tver >= [vver|8.8.0|] -> do
-          bghcPath <- case bghc of
-            Right ghc' -> pure ghc'
-            Left  bver -> do
-              spaths <- liftIO getSearchPath
-              liftIO (searchPath spaths bver) !? NotFoundInPATH bver
+          env <- liftE $ ghcEnv bghc
           lEM $ execLogged
             "sh"
             ("./configure" :  maybe mempty
@@ -2499,7 +2495,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
             )
             (Just workdir)
             "ghc-conf"
-            (Just (("GHC", bghcPath) : cEnv))
+            (Just env)
        | otherwise -> do
         lEM $ execLogged
           "sh"
@@ -2516,8 +2512,18 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
           )
           (Just workdir)
           "ghc-conf"
-          (Just cEnv)
+          Nothing
     pure ()
+
+  ghcEnv :: MonadIO m => Either FilePath FilePath -> Excepts '[NotFoundInPATH] m [(String, String)]
+  ghcEnv bghc = do
+    cEnv <- liftIO getEnvironment
+    bghcPath <- case bghc of
+      Right ghc' -> pure ghc'
+      Left  bver -> do
+        spaths <- liftIO getSearchPath
+        liftIO (searchPath spaths bver) !? NotFoundInPATH bver
+    pure (("GHC", bghcPath) : cEnv)
 
 
 
