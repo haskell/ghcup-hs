@@ -1793,6 +1793,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   DInfo -> pure ()
                   ToolRequirements -> pure ()
                   ChangeLog _ -> pure ()
+                  UnSet _ -> pure ()
 #if defined(BRICK)
                   Interactive -> pure ()
 #endif
@@ -1879,7 +1880,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     ]
 
             runUnsetGHC =
-                runAppState
+                runLeanAppState
                 . runE
                   @'[ NotInstalled ]
 
