@@ -11,6 +11,8 @@
     * cabal - The Cabal build tool for managing Haskell software"
     * stack - (optional) A cross-platform program for developing Haskell projects"
     * hls   - (optional) A language server for developers to integrate with their editor/IDE"
+    
+	By default, the installation is non-interactive, unless you run it with 'Interactive $true'.
 #>
 param (
     # Run an interactive installation

@@ -24,30 +24,29 @@
       </p>
 
       <div id="platform-instructions-linux" class="instructions" style="display: none;">
-        <p>Run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
-		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
-        <p class="other-help">If you don't like curl | sh, see <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">other installation methods</a>.<br/>You appear to be running Linux. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
+        <p>On Linux, run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
+		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div> 
+	<p class="other-help"><a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell" target="_blank">What does this do?</a> <b>&nbsp;&middot;&nbsp;</b> <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">I don't like curl | sh</a> <b>&nbsp;&middot;&nbsp;</b> <a class="default-platform-button" href="#">I'm not running Linux</a></p>
       </div>
 
       <div id="platform-instructions-mac" class="instructions" style="display: none;">
-        <p>Run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
+        <p>On macOS, run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
 		<div class="command-button"><pre><span class='ghcup-command' id="ghcup-command-normal">curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
-        <p class="other-help">If you don't like curl | sh, see <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">other installation methods</a>.<br/>You appear to be running macOS. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
+	<p class="other-help"><a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell" target="_blank">What does this do?</a> <b>&nbsp;&middot;&nbsp;</b> <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">I don't like curl | sh</a> <b>&nbsp;&middot;&nbsp;</b> <a class="default-platform-button" href="#">I'm not running macOS</a></p>
       </div>
 
       <div id="platform-instructions-freebsd" class="instructions" style="display: none;">
-        <p>Run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
+        <p>On FreeBSD Run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
 		<div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
-        <p class="other-help">If you don't like curl | sh, see <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">other installation methods</a>.<br/>You appear to be running FreeBSD. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
+	<p class="other-help"><a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell" target="_blank">What does this do?</a> <b>&nbsp;&middot;&nbsp;</b> <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">I don't like curl | sh</a> <b>&nbsp;&middot;&nbsp;</b> <a class="default-platform-button" href="#">I'm not running FreeBSD</a></p>
       </div>
 
       <div id="platform-instructions-win32" class="instructions">
         <p>
-            To install Haskell,<br/>run the following in a powershell session (as a non-admin user).
+            On Windows, to install Haskell,<br/>run the following in a powershell session (as a non-admin user).
 			<div>
 			<div class="command-button"><pre><span class='ghcup-command' id="ghcup-command-powershell">Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
 			</div>
-				<p class="other-help">If you want to run a non-interactive installation, change <span class='code'>$true</span> to <span class='code'>$false</span> at the end of the script.</p>
 			</div>
 		<p>If you're a Windows Subsystem 2 for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.
 		</p>
@@ -58,18 +57,19 @@
 		</div>
         </p>
         <hr/>
-		<p class="other-help">You appear to be running Windows 32-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
+	<p class="other-help"><a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell.ps1" target="_blank">What does this do?</a> <b>&nbsp;&middot;&nbsp;</b> <a class="default-platform-button" href="#">I'm not running Windows</a></p>
       </div>
 
       <div id="platform-instructions-win64" class="instructions" style="display: none;">
         <p>
-            To install Haskell,<br/>run the following in a powershell session (as a non-admin user).
+            On Windows, to install Haskell,<br/>run the following in a powershell session (as a non-admin user).
 			<div>
 			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
 			</div>
-				<p class="other-help">If you want to run an non-interactive installation, change <span class='code'>$true</span> to <span class='code'>$false</span> at the end of the script.</p>
+	<p class="other-help"><a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell.ps1" target="_blank">What does this do?</a> <b>&nbsp;&middot;&nbsp;</b> <a class="default-platform-button" href="#">I'm not running Windows</a></p>
 			</div>
         </p>
+        <hr/>
 		<p>If you're a Windows Subsystem 2 for Linux user run the following in your terminal, then follow the onscreen instructions to install Haskell.
 		</p>
 		<div>
@@ -77,7 +77,7 @@
 		</div>
 		<p class="other-help">WSL1 does not work with ghcup, follow  <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">the instructions here</a> to upgrade to WSL2 if needed.</p>
 		</div>
-		<p class="other-help">You appear to be running Windows 64-bit. If not, <a class="default-platform-button" href="#">display all supported installers</a>.</p>
+	<p class="other-help"><a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell" target="_blank">What does this do?</a> <b>&nbsp;&middot;&nbsp;</b> <a class="default-platform-button" href="#">I'm not running Windows</a></p>
       </div>
 
       <div id="platform-instructions-unknown" class="instructions" style="display: none;">
@@ -101,7 +101,7 @@
         <div>
           <p>If you are running Linux, macOS, FreeBSD or Windows Subsystem 2 for Linux, run the following in your terminal (as a user other than root), then follow the onscreen instructions.</p>
 		  <div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
-          <p class="other-help">If you don't like curl | sh, see <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">other installation methods</a>.</p>
+		<p class="other-help"><a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell" target="_blank">What does this do?</a> <b>&nbsp;&middot;&nbsp;</b> <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">I don't like curl | sh</a></p>
         </div>
 
         <hr/>
@@ -120,7 +120,7 @@
           <p>To install Haskell, if you are running Linux, macOS, FreeBSD or Windows Subsystem 2 for Linux, run the following
           in your terminal (as a user other than root), then follow the onscreen instructions.</p>
 		  <div class="command-button"><pre><span class='ghcup-command'>curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre><button class="tooltip" onclick="copyToClipboard()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button></div>
-          <p class="other-help">If you don't like curl | sh, see <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">other installation methods</a>.</p>
+	<p class="other-help"><a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell" target="_blank">What does this do?</a> <b>&nbsp;&middot;&nbsp;</b> <a href="https://gitlab.haskell.org/haskell/ghcup-hs#manual-install">I don't like curl | sh</a></p>
         </div>
 
         <hr/>
@@ -130,7 +130,7 @@
             If you are running Windows,<br/>run the following in a powershell session (as a non-admin user).
 			<div class="command-button"><pre><span class='ghcup-command'>Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true</span></span></pre><button class="tooltip" onclick="copyToClipboardPowershell()"><img src="copy.svg" alt="" /><span class="tooltiptext">Copy to clipboard</span></button>
 			</div>
-				<p class="other-help">If you want to run a non-interactive installation, change <span class='code'>$true</span> to <span class='code'>$false</span> at the end of the script.</p>
+				<p class="other-help"><a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell.ps1" target="_blank">What does this do?</a></p>
 			</div>
           </p>
         </div>
@@ -151,9 +151,9 @@
         ghcup is a haskell.org supported project.
         <br/>
         <a href="https://www.haskell.org/downloads/">other installation options</a>
-        &nbsp;&middot;&nbsp;
+		<b>&nbsp;&middot;&nbsp;</b>
         <a href="https://gitlab.haskell.org/haskell/ghcup-hs">about ghcup</a>
-        &nbsp;&middot;&nbsp;
+		<b>&nbsp;&middot;&nbsp;</b>
         <a href="https://github.com/rust-lang/rustup.rs/tree/master/www">web design from rustup</a>
       </p>
     <script type="text/javascript" src="ghcup.js"></script>
