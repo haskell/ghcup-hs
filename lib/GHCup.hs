@@ -2189,13 +2189,14 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     let installVer = maybe tver (\ov' -> tver { _tvVersion = ov' }) ov
 
     alreadyInstalled <- lift $ ghcInstalled installVer
-    alreadySet <- fmap (== Just tver) $ lift $ ghcSet (_tvTarget tver)
+    alreadySet <- fmap (== Just installVer) $ lift $ ghcSet (_tvTarget installVer)
+
     when alreadyInstalled $ do
       case isolateDir of
         Just isoDir ->
-          lift $ logWarn $ "GHC " <> T.pack (prettyShow tver) <> " already installed. Isolate installing to " <> T.pack isoDir
+          lift $ logWarn $ "GHC " <> T.pack (prettyShow installVer) <> " already installed. Isolate installing to " <> T.pack isoDir
         Nothing ->
-          lift $ logWarn $ "GHC " <> T.pack (prettyShow tver) <> " already installed. Will overwrite existing version."
+          lift $ logWarn $ "GHC " <> T.pack (prettyShow installVer) <> " already installed. Will overwrite existing version."
       lift $ logWarn
         "...waiting for 10 seconds before continuing, you can still abort..."
       liftIO $ threadDelay 10000000 -- give the user a sec to intervene
@@ -2220,7 +2221,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
         -- only remove old ghc in regular installs
         when alreadyInstalled $ do
           lift $ logInfo "Deleting existing installation"
-          liftE $ rmGHCVer tver
+          liftE $ rmGHCVer installVer
           
       _ -> pure ()
 
@@ -2228,7 +2229,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
       liftE $ installPackedGHC bindist
                                (Just $ RegexDir "ghc-.*")
                                ghcdir
-                               (tver ^. tvVersion)
+                               (installVer ^. tvVersion)
                                False       -- not a force install, since we already overwrite when compiling.
 
     liftIO $ B.writeFile (ghcdir </> ghcUpSrcBuiltFile) bmk
@@ -2236,13 +2237,13 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     case isolateDir of
       -- set and make symlinks for regular (non-isolated) installs
       Nothing -> do
-        reThrowAll GHCupSetError $ postGHCInstall tver
+        reThrowAll GHCupSetError $ postGHCInstall installVer
         -- restore
-        when alreadySet $ liftE $ void $ setGHC tver SetGHCOnly
+        when alreadySet $ liftE $ void $ setGHC installVer SetGHCOnly
         
       _ -> pure ()
 
-    pure tver
+    pure installVer
 
  where
   defaultConf = 
