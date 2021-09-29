@@ -2060,6 +2060,11 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-aarch64-deb10-linux.tar.xz
               dlSubdir: ghc-9.2.0.20210821
               dlHash: 289fc361be4a3199ac15449e30405a9831454811dd454e81eab73bfcdd2c4088
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-aarch64-apple-darwin.tar.xz
+              dlSubdir: ghc-9.2.0.20210821-aarch64-apple-darwin
+              dlHash: 0d763fb619cfa32fa37c113c446e13bebc2215db5946e5fa8fd8400559cf4152
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
