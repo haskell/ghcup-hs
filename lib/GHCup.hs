@@ -2144,6 +2144,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
         workdir <- maybe (pure tmpUnpack)
                          (liftE . intoSubdir tmpUnpack)
                          (view dlSubdir dlInfo)
+        forM_ patchdir (\dir -> liftE $ applyPatches dir workdir)
 
         pure (workdir, tmpUnpack, tver)
 
@@ -2151,7 +2152,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
       Right GitBranch{..} -> do
         tmpUnpack <- lift mkGhcupTmpDir
         let git args = execLogged "git" ("--no-pager":args) (Just tmpUnpack) "git" Nothing
-        tver <- reThrowAll @_ @'[ProcessError, NotFoundInPATH] DownloadFailed $ do
+        tver <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
           lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
           lEM $ git [ "init" ]
@@ -2171,6 +2172,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
 
           lEM $ git [ "checkout", "FETCH_HEAD" ]
           lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
+          forM_ patchdir (\dir -> liftE $ applyPatches dir tmpUnpack)
           env <- liftE $ ghcEnv bghc
           lEM $ execLogged "python3" ["./boot"] (Just tmpUnpack) "ghc-bootstrap" (Just env)
           lEM $ execLogged "sh" ["./configure"] (Just tmpUnpack) "ghc-bootstrap" (Just env)
@@ -2477,9 +2479,6 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                         ()
   configureBindist bghc tver workdir ghcdir = do
     lift $ logInfo [s|configuring build|]
-    
-    forM_ patchdir (\dir -> liftE $ applyPatches dir workdir)
-
 
     if | _tvVersion tver >= [vver|8.8.0|] -> do
           env <- liftE $ ghcEnv bghc
