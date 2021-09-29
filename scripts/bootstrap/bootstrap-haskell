@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# This script downloads the 'ghcup' binary into '~/.ghcup/bin/' and then runs an interactive
+# installation that lets you choose various options. Below is a list of environment variables
+# that affect the installation procedure.
+
 # Main settings:
 #   * BOOTSTRAP_HASKELL_NONINTERACTIVE - any nonzero value for noninteractive installation
 #   * BOOTSTRAP_HASKELL_NO_UPGRADE - any nonzero value to not trigger the upgrade
