@@ -1,5 +1,12 @@
 # Revision history for ghcup
 
+## 0.1.17.2 -- 2021-09-30
+
+* Honour GHC bootstrap compiler during git clone stages wrt [#250](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/250)
+* Speed up `unset` command
+* Fix `--overwrite-version` for `ghcup compile ghc` wrt [#253](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/253)
+* Apply patches before bootstrap
+
 ## 0.1.17.1 -- 2021-09-26
 
 * Fix `NO_COLOR`
