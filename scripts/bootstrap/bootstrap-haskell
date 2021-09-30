@@ -25,7 +25,7 @@
 
 plat="$(uname -s)"
 arch=$(uname -m)
-ghver="0.1.17.1"
+ghver="0.1.17.2"
 base_url="https://downloads.haskell.org/~ghcup"
 
 export GHCUP_SKIP_UPDATE_CHECK=yes
@@ -211,6 +211,14 @@ download_ghcup() {
 			esac
 			;;
         "FreeBSD"|"freebsd")
+            if freebsd-version | grep -E '^12.*' ; then
+                freebsd_ver=12
+            elif freebsd-version | grep -E '^13.*' ; then
+                freebsd_ver=13
+            else
+                die "Unsupported FreeBSD version! Please report a bug at https://gitlab.haskell.org/haskell/ghcup-hs/-/issues"
+            fi
+
 			case "${arch}" in
 				x86_64|amd64)
 					;;
@@ -220,7 +228,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${arch}"
 					;;
 			esac
-			_url=${base_url}/${ghver}/x86_64-portbld-freebsd-ghcup-${ghver}
+			_url=${base_url}/${ghver}/x86_64-portbld-freebsd${freebsd_ver}-ghcup-${ghver}
             ;;
         "Darwin"|"darwin")
 			case "${arch}" in
