@@ -111,7 +111,7 @@ library
     , haskus-utils-types    ^>=1.5
     , haskus-utils-variant  >=3.0        && <3.2
     , HsYAML-aeson          ^>=0.2.0.0
-    , libarchive            ^>=3.0.0.0
+    , libarchive            ^>=3.0.3.0
     , lzma-static           ^>=5.2.5.3
     , megaparsec            >=8.0.0      && <9.1
     , mtl                   ^>=2.2
@@ -202,7 +202,7 @@ executable ghcup
     , ghcup
     , haskus-utils-variant  >=3.0      && <3.2
     , HsYAML-aeson          ^>=0.2.0.0
-    , libarchive            ^>=3.0.0.0
+    , libarchive            ^>=3.0.3.0
     , megaparsec            >=8.0.0    && <9.1
     , mtl                   ^>=2.2
     , optparse-applicative  >=0.15.1.0 && <0.17
@@ -264,7 +264,7 @@ executable ghcup-gen
     , ghcup
     , haskus-utils-variant  >=3.0      && <3.2
     , HsYAML-aeson          ^>=0.2.0.0
-    , libarchive            ^>=3.0.0.0
+    , libarchive            ^>=3.0.3.0
     , mtl                   ^>=2.2
     , optics                ^>=0.4
     , optparse-applicative  >=0.15.1.0 && <0.17

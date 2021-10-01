@@ -1,12 +1,9 @@
-resolver: lts-18.2
+resolver: lts-18.12
 
 packages:
   - .
 
 extra-deps:
-  - git: https://github.com/hasufell/libarchive
-    commit: 8587aab78dd515928024ecd82c8f215e06db85cd
-
   - IfElse-0.85@sha256:6939b94acc6a55f545f63a168a349dd2fbe4b9a7cca73bf60282db5cc6aa47d2,445
   - ascii-string-1.0.1.4@sha256:fa34f1d9ba57e8e89c0d4c9cef5e01ba32cb2d4373d13f92dcc0b531a6c6749b,2582
   - base16-bytestring-0.1.1.7@sha256:0021256a9628971c08da95cb8f4d0d72192f3bb8a7b30b55c080562d17c43dd3,2231
@@ -26,6 +23,7 @@ extra-deps:
   - hspec-discover-2.7.10@sha256:d08bf5dd785629f589571477d9beb7cd91529471bd89f39517c1cb4b9b38160f,2184
   - hspec-golden-aeson-0.9.0.0@sha256:aa17274114026661ba4dfc9c60c230673c8f408bd86482fd611d2d5cb6aff996,2179
   - http-io-streams-0.1.6.0@sha256:53f5bab177efb52cd65ec396fd04ed59b93e5f919fb3700cd7dacd6cfce6f06d,3582
+  - libarchive-3.0.3.0
   - lzma-static-5.2.5.3@sha256:2758ee58c35992fcf7db78e98684c357a16a82fa2a4e7c352a6c210c08c555d8,7308
   - optics-0.4@sha256:9fb69bf0195b8d8f1f8cd0098000946868b8a3c3ffb51e5b64f79fc600c3eb4c,6568
   - optics-core-0.4@sha256:59e04aebca536bd011ae50c781937f45af4c1456af1eb9fb578f9a69eee293cd,4995
