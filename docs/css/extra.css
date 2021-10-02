@@ -61,3 +61,8 @@ body.homepage>div.container div.col-md-9 {
     flex: 0 0 100%;
     max-width: 100%;
 }
+
+.center {
+    display: block !important;
+}
+

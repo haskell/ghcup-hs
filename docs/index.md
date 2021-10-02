@@ -32,5 +32,5 @@ It follows the unix UNIX philosophy of [do one thing and do it well](https://en.
 
 ----
 
-![GHCup](./ghcup.gif)
+![GHCup](./ghcup.gif#center){: .center style="width:700px"}
 
