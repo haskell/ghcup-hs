@@ -20,6 +20,19 @@ code.no-highlight {
     color: black;
 }
 
+div.gh-badge img {
+	margin: 0;
+	padding: 0;
+	height: 30px;
+}
+
+a.donate-badge img {
+	margin-top: 10;
+	margin-bottom: 0;
+	padding: 0;
+	height: 50px;
+}
+
 /* Definition List styles */
 
 dd {
