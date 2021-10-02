@@ -1,3 +1,9 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 # GHCup
 
 GHCup is an installer for the general purpose language [Haskell](https://www.haskell.org/).
