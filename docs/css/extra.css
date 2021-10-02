@@ -115,3 +115,8 @@ a:hover {
     background-color: #453A62;
     border-color: #996FC1;
 }
+
+.navbar-default .navbar-nav>li>a:hover, .navbar-default .navbar-nav>li>a:focus {
+    color: #fff;
+    background-color: #453A62;
+}
