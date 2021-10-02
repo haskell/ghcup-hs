@@ -66,3 +66,39 @@ body.homepage>div.container div.col-md-9 {
     display: block !important;
 }
 
+.bg-primary {
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#996FC2), color-stop(60%, #6A478D), to(#5E5086)) !important;
+    background-image: linear-gradient(#996FC2, #6A478D 60%, #5E5086) !important;
+    background-repeat: no-repeat !important;
+}
+
+.btn-primary {
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#996FC2), color-stop(60%, #6A478D), to(#5E5086)) !important;
+    background-image: linear-gradient(#996FC2, #6A478D 60%, #5E5086) !important;
+    background-repeat: no-repeat !important;
+
+    color: #fff;
+    background-color: #996FC1;
+    border-color: #996FC1;
+
+	border-bottom: 1px solid #453A62;
+}
+
+a {
+	color: #996FC2;
+}
+
+a:hover {
+	color: #674489;
+}
+
+.col-md-9 img.main-logo {
+    border: 0px; 
+	padding: 0px;
+	margin: 0px;
+}
+
+.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:hover, .navbar-default .navbar-nav>.active>a:focus {
+    color: #fff;
+    background-color: #453A62;
+}

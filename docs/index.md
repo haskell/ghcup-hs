@@ -4,7 +4,7 @@ hide:
   - toc
 ---
 
-# GHCup
+# ![](./haskell_logo.png){: .main-logo style="width:100px"} GHCup
 
 GHCup is an installer for the general purpose language [Haskell](https://www.haskell.org/).
 
@@ -32,5 +32,5 @@ It follows the unix UNIX philosophy of [do one thing and do it well](https://en.
 
 ----
 
-![GHCup](./ghcup.gif#center){: .center style="width:700px"}
+![GHCup](./ghcup.gif){: .center style="width:700px"}
 
