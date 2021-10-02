@@ -1,0 +1,95 @@
+# Getting started
+
+Let's get started....
+
+## Installation
+
+On Linux, macOS, FreeBSD or Windows Subsystem 2 for Linux, run the following in your terminal (as a user other than root), then follow the onscreen instructions:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+```
+
+If you are running Windows, run the following in a powershell session (as a non-admin user).
+
+```psh
+Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true
+```
+
+Advanced users may want to perform a [manual installation](#manual-install).
+
+## Supported tools
+
+GHCup supports the following tools:
+
+1. [GHC](https://www.haskell.org/ghc/)
+2. [cabal-install](https://cabal.readthedocs.io/en/latest/)
+3. [haskell-language-server](https://haskell-language-server.readthedocs.io/en/latest/)
+4. [stack](https://docs.haskellstack.org/en/latest/README/)
+
+## Supported platforms
+
+This list may not be exhaustive and specifies support for bindists only.
+
+| Platform | Architecture | ghcup | GHC | cabal | HLS | stack | 
+| ------ | ------ | ------ | ------ | ------ | ------ | ------ |
+| Windows 7 | amd64 | ❔ | ✅ | ✅ | ✅ | ✅ |
+| Windows 10 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Windows Server 2016 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Windows Server 2019 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Windows Server 2022 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Windows WSL1 | amd64 | ❌ | ❔ | ❔ | ❔ | ❔ |
+| Windows WSL2 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MacOS >=13 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MacOS <13 | amd64 | ❌ | ❔ | ❔ | ❔ | ❔ |
+| MacOS | aarch64 | ✅ | ✅ | ✅ | ⚠️ | ❌ |
+| FreeBSD | amd64 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
+| Linux generic | x86 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Linux generic | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Linux generic | aarch64 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
+| Linux generic | armv7 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
+
+#### Windows 7
+
+May or may not work, several issues:
+
+* https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/140
+* https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/197
+
+#### WSL1
+
+Unsupported. GHC may or may not work. Upgrade to WSL2.
+
+#### MacOS <13
+
+Not supported. Would require separate binaries, since >=13 binaries are incompatible.
+Please upgrade.
+
+#### MacOS aarch64
+
+HLS bindists are still experimental. Stack is theoretically supported, but has no binaries yet.
+
+#### FreeBSD
+
+Lacks some upstream bindists and may need compat libs, since most bindists are built on FreeBSD-12.
+HLS bindists are experimental.
+
+#### Linux ARMv7/AARCH64
+
+Lower availability of bindists. HLS only has experimental ones. Stack not supported currently.
+
+## Manual install
+
+Download the binary for your platform at [https://downloads.haskell.org/~ghcup/](https://downloads.haskell.org/~ghcup/)
+and place it into your `PATH` anywhere.
+
+Then adjust your `PATH` in `~/.bashrc` (or similar, depending on your shell) like so:
+
+```sh
+export PATH="$HOME/.cabal/bin:$HOME/.ghcup/bin:$PATH"
+```
+
+## Vim integration
+
+See [ghcup.vim](https://github.com/hasufell/ghcup.vim).
+
