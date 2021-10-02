@@ -44,6 +44,7 @@ body.homepage>div.container div.col-md-3 {
 
 body.homepage>div.container div.col-md-9 {
     margin-left: 0;
+    padding-left: 0;
     flex: 0 0 100%;
     max-width: 100%;
 }
