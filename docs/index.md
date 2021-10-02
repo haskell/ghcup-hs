@@ -26,6 +26,7 @@ It follows the unix UNIX philosophy of [do one thing and do it well](https://en.
 <a href="https://www.haskell.org/ghcup/" class="btn btn-primary" role="button">Quick Install</a>
 <a href="install/" class="btn btn-primary" role="button">Getting Started</a>
 <a href="guide/" class="btn btn-primary" role="button">User Guide</a>
+<a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/issues" class="btn btn-primary" role="button">Issue tracker</a>
 </div>
 
 
