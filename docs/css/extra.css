@@ -72,7 +72,19 @@ body.homepage>div.container div.col-md-9 {
     background-repeat: no-repeat !important;
 }
 
-.btn-primary .navbar {
+.btn-primary {
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#996FC2), color-stop(60%, #6A478D), to(#5E5086)) !important;
+    background-image: linear-gradient(#996FC2, #6A478D 60%, #5E5086) !important;
+    background-repeat: no-repeat !important;
+
+    color: #fff;
+    background-color: #996FC1;
+    border-color: #996FC1;
+
+	border-bottom: 1px solid #453A62;
+}
+
+.navbar {
     background-image: -webkit-gradient(linear, left top, left bottom, from(#996FC2), color-stop(60%, #6A478D), to(#5E5086)) !important;
     background-image: linear-gradient(#996FC2, #6A478D 60%, #5E5086) !important;
     background-repeat: no-repeat !important;
