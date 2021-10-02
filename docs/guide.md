@@ -136,11 +136,11 @@ This is the complete list of env variables that change GHCup behavior:
 There are a couple of good use cases to install custom bindists:
 
 1. manually built bindists (e.g. with patches)
-  - example: `ghcup install ghc -u 'file:///home/mearwald/tmp/ghc-eff-patches/ghc-8.10.2-x86_64-deb10-linux.tar.xz' 8.10.2-eff`
+    - example: `ghcup install ghc -u 'file:///home/mearwald/tmp/ghc-eff-patches/ghc-8.10.2-x86_64-deb10-linux.tar.xz' 8.10.2-eff`
 2. GHC head CI bindists
-  - example: `ghcup install ghc -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
+    - example: `ghcup install ghc -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
 3. DWARF bindists
-  - example: `ghcup install ghc -u 'https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux-dwarf.tar.xz' 8.10.2-dwarf`
+    - example: `ghcup install ghc -u 'https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux-dwarf.tar.xz' 8.10.2-dwarf`
 
 Since the version parser is pretty lax, `8.10.2-eff` and `head` are both valid versions
 and produce the binaries `ghc-8.10.2-eff` and `ghc-head` respectively.
@@ -159,23 +159,22 @@ These installs, as the name suggests, are separate from your main installs and D
 
 You need to use the `--isolate` or `-i` flag followed by the directory path.
 
-Examples:-
+Examples:
 
 1. install an isolated GHC version at location /home/user/isolated_dir/ghc/  
-   - `ghcup install ghc 8.10.5 --isolate /home/user/isolated_dir/ghc`
+    - `ghcup install ghc 8.10.5 --isolate /home/user/isolated_dir/ghc`
 
 2. isolated install Cabal at a location you desire  
-   - `ghcup install cabal --isolate /home/username/my_isolated_dir/`
+    - `ghcup install cabal --isolate /home/username/my_isolated_dir/`
 
 3. do an isolated install with a custom bindist  
-   - `ghcup install ghc --isolate /home/username/my_isolated_dir/ -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
+    - `ghcup install ghc --isolate /home/username/my_isolated_dir/ -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
 
 4. isolated install HLS  
-   - `ghcup install hls --isolate /home/username/dir/hls/`
+    - `ghcup install hls --isolate /home/username/dir/hls/`
 
 5. you can even compile ghc to an isolated location.  
-   - `ghcup compile ghc -j 4 -v 9.0.1 -b 8.10.5 -i /home/username/my/dir/ghc` 
-   ---  
+    - `ghcup compile ghc -j 4 -v 9.0.1 -b 8.10.5 -i /home/username/my/dir/ghc` 
 
 ## CI
 
