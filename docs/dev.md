@@ -1,16 +1,18 @@
-# HACKING
+# Development
+
+All you wanted to know about development.
 
 ## Design decisions
 
-### Using [Excepts](https://hackage.haskell.org/package/haskus-utils-variant-3.0/docs/Haskus-Utils-Variant-Excepts.html) as a beefed up ExceptT
+#### Using [Excepts](https://hackage.haskell.org/package/haskus-utils-variant-3.0/docs/Haskus-Utils-Variant-Excepts.html) as a beefed up ExceptT
 
 This is an open variant, similar to [plucky](https://hackage.haskell.org/package/plucky) or [oops](https://github.com/i-am-tom/oops) and allows us to combine different error types. Maybe it is too much and it's a little bit [unergonomic](https://github.com/haskus/packages/issues/32) at times. If it really hurts maintenance, it will be removed. It was more of an experiment.
 
-### No use of haskell-TLS
+#### No use of haskell-TLS
 
 I consider haskell-TLS an interesting experiment, but not a battle-tested and peer-reviewed crypto implementation. There is little to no research about what the intricacies of using haskell for low-level crypto are and how vulnerable such binaries are. Instead, we use either curl the binary (for FreeBSD and mac) or http-io-streams, which works with OpenSSL bindings.
 
-### Optics instead of lens
+#### Optics instead of lens
 
 They're a little safer (less Monoid weirdness with view) and have better error messages. Consider the following wit lens
 
@@ -30,7 +32,7 @@ vs optics
       In an equation for ‘it’: it = view (_Just % to (++ "abc")) Nothing
 ```
 
-### Strict and StrictData on by default
+#### Strict and StrictData on by default
 
 Kazu Yamamoto [explained it in his PR](https://github.com/yesodweb/wai/pull/752#issuecomment-501531386) very well. I like to agree with him. The instances where we need non-strict behavior, we annotate it.
 
@@ -40,7 +42,7 @@ Kazu Yamamoto [explained it in his PR](https://github.com/yesodweb/wai/pull/752#
 2. mtl-style preferred
 3. no overly pointfree style
 
-## Code structure
+#### Code structure
 
 Main functionality is in `GHCup` module. Utility functions are
 organised tree-ish in `GHCup.Utils` and `GHCup.Utils.*`.
@@ -53,7 +55,7 @@ yaml files: `ghcup-<yaml-ver>.yaml`.
 
 ## Common Tasks
 
-### Adding a new GHC version
+#### Adding a new GHC version
 
 1. open the latest `ghcup-<yaml-ver>.yaml`
 2. find the latest ghc version (in yaml tree e.g. `ghcupDownloads -> GHC -> 8.10.3`)
@@ -73,3 +75,26 @@ yaml files: `ghcup-<yaml-ver>.yaml`.
    The major changes here were switching `hpath` library out for `filepath`/`directory` (sadly) and
    introducing a non-unix way of handling processes via the `process` library. It also introduced considerable
    amounts of CPP wrt file handling, installation etc.
+
+# Releasing
+
+1. Update version in `ghcup.cabal` and `boostrap-haskell` (`ghver` variable at the top of the script)
+
+2. Update `GHCup.Version` module. `ghcupURL` must only be updated if we change the `GHCupInfo` type or the YAML representation of it. The version of the YAML represents the change increments. `ghcUpVer` is the current application version, read from `ghcup.cabal`.
+
+3. Add ChangeLog entry
+
+4. Add/fix downloads in `ghcup-<ver>.yaml` (under `data/metadata`), then verify with `ghcup-gen check -f ghcup-<ver>.yaml` and possibly (example only) `ghcup-gen check-tarballs -f ghcup-<ver>.yaml -u 'ghc-8.10.7'`. Generally, new GHC/cabal/stack/hls versions are only added to the latest yaml file. New GHCup versions are added to all (great care must be taken here to not break the parser... e.g. ARM platforms don't parse in all older formats).
+
+5. Commit and git push with tag. Wait for tests to succeed and release artifacts to build.
+
+6. Download release artifacts and upload them `downloads.haskell.org/ghcup` along with checksum files (`sha256sum --tag * > SHA256SUMS && gpg --detach-sign -u <your-email> SHA256SUMS`)
+
+7. Add ghcup release artifacts to ALL yaml files (see point 4.)
+
+8. Upload the final `ghcup-<ver>.yaml` to `webhost.haskell.org/ghcup/data/`.
+
+9. Update `bootstrap-haskell` and `bootstrap-haskell.ps1` to `webhost.haskell.org/ghcup/sh/`
+
+10. Update the ghcup symlinks at `downloads.haskell.org/ghcup`
+

@@ -1,0 +1,27 @@
+site_name: GHCup
+site_url: https://www.haskell.org/ghcup
+site_description: GHCup documentation
+site_author: GHCup Team
+
+repo_url: https://gitlab.haskell.org/haskell/ghcup-hs
+
+theme:
+    name: mkdocs
+    locale: en
+
+nav:
+  - Home: index.md
+  - "Getting Started": install.md
+  - "User Guide": guide.md
+  - "Developer Guide": dev.md
+  - About: about.md
+
+extra_css:
+    - css/extra.css
+
+markdown_extensions:
+    - toc:
+        permalink: 
+    - admonition
+    - attr_list
+    - def_list
