@@ -74,7 +74,7 @@ For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man`
 
 ## Shell-completion
 
-Shell completions are in [scripts/shell-completions](./scripts/shell-completions) directory of this repository.
+Shell completions are in [scripts/shell-completions](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/scripts/shell-completions) directory of this repository.
 
 For bash: install `shell-completions/bash`
 as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
@@ -87,7 +87,7 @@ Compiling from source is supported for both source tarballs and arbitrary git re
 for a list of all available options.
 
 If you need to overwrite the existing `build.mk`, check the default files
-in [data/build_mk](./data/build_mk), copy them somewhere, adjust them and
+in [data/build_mk](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/data/build_mk), copy them somewhere, adjust them and
 pass `--config path/to/build.mk` to `ghcup compile ghc`.
 Common `build.mk` options are explained [here](https://gitlab.haskell.org/ghc/ghc/-/wikis/building/using#build-configuration).
 
