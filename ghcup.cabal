@@ -28,6 +28,7 @@ extra-doc-files:
 extra-source-files:
   data/build_mk/cross
   data/build_mk/default
+  test/golden/GHCupInfo.json
 
 source-repository head
   type:     git
