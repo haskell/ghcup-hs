@@ -72,7 +72,7 @@ body.homepage>div.container div.col-md-9 {
     background-repeat: no-repeat !important;
 }
 
-.btn-primary {
+.btn-primary .navbar {
     background-image: -webkit-gradient(linear, left top, left bottom, from(#996FC2), color-stop(60%, #6A478D), to(#5E5086)) !important;
     background-image: linear-gradient(#996FC2, #6A478D 60%, #5E5086) !important;
     background-repeat: no-repeat !important;
@@ -101,4 +101,5 @@ a:hover {
 .navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:hover, .navbar-default .navbar-nav>.active>a:focus {
     color: #fff;
     background-color: #453A62;
+    border-color: #996FC1;
 }
