@@ -20,9 +20,7 @@ extra-doc-files:
   data/metadata/ghcup-0.0.4.yaml
   data/metadata/ghcup-0.0.5.yaml
   data/metadata/ghcup-0.0.6.yaml
-  docs/CHANGELOG.md
-  docs/HACKING.md
-  docs/RELEASING.md
+  CHANGELOG.md
   README.md
 
 extra-source-files:
