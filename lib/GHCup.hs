@@ -1137,6 +1137,7 @@ setGHC ver sghc = do
       SetGHCOnly -> do
         let sharedir     = "share"
         let fullsharedir = ghcdir </> sharedir
+        logDebug $ "Checking for sharedir existence: " <> T.pack fullsharedir
         whenM (liftIO $ doesDirectoryExist fullsharedir) $ do
           let fullF   = destdir </> sharedir
           let targetF = "." </> "ghc" </> ver' </> sharedir
@@ -2121,10 +2122,6 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
-    bghc <- case bstrap of
-      Right g    -> pure $ Right g
-      Left  bver -> pure $ Left ("ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt)
-
     (workdir, tmpUnpack, tver) <- case targetGhc of
       -- unpack from version tarball
       Left tver -> do
@@ -2173,9 +2170,8 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
           lEM $ git [ "checkout", "FETCH_HEAD" ]
           lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
           forM_ patchdir (\dir -> liftE $ applyPatches dir tmpUnpack)
-          env <- liftE $ ghcEnv bghc
-          lEM $ execLogged "python3" ["./boot"] (Just tmpUnpack) "ghc-bootstrap" (Just env)
-          lEM $ execLogged "sh" ["./configure"] (Just tmpUnpack) "ghc-bootstrap" (Just env)
+          lEM $ execWithGhcEnv "python3" ["./boot"] (Just tmpUnpack) "ghc-bootstrap"
+          lEM $ execWithGhcEnv "sh" ["./configure"] (Just tmpUnpack) "ghc-bootstrap"
           CapturedProcess {..} <- lift $ makeOut
             ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just tmpUnpack)
           case _exitCode of
@@ -2212,8 +2208,8 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
       Nothing
       (do
         b <- if hadrian
-             then compileHadrianBindist bghc tver workdir ghcdir
-             else compileMakeBindist bghc tver workdir ghcdir
+             then compileHadrianBindist tver workdir ghcdir
+             else compileMakeBindist tver workdir ghcdir
         bmk <- liftIO $ handleIO (\_ -> pure "") $ B.readFile (build_mk workdir)
         pure (b, bmk)
       )
@@ -2265,8 +2261,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                            , MonadIO m
                            , MonadFail m
                            )
-                        => Either FilePath FilePath
-                        -> GHCTargetVersion
+                        => GHCTargetVersion
                         -> FilePath
                         -> FilePath
                         -> Excepts
@@ -2279,19 +2274,19 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                               , CopyError]
                              m
                              (Maybe FilePath)  -- ^ output path of bindist, None for cross
-  compileHadrianBindist bghc tver workdir ghcdir = do
-    lEM $ execLogged "python3" ["./boot"] (Just workdir) "ghc-bootstrap" Nothing
+  compileHadrianBindist tver workdir ghcdir = do
+    lEM $ execWithGhcEnv "python3" ["./boot"] (Just workdir) "ghc-bootstrap"
 
-    liftE $ configureBindist bghc tver workdir ghcdir
+    liftE $ configureBindist tver workdir ghcdir
 
     lift $ logInfo "Building (this may take a while)..."
     hadrian_build <- liftE $ findHadrianFile workdir
-    lEM $ execLogged hadrian_build
+    lEM $ execWithGhcEnv hadrian_build
                           ( maybe [] (\j  -> ["-j" <> show j]         ) jobs
                          ++ maybe [] (\bf -> ["--flavour=" <> bf]) buildFlavour
                          ++ ["binary-dist"]
                           )
-                          (Just workdir) "ghc-make" Nothing
+                          (Just workdir) "ghc-make"
     [tar] <- liftIO $ findFiles
       (workdir </> "_build" </> "bindist")
       (makeRegexOpts compExtended
@@ -2327,8 +2322,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                         , MonadIO m
                         , MonadFail m
                         )
-                     => Either FilePath FilePath
-                     -> GHCTargetVersion
+                     => GHCTargetVersion
                      -> FilePath
                      -> FilePath
                      -> Excepts
@@ -2341,8 +2335,8 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                            , CopyError]
                           m
                        (Maybe FilePath)  -- ^ output path of bindist, None for cross
-  compileMakeBindist bghc tver workdir ghcdir = do
-    liftE $ configureBindist bghc tver workdir ghcdir
+  compileMakeBindist tver workdir ghcdir = do
+    liftE $ configureBindist tver workdir ghcdir
 
     case mbuildConfig of
       Just bc -> liftIOException
@@ -2463,8 +2457,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                       , MonadIO m
                       , MonadFail m
                       )
-                   => Either FilePath FilePath
-                   -> GHCTargetVersion
+                   => GHCTargetVersion
                    -> FilePath
                    -> FilePath
                    -> Excepts
@@ -2477,12 +2470,11 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                          ]
                         m
                         ()
-  configureBindist bghc tver workdir ghcdir = do
+  configureBindist tver workdir ghcdir = do
     lift $ logInfo [s|configuring build|]
 
     if | _tvVersion tver >= [vver|8.8.0|] -> do
-          env <- liftE $ ghcEnv bghc
-          lEM $ execLogged
+          lEM $ execWithGhcEnv
             "sh"
             ("./configure" :  maybe mempty
                       (\x -> ["--target=" <> T.unpack x])
@@ -2495,7 +2487,6 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
             )
             (Just workdir)
             "ghc-conf"
-            (Just env)
        | otherwise -> do
         lEM $ execLogged
           "sh"
@@ -2515,14 +2506,32 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
           Nothing
     pure ()
 
-  ghcEnv :: MonadIO m => Either FilePath FilePath -> Excepts '[NotFoundInPATH] m [(String, String)]
-  ghcEnv bghc = do
+  execWithGhcEnv :: ( MonadReader env m
+                    , HasSettings env
+                    , HasDirs env
+                    , MonadIO m
+                    , MonadThrow m)
+                 => FilePath         -- ^ thing to execute
+                 -> [String]         -- ^ args for the thing
+                 -> Maybe FilePath   -- ^ optionally chdir into this
+                 -> FilePath         -- ^ log filename (opened in append mode)
+                 -> m (Either ProcessError ())
+  execWithGhcEnv fp args dir logf = do
+    env <- ghcEnv
+    execLogged fp args dir logf (Just env)
+
+  bghc = case bstrap of
+           Right g    -> Right g
+           Left  bver -> Left ("ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt)
+
+  ghcEnv :: (MonadThrow m, MonadIO m) => m [(String, String)]
+  ghcEnv = do
     cEnv <- liftIO getEnvironment
     bghcPath <- case bghc of
       Right ghc' -> pure ghc'
       Left  bver -> do
         spaths <- liftIO getSearchPath
-        liftIO (searchPath spaths bver) !? NotFoundInPATH bver
+        throwMaybeM (NotFoundInPATH bver) $ liftIO (searchPath spaths bver)
     pure (("GHC", bghcPath) : cEnv)
 
 

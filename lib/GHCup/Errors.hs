@@ -149,6 +149,8 @@ instance Pretty NotInstalled where
 data NotFoundInPATH = NotFoundInPATH FilePath
   deriving Show
 
+instance Exception NotFoundInPATH
+
 instance Pretty NotFoundInPATH where
   pPrint (NotFoundInPATH exe) =
     text $ "The exe " <> exe <> " was not found in PATH."
