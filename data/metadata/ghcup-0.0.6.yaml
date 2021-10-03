@@ -2262,6 +2262,13 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-x86_64-windows.zip
               dlSubdir:
               dlHash: 8222b49b6eac3d06aaa390bc688f467e8f949a38943567f46246f8320fd72ded
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3600-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.0.0/cabal-install-3.6.0.0-i386-linux.tar.gz
+              dlHash: f2fcef4a212906379a255e12c853f1d015fa22c867764bd7f6e09c6f656b3c75
+          Linux_Alpine:
+            unknown_versioning: *cabal-3600-32
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
