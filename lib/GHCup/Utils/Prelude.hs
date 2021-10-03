@@ -283,6 +283,16 @@ throwEither' e eth = case eth of
   Left  _ -> throwM e
   Right r -> pure r
 
+throwMaybe :: (Exception a, MonadThrow m) => a -> Maybe b -> m b
+throwMaybe a m = case m of
+  Nothing -> throwM a
+  Just r -> pure r
+
+throwMaybeM :: (Exception a, MonadThrow m) => a -> m (Maybe b) -> m b
+throwMaybeM a am = do
+  m <- am
+  throwMaybe a m
+
 
 verToBS :: Version -> ByteString
 verToBS = E.encodeUtf8 . prettyVer
