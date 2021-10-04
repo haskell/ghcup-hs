@@ -8,4 +8,4 @@
 
 GHCup is an installer for the general purpose language [Haskell](https://www.haskell.org/).
 
-See the [quick installation](https://www.haskell.org/ghcup/) or browse the [documentation](https://ghcup.readthedocs.io/en/latest/).
+Visit the [documentation](https://www.haskell.org/ghcup/) for installation instructions.
