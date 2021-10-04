@@ -40,7 +40,7 @@ cabal-install/HLS/stack are installed in `~/.ghcup/bin/<tool>-<ver>` and have un
 
 ## Known problems
 
-#### Custom ghc version names
+### Custom ghc version names
 
 When installing ghc bindists with custom version names as outlined in
 [installing custom bindists](#installing-custom-bindists), then cabal might
@@ -51,16 +51,16 @@ as the current one via: `ghcup set ghc <version-name>`.
 
 This problem doesn't exist for regularly installed GHC versions.
 
-#### Limited distributions supported
+### Limited distributions supported
 
 Currently only GNU/Linux distributions compatible with the [upstream GHC](https://www.haskell.org/ghc/download_ghc_8_6_1.html#binaries) binaries are supported.
 
-#### Precompiled binaries
+### Precompiled binaries
 
 Since this uses precompiled binaries you may run into
 several problems.
 
-##### Missing libtinfo (ncurses)
+#### Missing libtinfo (ncurses)
 
 You may run into problems with *ncurses* and **missing libtinfo**, in case
 your distribution doesn't use the legacy way of building
@@ -69,13 +69,13 @@ ncurses and has no compatibility symlinks in place.
 Ask your distributor on how to solve this or
 try to compile from source via `ghcup compile <version>`.
 
-##### Libnuma required
+#### Libnuma required
 
 This was a [bug](https://ghc.haskell.org/trac/ghc/ticket/15688) in the build system of some GHC versions that lead to
 unconditionally enabled libnuma support. To mitigate this you might have to install the libnuma
 package of your distribution. See [here](https://gitlab.haskell.org/haskell/ghcup/issues/58) for a discussion.
 
-#### Compilation
+### Compilation
 
 Although this script can compile GHC for you, it's just a very thin
 wrapper around the build system. It makes no effort in trying
@@ -83,7 +83,7 @@ to figure out whether you have the correct toolchain and
 the correct dependencies. Refer to [the official docs](https://ghc.haskell.org/trac/ghc/wiki/Building/Preparation/Linux)
 on how to prepare your environment for building GHC.
 
-#### Stack support
+### Stack support
 
 There may be a number of bugs when trying to make ghcup installed GHC versions work with stack,
 such as:
@@ -95,7 +95,7 @@ issues discussed here:
 
 - https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/153
 
-#### Windows support
+### Windows support
 
 Windows support is in early stages. Since windows doesn't support symbolic links properly,
 ghcup uses a [shimgen wrapper](https://github.com/71/scoop-better-shimexe). It seems to work
@@ -108,17 +108,17 @@ Windows 7 and Powershell 2.0 aren't well supported at the moment, also see:
 
 ## FAQ
 
-#### Why reimplement stack?
+### Why reimplement stack?
 
 GHCup is not a reimplementation of stack. The only common part is automatic installation of GHC,
 but even that differs in scope and design.
 
-#### Why should I use ghcup over stack?
+### Why should I use ghcup over stack?
 
 GHCup is not a replacement for stack. Instead, it supports installing and managing stack versions.
 It does the same for cabal, GHC and HLS. As such, It doesn't make a workflow choice for you.
 
-#### Why should I let ghcup manage stack?
+### Why should I let ghcup manage stack?
 
 You don't need to. However, some users seem to prefer to have a central tool that manages cabal and stack
 at the same time. Additionally, it can allow better sharing of GHC installation across these tools.
@@ -127,7 +127,7 @@ Also see:
 * https://docs.haskellstack.org/en/stable/yaml_configuration/#system-ghc
 * https://github.com/commercialhaskell/stack/pull/5585
 
-#### Why does ghcup not use stack code?
+### Why does ghcup not use stack code?
 
 Oddly, this question has been asked a couple of times. For the curious, here are a few reasons:
 
@@ -138,14 +138,14 @@ Oddly, this question has been asked a couple of times. For the curious, here are
 	  - it's not clear how GHCup would have been implemented with the provided API. It seems the codebases are fairly different. GHCup does a lot of symlink handling to expose a central `bin/` directory that users can easily put in PATH, without having to worry about anything more. It also provides explicit removal functionality, GHC cross-compilation, a TUI, etc etc.
 3. GHCup is built around unix principles and supposed to be simple.
 
-#### Why not unify...
+### Why not unify...
 
-##### ...stack and Cabal and do away with standalone installers
+#### ...stack and Cabal and do away with standalone installers
 
 GHCup is not involved in such decisions. cabal-install and stack might have a
 sufficiently different user experience to warrant having a choice.
 
-##### ...installer implementations and have a common library
+#### ...installer implementations and have a common library
 
 This sounds like an interesting goal. However, GHC installation isn't a hard engineering problem
 and the shared code wouldn't be too exciting. For such an effort to make sense, all involved
@@ -158,7 +158,7 @@ can then call into ghcup or anything else, also see:
 * https://github.com/haskell/cabal/issues/7394
 * https://github.com/commercialhaskell/stack/pull/5585
 
-##### ...installers (like, all of it)
+#### ...installers (like, all of it)
 
 So far, there hasn't been an **open** discussion about this. Is this even a good idea?
 Sometimes projects converge eventually if their overlap is big enough, sometimes they don't.
@@ -168,11 +168,11 @@ Take `curl` and `wget` as an example.
 
 How bad do we need this?
 
-#### Why not support windows?
+### Why not support windows?
 
 Windows is supported since GHCup version 0.1.15.1.
 
-#### Why the haskell reimplementation?
+### Why the haskell reimplementation?
 
 GHCup started as a portable posix shell script of maybe 50 LOC. GHC installation itself can be carried out in
 about ~3 lines of shell code (download, unpack , configure+make install). However, much convenient functionality
@@ -183,7 +183,7 @@ The main concern when switching from a portable shell script to haskell was plat
 However, ghcup now re-uses GHCs CI infrastructure and as such is perfectly in sync with all platforms that
 GHC supports.
 
-#### Is GHCup affiliated with the Haskell Foundation?
+### Is GHCup affiliated with the Haskell Foundation?
 
 There has been some collaboration: Windows and Stack support were mainly requested by the Haskell Foundation
 and those seemed interesting features to add.

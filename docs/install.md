@@ -4,23 +4,27 @@ Let's get started....
 
 ## Installation
 
-On Linux, macOS, FreeBSD or Windows Subsystem 2 for Linux, run the following in your terminal (as a user other than root), then follow the onscreen instructions:
+The following commands will download the `ghcup` binary into `~/.ghcup/bin` (or `C:\ghcup\bin` on windows) and then
+run it to interactively install the [Haskell Toolchain](#supported-tools). These commands should be run as **non-root/non-admin
+user**.
+
+For Linux, macOS, FreeBSD or Windows Subsystem 2 for Linux, run this in a terminal:
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 ```
 
-If you are running Windows, run the following in a powershell session (as a non-admin user).
+For Windows, run this in a PowerShell session:
 
 ```psh
 Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true
 ```
 
-Advanced users may want to perform a [manual installation](#manual-install).
+Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
 
 ## Supported tools
 
-GHCup supports the following tools:
+GHCup supports the following tools, which are also known as the **Haskell Toolchain**:
 
 1. [GHC](https://www.haskell.org/ghc/)
 2. [cabal-install](https://cabal.readthedocs.io/en/latest/)
@@ -49,32 +53,32 @@ This list may not be exhaustive and specifies support for bindists only.
 | Linux generic | aarch64 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
 | Linux generic | armv7 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
 
-#### Windows 7
+### Windows 7
 
 May or may not work, several issues:
 
 * https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/140
 * https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/197
 
-#### WSL1
+### WSL1
 
 Unsupported. GHC may or may not work. Upgrade to WSL2.
 
-#### MacOS <13
+### MacOS <13
 
 Not supported. Would require separate binaries, since >=13 binaries are incompatible.
 Please upgrade.
 
-#### MacOS aarch64
+### MacOS aarch64
 
 HLS bindists are still experimental. Stack is theoretically supported, but has no binaries yet.
 
-#### FreeBSD
+### FreeBSD
 
 Lacks some upstream bindists and may need compat libs, since most bindists are built on FreeBSD-12.
 HLS bindists are experimental.
 
-#### Linux ARMv7/AARCH64
+### Linux ARMv7/AARCH64
 
 Lower availability of bindists. HLS only has experimental ones. Stack not supported currently.
 
@@ -82,6 +86,8 @@ Lower availability of bindists. HLS only has experimental ones. Stack not suppor
 
 Download the binary for your platform at [https://downloads.haskell.org/~ghcup/](https://downloads.haskell.org/~ghcup/)
 and place it into your `PATH` anywhere.
+
+If you want to GPG verify the binaries, import the following key first: `7784930957807690A66EBDBE3786C5262ECB4A3F`.
 
 Then adjust your `PATH` in `~/.bashrc` (or similar, depending on your shell) like so:
 

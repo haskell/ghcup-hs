@@ -1,3 +1,28 @@
+h2
+{
+    border-bottom:1px solid #CCC;
+    padding-bottom:5px;
+    padding-top:15px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 60px;
+    font-weight: 300;
+    padding-top:15px;
+}
+
+h3 {
+    font-size: 30px;
+    padding-top:10px;
+}
+
+h4 {
+    font-size: 25px;
+    padding-top:10px;
+}
+
+
 div.col-md-9 h1:first-of-type {
     text-align: center;
     font-size: 60px;

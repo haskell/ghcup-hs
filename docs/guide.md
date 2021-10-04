@@ -176,9 +176,9 @@ Examples:
 5. you can even compile ghc to an isolated location.  
     - `ghcup compile ghc -j 4 -v 9.0.1 -b 8.10.5 -i /home/username/my/dir/ghc` 
 
-## CI
+## Continuous integration
 
-On windows, ghcup can be installed automatically on a CI runner like so:
+On windows, ghcup can be installed automatically on a CI runner non-interactively like so:
 
 ```ps
 Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false,$true,$true,$false,$false,$false,$false,"C:\"
@@ -191,6 +191,11 @@ curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_H
 ```
 
 This will just install `ghcup` and on windows additionally `msys2`.
+
+For the full list of env variables and parameters to tweak the script behavior, see:
+
+* [bootstrap-haskell for linux/darwin/freebsd](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell#L7)
+* [bootstrap-haskell.ps1 for windows](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell.ps1#L17)
 
 ### Example github workflow
 
