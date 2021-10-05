@@ -2,6 +2,7 @@ site_name: GHCup
 site_url: https://www.haskell.org/ghcup
 site_description: GHCup documentation
 site_author: GHCup Team
+site_favicon: haskell_logo.png
 
 repo_url: https://gitlab.haskell.org/haskell/ghcup-hs
 
