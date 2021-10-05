@@ -2,10 +2,42 @@
 
 All you wanted to know about GHCup.
 
+## Team
+
+### Author and Maintainer
+
+* [Julian Ospald](https://github.com/hasufell) (aka: maerwald, hasufell)
+
+### Collaborators
+
+* [Arjun Kathuria](https://github.com/arjunkathuria)
+* [Ben Gamari](https://github.com/bgamari)
+* [Javier Neira](https://github.com/jneira)
+
+### Contributors
+
+* amesgen
+* Chris Smith
+* Anton-Latukha
+* Brian McKenna
+* Huw campbell
+* Tom Ellis
+* Sigmund Vestergaard
+* Ron Toland
+* Paolo Martini
+* Mario Lang
+* Jan Hrček
+* vglfr
+* Fendor
+* Enrico Maria De Angelis
+* Emily Pillmore
+* Colin Barrett
+* Artur Gajowy
+
 ## Design goals
 
 1. simplicity
-2. non-interactive
+2. non-interactive CLI interface
 3. portable
 4. do one thing and do it well (UNIX philosophy)
 
