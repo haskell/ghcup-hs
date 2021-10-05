@@ -2,6 +2,10 @@
 
 All you wanted to know about development.
 
+## Module graph
+
+[![Module graph](./modules_small.svg){: .center style="width:900px"}](./modules_wide.svg)
+
 ## Design decisions
 
 ### Using [Excepts](https://hackage.haskell.org/package/haskus-utils-variant-3.0/docs/Haskus-Utils-Variant-Excepts.html) as a beefed up ExceptT
