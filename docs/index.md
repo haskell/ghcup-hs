@@ -4,6 +4,10 @@ hide:
   - toc
 ---
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="javascripts/extra.js"></script>
+
+
 # ![](./haskell_logo.png){: .main-logo style="width:100px"} GHCup
 
 GHCup is an installer for the general purpose language [Haskell](https://www.haskell.org/).
@@ -22,115 +26,37 @@ GHCup makes it easy to install specific versions of GHC on GNU/Linux,
 macOS (aka Darwin), FreeBSD and Windows and can also bootstrap a fresh [Haskell developer environment](./install/#supported-tools) from scratch.
 It follows the unix UNIX philosophy of [do one thing and do it well](https://en.wikipedia.org/wiki/Unix_philosophy#Do_One_Thing_and_Do_It_Well). Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [pyenv](https://github.com/pyenv/pyenv) and [jenv](http://www.jenv.be).
 
-<div class="wrap-collabsible text-center"> <input id="collapsible" class="toggle" type="checkbox"> 
-<label for="collapsible" class="lbl-toggle btn btn-primary">Quick Install</label>
+<div class="text-center main-buttons">
+<a href="#quick-install" class="btn btn-primary" role="button">Quick Install</a>
 <a href="install/" class="btn btn-primary" role="button">Getting Started</a>
 <a href="guide/" class="btn btn-primary" role="button">User Guide</a>
 <a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/issues" class="btn btn-primary" role="button">Issue tracker</a>
-  <div class="collapsible-content">
-    <div class="content-inner">
-      <h2>Select your platform</h3>
-		<div class="platforms">
-			<div class="platform">
-				<div class="platform-name"><img src="os-linux.svg" alt="Linux logo"> <h3>Linux</h3></div>
-				<a class="expander" href="#linux-link">
-					<div>
-						<img src="expand-piece.svg" class="expand-1">
-						<img src="expand-piece.svg" class="expand-2">
-						<img src="expand-piece.svg" class="expand-3">
-					</div>
-				</a>
-			</div>
-
-			<div class="platform">
-				<div class="platform-name"><img src="os-osx.svg" alt="Mac logo"> <h3>Mac OS X</h3></div>
-					<a class="expander" href="#mac-link">
-						<div>
-							<img src="expand-piece.svg" class="expand-1">
-							<img src="expand-piece.svg" class="expand-2">
-							<img src="expand-piece.svg" class="expand-3">
-						</div>
-					</a>
-			</div>
-
-			<div class="platform">
-				<div class="platform-name"><img src="os-freebsd.svg" alt="FreeBSD logo" style="fill: black;"> <h3>FreeBSD</h3></div>
-				<a class="expander" href="#freebsd-link">
-					<div>
-						<img src="expand-piece.svg" class="expand-1">
-						<img src="expand-piece.svg" class="expand-2">
-						<img src="expand-piece.svg" class="expand-3">
-					</div>
-				</a>
-			</div>
-
-			<div class="platform">
-				<div class="platform-name"><img src="os-windows.svg" alt="Windows logo"> <h3>Windows</h3></div>
-				<a class="expander" href="#windows-link">
-					<div>
-						<img src="expand-piece.svg" class="expand-1">
-						<img src="expand-piece.svg" class="expand-2">
-						<img src="expand-piece.svg" class="expand-3">
-					</div>
-				</a>
-			</div>
-
-			<div class="platform">
-				<div class="platform-name"><img src="os-windows.svg" alt="Windows logo"> <h3>WSL2</h3></div>
-				<a class="expander" href="#wsl-link">
-					<div>
-						<img src="expand-piece.svg" class="expand-1">
-						<img src="expand-piece.svg" class="expand-2">
-						<img src="expand-piece.svg" class="expand-3">
-					</div>
-				</a>
-			</div>
-
-		</div>
-
-		<div id="linux-link">
-			<hr/>
-			<h4>On Linux, run the following in your terminal (as a user other than root), then follow the onscreen instructions:</h4>
-			<div class="command-button">
-				<pre><span class="ghcup-command">curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre>
-			</div>
-		</div>
-		<div id="mac-link">
-			<hr/>
-			<h4>On Mac, run the following in your terminal (as a user other than root), then follow the onscreen instructions:</h4>
-			<div class="command-button">
-				<pre><span class="ghcup-command">curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre>
-			</div>
-		</div>
-		<div id="freebsd-link">
-			<hr/>
-			<h4>On FreeBSD, run the following in your terminal (as a user other than root), then follow the onscreen instructions:</h4>
-			<div class="command-button">
-				<pre><span class="ghcup-command">curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre>
-			</div>
-		</div>
-		<div id="windows-link" class="anchor">
-			<hr/>
-			<h4>On Windows, run the following in a powershell session (as a non-admin user), then follow the onscreen instructions:</h4>
-			<div class="command-button">
-				<pre><span class="ghcup-command">Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true</span></pre>
-			</div>
-		</div>
-
-		<div id="wsl-link">
-			<hr/>
-			<h4>On WSL2, run the following in your terminal (as a user other than root), then follow the onscreen instructions:</h4>
-			<div class="command-button">
-				<pre><span class="ghcup-command">curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre>
-			</div>
-		</div>
-    </div>
-
-  </div>
 </div>
 
+[![GHCup](./ghcup.gif){: .center style="width:700px"}](install#installation)
 
-----
+<h2 class="text-center" id="quick-install">Quick Install<a class="headerlink" href="#quick-install" title="Permanent link"></a>
+</h2>
 
-![GHCup](./ghcup.gif){: .center style="width:700px"}
+### Linux, macOS, FreeBSD or [WSL2](https://docs.microsoft.com/en-us/windows/wsl/)
+
+Run the following in a terminal (as a non-root user):
+
+<div class="command-button">
+	<pre><span class="ghcup-command" id="ghcup-command-linux">curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</span></pre>
+<button class="btn" onclick="copyToClipboardNux()" id="ghcup-linux-button"><i class="fa fa-copy"></i></button>
+</div>
+<span>
+
+</span>
+
+### Windows
+
+Run the following in a PowerShell session (as a non-admin user):
+
+<div class="command-button">
+	<pre><span class="ghcup-command" id="ghcup-command-windows">Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true</span></pre>
+<button class="btn" onclick="copyToClipboardWin()" id="ghcup-windows-button"><i class="fa fa-copy"></i></button>
+</div>
+
 

@@ -20,6 +20,9 @@ nav:
 extra_css:
     - css/extra.css
 
+extra_javascript:
+  - javascripts/extra.js
+
 markdown_extensions:
     - toc:
         permalink: 

@@ -117,10 +117,12 @@ body#idx p.other-help {
 	margin-top: 25px;
 	margin-bottom: 25px;
     text-align: center;
+
+	padding: 18px;
 }
 
 .instructions div.command-button button:hover {
-	background: rgb(232, 232, 232);
+	background: rgb(100, 100, 100);
 }
 
 .instructions div.command-button button:focus {

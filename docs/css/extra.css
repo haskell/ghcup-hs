@@ -146,127 +146,17 @@ a:hover {
     background-color: #453A62;
 }
 
-
-input[type="checkbox"] {
-  display: none;
-}
-
-.wrap-collabsible {
-  margin: 1.2rem 0;
-}
-
-
-.lbl-toggle {
-	margin: 0px;
-}
-
-.toggle:checked + .lbl-toggle::before {
-  transform: rotate(90deg) translateX(-3px);
-}
-
-.collapsible-content {
-  margin-top: 5px;
-  max-height: 0px;
-  overflow: hidden;
-  transition: max-height 0.25s ease-in-out;
-}
-
-.toggle:checked + .lbl-toggle ~ .collapsible-content {
-  max-height: 500px;
-}
-
-.toggle:checked + .lbl-toggle {
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.collapsible-content .content-inner {
-  background: rgba(0, 105, 255, 0.2);
-  border-bottom: 1px solid rgba(0, 105, 255, 0.45);
-  border-bottom-left-radius: 7px;
-  border-bottom-right-radius: 7px;
-  padding: 0.5rem 1rem;
-}
-
-.collapsible-content p {
-  margin-bottom: 0;
-}
-
-
-.platform-name img {
-    max-width: 40px;
-    max-height: 30px;
-    display: block;
-
-    max-width: 100%;
-    padding: unset;
-    line-height: unset;
-    background-color: unset;
-    border: unset;
-    border-radius: unset;
-    margin: 20px auto 0px auto;
-}
-
-
-.expander div {
-    position: relative;
-    height: 50px;
-    width: 40px;
-    margin: 10px auto 0px auto;
-    display: block;
-}
-
-.expander img {
-    position: absolute;
-    width: 40px;
-    display: block;
-    transition: all 400ms ease;
-
-    max-width: 100%;
-    padding: unset;
-    line-height: unset;
-    background-color: unset;
-    border: unset;
-    border-radius: unset;
-    margin: 0px auto 0px auto;
-}
-
-.expander img.expand-2 {
-    top: 8px;
-}
-
-.expander img.expand-3 {
-    top: 16px;
-}
-
-.expander:hover img.expand-2 {transform: translateY(5px);}
-.expander:hover img.expand-3 {transform: translateY(10px);}
-
-div.platforms {
+.main-buttons {
 	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
 	justify-content: center;
 }
 
-div.platform {
-	margin: 0px 20px 0px 20px;
+.main-buttons a {
+	margin-right: 5px;
+	margin-bottom: 5px;
 }
-
-
-#linux-link, #mac-link, #freebsd-link, #windows-link, #wsl-link {
-  display: none;
-}
-
-#linux-link:target, #mac-link:target, #freebsd-link:target, #windows-link:target, #wsl-link:target {
-  display: block;
-}
-
-:target:before {
-content:"";
-display:block;
-height:150px; /* fixed header height*/
-margin:-150px 0 0; /* negative fixed header height */
-}
-
 
 .command-button {
 	display: flex;
@@ -293,6 +183,7 @@ margin:-150px 0 0; /* negative fixed header height */
 .ghcup-command:before {
     color: #999;
     content: " $ ";
+	margin-left: 15px;
 }
 
 div.command-button {
@@ -301,24 +192,32 @@ div.command-button {
 }
 
 div.command-button button {
-	color: white;
+	color: #515151;
 	/* border: none; */
-	background-color: rgb(242, 242, 242);
-	border-width: 2px;
-	border-style: solid;
-	border-radius: 3px;
+	background: rgb(230, 230, 230);
+	border-width: 2px !important;
+	border-style: solid !important;
+	border-radius: 3px !important;
+	border: grey;
 
-    margin-left: 0.5rem;
-    margin-right: auto;
-	margin-top: 25px;
-	margin-bottom: 25px;
-    text-align: center;
+    margin-left: 0.5rem !important;
+    margin-right: auto !important;
+    text-align: center !important;
+
+	padding: 18px;
+	padding-bottom: 16px;
+}
+
+div.command-button button .fa {
+	font-size: x-large;
 }
 
 div.command-button button:hover {
-	background: rgb(232, 232, 232);
+	background: rgb(220, 220, 220);
+	color: black;
+	border: black;
 }
 
 div.command-button button:focus {
-	background: rgb(222, 222, 222);
+	color: green;
 }
