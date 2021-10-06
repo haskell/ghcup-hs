@@ -44,8 +44,8 @@ This list may not be exhaustive and specifies support for bindists only.
 | Windows Server 2022 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Windows WSL1 | amd64 | ❌ | ❔ | ❔ | ❔ | ❔ |
 | Windows WSL2 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| MacOS >=13 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| MacOS <13 | amd64 | ❌ | ❔ | ❔ | ❔ | ❔ |
+| MacOS >=10.13 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MacOS <10.13 | amd64 | ❌ | ❔ | ❔ | ❔ | ❔ |
 | MacOS | aarch64 | ✅ | ✅ | ✅ | ⚠️ | ❌ |
 | FreeBSD | amd64 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
 | Linux generic | x86 | ✅ | ✅ | ✅ | ✅ | ✅ |
