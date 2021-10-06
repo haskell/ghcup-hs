@@ -161,14 +161,10 @@ Also see:
 
 ### Why does ghcup not use stack code?
 
-Oddly, this question has been asked a couple of times. For the curious, here are a few reasons:
-
 1. GHCup started as a shell script. At the time of rewriting it in Haskell, the authors didn't even know that stack exposes *some* of its [installation API](https://hackage.haskell.org/package/stack-2.5.1.1/docs/Stack-Setup.html)
-2. Even if they did, it doesn't seem it would have satisfied their needs
-	  - it didn't support cabal installation, which was the main motivation behind GHCup back then
-	  - depending on a codebase as big as stack for a central part of one's application without having a short contribution pipeline would likely have caused stagnation or resulted in simply copy-pasting the relevant code in order to adjust it
-	  - it's not clear how GHCup would have been implemented with the provided API. It seems the codebases are fairly different. GHCup does a lot of symlink handling to expose a central `bin/` directory that users can easily put in PATH, without having to worry about anything more. It also provides explicit removal functionality, GHC cross-compilation, a TUI, etc etc.
-3. GHCup is built around unix principles and supposed to be simple.
+2. it doesn't support cabal installation, which was the main motivation behind GHCup back then
+3. depending on a codebase as big as stack for a central part of one's application without having a short contribution pipeline would likely have caused stagnation or resulted in simply copy-pasting the relevant code in order to adjust it
+4. it's not clear how GHCup would have been implemented with the provided API. It seems the codebases are fairly different. GHCup does a lot of symlink handling to expose a central `bin/` directory that users can easily put in PATH, without having to worry about anything more. It also provides explicit removal functionality, GHC cross-compilation, a TUI, etc etc.
 
 ### Why not unify...
 
@@ -192,13 +188,11 @@ can then call into ghcup or anything else, also see:
 
 #### ...installers (like, all of it)
 
-So far, there hasn't been an **open** discussion about this. Is this even a good idea?
+So far, there hasn't been an open discussion about this. Is this even a good idea?
 Sometimes projects converge eventually if their overlap is big enough, sometimes they don't.
 
 While unification sounds like a simplification of the ecosystem, it also takes away choice.
 Take `curl` and `wget` as an example.
-
-How bad do we need this?
 
 ### Why not support windows?
 
@@ -214,12 +208,3 @@ over 2k LOC, which was very hard to maintain.
 The main concern when switching from a portable shell script to haskell was platform/architecture support.
 However, ghcup now re-uses GHCs CI infrastructure and as such is perfectly in sync with all platforms that
 GHC supports.
-
-### Is GHCup affiliated with the Haskell Foundation?
-
-There has been some collaboration: Windows and Stack support were mainly requested by the Haskell Foundation
-and those seemed interesting features to add.
-
-Other than that, GHCup is dedicated only to its users and is supported by haskell.org through hosting and CI
-infrastructure.
-
