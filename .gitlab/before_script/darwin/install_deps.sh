@@ -23,10 +23,10 @@ if [ $ARCH = 'ARM64' ] ; then
 	cabal update
 	mkdir vendored
 	cd vendored
-	cabal unpack network-3.1.2.1
-	cd network*
-	autoreconf -fi
-	cd ../..
+	curl -O https://downloads.haskell.org/~ghcup/tmp/network-3.1.2.3.tar.gz
+	tar xf network-3.1.2.3.tar.gz
+	rm network-3.1.2.3.tar.gz
+	cd ..
 fi
 
 exit 0

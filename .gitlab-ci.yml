@@ -166,7 +166,7 @@ variables:
     set -Eeuo pipefail
     function runInNixShell() {
       time nix-shell $CI_PROJECT_DIR/.gitlab/shell.nix \
-        -I nixpkgs=https://github.com/angerman/nixpkgs/archive/75f7281738b.tar.gz \
+        -I nixpkgs=https://github.com/bgamari/nixpkgs/archive/37c60356e3f83c708a78a96fdd914b5ffc1f551c.tar.gz \
         --argstr system "aarch64-darwin" \
         --pure \
         --keep CI_PROJECT_DIR \
