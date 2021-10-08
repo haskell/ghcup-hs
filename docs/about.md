@@ -34,6 +34,12 @@ All you wanted to know about GHCup.
 * Colin Barrett
 * Artur Gajowy
 
+### Sponsors
+
+* All [opencollective](https://opencollective.com/ghcup#category-CONTRIBUTE) contributors
+* [haskell.org](https://www.haskell.org/haskell-org-committee/) via CI and infrastructure
+* [Haskell Foundation](https://haskell.foundation/affiliates/) via affiliation
+
 ## Design goals
 
 1. simplicity
