@@ -2182,7 +2182,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-i386-unknown-linux.tar.xz
               dlHash: 2b3ac28549916de5f3379241797eaf60e84b6c001f2abbe73d9fadbbaf768e93
     3.4.0.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.4.0.0.md
       viArch:
         A_64:
@@ -2283,7 +2284,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.1.0/cabal-install-3.4.1.0-armv7-linux-deb10.tar.xz
               dlHash: 40602979b75f23b1ad396196803d4e21c3c61700eb8f9efa8761d8b23954632b
     3.6.0.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.6.0.0.md
       viArch:
         A_64:
