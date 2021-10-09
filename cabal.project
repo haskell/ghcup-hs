@@ -8,7 +8,9 @@ package ghcup
     tests: True
     flags: +tui
 
-constraints: http-io-streams -brotli
+constraints: http-io-streams -brotli,
+             any.Cabal ==3.4.0.0 || ==3.6.2.0
+
 
 package libarchive
   flags: -system-libarchive
