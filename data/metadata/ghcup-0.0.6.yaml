@@ -2265,8 +2265,8 @@ ghcupDownloads:
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &cabal-3410-32
-              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.1.0/cabal-install-3.4.1.0-i386-linux-alpine-static.tar.xz
-              dlHash: 8c89847c0f56f05c713668b5807e184c83bd30b26e04041bfce82b458dc004fb
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.1.0/cabal-install-3.4.1.0-i386-linux-alpine.tar.xz
+              dlHash: 7622c64b9382443a43494a992c836654d6554110acf34a4331271e1b438e2ab8
           Linux_Alpine:
             unknown_versioning: *cabal-3410-32
         A_ARM64:
@@ -2281,8 +2281,8 @@ ghcupDownloads:
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.1.0/cabal-install-3.4.1.0-armv7-linux-deb10.tar.xz
-              dlHash: 40602979b75f23b1ad396196803d4e21c3c61700eb8f9efa8761d8b23954632b
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.1.0/cabal-install-3.4.1.0-armv7-linux-deb10.tar.xz
+              dlHash: 7c5b75ded319629ff47b17dd283b90ad1ba2635cf65c1a0d2b5be9610e843968
     3.6.0.0:
       viTags:
         - old
@@ -2367,8 +2367,8 @@ ghcupDownloads:
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &cabal-3620-32
-              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-i386-linux-alpine-static.tar.xz
-              dlHash: 1e4fc1e9bec664b04234edfc75cbc464ecd99da58734638c11528533c1c79a53
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-i386-linux-alpine.tar.xz
+              dlHash: 902b15de4ec5935474c62a72b373a76f727684449d7425996f0ad067a5481bd0
           Linux_Alpine:
             unknown_versioning: *cabal-3620-32
         A_ARM64:
@@ -2383,8 +2383,8 @@ ghcupDownloads:
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-armv7-linux-deb10.tar.xz
-              dlHash: 94477e9f318053a9d806fd3f7188014ee4c803d367a943097e5ec4c68536609b
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-armv7-linux-deb10.tar.xz
+              dlHash: 694ba7c14f8d720c6e790ab0488dbff2d8a07d9c6de97b4deeba31088f825bc2
   GHCup:
     0.1.17.2:
       viTags:
