@@ -1,5 +1,5 @@
 stages:
-  - hlint
+  - checks
   - test
   - release
 
@@ -585,7 +585,7 @@ release:windows:
 ######## hlint ########
 
 hlint:
-  stage: hlint
+  stage: checks
   extends:
     - .debian
   script:
@@ -596,3 +596,29 @@ hlint:
     paths:
       - report.html
     when: on_failure
+
+######## mkdocs ########
+
+mkdocs:
+  stage: checks
+  extends:
+    - .debian
+  before_script:
+    - sudo apt-get update -y
+    - sudo apt-get install -y python3-pip
+    - pip3 install mkdocs
+  script:
+    - ~/.local/bin/mkdocs build
+  allow_failure: true
+
+######## shellcheck ########
+
+shellcheck:
+  image: "koalaman/shellcheck-alpine"
+  tags:
+    - x86_64-linux
+  stage: checks
+  script:
+    - shellcheck scripts/bootstrap/bootstrap-haskell
+  allow_failure: true
+
