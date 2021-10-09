@@ -2245,7 +2245,7 @@ ghcupDownloads:
           Linux_Alpine:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.1.0/cabal-install-3.4.1.0-x86_64-linux-alpine-static.tar.xz
-              dlHash: db561c512ff7c4a816f41f302a68a87ba3830af06d1491a31a00173ca99ef98c
+              dlHash: f8cae8b5e6346b56676f734de1afd9b4b5f27eab6ab87852c19a30f7850f17fe
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.1.0/cabal-install-3.4.1.0-x86_64-darwin.tar.xz
@@ -2266,7 +2266,7 @@ ghcupDownloads:
           Linux_UnknownLinux:
             unknown_versioning: &cabal-3410-32
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.1.0/cabal-install-3.4.1.0-i386-linux-alpine-static.tar.xz
-              dlHash: d0ed645c6d1dda91e184285609d4f64c818931770599e424c09e55c592c8dd17
+              dlHash: 8c89847c0f56f05c713668b5807e184c83bd30b26e04041bfce82b458dc004fb
           Linux_Alpine:
             unknown_versioning: *cabal-3410-32
         A_ARM64:
@@ -2347,7 +2347,7 @@ ghcupDownloads:
           Linux_Alpine:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-x86_64-linux-alpine-static.tar.xz
-              dlHash: cf3c6a1b06fcf87ac8d5c8af5790c48cdc9d4dfcf2819bc867f2563dfa043038
+              dlHash: 7810d31f35ca7649355647abc6406ad2a3696648ce848e49409e86bd70f6a2c6
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-darwin.tar.xz
@@ -2368,7 +2368,7 @@ ghcupDownloads:
           Linux_UnknownLinux:
             unknown_versioning: &cabal-3620-32
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-i386-linux-alpine-static.tar.xz
-              dlHash: 7ead5831c086a05286efb44367144fac5c45caa0ba4228ffee1e4a604ec8275d
+              dlHash: 1e4fc1e9bec664b04234edfc75cbc464ecd99da58734638c11528533c1c79a53
           Linux_Alpine:
             unknown_versioning: *cabal-3620-32
         A_ARM64:
