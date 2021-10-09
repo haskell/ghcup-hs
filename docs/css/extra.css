@@ -52,10 +52,16 @@ div.gh-badge img {
 }
 
 a.donate-badge img {
-	margin-top: 10px;
-	margin-bottom: 0;
-	padding: 0;
-	height: 35px;
+    margin-top: 10px;
+    margin-bottom: 0;
+    padding: 0;
+    height: 35px;
+}
+
+@media only screen and (min-width: 1000px) {
+    a.donate-badge img {
+        margin-top: 0;
+    }
 }
 
 /* Definition List styles */
