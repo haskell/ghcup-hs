@@ -243,3 +243,9 @@ footer > hr {
 .ghcup-os-container > * {
     text-align: center;
 }
+
+/* fix list overflows (esp about page) */
+ul > li {
+    overflow-wrap: anywhere;
+}
+
