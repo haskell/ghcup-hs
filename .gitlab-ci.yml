@@ -610,3 +610,15 @@ mkdocs:
   script:
     - ~/.local/bin/mkdocs build
   allow_failure: true
+
+######## shellcheck ########
+
+shellcheck:
+  image: "koalaman/shellcheck-alpine"
+  tags:
+    - x86_64-linux
+  stage: checks
+  script:
+    - shellcheck scripts/bootstrap/bootstrap-haskell
+  allow_failure: true
+

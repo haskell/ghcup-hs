@@ -70,6 +70,7 @@ warn() {
     else
         case "${plat}" in
                 MSYS*|MINGW*)
+                    # shellcheck disable=SC3037
                     echo -e "\\033[0;35m$1\\033[0m"
                     ;;
                 *)
@@ -85,6 +86,7 @@ yellow() {
     else
         case "${plat}" in
                 MSYS*|MINGW*)
+                    # shellcheck disable=SC3037
                     echo -e "\\033[0;33m$1\\033[0m"
                     ;;
                 *)
@@ -100,6 +102,7 @@ green() {
     else
         case "${plat}" in
                 MSYS*|MINGW*)
+                    # shellcheck disable=SC3037
                     echo -e "\\033[0;32m$1\\033[0m"
                     ;;
                 *)
@@ -122,8 +125,10 @@ _eghcup() {
 		args="-s ${BOOTSTRAP_HASKELL_YAML}"
 	fi
     if [ -z "${BOOTSTRAP_HASKELL_VERBOSE}" ] ; then
+        # shellcheck disable=SC2086
         "${GHCUP_BIN}/ghcup" ${args} "$@"
     else
+        # shellcheck disable=SC2086
         "${GHCUP_BIN}/ghcup" ${args} --verbose "$@"
     fi
 }
@@ -389,7 +394,7 @@ adjust_bashrc() {
 							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; set -gx PATH \$HOME/.cabal/bin \$PATH $GHCUP_BIN # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 							;;
 					esac
-					break ;;
+					;;
 				bash)
 					sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
 					echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
@@ -407,12 +412,12 @@ adjust_bashrc() {
 							fi
 							;;
 					esac
-					break ;;
+					;;
 
 				zsh)
 					sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
 					echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
-					break ;;
+					;;
 			esac
 			echo
 			echo "==============================================================================="
@@ -644,7 +649,7 @@ else
 fi
 
 echo
-echo "$(if [ -n "${BOOTSTRAP_HASKELL_YAML}" ] ; then ghcup -s "${BOOTSTRAP_HASKELL_YAML}" tool-requirements ; else ghcup tool-requirements ; fi)"
+if [ -n "${BOOTSTRAP_HASKELL_YAML}" ] ; then (>&2 ghcup -s "${BOOTSTRAP_HASKELL_YAML}" tool-requirements) ; else (>&2 ghcup tool-requirements) ; fi
 echo
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
