@@ -2343,7 +2343,7 @@ ghcupDownloads:
           Linux_UnknownLinux:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-linux-deb10.tar.xz
-              dlHash: 6e02ee036945f1d45e8655de10e18979a7eab66033f539626126219ba2e1e66c
+              dlHash: 4759b56e9257e02f29fa374a6b25d6cb2f9d80c7e3a55d4f678a8e570925641c
           Linux_Alpine:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-x86_64-linux-alpine-static.tar.xz
@@ -2351,19 +2351,19 @@ ghcupDownloads:
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-darwin.tar.xz
-              dlHash: 4eb1971586c1e7472541e12ec6a02a56610e0381788835fd4d4f96073fb99809
+              dlHash: d616284712f052e599cf1940b10fa2dca4fc6ae1308c32db03f5bd2c23eb2419
           FreeBSD:
             '( >= 12 && < 13 )':
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-freebsd12.tar.xz
               dlHash: eaabbc6f6f4782ad21f8df95d1902eb29b66d8fafe6c8278aaa3d48da772aecb
             '( >= 13 )':
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-freebsd13.tar.xz
-              dlHash: d6996a1ba078a96a5d49f729d922bd32954355671ee9c3aebfe56beb45cfc625
+              dlHash: b22965d2cc70061e6efb3b4a0e901906c83fb448810e79aca97b9e61bce22692
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-windows.zip
               dlSubdir:
-              dlHash: b081cb53ceb30a70218288b0cfaed6150e101da1a899d1cfab96ce5b4a1c4c72
+              dlHash: 89aa3aa3f76d15182c0d03227639890cd537627ba0bf0ef9ab451fee504b24c6
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &cabal-3620-32
@@ -2375,11 +2375,11 @@ ghcupDownloads:
           Linux_UnknownLinux:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-aarch64-linux-deb10.tar.xz
-              dlHash: d07f16cedb0aaa5a9f02bf28dfc8de5ea54b8a93140dbfa414ff935128735fdb
+              dlHash: d9acee67d4308bc5c22d27bee034d388cc4192a25deff9e7e491e2396572b030
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-aarch64-darwin.tar.xz
-              dlHash: 287634db9ff1bfe46822a319379db12dd83217b599893193a968f2d2c8da0c48
+              dlHash: 859c526cde4498879a935e38422d3a0b70ae012dff034913331be8dd429a4a74
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
