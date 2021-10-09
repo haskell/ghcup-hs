@@ -52,10 +52,16 @@ div.gh-badge img {
 }
 
 a.donate-badge img {
-	margin-top: 10;
-	margin-bottom: 0;
-	padding: 0;
-	height: 35px;
+    margin-top: 10px;
+    margin-bottom: 0;
+    padding: 0;
+    height: 35px;
+}
+
+@media only screen and (min-width: 1000px) {
+    a.donate-badge img {
+        margin-top: 0;
+    }
 }
 
 /* Definition List styles */
@@ -81,8 +87,8 @@ body.homepage>div.container div.col-md-3 {
 }
 
 body.homepage>div.container div.col-md-9 {
-    margin-left: 0;
-    padding-left: 0;
+    /* margin-left: 0; */
+    /* padding-left: 0; */
     flex: 0 0 100%;
     max-width: 100%;
 }
@@ -146,78 +152,100 @@ a:hover {
     background-color: #453A62;
 }
 
+.ghcup-intro {
+    text-align: center;
+}
+
 .main-buttons {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	justify-content: center;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .main-buttons a {
-	margin-right: 5px;
-	margin-bottom: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
 }
 
 .command-button {
-	display: flex;
-	align-items: center;
+    display: flex;
+    align-items: center;
 }
 
 .command-button > pre {
+    flex: 0 1 80%;
+    margin: 0;
+    padding: 10px;
+    text-align: center;
     background-color: #515151;
     color: white;
-    margin: auto;
-	margin-top: 0px;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    padding-right: 1rem;
-    text-align: center;
     border-radius: 3px;
     box-shadow: inset 0px 0px 20px 0px #333333;
     font-size: 1em;
-    width: 55rem;
-	overflow: auto;
-	white-space: nowrap;
+    white-space: nowrap;
+    overflow: auto;
 }
 
 .ghcup-command:before {
     color: #999;
     content: " $ ";
-	margin-left: 15px;
+    margin-left: 15px;
 }
 
 div.command-button {
-	display: flex;
-	align-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.command-button pre {
+
 }
 
 div.command-button button {
-	color: #515151;
-	/* border: none; */
-	background: rgb(230, 230, 230);
-	border-width: 2px !important;
-	border-style: solid !important;
-	border-radius: 3px !important;
-	border: grey;
-
-    margin-left: 0.5rem !important;
-    margin-right: auto !important;
-    text-align: center !important;
-
-	padding: 18px;
-	padding-bottom: 16px;
+    color: #515151;
+    background: rgb(230, 230, 230);
+    border: 1px solid grey;
+    margin: 0 0 0 10px;
+    padding: 10px;
+    flex-basis: 0 0 20%;
 }
 
 div.command-button button .fa {
-	font-size: x-large;
+    font-size: x-large;
 }
 
 div.command-button button:hover {
-	background: rgb(220, 220, 220);
-	color: black;
-	border: black;
+    background: rgb(220, 220, 220);
+    color: black;
+    border: 1px solid black;
 }
 
 div.command-button button:focus {
-	color: green;
+    background-color: #04aa6d;
 }
+
+footer > hr {
+    border-top: 0.5px solid #CCC;
+}
+
+.qi-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ghcup-os-container {
+    width: 100%;
+    margin: 10px 0;
+}
+.ghcup-os-container > * {
+    text-align: center;
+}
+
+/* fix list overflows (esp about page) */
+ul > li {
+    overflow-wrap: anywhere;
+}
+
