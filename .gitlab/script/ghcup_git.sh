@@ -41,7 +41,13 @@ cabal --version
 
 eghcup debug-info
 
-eghcup compile ghc -j $(nproc) -g ${GHC_GIT_TAG} -b ${GHC_VERSION} -- --enable-unregisterised
+(
+	cd /tmp
+	ecabal install --installdir="$CI_PROJECT_DIR/.local/bin" --overwrite-policy=always --install-method=copy --constraint="happy == 1.19.12" happy
+	ecabal install --installdir="$CI_PROJECT_DIR/.local/bin" --overwrite-policy=always --install-method=copy --constraint="alex == 3.2.6" alex
+)
+
+eghcup compile ghc -j $(nproc) -g ${GHC_GIT_TAG} -b ${GHC_VERSION} --hadrian -- --enable-unregisterised
 eghcup set ghc ${GHC_GIT_VERSION}
 
 [ `$(eghcup whereis ghc ${GHC_GIT_VERSION}) --numeric-version` = "${GHC_GIT_VERSION}" ]
