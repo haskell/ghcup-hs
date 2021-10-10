@@ -434,6 +434,7 @@ install' _ (_, ListResult {..}) = do
               , NoUpdate
               , TarDirDoesNotExist
               , FileAlreadyExistsError
+              , ProcessError
               ]
 
   run (do

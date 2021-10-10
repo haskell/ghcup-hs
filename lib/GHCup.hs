@@ -205,6 +205,7 @@ installGHCBindist :: ( MonadFail m
                         , TarDirDoesNotExist
                         , DirNotEmpty
                         , ArchiveResult
+                        , ProcessError
                         ]
                        m
                        ()
@@ -283,6 +284,7 @@ installPackedGHC :: ( MonadMask m
                        , TarDirDoesNotExist
                        , DirNotEmpty
                        , ArchiveResult
+                       , ProcessError
                        ] m ()
 installPackedGHC dl msubdir inst ver forceInstall = do
   PlatformRequest {..} <- lift getPlatformReq
@@ -292,7 +294,7 @@ installPackedGHC dl msubdir inst ver forceInstall = do
 
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
-  liftE $ unpackToDir tmpUnpack dl
+  liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
   liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
   -- the subdir of the archive where we do the work
@@ -402,12 +404,13 @@ installGHCBin :: ( MonadFail m
                     , TarDirDoesNotExist
                     , DirNotEmpty
                     , ArchiveResult
+                    , ProcessError
                     ]
                    m
                    ()
 installGHCBin ver isoFilepath forceInstall = do
   dlinfo <- liftE $ getDownloadInfo GHC ver
-  installGHCBindist dlinfo ver isoFilepath forceInstall
+  liftE $ installGHCBindist dlinfo ver isoFilepath forceInstall
 
 
 -- | Like 'installCabalBin', except takes the 'DownloadInfo' as
@@ -472,7 +475,7 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
 
   -- unpack
   tmpUnpack <- lift withGHCupTmpDir
-  liftE $ unpackToDir tmpUnpack dl
+  liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
   liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
   -- the subdir of the archive where we do the work
@@ -614,7 +617,7 @@ installHLSBindist dlinfo ver isoFilepath forceInstall = do
 
   -- unpack
   tmpUnpack <- lift withGHCupTmpDir
-  liftE $ unpackToDir tmpUnpack dl
+  liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
   liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
   -- the subdir of the archive where we do the work
@@ -784,7 +787,7 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
 
       -- unpack
       tmpUnpack <- lift mkGhcupTmpDir
-      liftE $ unpackToDir tmpUnpack dl
+      liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
       liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
       workdir <- maybe (pure tmpUnpack)
@@ -1001,7 +1004,7 @@ installStackBindist dlinfo ver isoFilepath forceInstall = do
 
   -- unpack
   tmpUnpack <- lift withGHCupTmpDir
-  liftE $ unpackToDir tmpUnpack dl
+  liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
   liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
   -- the subdir of the archive where we do the work
@@ -2114,6 +2117,12 @@ compileGHC :: ( MonadMask m
                  , NotInstalled
                  , DirNotEmpty
                  , ArchiveResult
+                 , FileDoesNotExistError
+                 , HadrianNotFound
+                 , InvalidBuildConfig
+                 , ProcessError
+                 , CopyError
+                 , BuildFailed
                  ]
                 m
                 GHCTargetVersion
@@ -2135,7 +2144,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
 
         -- unpack
         tmpUnpack <- lift mkGhcupTmpDir
-        liftE $ unpackToDir tmpUnpack dl
+        liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
         liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
 
         workdir <- maybe (pure tmpUnpack)

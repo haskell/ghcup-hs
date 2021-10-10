@@ -74,7 +74,6 @@ import           System.Win32.Console
 import           System.Win32.File     hiding ( copyFile )
 import           System.Win32.Types
 #endif
-import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           Text.Regex.Posix
 import           URI.ByteString
 
@@ -926,11 +925,7 @@ getChangeLog dls tool (Right tag) =
 --
 --   1. the build directory, depending on the KeepDirs setting
 --   2. the install destination, depending on whether the build failed
-runBuildAction :: ( Pretty (V e)
-                  , Show (V e)
-                  , PopVariant BuildFailed e
-                  , ToVariantMaybe BuildFailed e
-                  , MonadReader env m
+runBuildAction :: ( MonadReader env m
                   , HasDirs env
                   , HasSettings env
                   , MonadIO m
@@ -943,24 +938,41 @@ runBuildAction :: ( Pretty (V e)
                => FilePath        -- ^ build directory (cleaned up depending on Settings)
                -> Maybe FilePath  -- ^ dir to *always* clean up on exception
                -> Excepts e m a
-               -> Excepts '[BuildFailed] m a
+               -> Excepts e m a
 runBuildAction bdir instdir action = do
   Settings {..} <- lift getSettings
   let exAction = do
         forM_ instdir $ \dir ->
-          lift $ hideError doesNotExistErrorType $ recyclePathForcibly dir
+          hideError doesNotExistErrorType $ recyclePathForcibly dir
         when (keepDirs == Never)
-          $ lift $ rmBDir bdir
+          $ rmBDir bdir
   v <-
-    flip onException exAction
-    $ catchAllE
-        (\es -> do
-          exAction
-          throwE (BuildFailed bdir es)
-        ) action
-
+    flip onException (lift exAction)
+    $ onE_ exAction action
   when (keepDirs == Never || keepDirs == Errors) $ lift $ rmBDir bdir
   pure v
+
+
+-- | Clean up the given directory if the action fails,
+-- depending on the Settings.
+cleanUpOnError :: ( MonadReader env m
+                  , HasDirs env
+                  , HasSettings env
+                  , MonadIO m
+                  , MonadMask m
+                  , HasLog env
+                  , MonadUnliftIO m
+                  , MonadFail m
+                  , MonadCatch m
+                  )
+               => FilePath        -- ^ build directory (cleaned up depending on Settings)
+               -> Excepts e m a
+               -> Excepts e m a
+cleanUpOnError bdir action = do
+  Settings {..} <- lift getSettings
+  let exAction = when (keepDirs == Never) $ rmBDir bdir
+  flip onException (lift exAction) $ onE_ exAction action
+
 
 
 -- | Remove a build directory, ignoring if it doesn't exist and gracefully
