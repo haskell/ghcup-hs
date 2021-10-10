@@ -1,8 +1,8 @@
 stages:
-  - checks
-  - quick-test
-  - test
-  - expensive-test
+  - linting
+  - quick-tests
+  - tests
+  - expensive-tests
   - release
 
 variables:
@@ -232,7 +232,7 @@ variables:
 ######## stack test ########
 
 test:linux:stack:
-  stage: test
+  stage: tests
   before_script:
     - ./.gitlab/before_script/linux/install_deps_minimal.sh
   script:
@@ -244,7 +244,7 @@ test:linux:stack:
 ######## bootstrap test ########
 
 test:linux:bootstrap_script:
-  stage: quick-test
+  stage: quick-tests
   before_script:
     - ./.gitlab/before_script/linux/install_deps_minimal.sh
   script:
@@ -258,7 +258,7 @@ test:linux:bootstrap_script:
   needs: []
 
 test:windows:bootstrap_powershell_script:
-  stage: quick-test
+  stage: quick-tests
   script:
     - ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir $CI_PROJECT_DIR -BootstrapUrl $CI_PROJECT_DIR/bootstrap-haskell -InBash
   after_script:
@@ -276,7 +276,7 @@ test:windows:bootstrap_powershell_script:
 ######## linux test ########
 
 test:linux:
-  stage: test
+  stage: tests
   extends: .test_ghcup_version:linux
   variables:
     GHC_VERSION: "8.10.7"
@@ -284,7 +284,7 @@ test:linux:
   needs: []
 
 test:linux:hls:
-  stage: expensive-test
+  stage: expensive-tests
   extends:
     - .test_ghcup_version
     - .debian
@@ -301,7 +301,7 @@ test:linux:hls:
     - ./.gitlab/script/ghcup_hls.sh
 
 test:linux:cross-armv7:
-  stage: expensive-test
+  stage: expensive-tests
   extends:
     - .test_ghcup_version
     - .debian
@@ -319,7 +319,7 @@ test:linux:cross-armv7:
     - ./.gitlab/script/ghcup_cross.sh
 
 test:linux:git:hadrian:
-  stage: expensive-test
+  stage: expensive-tests
   extends:
     - .test_ghcup_version
     - .debian
@@ -341,7 +341,7 @@ test:linux:git:hadrian:
 ######## linux 32bit test ########
 
 test:linux:32bit:
-  stage: test
+  stage: tests
   extends: .test_ghcup_version:linux32
   variables:
     GHC_VERSION: "8.10.7"
@@ -351,7 +351,7 @@ test:linux:32bit:
 ######## arm tests ########
 
 test:linux:armv7:
-  stage: test
+  stage: tests
   extends: .test_ghcup_version:armv7
   variables:
     GHC_VERSION: "8.10.7"
@@ -361,7 +361,7 @@ test:linux:armv7:
   needs: []
 
 test:linux:aarch64:
-  stage: test
+  stage: tests
   extends: .test_ghcup_version:aarch64
   variables:
     GHC_VERSION: "8.10.7"
@@ -373,7 +373,7 @@ test:linux:aarch64:
 ######## darwin test ########
 
 test:mac:
-  stage: test
+  stage: tests
   extends: .test_ghcup_version:darwin
   variables:
     GHC_VERSION: "8.10.7"
@@ -381,7 +381,7 @@ test:mac:
   needs: []
 
 test:mac:aarch64:
-  stage: test
+  stage: tests
   extends: .test_ghcup_version:darwin:aarch64
   variables:
     GHC_VERSION: "8.10.7"
@@ -393,7 +393,7 @@ test:mac:aarch64:
 ######## freebsd test ########
 
 test:freebsd12:
-  stage: test
+  stage: tests
   extends: .test_ghcup_version:freebsd12
   variables:
     GHC_VERSION: "8.10.7"
@@ -403,7 +403,7 @@ test:freebsd12:
   needs: []
 
 test:freebsd13:
-  stage: test
+  stage: tests
   extends: .test_ghcup_version:freebsd13
   variables:
     GHC_VERSION: "8.10.7"
@@ -415,7 +415,7 @@ test:freebsd13:
 ######## windows test ########
 
 test:windows:
-  stage: test
+  stage: tests
   extends: .test_ghcup_version:windows
   variables:
     GHC_VERSION: "8.10.7"
@@ -587,7 +587,7 @@ release:windows:
 ######## hlint ########
 
 hlint:
-  stage: checks
+  stage: linting
   extends:
     - .debian
   script:
@@ -602,7 +602,7 @@ hlint:
 ######## mkdocs ########
 
 mkdocs:
-  stage: checks
+  stage: linting
   extends:
     - .debian
   before_script:
@@ -619,7 +619,7 @@ shellcheck:
   image: "koalaman/shellcheck-alpine"
   tags:
     - x86_64-linux
-  stage: checks
+  stage: linting
   script:
     - shellcheck scripts/bootstrap/bootstrap-haskell
   allow_failure: true
