@@ -1852,6 +1852,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NextVerNotFound
                       , NoToolVersionSet
                       , FileAlreadyExistsError
+                      , ProcessError
                       ]
 
           let runInstTool mInstPlatform action' = do
@@ -1953,6 +1954,12 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                       , NotInstalled
                       , DirNotEmpty
                       , ArchiveResult
+                      , FileDoesNotExistError
+                      , HadrianNotFound
+                      , InvalidBuildConfig
+                      , ProcessError
+                      , CopyError
+                      , BuildFailed
                       ]
 
           let runCompileHLS =
