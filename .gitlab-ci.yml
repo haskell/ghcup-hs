@@ -322,18 +322,19 @@ test:linux:git:hadrian:
   stage: expensive-tests
   extends:
     - .test_ghcup_version
-    - .debian
+    - .alpine:64bit
   variables:
-    GHC_VERSION: "8.10.7"
-    GHC_GIT_TAG: "ghc-9.0.1-release"
-    GHC_GIT_VERSION: "9.0.1"
+    GHC_VERSION: "8.8.4"
+    GHC_GIT_TAG: "ghc-8.10.7-release"
+    GHC_GIT_VERSION: "8.10.7"
     CABAL_VERSION: "3.6.2.0"
     CROSS: ""
   needs: []
   when: manual
   allow_failure: true
   before_script:
-    - ./.gitlab/before_script/linux/install_deps.sh
+    - apk add --no-cache python3 autoconf automake
+    - ./.gitlab/before_script/linux/alpine/install_deps.sh
   script:
     - ./.gitlab/script/ghcup_git.sh
 
