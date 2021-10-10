@@ -47,6 +47,13 @@ eghcup debug-info
 	ecabal install --installdir="$CI_PROJECT_DIR/.local/bin" --overwrite-policy=always --install-method=copy --constraint="alex == 3.2.6" alex
 )
 
+ls -la "$CI_PROJECT_DIR/.local/bin"
+which alex
+which happy
+"$CI_PROJECT_DIR/.local/bin/alex" --version
+"$CI_PROJECT_DIR/.local/bin/happy" --version
+
+
 eghcup compile ghc -j $(nproc) -g ${GHC_GIT_TAG} -b ${GHC_VERSION} --hadrian -- --enable-unregisterised
 eghcup set ghc ${GHC_GIT_VERSION}
 
