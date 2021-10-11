@@ -1,6 +1,8 @@
 # Getting started
 
-Let's get started....
+GHCup makes it easy to install specific versions of GHC on GNU/Linux,
+macOS (aka Darwin), FreeBSD and Windows and can also bootstrap a fresh [Haskell developer environment](./install/#supported-tools) from scratch.
+It follows the unix UNIX philosophy of [do one thing and do it well](https://en.wikipedia.org/wiki/Unix_philosophy#Do_One_Thing_and_Do_It_Well). Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [pyenv](https://github.com/pyenv/pyenv) and [jenv](http://www.jenv.be).
 
 ## Installation
 
@@ -20,7 +22,9 @@ For Windows, run this in a PowerShell session:
 Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true
 ```
 
-Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
+If you want to know what these scripts do, check out the [source code at the repository](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
+
+**Advice: Make sure to check out the [Haskell documentation](https://www.haskell.org/documentation/) after installation.**
 
 ## Supported tools
 
@@ -98,4 +102,3 @@ export PATH="$HOME/.cabal/bin:$HOME/.ghcup/bin:$PATH"
 ## Vim integration
 
 See [ghcup.vim](https://github.com/hasufell/ghcup.vim).
-
