@@ -61,8 +61,8 @@ This list may not be exhaustive and specifies support for bindists only.
 
 May or may not work, several issues:
 
-* https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/140
-* https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/197
+* [https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/140](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/140)
+* [https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/197](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/197)
 
 ### WSL1
 

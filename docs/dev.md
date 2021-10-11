@@ -76,7 +76,7 @@ Some light suggestions:
 
 ### Adding a new CLI command
 
-An example illustration on how to deal with [optparse-applicative](https://hackage.haskell.org/package/optparse-applicative) can be seen here: https://gitlab.haskell.org/haskell/ghcup-hs/-/commit/c19dd5ee8b2edbaf0336af143f1c75b6f4843e26
+An example illustration on how to deal with [optparse-applicative](https://hackage.haskell.org/package/optparse-applicative) can be seen here: [https://gitlab.haskell.org/haskell/ghcup-hs/-/commit/c19dd5ee8b2edbaf0336af143f1c75b6f4843e26](https://gitlab.haskell.org/haskell/ghcup-hs/-/commit/c19dd5ee8b2edbaf0336af143f1c75b6f4843e26)
 
 ## Major refactors
 

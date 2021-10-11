@@ -199,7 +199,7 @@ For the full list of env variables and parameters to tweak the script behavior, 
 
 ### Example github workflow
 
-On github workflows you can use https://github.com/haskell/actions/
+On github workflows you can use [https://github.com/haskell/actions/](https://github.com/haskell/actions/)
 
 If you want to install ghcup manually though, here's an example config:
 
