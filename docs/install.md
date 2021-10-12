@@ -102,3 +102,11 @@ export PATH="$HOME/.cabal/bin:$HOME/.ghcup/bin:$PATH"
 ## Vim integration
 
 See [ghcup.vim](https://github.com/hasufell/ghcup.vim).
+
+## Get help
+
+* [Libera IRC chat on #haskell-ghcup or #haskell](https://kiwiirc.com/nextclient/irc.libera.chat/?nick=Guest%7C?#haskell,#haskell-ghcup)
+* [GHCup issue tracker](https://gitlab.haskell.org/haskell/ghcup-hs/issues)
+* [Matrix](https://app.element.io/#/room/#haskell-tooling:matrix.org)
+* [Discord](https://discord.gg/pKYf3zDQU7)
+
