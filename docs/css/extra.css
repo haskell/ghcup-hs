@@ -22,6 +22,23 @@ h4 {
   padding-top:10px;
 }
 
+.index-ghcup-hero {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.index-ghcup-hero img {
+  width: 10%;
+  min-width: 110px;
+  max-width: 120px;
+  border: none;
+  margin: 0;
+}
+
+.index-ghcup-hero h1 {
+}
 
 div.col-md-9 h1:first-of-type {
   text-align: center;

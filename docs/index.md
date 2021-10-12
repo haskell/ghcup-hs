@@ -8,7 +8,10 @@ hide:
 <script src="javascripts/extra.js"></script>
 
 
-# ![](./haskell_logo.png){: .main-logo style="width:100px"} GHCup
+<section class="index-ghcup-hero">
+  <img alt="haskell logo" src="./haskell_logo.png" />
+  <h1>GHCup</h1>
+</section>
 
 <p class="ghcup-intro">GHCup is an installer for the general purpose language <a href="https://www.haskell.org">Haskell</a>.</p>
 
