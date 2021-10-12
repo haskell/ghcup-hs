@@ -54,20 +54,23 @@ hide:
 		<a href="https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell.ps1" target="_blank">What does this do?</a> <b>&nbsp;&middot;&nbsp;</b> <a href="https://www.haskell.org/ghcup/install/#manual-install">I don't like curl | sh</a> <div class="show-all-platforms"><b>&nbsp;&middot;&nbsp;</b> <a class="show-all-platforms-button" href="#">Show all platforms</a></div></p>
 	</div>
     </div>
-
-
 </section>
 
-<p id="help">
-Need help? Ask on <a href="https://kiwiirc.com/nextclient/irc.libera.chat/?nick=Guest%7C?#haskell,#haskell-ghcup"><img src="irc.svg" alt="" />IRC</a>, <a href="https://discord.gg/pKYf3zDQU7"><img src="Discord-Logo-Black.svg" alt="" />Discord</a>, <a href="https://app.element.io/#/room/#haskell-tooling:matrix.org"><img src="Matrix_logo.svg" alt=""/></a> or <a href="https://gitlab.haskell.org/haskell/ghcup-hs/issues">report a bug <img src="Octicons-bug.svg" alt="" /></a>
-<div id="collective" href="https://opencollective.com/ghcup#category-CONTRIBUTE" target="_blank">
-<a href="https://opencollective.com/ghcup#category-CONTRIBUTE" class="donate-badge">
-<img src="https://opencollective.com/webpack/donate/button@2x.png?color=blue" alt="Donate">
-</a>
-</div>
-</p>
+<section class="index-cta-donate">
+  <button class="donate-button">
+    <a href="https://opencollective.com/ghcup#category-CONTRIBUTE" class="donate-badge" />
+    </button>
+</section>
 
 ----
 
 ![GHCup](./ghcup.gif){: .center style="width:700px"}
 
+<p id="help">
+Need help? Ask on
+<a href="https://kiwiirc.com/nextclient/irc.libera.chat/?nick=Guest%7C?#haskell,#haskell-ghcup">
+<img src="irc.svg" alt="" />IRC</a>,
+<a href="https://discord.gg/pKYf3zDQU7"><img src="Discord-Logo-Black.svg" alt="" />Discord</a>, <a href="https://app.element.io/#/room/#haskell-tooling:matrix.org"><img src="Matrix_logo.svg" alt=""/></a> or <a href="https://gitlab.haskell.org/haskell/ghcup-hs/issues">report a bug <img src="Octicons-bug.svg" alt="" /></a>
+</p>
+
+<script type="text/javascript" src="javascripts/ghcup.js"></script>
