@@ -448,7 +448,12 @@ warn_path() {
 }
 
 adjust_cabal_config() {
-	edo cabal user-config -a "extra-prog-path: $(cygpath -w "$GHCUP_BIN"), $(cygpath -w "$HOME"/AppData/Roaming/cabal/bin), $(cygpath -w "$GHCUP_MSYS2"/usr/bin), $(cygpath -w "$GHCUP_MSYS2"/mingw64/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/lib)" -f init
+    if [ -n "${CABAL_DIR}" ] ; then
+        cabal_bin="${CABAL_DIR}/bin"
+    else
+        cabal_bin="$HOME/AppData/Roaming/cabal/bin"
+    fi
+    edo cabal user-config -a "extra-prog-path: $(cygpath -w "$GHCUP_BIN"), $(cygpath -w "$cabal_bin"), $(cygpath -w "$GHCUP_MSYS2"/usr/bin), $(cygpath -w "$GHCUP_MSYS2"/mingw64/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/lib)" -f init
 }
 
 ask_cabal_config_init() {
