@@ -47,14 +47,30 @@ function Print-Msg {
 }
 
 function Create-Shortcut {
-    param ( [Parameter(Mandatory=$true,HelpMessage='Target path')][string]$SourceExe, [Parameter(Mandatory=$true,HelpMessage='Arguments to the path/exe')][AllowEmptyString()]$ArgumentsToSourceExe, [Parameter(Mandatory=$true,HelpMessage='The destination of the desktop link')][string]$DestinationPath )
+    param ( [Parameter(Mandatory=$true,HelpMessage='Target path')][string]$SourceExe
+          , [Parameter(Mandatory=$true,HelpMessage='Arguments to the path/exe')][AllowEmptyString()]$ArgumentsToSourceExe
+          , [Parameter(Mandatory=$true,HelpMessage='The destination of the desktop link')][string]$DestinationPath
+          , [Parameter(Mandatory=$true,HelpMessage='Temporary path to create the link at')][string]$TempPath
+           )
+	# we save to a temp dir first due to
+	# https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/267
+    $DesktopDir = [Environment]::GetFolderPath("Desktop")
+    if (!(Test-Path -Path ('{0}' -f $TempPath))) {
+      New-Item -Path $TempPath -ItemType "directory"
+    }
+    $TmpFile = ('{0}\{1}' -f $TempPath, $DestinationPath)
+    $FinalDest = ('{0}\{1}' -f $DesktopDir, $DestinationPath)
     $WshShell = New-Object -comObject WScript.Shell
-    $Shortcut = $WshShell.CreateShortcut($DestinationPath)
+    $Shortcut = $WshShell.CreateShortcut($TmpFile)
     $Shortcut.TargetPath = $SourceExe
     if($ArgumentsToSourceExe) {
       $Shortcut.Arguments = $ArgumentsToSourceExe
     }
     $Shortcut.Save()
+    if ((Test-Path -Path ('{0}' -f $FinalDest))) {
+      Remove-Item -LiteralPath $FinalDest -Force
+    }
+    Move-Item -LiteralPath $TmpFile -Destination $FinalDest
 }
 
 function Add-EnvPath {
@@ -512,11 +528,11 @@ if ($Host.Name -eq "ConsoleHost")
 }
 '@
 
-$DesktopDir = [Environment]::GetFolderPath("Desktop")
 $GhcInstArgs = '-mingw64 -mintty -c "pacman --noconfirm -S --needed base-devel gettext autoconf make libtool automake python p7zip patch unzip"'
-Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $GhcInstArgs -DestinationPath ('{0}\Install GHC dev dependencies.lnk' -f $DesktopDir)
-Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath ('{0}\Mingw haskell shell.lnk' -f $DesktopDir)
-Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath ('{0}\Mingw package management docs.url' -f $DesktopDir)
+Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $GhcInstArgs -DestinationPath 'Install GHC dev dependencies.lnk' -TempPath $GhcupDir
+Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath 'Mingw haskell shell.lnk' -TempPath $GhcupDir
+Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath 'Mingw package management docs.url' -TempPath $GhcupDir
+$DesktopDir = [Environment]::GetFolderPath("Desktop")
 $null = New-Item -Path $DesktopDir -Name "Uninstall Haskell.ps1" -ItemType "file" -Force -Value $uninstallShortCut
 
 Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
