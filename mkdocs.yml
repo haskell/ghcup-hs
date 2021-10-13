@@ -9,6 +9,7 @@ repo_url: https://gitlab.haskell.org/haskell/ghcup-hs
 theme:
     name: mkdocs
     locale: en
+    custom_dir: docs/overrides
 
 nav:
   - Home: index.md
