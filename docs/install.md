@@ -24,7 +24,17 @@ Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager
 
 If you want to know what these scripts do, check out the [source code at the repository](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
 
-**Advice: Make sure to check out the [Haskell documentation](https://www.haskell.org/documentation/) after installation.**
+## First steps
+
+1. To get started with creating a Haskell project, follow the [Getting Started with Haskell and Cabal](https://cabal.readthedocs.io/en/latest/getting-started.html) guide
+2. To properly learn Haskell, run through the [CIS 194 Haskell course](https://www.cis.upenn.edu/~cis194/spring13/) including exercises
+3. To learn more about Haskell Toolchain management, check out the [ghcup user guide](./guide.md)
+
+## Uninstallation
+
+On linux, just run `ghcup nuke`, then make sure any ghcup added lines in your `~/.bashrc` (or similar) are removed.
+
+On windows, double-click on the `Uninstall Haskell.ps1` PowerShell script on your Desktop.
 
 ## Supported tools
 

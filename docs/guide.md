@@ -39,34 +39,6 @@ explaining all possible configurations can be found in this repo: [config.yaml](
 
 Partial configuration is fine. Command line options always override the config file settings.
 
-## GPG verification
-
-GHCup supports verifying the GPG signature of the metadata file. The metadata file then contains SHA256 hashes of all downloads, so
-this is cryptographically secure.
-
-First, obtain the gpg key:
-
-```sh
-gpg --batch --keyserver keys.openpgp.org --recv-keys 7784930957807690A66EBDBE3786C5262ECB4A3F
-```
-
-Then verify the gpg key in one of these ways:
-
-1. find out where I live and visit me to do offline key signing
-2. figure out my mobile phone number and call me to verify the fingerprint
-3. more boring: contact me on Libera IRC (`maerwald`) and verify the fingerprint
-
-Once you've verified the key, you have to figure out if you trust me.
-
-If you trust me, then you can configure gpg in `~/.ghcup/config.yaml`:
-
-```yml
-gpg-setting: GPGLax # GPGStrict | GPGLax | GPGNone
-```
-
-In `GPGStrict` mode, ghcup will fail if verification fails. In `GPGLax` mode it will just print a warning.
-You can also pass the mode via `ghcup --gpg <strict|lax|none>`.
-
 ## Manpages
 
 For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man` provider, then issue `man ghc`. Manpages only work for the currently set ghc.
@@ -257,6 +229,34 @@ jobs:
       run: cabal test
       shell: bash
 ```
+
+## GPG verification
+
+GHCup supports verifying the GPG signature of the metadata file. The metadata file then contains SHA256 hashes of all downloads, so
+this is cryptographically secure.
+
+First, obtain the gpg key:
+
+```sh
+gpg --batch --keyserver keys.openpgp.org --recv-keys 7784930957807690A66EBDBE3786C5262ECB4A3F
+```
+
+Then verify the gpg key in one of these ways:
+
+1. find out where I live and visit me to do offline key signing
+2. figure out my mobile phone number and call me to verify the fingerprint
+3. more boring: contact me on Libera IRC (`maerwald`) and verify the fingerprint
+
+Once you've verified the key, you have to figure out if you trust me.
+
+If you trust me, then you can configure gpg in `~/.ghcup/config.yaml`:
+
+```yml
+gpg-setting: GPGLax # GPGStrict | GPGLax | GPGNone
+```
+
+In `GPGStrict` mode, ghcup will fail if verification fails. In `GPGLax` mode it will just print a warning.
+You can also pass the mode via `ghcup --gpg <strict|lax|none>`.
    
 ## Tips and tricks
 

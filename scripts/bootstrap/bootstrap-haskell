@@ -158,7 +158,7 @@ _done() {
 				green "and the \"Mingw package management docs\""
 				green "desktop shortcuts."
 				green
-				green "If you are net to Haskell, check out https://www.haskell.org/documentation/"
+				green "If you are new to Haskell, check out https://www.haskell.org/ghcup/install/#first-steps"
 				;;
 			*)
 				green
@@ -173,7 +173,7 @@ _done() {
 				green "To install other GHC versions and tools, run:"
 				green "  ghcup tui"
 				green
-				green "If you are net to Haskell, check out https://www.haskell.org/documentation/"
+				green "If you are new to Haskell, check out https://www.haskell.org/ghcup/install/#first-steps"
 				;;
 
 	esac

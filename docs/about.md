@@ -40,6 +40,11 @@ All you wanted to know about GHCup.
 * [haskell.org](https://www.haskell.org/haskell-org-committee/) via CI and infrastructure
 * [Haskell Foundation](https://haskell.foundation/affiliates/) via affiliation
 
+## How to help
+
+* if you are a developer, check out the [issue tracker](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues) and the [Development guide](./dev.md)
+* if you want to donate to the project, visit our [opencollective](https://opencollective.com/ghcup#category-CONTRIBUTE) page
+
 ## Design goals
 
 1. simplicity
