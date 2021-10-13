@@ -1,3 +1,8 @@
+:root {
+  --theme-purple: #5E5184;
+  --link-pink: #9E358F;
+}
+
 h2
 {
   border-bottom:1px solid #CCC;
@@ -102,58 +107,46 @@ body.homepage>div.container div.col-md-9 {
 }
 
 .bg-primary {
-  background-image: -webkit-gradient(linear, left top, left bottom, from(#996FC2), color-stop(60%, #6A478D), to(#5E5086)) !important;
-  background-image: linear-gradient(#996FC2, #6A478D 60%, #5E5086) !important;
-  background-repeat: no-repeat !important;
+  background-image: none;
+  background-color: var(--theme-purple) !important;
 }
 
-.btn-primary {
-  background-image: -webkit-gradient(linear, left top, left bottom, from(#996FC2), color-stop(60%, #6A478D), to(#5E5086)) !important;
-  background-image: linear-gradient(#996FC2, #6A478D 60%, #5E5086) !important;
-  background-repeat: no-repeat !important;
-
-  color: #fff;
-  background-color: #996FC1;
-  border-color: #996FC1;
-
-  border-bottom: 1px solid #453A62;
+body .bg-primary {
+  background-image: none;
+  background-color: var(--theme-purple);
+  border: 0px;
 }
 
-.navbar {
-  background-image: -webkit-gradient(linear, left top, left bottom, from(#996FC2), color-stop(60%, #6A478D), to(#5E5086)) !important;
-  background-image: linear-gradient(#996FC2, #6A478D 60%, #5E5086) !important;
-  background-repeat: no-repeat !important;
+body .btn-primary {
+  background-image: none;
+  background-color: var(--theme-purple);
+  border: 1px solid var(--theme-purple);
+}
 
-  color: #fff;
-  background-color: #996FC1;
-  border-color: #996FC1;
+.navbar.fixed-top {
+  background-image: none;
+  background-color: var(--theme-purple);
+  border-bottom: 5px solid rgba(69, 59, 97, 0.5);
+  padding: 0px;
+}
 
-  border-bottom: 1px solid #453A62;
+.btn-primary:hover {
+  background-color: var(--theme-purple);
+  border: 1px solid var(--theme-purple);
 }
 
 a {
-  color: #996FC2;
+  color: var(--link-pink);
 }
 
 a:hover {
-  color: #674489;
+  color: #996FC2;
 }
 
 .col-md-9 img.main-logo {
   border: 0px; 
   padding: 0px;
   margin: 0px;
-}
-
-.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:hover, .navbar-default .navbar-nav>.active>a:focus {
-  color: #fff;
-  background-color: #453A62;
-  border-color: #996FC1;
-}
-
-.navbar-default .navbar-nav>li>a:hover, .navbar-default .navbar-nav>li>a:focus {
-  color: #fff;
-  background-color: #453A62;
 }
 
 .ghcup-intro {
@@ -310,12 +303,7 @@ ul > li {
 }
 
 #help, #collective {
-  margin-bottom: 0px;
   display: block;
-
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 15px;
   text-align: center;
 }
 
@@ -323,6 +311,12 @@ ul > li {
   border: none;
   margin: 0px;
   height: 24px;
+}
+
+.ghcup-help {
+  margin: 10px auto;
+  padding: 10px 0;
+  box-sizing: border-box;
 }
 
 #collective img {
