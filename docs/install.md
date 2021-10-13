@@ -30,6 +30,12 @@ If you want to know what these scripts do, check out the [source code at the rep
 2. To properly learn Haskell, run through the [CIS 194 Haskell course](https://www.cis.upenn.edu/~cis194/spring13/) including exercises
 3. To learn more about Haskell Toolchain management, check out the [ghcup user guide](./guide.md)
 
+## Uninstallation
+
+On linux, just run `ghcup nuke`, then make sure any ghcup added lines in your `~/.bashrc` (or similar) are removed.
+
+On windows, double-click on the `Uninstall Haskell.ps1` PowerShell script on your Desktop.
+
 ## Supported tools
 
 GHCup supports the following tools, which are also known as the **Haskell Toolchain**:
