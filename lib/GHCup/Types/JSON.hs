@@ -28,9 +28,9 @@ import           GHCup.Utils.Logger             () -- TH is broken shite and nee
                                                    -- This is due to the boot file.
 
 import           Control.Applicative            ( (<|>) )
-import           Data.Aeson
+import           Data.Aeson              hiding (Key)
 import           Data.Aeson.TH
-import           Data.Aeson.Types
+import           Data.Aeson.Types        hiding (Key)
 import           Data.List.NonEmpty             ( NonEmpty(..) )
 import           Data.Text.Encoding            as E
 import           Data.Versions

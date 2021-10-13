@@ -92,7 +92,7 @@ library
     -fwarn-incomplete-record-updates
 
   build-depends:
-    , aeson                 >=1.4        && <1.6
+    , aeson                 >=1.4
     , async                 >=0.8        && <2.3
     , base                  >=4.13       && <5
     , base16-bytestring     >=0.1.1.6    && <1.1
@@ -189,7 +189,7 @@ executable ghcup
     -fwarn-incomplete-record-updates -threaded
 
   build-depends:
-    , aeson                 >=1.4      && <1.6
+    , aeson                 >=1.4
     , aeson-pretty          ^>=0.8.8
     , async                 ^>=2.2.3
     , base                  >=4.13     && <5
