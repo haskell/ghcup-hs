@@ -114,7 +114,7 @@ body.homepage>div.container div.col-md-9 {
 body .bg-primary {
   background-image: none;
   background-color: var(--theme-purple);
-  border: 1px solid var(--theme-purple);
+  border: 0px;
 }
 
 body .btn-primary {
@@ -126,7 +126,8 @@ body .btn-primary {
 .navbar.fixed-top {
   background-image: none;
   background-color: var(--theme-purple);
-  border: 1px solid var(--theme-purple);
+  border-bottom: 5px solid rgba(69, 59, 97, 0.5);
+  padding: 0px;
 }
 
 .btn-primary:hover {
