@@ -56,22 +56,45 @@ hide:
     </div>
 </section>
 
+<p id="help" class="ghcup-help">
+  Need help? Ask on
+  <span>
+    <a href="https://kiwiirc.com/nextclient/irc.libera.chat/?nick=Guest%7C?#haskell,#haskell-ghcup">
+      <img src="irc.svg" alt="" />
+      IRC
+    </a>
+  </span>,
+  <span>
+    <a href="https://discord.gg/pKYf3zDQU7">
+      <img src="Discord-Logo-Black.svg" alt="" />
+      Discord
+    </a>
+  </span>,
+  <span>
+    <a href="https://app.element.io/#/room/#haskell-tooling:matrix.org">
+      <img src="Matrix_logo.svg" alt=""/>
+    </a>
+  </span>
+   or
+   <span>
+     <a href="https://gitlab.haskell.org/haskell/ghcup-hs/issues">
+       report a bug
+       <img src="Octicons-bug.svg" alt="" />
+     </a>
+   </span>
+</p>
+
+<script type="text/javascript" src="javascripts/ghcup.js"></script>
+
+
+----
+
+
+![GHCup](./ghcup.gif){: .center style="width:700px"}
+
 <section class="index-cta-donate">
   <button class="donate-button">
     <a href="https://opencollective.com/ghcup#category-CONTRIBUTE" class="donate-badge" />
 	</a>
     </button>
 </section>
-
-----
-
-![GHCup](./ghcup.gif){: .center style="width:700px"}
-
-<p id="help">
-Need help? Ask on
-<a href="https://kiwiirc.com/nextclient/irc.libera.chat/?nick=Guest%7C?#haskell,#haskell-ghcup">
-<img src="irc.svg" alt="" />IRC</a>,
-<a href="https://discord.gg/pKYf3zDQU7"><img src="Discord-Logo-Black.svg" alt="" />Discord</a>, <a href="https://app.element.io/#/room/#haskell-tooling:matrix.org"><img src="Matrix_logo.svg" alt=""/></a> or <a href="https://gitlab.haskell.org/haskell/ghcup-hs/issues">report a bug <img src="Octicons-bug.svg" alt="" /></a>
-</p>
-
-<script type="text/javascript" src="javascripts/ghcup.js"></script>
