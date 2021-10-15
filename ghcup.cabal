@@ -172,6 +172,23 @@ library
 
 executable ghcup
   main-is:            Main.hs
+  other-modules:      GHCup.OptParse.Install
+                      GHCup.OptParse.Common
+                      GHCup.OptParse.Set
+                      GHCup.OptParse.UnSet
+                      GHCup.OptParse.Rm
+                      GHCup.OptParse.Compile
+                      GHCup.OptParse.Config
+                      GHCup.OptParse.Whereis
+                      GHCup.OptParse.List
+                      GHCup.OptParse.DInfo
+                      GHCup.OptParse.Upgrade
+                      GHCup.OptParse.ToolRequirements
+                      GHCup.OptParse.ChangeLog
+                      GHCup.OptParse.Nuke
+                      GHCup.OptParse.Prefetch
+                      GHCup.OptParse.GC
+                      GHCup.OptParse
   hs-source-dirs:     app/ghcup
   default-language:   Haskell2010
   default-extensions:

@@ -2,10 +2,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE ViewPatterns      #-}
 {-# LANGUAGE RankNTypes        #-}
 
 module BrickMain where
@@ -368,10 +365,7 @@ listSelectedElement' BrickInternalState{..} = fmap (ix, ) $ clr !? ix
 
 
 selectLatest :: Vector ListResult -> Int
-selectLatest v =
-  case V.findIndex (\ListResult {..} -> lTool == GHC && Latest `elem` lTag) v of
-    Just ix -> ix
-    Nothing -> 0
+selectLatest = fromMaybe 0 . V.findIndex (\ListResult {..} -> lTool == GHC && Latest `elem` lTag)
 
 
 -- | Replace the @appState@ or construct it based on a filter function
@@ -398,14 +392,14 @@ filterVisible :: Bool -> Bool -> ListResult -> Bool
 filterVisible v t e | lInstalled e = True
                     | v
                     , not t
-                    , not (elem (lTool e) hiddenTools) = True
+                    , lTool e `notElem` hiddenTools = True
                     | not v
                     , t
-                    , not (elem Old (lTag e)) = True
+                    , Old `notElem` lTag e = True
                     | v
                     , t = True
-                    | otherwise = not (elem Old (lTag e)) &&
-                                  not (elem (lTool e) hiddenTools)
+                    | otherwise = (Old `notElem` lTag e) &&
+                                  (lTool e `notElem` hiddenTools)
 
 
 install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
@@ -507,7 +501,7 @@ del' _ (_, ListResult {..}) = do
     )
     >>= \case
           VRight vi -> do
-            forM_ (join $ fmap _viPostRemove vi) $ \msg ->
+            forM_ (_viPostRemove =<< vi) $ \msg ->
               logInfo msg
             pure $ Right ()
           VLeft  e -> pure $ Left (prettyShow e)
@@ -594,8 +588,7 @@ getGHCupInfo = do
   r <-
     flip runReaderT settings
     . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError]
-    $ liftE
-    $ getDownloadsF
+    $ liftE getDownloadsF
 
   case r of
     VRight a -> pure $ Right a
