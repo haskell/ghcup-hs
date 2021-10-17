@@ -52,9 +52,7 @@ import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
-#if defined(IS_WINDOWS)
 import           Control.Monad.IO.Unlift        ( MonadUnliftIO( withRunInIO ) )
-#endif
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.List
@@ -96,9 +94,6 @@ import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
-#if defined(IS_WINDOWS)
-import qualified System.Win32.File             as Win32
-#endif
 import qualified Text.Megaparsec               as MP
 import GHCup.Utils.MegaParsec
 import Control.Concurrent (threadDelay)
@@ -339,36 +334,35 @@ installUnpackedGHC :: ( MonadReader env m
                    -> FilePath      -- ^ Path to install to
                    -> Version       -- ^ The GHC version
                    -> Excepts '[ProcessError] m ()
-installUnpackedGHC path inst ver = do
-#if defined(IS_WINDOWS)
-  lift $ logInfo "Installing GHC (this may take a while)"
-  -- Windows bindists are relocatable and don't need
-  -- to run configure.
-  -- We also must make sure to preserve mtime to not confuse ghc-pkg.
-  lift $ withRunInIO $ \run -> flip onException (run $ recyclePathForcibly inst) $ copyDirectoryRecursive path inst $ \source dest -> do
-    mtime <- getModificationTime source
-    Win32.moveFile source dest
-    setModificationTime dest mtime
-#else
-  PlatformRequest {..} <- lift getPlatformReq
+installUnpackedGHC path inst ver
+  | isWindows = do
+      lift $ logInfo "Installing GHC (this may take a while)"
+      -- Windows bindists are relocatable and don't need
+      -- to run configure.
+      -- We also must make sure to preserve mtime to not confuse ghc-pkg.
+      lift $ withRunInIO $ \run -> flip onException (run $ recyclePathForcibly inst) $ copyDirectoryRecursive path inst $ \source dest -> do
+        mtime <- getModificationTime source
+        moveFilePortable source dest
+        setModificationTime dest mtime
+  | otherwise = do
+      PlatformRequest {..} <- lift getPlatformReq
 
-  let alpineArgs
-       | ver >= [vver|8.2.2|], Linux Alpine <- _rPlatform
-       = ["--disable-ld-override"]
-       | otherwise
-       = []
+      let alpineArgs
+           | ver >= [vver|8.2.2|], Linux Alpine <- _rPlatform
+           = ["--disable-ld-override"]
+           | otherwise
+           = []
 
-  lift $ logInfo "Installing GHC (this may take a while)"
-  lEM $ execLogged "sh"
-                   ("./configure" : ("--prefix=" <> inst) 
-                    : alpineArgs
-                   )
-                   (Just path)
-                   "ghc-configure"
-                   Nothing
-  lEM $ make ["install"] (Just path)
-  pure ()
-#endif
+      lift $ logInfo "Installing GHC (this may take a while)"
+      lEM $ execLogged "sh"
+                       ("./configure" : ("--prefix=" <> inst) 
+                        : alpineArgs
+                       )
+                       (Just path)
+                       "ghc-configure"
+                       Nothing
+      lEM $ make ["install"] (Just path)
+      pure ()
 
 
 -- | Installs GHC into @~\/.ghcup\/ghc/\<ver\>@ and places the
@@ -1147,15 +1141,17 @@ setGHC ver sghc = do
           logDebug $ "rm -f " <> T.pack fullF
           hideError doesNotExistErrorType $ rmDirectoryLink fullF
           logDebug $ "ln -s " <> T.pack targetF <> " " <> T.pack fullF
-          liftIO
-#if defined(IS_WINDOWS)
-            -- On windows we need to be more permissive
-            -- in case symlinks can't be created, be just
-            -- give up here. This symlink isn't strictly necessary.
-            $ hideError permissionErrorType
-            $ hideError illegalOperationErrorType
-#endif
-            $ createDirectoryLink targetF fullF
+
+          if isWindows
+          then liftIO
+                 -- On windows we need to be more permissive
+                 -- in case symlinks can't be created, be just
+                 -- give up here. This symlink isn't strictly necessary.
+                 $ hideError permissionErrorType
+                 $ hideError illegalOperationErrorType
+                 $ createDirectoryLink targetF fullF
+          else liftIO
+                 $ createDirectoryLink targetF fullF
       _ -> pure ()
 
 unsetGHC :: ( MonadReader env m
@@ -1876,17 +1872,17 @@ rmGhcup = do
 
   unless areEqualPaths $ logWarn $ nonStandardInstallLocationMsg currentRunningExecPath
 
-#if defined(IS_WINDOWS)
-  -- since it doesn't seem possible to delete a running exe on windows
-  -- we move it to temp dir, to be deleted at next reboot
-  tempFilepath <- mkGhcupTmpDir
-  hideError UnsupportedOperation $
-            liftIO $ hideError NoSuchThing $
-            Win32.moveFileEx ghcupFilepath (Just (tempFilepath </> "ghcup")) 0
-#else
-  -- delete it.
-  hideError doesNotExistErrorType $ rmFile ghcupFilepath
-#endif
+  if isWindows
+  then do
+    -- since it doesn't seem possible to delete a running exe on windows
+    -- we move it to temp dir, to be deleted at next reboot
+    tempFilepath <- mkGhcupTmpDir
+    hideError UnsupportedOperation $
+              liftIO $ hideError NoSuchThing $
+              moveFile ghcupFilepath (tempFilepath </> "ghcup")
+  else
+    -- delete it.
+    hideError doesNotExistErrorType $ rmFile ghcupFilepath
 
   where
     handlePathNotPresent fp _err = do
@@ -1946,10 +1942,9 @@ rmGhcupDirs = do
 
   handleRm $ rmBinDir binDir
   handleRm $ rmDir recycleDir
-#if defined(IS_WINDOWS)
-  logInfo $ "removing " <> T.pack (baseDir </> "msys64")
-  handleRm $ rmPathForcibly (baseDir </> "msys64")
-#endif
+  when isWindows $ do
+    logInfo $ "removing " <> T.pack (baseDir </> "msys64")
+    handleRm $ rmPathForcibly (baseDir </> "msys64")
 
   handleRm $ removeEmptyDirsRecursive baseDir
 
@@ -1983,15 +1978,13 @@ rmGhcupDirs = do
         forM_ contents (deleteFile . (dir </>))
 
     rmBinDir :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
-    rmBinDir binDir = do
-#if !defined(IS_WINDOWS)
-      isXDGStyle <- liftIO useXDG
-      if not isXDGStyle
-        then removeDirIfEmptyOrIsSymlink binDir
-        else pure ()
-#else
-      removeDirIfEmptyOrIsSymlink binDir
-#endif
+    rmBinDir binDir
+      | isWindows = removeDirIfEmptyOrIsSymlink binDir
+      | otherwise = do
+          isXDGStyle <- liftIO useXDG
+          if not isXDGStyle
+            then removeDirIfEmptyOrIsSymlink binDir
+            else pure ()
 
     reportRemainingFiles :: MonadIO m => FilePath -> m [FilePath]
     reportRemainingFiles dir = do
@@ -2311,11 +2304,9 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                        m
                        FilePath
   findHadrianFile workdir = do
-#if defined(IS_WINDOWS)
-    let possible_files = ((workdir </> "hadrian") </>) <$> ["build.bat"]
-#else   
-    let possible_files = ((workdir </> "hadrian") </>) <$> ["build", "build.sh"]
-#endif
+    let possible_files = if isWindows
+                         then ((workdir </> "hadrian") </>) <$> ["build.bat"]
+                         else ((workdir </> "hadrian") </>) <$> ["build", "build.sh"]
     exsists <- forM possible_files (\f -> liftIO (doesFileExist f) <&> (,f))
     case filter fst exsists of
       [] -> throwE HadrianNotFound
@@ -2489,9 +2480,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                       (\x -> ["--target=" <> T.unpack x])
                       (_tvTarget tver)
             ++ ["--prefix=" <> ghcdir]
-#if defined(IS_WINDOWS)
-            ++ ["--enable-tarballs-autodownload"]
-#endif
+            ++ (if isWindows then ["--enable-tarballs-autodownload"] else [])
             ++ fmap T.unpack aargs
             )
             (Just workdir)
@@ -2505,9 +2494,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
                    (\x -> ["--target=" <> T.unpack x])
                    (_tvTarget tver)
           ++ ["--prefix=" <> ghcdir]
-#if defined(IS_WINDOWS)
-          ++ ["--enable-tarballs-autodownload"]
-#endif
+          ++ (if isWindows then ["--enable-tarballs-autodownload"] else [])
           ++ fmap T.unpack aargs
           )
           (Just workdir)
