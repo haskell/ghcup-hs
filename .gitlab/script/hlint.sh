@@ -15,5 +15,5 @@ git describe
 ecabal update
 ecabal install -w ghc-${GHC_VERSION} --installdir="$CI_PROJECT_DIR"/.local/bin hlint
 
-hlint -r lib/ test/ 
+hlint -r app/ lib/ test/ 
 

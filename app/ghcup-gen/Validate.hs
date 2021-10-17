@@ -91,23 +91,23 @@ validate dls _ = do
   checkHasRequiredPlatforms t v tags arch pspecs = do
     let v' = prettyVer v
         arch' = prettyShow arch
-    when (notElem (Linux UnknownLinux) pspecs) $ do
+    when (Linux UnknownLinux `notElem` pspecs) $ do
       lift $ logError $
         "Linux UnknownLinux missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
       addError
-    when ((notElem Darwin pspecs) && arch == A_64) $ do
+    when ((Darwin `notElem` pspecs) && arch == A_64) $ do
       lift $ logError $ "Darwin missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
       addError
-    when ((notElem FreeBSD pspecs) && arch == A_64) $ lift $ logWarn $
+    when ((FreeBSD `notElem` pspecs) && arch == A_64) $ lift $ logWarn $
       "FreeBSD missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
-    when (notElem Windows pspecs && arch == A_64) $ do
+    when (Windows `notElem` pspecs && arch == A_64) $ do
       lift $ logError $ "Windows missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
       addError
 
     -- alpine needs to be set explicitly, because
     -- we cannot assume that "Linux UnknownLinux" runs on Alpine
     -- (although it could be static)
-    when (notElem (Linux Alpine) pspecs) $
+    when (Linux Alpine `notElem` pspecs) $
       case t of
         GHCup | arch `elem` [A_64, A_32] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)) >> addError
         Cabal | v > [vver|2.4.1.0|]
@@ -117,7 +117,7 @@ validate dls _ = do
         _ -> lift $ logWarn $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)
 
   checkUniqueTags tool = do
-    let allTags = join $ fmap _viTags $ M.elems $ availableToolVersions dls tool
+    let allTags = _viTags =<< M.elems (availableToolVersions dls tool)
     let nonUnique =
           fmap fst
             .   filter (\(_, b) -> not b)
@@ -155,8 +155,8 @@ validate dls _ = do
 
   -- a tool must have at least one of each mandatory tags
   checkMandatoryTags tool = do
-    let allTags = join $ fmap _viTags $ M.elems $ availableToolVersions dls tool
-    forM_ [Latest, Recommended] $ \t -> case elem t allTags of
+    let allTags = _viTags =<< M.elems (availableToolVersions dls tool)
+    forM_ [Latest, Recommended] $ \t -> case t `elem` allTags of
       False -> do
         lift $ logError $ "Tag " <> T.pack (prettyShow t) <> " missing from " <> T.pack (prettyShow tool)
         addError
@@ -202,7 +202,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
   let dlis = either (const []) (\tool -> nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool) %> each %& indices (matchTest versionRegex . T.unpack . prettyVer) % (viSourceDL % _Just `summing` viArch % each % each % each)) etool
   let gdlis = nubOrd $ gt ^.. each
   let allDls = either (const gdlis) (const dlis) etool
-  when (null allDls) $ logError "no tarballs selected by filter" *> (flip runReaderT ref addError)
+  when (null allDls) $ logError "no tarballs selected by filter" *> runReaderT addError ref
   forM_ allDls (downloadAll ref)
 
   -- exit
@@ -260,7 +260,7 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
             when (basePath /= prel) $ do
               logError $
                 "Subdir doesn't match: expected " <> T.pack prel <> ", got " <> T.pack basePath
-              (flip runReaderT ref addError)
+              runReaderT addError ref
           Just (RegexDir regexString) -> do
             logInfo $
               "verifying subdir (regex): " <> T.pack regexString
@@ -268,13 +268,13 @@ validateTarballs (TarballFilter etool versionRegex) dls gt = do
                   compIgnoreCase
                   execBlank
                   regexString
-            when (not (match regex basePath)) $ do
+            unless (match regex basePath) $ do
               logError $
                 "Subdir doesn't match: expected regex " <> T.pack regexString <> ", got " <> T.pack basePath
-              (flip runReaderT ref addError)
+              runReaderT addError ref
           Nothing -> pure ()
       VRight Nothing -> pure ()
       VLeft  e -> do
         logError $
           "Could not download (or verify hash) of " <> T.pack (show dli) <> ", Error was: " <> T.pack (prettyShow e)
-        (flip runReaderT ref addError)
+        runReaderT addError ref
