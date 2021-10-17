@@ -25,9 +25,7 @@ module GHCup.Utils.Dirs
   , relativeSymlink
   , withGHCupTmpDir
   , getConfigFilePath
-#if !defined(IS_WINDOWS)
   , useXDG
-#endif
   , cleanupTrash
   )
 where
@@ -75,26 +73,25 @@ import Control.Concurrent (threadDelay)
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_DATA_HOME/ghcup' as per xdg spec.
 ghcupBaseDir :: IO FilePath
-ghcupBaseDir = do
-#if defined(IS_WINDOWS)
-  bdir <- fromMaybe "C:\\" <$> lookupEnv "GHCUP_INSTALL_BASE_PREFIX"
-  pure (bdir </> "ghcup")
-#else
-  xdg <- useXDG
-  if xdg
-    then do
-      bdir <- lookupEnv "XDG_DATA_HOME" >>= \case
-        Just r  -> pure r
-        Nothing -> do
-          home <- liftIO getHomeDirectory
-          pure (home </> ".local" </> "share")
+ghcupBaseDir
+  | isWindows = do
+      bdir <- fromMaybe "C:\\" <$> lookupEnv "GHCUP_INSTALL_BASE_PREFIX"
       pure (bdir </> "ghcup")
-    else do
-      bdir <- lookupEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
-        Just r  -> pure r
-        Nothing -> liftIO getHomeDirectory
-      pure (bdir </> ".ghcup")
-#endif
+  | otherwise = do
+      xdg <- useXDG
+      if xdg
+        then do
+          bdir <- lookupEnv "XDG_DATA_HOME" >>= \case
+            Just r  -> pure r
+            Nothing -> do
+              home <- liftIO getHomeDirectory
+              pure (home </> ".local" </> "share")
+          pure (bdir </> "ghcup")
+        else do
+          bdir <- lookupEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
+            Just r  -> pure r
+            Nothing -> liftIO getHomeDirectory
+          pure (bdir </> ".ghcup")
 
 
 -- | ~/.ghcup by default
@@ -102,45 +99,41 @@ ghcupBaseDir = do
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CONFIG_HOME/ghcup' as per xdg spec.
 ghcupConfigDir :: IO FilePath
-ghcupConfigDir = do
-#if defined(IS_WINDOWS)
-  ghcupBaseDir
-#else
-  xdg <- useXDG
-  if xdg
-    then do
-      bdir <- lookupEnv "XDG_CONFIG_HOME" >>= \case
-        Just r  -> pure r
-        Nothing -> do
-          home <- liftIO getHomeDirectory
-          pure (home </> ".config")
-      pure (bdir </> "ghcup")
-    else do
-      bdir <- lookupEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
-        Just r  -> pure r
-        Nothing -> liftIO getHomeDirectory
-      pure (bdir </> ".ghcup")
-#endif
+ghcupConfigDir
+  | isWindows = ghcupBaseDir
+  | otherwise = do
+      xdg <- useXDG
+      if xdg
+        then do
+          bdir <- lookupEnv "XDG_CONFIG_HOME" >>= \case
+            Just r  -> pure r
+            Nothing -> do
+              home <- liftIO getHomeDirectory
+              pure (home </> ".config")
+          pure (bdir </> "ghcup")
+        else do
+          bdir <- lookupEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
+            Just r  -> pure r
+            Nothing -> liftIO getHomeDirectory
+          pure (bdir </> ".ghcup")
 
 
 -- | If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_BIN_HOME' env var or defaults to '~/.local/bin'
 -- (which, sadly is not strictly xdg spec).
 ghcupBinDir :: IO FilePath
-ghcupBinDir = do
-#if defined(IS_WINDOWS)
-  ghcupBaseDir <&> (</> "bin")
-#else
-  xdg <- useXDG
-  if xdg
-    then do
-      lookupEnv "XDG_BIN_HOME" >>= \case
-        Just r  -> pure r
-        Nothing -> do
-          home <- liftIO getHomeDirectory
-          pure (home </> ".local" </> "bin")
-    else ghcupBaseDir <&> (</> "bin")
-#endif
+ghcupBinDir
+  | isWindows = ghcupBaseDir <&> (</> "bin")
+  | otherwise = do
+      xdg <- useXDG
+      if xdg
+        then do
+          lookupEnv "XDG_BIN_HOME" >>= \case
+            Just r  -> pure r
+            Nothing -> do
+              home <- liftIO getHomeDirectory
+              pure (home </> ".local" </> "bin")
+        else ghcupBaseDir <&> (</> "bin")
 
 
 -- | Defaults to '~/.ghcup/cache'.
@@ -148,21 +141,19 @@ ghcupBinDir = do
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CACHE_HOME/ghcup' as per xdg spec.
 ghcupCacheDir :: IO FilePath
-ghcupCacheDir = do
-#if defined(IS_WINDOWS)
-  ghcupBaseDir <&> (</> "cache")
-#else
-  xdg <- useXDG
-  if xdg
-    then do
-      bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
-        Just r  -> pure r
-        Nothing -> do
-          home <- liftIO getHomeDirectory
-          pure (home </> ".cache")
-      pure (bdir </> "ghcup")
-    else ghcupBaseDir <&> (</> "cache")
-#endif
+ghcupCacheDir
+  | isWindows = ghcupBaseDir <&> (</> "cache")
+  | otherwise = do
+      xdg <- useXDG
+      if xdg
+        then do
+          bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
+            Just r  -> pure r
+            Nothing -> do
+              home <- liftIO getHomeDirectory
+              pure (home </> ".cache")
+          pure (bdir </> "ghcup")
+        else ghcupBaseDir <&> (</> "cache")
 
 
 -- | Defaults to '~/.ghcup/logs'.
@@ -170,21 +161,19 @@ ghcupCacheDir = do
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CACHE_HOME/ghcup/logs' as per xdg spec.
 ghcupLogsDir :: IO FilePath
-ghcupLogsDir = do
-#if defined(IS_WINDOWS)
-  ghcupBaseDir <&> (</> "logs")
-#else
-  xdg <- useXDG
-  if xdg
-    then do
-      bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
-        Just r  -> pure r
-        Nothing -> do
-          home <- liftIO getHomeDirectory
-          pure (home </> ".cache")
-      pure (bdir </> "ghcup" </> "logs")
-    else ghcupBaseDir <&> (</> "logs")
-#endif
+ghcupLogsDir
+  | isWindows = ghcupBaseDir <&> (</> "logs")
+  | otherwise = do
+      xdg <- useXDG
+      if xdg
+        then do
+          bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
+            Just r  -> pure r
+            Nothing -> do
+              home <- liftIO getHomeDirectory
+              pure (home </> ".cache")
+          pure (bdir </> "ghcup" </> "logs")
+        else ghcupBaseDir <&> (</> "logs")
 
 
 -- | '~/.ghcup/trash'.
@@ -320,10 +309,8 @@ withGHCupTmpDir = snd <$> withRunInIO (\run ->
     --------------
 
 
-#if !defined(IS_WINDOWS)
 useXDG :: IO Bool
 useXDG = isJust <$> lookupEnv "GHCUP_USE_XDG_DIRS"
-#endif
 
 
 relativeSymlink :: FilePath  -- ^ the path in which to create the symlink

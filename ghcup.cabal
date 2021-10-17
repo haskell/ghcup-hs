@@ -16,11 +16,11 @@ description:
 category:           System
 build-type:         Simple
 extra-doc-files:
+  CHANGELOG.md
   data/config.yaml
   data/metadata/ghcup-0.0.4.yaml
   data/metadata/ghcup-0.0.5.yaml
   data/metadata/ghcup-0.0.6.yaml
-  CHANGELOG.md
   README.md
 
 extra-source-files:
@@ -120,6 +120,7 @@ library
     , pretty-terminal       ^>=0.1.0.0
     , regex-posix           ^>=0.96
     , resourcet             ^>=1.2.2
+    , retry                 ^>=0.8.1.2
     , safe                  ^>=0.3.18
     , safe-exceptions       ^>=0.1
     , split                 ^>=0.2.3.4
@@ -148,16 +149,21 @@ library
 
   if os(windows)
     cpp-options:   -DIS_WINDOWS
-    other-modules: GHCup.Utils.File.Windows
+    other-modules:
+      GHCup.Utils.File.Windows
+      GHCup.Utils.Prelude.Windows
+      GHCup.Utils.Windows
+
     build-depends:
       , bzlib
       , process  ^>=1.6.11.0
-      , retry    ^>=0.8.1.2
       , Win32    ^>=2.10
 
   else
     other-modules:
       GHCup.Utils.File.Posix
+      GHCup.Utils.Posix
+      GHCup.Utils.Prelude.Posix
       System.Console.Terminal.Common
       System.Console.Terminal.Posix
 
@@ -172,23 +178,25 @@ library
 
 executable ghcup
   main-is:            Main.hs
-  other-modules:      GHCup.OptParse.Install
-                      GHCup.OptParse.Common
-                      GHCup.OptParse.Set
-                      GHCup.OptParse.UnSet
-                      GHCup.OptParse.Rm
-                      GHCup.OptParse.Compile
-                      GHCup.OptParse.Config
-                      GHCup.OptParse.Whereis
-                      GHCup.OptParse.List
-                      GHCup.OptParse.DInfo
-                      GHCup.OptParse.Upgrade
-                      GHCup.OptParse.ToolRequirements
-                      GHCup.OptParse.ChangeLog
-                      GHCup.OptParse.Nuke
-                      GHCup.OptParse.Prefetch
-                      GHCup.OptParse.GC
-                      GHCup.OptParse
+  other-modules:
+    GHCup.OptParse
+    GHCup.OptParse.ChangeLog
+    GHCup.OptParse.Common
+    GHCup.OptParse.Compile
+    GHCup.OptParse.Config
+    GHCup.OptParse.DInfo
+    GHCup.OptParse.GC
+    GHCup.OptParse.Install
+    GHCup.OptParse.List
+    GHCup.OptParse.Nuke
+    GHCup.OptParse.Prefetch
+    GHCup.OptParse.Rm
+    GHCup.OptParse.Set
+    GHCup.OptParse.ToolRequirements
+    GHCup.OptParse.UnSet
+    GHCup.OptParse.Upgrade
+    GHCup.OptParse.Whereis
+
   hs-source-dirs:     app/ghcup
   default-language:   Haskell2010
   default-extensions:

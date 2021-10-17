@@ -22,13 +22,21 @@ installation and introspection of files/versions etc.
 module GHCup.Utils
   ( module GHCup.Utils.Dirs
   , module GHCup.Utils
+#if defined(IS_WINDOWS)
+  , module GHCup.Utils.Windows
+#else
+  , module GHCup.Utils.Posix
+#endif
   )
 where
 
 
 #if defined(IS_WINDOWS)
-import           GHCup.Download
+import GHCup.Utils.Windows
+#else
+import GHCup.Utils.Posix
 #endif
+import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
@@ -51,9 +59,6 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Control.Monad.IO.Unlift        ( MonadUnliftIO( withRunInIO ) )
-#if defined(IS_WINDOWS)
-import           Data.Bits
-#endif
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.Foldable
@@ -69,11 +74,6 @@ import           Safe
 import           System.Directory      hiding   ( findFiles )
 import           System.FilePath
 import           System.IO.Error
-#if defined(IS_WINDOWS)
-import           System.Win32.Console
-import           System.Win32.File     hiding ( copyFile )
-import           System.Win32.Types
-#endif
 import           Text.Regex.Posix
 import           URI.ByteString
 
@@ -1000,50 +1000,17 @@ getVersionInfo v' tool =
 
 -- | The file extension for executables.
 exeExt :: String
-#if defined(IS_WINDOWS)
-exeExt = ".exe"
-#else
-exeExt = ""
-#endif
+exeExt
+  | isWindows = ".exe"
+  | otherwise = ""
 
 -- | The file extension for executables.
 exeExt' :: ByteString
-#if defined(IS_WINDOWS)
-exeExt' = ".exe"
-#else
-exeExt' = ""
-#endif
+exeExt'
+  | isWindows = ".exe"
+  | otherwise = ""
 
 
--- | Enables ANSI support on windows, does nothing on unix.
---
--- Returns 'Left str' on errors and 'Right bool' on success, where
--- 'bool' markes whether ansi support was already enabled.
---
--- This function never crashes.
---
--- Rip-off of https://docs.rs/ansi_term/0.12.1/x86_64-pc-windows-msvc/src/ansi_term/windows.rs.html#10-61
-enableAnsiSupport :: IO (Either String Bool)
-#if defined(IS_WINDOWS)
-enableAnsiSupport = handleIO (pure . Left . displayException) $ do
-  -- ref: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
-  -- Using `CreateFileW("CONOUT$", ...)` to retrieve the console handle works correctly even if STDOUT and/or STDERR are redirected
-  h <- createFile "CONOUT$" (gENERIC_WRITE .|. gENERIC_READ)
-    fILE_SHARE_WRITE Nothing oPEN_EXISTING 0 Nothing
-  when (h == iNVALID_HANDLE_VALUE ) $ fail "invalid handle value"
-
-  -- ref: https://docs.microsoft.com/en-us/windows/console/getconsolemode
-  m <- getConsoleMode h
-
-  -- VT processing not already enabled?
-  if ((m .&. eNABLE_VIRTUAL_TERMINAL_PROCESSING) == 0)
-  -- https://docs.microsoft.com/en-us/windows/console/setconsolemode
-  then setConsoleMode h (m .|. eNABLE_VIRTUAL_TERMINAL_PROCESSING)
-    >> pure (Right False)
-  else pure (Right True)
-#else
-enableAnsiSupport = pure (Right True)
-#endif
 
 
 -- | On unix, we can use symlinks, so we just get the
@@ -1052,33 +1019,27 @@ enableAnsiSupport = pure (Right True)
 -- On windows, we have to emulate symlinks via shims,
 -- see 'createLink'.
 getLinkTarget :: FilePath -> IO FilePath
-getLinkTarget fp = do
-#if defined(IS_WINDOWS)
-  content <- readFile (dropExtension fp <.> "shim")
-  [p] <- pure . filter ("path = " `isPrefixOf`) . lines $ content
-  pure $ stripNewline $ dropPrefix "path = " p
-#else
-  getSymbolicLinkTarget fp
-#endif
+getLinkTarget fp
+  | isWindows = do
+      content <- readFile (dropExtension fp <.> "shim")
+      [p] <- pure . filter ("path = " `isPrefixOf`) . lines $ content
+      pure $ stripNewline $ dropPrefix "path = " p
+  | otherwise = getSymbolicLinkTarget fp
 
 
 -- | Checks whether the path is a link.
 pathIsLink :: FilePath -> IO Bool
-#if defined(IS_WINDOWS)
-pathIsLink fp = doesPathExist (dropExtension fp <.> "shim")
-#else
-pathIsLink = pathIsSymbolicLink
-#endif
+pathIsLink fp
+  | isWindows = doesPathExist (dropExtension fp <.> "shim")
+  | otherwise = pathIsSymbolicLink fp
 
 
 rmLink :: (MonadReader env m, HasDirs env, MonadIO m, MonadMask m) => FilePath -> m ()
-#if defined(IS_WINDOWS)
-rmLink fp = do
-  hideError doesNotExistErrorType . recycleFile $ fp
-  hideError doesNotExistErrorType . recycleFile $ (dropExtension fp <.> "shim")
-#else
-rmLink = hideError doesNotExistErrorType . recycleFile
-#endif
+rmLink fp
+  | isWindows = do
+      hideError doesNotExistErrorType . recycleFile $ fp
+      hideError doesNotExistErrorType . recycleFile $ (dropExtension fp <.> "shim")
+  | otherwise = hideError doesNotExistErrorType . recycleFile $ fp
 
 
 -- | Creates a symbolic link on unix and a fake symlink on windows for
@@ -1102,31 +1063,30 @@ createLink :: ( MonadMask m
            => FilePath      -- ^ path to the target executable
            -> FilePath      -- ^ path to be created
            -> m ()
-createLink link exe = do
-#if defined(IS_WINDOWS)
-  dirs <- getDirs
-  let shimGen = cacheDir dirs </> "gs.exe"
+createLink link exe
+  | isWindows = do
+      dirs <- getDirs
+      let shimGen = cacheDir dirs </> "gs.exe"
 
-  let shim = dropExtension exe <.> "shim"
-      -- For hardlinks, link needs to be absolute.
-      -- If link is relative, it's relative to the target exe.
-      -- Note that (</>) drops lhs when rhs is absolute.
-      fullLink = takeDirectory exe </> link
-      shimContents = "path = " <> fullLink
+      let shim = dropExtension exe <.> "shim"
+          -- For hardlinks, link needs to be absolute.
+          -- If link is relative, it's relative to the target exe.
+          -- Note that (</>) drops lhs when rhs is absolute.
+          fullLink = takeDirectory exe </> link
+          shimContents = "path = " <> fullLink
 
-  logDebug $ "rm -f " <> T.pack exe
-  rmLink exe
+      logDebug $ "rm -f " <> T.pack exe
+      rmLink exe
 
-  logDebug $ "ln -s " <> T.pack fullLink <> " " <> T.pack exe
-  liftIO $ copyFile shimGen exe
-  liftIO $ writeFile shim shimContents
-#else
-  logDebug $ "rm -f " <> T.pack exe
-  hideError doesNotExistErrorType $ recycleFile exe
+      logDebug $ "ln -s " <> T.pack fullLink <> " " <> T.pack exe
+      liftIO $ copyFile shimGen exe
+      liftIO $ writeFile shim shimContents
+  | otherwise = do
+      logDebug $ "rm -f " <> T.pack exe
+      hideError doesNotExistErrorType $ recycleFile exe
 
-  logDebug $ "ln -s " <> T.pack link <> " " <> T.pack exe
-  liftIO $ createFileLink link exe
-#endif
+      logDebug $ "ln -s " <> T.pack link <> " " <> T.pack exe
+      liftIO $ createFileLink link exe
 
 
 ensureGlobalTools :: ( MonadMask m
@@ -1141,23 +1101,20 @@ ensureGlobalTools :: ( MonadMask m
                      , MonadFail m
                      )
                   => Excepts '[GPGError, DigestError , DownloadFailed, NoDownload] m ()
-ensureGlobalTools = do
-#if defined(IS_WINDOWS)
-  (GHCupInfo _ _ gTools) <- lift getGHCupInfo
-  dirs <- lift getDirs
-  shimDownload <- liftE $ lE @_ @'[NoDownload]
-    $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
-  let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
-  void $ (\(DigestError _ _ _) -> do
-      lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
-      lift $ logDebug ("rm -f " <> T.pack (cacheDir dirs </> "gs.exe"))
-      lift $ hideError doesNotExistErrorType $ recycleFile (cacheDir dirs </> "gs.exe")
-      liftE @'[GPGError, DigestError , DownloadFailed] $ dl
-    ) `catchE` (liftE @'[GPGError, DigestError , DownloadFailed] dl)
-  pure ()
-#else
-  pure ()
-#endif
+ensureGlobalTools
+  | isWindows = do
+      (GHCupInfo _ _ gTools) <- lift getGHCupInfo
+      dirs <- lift getDirs
+      shimDownload <- liftE $ lE @_ @'[NoDownload]
+        $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
+      let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
+      void $ (\DigestError{} -> do
+          lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
+          lift $ logDebug ("rm -f " <> T.pack (cacheDir dirs </> "gs.exe"))
+          lift $ hideError doesNotExistErrorType $ recycleFile (cacheDir dirs </> "gs.exe")
+          liftE @'[GPGError, DigestError , DownloadFailed] $ dl
+        ) `catchE` liftE @'[GPGError, DigestError , DownloadFailed] dl
+  | otherwise = pure ()
 
 
 -- | Ensure ghcup directory structure exists.

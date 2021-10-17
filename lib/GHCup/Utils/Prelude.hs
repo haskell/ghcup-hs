@@ -17,14 +17,25 @@ Portability : portable
 
 GHCup specific prelude. Lots of Excepts functionality.
 -}
-module GHCup.Utils.Prelude where
-
+module GHCup.Utils.Prelude
+  (module GHCup.Utils.Prelude,
 #if defined(IS_WINDOWS)
-import           GHCup.Types
+   module GHCup.Utils.Prelude.Windows
+#else
+   module GHCup.Utils.Prelude.Posix
 #endif
+  )
+where
+
+import           GHCup.Types
 import           GHCup.Errors
 import           GHCup.Types.Optics
 import {-# SOURCE #-} GHCup.Utils.Logger
+#if defined(IS_WINDOWS)
+import           GHCup.Utils.Prelude.Windows
+#else
+import           GHCup.Utils.Prelude.Posix
+#endif
 
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -45,17 +56,13 @@ import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
 import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
 import           System.IO.Error
-#if defined(IS_WINDOWS)
 import           System.IO.Temp
-#endif
 import           System.IO.Unsafe
 import           System.Directory
 import           System.FilePath
 
-#if defined(IS_WINDOWS)
 import           Control.Retry
 import           GHC.IO.Exception
-#endif
 
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as L
@@ -69,9 +76,6 @@ import qualified Data.Text.Lazy                as TL
 import qualified Data.Text.Lazy.Builder        as B
 import qualified Data.Text.Lazy.Builder.Int    as B
 import qualified Data.Text.Lazy.Encoding       as TLE
-#if defined(IS_WINDOWS)
-import qualified System.Win32.File             as Win32
-#endif
 
 
 -- $setup
@@ -438,19 +442,17 @@ recyclePathForcibly :: ( MonadIO m
                        )
                     => FilePath
                     -> m ()
-recyclePathForcibly fp = do
-#if defined(IS_WINDOWS)
-  Dirs { recycleDir } <- getDirs
-  tmp <- liftIO $ createTempDirectory recycleDir "recyclePathForcibly"
-  let dest = tmp </> takeFileName fp
-  liftIO (Win32.moveFileEx fp (Just dest) 0)
-      `catch`
-      (\e -> if isPermissionError e {- EXDEV on windows -} then recover (liftIO $ removePathForcibly fp) else throwIO e)
-      `finally`
-        (liftIO $ handleIO (\_ -> pure ()) $ removePathForcibly tmp)
-#else
-  liftIO $ removePathForcibly fp
-#endif
+recyclePathForcibly fp
+  | isWindows = do
+      Dirs { recycleDir } <- getDirs
+      tmp <- liftIO $ createTempDirectory recycleDir "recyclePathForcibly"
+      let dest = tmp </> takeFileName fp
+      liftIO (moveFile fp dest)
+          `catch`
+          (\e -> if isPermissionError e {- EXDEV on windows -} then recover (liftIO $ removePathForcibly fp) else throwIO e)
+          `finally`
+            liftIO (handleIO (\_ -> pure ()) $ removePathForcibly tmp)
+  | otherwise = liftIO $ removePathForcibly fp
 
 
 rmPathForcibly :: ( MonadIO m
@@ -458,23 +460,17 @@ rmPathForcibly :: ( MonadIO m
                   )
                => FilePath
                -> m ()
-rmPathForcibly fp =
-#if defined(IS_WINDOWS)
-  recover (liftIO $ removePathForcibly fp)
-#else
-  liftIO $ removePathForcibly fp
-#endif
+rmPathForcibly fp
+  | isWindows = recover (liftIO $ removePathForcibly fp)
+  | otherwise = liftIO $ removePathForcibly fp
 
 
 rmDirectory :: (MonadIO m, MonadMask m)
             => FilePath
             -> m ()
-rmDirectory fp =
-#if defined(IS_WINDOWS)
-  recover (liftIO $ removeDirectory fp)
-#else
-  liftIO $ removeDirectory fp
-#endif
+rmDirectory fp
+  | isWindows = recover (liftIO $ removeDirectory fp)
+  | otherwise = liftIO $ removeDirectory fp
 
 
 -- https://www.sqlite.org/src/info/89f1848d7f
@@ -486,20 +482,18 @@ recycleFile :: ( MonadIO m
                )
             => FilePath
             -> m ()
-recycleFile fp = do
-#if defined(IS_WINDOWS)
-  Dirs { recycleDir } <- getDirs
-  liftIO $ whenM (doesDirectoryExist fp) $ ioError (IOError Nothing InappropriateType "recycleFile" "" Nothing (Just fp))
-  tmp <- liftIO $ createTempDirectory recycleDir "recycleFile"
-  let dest = tmp </> takeFileName fp
-  liftIO (Win32.moveFileEx fp (Just dest) 0)
-    `catch`
-      (\e -> if isPermissionError e {- EXDEV on windows -} then recover (liftIO $ removePathForcibly fp) else throwIO e)
-    `finally`
-      (liftIO $ handleIO (\_ -> pure ()) $ removePathForcibly tmp)
-#else
-  liftIO $ removeFile fp
-#endif
+recycleFile fp
+  | isWindows = do
+      Dirs { recycleDir } <- getDirs
+      liftIO $ whenM (doesDirectoryExist fp) $ ioError (IOError Nothing InappropriateType "recycleFile" "" Nothing (Just fp))
+      tmp <- liftIO $ createTempDirectory recycleDir "recycleFile"
+      let dest = tmp </> takeFileName fp
+      liftIO (moveFile fp dest)
+        `catch`
+          (\e -> if isPermissionError e {- EXDEV on windows -} then recover (liftIO $ removePathForcibly fp) else throwIO e)
+        `finally`
+          liftIO (handleIO (\_ -> pure ()) $ removePathForcibly tmp)
+  | otherwise = liftIO $ removeFile fp
 
 
 rmFile :: ( MonadIO m
@@ -507,26 +501,19 @@ rmFile :: ( MonadIO m
           )
       => FilePath
       -> m ()
-rmFile fp =
-#if defined(IS_WINDOWS)
-  recover (liftIO $ removeFile fp)
-#else
-  liftIO $ removeFile fp
-#endif
+rmFile fp
+  | isWindows = recover (liftIO $ removeFile fp)
+  | otherwise = liftIO $ removeFile fp
 
 
 rmDirectoryLink :: (MonadIO m, MonadMask m, MonadReader env m, HasDirs env)
                 => FilePath
                 -> m ()
-rmDirectoryLink fp = 
-#if defined(IS_WINDOWS)
-  recover (liftIO $ removeDirectoryLink fp)
-#else
-  liftIO $ removeDirectoryLink fp
-#endif
+rmDirectoryLink fp
+  | isWindows = recover (liftIO $ removeDirectoryLink fp)
+  | otherwise = liftIO $ removeDirectoryLink fp
 
 
-#if defined(IS_WINDOWS)
 recover :: (MonadIO m, MonadMask m) => m a -> m a
 recover action = 
   recovering (fullJitterBackoff 25000 <> limitRetries 10)
@@ -535,7 +522,6 @@ recover action =
     ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
     ]
     (\_ -> action)
-#endif
 
 
 copyFileE :: (CopyError :< xs, MonadCatch m, MonadIO m) => FilePath -> FilePath -> Excepts xs m ()
@@ -751,6 +737,4 @@ breakOn :: Eq a => [a] -> [a] -> ([a], [a])
 breakOn needle haystack | needle `isPrefixOf` haystack = ([], haystack)
 breakOn _ [] = ([], [])
 breakOn needle (x:xs) = first (x:) $ breakOn needle xs
-
-
 

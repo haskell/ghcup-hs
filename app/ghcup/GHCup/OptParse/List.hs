@@ -11,6 +11,7 @@ module GHCup.OptParse.List where
 
 
 import           GHCup
+import           GHCup.Utils.Prelude
 import           GHCup.Types
 import           GHCup.OptParse.Common
 
@@ -115,15 +116,9 @@ printListResult no_color raw lr = do
         . fmap
             (\ListResult {..} ->
               let marks = if
-#if defined(IS_WINDOWS)
-                    | lSet       -> (color Green "IS")
-                    | lInstalled -> (color Green "I ")
-                    | otherwise  -> (color Red "X ")
-#else
-                    | lSet       -> (color Green "✔✔")
-                    | lInstalled -> (color Green "✓ ")
-                    | otherwise  -> (color Red "✗ ")
-#endif
+                    | lSet       -> (color Green (if isWindows then "IS" else "✔✔"))
+                    | lInstalled -> (color Green (if isWindows then "I " else "✓ "))
+                    | otherwise  -> (color Red   (if isWindows then "X " else "✗ "))
               in
                 (if raw then [] else [marks])
                   ++ [ fmap toLower . show $ lTool
