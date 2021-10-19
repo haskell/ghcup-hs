@@ -1,0 +1,2639 @@
+---
+globalTools:
+  ShimGen:
+    dlUri: https://downloads.haskell.org/~ghcup/shimgen/shim-2.exe
+    dlHash: 7c55e201f71860c5babea886007c8fa44b861abf50d1c07e5677eb0bda387a70
+toolRequirements:
+  GHC:
+    unknown_version:
+      Linux_Debian:
+        unknown_versioning:
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi6
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+        ">= 11":
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi7
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+      Linux_Ubuntu:
+        unknown_versioning:
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi6
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+        "( >= 20.04 && < 20.10 )":
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi7
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+        "( >= 20.10 )":
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi8ubuntu1
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+      Linux_CentOS:
+        '( >= 7 && < 8 )':
+          distroPKGs:
+          - gcc
+          - gmp
+          - gmp-devel
+          - make
+          - ncurses
+          - xz
+          - perl
+          notes: ''
+        unknown_versioning:
+          distroPKGs:
+          - gcc
+          - gmp
+          - gmp-devel
+          - make
+          - ncurses
+          - ncurses-compat-libs
+          - xz
+          - perl
+          notes: ''
+      Linux_Fedora:
+        unknown_versioning:
+          distroPKGs:
+          - gcc
+          - gmp
+          - gmp-devel
+          - make
+          - ncurses
+          - ncurses-compat-libs
+          - xz
+          - perl
+          notes: ''
+      Linux_Alpine:
+        unknown_versioning:
+          distroPKGs:
+          - binutils-gold
+          - curl
+          - gcc
+          - gmp-dev
+          - libc-dev
+          - libffi-dev
+          - make
+          - musl-dev
+          - ncurses-dev
+          - perl
+          - tar
+          - xz
+          notes: ''
+      Linux_UnknownLinux:
+        unknown_versioning:
+          distroPKGs: []
+          notes: 'You need the following packages: curl g++ gcc gmp make ncurses realpath
+            xz-utils. Consult your distro documentation on the exact names of those
+            packages.'
+      Darwin:
+        unknown_versioning:
+          distroPKGs: []
+          notes: On OS X, in the course of running ghcup you will be given a dialog
+            box to install the command line tools. Accept and the requirements will
+            be installed for you. You will then need to run the command again.
+      FreeBSD:
+        unknown_versioning:
+          distroPKGs:
+          - curl
+          - gcc
+          - gmp
+          - gmake
+          - ncurses
+          - perl5
+          - libffi
+          - libiconv
+          notes: ''
+      Windows:
+        unknown_versioning:
+          distroPKGs: []
+          notes: On Windows, msys2 should already have been set up during the installation,
+            so most users should just press ENTER.
+            If you are installing manually, make sure to have a working mingw64 toolchain and
+            shell.
+ghcupDownloads:
+  GHC:
+    7.10.3:
+      viTags:
+      - base-4.8.2.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/7.10.3/docs/html/users_guide/release-7-10-1.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-src.tar.xz
+        dlSubdir: ghc-7.10.3
+        dlHash: cf90cedce1c28fd0e2b9e72fe8a938756668d18ea1fcc884a19f698658ac4fef
+      viPostRemove: &ghc-post-remove "After removing GHC you might also want to clean up your cabal store at: ~/.cabal/store/ghc-<ghcver>"
+      viPostInstall: "GHC-7.10.3 may give linking errors on most modern distros. You may have to pass '--ghc-option=-optc-no-pie --ghc-option=-optl-no-pie' to cabal build/install. Also see https://gitlab.haskell.org/ghc/ghc/-/issues/18763"
+      viArch:
+        A_64:
+          Linux_Debian:
+            unknown_versioning: &ghc-7103-64-deb8
+              dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-x86_64-deb8-linux.tar.bz2
+              dlSubdir: ghc-7.10.3
+              dlHash: 01cfbad8dff1e8b34a5fdca8caeaf843b56e36af919e29cd68870d2588563db5
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-7103-64-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-7103-64-deb8
+          Linux_CentOS:
+            unknown_versioning: &ghc-7103-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-x86_64-centos67-linux.tar.bz2
+              dlSubdir: ghc-7.10.3
+              dlHash: a8957f7a2fd81720c5d3dc403571d77d31115ff5f42edb2917c36d8e714220d4
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-7103-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-7103-64-deb8
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-x86_64-apple-darwin.tar.bz2
+              dlSubdir: ghc-7.10.3
+              dlHash: 80893e367e8318105f7db2064adf202e3d96b1f014e792b73e92f2cacf0b757a
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-x86_64-portbld-freebsd.tar.bz2
+              dlSubdir: ghc-7.10.3
+              dlHash: 2aa396edd2bb651f4bc7eef7a396913ea24923de5aafdc76df6295333e487e48
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-7.10.3
+              dlHash: 63e1689fc9e2809ae4d7f422b4dc810052e54c9aa2afd08746e234180e711dde
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-7103-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-i386-deb8-linux.tar.bz2
+              dlSubdir: ghc-7.10.3
+              dlHash: d2ccf072457fb100503f6f5430a1e3589ca525a97424263d036b0550bc277f0c
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-7103-32-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-7103-32-deb8
+          Linux_CentOS:
+            unknown_versioning: &ghc-7103-32-centos
+              dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-i386-centos67-linux.tar.bz2
+              dlSubdir: ghc-7.10.3
+              dlHash: c50aa20275e8d1ba9148f380eb7598bc148143281fc17c9acd38ea7b325852bd
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-7103-32-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-7103-32-deb8
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-i386-portbld-freebsd.tar.bz2
+              dlSubdir: ghc-7.10.3
+              dlHash: 3dde05577c6f94dcb0ba201ebd53ab88553bbc9a3aa8e72237162ed7a9d588a3
+    8.0.2:
+      viTags:
+      - base-4.9.1.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.0.2/docs/html/users_guide/8.0.1-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-src.tar.xz
+        dlSubdir: ghc-8.0.2
+        dlHash: 11625453e1d0686b3fa6739988f70ecac836cadc30b9f0c8b49ef9091d6118b1
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 7 && < 8 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-x86_64-deb7-linux.tar.xz
+              dlSubdir: ghc-8.0.2
+              dlHash: b2f5c304b57ac5840a0d2ef763a3c6fa858c70840f749cfad12ed227da973c0a
+            unknown_versioning: &ghc-802-64-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.0.2
+              dlHash: 5ee68290db00ca0b79d57bc3a5bdce470de9ce9da0b098a7ce6c504605856c8f
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-802-64-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-802-64-deb8
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.0.2/ghc-8.0.2-x86_64-alpine-linux.tar.xz
+              dlSubdir: ghc-8.0.2
+              dlHash: 517783b660a27ebf95b2568d47292fd633d5f9a4de4c80ad1ccf05e1b9d7313f
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-802-64-deb8
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.0.2
+              dlHash: ff50a2df9f002f33b9f09717ebf5ec5a47906b9b65cc57b1f9849f8b2e06788d
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.0.2
+              dlHash: b36a20e5cae24d70bbb6116ae486f21811e9384f15d3892d260f02fba3e3bb8c
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.0.2
+              dlHash: 8c42c1f4af995205b9816a1e97e2752fe758544c1f5fe77958cdcd319c9c2d53
+        A_32:
+          Linux_Debian:
+            '( >= 7 && < 8 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-i386-deb7-linux.tar.xz
+              dlSubdir: ghc-8.0.2
+              dlHash: 07ead3a49f8c9df4b429e7a2f96f6f31bcab8d3ff8277a9aed0201d13ddad448
+            unknown_versioning: &ghc-802-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-i386-deb8-linux.tar.xz
+              dlSubdir: ghc-8.0.2
+              dlHash: 818621342a2161b8afcc995a0765816bb40aefbfa1db2c8a7d59c04d8b18228a
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.0.2/ghc-8.0.2-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.0.2
+              dlHash: b4cd12a1048b2fff2f23c9eec0dd3a1174d54d017f8d79ec79af4534118e6881
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-802-32-deb8
+    8.2.2:
+      viTags:
+      - base-4.10.1.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.2.2/docs/html/users_guide/8.2.2-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-src.tar.xz
+        dlSubdir: ghc-8.2.2
+        dlHash: bb8ec3634aa132d09faa270bbd604b82dfa61f04855655af6f9d14a9eedc05fc
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 7 && < 8 )': &ghc-822-64-deb7
+              dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-deb7-linux.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: cd7afbca54edf9890da9f432c63366556246c85c1198e40c99df5af01c555834
+            unknown_versioning: &ghc-822-64-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: 48e205c62b9dc1ccf6739a4bc15a71e56dde2f891a9d786a1b115f0286111b2a
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-822-64-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-822-64-deb8
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.2.2/ghc-8.2.2-x86_64-alpine-linux.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: adcf3a320a3c402aba07ae9586990dc3c0b550e96aeffb1b9e194313d3ba716d
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-822-64-deb7
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: f90fcf62f7e0936a6dfc3601cf663729bfe9bbf85097d2d75f0a16f8c2e95c27
+          FreeBSD:
+            '( >= 10 && < 11 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-portbld10_3-freebsd.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: 9e99aaeaec4b2c6d660d80246c0d4dbd41fda88f1eb7a908b29dc8fa8d663949
+            '( >= 11 && < 12 )': &ghc-822-64-fbsd11
+              dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-portbld11-freebsd.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: cd351c704b92b9af23994024df07de8ca7090ea7675d5c8b14b2be857a46d804
+            unknown_versioning: *ghc-822-64-fbsd11
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: 1e033df2092aa546e763e7be63167720b32df64f76673ea1ce7ae7c9f564b223
+        A_32:
+          Linux_Debian:
+            '( >= 7 && < 8 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-i386-deb7-linux.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: cd18766b1a9b74fc6c90003a719ecab158f281f9a755d8b1bd3fd764ba6947b5
+            unknown_versioning: &ghc-822-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-i386-deb8-linux.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: 9e67d72d76482e0ba91c718e727b00386a1a12a32ed719714976dc56ca8c8223
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-822-32-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-822-32-deb8
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.2.2/ghc-8.2.2-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.2.2
+              dlHash: 467534c32552cfd318753112dbc70af003693aad4b0081f2a07e61f5b5ea2c22
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-822-32-deb8
+    8.4.1:
+      viTags:
+      - base-4.11.0.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.4.1/docs/html/users_guide/8.4.1-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-src.tar.xz
+        dlSubdir: ghc-8.4.1
+        dlHash: 39ae2f25192408f355693e5a3c8b6ff613ddb7c4da998fdf26210143a61839d2
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.4.1
+              dlHash: 427c77a934b30c3f1de992c38c072afb4323fe6fb30dbac919ca8cb6ae98fbd9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-841-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.4.1
+              dlHash: 89328a013e64b9b56825a9071fea5616ddd623d37fd41e8fb913dfebc609e7ea
+          Linux_Mint:
+            unknown_versioning: *ghc-841-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-841-64-fedora
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-841-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.4.1
+              dlHash: d774e39f3a0105843efd06709b214ee332c30203e6c5902dd6ed45e36285f9b7
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-x86_64-portbld11-freebsd.tar.xz
+              dlSubdir: ghc-8.4.1
+              dlHash: e748daec098445c6190090fe32bb2817a1140553be5acd2188e1af05ad24e5aa
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.4.1
+              dlHash: 328b013fc651d34e075019107e58bb6c8a578f0155cf3ad4557e6f2661b03131
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-841-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-i386-deb8-linux.tar.xz
+              dlSubdir: ghc-8.4.1
+              dlHash: c56c589c76c7ddcb77cdbef885a811761e669d3e76868b723d5be56dedcd4f69
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-841-32-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-841-32-deb8
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-841-32-deb8
+    8.4.2:
+      viTags:
+      - base-4.11.1.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.4.2/docs/html/users_guide/8.4.2-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-src.tar.xz
+        dlSubdir: ghc-8.4.2
+        dlHash: 01cc32f24a06bf3b2428351b6d7fec791e82d042426d29ad9e5a245b35f0047b
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.4.2
+              dlHash: 246f66eb56f4ad0f1c7755502cfc8f9972f2d067dede17e151f6f479c1f76fbd
+            unknown_versioning: &ghc-842-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.4.2
+              dlHash: 3f4f5bbd2cdab4e7015ada9196d8d9b3a1ad274293cef011f85c46854596cb57
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-842-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.4.2
+              dlHash: d057b5c833596dbe4ae5d0dc2994f6cc5d0f4c2a21ea1d7900821d165fd4e846
+            '( >= 16 && < 19 )': *ghc-842-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-842-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-842-64-fedora
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-842-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.4.2
+              dlHash: 87469222042b9ac23f9db216a8d4e5107297bdbbb99df71eb4d9e7208455def2
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.4.2
+              dlHash: e9ed417fdf94c2ff2c6e344ed16f332bf6b591511f6442c0d9ea94854882b66c
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.4.2
+              dlHash: 797634aa9812fc6b2084a24ddb4fde44fa83a2f59daea82e0af81ca3dd323fde
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-842-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-i386-deb8-linux.tar.xz
+              dlSubdir: ghc-8.4.2
+              dlHash: 2d849c30b4c1eac25dc74333501920921e22fa483153f404993808bbda93df05
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-842-32-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-842-32-deb8
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-842-32-deb8
+    8.4.3:
+      viTags:
+      - base-4.11.1.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.4.3/docs/html/users_guide/8.4.3-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-src.tar.xz
+        dlSubdir: ghc-8.4.3
+        dlHash: ae47afda985830de8811243255aa3744dfb9207cb980af74393298b2b62160d6
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.4.3
+              dlHash: 30a402c6d4754a6c020e0547f19ae3ac42e907e35349aa932d347f73e421a8e2
+            unknown_versioning: &ghc-843-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.4.3
+              dlHash: 2e4f53afb872ad9c640f31aea283b3ff4c5028b65808a1920739900aef7d15c9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-843-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.4.3
+              dlHash: 269e7a4d3f336491b88409a020998122b30a3a729af78d33be86d3b3f8000c3e
+            '( >= 16 && < 19 )': *ghc-843-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-843-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-843-64-fedora
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-843-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.4.3
+              dlHash: af0b455f6c46b9802b4b48dad996619cfa27cc6e2bf2ce5532387b4a8c00aa64
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.4.3
+              dlHash: 8a83cfbf9ae84de0443c39c93b931693bdf2a6d4bf163ffb41855f80f4bf883e
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-843-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-i386-deb8-linux.tar.xz
+              dlSubdir: ghc-8.4.3
+              dlHash: f5763983a26dedd88b65a0b17267359a3981b83a642569b26334423f684f8b8c
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-843-32-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-843-32-deb8
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-843-32-deb8
+    8.4.4:
+      viTags:
+      - base-4.11.1.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.4.4/docs/html/users_guide/8.4.4-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-src.tar.xz
+        dlSubdir: ghc-8.4.4
+        dlHash: 11117735a58e507c481c09f3f39ae5a314e9fbf49fc3109528f99ea7959004b2
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: 4c2a8857f76b7f3e34ecba0b51015d5cb8b767fe5377a7ec477abde10705ab1a
+            unknown_versioning: &ghc-844-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: 47c80a32d8f02838a2401414c94ba260d1fe82b7d090479994522242c767cc83
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-844-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: 8ab2befddc14d1434d0aad0c5d3c7e0c2b78ff84caa3429fa62527bfc6b86095
+            '( >= 16 && < 19 )': *ghc-844-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-844-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-844-64-fedora
+          Linux_CentOS:
+            unknown_versioning: &ghc-844-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-centos70-linux.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: 83a96650f5a92b1e4d7651d256d6438624342d40e780e68125033435a54cd674
+          Linux_RedHat:
+            unknown_versioning: *ghc-844-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.4.4/ghc-8.4.4-x86_64-alpine-linux.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: 336affff8314d3dc5e85d9c09015ae2ba8a7658b459c8c8ae77ecaa551a56ae7
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-844-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-844-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: 28dc89ebd231335337c656f4c5ead2ae2a1acc166aafe74a14f084393c5ef03a
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-portbld-freebsd11.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: 44fbd142d1c355d6110595c59c760e2c73866ff9259ec85ebf814edb244d1940
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: da29dbb0f1199611c7d5bb7b0dd6a7426ca98f67dfd6da1526b033cd3830dc05
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-844-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-i386-deb8-linux.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: 678bafaabea6af70ba71ccf0210bb437f9f5591ec28ac1cbbbd5f7aa6894e450
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-844-32-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-844-32-deb8
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.4.4/ghc-8.4.4-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.4.4
+              dlHash: 892888d388ef5c9cadf5cfba1146d62237c25b9b066fb62fee940b2b285fd308
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-844-32-deb8
+    8.6.1:
+      viTags:
+      - base-4.12.0.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.6.1/docs/html/users_guide/8.6.1-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-src.tar.xz
+        dlSubdir: ghc-8.6.1
+        dlHash: 2c25c26d1e5c47c7cbb2a1d8e6456524033e7a71409184dd3125e3fc5a3c7036
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.6.1
+              dlHash: 6d8784401b7dd80c90fa17306ec0539920e3987399a2c7ef247989e53197dc42
+            unknown_versioning: &ghc-861-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.6.1
+              dlHash: 97d44f303868d74e4d13a2e99c82ffce3d25fd54c704675e5a1939e0d824dbf0
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-861-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.6.1
+              dlHash: da903fbcf11ee6c977a8b7dac3f04dbc098d674def587880b6624b8f32588beb
+            '( >= 16 && < 19 )': *ghc-861-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-861-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-861-64-fedora
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-861-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.6.1
+              dlHash: 9692cdfd202b0e039ea0c3dde5dbf653736c836ca1df46504b179b572100808c
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.6.1
+              dlHash: 51403b054a3a649039ac988e1d1112561f96750bfced63df864091a3fab36f08
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.6.1
+              dlHash: 7316d9cb5e486460476754f872c7bac30ee2082e42f46da4342f872d10b88099
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-861-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-i386-deb8-linux.tar.xz
+              dlSubdir: ghc-8.6.1
+              dlHash: 83573af96e3dec8f67c1a844512f92cbf7d51ae7ceca53d948fc2a3300abd05c
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-861-32-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-861-32-deb8
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-861-32-deb8
+    8.6.2:
+      viTags:
+      - base-4.12.0.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.6.2/docs/html/users_guide/8.6.2-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-src.tar.xz
+        dlSubdir: ghc-8.6.2
+        dlHash: caaa819d21280ecde90a4773143dee188711e9ff175a27cfbaee56eb851d76d5
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            unknown_versioning: &ghc-862-64-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.6.2
+              dlHash: 13f96e8b83bb5bb60f955786ff9085744c24927a33be8a17773f84c7c248533a
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-862-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.6.2
+              dlHash: 702aa5dfa1639c37953ceb7571a5057d9fb0562aecb197b277953a037d78047d
+            '( >= 16 && < 19 )': *ghc-862-64-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-862-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-862-64-fedora
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-862-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.6.2
+              dlHash: 8ec46a25872226dd7e5cf7271e3f3450c05f32144b96e6b9cb44cc4079db50dc
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.6.2
+              dlHash: 9a398e133cab09ff2610834337355d4e26c35e0665403fb9ff8db79315f74d3d
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-862-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-i386-deb8-linux.tar.xz
+              dlSubdir: ghc-8.6.2
+              dlHash: a288026d9ef22f7ac387edab6b29ef7dcb3b28945c8ea532a15c1fa35d4733ed
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-862-32-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-862-32-deb8
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-862-32-deb8
+    8.6.3:
+      viTags:
+      - base-4.12.0.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.6.3/docs/html/users_guide/8.6.3-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-src.tar.xz
+        dlSubdir: ghc-8.6.3
+        dlHash: 9f9e37b7971935d88ba80426c36af14b1e0b3ec1d9c860f44a4391771bc07f23
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.6.3
+              dlHash: 291ca565374f4d51cc311488581f3279d3167a064fabfd4a6722fe2bd4532fd5
+            unknown_versioning: &ghc-863-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.6.3
+              dlHash: e7954c8ed9b422a09c6ab737e4a0865a2725d034ba0e272bd5c70db910797f99
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-863-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.6.3
+              dlHash: 52ae92f4e8bb2ac0b7847287ea3da37081f5f7bf8bbb7c78ac35fde537d1a89f
+            '( >= 16 && < 19 )': *ghc-863-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-863-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-863-64-fedora
+          Linux_CentOS:
+            unknown_versioning: &ghc-863-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.6.3
+              dlHash: 355bd85c69933c31bbe99b4269ce719acfd0aad0b45e359ac39b9bb13996acc6
+          Linux_RedHat:
+            unknown_versioning: *ghc-863-64-centos
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-863-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-863-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.6.3
+              dlHash: 79d069a1a7d74cfdd7ac2a2711c45d3ddc6265b988a0cefa342714b24f997fc1
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.6.3
+              dlHash: bc2419fa180f8a7808c49775987866435995df9bdd9ce08bcd38352d63ba6031
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.6.3
+              dlHash: 2fec383904e5fa79413e9afd328faf9bc700006c8c3d4bcdd8d4f2ccf0f7fa2a
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-863-32-deb8
+              dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-i386-deb8-linux.tar.xz
+              dlSubdir: ghc-8.6.3
+              dlHash: b57070ba8c70b1333a3e47ce124baf791be39c20a592954772532fd6dd51882f
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-863-32-deb8
+          Linux_Mint:
+            unknown_versioning: *ghc-863-32-deb8
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-863-32-deb8
+    8.6.4:
+      viTags:
+      - base-4.12.0.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.6.4/docs/html/users_guide/8.6.4-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-src.tar.xz
+        dlSubdir: ghc-8.6.4
+        dlHash: 5b5d07e4463203a433c3ed3df461ba6cce11b6d2b9b264db31f3429075d0303a
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.6.4
+              dlHash: 34ef5fc8ddf2fc32a027180bea5b1c8a81ea840c87faace2977a572188d4b42d
+            unknown_versioning: &ghc-864-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.6.4
+              dlHash: ef74222ef3c01c3fc5b926f67e8b4ef612fe8efa40ac937317cff9b0eed8d863
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-864-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.6.4
+              dlHash: e0b1ada7a679d6c35f9d7a1192ed35fde054f3650bb0bd2570d103729ad3b846
+            '( >= 16 && < 19 )': *ghc-864-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-864-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-864-64-fedora
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-864-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.6.4
+              dlHash: cccb58f142fe41b601d73690809f6089f7715b6a50a09aa3d0104176ab4db09e
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.6.4
+              dlHash: e8d021b7a90772fc559862079da20538498d991956d7557b468ca19ddda22a08
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-864-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.6.4
+              dlHash: 5e2ce88f4d13d23ac37e278e0c7b51c801008931359b9fa8a631d804d2da552c
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-864-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-864-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-864-32-deb9
+    8.6.5:
+      viTags:
+      - base-4.12.0.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.6.5/docs/html/users_guide/8.6.5-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-src.tar.xz
+        dlSubdir: ghc-8.6.5
+        dlHash: 4d4aa1e96f4001b934ac6193ab09af5d6172f41f5a5d39d8e43393b9aafee361
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: c419fd0aa9065fe4d2eb9a248e323860c696ddf3859749ca96a84938aee49107
+            unknown_versioning: &ghc-865-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: bc75f5601a9f41d58b2ba161b9e28fad52143a7229060f1e084168d9b2e914df
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-865-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: cf78b53eaf336083e7a05f4a3000afbae4abe5bbc77ef80cc40e09d04ac5b4a1
+            '( >= 16 && < 19 )': *ghc-865-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-865-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-865-64-fedora
+          Linux_CentOS:
+            unknown_versioning: &ghc-865-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: 80ab566f4411299f9e5922d60749ca80f989d697db19e03ed875619d699f0edf
+          Linux_RedHat:
+            unknown_versioning: *ghc-865-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.6.5/ghc-8.6.5-x86_64-alpine-linux.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: b9d3ed7f7aa24ef2d58bb579252289caa0b8877adee3685e3af2fb73d440afdc
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-865-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-865-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: dfc1bdb1d303a87a8552aa17f5b080e61351f2823c2b99071ec23d0837422169
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.6.5/ghc-8.6.5-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: 83a3059a630d40a98e26cb5b520354e12094a96e36ba2f5ab002dad94cf2fb37
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: 457024c6ea43bdce340af428d86319931f267089398b859b00efdfe2fd4ce93f
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-865-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: 1cddb907393a669342b1a922dd16d505d9d93d50bd9433a54a8162f8701250dc
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-865-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-865-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.6.5/ghc-8.6.5-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: 3737837550d9b177acfe150e3a3cd4545427ded020487c2ed5194d7b8f116349
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-865-32-deb9
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-aarch64-ubuntu18.04-linux.tar.xz
+              dlSubdir: ghc-8.6.5
+              dlHash: 1852589037e4b2805ab517bc430e25a3125c4a118a1674ffefbb443394a0c786
+    8.8.1:
+      viTags:
+      - base-4.13.0.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.8.1/docs/html/users_guide/8.8.1-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-src.tar.xz
+        dlSubdir: ghc-8.8.1
+        dlHash: 908a83d9b814da74585de9d39687189e6260ec3848131f9d9236cab8a123721a
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.8.1
+              dlHash: fd96eb851971fbc3332bf2fa7821732cfa8b37e5a076a69f6a06f83f0ea7ccc5
+            unknown_versioning: &ghc-881-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.8.1
+              dlHash: 620fd560535b63cac5f8c97354ccddf93fa940cca78e2d19f6f98b7e67c6a723
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-881-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.8.1
+              dlHash: 851a78df620bc056c34b252c97040d5755e294993fa8afa5429708b5229204d6
+            '( >= 16 && < 19 )': *ghc-881-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-881-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-881-64-fedora
+          Linux_CentOS:
+            unknown_versioning: &ghc-881-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.8.1
+              dlHash: 6cdd34e4dbaeb801e805811f91cf43a2d5f64b22f884718ffbd3542a2f4dd14f
+          Linux_RedHat:
+            unknown_versioning: *ghc-881-64-centos
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-881-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-881-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.8.1
+              dlHash: 38c8917b47c31bedf58c9305dfca3abe198d8d35570366f0773c4e2948bd8abe
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.8.1
+              dlHash: 29e56e6af38017a5a76b2b6995a39d3988fa58131e4b55b62dd317ba7186ac9b
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-881-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.8.1
+              dlHash: 3d3bb75aff2dd79ec87ace10483368681fbc328ff00ebf15edad33420f00f7f5
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-881-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-881-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-881-32-deb9
+    8.8.2:
+      viTags:
+      - base-4.13.0.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.8.2/docs/html/users_guide/8.8.2-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-src.tar.xz
+        dlSubdir: ghc-8.8.2
+        dlHash: 01cea54d90686b97bcc9960b108beaffccd4336dee930dcf9beaf52b1f370a0b
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.8.2
+              dlHash: fbe69652eba75dadb758d00292247d17fb018c29cac5acd79843e56311256c9f
+            unknown_versioning: &ghc-882-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.8.2
+              dlHash: 7b2d66c2d5d8c15750da5833d3018634a5eb792a5662282e3abfeb112c2a1cc3
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-882-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.8.2
+              dlHash: dbe2db717b33460f790e155e487d2a31c9b21a9d245f0c9490ad65844c3ea21f
+            '( >= 16 && < 19 )': *ghc-882-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-882-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-882-64-fedora
+          Linux_CentOS:
+            unknown_versioning: &ghc-882-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.8.2
+              dlHash: f065a017d7a38f235f186ffe32d8261a4fd39c7e945d5cde85c0984c2569db99
+          Linux_RedHat:
+            unknown_versioning: *ghc-882-64-centos
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-882-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-882-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.8.2
+              dlHash: 25c5c1a70036abf3f22b2b19c10d26adfdb08e8f8574f89d4b2042de5947f990
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.8.2
+              dlHash: e25d9b16ee62cafc7387af2cd021eea676a99cd2c32b83533b016162c63065d9
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-882-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.8.2
+              dlHash: ad1c628082c32635a436905a7ff83eaa4246347d869be5ef6b33c3bf85e8f00c
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-882-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-882-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-882-32-deb9
+    8.8.3:
+      viTags:
+      - base-4.13.0.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.8.3/docs/html/users_guide/8.8.3-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-src.tar.xz
+        dlSubdir: ghc-8.8.3
+        dlHash: e0dcc0aaf3e234c5978f29e6df62947e97720ab404ec0158343df211c5480f89
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.8.3
+              dlHash: 92b9fadc442976968d2c190c14e000d737240a7d721581cda8d8741b7bd402f0
+            unknown_versioning: &ghc-883-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.8.3
+              dlHash: 42fde2ef5a143e1e6b47ae8875162ea2d4d54b06f0f7fa32ee4f0eb86f2be7ad
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-883-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.8.3
+              dlHash: 45ee1de3bfc98cbcc4886b65fc7651ade2d3820aa85eac2dbe9bc7bf91e7c818
+            '( >= 16 && < 19 )': *ghc-883-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-883-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-883-64-fedora
+          Linux_CentOS:
+            unknown_versioning: &ghc-883-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.8.3
+              dlHash: 4b2b5313f7c12b81e54efcb26705fa9e4ad5b98f2b58bfc76fb0c9ba1d55eb1f
+          Linux_RedHat:
+            unknown_versioning: *ghc-883-64-centos
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-883-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-883-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.8.3
+              dlHash: 7016de90dd226b06fc79d0759c5d4c83c2ab01d8c678905442c28bd948dbb782
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.8.3/ghc-8.8.3-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.8.3
+              dlHash: 569719075b4d14b3875a899df522090ae31e6fe085e6dffe518e875b09a2f0be
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.8.3
+              dlHash: e22586762af0911c06e8140f1792e3ca381a3a482a20d67b9054883038b3a422
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-883-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.8.3
+              dlHash: 441e2c7a4fc83ebf179712bd939b555cda7c6633545b7c8ac38049f9d85003ae
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-883-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-883-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-883-32-deb9
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-aarch64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.8.3
+              dlHash: 2a6821d0e7326cfa7670851702924bbab3b092415ba41247c37419158327eed9
+    8.8.4:
+      viTags:
+      - base-4.13.0.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.8.4/docs/html/users_guide/8.8.4-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-src.tar.xz
+        dlSubdir: ghc-8.8.4
+        dlHash: f0505e38b2235ff9f1090b51f44d6c8efd371068e5a6bb42a2a6d8b67b5ffc2d
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 8 && < 9 )':
+              dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb8-linux.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: 51a36892f1264744195274187298d13ac62bce2da86d4ddf76d8054ab90f2feb
+            unknown_versioning: &ghc-884-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: 4862559d221153caf978f4bf2c15a82c114d1e1f43b298b2ecff2ac94b586d20
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-884-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: f32e37f8aa03e74bad533ae02f62dc27a4521e78199576af490888ba34b515db
+            '( >= 16 && < 19 )': *ghc-884-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-884-64-fedora
+          Linux_Fedora:
+            unknown_versioning: *ghc-884-64-fedora
+          Linux_CentOS:
+            unknown_versioning: &ghc-884-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: a12aa4b1fd3c64240a8a6d15196d33e1c0e0d55b51ff78c387242126d0ef7910
+          Linux_RedHat:
+            unknown_versioning: *ghc-884-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.8.4/ghc-8.8.4-x86_64-alpine-linux.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: 90c6a1661de7f20c7d169cd6270125035b3332063e45103ce028df0beecf434e
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-884-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-884-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: e80a789e9d8cfb41dd87f3284b75432427c4461c1731d220d04ead8733ccdb5e
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.8.4/ghc-8.8.4-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: 8cebe5ccf454e82acd1ff52ca57590d1ab0f3f44a981b46257ec12158c8c447e
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: d185055d2c8dc3bfe5b88afd59d6877eb1e722b672d1c9649f18296e148ed71f
+        A_32:
+          Linux_Debian:
+            unknown_versioning: &ghc-884-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: 43dd954910c9027694312cef0aabc7774d102d0422b7172802cfb72f7d5da3a0
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-884-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-884-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.8.4/ghc-8.8.4-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.8.4
+              dlHash: 1d18e89ee031197e55c48683e78a7ffc67601ac5fd9f73aac555eb064b3859a2
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-884-32-deb9
+    8.10.1:
+      viTags:
+      - base-4.14.0.0
+      - old
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.1/docs/html/users_guide/8.10.1-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-src.tar.xz
+        dlSubdir: ghc-8.10.1
+        dlHash: 4e3b07f83a266b3198310f19f71e371ebce97c769b14f0d688f4cbf2a2a1edf5
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8101-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: d1cf7886f27af070f3b7dbe1975a78b43ef2d32b86362cbe953e79464fe70761
+            '( >= 10 && < 11 )': &ghc-8101-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: c1e31d798b013699b3c0de4fda27fb4cda47f572df0e75e3bd598a3012060615
+            unknown_versioning: *ghc-8101-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8101-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: 3c4cd72b4806045779739e8f5d1658e30e57123d88c2c8966422cdbcae448470
+            '( >= 16 && < 19 )': *ghc-8101-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8101-64-fedora
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-8101-64-fedora
+            unknown_versioning: *ghc-8101-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-8101-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: 0618b94854edc6be5302489df905e627820b71be6b66c950f5e3088fe92df0a1
+            unknown_versioning: *ghc-8101-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8101-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.1-x86_64-unknown-linux
+              dlHash: cb13b645d103e2fba2eb8dfcc4e5f2fbd9550c00c4df42f342b4210436dcb8a8
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8101-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8101-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: 65b1ca361093de4804a7e40b3e68178e1ef720f84f743641ec8d95e56a45b3a8
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.1/ghc-8.10.1-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: e8646ec9b60fd40aa9505ee055f22f04601290ab7a1342c2cf37c34de9d3f142
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: 38a3166ea50cccd5bae7e1680eae3aae2b4ae31b61f82a1d8168fb821f43bd67
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8101-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: 8b53eef2c827b5f634d72920a93c0c9dd66ea288691a2bfe28def45d3c686ee2
+            unknown_versioning: *ghc-8101-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8101-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8101-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.1/ghc-8.10.1-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: 7360cc6b29e9b4ab08f6ea5bc3bcca6f5c216933e81ef1620dcdd700f1fdb289
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8101-32-deb9
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-aarch64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: c099011e07999db917e797fb5d89c31f075a562556ab99be8ab0accbf2a94db7
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-armv7-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.1
+              dlHash: afe1bde2b0d6deb0320b9460fffe5d9427e302df85aec866b9c1458777d52b28
+    8.10.2:
+      viTags:
+      - old
+      - base-4.14.1.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.2/docs/html/users_guide/8.10.2-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-src.tar.xz
+        dlSubdir: ghc-8.10.2
+        dlHash: 9c573a4621a78723950617c223559bdc325ea6a3409264aedf68f05510b0880b
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8102-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: 4dbe3b479e76767bfeb4cbb7a4db8b761c4720266193483ca370b2ace3f10f7c
+            '( >= 10 && < 11 )': &ghc-8102-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: 94513d82c38c848f489113a75fa5ef4e5a8e3ecfaa74ca90e2620d2193ff1632
+            unknown_versioning: *ghc-8102-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8102-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: 8c675da83e9b3c2f64ebb407b5f9ebb2c1f21aa5d701020614fdce644a542e3b
+            '( >= 16 && < 19 )': *ghc-8102-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8102-64-fedora
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-8102-64-fedora
+            unknown_versioning: *ghc-8102-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-8102-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: fd2dccd6f496915a5f962dab24e7eeb8bee49bcc38e74b17eac76159083538fa
+            unknown_versioning: *ghc-8102-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8102-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.2-x86_64-unknown-linux
+              dlHash: 14d09a508f2a3a11875c140be8e6c5f6982ac5cd448f089ca10b7adc955fec76
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8102-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8102-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: edb772b00c0d7f18bb56ad27765162ee09c508104d40f82128c9114a02f6cfc2
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-unknown-freebsd.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: 9e5957f3497f4b58ecd3699568d9caaa11a47a6d7e902032c261e450fa0f6686
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: dcae4c173b9896e07ff048de5509aa0a4537233150e06e5ce8848303dfadc176
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8102-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: 9dae2a86ad43d08f72c783542c944d1556b075aa20a8063efae5034ea88e7c2f
+            unknown_versioning: *ghc-8102-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8102-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8102-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8102-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.2/ghc-8.10.2-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: 9ee1cf1e85e9536088b3c9e80e975074e525ea378cd4eb156071bbc4b7b38327
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: 5cf24189077e6e2dce2aa16367ad8a53f603e751a15010dfb23d067206e55593
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-armv7-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.2
+              dlHash: bb9c97826b1f4d7a8ef8bce0616b612f1ded10480ef10fcf7fb4e6d10a6681c8
+    8.10.3:
+      viTags:
+      - old
+      - base-4.14.1.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.3/docs/html/users_guide/8.10.3-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-src.tar.xz
+        dlSubdir: ghc-8.10.3
+        dlHash: ccdc8319549028a708d7163e2967382677b1a5a379ff94d948195b5cf46eb931
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8103-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: 95e4aadea30701fe5ab84d15f757926d843ded7115e11c4cd827809ca830718d
+            '( >= 10 && < 11 )': &ghc-8103-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: c8f3d9f0e61a89eaba1d3ad8fb2eced1af0e81576811261b887993bee12538ac
+            unknown_versioning: *ghc-8103-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8103-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: f8739b12008712d6b6a9ffc6c39f9d05af77ef3bcb932c9aff20fa0893c8c159
+            '( >= 16 && < 19 )': *ghc-8103-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8103-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-8103-64-fedora
+            unknown_versioning: *ghc-8103-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-8103-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: f562ca61979ff1d21e34e69e59028cb742a8eff8d84e46bbd3a750f2ac7d8ed1
+            unknown_versioning: *ghc-8103-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8103-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.3-x86_64-unknown-linux
+              dlHash: 8506c478ebbfb5441c3c36c07c36fc8532cacb2b3e13c6733bd44cb17b3ce96c
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8103-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8103-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: 2635f35d76e44e69afdfd37cae89d211975cc20f71f784363b72003e59f22015
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: 749007e995104db05cf6e3ad5bc36238cab8afac8055145661e5730e8f8af040
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: 927a6c699533a115cd49772ef2c753d9af2c13bf9f0b2d3bd13645cc6a144ee3
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8103-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: f0addd2a16b705f58ff9e8702c3ddf3e2d6bd0d3555707b5b5095e51bafee7b1
+            unknown_versioning: *ghc-8103-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8103-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8103-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8103-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.3/ghc-8.10.3-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: 309201cdefd2d13b8b3fd09c26c6137048c490d219a0a9c7407c3ce1d011f60c
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: a531432d505a1fe886cdc8639d168eb1c92d76464c1270713e01ce81891bbadb
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-armv7-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.3
+              dlHash: b823b58cae36fbac0741680ca7605180fa4cf4c6ae439123d282184b94d32fd6
+    8.10.4:
+      viTags:
+      - old
+      - base-4.14.1.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.4/docs/html/users_guide/8.10.4-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-src.tar.xz
+        dlSubdir: ghc-8.10.4
+        dlHash: 52af871b4e08550257d720c2944ac85727d0b948407cef1bebfe7508c224910e
+      viPostRemove: *ghc-post-remove
+      viPreCompile: &ghc-pre-compile "If you have autoconf >= 2.70 you'll need this patch https://gitlab.haskell.org/ghc/ghc/-/snippets/2040 (see the --patchdir option)"
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8104-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 5694200a5c38f22c142baf850b1d2f3784211d2ec9302e11693259a1ae8e38b7
+            '( >= 10 && < 11 )': &ghc-8104-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 816365565e9927459b035515a7db6a0db62f9796f327389b6f8a0035d12fbda0
+            unknown_versioning: *ghc-8104-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8104-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: a189eed900a8717d6d7906bafd10b9a9a9688ad942d1c75e19df480376dff9ea
+            '( >= 16 && < 19 )': *ghc-8104-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8104-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-8104-64-fedora
+            unknown_versioning: *ghc-8104-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-8104-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: fb8a91f0cf06594172aff46c2f6f7486179e1c3760855c79fbdd3012598cc2cd
+            unknown_versioning: *ghc-8104-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8104-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.4-x86_64-unknown-linux
+              dlHash: 74c2c07537832708502716ef4ec40019f8e552ddda13c8eadf8f7c4b03a79359
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8104-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8104-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 725ecf6543e63b81a3581fb8c97afd21a08ae11bc0fa4f8ee25d45f0362ef6d5
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: c9776a2ccf9629b03e967206a507fcdcb6c5189800a626e9461ababf6733c357
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: e9175a276504c3390a5e0084954e6997d56078737dbe7158049518892cf6bfb2
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8104-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 0022c5b9ac22825bb7b4745af3d92cef0ba1ecd01fab3ef387ddbd47146569ad
+            unknown_versioning: *ghc-8104-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8104-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8104-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8104-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/8.10.4/ghc-8.10.4-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 9161a98bed763692101854d83af69c1316030cfe5ee6f6acde283d04ef139735
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 249da6310be799a5eefe0579b6dae1701eb984afb980fe08309d19cf704038ed
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-armv7-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.4
+              dlHash: 0d18ef83593272f6196a41cc3abdc48dfe5e14372db75d71ea19fe35320c4e81
+    8.10.5:
+      viTags:
+      - old
+      - base-4.14.2.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.5/docs/html/users_guide/8.10.5-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-src.tar.xz
+        dlSubdir: ghc-8.10.5
+        dlHash: f10941f16e4fbd98580ab5241b9271bb0851304560c4d5ca127e3b0e20e3076f
+      viPostRemove: *ghc-post-remove
+      viPreCompile: *ghc-pre-compile
+      viPostInstall: &ghc-8105-post-install |
+        GHC 8.10.5 and 8.10.6 have several issues on Darwin, e.g.
+          https://gitlab.haskell.org/ghc/ghc/-/issues/19950
+        Consider upgrading to 8.10.7 via
+          ghcup install ghc --set 8.10.7
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8105-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 15e71325c3bdfe3804be0f84c2fc5c913d811322d19b0f4d4cff20f29cdd804d
+            '( >= 10 && < 11 )': &ghc-8105-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: bc623c20ca4c5c18e952071ba14aa0cfc5c94d34219bffaa615f7b491f376787
+            unknown_versioning: *ghc-8105-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8105-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 73528ebfb219b50aa9042ee51a0a2bd764828d605f058404989d0b645752d210
+            '( >= 16 && < 19 )': *ghc-8105-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8105-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-8105-64-fedora
+            unknown_versioning: *ghc-8105-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-8105-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 4cdb259ec74d1408dab45dab20dcedc21690f39921c2ea4546486fb3e81f4fbd
+            unknown_versioning: *ghc-8105-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8105-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.5-x86_64-unknown-linux
+              dlHash: f4d7cd9ed12a4b8592219c9a63a86db1a256a09fa9e6ed755a60afc57dc782e2
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8105-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8105-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: ef0f47eff8962d58fa447123636cf8ef31c1e5b2d0ae90177d3388861ddf4a22
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/8.10.5/ghc-8.10.5-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 11a0b490bfb2f57b5bc87c69c197542eafce1b4991cc22f625179a6c6e567834
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 4443d989df4f2680f681a4d8b8db310ce9582d21743984016b0eb0163b0c9998
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8105-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 0ccb5b2c1222374874795c35410754dd650f649b774872abbea2a4ef21ac9c9d
+            unknown_versioning: *ghc-8105-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8105-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8105-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8105-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/8.10.5/ghc-8.10.5-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 0e91abe61607f9375d4e252ee9c261e4856df396f60641bb1b880ab8a3a83ea7
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 9a085cd8a7f8e0ace21ac67dbf659a56fcf41564b48817ba42cd8a1aac7f0ddc
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-aarch64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 03684e70ff03d041b9a4e0f84c177953a241ab8ec7a028c72fa21ac67e66cb09
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-armv7-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.5
+              dlHash: 56170d1a8450e18b7eb9c23c94723da352815b27ec250bb23742a62f16dcab6c
+    8.10.6:
+      viTags:
+      - old
+      - base-4.14.3.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.6/docs/html/users_guide/8.10.6-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-src.tar.xz
+        dlSubdir: ghc-8.10.6
+        dlHash: 43afba72a533408b42c1492bd047b5e37e5f7204e41a5cedd3182cc841610ce9
+      viPostRemove: *ghc-post-remove
+      viPreCompile: *ghc-pre-compile
+      viPostInstall: *ghc-8105-post-install
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8106-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: c14b631437ebc867f1fe1648579bc1dbe1a9b9ad31d7c801c3c77639523a83ae
+            '( >= 10 && < 11 )': &ghc-8106-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: 95be925e310b8c419e1099d620a727a1ca2d8c918f33eb905a8221d7eb16467b
+            unknown_versioning: *ghc-8106-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8106-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: c452b84565cfc07c476694dd0fd389ed6d2b83619490b3c238f6bded438eddb1
+            '( >= 16 && < 19 )': *ghc-8106-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8106-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-8106-64-fedora
+            unknown_versioning: *ghc-8106-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-8106-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: 71bb69b7185cbb44a941f5214b241a55e158f69b103f10214a05de7845f77e45
+            unknown_versioning: *ghc-8106-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8106-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.6-x86_64-unknown-linux
+              dlHash: f6c86909f665c9a01b9703450a500a5206a951ee43e6a0a227eebe1da0987d6a
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8106-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8106-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: 32ab41da04d56cae2297d6e45caa88180f99cec0e33f2756cfbc48c0c60b5721
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-unknown-freebsd.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: 268b9c0c55c70b0ebd7848c0e6c7f6c743b2f3082fb19f17b753c2536c354241
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: ff62f4a245c2427a1a5e6f5f1c2ad7521f69f9274a27ffb17c76f252ca573f3b
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8106-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: 31f934423d7971b462eaa53cf87b15265d11420578c5a8a04304348cb90f1c13
+            unknown_versioning: *ghc-8106-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8106-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8106-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8106-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/8.10.6/ghc-8.10.6-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: f29974a67d76b64d0eb58603d60424c684a871e3107cebe45cf5b9b85f83b4c0
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: 1ea27a7776e3cbd0881ecf2eb03eb5176e2cef177a12271a1c33417f4fa48a59
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-aarch64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: 9e43fc3a39d2f2762262c63868653984e381e29eff6386f7325aad501b9190ad
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-armv7-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: d54de8306aa8b33afabf2ac94408e1f82c8e982a2a3346168c071b92bdb464c0
+    8.10.7:
+      viTags:
+      - Recommended
+      - base-4.14.3.0
+      viChangeLog: https://downloads.haskell.org/~ghc/8.10.7/docs/html/users_guide/8.10.7-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-src.tar.xz
+        dlSubdir: ghc-8.10.7
+        dlHash: e3eef6229ce9908dfe1ea41436befb0455fefb1932559e860ad4c606b0d03c9d
+      viPostRemove: *ghc-post-remove
+      viPreCompile: *ghc-pre-compile
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8107-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: ced9870ea351af64fb48274b81a664cdb6a9266775f1598a79cbb6fdd5770a23
+            '( >= 10 && < 11 )': &ghc-8107-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: a13719bca87a0d3ac0c7d4157a4e60887009a7f1a8dbe95c4759ec413e086d30
+            unknown_versioning: *ghc-8107-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-8107-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: b6ed67049a23054a8042e65c9976d5e196e5ee4e83b29b2ee35c8a22ab1e5b73
+            '( >= 16 && < 19 )': *ghc-8107-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8107-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-8107-64-fedora
+            unknown_versioning: *ghc-8107-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-8107-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: 262a50bfb5b7c8770e0d99f54d42e5876968da7bf93e2e4d6cfe397891a36d05
+            unknown_versioning: *ghc-8107-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-8107-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-8.10.7-x86_64-unknown-linux
+              dlHash: 16903df850ef73d5246f2ff169cbf57ecab76c2ac5acfa9928934282cfad575c
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-8107-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8107-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: 287db0f9c338c9f53123bfa8731b0996803ee50f6ee847fe388092e5e5132047
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-unknown-freebsd.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: 45e35d24bc700e1093efa39189e9fa01498069881aed2fa8779c011941a80da1
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: b6515b0ea3f7a6e34d92e7fcd0c1fef50d6030fe8f46883000185289a4b8ea9a
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-8107-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: fbfc1ef194f4e7a4c0da8c11cc69b17458a4b928b609b3622c97acc4acd5c5ab
+            unknown_versioning: *ghc-8107-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-8107-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-8107-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-8107-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/8.10.7/ghc-8.10.7-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: 3110e6ee029d9d8062158b54b06f71a21b0fac87bf0e085f9be5bbcf73f99e6d
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: fad2417f9b295233bf8ade79c0e6140896359e87be46cb61cd1d35863d9d0e55
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-aarch64-apple-darwin.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: dc469fc3c35fd2a33a5a575ffce87f13de7b98c2d349a41002e200a56d9bba1c
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-armv7-deb10-linux.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: 3949c31bdf7d3b4afb765ea8246bca4ca9707c5d988d9961a244f0da100956a2
+    9.0.1:
+      viTags:
+      - Latest
+      - base-4.15.0.0
+      viChangeLog: https://downloads.haskell.org/~ghc/9.0.1/docs/html/users_guide/9.0.1-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-src.tar.xz
+        dlSubdir: ghc-9.0.1
+        dlHash: a5230314e4065f9fcc371dfe519748fd85c825b279abf72a24e09b83578a35f9
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-901-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: 4ca6252492f59fe589029fadca4b6f922d6a9f0ff39d19a2bd9886fde4e183d5
+            '( >= 10 && < 11 )': &ghc-901-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: c253e7eb62cc9da6524c491c85ec8d3727c2ca6035a8653388e636aaa30a2a0f
+            unknown_versioning: *ghc-901-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-901-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: 1fb8e27eeec51b4cdbfd1b3c16727adc5f77388d3e925e63799d8232647f316d
+            '( >= 16 && < 19 )': *ghc-901-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-901-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-901-64-fedora
+            unknown_versioning: *ghc-901-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-901-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: a23750950b6995a66ba59afe82bbc505bd3479d6ab59cf66f45bc6c056e4d87b
+            unknown_versioning: *ghc-901-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-901-64-centos
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-alpine3.10-linux-integer-simple.tar.xz
+              dlSubdir: ghc-9.0.1-x86_64-unknown-linux
+              dlHash: 7c1a0154c9e361b75be6cb0305533bb8a3b963c54e8092ffd1759e5710805a5c
+          Linux_AmazonLinux:
+            unknown_versioning: *ghc-901-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-901-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: 122d60509147d0117779d275f0215bde2ff63a64cda9d88f149432d0cae71b22
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: 9dbc06d8832cae5c9f86dd7b2db729b3748a47beb4fd4b1e62bb66119817c3c1
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-9.0.1-x86_64-unknown-mingw32
+              dlHash: 4f4ab118df01cbc7e7c510096deca0cb25025339a97730de0466416296202493
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-901-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: 880e37cea8328401bcfecfe4bb56eb85195f30135b140140b3f24094264f8ba5
+            unknown_versioning: *ghc-901-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-901-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-901-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-901-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.0.1/ghc-9.0.1-i386-alpine-linux.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: ebfeb3b91e6f2bb5a49fd3376746f7fd1b89e62e9838bf5b1530a8756ff1e6aa
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-aarch64-deb9-linux.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: fac7a0bdfc83c05df94024a2d67b8f00a9cd2733b9cb41fb8ad76be399014906
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-armv7-deb9-linux.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: 6f404f9b88468407b3a9ec5800bcc2d01dd453ef3d63414853b4fbbd4d8df496
+    9.2.0.20210821:
+      viTags:
+      - Prerelease
+      - base-4.16.0.0
+      viChangeLog: https://downloads.haskell.org/~ghc/9.2.1-rc1/docs/html/users_guide/index.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-src.tar.xz
+        dlSubdir: ghc-9.2.0.20210821
+        dlHash: 7c4772d9a22a1774a13f67a570719c339f744b1607fbddfdf4702bb1fbbd57e0
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-921-rc1-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-9.2.0.20210821
+              dlHash: 4a561cb97f0cbe51de676d4e29968d49beb415a0190514d8f1a8f8ae0405f313
+            '( >= 10 && < 11 )': &ghc-921-rc1-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-9.2.0.20210821
+              dlHash: 28112271739b490635e7fd6ed1936949c3a3c41d4a7d95833bb47f420dd1a815
+            unknown_versioning: *ghc-921-rc1-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-921-rc1-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-9.2.0.20210821
+              dlHash: 3c4d3874e4438baf54bdf8bcbdca60a7416ca88c32da1823127dd3159bbede62
+            '( >= 16 && < 19 )': *ghc-921-rc1-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-921-rc1-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-921-rc1-64-fedora
+            unknown_versioning: *ghc-921-rc1-64-fedora
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-921-rc1-64-fedora
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-x86_64-unknown-freebsd.tar.xz
+              dlSubdir: ghc-9.2.0.20210821
+              dlHash: ed31d0ca40588fcbed4f03e83e49abea7babb37e528bb36ab3c1fb6191c4c422
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-9.2.0.20210821-x86_64-apple-darwin
+              dlHash: 38199ca35117cc1f4372a4b6692596f8639688c286d2a0d09bc7336826c05e10
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-9.2.0.20210821-x86_64-unknown-mingw32
+              dlHash: 3926620698cb43b9e9a5381b4c3b7b84d22c67b3509a546581aa17afecd6a846
+        A_32:
+          Linux_Debian:
+            '( >= 9 && < 10 )': &ghc-921-rc1-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-9.2.0.20210821
+              dlHash: 30b25b787a787473988a785606b01099ce077f99d5c08940c0024537433f5084
+            unknown_versioning: *ghc-921-rc1-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-921-rc1-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-921-rc1-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-921-rc1-32-deb9
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-9.2.0.20210821
+              dlHash: 289fc361be4a3199ac15449e30405a9831454811dd454e81eab73bfcdd2c4088
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-aarch64-apple-darwin.tar.xz
+              dlSubdir: ghc-9.2.0.20210821-aarch64-apple-darwin
+              dlHash: 0d763fb619cfa32fa37c113c446e13bebc2215db5946e5fa8fd8400559cf4152
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1-rc1/ghc-9.2.0.20210821-armv7-deb10-linux.tar.xz
+              dlSubdir: ghc-9.2.0.20210821
+              dlHash: 9ff0be63191181700a1f51c453056c2dab16e11ecb7a4b1dd72e4b7aad5999a6
+  Cabal:
+    2.4.1.0:
+      viTags:
+        - old
+      viChangeLog: https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/changelog
+      viArch:
+        A_64:
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-alpine-linux-musl.tar.xz
+              dlSubdir:
+              dlHash: 720bef015f834a03deb7180be2952a44e7c2e6c8429137570404c3de4f46b984
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-unknown-linux.tar.xz
+              dlSubdir:
+              dlHash: 6136c189ffccaa39916f9cb5788f757166444a2d0c473b987856a79ecbf0c714
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-apple-darwin-sierra.tar.xz
+              dlSubdir:
+              dlHash: 56361cf4b0d920fe23174751fea1fb82a8e1ce522bd9706a3fbe47a72e458c9c
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-portbld-freebsd.tar.xz
+              dlSubdir:
+              dlHash: 33b7d37ea0688c93436eac9ec139d9967687875aa1fa13f2bb73bf05a9a59a1d
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-x86_64-unknown-mingw32.zip
+              dlSubdir:
+              dlHash: 95f233efedb1ebf0e6db015fa2f55c1ed00b9938d207ec63c066f706fb4b6373
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/cabal-install-2.4.1.0-i386-unknown-linux.tar.xz
+              dlSubdir:
+              dlHash: b2da736cc27609442b10f77fc1a687aba603a7a33045b722dbf1a0066fade198
+    3.0.0.0:
+      viTags:
+        - old
+      viChangeLog: https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/changelog
+      viArch:
+        A_64:
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-x86_64-alpine-linux-musl.tar.xz
+              dlHash: 2b7ea63601e11a0db2941b96e6a7036a48efc2a1ab3849d7dfce08b45f5daa58
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-x86_64-unknown-linux.tar.xz
+              dlHash: ee911ba67a70756eedeac662955b896d7e89432a99372aa45d2c6e71fa95a5e4
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-x86_64-apple-darwin17.7.0.tar.xz
+              dlHash: d4857e068560515e4cbb0e8ca124c370e07892f2a28804d87152834e5fe2b845
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-x86_64-portbld-freebsd.tar.xz
+              dlHash: 2240842ab2ae7b955feb8b526aba1c7991248c803383107adf39990441294d2a
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-x86_64-unknown-mingw32.zip
+              dlSubdir:
+              dlHash: 8889963ebef5e829d86329fdb59832c107efd117cf7862a605f2fe2d2360de1f
+        A_32:
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-i386-alpine-linux-musl.tar.xz
+              dlHash: ac018f061993d40bf146517e32629bcab274b4d9f5527b1c37a665ebdf3f5ac6
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.0.0.0/cabal-install-3.0.0.0-i386-unknown-linux.tar.xz
+              dlHash: 6898ccd6e6dc0872999c06daaf61d546164e12f60a1880d09852c9f0c59c5cf6
+    3.2.0.0:
+      viTags:
+      - old
+      viChangeLog: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/changelog
+      viArch:
+        A_64:
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-alpine-linux-musl.tar.xz
+              dlHash: 8bae37a1ce8b5f10440b5591fed734935e1411c1b765258325ffe268e2cc2042
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-unknown-linux.tar.xz
+              dlHash: 32d1f7cf1065c37cb0ef99a66adb405f409b9763f14c0926f5424ae408c738ac
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-apple-darwin17.7.0.tar.xz
+              dlHash: 9197c17d2ece0f934f5b33e323cfcaf486e4681952687bc3d249488ce3cbe0e9
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-portbld-freebsd.tar.xz
+              dlHash: f1e35151cca91541b0fb4bdb3ed18f3c348038eab751845ad19c11307d66c273
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-x86_64-unknown-mingw32.zip
+              dlSubdir:
+              dlHash: 17778c3ade0482bc37f451eec326f8fce8fbe1f12b1d6aacb2e2b9e34786c054
+        A_32:
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-i386-alpine-linux-musl.tar.xz
+              dlHash: c2a419dedf730987b60daf8d24e871d115a09ea608d740d7c61b36e3f5b9c830
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.2.0.0/cabal-install-3.2.0.0-i386-unknown-linux.tar.xz
+              dlHash: 2b3ac28549916de5f3379241797eaf60e84b6c001f2abbe73d9fadbbaf768e93
+    3.4.0.0:
+      viTags:
+        - old
+      viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.4.0.0.md
+      viArch:
+        A_64:
+          Linux_Ubuntu:
+            unknown_versioning: &cabal-3400-ubuntu
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.0.0/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz
+              dlHash: cf28f9ffd763476aa2b1730d85cbf155d366fac541f78ee3951e8cb2d6de63e6
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.0.0/cabal-install-3.4.0.0-x86_64-alpine-3.11.6-static-noofd.tar.xz
+              dlHash: c74073fe79110946182e522fcadc8dcabf07c87583e8cf7801ed4e0c327241f6
+          Linux_UnknownLinux:
+            unknown_versioning: *cabal-3400-ubuntu
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.0.0/cabal-install-3.4.0.0-x86_64-darwin-sierra.tar.xz
+              dlHash: cb10be9a53e856aa2d852fd88fb6944f138783ffe0ea84d93c9a69244e34ea91
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.0.0/cabal-install-3.4.0.0-x86_64-freebsd-12.1-release.tar.xz
+              dlHash: a1e2db664ec00e42a1e071a4181f6476f6e0bad321f1ddc0cf27831119f4c6d4
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-x86_64-windows.zip
+              dlSubdir:
+              dlHash: c898496b199a3ebf41fb399c12a0cb55a470a67e758cee4b08b9f304c4be6979
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3400-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-i386-unknown-linux.tar.xz
+              dlHash: cc62a471e9e68a6a9933e54f75bf0cffae67a1d2220df1152ab887c38eb6bc8a
+          Linux_Alpine:
+            unknown_versioning: *cabal-3400-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.0.0/cabal-install-3.4.0.0-aarch64-ubuntu-18.04.tar.xz
+              dlHash: 04d378347896dfdc3510b192b97489815cfa5d692f46e2758da0f789e682b8f0
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-aarch64-darwin-big-sur.tar.xz
+              dlHash: 46d8f96446a6bcdb81b3a9fbc14b137dc4f08436b46fe6446c5fba7bcb9b3d75
+
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-armv7-linux-bootstrapped.tar.xz
+              dlHash: 16c0d1eaba24bed14f3e152970179a45d9f9bb5cc839b2c210ad06eb7d4826ed
+    3.4.1.0:
+      viTags:
+        - Recommended
+      viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.4.1.0.md
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3410-64
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.1.0/cabal-install-3.4.1.0-x86_64-linux-alpine-static.tar.xz
+              dlHash: f8cae8b5e6346b56676f734de1afd9b4b5f27eab6ab87852c19a30f7850f17fe
+          Linux_Alpine:
+            unknown_versioning: *cabal-3410-64
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.1.0/cabal-install-3.4.1.0-x86_64-darwin.tar.xz
+              dlHash: c45f9503a60cb580c0ef13c7d9c0069fb953ee4c173835454d1e8f708ed2b574
+          FreeBSD:
+            '( >= 12 && < 13 )':
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.1.0/cabal-install-3.4.1.0-x86_64-freebsd12.tar.xz
+              dlHash: 54563fb7624d871dec0d852c156f4826e31078def99d376bbebb4d066d3aa7ae
+            '( >= 13 )':
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.1.0/cabal-install-3.4.1.0-x86_64-freebsd13.tar.xz
+              dlHash: 3cc9e9a8f9dadcb97b777907bb884042edc5a2f89c81a782b086554a48852506
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.1.0/cabal-install-3.4.1.0-x86_64-windows.zip
+              dlSubdir:
+              dlHash: b86761a55a0899e33b6e9b64c75a52b33716430de93ea47bfd07d8f11417e800
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3410-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.1.0/cabal-install-3.4.1.0-i386-linux-alpine.tar.xz
+              dlHash: 7622c64b9382443a43494a992c836654d6554110acf34a4331271e1b438e2ab8
+          Linux_Alpine:
+            unknown_versioning: *cabal-3410-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.1.0/cabal-install-3.4.1.0-aarch64-linux-deb10.tar.xz
+              dlHash: 67a7d253e2f4069d47c321fb1b72ca8156e7387a05801417569b95c2654e18ce
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.4.1.0/cabal-install-3.4.1.0-aarch64-darwin.tar.xz
+              dlHash: f1fb07f1e385ef12d6c3a26ee6caa5223463b095373f1ea1ef74ab5922b0302f
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.1.0/cabal-install-3.4.1.0-armv7-linux-deb10.tar.xz
+              dlHash: 7c5b75ded319629ff47b17dd283b90ad1ba2635cf65c1a0d2b5be9610e843968
+    3.6.0.0:
+      viTags:
+        - old
+      viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.6.0.0.md
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-x86_64-linux.tar.xz
+              dlHash: bfcb7350966dafe95051b5fc9fcb989c5708ab9e78191e71fc04647061668a11
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-x86_64-linux-alpine.tar.xz
+              dlHash: 3203d71b7ee87fc9dce74b452ae07f420afe8817b5e6f84e54798442f4ccdda8
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-x86_64-darwin.tar.xz
+              dlHash: 8e1367a4a1fc86ff0fd82ee057320a7b974595ba7999457b42035467ba06190c
+          FreeBSD:
+            '( >= 12 && < 13 )':
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-x86_64-freebsd.tar.xz
+              dlHash: 56b5b37396c16a29f164a6963f24bd88f09e1d37448542ed61a683325f0a868b
+            '( >= 13 )':
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.0.0/cabal-install-3.6.0.0-x86_64-freebsd13.tar.xz
+              dlHash: a283aa498702a3e286aa08e004c2a389538cbb47ec7096a25682fb7d57f6bb7f
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-x86_64-windows.zip
+              dlSubdir:
+              dlHash: 8222b49b6eac3d06aaa390bc688f467e8f949a38943567f46246f8320fd72ded
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3600-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.0.0/cabal-install-3.6.0.0-i386-linux.tar.gz
+              dlHash: f2fcef4a212906379a255e12c853f1d015fa22c867764bd7f6e09c6f656b3c75
+          Linux_Alpine:
+            unknown_versioning: *cabal-3600-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-aarch64-linux-deb10.tar.xz
+              dlHash: 534f71cd4e1d9758dc73066cc5733c5838874710aeb3aa88541de6c6d042d9ec
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.0.0/cabal-install-3.6.0.0-aarch64-darwin-big-sur.tar.xz
+              dlHash: 7acf740946d996ede835edf68887e6b2f1e16d1b95e94054d266463f38d136d9
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.0.0/cabal-install-3.6.0.0-armv7-linux.tar.xz
+              dlHash: 11b5ca042a8bf45971224f2127a3e9d6b803f09210042ca80a254bea06f01a2e
+    3.6.2.0:
+      viTags:
+        - Latest
+      viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.6.2.0.md
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3620-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-x86_64-linux-alpine-static.tar.xz
+              dlHash: 7810d31f35ca7649355647abc6406ad2a3696648ce848e49409e86bd70f6a2c6
+          Linux_Alpine:
+            unknown_versioning: *cabal-3620-32
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-darwin.tar.xz
+              dlHash: d616284712f052e599cf1940b10fa2dca4fc6ae1308c32db03f5bd2c23eb2419
+          FreeBSD:
+            '( >= 12 && < 13 )':
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-freebsd12.tar.xz
+              dlHash: eaabbc6f6f4782ad21f8df95d1902eb29b66d8fafe6c8278aaa3d48da772aecb
+            '( >= 13 )':
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-freebsd13.tar.xz
+              dlHash: b22965d2cc70061e6efb3b4a0e901906c83fb448810e79aca97b9e61bce22692
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-windows.zip
+              dlSubdir:
+              dlHash: 89aa3aa3f76d15182c0d03227639890cd537627ba0bf0ef9ab451fee504b24c6
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3620-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-i386-linux-alpine.tar.xz
+              dlHash: 902b15de4ec5935474c62a72b373a76f727684449d7425996f0ad067a5481bd0
+          Linux_Alpine:
+            unknown_versioning: *cabal-3620-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-aarch64-linux-deb10.tar.xz
+              dlHash: d9acee67d4308bc5c22d27bee034d388cc4192a25deff9e7e491e2396572b030
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-aarch64-darwin.tar.xz
+              dlHash: 859c526cde4498879a935e38422d3a0b70ae012dff034913331be8dd429a4a74
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-armv7-linux-deb10.tar.xz
+              dlHash: 694ba7c14f8d720c6e790ab0488dbff2d8a07d9c6de97b4deeba31088f825bc2
+  GHCup:
+    0.1.17.2:
+      viTags:
+      - Recommended
+      - Latest
+      viChangeLog: https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/CHANGELOG.md
+      viSourceDL:
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghcup-64
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.2/x86_64-linux-ghcup-0.1.17.2
+              dlHash: e9adb022b9bcfe501caca39e76ae7241af0f30fbb466a2202837a7a578607daf
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.2/x86_64-apple-darwin-ghcup-0.1.17.2
+              dlHash: 9418dab0f603b25f925739d66ca2328e876ce5197c131d7e75060f8edf7c57c9
+          FreeBSD:
+            '( >= 12 && < 13 )':
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.2/x86_64-portbld-freebsd12-ghcup-0.1.17.2
+              dlHash: b6f0558e66f95a0772a60902c2c96202d0271d8d963db436a1359f1c4e1d2947
+            '( >= 13 )':
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.2/x86_64-portbld-freebsd13-ghcup-0.1.17.2
+              dlHash: 5bd5760dd29117ca2797a87b79f99b804743e7e64fcdcfe6ad6436314423ef84
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.2/x86_64-mingw64-ghcup-0.1.17.2.exe
+              dlHash: 17ab704551c691067d590760c513891d0d0d375efb59dc3c99219fdf352fed71
+          Linux_Alpine:
+            unknown_versioning: *ghcup-64
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghcup-32
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.2/i386-linux-ghcup-0.1.17.2
+              dlHash: eb29a33ed9798c94ed05b10c66c2cd6690a4d5aa79ed7ce6a9b8564e0c095ff4
+          Linux_Alpine:
+            unknown_versioning: *ghcup-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.2/aarch64-linux-ghcup-0.1.17.2
+              dlHash: ad72641877f91f1cc5142151dafad68566f439114f96a738837ed549430173a5
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.2/aarch64-apple-darwin-ghcup-0.1.17.2
+              dlHash: bf8691a88627b02253c2068537dc16e7eb1d3dbb22bcb1342cb7f0d00df08fd5
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.2/armv7-linux-ghcup-0.1.17.2
+              dlHash: 03f2f8aaa8393372e9f7e16061703eda3f497b9604171825995389f3d5cc8f8f
+  HLS:
+    1.1.0:
+      viTags:
+        - old
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#110
+      viPostInstall: &hls-post-install |
+        This is just the server part of your LSP configuration. Consult the README on how to
+        configure HLS, your project and your LSP client in your editor:
+          https://github.com/haskell/haskell-language-server/blob/master/README.md
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &hls-110-64
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.1.0/haskell-language-server-Linux-1.1.0.tar.gz
+              dlHash: 0f0dadb0e9a08273658f565fd71c636801959b954be2737f38f2a1aac522208f
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.1.0/haskell-language-server-macOS-1.1.0.tar.gz
+              dlHash: 4e89b192e2f49637d772e974f2c17b16da067ecd5912575eaa542551de97681b
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/hls/1.1.0/haskell-language-server-Windows-1.1.0.tar.gz
+              dlHash: a1d3f451e64a041aa527a25da29e4716a2de6ae347cef4ef9312fc7611e168cc
+          Linux_Alpine:
+            unknown_versioning: *hls-110-64
+    1.2.0:
+      viTags:
+        - old
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#120
+      viPostInstall: *hls-post-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &hls-120-64
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-Linux-1.2.0.tar.gz
+              dlHash: d29ee22f7bd706da2e2a1bd7640e25bb9736adeafb34eef47d29ea143b0fa927
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-macOS-1.2.0.tar.gz
+              dlHash: a310d8a3e9c5c4218210f750682c74a0f82ad0f59995adde0dbe775115b1e357
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-Windows-1.2.0.tar.gz
+              dlHash: 961c6ff12c9a9c7a4609f239c5ac70d7d16753cdb8c10348a6a51feeaa0b6aea
+          Linux_Alpine:
+            unknown_versioning: *hls-120-64
+    1.3.0:
+      viTags: []
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#130
+      viPostInstall: *hls-post-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &hls-130-64
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.3.0/haskell-language-server-Linux-1.3.0.tar.gz
+              dlHash: 0f232cd4316f5215eb82c6d8f568260e1862a9b39a68ec37662e5e87b714f271
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.3.0/haskell-language-server-macOS-1.3.0.tar.gz
+              dlHash: 2ce9763718544c2e1ff6b005d9bdc86178dcdaf71e63dc68d3fcd23457abf180
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.3.0/haskell-language-server-Windows-1.3.0.tar.gz
+              dlHash: 46aac7be888e29a9907cf56698c1ce1475c148b5e6cc099513e9ef74a0520dcf
+          Linux_Alpine:
+            unknown_versioning: *hls-130-64
+    1.4.0:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#140
+      viPostInstall: *hls-post-install
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/ghcup/src/haskell-language-server/1.4.0/haskell-language-server-1.4.0.tar.gz
+        dlSubdir: haskell-language-server-1.4.0
+        dlHash: c5d7dbf7fae9aa3ed2c1184b49e82d8ac623ca786494ef6602cfe11735d28db0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &hls-140-64
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.4.0/haskell-language-server-Linux-1.4.0.tar.gz
+              dlHash: f93c114441911ccce55649702adc9553cb4c9f953c37878321d2806a3525fee8
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.4.0/haskell-language-server-macOS-1.4.0.tar.gz
+              dlHash: a7f0ac6be93ffb08cc239e5f5fead99b061061825f99566c1be33ee60cab62a4
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.4.0/haskell-language-server-freebsd-1.4.0.tar.gz
+              dlHash: 6b2ad2398ed8c3964dea017e3d5e553b54c10ba1373d7653d2edd019854f4da2
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.4.0/haskell-language-server-Windows-1.4.0.tar.gz
+              dlHash: 0ec77cee750037b7a0ede817b46a913a702821f4098c6a858bcb686cb30f7efd
+          Linux_Alpine:
+            unknown_versioning: *hls-140-64
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.4.0/haskell-language-server-linux-aarch64-1.4.0.tar.gz
+              dlHash: 8ad97e2bf1c538e637edec194e1cd9939019955bb749cb470f34bbe5a067b001
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.4.0/haskell-language-server-macOS-aarch64-1.4.0.tar.gz
+              dlHash: 70c6fe38e987ba44c1e19173486c01f666ffb30a74cd5a7968296a5aba4c2dd0
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.4.0/haskell-language-server-linux-armv7-1.4.0.tar.gz
+              dlHash: 4a921fbca06b02f3b1c0930cec5e65e9362b603e7715680ec7b150f18bd703d6
+  Stack:
+    2.5.1:
+      viTags:
+        - old
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v251
+      viPostInstall: &stack-post |
+        Stack manages GHC versions internally by default. In order to make it use ghcup installed
+        GHC versions you can run the following commands:
+          stack config set install-ghc false --global
+          stack config set system-ghc  true  --global
+        
+        On windows, you may find the following config options useful too:
+          skip-msys, extra-path, extra-include-dirs, extra-lib-dirs
+
+        Also check out: https://docs.haskellstack.org/en/stable/yaml_configuration
+
+        !!! Additionally, you should upgrade stack only through ghcup and not use 'stack upgrade' !!!
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-251-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.5.1/stack-2.5.1-linux-x86_64.tar.gz
+              dlHash: c83b6c93d6541c0bce2175085a04062020f4160a86116e20f3b343b562f2d1e8
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.5.1/stack-2.5.1-osx-x86_64.tar.gz
+              dlHash: f4aedfa8fbe371f77286ee97ec5c3c553842e7ae15b2952a8b8442dccba04bf0
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.5.1/stack-2.5.1-windows-x86_64.tar.gz
+              dlHash: 57150b422cfd42249f5e629d0eb678df6d95dabe486ced57e8298d300b940d41
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-251-64
+    2.7.1:
+      viTags:
+        - old
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v271
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-271-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.1/stack-2.7.1-linux-x86_64.tar.gz
+              dlHash: 2bc47749ee4be5eccb52a2d4a6a00b0f3b28b92517742b40c675836d7db2777d
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.1/stack-2.7.1-osx-x86_64.tar.gz
+              dlHash: 4248c6fbc87e8a2c06f39e867eb5ef28eae0d99470137cb415356c631c0dcbf2
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.1/stack-2.7.1-windows-x86_64.tar.gz
+              dlHash: 8452f5fc9235620a84863f2f68e5f681c72d0d181cde50482f178a966ee0ceb9
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-271-64
+    2.7.3:
+      viTags:
+        - Latest
+        - Recommended
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v273
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-273-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.3/stack-2.7.3-linux-x86_64.tar.gz
+              dlHash: a6c090555fa1c64aa61c29aa4449765a51d79e870cf759cde192937cd614e72b
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.3/stack-2.7.3-osx-x86_64.tar.gz
+              dlHash: 42e5000a00af44a7b26852421ac63ce75f510ad1a97742cb131107088ee9fe30
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.3/stack-2.7.3-windows-x86_64.tar.gz
+              dlHash: e6ba12e0ecabf0df2567d88a0d247da238bc114bcccfca4195f5e86472c9330c
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-273-64
+
