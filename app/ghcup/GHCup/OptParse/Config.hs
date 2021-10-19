@@ -28,6 +28,7 @@ import           Data.Functor
 import           Data.Maybe
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
+import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 
@@ -46,7 +47,7 @@ import Control.Exception.Safe (MonadMask)
 
 data ConfigCommand
   = ShowConfig
-  | SetConfig String String
+  | SetConfig String (Maybe String)
   | InitConfig
 
 
@@ -67,8 +68,8 @@ configP = subparser
  where
   initP = info (pure InitConfig) (progDesc "Write default config to ~/.ghcup/config.yaml")
   showP = info (pure ShowConfig) (progDesc "Show current config (default)")
-  setP  = info argsP (progDesc "Set config KEY to VALUE")
-  argsP = SetConfig <$> argument str (metavar "KEY") <*> argument str (metavar "VALUE")
+  setP  = info argsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
+  argsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
 
 
 
@@ -88,7 +89,19 @@ configFooter = [s|Examples:
   ghcup config init
 
   # set <key> <value> configuration pair
-  ghcup config <key> <value>|]
+  ghcup config set <key> <value>|]
+
+
+configSetFooter :: String
+configSetFooter = [s|Examples:
+  # disable caching
+  ghcup config set cache false
+
+  # switch downloader to wget
+  ghcup config set downloader Wget
+
+  # set mirror for ghcup metadata
+  ghcup config set '{url-source: { OwnSource: "<url>"}}'|]
 
 
 
@@ -147,22 +160,27 @@ config configCommand settings keybindings runLogger = case configCommand of
     liftIO $ putStrLn $ formatConfig $ fromSettings settings (Just keybindings)
     pure ExitSuccess
 
-  (SetConfig k v) -> do
+  (SetConfig k (Just v)) ->
     case v of
       "" -> do
         runLogger $ logError "Empty values are not allowed"
         pure $ ExitFailure 55
-      _  -> do
-        r <- runE @'[JSONError] $ do
-          settings' <- updateSettings (UTF8.fromString (k <> ": " <> v <> "\n")) settings
-          path <- liftIO getConfigFilePath
-          liftIO $ writeFile path $ formatConfig $ fromSettings settings' (Just keybindings)
-          lift $ runLogger $ logDebug $ T.pack $ show settings'
-          pure ()
+      _  -> doConfig (k <> ": " <> v <> "\n")
 
-        case r of
-            VRight _ -> pure ExitSuccess
-            VLeft (V (JSONDecodeError e)) -> do
-              runLogger $ logError $ "Error decoding config: " <> T.pack e
-              pure $ ExitFailure 65
-            VLeft _ -> pure $ ExitFailure 65
+  (SetConfig json Nothing) -> doConfig json
+
+ where
+  doConfig val = do
+    r <- runE @'[JSONError] $ do
+      settings' <- updateSettings (UTF8.fromString val) settings
+      path <- liftIO getConfigFilePath
+      liftIO $ writeFile path $ formatConfig $ fromSettings settings' (Just keybindings)
+      lift $ runLogger $ logDebug $ T.pack $ show settings'
+      pure ()
+
+    case r of
+        VRight _ -> pure ExitSuccess
+        VLeft (V (JSONDecodeError e)) -> do
+          runLogger $ logError $ "Error decoding config: " <> T.pack e
+          pure $ ExitFailure 65
+        VLeft _ -> pure $ ExitFailure 65
