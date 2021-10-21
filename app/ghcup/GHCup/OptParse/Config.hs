@@ -21,9 +21,9 @@ import           GHCup.Utils.String.QQ
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
+import           Control.Exception              ( displayException )
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
-import           Data.Bifunctor
 import           Data.Functor
 import           Data.Maybe
 import           Haskus.Utils.Variant.Excepts
@@ -34,7 +34,7 @@ import           System.Exit
 
 import qualified Data.Text                     as T
 import qualified Data.ByteString.UTF8          as UTF8
-import qualified Data.YAML.Aeson               as Y
+import qualified Data.Yaml.Aeson               as Y
 import Control.Exception.Safe (MonadMask)
 
 
@@ -111,12 +111,12 @@ configSetFooter = [s|Examples:
 
 
 formatConfig :: UserSettings -> String
-formatConfig = UTF8.toString . Y.encode1Strict
+formatConfig = UTF8.toString . Y.encode
 
 
 updateSettings :: Monad m => UTF8.ByteString -> Settings -> Excepts '[JSONError] m Settings
 updateSettings config' settings = do
-  settings' <- lE' JSONDecodeError . first snd . Y.decode1Strict $ config'
+  settings' <- lE' (JSONDecodeError . displayException) . Y.decodeEither' $ config'
   pure $ mergeConf settings' settings
   where
    mergeConf :: UserSettings -> Settings -> Settings

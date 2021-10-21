@@ -49,7 +49,6 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.Aeson
-import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
 #if defined(INTERNAL_DOWNLOADER)
 import           Data.CaseInsensitive           ( mk )
@@ -87,7 +86,7 @@ import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
-import qualified Data.YAML.Aeson               as Y
+import qualified Data.Yaml.Aeson               as Y
 
 
 
@@ -183,15 +182,14 @@ getBase uri = do
 
   -- if we didn't get a filepath from the download, use the cached yaml
   actualYaml <- maybe (lift $ yamlFromCache uri) pure mYaml
-  yamlContents <- liftIOException doesNotExistErrorType (FileDoesNotExistError actualYaml) $ liftIO $ L.readFile actualYaml
   lift $ logDebug $ "Decoding yaml at: " <> T.pack actualYaml
 
   liftE
     . onE_ (onError actualYaml)
-    . lE' @_ @_ @'[JSONError] JSONDecodeError
-    . first (\(_, e) -> unlines [e, "Consider removing " <> actualYaml <> " manually."])
-    . Y.decode1
-    $ yamlContents
+    . lEM' @_ @_ @'[JSONError] (\(displayException -> e) -> JSONDecodeError $ unlines [e, "Consider removing " <> actualYaml <> " manually."])
+    . liftIO 
+    . Y.decodeFileEither
+    $ actualYaml
  where
   -- On error, remove the etags file and set access time to 0. This should ensure the next invocation
   -- may re-download and succeed.
