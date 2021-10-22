@@ -14,6 +14,7 @@ import           GHCup.Utils.Dirs
 import           GHCup.Utils.Logger
 import           GHCup.Types.JSON               ( )
 
+import           Control.Exception              ( displayException )
 import           Control.Monad.Trans.Reader     ( runReaderT )
 import           Control.Monad.IO.Class
 import           Data.Char                      ( toLower )
@@ -34,7 +35,7 @@ import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import qualified Data.Text.IO                  as T
 import qualified Data.Text                     as T
 import qualified Data.ByteString               as B
-import qualified Data.YAML.Aeson               as Y
+import qualified Data.Yaml.Aeson               as Y
 
 
 data Options = Options
@@ -147,8 +148,8 @@ main = do
     ValidateYAMLOpts { vInput = Just (FileInput file) } ->
       B.readFile file >>= valAndExit f
   valAndExit f contents = do
-    (GHCupInfo _ av gt) <- case Y.decode1Strict contents of
+    (GHCupInfo _ av gt) <- case Y.decodeEither' contents of
       Right r -> pure r
-      Left  (_, e) -> die (color Red $ show e)
+      Left  e -> die (color Red $ displayException e)
     f av gt
       >>= exitWith

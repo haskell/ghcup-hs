@@ -57,7 +57,7 @@ import           System.IO.Temp
 
 import qualified Data.ByteString               as BS
 import qualified Data.Text                     as T
-import qualified Data.YAML.Aeson               as Y
+import qualified Data.Yaml.Aeson               as Y
 import qualified Text.Megaparsec               as MP
 import Control.Concurrent (threadDelay)
 
@@ -211,7 +211,7 @@ ghcupConfigFile = do
   contents <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> BS.readFile filepath
   case contents of
       Nothing -> pure defaultUserSettings
-      Just contents' -> lE' JSONDecodeError . first snd . Y.decode1Strict $ contents'
+      Just contents' -> lE' JSONDecodeError . first displayException . Y.decodeEither' $ contents'
 
 
     -------------------------
