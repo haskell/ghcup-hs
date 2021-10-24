@@ -9,7 +9,7 @@ package ghcup
     flags: +tui
 
 constraints: http-io-streams -brotli,
-             any.Cabal ==3.4.0.0 || ==3.6.2.0,
+             any.Cabal ==3.4.1.0 || ==3.6.2.0,
              any.aeson >= 2.0.1.0
 
 package libarchive
