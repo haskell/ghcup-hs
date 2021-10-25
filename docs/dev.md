@@ -66,17 +66,13 @@ Some light suggestions:
 
 ### Adding a new GHC version
 
-1. open the latest `data/metadata/ghcup-<yaml-ver>.yaml`
-2. find the latest ghc version (in yaml tree e.g. `ghcupDownloads -> GHC -> 8.10.7`)
-3. copy-paste it
-4. adjust the version, tags, changelog, source url
-5. adjust the various bindist urls (make sure to also change the yaml anchors)
-6. run `cabal run exe:ghcup-gen -- check          -f data/metadata/ghcup-<yaml-ver>.yaml`
-7. run `cabal run exe:ghcup-gen -- check-tarballs -f data/metadata/ghcup-<yaml-ver>.yaml -u 'ghc-8\.10\.8'`
+Head over to: [https://github.com/haskell/ghcup-metadata#adding-a-new-ghc-version](https://github.com/haskell/ghcup-metadata#adding-a-new-ghc-version)
 
 ### Adding a new CLI command
 
 An example illustration on how to deal with [optparse-applicative](https://hackage.haskell.org/package/optparse-applicative) can be seen here: [https://gitlab.haskell.org/haskell/ghcup-hs/-/commit/c19dd5ee8b2edbaf0336af143f1c75b6f4843e26](https://gitlab.haskell.org/haskell/ghcup-hs/-/commit/c19dd5ee8b2edbaf0336af143f1c75b6f4843e26)
+
+Every subcommand now lives in its own module under [GHCup.OptParse.MyCommand](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/app/ghcup/GHCup/OptParse).
 
 ## Major refactors
 
@@ -89,6 +85,7 @@ An example illustration on how to deal with [optparse-applicative](https://hacka
    The major changes here were switching `hpath` library out for `filepath`/`directory` (sadly) and
    introducing a non-unix way of handling processes via the `process` library. It also introduced considerable
    amounts of CPP wrt file handling, installation etc.
+3. This refactor split up the huge `Main.hs` and put every subcommand in its own module: [#212](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/212)
 
 # Releasing
 
@@ -98,7 +95,7 @@ An example illustration on how to deal with [optparse-applicative](https://hacka
 
 3. Add ChangeLog entry
 
-4. Add/fix downloads in `ghcup-<ver>.yaml` (under `data/metadata`), then verify with `ghcup-gen check -f data/metadata/ghcup-<ver>.yaml` and possibly (example only) `ghcup-gen check-tarballs -f data/metadata/ghcup-<ver>.yaml -u 'ghc-8.10.7'`. Generally, new GHC/cabal/stack/hls versions are only added to the latest yaml file. New GHCup versions are added to all (great care must be taken here to not break the parser... e.g. ARM platforms don't parse in all older formats).
+4. Add/fix downloads in `ghcup-<ver>.yaml` ([ghcup-metadata repo](https://github.com/haskell/ghcup-metadata)), then verify with `ghcup-gen check -f ghcup-<ver>.yaml` and possibly (example only) `ghcup-gen check-tarballs -f ghcup-<ver>.yaml -u 'ghc-8.10.7'`. Generally, new GHC/cabal/stack/hls versions are only added to the latest yaml file. New GHCup versions are added to all (great care must be taken here to not break the parser... e.g. ARM platforms don't parse in all older formats).
 
 5. Commit and git push with tag. Wait for tests to succeed and release artifacts to build.
 
@@ -106,9 +103,9 @@ An example illustration on how to deal with [optparse-applicative](https://hacka
 
 7. Add ghcup release artifacts to ALL yaml files (see point 4.)
 
-8. Upload the final `data/metadata/ghcup-<ver>.yaml` (and a detached GPG sig of it) to `webhost.haskell.org/ghcup/data/`.
+8. Upload the final `ghcup-<ver>.yaml` (and a detached GPG sig of it) to `webhost.haskell.org/ghcup/data/` (for yaml versions <= 0.0.6) as well as [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata) (for all versions).
 
-9. Update `bootstrap-haskell` and `bootstrap-haskell.ps1` to `webhost.haskell.org/ghcup/sh/`
+9. Upload `bootstrap-haskell` and `bootstrap-haskell.ps1` to `webhost.haskell.org/ghcup/sh/`
 
 10. Update the top-level ghcup symlinks at `downloads.haskell.org/~ghcup`
 
