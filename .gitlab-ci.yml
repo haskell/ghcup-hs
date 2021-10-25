@@ -16,7 +16,7 @@ variables:
 ############################################################
 
 .debian:
-  image: "registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb10:$DOCKER_REV"
+  image: "debian:11"
   tags:
     - x86_64-linux
   variables:
@@ -44,7 +44,7 @@ variables:
     CABAL_DIR: "$CI_PROJECT_DIR/cabal"
 
 .linux:armv7:
-  image: "registry.gitlab.haskell.org/ghc/ci-images/armv7-linux-deb10:$DOCKER_REV"
+  image: "arm32v7/debian:11"
   tags:
     - armv7-linux
   variables:
@@ -54,7 +54,7 @@ variables:
   retry: 2
 
 .linux:aarch64:
-  image: "registry.gitlab.haskell.org/ghc/ci-images/aarch64-linux-deb10:$DOCKER_REV"
+  image: "aarch64/debian:11"
   tags:
     - aarch64-linux
   variables:
