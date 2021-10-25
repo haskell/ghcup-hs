@@ -5,6 +5,8 @@ set -eux
 . "$( cd "$(dirname "$0")" ; pwd -P )/../ghcup_env"
 
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
+mkdir -p data/
+git clone https://github.com/haskell/ghcup-metadata.git data/metadata
 
 CI_PROJECT_DIR=$(pwd)
 
