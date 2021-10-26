@@ -37,6 +37,7 @@ raw_eghcup() {
             -m 'allowlist/read+/etc/gai.conf' \
             -m 'allowlist/read+/etc/ssl/certs/ca-certificates.crt' \
             -m 'allowlist/read+/usr/share/zoneinfo/Etc/UTC' \
+            -m 'allowlist/read+/dev/urandom' \
             -m 'core/violation/decision:killall' \
 		    -- ghcup -v -c "$@"
 	else
@@ -46,6 +47,30 @@ raw_eghcup() {
 
 eghcup() {
 	if [ "${OS}" = "WINDOWS" ] ; then
+        sydbox \
+            -m core/sandbox/read:deny \
+            -m core/sandbox/write:deny \
+            -m core/sandbox/network:allow \
+            -m allowlist/read+/usr/lib/os-release \
+            -m "allowlist/read+${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/***" \
+            -m "allowlist/write+${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/***" \
+            -m "allowlist/read+${TMPDIR}/***" \
+            -m "allowlist/write+${TMPDIR}/***" \
+            -m "allowlist/read+/usr/lib/***" \
+            -m 'allowlist/read+/etc/ld.so.cache' \
+            -m "allowlist/read+/lib/***" \
+            -m 'allowlist/read+/etc/ssl/openssl.cnf' \
+            -m 'allowlist/read+/proc/sys/crypto/fips_enabled' \
+            -m 'allowlist/read+/etc/nsswitch.conf' \
+            -m 'allowlist/read+/etc/host.conf' \
+            -m 'allowlist/read+/etc/resolv.conf' \
+            -m 'allowlist/read+/etc/hosts' \
+            -m 'allowlist/read+/etc/gai.conf' \
+            -m 'allowlist/read+/etc/ssl/certs/ca-certificates.crt' \
+            -m 'allowlist/read+/usr/share/zoneinfo/Etc/UTC' \
+            -m 'allowlist/read+/dev/urandom' \
+            -m 'core/violation/decision:killall' \
+    
 		ghcup -v -c -s file:/$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
 	else
 		if command -v sydbox 1>/dev/null ; then
@@ -79,6 +104,7 @@ eghcup_offline() {
             -m 'allowlist/read+/etc/gai.conf' \
             -m 'allowlist/read+/etc/ssl/certs/ca-certificates.crt' \
             -m 'allowlist/read+/usr/share/zoneinfo/Etc/UTC' \
+            -m 'allowlist/read+/dev/urandom' \
             -m 'core/violation/decision:killall' \
 			-- ghcup -v --offline "$@"
 	else
