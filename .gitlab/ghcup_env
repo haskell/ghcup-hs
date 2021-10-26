@@ -6,6 +6,6 @@ if [ "${OS}" = "WINDOWS" ] ; then
 else
 	export GHCUP_INSTALL_BASE_PREFIX="$CI_PROJECT_DIR"
 	export GHCUP_BIN="$CI_PROJECT_DIR/.ghcup/bin"
-	export PATH="$GHCUP_BIN:$CI_PROJECT_DIR/.local/bin:/opt/llvm/bin:$PATH"
+	export PATH="$GHCUP_BIN:$CI_PROJECT_DIR/.local/bin:$PATH"
 	export TMPDIR="$CI_PROJECT_DIR/tmp"
 fi
