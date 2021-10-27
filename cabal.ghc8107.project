@@ -8,7 +8,9 @@ package ghcup
     tests: True
     flags: +tui
 
-constraints: http-io-streams -brotli
+constraints: http-io-streams -brotli,
+             any.Cabal ==3.6.2.0,
+             any.aeson >= 2.0.1.0
 
 package libarchive
   flags: -system-libarchive
@@ -18,6 +20,9 @@ package aeson-pretty
 
 package cabal-plan
   flags: -exe
+
+package aeson
+  flags: +ordered-keymap
 
 allow-newer: base, ghc-prim, template-haskell, language-c
 
