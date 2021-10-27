@@ -11,6 +11,10 @@ variables:
   # Commit of ghc/ci-images repository from which to pull Docker images
   DOCKER_REV: 8d0224e6b2a08157649651e69302380b2bd24e11
 
+  # Sequential version number of all cached things.
+  # Bump to invalidate GitLab CI cache.
+  CACHE_REV: 0
+
 ############################################################
 # CI Step
 ############################################################
@@ -164,26 +168,40 @@ variables:
     - .test_ghcup_version
     - .darwin:aarch64
     - .root_cleanup
+  cache:
+    key: darwin-brew-$CACHE_REV
+    paths:
+      - .brew
+      - .brew_cache
+  before_script:
+    # Install brew locally in the project dir. Packages will also be installed here.
+    - git clone --depth=1 https://github.com/Homebrew/brew $CI_PROJECT_DIR/.brew
+    - export PATH="$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
+
+    # otherwise we seem to get intel binaries
+    - export HOMEBREW_CHANGE_ARCH_TO_ARM=1
+
+    # make sure to not pollute the machine with temp files etc
+    - mkdir -p $CI_PROJECT_DIR/.brew_cache
+    - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.brew_cache
+    - mkdir -p $CI_PROJECT_DIR/.brew_logs
+    - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.brew_logs
+    - mkdir -p $CI_PROJECT_DIR/.brew_tmp
+    - export HOMEBREW_TEMP=$CI_PROJECT_DIR/.brew_tmp
+
+    # update and install packages
+    - brew update
+    - brew install llvm
+    - brew install autoconf automake coreutils
   script: |
-    set -Eeuo pipefail
-    function runInNixShell() {
-      time nix-shell $CI_PROJECT_DIR/.gitlab/shell.nix \
-        -I nixpkgs=https://github.com/angerman/nixpkgs/archive/75f7281738b.tar.gz \
-        --argstr system "aarch64-darwin" \
-        --pure \
-        --keep CI_PROJECT_DIR \
-        --keep MACOSX_DEPLOYMENT_TARGET \
-        --keep JSON_VERSION \
-        --keep ARTIFACT \
-        --keep OS \
-        --keep ARCH \
-        --keep CABAL_DIR \
-        --keep GHC_VERSION \
-        --keep CABAL_VERSION \
-        --run "$1" 2>&1
-    }
-    runInNixShell ./.gitlab/before_script/darwin/install_deps.sh 2>&1
-    runInNixShell ./.gitlab/script/ghcup_version.sh 2>&1
+    export PATH="$CI_PROJECT_DIR/.brew/opt/llvm/bin:$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
+    export CC=$CI_PROJECT_DIR/.brew/opt/llvm/bin/clang
+    export CXX=$CI_PROJECT_DIR/.brew/opt/llvm/bin/clang++
+    export LD=ld
+    export AR=$CI_PROJECT_DIR/.brew/opt/llvm/bin/llvm-ar
+    export RANLIB=$CI_PROJECT_DIR/.brew/opt/llvm/bin/llvm-ranlib
+    ./.gitlab/before_script/darwin/install_deps.sh
+    ./.gitlab/script/ghcup_version.sh
 
 .test_ghcup_version:freebsd12:
   extends:
@@ -508,26 +526,40 @@ release:darwin:aarch64:
     - .darwin:aarch64
     - .release_ghcup
     - .root_cleanup
+  cache:
+    key: darwin-brew-$CACHE_REV
+    paths:
+      - .brew
+      - .brew_cache
+  before_script:
+    # Install brew locally in the project dir. Packages will also be installed here.
+    - git clone --depth=1 https://github.com/Homebrew/brew $CI_PROJECT_DIR/.brew
+    - export PATH="$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
+
+    # otherwise we seem to get intel binaries
+    - export HOMEBREW_CHANGE_ARCH_TO_ARM=1
+
+    # make sure to not pollute the machine with temp files etc
+    - mkdir -p $CI_PROJECT_DIR/.brew_cache
+    - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.brew_cache
+    - mkdir -p $CI_PROJECT_DIR/.brew_logs
+    - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.brew_logs
+    - mkdir -p $CI_PROJECT_DIR/.brew_tmp
+    - export HOMEBREW_TEMP=$CI_PROJECT_DIR/.brew_tmp
+
+    # update and install packages
+    - brew update
+    - brew install llvm
+    - brew install autoconf automake
   script: |
-    set -Eeuo pipefail
-    function runInNixShell() {
-      time nix-shell $CI_PROJECT_DIR/.gitlab/shell.nix \
-        -I nixpkgs=https://github.com/angerman/nixpkgs/archive/75f7281738b.tar.gz \
-        --argstr system "aarch64-darwin" \
-        --pure \
-        --keep CI_PROJECT_DIR \
-        --keep MACOSX_DEPLOYMENT_TARGET \
-        --keep JSON_VERSION \
-        --keep ARTIFACT \
-        --keep OS \
-        --keep ARCH \
-        --keep CABAL_DIR \
-        --keep GHC_VERSION \
-        --keep CABAL_VERSION \
-        --run "$1" 2>&1
-    }
-    runInNixShell ./.gitlab/before_script/darwin/install_deps.sh 2>&1
-    runInNixShell ./.gitlab/script/ghcup_release.sh 2>&1
+    export PATH="$CI_PROJECT_DIR/.brew/opt/llvm/bin:$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
+    export CC=$CI_PROJECT_DIR/.brew/opt/llvm/bin/clang
+    export CXX=$CI_PROJECT_DIR/.brew/opt/llvm/bin/clang++
+    export LD=ld
+    export AR=$CI_PROJECT_DIR/.brew/opt/llvm/bin/llvm-ar
+    export RANLIB=$CI_PROJECT_DIR/.brew/opt/llvm/bin/llvm-ranlib
+    ./.gitlab/before_script/darwin/install_deps.sh
+    ./.gitlab/script/ghcup_release.sh
   variables:
     ARTIFACT: "aarch64-apple-darwin-ghcup"
     GHC_VERSION: "8.10.7"
