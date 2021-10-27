@@ -9,3 +9,5 @@
 GHCup is an installer for the general purpose language [Haskell](https://www.haskell.org/).
 
 Visit the [documentation](https://www.haskell.org/ghcup/) for installation instructions.
+
+If you're looking for the metadata YAML files, see here: [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata)
