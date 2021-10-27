@@ -175,7 +175,7 @@ variables:
       - .brew_cache
   before_script:
     # Install brew locally in the project dir. Packages will also be installed here.
-    - [ -e "$CI_PROJECT_DIR/.brew" ] || git clone --depth=1 https://github.com/Homebrew/brew $CI_PROJECT_DIR/.brew
+    - '[ -e "$CI_PROJECT_DIR/.brew" ] || git clone --depth=1 https://github.com/Homebrew/brew $CI_PROJECT_DIR/.brew'
     - export PATH="$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
 
     # otherwise we seem to get intel binaries
@@ -533,7 +533,7 @@ release:darwin:aarch64:
       - .brew_cache
   before_script:
     # Install brew locally in the project dir. Packages will also be installed here.
-    - [ -e "$CI_PROJECT_DIR/.brew" ] || git clone --depth=1 https://github.com/Homebrew/brew $CI_PROJECT_DIR/.brew
+    - '[ -e "$CI_PROJECT_DIR/.brew" ] || git clone --depth=1 https://github.com/Homebrew/brew $CI_PROJECT_DIR/.brew'
     - export PATH="$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
 
     # otherwise we seem to get intel binaries
