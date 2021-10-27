@@ -1,0 +1,53 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Test metadata
+    runs-on: ${{ matrix.os }}
+    env:
+      YAML_VER: 0.0.6
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - uses: haskell/actions/setup@v1.2
+        with:
+          ghc-version: 8.10.7
+          cabal-version: 3.6.2.0
+
+      - name: create ~/.local/bin
+        run: mkdir -p "$HOME/.local/bin"
+        shell: bash
+
+      - name: Add ~/.local/bin to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Update cabal cache
+        run: cabal update
+        shell: bash
+
+      - name: Install ghcup-gen
+        run: |
+          cabal install --installdir="$HOME/.local/bin" --overwrite-policy=always --install-method=copy ghcup
+        shell: bash
+
+      - name: Check
+        run: |
+          ghcup-gen -- check -f ghcup-${{ env.YAML_VER }}.yaml
+        shell: bash
+
+      - name: Check tarballs
+        run: |
+          ghcup-gen -- check-tarballs -f ghcup-${{ env.YAML_VER }}.yaml -u 'ghcup-.*'
+        shell: bash
