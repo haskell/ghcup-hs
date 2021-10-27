@@ -18,9 +18,6 @@ build-type:         Simple
 extra-doc-files:
   CHANGELOG.md
   data/config.yaml
-  data/metadata/ghcup-0.0.4.yaml
-  data/metadata/ghcup-0.0.5.yaml
-  data/metadata/ghcup-0.0.6.yaml
   README.md
 
 extra-source-files:
