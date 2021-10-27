@@ -14,6 +14,10 @@ jobs:
       YAML_VER: 0.0.6
     strategy:
       matrix:
+        ghc:
+          - '8.10.7'
+        cabal:
+          - '3.6.2.0'
         os:
           - ubuntu-latest
     steps:
@@ -22,8 +26,22 @@ jobs:
 
       - uses: haskell/actions/setup@v1.2
         with:
-          ghc-version: 8.10.7
-          cabal-version: 3.6.2.0
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+
+      - name: Cache Cabal
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-cabal
+        with:
+          path: |
+            ~/.cabal/store
+            ~/.cabal/packages
+          key: v2-${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-build-${{ hashFiles('cabal.project') }}
+          restore-keys: |
+            v2-${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-build-${{ hashFiles('cabal.project') }}
+            v2-${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.cabal }}-build-
+            v2-${{ runner.os }}-${{ matrix.ghc }}
 
       - name: create ~/.local/bin
         run: mkdir -p "$HOME/.local/bin"
@@ -39,7 +57,7 @@ jobs:
 
       - name: Install ghcup-gen
         run: |
-          cabal install --installdir="$HOME/.local/bin" --overwrite-policy=always --install-method=copy ghcup
+          cabal install --installdir="$HOME/.local/bin" --overwrite-policy=always --install-method=copy ghcup-gen
         shell: bash
 
       - name: Check

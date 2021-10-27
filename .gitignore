@@ -1,0 +1,17 @@
+.ghci
+.vim
+codex.tags
+dist-newstyle/
+cabal.project.local
+.stack-work/
+bin/
+/*.prof
+/*.ps
+/*.hp
+tags
+TAGS
+/tmp/
+.entangled
+release/
+releases/
+site/

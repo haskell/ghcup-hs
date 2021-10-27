@@ -7,7 +7,6 @@
 3. copy-paste it
 4. adjust the version, tags, changelog, source url
 5. adjust the various bindist urls (make sure to also change the yaml anchors)
-6. build the `ghcup-gen` binary from the [ghcup repo](https://gitlab.haskell.org/haskell/ghcup-hs)
-7. run `ghcup-gen -- check          -f ghcup-<yaml-ver>.yaml`
-8. run `ghcup-gen -- check-tarballs -f ghcup-<yaml-ver>.yaml -u 'ghc-8\.10\.8'`
+6. run `cabal run ghcup-gen -- check          -f ghcup-<yaml-ver>.yaml`
+7. run `cabal run ghcup-gen -- check-tarballs -f ghcup-<yaml-ver>.yaml -u 'ghc-8\.10\.8'`
 
