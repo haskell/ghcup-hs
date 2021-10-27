@@ -85,7 +85,6 @@ else
 	ext=''
 fi
 	cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup')" "$CI_PROJECT_DIR"/.local/bin/ghcup${ext}
-	cp "$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup-gen')" "$CI_PROJECT_DIR"/.local/bin/ghcup-gen${ext}
 
 ### cleanup
 
@@ -93,8 +92,6 @@ rm -rf "${GHCUP_DIR}"
 
 ### manual cli based testing
 
-
-ghcup-gen check -f data/metadata/ghcup-${JSON_VERSION}.yaml
 
 eghcup --numeric-version
 

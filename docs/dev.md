@@ -95,21 +95,19 @@ Every subcommand now lives in its own module under [GHCup.OptParse.MyCommand](ht
 
 3. Add ChangeLog entry
 
-4. Add/fix downloads in `ghcup-<ver>.yaml` ([ghcup-metadata repo](https://github.com/haskell/ghcup-metadata)), then verify with `ghcup-gen check -f ghcup-<ver>.yaml` and possibly (example only) `ghcup-gen check-tarballs -f ghcup-<ver>.yaml -u 'ghc-8.10.7'`. Generally, new GHC/cabal/stack/hls versions are only added to the latest yaml file. New GHCup versions are added to all (great care must be taken here to not break the parser... e.g. ARM platforms don't parse in all older formats).
+4. Commit and git push with tag. Wait for tests to succeed and release artifacts to build.
 
-5. Commit and git push with tag. Wait for tests to succeed and release artifacts to build.
+5. Download release artifacts and upload them `downloads.haskell.org/~ghcup` along with checksum files (`sha256sum --tag * > SHA256SUMS && gpg --detach-sign -u <your-email> SHA256SUMS`)
 
-6. Download release artifacts and upload them `downloads.haskell.org/~ghcup` along with checksum files (`sha256sum --tag * > SHA256SUMS && gpg --detach-sign -u <your-email> SHA256SUMS`)
+6. Add ghcup release artifacts to ALL yaml files, see [ghcup-metadata repo](https://github.com/haskell/ghcup-metadata)
 
-7. Add ghcup release artifacts to ALL yaml files (see point 4.)
+7. Upload the final `ghcup-<ver>.yaml` (and a detached GPG sig of it) to `webhost.haskell.org/ghcup/data/` (for yaml versions <= 0.0.6) as well as [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata) (for all versions).
 
-8. Upload the final `ghcup-<ver>.yaml` (and a detached GPG sig of it) to `webhost.haskell.org/ghcup/data/` (for yaml versions <= 0.0.6) as well as [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata) (for all versions).
+8. Upload `bootstrap-haskell` and `bootstrap-haskell.ps1` to `webhost.haskell.org/ghcup/sh/`
 
-9. Upload `bootstrap-haskell` and `bootstrap-haskell.ps1` to `webhost.haskell.org/ghcup/sh/`
+9. Update the top-level ghcup symlinks at `downloads.haskell.org/~ghcup`
 
-10. Update the top-level ghcup symlinks at `downloads.haskell.org/~ghcup`
-
-11. Post on reddit/discourse/etc. and collect rewards
+10. Post on reddit/discourse/etc. and collect rewards
 
 # Documentation
 
