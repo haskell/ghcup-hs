@@ -45,7 +45,7 @@ jobs:
       - uses: haskell/actions/setup@v1.2
         with:
           ghc-version: 8.10.7
-          cabal-version: 3.4.1.0
+          cabal-version: 3.6.2.0
 
       - name: create ~/.local/bin
         run: mkdir -p "$HOME/.local/bin"
