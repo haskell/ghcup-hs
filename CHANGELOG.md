@@ -1,5 +1,12 @@
 # Revision history for ghcup
 
+## 0.1.17.3 -- 2021-10-27
+
+* clean up during unpack failures as well
+* migrate te aeson-2.0.1.0
+* switch to yaml-streamly to fix performance regression wrt [#270](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/270)
+* use [github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata) for metadata file download (better caching)
+
 ## 0.1.17.2 -- 2021-09-30
 
 * Honour GHC bootstrap compiler during git clone stages wrt [#250](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/250)
