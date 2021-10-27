@@ -406,6 +406,7 @@ test:mac:aarch64:
     CABAL_VERSION: "3.6.2.0"
   needs: []
   allow_failure: true
+  when: manual
 
 
 ######## freebsd test ########
@@ -566,6 +567,7 @@ release:darwin:aarch64:
     CABAL_VERSION: "3.6.2.0"
     MACOSX_DEPLOYMENT_TARGET: "10.7"
   allow_failure: true
+  when: manual
 
 
 ######## freebsd release ########
