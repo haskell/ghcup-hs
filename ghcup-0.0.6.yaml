@@ -2053,6 +2053,11 @@ ghcupDownloads:
             unknown_versioning: *ghc-921-32-deb9
           Linux_UnknownLinux:
             unknown_versioning: *ghc-921-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.2.1/ghc-9.2.1-i386-unknown-linux.tar.xz
+              dlSubdir: ghc-9.2.1-i386-unknown-linux
+              dlHash: 92e8c4d3eee1ede5bbc324b3ebad0bdb891413a872335733b754543162dadd98
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
