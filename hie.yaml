@@ -4,7 +4,5 @@ cradle:
     path: ./lib
   - component: "ghcup:exe:ghcup"
     path: ./app/ghcup
-  - component: "ghcup:exe:ghcup-gen"
-    path: "./app/ghcup-gen"
   - component: "ghcup:test:ghcup-test"
     path: ./test
