@@ -55,6 +55,7 @@ import qualified Data.ByteString               as B
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
+import qualified GHCup.Types                   as Types
 
 
 
@@ -72,15 +73,16 @@ toSettings options = do
  where
    mergeConf :: Options -> UserSettings -> Bool -> (Settings, KeyBindings)
    mergeConf Options{..} UserSettings{..} noColor =
-     let cache       = fromMaybe (fromMaybe False uCache) optCache
-         noVerify    = fromMaybe (fromMaybe False uNoVerify) optNoVerify
-         verbose     = fromMaybe (fromMaybe False uVerbose) optVerbose
-         keepDirs    = fromMaybe (fromMaybe Errors uKeepDirs) optKeepDirs
+     let cache       = fromMaybe (fromMaybe (Types.cache defaultSettings) uCache) optCache
+         metaCache   = fromMaybe (fromMaybe (Types.metaCache defaultSettings) uMetaCache) optMetaCache
+         noVerify    = fromMaybe (fromMaybe (Types.noVerify defaultSettings) uNoVerify) optNoVerify
+         verbose     = fromMaybe (fromMaybe (Types.verbose defaultSettings) uVerbose) optVerbose
+         keepDirs    = fromMaybe (fromMaybe (Types.keepDirs defaultSettings) uKeepDirs) optKeepDirs
          downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
-         urlSource   = maybe (fromMaybe GHCupURL uUrlSource) OwnSource optUrlSource
-         noNetwork   = fromMaybe (fromMaybe False uNoNetwork) optNoNetwork
-         gpgSetting  = fromMaybe (fromMaybe GPGNone uGPGSetting) optGpg
+         urlSource   = maybe (fromMaybe (Types.urlSource defaultSettings) uUrlSource) OwnSource optUrlSource
+         noNetwork   = fromMaybe (fromMaybe (Types.noNetwork defaultSettings) uNoNetwork) optNoNetwork
+         gpgSetting  = fromMaybe (fromMaybe (Types.gpgSetting defaultSettings) uGPGSetting) optGpg
      in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal

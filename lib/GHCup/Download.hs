@@ -242,14 +242,18 @@ getBase uri = do
     e <- liftIO $ doesFileExist json_file
     currentTime <- liftIO getCurrentTime
     Dirs { cacheDir } <- lift getDirs
+    Settings { metaCache } <- lift getSettings
 
        -- for local files, let's short-circuit and ignore access time
     if | scheme == "file" -> liftE $ download uri' Nothing Nothing cacheDir Nothing True
        | e -> do
-          accessTime <- liftIO $ getAccessTime json_file
-
+          accessTime <- fmap utcTimeToPOSIXSeconds $ liftIO $ getAccessTime json_file
+          let sinceLastAccess = utcTimeToPOSIXSeconds currentTime - accessTime
+          let cacheInterval = fromInteger metaCache
+          lift $ logDebug $ "last access was " <> T.pack (show sinceLastAccess) <> " ago, cache interval is " <> T.pack (show cacheInterval)
           -- access time won't work on most linuxes, but we can try regardless
-          if | ((utcTimeToPOSIXSeconds currentTime - utcTimeToPOSIXSeconds accessTime) > 300) ->
+          if | metaCache <= 0 -> dlWithMod currentTime json_file
+             | (sinceLastAccess > cacheInterval) ->
                 -- no access in last 5 minutes, re-check upstream mod time
                 dlWithMod currentTime json_file
              | otherwise -> pure json_file

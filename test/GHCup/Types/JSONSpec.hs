@@ -3,7 +3,7 @@
 module GHCup.Types.JSONSpec where
 
 import           GHCup.ArbitraryTypes ()
-import           GHCup.Types
+import           GHCup.Types hiding ( defaultSettings )
 import           GHCup.Types.JSON ()
 
 import           Test.Aeson.GenericSpecs

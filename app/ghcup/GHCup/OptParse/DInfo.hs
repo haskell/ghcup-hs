@@ -51,7 +51,7 @@ describe_result = $( LitE . StringL <$>
                      runIO (do
                              CapturedProcess{..} <-  do
                               dirs <- liftIO getAllDirs
-                              let settings = AppState (Settings True False Never Curl False GHCupURL False GPGNone False)
+                              let settings = AppState (defaultSettings { noNetwork = True })
                                                dirs
                                                defaultKeyBindings
                               flip runReaderT settings $ executeOut "git" ["describe"] Nothing

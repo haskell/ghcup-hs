@@ -67,6 +67,7 @@ data Options = Options
   -- global options
     optVerbose     :: Maybe Bool
   , optCache       :: Maybe Bool
+  , optMetaCache   :: Maybe Integer
   , optUrlSource   :: Maybe URI
   , optNoVerify    :: Maybe Bool
   , optKeepDirs    :: Maybe KeepDirs
@@ -105,6 +106,7 @@ opts =
   Options
     <$> invertableSwitch "verbose" 'v' False (help "Enable verbosity (default: disabled)")
     <*> invertableSwitch "cache" 'c' False (help "Cache downloads in ~/.ghcup/cache (default: disabled)")
+    <*> optional (option auto (long "metadata-caching" <> help "How long the yaml metadata caching interval is (in seconds), 0 to disable" <> internal))
     <*> optional
           (option
             (eitherReader parseUri)

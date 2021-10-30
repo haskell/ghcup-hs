@@ -294,6 +294,7 @@ instance NFData (URIRef Absolute) where
 
 data UserSettings = UserSettings
   { uCache       :: Maybe Bool
+  , uMetaCache   :: Maybe Integer
   , uNoVerify    :: Maybe Bool
   , uVerbose     :: Maybe Bool
   , uKeepDirs    :: Maybe KeepDirs
@@ -306,12 +307,13 @@ data UserSettings = UserSettings
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
   UserSettings {
       uCache = Just cache
+    , uMetaCache = Just metaCache
     , uNoVerify = Just noVerify
     , uVerbose = Just verbose
     , uKeepDirs = Just keepDirs
@@ -335,6 +337,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
             }
   in UserSettings {
       uCache = Just cache
+    , uMetaCache = Just metaCache
     , uNoVerify = Just noVerify
     , uVerbose = Just verbose
     , uKeepDirs = Just keepDirs
@@ -410,6 +413,7 @@ instance NFData LeanAppState
 
 data Settings = Settings
   { cache      :: Bool
+  , metaCache  :: Integer
   , noVerify   :: Bool
   , keepDirs   :: KeepDirs
   , downloader :: Downloader
@@ -420,6 +424,12 @@ data Settings = Settings
   , noColor    :: Bool -- this also exists in LoggerConfig
   }
   deriving (Show, GHC.Generic)
+
+defaultMetaCache :: Integer
+defaultMetaCache = 300 -- 5 minutes
+
+defaultSettings :: Settings
+defaultSettings = Settings False defaultMetaCache False Never Curl False GHCupURL False GPGNone False
 
 instance NFData Settings
 

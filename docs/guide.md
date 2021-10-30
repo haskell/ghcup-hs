@@ -53,6 +53,25 @@ as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
 and make sure your bashrc sources the startup script
 (`/usr/share/bash-completion/bash_completion` on some distros).
 
+## Caching
+
+GHCup has a few caching mechanisms to avoid redownloads. All cached files end up in `~/.ghcup/cache` by default.
+
+### Downloads cache
+
+Downloaded tarballs (such as GHC, cabal, etc.) are not cached by default unless you pass `ghcup --cache` or set caching
+in your [config](#configuration) via `ghcup config set cache true`.
+
+### Metadata cache
+
+The metadata files (also see [github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata))
+have a 5 minutes cache per default depending on the last access time of the file. That means if you run
+`ghcup list` 10 times in a row, only the first time will trigger a download attempt.
+
+### Clearing the cache
+
+If you experience problems, consider clearing the cache via `ghcup gc --cache`.
+
 ## Compiling GHC from source
 
 Compiling from source is supported for both source tarballs and arbitrary git refs. See `ghcup compile ghc --help`

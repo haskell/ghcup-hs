@@ -122,6 +122,7 @@ updateSettings config' settings = do
    mergeConf :: UserSettings -> Settings -> Settings
    mergeConf UserSettings{..} Settings{..} =
      let cache'      = fromMaybe cache uCache
+         metaCache'  = fromMaybe metaCache uMetaCache
          noVerify'   = fromMaybe noVerify uNoVerify
          keepDirs'   = fromMaybe keepDirs uKeepDirs
          downloader' = fromMaybe downloader uDownloader
@@ -129,7 +130,7 @@ updateSettings config' settings = do
          urlSource'  = fromMaybe urlSource uUrlSource
          noNetwork'  = fromMaybe noNetwork uNoNetwork
          gpgSetting' = fromMaybe gpgSetting uGPGSetting
-     in Settings cache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor
+     in Settings cache' metaCache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor
 
 
 
