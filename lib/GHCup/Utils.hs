@@ -111,7 +111,7 @@ import qualified Data.List.NonEmpty            as NE
 -- >>> let lc = LoggerConfig { lcPrintDebug = False, consoleOutter = mempty, fileOutter = mempty, fancyColors = False }
 -- >>> dirs' <- getAllDirs
 -- >>> let installedVersions = [ ([pver|8.10.7|], Nothing), ([pver|8.10.4|], Nothing), ([pver|8.8.4|], Nothing), ([pver|8.8.3|], Nothing) ]
--- >>> let settings = Settings True False Never Curl False GHCupURL True GPGNone False
+-- >>> let settings = Settings True 0 False Never Curl False GHCupURL True GPGNone False
 -- >>> let leanAppState = LeanAppState settings dirs' defaultKeyBindings lc
 -- >>> cwd <- getCurrentDirectory
 -- >>> (Right ref) <- pure $ parseURI strictURIParserOptions $ "file://" <> E.encodeUtf8 (T.pack cwd) <> "/data/metadata/" <> (urlBaseName . view pathL' $ ghcupURL)

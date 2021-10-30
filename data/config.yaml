@@ -36,6 +36,10 @@ key-bindings:
   show-all-tools:
     KChar: 't'
 
+# The caching for the metadata files containing download info, depending on last access time
+# of the file. These usually are in '~/.ghcup/cache/ghcup-<ver>.yaml'.
+meta-cache: 300 # in seconds
+
 # Where to get GHC/cabal/hls download info/versions from. For more detailed explanation
 # check the 'URLSource' type in the code.
 url-source:

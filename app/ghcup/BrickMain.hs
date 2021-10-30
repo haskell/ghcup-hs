@@ -536,17 +536,7 @@ settings' = unsafePerformIO $ do
                                   , fileOutter    = \_ -> pure ()
                                   , fancyColors   = True
                                   }
-  newIORef $ AppState (Settings { cache      = True
-                                , noVerify   = False
-                                , keepDirs   = Never
-                                , downloader = Curl
-                                , verbose    = False
-                                , urlSource  = GHCupURL
-                                , noNetwork  = False
-                                , gpgSetting = GPGNone
-                                , noColor    = False
-                                , ..
-                                })
+  newIORef $ AppState defaultSettings
                       dirs
                       defaultKeyBindings
                       (GHCupInfo mempty mempty mempty)

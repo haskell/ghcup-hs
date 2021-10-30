@@ -299,7 +299,7 @@ tagCompleter tool add = listIOCompleter $ do
         , fancyColors    = False
         }
   let appState = LeanAppState
-        (Settings True False Never Curl False GHCupURL True GPGNone False)
+        (defaultSettings { noNetwork = True })
         dirs'
         defaultKeyBindings
         loggerConfig
@@ -322,7 +322,7 @@ versionCompleter criteria tool = listIOCompleter $ do
         , fileOutter     = mempty
         , fancyColors    = False
         }
-  let settings = Settings True False Never Curl False GHCupURL True GPGNone False
+  let settings = defaultSettings { noNetwork = True }
   let leanAppState = LeanAppState
                    settings
                    dirs'
