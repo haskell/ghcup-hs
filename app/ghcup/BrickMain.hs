@@ -10,6 +10,7 @@ module BrickMain where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
+import           GHCup.Types.Optics ( getDirs )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
 import           GHCup.Utils.Logger
@@ -40,6 +41,8 @@ import           Data.Vector                    ( Vector
 import           Data.Versions           hiding ( str )
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
+import           System.Directory               ( canonicalizePath )
+import           System.FilePath
 import           System.Exit
 import           System.IO.Unsafe
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
@@ -48,6 +51,8 @@ import           URI.ByteString
 import qualified Data.Text                     as T
 import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
+import System.Environment (getExecutablePath)
+import qualified System.Posix.Process          as SPP
 
 
 hiddenTools :: [Tool]
@@ -432,27 +437,42 @@ install' _ (_, ListResult {..}) = do
               ]
 
   run (do
+      ce <- liftIO $ fmap (either (const Nothing) Just) $
+        try @_ @SomeException $ getExecutablePath >>= canonicalizePath
+      dirs <- lift getDirs
       case lTool of
         GHC   -> do
           let vi = getVersionInfo lVer GHC dls
-          liftE $ installGHCBin lVer Nothing False $> vi
+          liftE $ installGHCBin lVer Nothing False $> (vi, dirs, ce)
         Cabal -> do
           let vi = getVersionInfo lVer Cabal dls
-          liftE $ installCabalBin lVer Nothing False $> vi
+          liftE $ installCabalBin lVer Nothing False $> (vi, dirs, ce)
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
-          liftE $ upgradeGHCup Nothing False $> vi
+          liftE $ upgradeGHCup Nothing False $> (vi, dirs, ce)
         HLS   -> do
           let vi = getVersionInfo lVer HLS dls
-          liftE $ installHLSBin lVer Nothing False $> vi
+          liftE $ installHLSBin lVer Nothing False $> (vi, dirs, ce)
         Stack -> do
           let vi = getVersionInfo lVer Stack dls
-          liftE $ installStackBin lVer Nothing False $> vi
+          liftE $ installStackBin lVer Nothing False $> (vi, dirs, ce)
     )
     >>= \case
-          VRight vi                         -> do
-            forM_ (_viPostInstall =<< vi) $ \msg ->
-              logInfo msg
+          VRight (vi, Dirs{..}, Just ce) -> do
+            forM_ (_viPostInstall =<< vi) $ \msg -> logInfo msg
+            case lTool of
+              GHCup -> do
+                up <- liftIO $ fmap (either (const Nothing) Just)
+                  $ try @_ @SomeException $ canonicalizePath (binDir </> "ghcup" <.> exeExt)
+                when ((normalise <$> up) == Just (normalise ce)) $
+                  -- TODO: track cli arguments of previous invocation
+                  liftIO $ SPP.executeFile ce False ["tui"] Nothing
+                logInfo "Please restart 'ghcup' for the changes to take effect"
+              _ -> pure ()
+            pure $ Right ()
+          VRight (vi, _, _) -> do
+            forM_ (_viPostInstall =<< vi) $ \msg -> logInfo msg
+            logInfo "Please restart 'ghcup' for the changes to take effect"
             pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
           VLeft (V NoUpdate) -> pure $ Right ()
@@ -605,4 +625,3 @@ getAppData mgi = runExceptT $ do
   flip runReaderT settings $ do
     lV <- listVersions Nothing Nothing
     pure $ BrickData (reverse lV)
-
