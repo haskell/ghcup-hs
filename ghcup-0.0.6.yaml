@@ -234,7 +234,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 7 && < 8 )':
+            '< 8':
               dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-x86_64-deb7-linux.tar.xz
               dlSubdir: ghc-8.0.2
               dlHash: b2f5c304b57ac5840a0d2ef763a3c6fa858c70840f749cfad12ed227da973c0a
@@ -270,7 +270,7 @@ ghcupDownloads:
               dlHash: 8c42c1f4af995205b9816a1e97e2752fe758544c1f5fe77958cdcd319c9c2d53
         A_32:
           Linux_Debian:
-            '( >= 7 && < 8 )':
+            '< 8':
               dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-i386-deb7-linux.tar.xz
               dlSubdir: ghc-8.0.2
               dlHash: 07ead3a49f8c9df4b429e7a2f96f6f31bcab8d3ff8277a9aed0201d13ddad448
@@ -298,7 +298,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 7 && < 8 )': &ghc-822-64-deb7
+            '< 8': &ghc-822-64-deb7
               dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-deb7-linux.tar.xz
               dlSubdir: ghc-8.2.2
               dlHash: cd7afbca54edf9890da9f432c63366556246c85c1198e40c99df5af01c555834
@@ -339,7 +339,7 @@ ghcupDownloads:
               dlHash: 1e033df2092aa546e763e7be63167720b32df64f76673ea1ce7ae7c9f564b223
         A_32:
           Linux_Debian:
-            '( >= 7 && < 8 )':
+            '< 8':
               dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-i386-deb7-linux.tar.xz
               dlSubdir: ghc-8.2.2
               dlHash: cd18766b1a9b74fc6c90003a719ecab158f281f9a755d8b1bd3fd764ba6947b5
@@ -426,7 +426,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.4.2
               dlHash: 246f66eb56f4ad0f1c7755502cfc8f9972f2d067dede17e151f6f479c1f76fbd
@@ -486,7 +486,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.4.3
               dlHash: 30a402c6d4754a6c020e0547f19ae3ac42e907e35349aa932d347f73e421a8e2
@@ -540,7 +540,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.4.4
               dlHash: 4c2a8857f76b7f3e34ecba0b51015d5cb8b767fe5377a7ec477abde10705ab1a
@@ -619,7 +619,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.6.1
               dlHash: 6d8784401b7dd80c90fa17306ec0539920e3987399a2c7ef247989e53197dc42
@@ -730,7 +730,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.6.3
               dlHash: 291ca565374f4d51cc311488581f3279d3167a064fabfd4a6722fe2bd4532fd5
@@ -799,7 +799,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.6.4
               dlHash: 34ef5fc8ddf2fc32a027180bea5b1c8a81ea840c87faace2977a572188d4b42d
@@ -853,7 +853,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.6.5
               dlHash: c419fd0aa9065fe4d2eb9a248e323860c696ddf3859749ca96a84938aee49107
@@ -938,7 +938,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.8.1
               dlHash: fd96eb851971fbc3332bf2fa7821732cfa8b37e5a076a69f6a06f83f0ea7ccc5
@@ -1002,7 +1002,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.8.2
               dlHash: fbe69652eba75dadb758d00292247d17fb018c29cac5acd79843e56311256c9f
@@ -1066,7 +1066,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.8.3
               dlHash: 92b9fadc442976968d2c190c14e000d737240a7d721581cda8d8741b7bd402f0
@@ -1140,7 +1140,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 8 && < 9 )':
+            '< 9':
               dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb8-linux.tar.xz
               dlSubdir: ghc-8.8.4
               dlHash: 51a36892f1264744195274187298d13ac62bce2da86d4ddf76d8054ab90f2feb
@@ -1219,15 +1219,15 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8101-64-deb9
+            '< 10': &ghc-8101-64-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.1
               dlHash: d1cf7886f27af070f3b7dbe1975a78b43ef2d32b86362cbe953e79464fe70761
-            '( >= 10 && < 11 )': &ghc-8101-64-deb10
+            '>= 10': &ghc-8101-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-8.10.1
               dlHash: c1e31d798b013699b3c0de4fda27fb4cda47f572df0e75e3bd598a3012060615
-            unknown_versioning: *ghc-8101-64-deb9
+            unknown_versioning: *ghc-8101-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-8101-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-fedora27-linux.tar.xz
@@ -1273,7 +1273,7 @@ ghcupDownloads:
               dlHash: 38a3166ea50cccd5bae7e1680eae3aae2b4ae31b61f82a1d8168fb821f43bd67
         A_32:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8101-32-deb9
+            '< 10': &ghc-8101-32-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-i386-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.1
               dlHash: 8b53eef2c827b5f634d72920a93c0c9dd66ea288691a2bfe28def45d3c686ee2
@@ -1314,15 +1314,15 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8102-64-deb9
+            '< 10': &ghc-8102-64-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.2
               dlHash: 4dbe3b479e76767bfeb4cbb7a4db8b761c4720266193483ca370b2ace3f10f7c
-            '( >= 10 && < 11 )': &ghc-8102-64-deb10
+            '>= 10': &ghc-8102-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-8.10.2
               dlHash: 94513d82c38c848f489113a75fa5ef4e5a8e3ecfaa74ca90e2620d2193ff1632
-            unknown_versioning: *ghc-8102-64-deb9
+            unknown_versioning: *ghc-8102-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-8102-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-fedora27-linux.tar.xz
@@ -1368,7 +1368,7 @@ ghcupDownloads:
               dlHash: dcae4c173b9896e07ff048de5509aa0a4537233150e06e5ce8848303dfadc176
         A_32:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8102-32-deb9
+            '< 10': &ghc-8102-32-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-i386-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.2
               dlHash: 9dae2a86ad43d08f72c783542c944d1556b075aa20a8063efae5034ea88e7c2f
@@ -1409,15 +1409,15 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8103-64-deb9
+            '< 10': &ghc-8103-64-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.3
               dlHash: 95e4aadea30701fe5ab84d15f757926d843ded7115e11c4cd827809ca830718d
-            '( >= 10 && < 11 )': &ghc-8103-64-deb10
+            '>= 10': &ghc-8103-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-8.10.3
               dlHash: c8f3d9f0e61a89eaba1d3ad8fb2eced1af0e81576811261b887993bee12538ac
-            unknown_versioning: *ghc-8103-64-deb9
+            unknown_versioning: *ghc-8103-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-8103-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-fedora27-linux.tar.xz
@@ -1463,7 +1463,7 @@ ghcupDownloads:
               dlHash: 927a6c699533a115cd49772ef2c753d9af2c13bf9f0b2d3bd13645cc6a144ee3
         A_32:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8103-32-deb9
+            '< 10': &ghc-8103-32-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-i386-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.3
               dlHash: f0addd2a16b705f58ff9e8702c3ddf3e2d6bd0d3555707b5b5095e51bafee7b1
@@ -1505,15 +1505,15 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8104-64-deb9
+            '< 10': &ghc-8104-64-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.4
               dlHash: 5694200a5c38f22c142baf850b1d2f3784211d2ec9302e11693259a1ae8e38b7
-            '( >= 10 && < 11 )': &ghc-8104-64-deb10
+            '>= 10': &ghc-8104-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-8.10.4
               dlHash: 816365565e9927459b035515a7db6a0db62f9796f327389b6f8a0035d12fbda0
-            unknown_versioning: *ghc-8104-64-deb9
+            unknown_versioning: *ghc-8104-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-8104-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-fedora27-linux.tar.xz
@@ -1559,7 +1559,7 @@ ghcupDownloads:
               dlHash: e9175a276504c3390a5e0084954e6997d56078737dbe7158049518892cf6bfb2
         A_32:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8104-32-deb9
+            '< 10': &ghc-8104-32-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-i386-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.4
               dlHash: 0022c5b9ac22825bb7b4745af3d92cef0ba1ecd01fab3ef387ddbd47146569ad
@@ -1606,15 +1606,15 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8105-64-deb9
+            '< 10': &ghc-8105-64-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.5
               dlHash: 15e71325c3bdfe3804be0f84c2fc5c913d811322d19b0f4d4cff20f29cdd804d
-            '( >= 10 && < 11 )': &ghc-8105-64-deb10
+            '>= 10': &ghc-8105-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-8.10.5
               dlHash: bc623c20ca4c5c18e952071ba14aa0cfc5c94d34219bffaa615f7b491f376787
-            unknown_versioning: *ghc-8105-64-deb9
+            unknown_versioning: *ghc-8105-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-8105-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-x86_64-fedora27-linux.tar.xz
@@ -1660,7 +1660,7 @@ ghcupDownloads:
               dlHash: 4443d989df4f2680f681a4d8b8db310ce9582d21743984016b0eb0163b0c9998
         A_32:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8105-32-deb9
+            '< 10': &ghc-8105-32-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-i386-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.5
               dlHash: 0ccb5b2c1222374874795c35410754dd650f649b774872abbea2a4ef21ac9c9d
@@ -1708,15 +1708,15 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8106-64-deb9
+            '< 10': &ghc-8106-64-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.6
               dlHash: c14b631437ebc867f1fe1648579bc1dbe1a9b9ad31d7c801c3c77639523a83ae
-            '( >= 10 && < 11 )': &ghc-8106-64-deb10
+            '>= 10': &ghc-8106-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-8.10.6
               dlHash: 95be925e310b8c419e1099d620a727a1ca2d8c918f33eb905a8221d7eb16467b
-            unknown_versioning: *ghc-8106-64-deb9
+            unknown_versioning: *ghc-8106-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-8106-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-fedora27-linux.tar.xz
@@ -1762,7 +1762,7 @@ ghcupDownloads:
               dlHash: ff62f4a245c2427a1a5e6f5f1c2ad7521f69f9274a27ffb17c76f252ca573f3b
         A_32:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8106-32-deb9
+            '< 10': &ghc-8106-32-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-i386-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.6
               dlHash: 31f934423d7971b462eaa53cf87b15265d11420578c5a8a04304348cb90f1c13
@@ -1809,15 +1809,15 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8107-64-deb9
+            '< 10': &ghc-8107-64-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.7
               dlHash: ced9870ea351af64fb48274b81a664cdb6a9266775f1598a79cbb6fdd5770a23
-            '( >= 10 && < 11 )': &ghc-8107-64-deb10
+            '>= 10': &ghc-8107-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-8.10.7
               dlHash: a13719bca87a0d3ac0c7d4157a4e60887009a7f1a8dbe95c4759ec413e086d30
-            unknown_versioning: *ghc-8107-64-deb9
+            unknown_versioning: *ghc-8107-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-8107-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-fedora27-linux.tar.xz
@@ -1863,7 +1863,7 @@ ghcupDownloads:
               dlHash: b6515b0ea3f7a6e34d92e7fcd0c1fef50d6030fe8f46883000185289a4b8ea9a
         A_32:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-8107-32-deb9
+            '< 10': &ghc-8107-32-deb9
               dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-i386-deb9-linux.tar.xz
               dlSubdir: ghc-8.10.7
               dlHash: fbfc1ef194f4e7a4c0da8c11cc69b17458a4b928b609b3622c97acc4acd5c5ab
@@ -1908,15 +1908,15 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-901-64-deb9
+            '< 10': &ghc-901-64-deb9
               dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-9.0.1
               dlHash: 4ca6252492f59fe589029fadca4b6f922d6a9f0ff39d19a2bd9886fde4e183d5
-            '( >= 10 && < 11 )': &ghc-901-64-deb10
+            '>= 10': &ghc-901-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-9.0.1
               dlHash: c253e7eb62cc9da6524c491c85ec8d3727c2ca6035a8653388e636aaa30a2a0f
-            unknown_versioning: *ghc-901-64-deb9
+            unknown_versioning: *ghc-901-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-901-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-fedora27-linux.tar.xz
@@ -1962,7 +1962,7 @@ ghcupDownloads:
               dlHash: 4f4ab118df01cbc7e7c510096deca0cb25025339a97730de0466416296202493
         A_32:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-901-32-deb9
+            '< 10': &ghc-901-32-deb9
               dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-i386-deb9-linux.tar.xz
               dlSubdir: ghc-9.0.1
               dlHash: 880e37cea8328401bcfecfe4bb56eb85195f30135b140140b3f24094264f8ba5
@@ -2003,15 +2003,15 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-921-64-deb9
+            '< 10': &ghc-921-64-deb9
               dlUri: https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-9.2.1
               dlHash: f09133ed735e9f3b221b5ed54787e5651f039ed0f7dab0ab834a27c8ca68fc9b
-            '( >= 10 && < 11 )': &ghc-921-64-deb10
+            '>= 10': &ghc-921-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-9.2.1
               dlHash: 53f1650ed092230480ff5750b94f409e5dfe66bd07ced00bbbcdf5d6b180234c
-            unknown_versioning: *ghc-921-64-deb9
+            unknown_versioning: *ghc-921-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-921-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-fedora27-linux.tar.xz
@@ -2042,7 +2042,7 @@ ghcupDownloads:
               dlHash: 952b37671ef2838961e53949f4eecb4667d57472720058922929005ea7dc5b15
         A_32:
           Linux_Debian:
-            '( >= 9 && < 10 )': &ghc-921-32-deb9
+            '< 10': &ghc-921-32-deb9
               dlUri: https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-i386-deb9-linux.tar.xz
               dlSubdir: ghc-9.2.1
               dlHash: 6daa9e983fbe5af5a3c449c92e5b331d2ecb8e76ea07fc4e237ba5ff27af2c45
