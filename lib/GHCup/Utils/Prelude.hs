@@ -336,8 +336,8 @@ versionToPVP v = either (\_ -> (, rest v) <$> alternative v) (pure . (, mempty))
         me' = maybe [] (\m -> [T.pack "+",m]) me
         pr' = foldable [] (T.pack "-" :) $ intersperse (T.pack ".") (chunksAsT pr)
         prefix = case (ver, pr', me') of
-                   ((_:_), _, _) -> T.pack "."
-                   _             -> T.pack ""
+                   (_:_, _, _) -> T.pack "."
+                   _           -> T.pack ""
     in prefix <> mconcat (ver <> pr' <> me')
    where
     chunksAsT :: Functor t => t VChunk -> t Text
