@@ -44,7 +44,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
-import           Data.List                      ( nub, intercalate, stripPrefix, isPrefixOf, dropWhileEnd )
+import           Data.List                      ( nub, intercalate, stripPrefix, isPrefixOf, dropWhileEnd, intersperse )
 import           Data.Maybe
 import           Data.Foldable
 import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
@@ -313,17 +313,45 @@ removeLensFieldLabel str' =
   maybe str' T.unpack . T.stripPrefix (T.pack "_") . T.pack $ str'
 
 
-pvpToVersion :: MonadThrow m => PVP -> m Version
-pvpToVersion =
-  either (\_ -> throwM $ ParseError "Couldn't convert PVP to Version") pure . version . prettyPVP
+pvpToVersion :: MonadThrow m => PVP -> Text -> m Version
+pvpToVersion pvp_ rest =
+  either (\_ -> throwM $ ParseError "Couldn't convert PVP to Version") pure . version . (<> rest) . prettyPVP $ pvp_
 
-versionToPVP :: MonadThrow m => Version -> m PVP
-versionToPVP v = either (\_ -> alternative v) pure . pvp . prettyVer $ v
+-- | Convert a version to a PVP and unparsable rest.
+--
+-- -- prop> \v -> let (Just (pvp', r)) = versionToPVP v in pvpToVersion pvp' r === Just v
+versionToPVP :: MonadThrow m => Version -> m (PVP, Text)
+versionToPVP (Version (Just _) _ _ _) = throwM $ ParseError "Unexpected epoch"
+versionToPVP v = either (\_ -> (, rest v) <$> alternative v) (pure . (, mempty)) . pvp . prettyVer $ v
  where
   alternative :: MonadThrow m => Version -> m PVP
   alternative v' = case NE.takeWhile isDigit (_vChunks v') of
     [] -> throwM $ ParseError "Couldn't convert Version to PVP"
     xs -> pure $ pvpFromList (unsafeDigit <$> xs)
+
+  rest :: Version -> Text
+  rest (Version _ cs pr me) =
+    let chunks = NE.dropWhile isDigit cs
+        ver = intersperse (T.pack ".") . chunksAsT $ chunks
+        me' = maybe [] (\m -> [T.pack "+",m]) me
+        pr' = foldable [] (T.pack "-" :) $ intersperse (T.pack ".") (chunksAsT pr)
+        prefix = case (ver, pr', me') of
+                   ((_:_), _, _) -> T.pack "."
+                   _             -> T.pack ""
+    in prefix <> mconcat (ver <> pr' <> me')
+   where
+    chunksAsT :: Functor t => t VChunk -> t Text
+    chunksAsT = fmap (foldMap f)
+      where
+        f :: VUnit -> Text
+        f (Digits i) = T.pack $ show i
+        f (Str s)    = s
+
+    foldable :: Foldable f => f b -> (f a -> f b) -> f a -> f b
+    foldable d g f | null f    = d
+                   | otherwise = g f
+
+
 
   isDigit :: VChunk -> Bool
   isDigit (Digits _ :| []) = True

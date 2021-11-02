@@ -59,6 +59,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Control.Monad.IO.Unlift        ( MonadUnliftIO( withRunInIO ) )
+import           Data.Bifunctor                 ( first )
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.Foldable
@@ -110,7 +111,7 @@ import qualified Data.List.NonEmpty            as NE
 -- >>> import Text.PrettyPrint.HughesPJClass ( prettyShow )
 -- >>> let lc = LoggerConfig { lcPrintDebug = False, consoleOutter = mempty, fileOutter = mempty, fancyColors = False }
 -- >>> dirs' <- getAllDirs
--- >>> let installedVersions = [ ([pver|8.10.7|], Nothing), ([pver|8.10.4|], Nothing), ([pver|8.8.4|], Nothing), ([pver|8.8.3|], Nothing) ]
+-- >>> let installedVersions = [ ([pver|8.10.7|], "-debug+lol", Nothing), ([pver|8.10.4|], "", Nothing), ([pver|8.8.4|], "", Nothing), ([pver|8.8.3|], "", Nothing) ]
 -- >>> let settings = Settings True 0 False Never Curl False GHCupURL True GPGNone False
 -- >>> let leanAppState = LeanAppState settings dirs' defaultKeyBindings lc
 -- >>> cwd <- getCurrentDirectory
@@ -631,34 +632,34 @@ getGHCForPVP pvpIn mt = do
   ghcs <- rights <$> getInstalledGHCs
   -- we're permissive here... failed parse just means we have no match anyway
   let ghcs' = catMaybes $ flip fmap ghcs $ \GHCTargetVersion{..} -> do
-        pvp_ <- versionToPVP _tvVersion
-        pure (pvp_, _tvTarget)
+        (pvp_, rest) <- versionToPVP _tvVersion
+        pure (pvp_, rest, _tvTarget)
 
   getGHCForPVP' pvpIn ghcs' mt
 
 -- | Like 'getGHCForPVP', except with explicit input parameter.
 --
--- >>> fmap prettyShow $ getGHCForPVP' [pver|8|] installedVersions Nothing
--- "Just 8.10.7"
+-- >>> getGHCForPVP' [pver|8|] installedVersions Nothing
+-- Just (GHCTargetVersion {_tvTarget = Nothing, _tvVersion = Version {_vEpoch = Nothing, _vChunks = (Digits 8 :| []) :| [Digits 10 :| [],Digits 7 :| []], _vRel = [Str "debug" :| []], _vMeta = Just "lol"}})
 -- >>> fmap prettyShow $ getGHCForPVP' [pver|8.8|] installedVersions Nothing
 -- "Just 8.8.4"
 -- >>> fmap prettyShow $ getGHCForPVP' [pver|8.10.4|] installedVersions Nothing
 -- "Just 8.10.4"
 getGHCForPVP' :: MonadThrow m
              => PVP
-             -> [(PVP, Maybe Text)] -- ^ installed GHCs
+             -> [(PVP, Text, Maybe Text)] -- ^ installed GHCs
              -> Maybe Text          -- ^ the target triple
              -> m (Maybe GHCTargetVersion)
 getGHCForPVP' pvpIn ghcs' mt = do
   let mResult = lastMay
-                  . sortBy (\(x, _) (y, _) -> compare x y)
+                  . sortBy (\(x, _, _) (y, _, _) -> compare x y)
                   . filter
-                      (\(pvp_, target) ->
+                      (\(pvp_, _, target) ->
                         target == mt && matchPVPrefix pvp_ pvpIn
                       )
                   $ ghcs'
-  forM mResult $ \(pvp_, target) -> do
-    ver' <- pvpToVersion pvp_
+  forM mResult $ \(pvp_, rest, target) -> do
+    ver' <- pvpToVersion pvp_ rest
     pure (GHCTargetVersion target ver')
 
 
@@ -679,7 +680,7 @@ getLatestToolFor :: MonadThrow m
 getLatestToolFor tool pvpIn dls = do
   let ls = fromMaybe [] $ preview (ix tool % to Map.toDescList) dls
   let ps = catMaybes $ fmap (\(v, vi) -> (,vi) <$> versionToPVP v) ls
-  pure . headMay . filter (\(v, _) -> matchPVPrefix pvpIn v) $ ps
+  pure . fmap (first fst) . headMay . filter (\((v, _), _) -> matchPVPrefix pvpIn v) $ ps
 
 
 

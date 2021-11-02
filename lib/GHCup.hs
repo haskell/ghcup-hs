@@ -1574,7 +1574,7 @@ listVersions lt' criteria = do
 
   currentGHCup :: Map.Map Version VersionInfo -> Maybe ListResult
   currentGHCup av =
-    let currentVer = fromJust $ pvpToVersion ghcUpVer
+    let currentVer = fromJust $ pvpToVersion ghcUpVer ""
         listVer    = Map.lookup currentVer av
         latestVer  = fst <$> headOf (getTagged Latest) av
         recommendedVer = fst <$> headOf (getTagged Latest) av
@@ -2576,7 +2576,7 @@ upgradeGHCup mtarget force' = do
 
   lift $ logInfo "Upgrading GHCup..."
   let latestVer = fromJust $ fst <$> getLatest dls GHCup
-  (Just ghcupPVPVer) <- pure $ pvpToVersion ghcUpVer
+  (Just ghcupPVPVer) <- pure $ pvpToVersion ghcUpVer ""
   when (not force' && (latestVer <= ghcupPVPVer)) $ throwE NoUpdate
   dli   <- liftE $ getDownloadInfo GHCup latestVer
   tmp   <- lift withGHCupTmpDir

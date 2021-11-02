@@ -399,7 +399,7 @@ fromVersion' (SetToolVersion v) tool = do
     Right pvpIn ->
       lift (getLatestToolFor tool pvpIn dls) >>= \case
         Just (pvp_, vi') -> do
-          v' <- lift $ pvpToVersion pvp_
+          v' <- lift $ pvpToVersion pvp_ ""
           when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
           pure (GHCTargetVersion (_tvTarget v) v', Just vi')
         Nothing -> pure (v, vi)
