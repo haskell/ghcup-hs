@@ -96,7 +96,7 @@ library
   build-depends:
     , aeson                 >=1.4
     , async                 >=0.8        && <2.3
-    , base                  >=4.13       && <5
+    , base                  >=4.12       && <5
     , base16-bytestring     >=0.1.1.6    && <1.1
     , binary                ^>=0.8.6.0
     , bytestring            ^>=0.10
@@ -219,7 +219,7 @@ executable ghcup
     , aeson                 >=1.4
     , aeson-pretty          ^>=0.8.8
     , async                 ^>=2.2.3
-    , base                  >=4.13     && <5
+    , base                  >=4.12     && <5
     , bytestring            ^>=0.10
     , cabal-plan            ^>=0.7.2
     , containers            ^>=0.6
@@ -287,7 +287,7 @@ test-suite ghcup-test
     -fwarn-incomplete-record-updates
 
   build-depends:
-    , base                      >=4.13    && <5
+    , base                      >=4.12    && <5
     , bytestring                ^>=0.10
     , containers                ^>=0.6
     , generic-arbitrary         ^>=0.1.0

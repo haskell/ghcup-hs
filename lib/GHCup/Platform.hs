@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -27,6 +28,9 @@ import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 
+#if !MIN_VERSION_base(4,13,0)
+import           Control.Monad.Fail             ( MonadFail )
+#endif
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad

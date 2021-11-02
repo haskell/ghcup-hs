@@ -27,6 +27,9 @@ import           Brick.Widgets.List             ( listSelectedFocusedAttr
                                                 )
 import           Codec.Archive
 import           Control.Exception.Safe
+#if !MIN_VERSION_base(4,13,0)
+import           Control.Monad.Fail             ( MonadFail )
+#endif
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Resource
