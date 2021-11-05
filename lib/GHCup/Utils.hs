@@ -42,11 +42,12 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
-import           GHCup.Utils.File
 import           GHCup.Utils.Logger
 import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
+import           GHCup.System.Directory
+import           GHCup.System.Process
 
 import           Codec.Archive           hiding ( Directory )
 import           Control.Applicative

@@ -1,4 +1,4 @@
-module GHCup.Utils.File.Common where
+module GHCup.System.Directory where
 
 import           Text.Regex.Posix
 

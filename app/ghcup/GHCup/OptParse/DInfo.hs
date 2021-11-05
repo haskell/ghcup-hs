@@ -20,6 +20,7 @@ import           GHCup.Types
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.Logger
+import           GHCup.System.Process
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -36,7 +37,6 @@ import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
-import GHCup.Utils.File
 import Language.Haskell.TH
 
 

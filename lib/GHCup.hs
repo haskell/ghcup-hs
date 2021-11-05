@@ -33,12 +33,13 @@ import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
 import           GHCup.Utils
-import           GHCup.Utils.File
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ
 import           GHCup.Utils.Version.QQ
 import           GHCup.Version
+import           GHCup.System.Directory
+import           GHCup.System.Process
 
 import           Codec.Archive                  ( ArchiveResult )
 import           Control.Applicative

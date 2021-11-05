@@ -35,7 +35,7 @@ import GHCup.Utils
 import Data.Versions
 import URI.ByteString (serializeURIRef')
 import GHCup.Utils.Prelude
-import GHCup.Utils.File (exec)
+import GHCup.System.Process (exec)
 import Data.Char (toLower)
 
 

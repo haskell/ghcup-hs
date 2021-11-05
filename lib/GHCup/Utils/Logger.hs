@@ -18,7 +18,7 @@ module GHCup.Utils.Logger where
 
 import           GHCup.Types
 import           GHCup.Types.Optics
-import {-# SOURCE #-} GHCup.Utils.File.Common
+import {-# SOURCE #-} GHCup.System.Directory
 import           GHCup.Utils.String.QQ
 
 import           Control.Exception.Safe

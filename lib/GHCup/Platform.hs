@@ -23,7 +23,7 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.File
+import           GHCup.System.Process
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.String.QQ

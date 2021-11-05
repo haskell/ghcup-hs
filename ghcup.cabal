@@ -61,8 +61,9 @@ library
     GHCup.Types.Optics
     GHCup.Utils
     GHCup.Utils.Dirs
-    GHCup.Utils.File
-    GHCup.Utils.File.Common
+    GHCup.System.Process
+    GHCup.System.Directory
+    GHCup.System.Process.Common
     GHCup.Utils.Logger
     GHCup.Utils.MegaParsec
     GHCup.Utils.Prelude
@@ -152,7 +153,7 @@ library
   if os(windows)
     cpp-options:   -DIS_WINDOWS
     other-modules:
-      GHCup.Utils.File.Windows
+      GHCup.System.Process.Windows
       GHCup.Utils.Prelude.Windows
       GHCup.Utils.Windows
 
@@ -163,7 +164,7 @@ library
 
   else
     other-modules:
-      GHCup.Utils.File.Posix
+      GHCup.System.Process.Posix
       GHCup.Utils.Posix
       GHCup.Utils.Prelude.Posix
       System.Console.Terminal.Common

@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 
 {-|
-Module      : GHCup.Utils.File.Windows
+Module      : GHCup.System.Process.Windows
 Description : File and windows APIs
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
@@ -13,13 +13,14 @@ Portability : Windows
 This module handles file and executable handling.
 Some of these functions use sophisticated logging.
 -}
-module GHCup.Utils.File.Windows where
+module GHCup.System.Process.Windows where
 
 import {-# SOURCE #-} GHCup.Utils ( getLinkTarget, pathIsLink )
 import           GHCup.Utils.Dirs
-import           GHCup.Utils.File.Common
 import           GHCup.Types
 import           GHCup.Types.Optics
+import           GHCup.System.Directory
+import           GHCup.System.Process.Common
 
 import           Control.Concurrent
 import           Control.DeepSeq

@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 
 {-|
-Module      : GHCup.Utils.File.Posix
+Module      : GHCup.System.Process.Posix
 Description : File and unix APIs
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
@@ -13,13 +13,13 @@ Portability : POSIX
 This module handles file and executable handling.
 Some of these functions use sophisticated logging.
 -}
-module GHCup.Utils.File.Posix where
+module GHCup.System.Process.Posix where
 
-import           GHCup.Utils.File.Common
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.Logger
 import           GHCup.Types
 import           GHCup.Types.Optics
+import           GHCup.System.Process.Common
 
 import           Control.Concurrent
 import           Control.Concurrent.Async

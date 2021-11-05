@@ -15,7 +15,7 @@ import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude ( decUTF8Safe )
-import           GHCup.Utils.File
+import           GHCup.System.Process
 
 import           Brick
 import           Brick.Widgets.Border
