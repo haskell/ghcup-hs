@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 {-|
-Module      : GHCup.Utils.String.QQ
+Module      : GHCup.QQ.String
 Description : String quasi quoters
 Copyright   : (c) Audrey Tang <audreyt@audreyt.org> 2019, Julian Ospald <hasufell@posteo.de> 2020
 License     : LGPL-3.0
@@ -30,7 +30,7 @@ Any instance of the IsString type is permitted.
 (For GHC versions 6, write "[$s||]" instead of "[s||]".)
 
 -}
-module GHCup.Utils.String.QQ
+module GHCup.QQ.String
   ( s
   )
 where

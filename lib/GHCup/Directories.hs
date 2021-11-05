@@ -5,7 +5,7 @@
 {-# LANGUAGE ViewPatterns          #-}
 
 {-|
-Module      : GHCup.Utils.Dirs
+Module      : GHCup.Directories
 Description : Definition of GHCup directories
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
@@ -13,7 +13,7 @@ Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : portable
 -}
-module GHCup.Utils.Dirs
+module GHCup.Directories
   ( getAllDirs
   , ghcupBaseDir
   , ghcupConfigFile
@@ -35,9 +35,9 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
-import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
+import           GHCup.MegaParsec
+import           GHCup.Logger
+import           GHCup.Prelude
 
 import           Control.Exception.Safe
 import           Control.Monad

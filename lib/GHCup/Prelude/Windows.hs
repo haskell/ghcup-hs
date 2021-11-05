@@ -1,4 +1,4 @@
-module GHCup.Utils.Prelude.Windows where
+module GHCup.Prelude.Windows where
 
 import qualified System.Win32.File             as Win32
 

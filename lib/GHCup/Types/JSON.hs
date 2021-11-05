@@ -22,9 +22,9 @@ Portability : portable
 module GHCup.Types.JSON where
 
 import           GHCup.Types
-import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.Logger             () -- TH is broken shite and needs GHCup.Utils.Logger for linking, although we don't depend on the file.
+import           GHCup.MegaParsec
+import           GHCup.Prelude
+import           GHCup.Logger             () -- TH is broken shite and needs GHCup.Logger for linking, although we don't depend on the file.
                                                    -- This is due to the boot file.
 
 import           Control.Applicative            ( (<|>) )

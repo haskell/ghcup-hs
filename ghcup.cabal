@@ -52,7 +52,7 @@ library
   exposed-modules:
     GHCup
     GHCup.Download
-    GHCup.Download.Utils
+    GHCup.Download.Common
     GHCup.Errors
     GHCup.Platform
     GHCup.Requirements
@@ -60,15 +60,16 @@ library
     GHCup.Types.JSON
     GHCup.Types.Optics
     GHCup.Utils
-    GHCup.Utils.Dirs
+    GHCup.Directories
     GHCup.System.Process
     GHCup.System.Directory
     GHCup.System.Process.Common
-    GHCup.Utils.Logger
-    GHCup.Utils.MegaParsec
-    GHCup.Utils.Prelude
-    GHCup.Utils.String.QQ
-    GHCup.Utils.Version.QQ
+    GHCup.System.Console
+    GHCup.Logger
+    GHCup.MegaParsec
+    GHCup.Prelude
+    GHCup.QQ.String
+    GHCup.QQ.Version
     GHCup.Version
 
   hs-source-dirs:     lib
@@ -154,8 +155,8 @@ library
     cpp-options:   -DIS_WINDOWS
     other-modules:
       GHCup.System.Process.Windows
-      GHCup.Utils.Prelude.Windows
-      GHCup.Utils.Windows
+      GHCup.Prelude.Windows
+      GHCup.System.Console.Windows
 
     build-depends:
       , bzlib
@@ -165,8 +166,8 @@ library
   else
     other-modules:
       GHCup.System.Process.Posix
-      GHCup.Utils.Posix
-      GHCup.Utils.Prelude.Posix
+      GHCup.System.Console.Posix
+      GHCup.Prelude.Posix
       System.Console.Terminal.Common
       System.Console.Terminal.Posix
 

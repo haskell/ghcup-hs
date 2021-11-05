@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 
 {-|
-Module      : GHCup.Utils.Logger
+Module      : GHCup.Logger
 Description : logger definition
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
@@ -14,12 +14,12 @@ Portability : portable
 
 Here we define our main logger.
 -}
-module GHCup.Utils.Logger where
+module GHCup.Logger where
 
 import           GHCup.Types
 import           GHCup.Types.Optics
 import {-# SOURCE #-} GHCup.System.Directory
-import           GHCup.Utils.String.QQ
+import           GHCup.QQ.String
 
 import           Control.Exception.Safe
 import           Control.Monad
@@ -34,7 +34,7 @@ import           System.IO.Error
 import           Text.Regex.Posix
 
 import qualified Data.ByteString               as B
-import GHCup.Utils.Prelude
+import GHCup.Prelude
 import qualified Data.Text                     as T
 
 logInfo :: ( MonadReader env m

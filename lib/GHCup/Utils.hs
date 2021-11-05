@@ -20,32 +20,32 @@ This module contains GHCup helpers specific to
 installation and introspection of files/versions etc.
 -}
 module GHCup.Utils
-  ( module GHCup.Utils.Dirs
+  ( module GHCup.Directories
   , module GHCup.Utils
 #if defined(IS_WINDOWS)
-  , module GHCup.Utils.Windows
+  , module GHCup.System.Console.Windows
 #else
-  , module GHCup.Utils.Posix
+  , module GHCup.System.Console.Posix
 #endif
   )
 where
 
 
 #if defined(IS_WINDOWS)
-import GHCup.Utils.Windows
+import GHCup.System.Console.Windows
 #else
-import GHCup.Utils.Posix
+import GHCup.System.Console.Posix
 #endif
 import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.Dirs
-import           GHCup.Utils.Logger
-import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
+import           GHCup.Directories
+import           GHCup.Logger
+import           GHCup.MegaParsec
+import           GHCup.Prelude
+import           GHCup.QQ.String
 import           GHCup.System.Directory
 import           GHCup.System.Process
 
@@ -98,14 +98,14 @@ import qualified Data.List.NonEmpty            as NE
 -- >>> import System.Directory
 -- >>> import URI.ByteString
 -- >>> import qualified Data.Text as T
--- >>> import GHCup.Utils.Prelude
+-- >>> import GHCup.Prelude
 -- >>> import GHCup.Download
 -- >>> import GHCup.Version
 -- >>> import GHCup.Errors
 -- >>> import GHCup.Types
 -- >>> import GHCup.Types.Optics
 -- >>> import Optics
--- >>> import GHCup.Utils.Version.QQ
+-- >>> import GHCup.QQ.Version
 -- >>> import qualified Data.Text.Encoding as E
 -- >>> import Control.Monad.Reader
 -- >>> import Haskus.Utils.Variant.Excepts

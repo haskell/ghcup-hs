@@ -16,8 +16,8 @@ module GHCup.OptParse.UnSet where
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Logger
-import           GHCup.Utils.String.QQ
+import           GHCup.Logger
+import           GHCup.QQ.String
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )

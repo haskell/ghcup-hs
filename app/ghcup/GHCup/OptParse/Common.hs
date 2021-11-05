@@ -14,9 +14,9 @@ import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
-import           GHCup.Utils.Logger
-import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Prelude
+import           GHCup.Logger
+import           GHCup.MegaParsec
+import           GHCup.Prelude
 
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)

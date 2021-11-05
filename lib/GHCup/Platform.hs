@@ -24,9 +24,9 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.System.Process
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
+import           GHCup.Logger
+import           GHCup.Prelude
+import           GHCup.QQ.String
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )

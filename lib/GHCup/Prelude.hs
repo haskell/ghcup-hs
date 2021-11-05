@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeOperators       #-}
 
 {-|
-Module      : GHCup.Utils.Prelude
+Module      : GHCup.Prelude
 Description : MegaParsec utilities
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
@@ -17,12 +17,12 @@ Portability : portable
 
 GHCup specific prelude. Lots of Excepts functionality.
 -}
-module GHCup.Utils.Prelude
-  (module GHCup.Utils.Prelude,
+module GHCup.Prelude
+  (module GHCup.Prelude,
 #if defined(IS_WINDOWS)
-   module GHCup.Utils.Prelude.Windows
+   module GHCup.Prelude.Windows
 #else
-   module GHCup.Utils.Prelude.Posix
+   module GHCup.Prelude.Posix
 #endif
   )
 where
@@ -30,11 +30,11 @@ where
 import           GHCup.Types
 import           GHCup.Errors
 import           GHCup.Types.Optics
-import {-# SOURCE #-} GHCup.Utils.Logger
+import {-# SOURCE #-} GHCup.Logger
 #if defined(IS_WINDOWS)
-import           GHCup.Utils.Prelude.Windows
+import           GHCup.Prelude.Windows
 #else
-import           GHCup.Utils.Prelude.Posix
+import           GHCup.Prelude.Posix
 #endif
 
 import           Control.Applicative

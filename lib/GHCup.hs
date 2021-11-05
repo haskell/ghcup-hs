@@ -33,10 +33,10 @@ import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
 import           GHCup.Utils
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
-import           GHCup.Utils.Version.QQ
+import           GHCup.Logger
+import           GHCup.Prelude
+import           GHCup.QQ.String
+import           GHCup.QQ.Version
 import           GHCup.Version
 import           GHCup.System.Directory
 import           GHCup.System.Process
@@ -96,7 +96,7 @@ import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
-import GHCup.Utils.MegaParsec
+import GHCup.MegaParsec
 import Control.Concurrent (threadDelay)
 
 

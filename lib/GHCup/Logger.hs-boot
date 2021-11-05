@@ -3,7 +3,7 @@
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE OverloadedStrings   #-}
 
-module GHCup.Utils.Logger where
+module GHCup.Logger where
 
 import           GHCup.Types
 

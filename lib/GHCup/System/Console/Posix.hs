@@ -1,4 +1,4 @@
-module GHCup.Utils.Posix where
+module GHCup.System.Console.Posix where
 
 
 -- | Enables ANSI support on windows, does nothing on unix.

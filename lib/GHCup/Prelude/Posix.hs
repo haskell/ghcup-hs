@@ -1,4 +1,4 @@
-module GHCup.Utils.Prelude.Posix where
+module GHCup.Prelude.Posix where
 
 import System.Directory
 import System.Posix.Files

@@ -15,8 +15,8 @@ Some of these functions use sophisticated logging.
 -}
 module GHCup.System.Process.Posix where
 
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.Logger
+import           GHCup.Prelude
+import           GHCup.Logger
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.System.Process.Common

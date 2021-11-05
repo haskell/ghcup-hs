@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE OverloadedStrings     #-}
 
-module GHCup.Utils.Windows where
+module GHCup.System.Console.Windows where
 
 
 import           Control.Exception.Safe

@@ -10,7 +10,7 @@ module GHCup.OptParse.ToolRequirements where
 
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Logger
+import           GHCup.Logger
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -28,7 +28,7 @@ import qualified Data.Text.IO                  as T
 import Control.Exception.Safe (MonadMask)
 import GHCup.Types.Optics
 import GHCup.Platform
-import GHCup.Utils.Prelude
+import GHCup.Prelude
 import GHCup.Requirements
 import System.IO
 

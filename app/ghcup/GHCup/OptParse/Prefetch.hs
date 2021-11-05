@@ -14,9 +14,9 @@ module GHCup.OptParse.Prefetch where
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Logger
+import           GHCup.Logger
 import           GHCup.OptParse.Common
-import           GHCup.Utils.String.QQ
+import           GHCup.QQ.String
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -33,7 +33,7 @@ import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
-import GHCup.Utils.Prelude
+import GHCup.Prelude
 import GHCup.Download (getDownloadsF)
 
 

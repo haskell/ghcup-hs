@@ -8,7 +8,7 @@
 
 
 {-|
-Module      : GHCup.Utils.Version.QQ
+Module      : GHCup.QQ.Version
 Description : Version quasi-quoters
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
@@ -16,7 +16,7 @@ Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : portable
 -}
-module GHCup.Utils.Version.QQ where
+module GHCup.QQ.Version where
 
 import           Data.Data
 import           Data.Text                      ( Text )

@@ -16,7 +16,7 @@ Some of these functions use sophisticated logging.
 module GHCup.System.Process.Windows where
 
 import {-# SOURCE #-} GHCup.Utils ( getLinkTarget, pathIsLink )
-import           GHCup.Utils.Dirs
+import           GHCup.Directories
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.System.Directory

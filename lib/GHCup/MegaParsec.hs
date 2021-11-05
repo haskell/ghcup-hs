@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings    #-}
 
 {-|
-Module      : GHCup.Utils.MegaParsec
+Module      : GHCup.MegaParsec
 Description : MegaParsec utilities
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
@@ -10,7 +10,7 @@ Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : portable
 -}
-module GHCup.Utils.MegaParsec where
+module GHCup.MegaParsec where
 
 import           GHCup.Types
 

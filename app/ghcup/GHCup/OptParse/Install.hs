@@ -17,8 +17,8 @@ import           GHCup.OptParse.Common
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Logger
-import           GHCup.Utils.String.QQ
+import           GHCup.Logger
+import           GHCup.QQ.String
 import           GHCup.System.Process
 
 import           Codec.Archive

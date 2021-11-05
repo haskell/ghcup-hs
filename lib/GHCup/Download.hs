@@ -27,16 +27,16 @@ module GHCup.Download where
 
 #if defined(INTERNAL_DOWNLOADER)
 import           GHCup.Download.IOStreams
-import           GHCup.Download.Utils
+import           GHCup.Download.Common
 #endif
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.Dirs
+import           GHCup.Directories
 import           GHCup.System.Process
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
+import           GHCup.Logger
+import           GHCup.Prelude
 import           GHCup.Version
 
 import           Control.Applicative

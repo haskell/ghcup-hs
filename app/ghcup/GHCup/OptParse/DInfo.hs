@@ -17,9 +17,9 @@ import           GHCup
 import           GHCup.Errors
 import           GHCup.Version
 import           GHCup.Types
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.Dirs
-import           GHCup.Utils.Logger
+import           GHCup.Prelude
+import           GHCup.Directories
+import           GHCup.Logger
 import           GHCup.System.Process
 
 #if !MIN_VERSION_base(4,13,0)

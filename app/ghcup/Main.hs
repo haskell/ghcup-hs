@@ -21,9 +21,9 @@ import           GHCup.Errors
 import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Utils
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
+import           GHCup.Logger
+import           GHCup.Prelude
+import           GHCup.QQ.String
 import           GHCup.Version
 
 import           Cabal.Plan ( findPlanJson, SearchPlanJson(..) )

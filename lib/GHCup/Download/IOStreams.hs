@@ -7,10 +7,10 @@
 module GHCup.Download.IOStreams where
 
 
-import           GHCup.Download.Utils
+import           GHCup.Download.Common
 import           GHCup.Errors
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.Prelude
+import           GHCup.Prelude
 
 import           Control.Applicative
 import           Control.Exception.Safe

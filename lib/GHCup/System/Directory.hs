@@ -5,7 +5,7 @@
 
 module GHCup.System.Directory where
 
-import           GHCup.Utils.Prelude
+import           GHCup.Prelude
 
 import           Control.Monad.Reader
 import           Data.Maybe
