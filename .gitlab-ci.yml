@@ -182,12 +182,12 @@ variables:
     - export HOMEBREW_CHANGE_ARCH_TO_ARM=1
 
     # make sure to not pollute the machine with temp files etc
-    - mkdir -p $CI_PROJECT_DIR/.brew_cache
-    - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.brew_cache
-    - mkdir -p $CI_PROJECT_DIR/.brew_logs
-    - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.brew_logs
-    - mkdir -p $CI_PROJECT_DIR/.brew_tmp
-    - export HOMEBREW_TEMP=$CI_PROJECT_DIR/.brew_tmp
+    - mkdir -p $CI_PROJECT_DIR/.bc
+    - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.bc
+    - mkdir -p $CI_PROJECT_DIR/.bl
+    - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.bl
+    - mkdir -p $CI_PROJECT_DIR/.bt
+    - export HOMEBREW_TEMP=$CI_PROJECT_DIR/.bt
 
     # update and install packages
     - brew update
@@ -541,12 +541,12 @@ release:darwin:aarch64:
     - export HOMEBREW_CHANGE_ARCH_TO_ARM=1
 
     # make sure to not pollute the machine with temp files etc
-    - mkdir -p $CI_PROJECT_DIR/.brew_cache
-    - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.brew_cache
-    - mkdir -p $CI_PROJECT_DIR/.brew_logs
-    - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.brew_logs
-    - mkdir -p $CI_PROJECT_DIR/.brew_tmp
-    - export HOMEBREW_TEMP=$CI_PROJECT_DIR/.brew_tmp
+    - mkdir -p $CI_PROJECT_DIR/.bc
+    - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.bc
+    - mkdir -p $CI_PROJECT_DIR/.bl
+    - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.bl
+    - mkdir -p $CI_PROJECT_DIR/.bt
+    - export HOMEBREW_TEMP=$CI_PROJECT_DIR/.bt
 
     # update and install packages
     - brew update

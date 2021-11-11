@@ -36,6 +36,9 @@ import GHCup.System.Console.Windows
 #else
 import GHCup.System.Console.Posix
 #endif
+import {-# SOURCE #-} GHCup.GHC.Common
+import {-# SOURCE #-} GHCup.GHC.Set
+import           GHCup.Data.Versions
 import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Types
@@ -78,6 +81,7 @@ import           System.FilePath
 import           System.IO.Error
 import           Text.Regex.Posix
 import           URI.ByteString
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Codec.Compression.BZip        as BZip
 import qualified Codec.Compression.GZip        as GZip
@@ -121,161 +125,6 @@ import qualified Data.List.NonEmpty            as NE
 
 
 
-    ------------------------
-    --[ Symlink handling ]--
-    ------------------------
-
-
--- | The symlink destination of a ghc tool.
-ghcLinkDestination :: ( MonadReader env m
-                      , HasDirs env
-                      , MonadThrow m, MonadIO m)
-                   => FilePath -- ^ the tool, such as 'ghc', 'haddock' etc.
-                   -> GHCTargetVersion
-                   -> m FilePath
-ghcLinkDestination tool ver = do
-  Dirs {..}  <- getDirs
-  ghcd <- ghcupGHCDir ver
-  pure (relativeSymlink binDir (ghcd </> "bin" </> tool))
-
-
--- | Removes the minor GHC symlinks, e.g. ghc-8.6.5.
-rmMinorSymlinks :: ( MonadReader env m
-                   , HasDirs env
-                   , MonadIO m
-                   , HasLog env
-                   , MonadThrow m
-                   , MonadFail m
-                   , MonadMask m
-                   )
-                => GHCTargetVersion
-                -> Excepts '[NotInstalled] m ()
-rmMinorSymlinks tv@GHCTargetVersion{..} = do
-  Dirs {..}  <- lift getDirs
-
-  files                         <- liftE $ ghcToolFiles tv
-  forM_ files $ \f -> do
-    let f_xyz = f <> "-" <> T.unpack (prettyVer _tvVersion) <> exeExt
-    let fullF = binDir </> f_xyz
-    lift $ logDebug ("rm -f " <> T.pack fullF)
-    lift $ hideError doesNotExistErrorType $ rmLink fullF
-
-
--- | Removes the set ghc version for the given target, if any.
-rmPlain :: ( MonadReader env m
-           , HasDirs env
-           , HasLog env
-           , MonadThrow m
-           , MonadFail m
-           , MonadIO m
-           , MonadMask m
-           )
-        => Maybe Text -- ^ target
-        -> Excepts '[NotInstalled] m ()
-rmPlain target = do
-  Dirs {..}  <- lift getDirs
-  mtv                           <- lift $ ghcSet target
-  forM_ mtv $ \tv -> do
-    files <- liftE $ ghcToolFiles tv
-    forM_ files $ \f -> do
-      let fullF = binDir </> f <> exeExt
-      lift $ logDebug ("rm -f " <> T.pack fullF)
-      lift $ hideError doesNotExistErrorType $ rmLink fullF
-    -- old ghcup
-    let hdc_file = binDir </> "haddock-ghc" <> exeExt
-    lift $ logDebug ("rm -f " <> T.pack hdc_file)
-    lift $ hideError doesNotExistErrorType $ rmLink hdc_file
-
-
--- | Remove the major GHC symlink, e.g. ghc-8.6.
-rmMajorSymlinks :: ( MonadReader env m
-                   , HasDirs env
-                   , MonadIO m
-                   , HasLog env
-                   , MonadThrow m
-                   , MonadFail m
-                   , MonadMask m
-                   )
-                => GHCTargetVersion
-                -> Excepts '[NotInstalled] m ()
-rmMajorSymlinks tv@GHCTargetVersion{..} = do
-  Dirs {..}  <- lift getDirs
-  (mj, mi) <- getMajorMinorV _tvVersion
-  let v' = intToText mj <> "." <> intToText mi
-
-  files                         <- liftE $ ghcToolFiles tv
-  forM_ files $ \f -> do
-    let f_xy = f <> "-" <> T.unpack v' <> exeExt
-    let fullF = binDir </> f_xy
-    lift $ logDebug ("rm -f " <> T.pack fullF)
-    lift $ hideError doesNotExistErrorType $ rmLink fullF
-
-
-
-
-    -----------------------------------
-    --[ Set/Installed introspection ]--
-    -----------------------------------
-
-
--- | Whether the given GHC versin is installed.
-ghcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => GHCTargetVersion -> m Bool
-ghcInstalled ver = do
-  ghcdir <- ghcupGHCDir ver
-  liftIO $ doesDirectoryExist ghcdir
-
-
--- | Whether the given GHC version is installed from source.
-ghcSrcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => GHCTargetVersion -> m Bool
-ghcSrcInstalled ver = do
-  ghcdir <- ghcupGHCDir ver
-  liftIO $ doesFileExist (ghcdir </> ghcUpSrcBuiltFile)
-
-
--- | Whether the given GHC version is set as the current.
-ghcSet :: (MonadReader env m, HasDirs env, MonadThrow m, MonadIO m)
-       => Maybe Text   -- ^ the target of the GHC version, if any
-                       --  (e.g. armv7-unknown-linux-gnueabihf)
-       -> m (Maybe GHCTargetVersion)
-ghcSet mtarget = do
-  Dirs {..}  <- getDirs
-  let ghc = maybe "ghc" (\t -> T.unpack t <> "-ghc") mtarget
-  let ghcBin = binDir </> ghc <> exeExt
-
-  -- link destination is of the form ../ghc/<ver>/bin/ghc
-  -- for old ghcup, it is ../ghc/<ver>/bin/ghc-<ver>
-  liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
-    link <- liftIO $ getLinkTarget ghcBin
-    Just <$> ghcLinkVersion link
- where
-  ghcLinkVersion :: MonadThrow m => FilePath -> m GHCTargetVersion
-  ghcLinkVersion (T.pack . dropSuffix exeExt -> t) = throwEither $ MP.parse parser "ghcLinkVersion" t
-   where
-    parser =
-        (do
-           _    <- parseUntil1 ghcSubPath
-           _    <- ghcSubPath
-           r    <- parseUntil1 pathSep
-           rest <- MP.getInput
-           MP.setInput r
-           x <- ghcTargetVerP
-           MP.setInput rest
-           pure x
-         )
-        <* pathSep
-        <* MP.takeRest
-        <* MP.eof
-    ghcSubPath = pathSep <* MP.chunk "ghc" *> pathSep
-
--- | Get all installed GHCs by reading ~/.ghcup/ghc/<dir>.
--- If a dir cannot be parsed, returns left.
-getInstalledGHCs :: (MonadReader env m, HasDirs env, MonadIO m) => m [Either FilePath GHCTargetVersion]
-getInstalledGHCs = do
-  ghcdir <- ghcupGHCBaseDir
-  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectory ghcdir
-  forM fs $ \f -> case parseGHCupGHCDir f of
-    Right r -> pure $ Right r
-    Left  _ -> pure $ Left f
 
 
 -- | Get all installed cabals, by matching on @~\/.ghcup\/bin/cabal-*@.
@@ -589,79 +438,6 @@ hlsSymlinks = do
 
 
 
-    -----------------------------------------
-    --[ Major version introspection (X.Y) ]--
-    -----------------------------------------
-
-
--- | Extract (major, minor) from any version.
-getMajorMinorV :: MonadThrow m => Version -> m (Int, Int)
-getMajorMinorV Version {..} = case _vChunks of
-  ((Digits x :| []) :| ((Digits y :| []):_)) -> pure (fromIntegral x, fromIntegral y)
-  _ -> throwM $ ParseError "Could not parse X.Y from version"
-
-
-matchMajor :: Version -> Int -> Int -> Bool
-matchMajor v' major' minor' = case getMajorMinorV v' of
-  Just (x, y) -> x == major' && y == minor'
-  Nothing     -> False
-
--- | Match PVP prefix.
---
--- >>> matchPVPrefix [pver|8.8|] [pver|8.8.4|]
--- True
--- >>> matchPVPrefix [pver|8|] [pver|8.8.4|]
--- True
--- >>> matchPVPrefix [pver|8.10|] [pver|8.8.4|]
--- False
--- >>> matchPVPrefix [pver|8.10|] [pver|8.10.7|]
--- True
-matchPVPrefix :: PVP -> PVP -> Bool
-matchPVPrefix (toL -> prefix) (toL -> full) = and $ zipWith (==) prefix full
-
-toL :: PVP -> [Int]
-toL (PVP inner) = fmap fromIntegral $ NE.toList inner
-
-
--- | Get the latest installed full GHC version that satisfies the given (possibly partial)
--- PVP version.
-getGHCForPVP :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m)
-             => PVP
-             -> Maybe Text -- ^ the target triple
-             -> m (Maybe GHCTargetVersion)
-getGHCForPVP pvpIn mt = do
-  ghcs <- rights <$> getInstalledGHCs
-  -- we're permissive here... failed parse just means we have no match anyway
-  let ghcs' = catMaybes $ flip fmap ghcs $ \GHCTargetVersion{..} -> do
-        (pvp_, rest) <- versionToPVP _tvVersion
-        pure (pvp_, rest, _tvTarget)
-
-  getGHCForPVP' pvpIn ghcs' mt
-
--- | Like 'getGHCForPVP', except with explicit input parameter.
---
--- >>> getGHCForPVP' [pver|8|] installedVersions Nothing
--- Just (GHCTargetVersion {_tvTarget = Nothing, _tvVersion = Version {_vEpoch = Nothing, _vChunks = (Digits 8 :| []) :| [Digits 10 :| [],Digits 7 :| []], _vRel = [Str "debug" :| []], _vMeta = Just "lol"}})
--- >>> fmap prettyShow $ getGHCForPVP' [pver|8.8|] installedVersions Nothing
--- "Just 8.8.4"
--- >>> fmap prettyShow $ getGHCForPVP' [pver|8.10.4|] installedVersions Nothing
--- "Just 8.10.4"
-getGHCForPVP' :: MonadThrow m
-             => PVP
-             -> [(PVP, Text, Maybe Text)] -- ^ installed GHCs
-             -> Maybe Text          -- ^ the target triple
-             -> m (Maybe GHCTargetVersion)
-getGHCForPVP' pvpIn ghcs' mt = do
-  let mResult = lastMay
-                  . sortBy (\(x, _, _) (y, _, _) -> compare x y)
-                  . filter
-                      (\(pvp_, _, target) ->
-                        target == mt && matchPVPrefix pvp_ pvpIn
-                      )
-                  $ ghcs'
-  forM mResult $ \(pvp_, rest, target) -> do
-    ver' <- pvpToVersion pvp_ rest
-    pure (GHCTargetVersion target ver')
 
 
 -- | Get the latest available ghc for the given PVP version, which
@@ -811,39 +587,6 @@ getLatestBaseVersion av pvpVer =
     -------------
 
 
--- | Get tool files from @~\/.ghcup\/bin\/ghc\/\<ver\>\/bin\/\*@
--- while ignoring @*-\<ver\>@ symlinks and accounting for cross triple prefix.
---
--- Returns unversioned relative files without extension, e.g.:
---
---   - @["hsc2hs","haddock","hpc","runhaskell","ghc","ghc-pkg","ghci","runghc","hp2ps"]@
-ghcToolFiles :: (MonadReader env m, HasDirs env, MonadThrow m, MonadFail m, MonadIO m)
-             => GHCTargetVersion
-             -> Excepts '[NotInstalled] m [FilePath]
-ghcToolFiles ver = do
-  ghcdir <- lift $ ghcupGHCDir ver
-  let bindir = ghcdir </> "bin"
-
-  -- fail if ghc is not installed
-  whenM (fmap not $ liftIO $ doesDirectoryExist ghcdir)
-        (throwE (NotInstalled GHC ver))
-
-  files <- liftIO (listDirectory bindir >>= filterM (doesFileExist . (bindir </>)))
-  pure (getUniqueTools . groupToolFiles . fmap (dropSuffix exeExt) $ files)
-
- where
-
-  groupToolFiles :: [FilePath] -> [[(FilePath, String)]]
-  groupToolFiles = groupBy (\(a, _) (b, _) -> a == b) . fmap (splitOnPVP "-")
-
-  getUniqueTools :: [[(FilePath, String)]] -> [String]
-  getUniqueTools = filter (isNotAnyInfix blackListedTools) . nub . fmap fst . filter ((== "") . snd) . concat
-
-  blackListedTools :: [String]
-  blackListedTools = ["haddock-ghc"]
-
-  isNotAnyInfix :: [String] -> String -> Bool
-  isNotAnyInfix xs t = foldr (\a b -> not (a `isInfixOf` t) && b) True xs
 
 
 -- | This file, when residing in @~\/.ghcup\/ghc\/\<ver\>\/@ signals that
@@ -1142,3 +885,33 @@ ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir) = do
 ghcBinaryName :: GHCTargetVersion -> String
 ghcBinaryName (GHCTargetVersion (Just t) v') = T.unpack (t <> "-ghc-" <> prettyVer v' <> T.pack exeExt)
 ghcBinaryName (GHCTargetVersion Nothing  v') = T.unpack ("ghc-" <> prettyVer v' <> T.pack exeExt)
+
+
+
+-- | Warn if the installed and set HLS is not compatible with the installed and
+-- set GHC version.
+warnAboutHlsCompatibility :: ( MonadReader env m
+                             , HasDirs env
+                             , HasLog env
+                             , MonadThrow m
+                             , MonadCatch m
+                             , MonadIO m
+                             )
+                          => m ()
+warnAboutHlsCompatibility = do
+  supportedGHC <- hlsGHCVersions
+  currentGHC   <- fmap _tvVersion <$> ghcSet Nothing
+  currentHLS   <- hlsSet
+
+  case (currentGHC, currentHLS) of
+    (Just gv, Just hv) | gv `notElem` supportedGHC -> do
+      logWarn $
+        "GHC " <> T.pack (prettyShow gv) <> " is not compatible with " <>
+        "Haskell Language Server " <> T.pack (prettyShow hv) <> "." <> "\n" <>
+        "Haskell IDE support may not work until this is fixed." <> "\n" <>
+        "Install a different HLS version, or install and set one of the following GHCs:" <> "\n" <>
+        T.pack (prettyShow supportedGHC)
+        
+    _ -> return ()
+
+
