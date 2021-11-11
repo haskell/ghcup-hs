@@ -851,31 +851,26 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
         Nothing -> pure "cabal.project"
       forM_ cabalProjectLocal $ \cpl -> copyFileE cpl (workdir </> cp <.> "local")
 
-      let targets = ["exe:haskell-language-server", "exe:haskell-language-server-wrapper"]
-
       artifacts <- forM (sort ghcs) $ \ghc -> do
         let ghcInstallDir = installDir </> T.unpack (prettyVer ghc)
-        liftIO $ createDirRecursive' ghcInstallDir
+        liftIO $ createDirRecursive' installDir
         lift $ logInfo $ "Building HLS " <> prettyVer installVer <> " for GHC version " <> prettyVer ghc
         liftE $ lEM @_ @'[ProcessError] $
-          execLogged "cabal" ( [ "v2-build"
+          execLogged "cabal" ( [ "v2-install"
                                , "-w"
                                , "ghc-" <> T.unpack (prettyVer ghc)
+                               , "--install-method=copy"
                                ] ++
                                maybe [] (\j -> ["--jobs=" <> show j]) jobs ++
-                               [ "--project-file=" <> cp
-                               ] ++ targets
+                               [ "--overwrite-policy=always"
+                               , "--disable-profiling"
+                               , "--disable-tests"
+                               , "--installdir=" <> ghcInstallDir
+                               , "--project-file=" <> cp
+                               , "exe:haskell-language-server"
+                               , "exe:haskell-language-server-wrapper"]
                              )
           (Just workdir) "cabal" Nothing
-        forM_ targets $ \target -> do
-          let cabal = "cabal"
-              args = ["list-bin", target]
-          CapturedProcess{..} <- lift $ executeOut cabal args  (Just workdir) 
-          case _exitCode of
-            ExitFailure i -> throwE (NonZeroExit i cabal args)
-            _ -> pure ()
-          let cbin = stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
-          copyFileE cbin (ghcInstallDir </> takeFileName cbin)
         pure ghcInstallDir
 
       forM_ artifacts $ \artifact -> do
