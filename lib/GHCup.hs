@@ -2500,6 +2500,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
   execWithGhcEnv :: ( MonadReader env m
                     , HasSettings env
                     , HasDirs env
+                    , HasLog env
                     , MonadIO m
                     , MonadThrow m)
                  => FilePath         -- ^ thing to execute

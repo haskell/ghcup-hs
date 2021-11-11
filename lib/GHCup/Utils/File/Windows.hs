@@ -149,6 +149,7 @@ executeOut path args chdir = do
 
 execLogged :: ( MonadReader env m
               , HasDirs env
+              , HasLog env
               , HasSettings env
               , MonadIO m
               , MonadThrow m)
@@ -160,6 +161,7 @@ execLogged :: ( MonadReader env m
            -> m (Either ProcessError ())
 execLogged exe args chdir lfile env = do
   Dirs {..} <- getDirs
+  logDebug $ T.pack $ "Running " <> exe <> " with arguments " <> show args
   let stdoutLogfile = logsDir </> lfile <> ".stdout.log"
       stderrLogfile = logsDir </> lfile <> ".stderr.log"
   cp <- createProcessWithMingwPath ((proc exe args)

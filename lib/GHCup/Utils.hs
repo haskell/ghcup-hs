@@ -856,6 +856,7 @@ make :: ( MonadThrow m
         , MonadIO m
         , MonadReader env m
         , HasDirs env
+        , HasLog env
         , HasSettings env
         )
      => [String]
