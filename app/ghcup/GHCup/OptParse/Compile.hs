@@ -88,6 +88,7 @@ data HLSCompileOptions = HLSCompileOptions
   , cabalProjectLocal :: Maybe FilePath
   , patchDir     :: Maybe FilePath
   , targetGHCs   :: [ToolVersion]
+  , cabalArgs    :: [Text]
   }
 
 
@@ -148,7 +149,10 @@ Examples:
   These need to be available in PATH prior to compilation.
 
 Examples:
-  ghcup compile hls -v 1.4.0 -j 12 8.10.5 8.10.7 9.0.1|]
+  # compile 1.4.0 for ghc 8.10.5 and 8.10.7
+  ghcup compile hls -v 1.4.0 -j 12 --ghc 8.10.5 --ghc 8.10.7
+  # compile from master for ghc 8.10.7, linking everything dynamically
+  ghcup compile hls -g master -j 12 --ghc 8.10.7 -- --ghc-options='-dynamic'|]
 
 
 ghcCompileOpts :: Parser GHCCompileOptions
@@ -315,7 +319,8 @@ hlsCompileOpts =
               "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
             )
           )
-    <*> some (toolVersionArgument Nothing (Just GHC))
+    <*> some (toolVersionOption Nothing (Just GHC))
+    <*> many (argument str (metavar "CABAL_ARGS" <> help "Additional arguments to cabal install, prefix with '-- ' (longopts)"))
 
 
 
@@ -431,6 +436,7 @@ compile compileCommand settings runAppState runLogger = do
                     cabalProject
                     cabalProjectLocal
                     patchDir
+                    cabalArgs
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
         let vi = getVersionInfo targetVer HLS dls
         when setCompile $ void $ liftE $

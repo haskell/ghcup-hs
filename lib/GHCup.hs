@@ -753,6 +753,7 @@ compileHLS :: ( MonadMask m
            -> Maybe FilePath
            -> Maybe FilePath
            -> Maybe FilePath
+           -> [Text]                   -- ^ additional args to cabal install
            -> Excepts '[ NoDownload
                        , GPGError
                        , DownloadFailed
@@ -763,10 +764,11 @@ compileHLS :: ( MonadMask m
                        , BuildFailed
                        , NotInstalled
                        ] m Version
-compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patchdir = do
+compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patchdir cabalArgs = do
   PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   Dirs { .. } <- lift getDirs
+
 
   (workdir, tver) <- case targetHLS of
     -- unpack from version tarball
@@ -867,7 +869,8 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
                                , "--disable-tests"
                                , "--installdir=" <> ghcInstallDir
                                , "--project-file=" <> cp
-                               , "exe:haskell-language-server"
+                               ] ++ fmap T.unpack cabalArgs ++ [
+                                 "exe:haskell-language-server"
                                , "exe:haskell-language-server-wrapper"]
                              )
           (Just workdir) "cabal" Nothing
