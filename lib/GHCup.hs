@@ -1097,7 +1097,7 @@ setGHC ver sghc = do
         pure $ Just (file <> "-" <> verS)
 
     -- create symlink
-    forM mTargetFile $ \targetFile -> do
+    forM_ mTargetFile $ \targetFile -> do
       let fullF = binDir </> targetFile  <> exeExt
           fileWithExt = file <> exeExt
       destL <- lift $ ghcLinkDestination fileWithExt ver
