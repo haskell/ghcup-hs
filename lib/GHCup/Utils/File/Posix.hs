@@ -73,6 +73,7 @@ executeOut path args chdir = liftIO $ captureOutStreams $ do
 
 execLogged :: ( MonadReader env m
               , HasSettings env
+              , HasLog env
               , HasDirs env
               , MonadIO m
               , MonadThrow m)
@@ -85,6 +86,7 @@ execLogged :: ( MonadReader env m
 execLogged exe args chdir lfile env = do
   Settings {..} <- getSettings
   Dirs {..} <- getDirs
+  logDebug $ T.pack $ "Running " <> exe <> " with arguments " <> show args
   let logfile = logsDir </> lfile <> ".log"
   liftIO $ bracket (openFd logfile WriteOnly (Just newFilePerms) defaultFileFlags{ append = True })
                    closeFd

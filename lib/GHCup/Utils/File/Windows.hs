@@ -18,6 +18,7 @@ module GHCup.Utils.File.Windows where
 import {-# SOURCE #-} GHCup.Utils ( getLinkTarget, pathIsLink )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.File.Common
+import           GHCup.Utils.Logger
 import           GHCup.Types
 import           GHCup.Types.Optics
 
@@ -40,6 +41,7 @@ import qualified Control.Exception             as EX
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
+import qualified Data.Text                     as T
 
 
 
@@ -149,6 +151,7 @@ executeOut path args chdir = do
 
 execLogged :: ( MonadReader env m
               , HasDirs env
+              , HasLog env
               , HasSettings env
               , MonadIO m
               , MonadThrow m)
@@ -160,6 +163,7 @@ execLogged :: ( MonadReader env m
            -> m (Either ProcessError ())
 execLogged exe args chdir lfile env = do
   Dirs {..} <- getDirs
+  logDebug $ T.pack $ "Running " <> exe <> " with arguments " <> show args
   let stdoutLogfile = logsDir </> lfile <> ".stdout.log"
       stderrLogfile = logsDir </> lfile <> ".stderr.log"
   cp <- createProcessWithMingwPath ((proc exe args)

@@ -753,6 +753,7 @@ compileHLS :: ( MonadMask m
            -> Maybe FilePath
            -> Maybe FilePath
            -> Maybe FilePath
+           -> [Text]                   -- ^ additional args to cabal install
            -> Excepts '[ NoDownload
                        , GPGError
                        , DownloadFailed
@@ -763,10 +764,11 @@ compileHLS :: ( MonadMask m
                        , BuildFailed
                        , NotInstalled
                        ] m Version
-compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patchdir = do
+compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patchdir cabalArgs = do
   PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   Dirs { .. } <- lift getDirs
+
 
   (workdir, tver) <- case targetHLS of
     -- unpack from version tarball
@@ -851,31 +853,27 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
         Nothing -> pure "cabal.project"
       forM_ cabalProjectLocal $ \cpl -> copyFileE cpl (workdir </> cp <.> "local")
 
-      let targets = ["exe:haskell-language-server", "exe:haskell-language-server-wrapper"]
-
       artifacts <- forM (sort ghcs) $ \ghc -> do
         let ghcInstallDir = installDir </> T.unpack (prettyVer ghc)
-        liftIO $ createDirRecursive' ghcInstallDir
+        liftIO $ createDirRecursive' installDir
         lift $ logInfo $ "Building HLS " <> prettyVer installVer <> " for GHC version " <> prettyVer ghc
         liftE $ lEM @_ @'[ProcessError] $
-          execLogged "cabal" ( [ "v2-build"
+          execLogged "cabal" ( [ "v2-install"
                                , "-w"
                                , "ghc-" <> T.unpack (prettyVer ghc)
+                               , "--install-method=copy"
                                ] ++
                                maybe [] (\j -> ["--jobs=" <> show j]) jobs ++
-                               [ "--project-file=" <> cp
-                               ] ++ targets
+                               [ "--overwrite-policy=always"
+                               , "--disable-profiling"
+                               , "--disable-tests"
+                               , "--installdir=" <> ghcInstallDir
+                               , "--project-file=" <> cp
+                               ] ++ fmap T.unpack cabalArgs ++ [
+                                 "exe:haskell-language-server"
+                               , "exe:haskell-language-server-wrapper"]
                              )
           (Just workdir) "cabal" Nothing
-        forM_ targets $ \target -> do
-          let cabal = "cabal"
-              args = ["list-bin", target]
-          CapturedProcess{..} <- lift $ executeOut cabal args  (Just workdir) 
-          case _exitCode of
-            ExitFailure i -> throwE (NonZeroExit i cabal args)
-            _ -> pure ()
-          let cbin = stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
-          copyFileE cbin (ghcInstallDir </> takeFileName cbin)
         pure ghcInstallDir
 
       forM_ artifacts $ \artifact -> do
@@ -1102,7 +1100,7 @@ setGHC ver sghc = do
         pure $ Just (file <> "-" <> verS)
 
     -- create symlink
-    forM mTargetFile $ \targetFile -> do
+    forM_ mTargetFile $ \targetFile -> do
       let fullF = binDir </> targetFile  <> exeExt
           fileWithExt = file <> exeExt
       destL <- lift $ ghcLinkDestination fileWithExt ver
@@ -2505,6 +2503,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
   execWithGhcEnv :: ( MonadReader env m
                     , HasSettings env
                     , HasDirs env
+                    , HasLog env
                     , MonadIO m
                     , MonadThrow m)
                  => FilePath         -- ^ thing to execute
