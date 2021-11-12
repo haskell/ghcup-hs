@@ -16,7 +16,6 @@ extra-deps:
   - composition-prelude-3.0.0.2@sha256:1ffed216bd28d810fce0b5be83a661e2a892696d73b3f8de5c0f5edb9b5f0090,1216
   - haskus-utils-data-1.4@sha256:bfa94363b94b14779edd6834fbd59dbb847c3d7b8f48e3844f456ffdc077da4a,1466
   - haskus-utils-types-1.5.1@sha256:991c472f4e751e2f0d7aab6ad4220ef151d6160876dcf0511bbf876bbd432020,1298
-  - haskus-utils-variant-3.1@sha256:e602dd23e068c98d03c1027af20503addef8df6368577622453f44ccabea2a5b,2159
   - heaps-0.3.6.1@sha256:7928b759ca5180d35722c45948c0bde264229f3c99c1888188a3d9285f13d3d2,1340
   - hpath-filepath-0.10.4@sha256:e9e44fb5fdbade7f30b5b5451257dbee15b6ef1aae4060034d73008bb3b5d878,1269
   - hpath-posix-0.13.3@sha256:abe472cf16bccd3a8b8814865ed3551a728fde0f3a2baea2acc03023bec6c565,1615
@@ -39,6 +38,11 @@ extra-deps:
   - strict-base-0.4.0.0@sha256:2ff4e43cb95eedf2995558d7fc34d19362846413dd39e6aa6a5b3ea8228fef9f,1248
   - xor-0.0.1.0@sha256:f8362b4a68562b9afbcd727ff64c1a303970df3a032e0033d2f4c094c3501df3,2243
   - yaml-streamly-0.12.0
+
+  - git: https://github.com/hasufell/packages.git
+    commit: cc0b4688f8bb374fa92f17c856949de795b56291
+    subdirs:
+      - haskus-utils-variant
 
 flags:
   http-io-streams:
