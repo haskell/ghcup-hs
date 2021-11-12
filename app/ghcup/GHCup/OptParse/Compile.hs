@@ -40,6 +40,7 @@ import           Prelude                 hiding ( appendFile )
 import           System.Exit
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
+import           URI.ByteString          hiding ( uriParser )
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
 import System.FilePath (isPathSeparator)
@@ -84,8 +85,8 @@ data HLSCompileOptions = HLSCompileOptions
   , setCompile   :: Bool
   , ovewrwiteVer :: Maybe Version
   , isolateDir   :: Maybe FilePath
-  , cabalProject :: Maybe FilePath
-  , cabalProjectLocal :: Maybe FilePath
+  , cabalProject :: Maybe (Either FilePath URI)
+  , cabalProjectLocal :: Maybe URI
   , patchDir     :: Maybe FilePath
   , targetGHCs   :: [ToolVersion]
   , cabalArgs    :: [Text]
@@ -300,16 +301,16 @@ hlsCompileOpts =
            )
     <*> optional
           (option
-            str
+            ((fmap Right $ eitherReader uriParser) <|> (fmap Left str))
             (long "cabal-project" <> metavar "CABAL_PROJECT" <> help
-              "If relative, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. If absolute, will copy the file over."
+              "If relative filepath, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. Otherwise expects a full URI with https/http/file scheme."
             )
           )
     <*> optional
           (option
-            (eitherReader absolutePathParser)
+            (eitherReader uriParser)
             (long "cabal-project-local" <> metavar "CABAL_PROJECT_LOCAL" <> help
-              "Absolute path to a cabal.project.local to be used for the build. Will be copied over."
+              "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
             )
           )
     <*> optional

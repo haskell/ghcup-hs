@@ -84,6 +84,7 @@ import           System.IO.Error
 import           System.IO.Temp
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
+import           URI.ByteString
 
 import qualified Crypto.Hash.SHA256            as SHA256
 import qualified Data.List.NonEmpty            as NE
@@ -750,8 +751,8 @@ compileHLS :: ( MonadMask m
            -> Maybe Int
            -> Maybe Version
            -> Maybe FilePath
-           -> Maybe FilePath
-           -> Maybe FilePath
+           -> Maybe (Either FilePath URI)
+           -> Maybe URI
            -> Maybe FilePath
            -> [Text]                   -- ^ additional args to cabal install
            -> Excepts '[ NoDownload
@@ -836,7 +837,7 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
   liftE $ runBuildAction
     workdir
     Nothing
-    (reThrowAll @_ @'[PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed workdir) $ do
+    (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed workdir) $ do
       let installDir = workdir </> "out"
       liftIO $ createDirRecursive' installDir
 
@@ -845,14 +846,21 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
 
       -- set up project files
       cp <- case cabalProject of
-        Just cp
+        Just (Left cp)
           | isAbsolute cp -> do
               copyFileE cp (workdir </> "cabal.project")
               pure "cabal.project"
           | otherwise -> pure (takeFileName cp)
+        Just (Right uri) -> do
+          tmpUnpack <- lift withGHCupTmpDir
+          cp <- liftE $ download uri Nothing Nothing tmpUnpack (Just "cabal.project") False
+          copyFileE cp (workdir </> "cabal.project")
+          pure "cabal.project"
         Nothing -> pure "cabal.project"
-      forM_ cabalProjectLocal $ \cpl -> copyFileE cpl (workdir </> cp <.> "local")
-
+      forM_ cabalProjectLocal $ \uri -> do
+        tmpUnpack <- lift withGHCupTmpDir
+        cpl <- liftE $ download uri Nothing Nothing tmpUnpack (Just (cp <.> "local")) False
+        copyFileE cpl (workdir </> cp <.> "local")
       artifacts <- forM (sort ghcs) $ \ghc -> do
         let ghcInstallDir = installDir </> T.unpack (prettyVer ghc)
         liftIO $ createDirRecursive' installDir

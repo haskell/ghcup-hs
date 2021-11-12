@@ -208,8 +208,8 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
     ]
 
 
-bindistParser :: String -> Either String URI
-bindistParser = first show . parseURI strictURIParserOptions . UTF8.fromString
+uriParser :: String -> Either String URI
+uriParser = first show . parseURI strictURIParserOptions . UTF8.fromString
 
 
 absolutePathParser :: FilePath -> Either String FilePath

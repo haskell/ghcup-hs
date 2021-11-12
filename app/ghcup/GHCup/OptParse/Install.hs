@@ -37,7 +37,7 @@ import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
-import           URI.ByteString
+import           URI.ByteString          hiding ( uriParser )
 
 import qualified Data.Text                     as T
 
@@ -187,7 +187,7 @@ installOpts tool =
     <*> (   (   (,)
             <$> optional
                   (option
-                    (eitherReader bindistParser)
+                    (eitherReader uriParser)
                     (short 'u' <> long "url" <> metavar "BINDIST_URL" <> help
                       "Install the specified version from this bindist"
                     )
