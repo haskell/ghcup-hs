@@ -1,5 +1,13 @@
 # Revision history for ghcup
 
+## 0.1.17.4 -- 2021-11-13
+
+* add `--metadata-caching` option, allowing to also disable yaml metadata caching wrt [#278](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/278)
+* make upgrading ghcup in TUI more pleasant wrt [#276](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/276)
+* fix parsing of atypical GHC versions (e.g. `8.10.5-patch1`)
+* fix compiling HLS dynamically linked, also see [#245](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/245)
+* redo (and break) some of the `ghcup compile <tool>` interface, improving patch options and setting custom cabal.project files
+
 ## 0.1.17.3 -- 2021-10-27
 
 * clean up during unpack failures as well
