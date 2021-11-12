@@ -12,12 +12,6 @@ constraints: http-io-streams -brotli,
              any.Cabal ==3.6.2.0,
              any.aeson >= 2.0.1.0
 
-source-repository-package
-    type: git
-    location: https://github.com/hasufell/packages.git
-    tag: cc0b4688f8bb374fa92f17c856949de795b56291
-    subdir: haskus-utils-variant
-
 package libarchive
   flags: -system-libarchive
 
