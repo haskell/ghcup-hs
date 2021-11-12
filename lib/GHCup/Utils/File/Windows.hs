@@ -18,6 +18,7 @@ module GHCup.Utils.File.Windows where
 import {-# SOURCE #-} GHCup.Utils ( getLinkTarget, pathIsLink )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.File.Common
+import           GHCup.Utils.Logger
 import           GHCup.Types
 import           GHCup.Types.Optics
 
@@ -40,6 +41,7 @@ import qualified Control.Exception             as EX
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
+import qualified Data.Text                     as T
 
 
 
