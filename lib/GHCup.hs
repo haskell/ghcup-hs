@@ -62,7 +62,7 @@ import           Data.String                    ( fromString )
 import           Data.Text                      ( Text )
 import           Data.Time.Clock
 import           Data.Time.Format.ISO8601
-import           Data.Versions
+import           Data.Versions                hiding ( patch )
 import           Distribution.Types.Version   hiding ( Version )
 import           Distribution.Types.PackageId
 import           Distribution.Types.PackageDescription
@@ -753,7 +753,7 @@ compileHLS :: ( MonadMask m
            -> Maybe FilePath
            -> Maybe (Either FilePath URI)
            -> Maybe URI
-           -> Maybe FilePath
+           -> Maybe (Either FilePath [URI])  -- ^ patches
            -> [Text]                   -- ^ additional args to cabal install
            -> Excepts '[ NoDownload
                        , GPGError
@@ -765,7 +765,7 @@ compileHLS :: ( MonadMask m
                        , BuildFailed
                        , NotInstalled
                        ] m Version
-compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patchdir cabalArgs = do
+compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patches cabalArgs = do
   PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   Dirs { .. } <- lift getDirs
@@ -842,7 +842,7 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
       liftIO $ createDirRecursive' installDir
 
       -- apply patches
-      forM_ patchdir (\dir -> liftE $ applyPatches dir workdir)
+      liftE $ applyAnyPatch patches workdir
 
       -- set up project files
       cp <- case cabalProject of
@@ -2096,7 +2096,7 @@ compileGHC :: ( MonadMask m
            -> Either Version FilePath  -- ^ version to bootstrap with
            -> Maybe Int                -- ^ jobs
            -> Maybe FilePath           -- ^ build config
-           -> Maybe FilePath           -- ^ patch directory
+           -> Maybe (Either FilePath [URI])  -- ^ patches
            -> [Text]                   -- ^ additional args to ./configure
            -> Maybe String             -- ^ build flavour
            -> Bool
@@ -2125,7 +2125,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour hadrian isolateDir
+compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadrian isolateDir
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -2149,7 +2149,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
         workdir <- maybe (pure tmpUnpack)
                          (liftE . intoSubdir tmpUnpack)
                          (view dlSubdir dlInfo)
-        forM_ patchdir (\dir -> liftE $ applyPatches dir workdir)
+        liftE $ applyAnyPatch patches workdir
 
         pure (workdir, tmpUnpack, tver)
 
@@ -2157,7 +2157,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
       Right GitBranch{..} -> do
         tmpUnpack <- lift mkGhcupTmpDir
         let git args = execLogged "git" ("--no-pager":args) (Just tmpUnpack) "git" Nothing
-        tver <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH] DownloadFailed $ do
+        tver <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, DownloadFailed, GPGError] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
           lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
           lEM $ git [ "init" ]
@@ -2177,7 +2177,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patchdir aargs buildFlavour had
 
           lEM $ git [ "checkout", "FETCH_HEAD" ]
           lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
-          forM_ patchdir (\dir -> liftE $ applyPatches dir tmpUnpack)
+          liftE $ applyAnyPatch patches tmpUnpack
           lEM $ execWithGhcEnv "python3" ["./boot"] (Just tmpUnpack) "ghc-bootstrap"
           lEM $ execWithGhcEnv "sh" ["./configure"] (Just tmpUnpack) "ghc-bootstrap"
           CapturedProcess {..} <- lift $ makeOut
@@ -2852,3 +2852,25 @@ rmTmp = do
     let p = tmpdir </> f
     logDebug $ "rm -rf " <> T.pack p
     rmPathForcibly p
+
+
+applyAnyPatch :: ( MonadReader env m
+                 , HasDirs env
+                 , HasLog env
+                 , HasSettings env
+                 , MonadUnliftIO m
+                 , MonadCatch m
+                 , MonadResource m
+                 , MonadThrow m
+                 , MonadMask m
+                 , MonadIO m)
+              => Maybe (Either FilePath [URI])
+              -> FilePath
+              -> Excepts '[PatchFailed, DownloadFailed, DigestError, GPGError] m ()
+applyAnyPatch Nothing _                   = pure ()
+applyAnyPatch (Just (Left pdir)) workdir  = liftE $ applyPatches pdir workdir
+applyAnyPatch (Just (Right uris)) workdir = do
+  tmpUnpack <- lift withGHCupTmpDir
+  forM_ uris $ \uri -> do
+    patch <- liftE $ download uri Nothing Nothing tmpUnpack Nothing False
+    liftE $ applyPatch patch workdir

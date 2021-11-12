@@ -69,7 +69,7 @@ data GHCCompileOptions = GHCCompileOptions
   , bootstrapGhc :: Either Version FilePath
   , jobs         :: Maybe Int
   , buildConfig  :: Maybe FilePath
-  , patchDir     :: Maybe FilePath
+  , patches      :: Maybe (Either FilePath [URI])
   , crossTarget  :: Maybe Text
   , addConfArgs  :: [Text]
   , setCompile   :: Bool
@@ -87,7 +87,7 @@ data HLSCompileOptions = HLSCompileOptions
   , isolateDir   :: Maybe FilePath
   , cabalProject :: Maybe (Either FilePath URI)
   , cabalProjectLocal :: Maybe URI
-  , patchDir     :: Maybe FilePath
+  , patches      :: Maybe (Either FilePath [URI])
   , targetGHCs   :: [ToolVersion]
   , cabalArgs    :: [Text]
   }
@@ -200,13 +200,23 @@ ghcCompileOpts =
               "Absolute path to build config file"
             )
           )
-    <*> optional
-          (option
-            str
-            (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
-              "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
+    <*> (optional
+          (
+            (fmap Right $ many $ option
+              (eitherReader uriParser)
+              (long "patch" <> metavar "PATCH_URI" <> help
+                "URI to a patch (https/http/file)"
+              )
+            )
+            <|>
+            (fmap Left $ option
+              str
+              (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
+                "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
+              )
             )
           )
+        )
     <*> optional
           (option
             str
@@ -313,13 +323,23 @@ hlsCompileOpts =
               "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
             )
           )
-    <*> optional
-          (option
-            (eitherReader absolutePathParser)
-            (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
-              "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
+    <*> (optional
+          (
+            (fmap Right $ many $ option
+              (eitherReader uriParser)
+              (long "patch" <> metavar "PATCH_URI" <> help
+                "URI to a patch (https/http/file)"
+              )
+            )
+            <|>
+            (fmap Left $ option
+              str
+              (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
+                "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
+              )
             )
           )
+        )
     <*> some (toolVersionOption Nothing (Just GHC))
     <*> many (argument str (metavar "CABAL_ARGS" <> help "Additional arguments to cabal install, prefix with '-- ' (longopts)"))
 
@@ -436,7 +456,7 @@ compile compileCommand settings runAppState runLogger = do
                     isolateDir
                     cabalProject
                     cabalProjectLocal
-                    patchDir
+                    patches
                     cabalArgs
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
         let vi = getVersionInfo targetVer HLS dls
@@ -484,7 +504,7 @@ compile compileCommand settings runAppState runLogger = do
                     bootstrapGhc
                     jobs
                     buildConfig
-                    patchDir
+                    patches
                     addConfArgs
                     buildFlavour
                     hadrian
