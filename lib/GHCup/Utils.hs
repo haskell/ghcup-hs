@@ -67,7 +67,7 @@ import           Data.List
 import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
 import           Data.Maybe
 import           Data.Text                      ( Text )
-import           Data.Versions
+import           Data.Versions         hiding   ( patch )
 import           GHC.IO.Exception
 import           Haskus.Utils.Variant.Excepts
 import           Optics
@@ -892,15 +892,22 @@ applyPatches pdir ddir = do
                      execBlank
                      ([s|.+\.(patch|diff)$|] :: ByteString)
       )
-  forM_ (sort patches) $ \patch' -> do
-    lift $ logInfo $ "Applying patch " <> T.pack patch'
-    fmap (either (const Nothing) Just)
-         (exec
-           "patch"
-           ["-p1", "-i", patch']
-           (Just ddir)
-           Nothing)
-      !? PatchFailed
+  forM_ (sort patches) $ \patch' -> applyPatch patch' ddir
+
+
+applyPatch :: (MonadReader env m, HasDirs env, HasLog env, MonadIO m)
+           => FilePath   -- ^ Patch
+           -> FilePath   -- ^ dir to apply patches in
+           -> Excepts '[PatchFailed] m ()
+applyPatch patch ddir = do
+  lift $ logInfo $ "Applying patch " <> T.pack patch
+  fmap (either (const Nothing) Just)
+       (exec
+         "patch"
+         ["-p1", "-s", "-f", "-i", patch]
+         (Just ddir)
+         Nothing)
+    !? PatchFailed
 
 
 -- | https://gitlab.haskell.org/ghc/ghc/-/issues/17353
