@@ -429,11 +429,11 @@ compile :: ( Monad m
            )
       => CompileCommand
       -> Settings
+      -> Dirs
       -> (forall eff a . ReaderT AppState m (VEither eff a) -> m (VEither eff a))
       -> (ReaderT LeanAppState m () -> m ())
       -> m ExitCode
-compile compileCommand settings runAppState runLogger = do
-  VRight Dirs{ .. }  <- runAppState (VRight <$> getDirs)
+compile compileCommand settings Dirs{..} runAppState runLogger = do
   case compileCommand of
     (CompileHLS HLSCompileOptions { .. }) -> do
       runCompileHLS runAppState (do
