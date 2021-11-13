@@ -472,42 +472,22 @@ checkForUpdates :: ( MonadReader env m
                    , MonadIO m
                    , MonadFail m
                    )
-                => m ()
+                => m [(Tool, Version)]
 checkForUpdates = do
   GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
   lInstalled <- listVersions Nothing (Just ListInstalled)
   let latestInstalled tool = (fmap lVer . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
 
-  forM_ (getLatest dls GHCup) $ \(l, _) -> do
-    (Right ghc_ver) <- pure $ version $ prettyPVP ghcUpVer
-    when (l > ghc_ver)
-      $ logWarn $
-          "New GHCup version available: " <> prettyVer l <> ". To upgrade, run 'ghcup upgrade'"
+  ghcup <- forMM (getLatest dls GHCup) $ \(l, _) -> do
+    (Right ghcup_ver) <- pure $ version $ prettyPVP ghcUpVer
+    if (l > ghcup_ver) then pure $ Just (GHCup, l) else pure Nothing
 
-  forM_ (getLatest dls GHC) $ \(l, _) -> do
-    let mghc_ver = latestInstalled GHC
-    forM mghc_ver $ \ghc_ver ->
-      when (l > ghc_ver)
-        $ logWarn $
-          "New GHC version available: " <> prettyVer l <> ". To upgrade, run 'ghcup install ghc " <> prettyVer l <> "'"
+  otherTools <- forM [GHC, Cabal, HLS, Stack] $ \t ->
+    forMM (getLatest dls t) $ \(l, _) -> do
+      let mver = latestInstalled t
+      forMM mver $ \ver ->
+        if (l > ver) then pure $ Just (t, l) else pure Nothing
 
-  forM_ (getLatest dls Cabal) $ \(l, _) -> do
-    let mcabal_ver = latestInstalled Cabal
-    forM mcabal_ver $ \cabal_ver ->
-      when (l > cabal_ver)
-        $ logWarn $
-          "New Cabal version available: " <> prettyVer l <> ". To upgrade, run 'ghcup install cabal " <> prettyVer l <> "'"
-
-  forM_ (getLatest dls HLS) $ \(l, _) -> do
-    let mhls_ver = latestInstalled HLS
-    forM mhls_ver $ \hls_ver ->
-      when (l > hls_ver)
-        $ logWarn $
-          "New HLS version available: " <> prettyVer l <> ". To upgrade, run 'ghcup install hls " <> prettyVer l <> "'"
-
-  forM_ (getLatest dls Stack) $ \(l, _) -> do
-    let mstack_ver = latestInstalled Stack
-    forM mstack_ver $ \stack_ver ->
-      when (l > stack_ver)
-        $ logWarn $
-          "New Stack version available: " <> prettyVer l <> ". To upgrade, run 'ghcup install stack " <> prettyVer l <> "'"
+  pure $ catMaybes (ghcup:otherTools)
+ where
+  forMM a f = fmap join $ forM a f

@@ -20,6 +20,7 @@ import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Platform
 import           GHCup.Types
+import           GHCup.Types.Optics      hiding ( toolRequirements )
 import           GHCup.Utils
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
@@ -39,6 +40,7 @@ import           Data.Aeson.Encode.Pretty       ( encodePretty )
 import           Data.Either
 import           Data.Functor
 import           Data.Maybe
+import           Data.Versions
 import           GHC.IO.Encoding
 import           Haskus.Utils.Variant.Excepts
 import           Language.Haskell.TH
@@ -191,7 +193,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
           -------------------------
 
 
-              appState = do
+          let appState = do
                 pfreq <- (
                   runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest
                   ) >>= \case
@@ -227,8 +229,28 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 #if defined(BRICK)
                   Interactive -> pure ()
 #endif
+                  -- check for new tools
                   _ -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
-                         Nothing -> runReaderT checkForUpdates s'
+                         Nothing -> void . flip runReaderT s' . runE @'[TagNotFound, NextVerNotFound, NoToolVersionSet] $ do
+                           newTools <- lift checkForUpdates 
+                           forM_ newTools $ \newTool@(t, l) -> do
+                             -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/283
+                             alreadyInstalling' <- alreadyInstalling optCommand newTool
+                             when (not alreadyInstalling') $
+                               case t of
+                                 GHCup -> runLogger $
+                                            logWarn ("New GHCup version available: "
+                                              <> prettyVer l
+                                              <> ". To upgrade, run 'ghcup upgrade'")
+                                 _ -> runLogger $
+                                        logWarn ("New "
+                                          <> T.pack (prettyShow t)
+                                          <> " version available. "
+                                          <> "To upgrade, run 'ghcup install "
+                                          <> T.pack (prettyShow t)
+                                          <> " "
+                                          <> prettyVer l
+                                          <> "'")
                          Just _ -> pure ()
 
                 -- TODO: always run for windows
@@ -270,7 +292,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             List lo                  -> list lo no_color runAppState
             Rm rmCommand             -> rm rmCommand runAppState runLogger
             DInfo                    -> dinfo runAppState runLogger
-            Compile compileCommand   -> compile compileCommand settings runAppState runLogger
+            Compile compileCommand   -> compile compileCommand settings dirs runAppState runLogger
             Config configCommand     -> config configCommand settings keybindings runLogger
             Whereis whereisOptions
                     whereisCommand   -> whereis whereisCommand whereisOptions runAppState leanAppstate runLogger
@@ -287,4 +309,55 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
   pure ()
 
+ where
+  alreadyInstalling :: ( HasLog env
+                       , MonadFail m
+                       , MonadReader env m
+                       , HasGHCupInfo env
+                       , HasDirs env
+                       , MonadThrow m
+                       , MonadIO m
+                       , MonadCatch m
+                       )
+                    => Command
+                    -> (Tool, Version)
+                    -> Excepts
+                         '[ TagNotFound
+                          , NextVerNotFound
+                          , NoToolVersionSet
+                          ] m Bool
+  alreadyInstalling (Install (Right InstallOptions{..}))                 (GHC, ver)   = cmp' GHC instVer ver
+  alreadyInstalling (Install (Left (InstallGHC InstallOptions{..})))     (GHC, ver)   = cmp' GHC instVer ver
+  alreadyInstalling (Install (Left (InstallCabal InstallOptions{..})))   (Cabal, ver) = cmp' Cabal instVer ver
+  alreadyInstalling (Install (Left (InstallHLS InstallOptions{..})))     (HLS, ver)   = cmp' HLS instVer ver
+  alreadyInstalling (Install (Left (InstallStack InstallOptions{..})))   (Stack, ver) = cmp' Stack instVer ver
+  alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ ovewrwiteVer = Just over }))
+    (GHC, ver)   = cmp' GHC (Just $ ToolVersion (mkTVer over)) ver
+  alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ targetGhc = Left tver }))
+    (GHC, ver)   = cmp' GHC (Just $ ToolVersion (mkTVer tver)) ver
+  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ ovewrwiteVer = Just over }))
+    (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer over)) ver
+  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = Left tver }))
+    (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer tver)) ver
+  alreadyInstalling _ _ = pure False
 
+  cmp' :: ( HasLog env
+          , MonadFail m
+          , MonadReader env m
+          , HasGHCupInfo env
+          , HasDirs env
+          , MonadThrow m
+          , MonadIO m
+          , MonadCatch m
+          )
+       => Tool
+       -> Maybe ToolVersion
+       -> Version
+       -> Excepts
+            '[ TagNotFound
+             , NextVerNotFound
+             , NoToolVersionSet
+             ] m Bool
+  cmp' tool instVer ver = do
+    (v, _) <- liftE $ fromVersion instVer tool
+    pure (v == mkTVer ver)
