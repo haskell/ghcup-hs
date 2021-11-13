@@ -12,4 +12,8 @@ if [ "${OS}" = "WINDOWS" ] ; then
 	rm -Rf /c/ghcup
 fi
 
+if [ "${OS}" = "DARWIN" ] ; then
+	rm -Rf /private/tmp/.brew_tmp
+fi
+
 exit 0

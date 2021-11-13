@@ -186,8 +186,8 @@ variables:
     - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.brew_cache
     - mkdir -p $CI_PROJECT_DIR/.brew_logs
     - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.brew_logs
-    - mkdir -p $CI_PROJECT_DIR/.brew_tmp
-    - export HOMEBREW_TEMP=$CI_PROJECT_DIR/.brew_tmp
+    - mkdir -p /private/tmp/.brew_tmp
+    - export HOMEBREW_TEMP=/private/tmp/.brew_tmp
 
     # update and install packages
     - brew update
@@ -545,8 +545,8 @@ release:darwin:aarch64:
     - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.brew_cache
     - mkdir -p $CI_PROJECT_DIR/.brew_logs
     - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.brew_logs
-    - mkdir -p $CI_PROJECT_DIR/.brew_tmp
-    - export HOMEBREW_TEMP=$CI_PROJECT_DIR/.brew_tmp
+    - mkdir -p /private/tmp/.brew_tmp
+    - export HOMEBREW_TEMP=/private/tmp/.brew_tmp
 
     # update and install packages
     - brew update
