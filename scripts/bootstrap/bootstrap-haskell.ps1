@@ -246,6 +246,7 @@ if ($Silent -and !($InstallDir)) {
       $GhcupBasePrefix = ('{0}\' -f $GhcupBasePrefix)
     }
   
+    $GhcupBasePrefix = $GhcupBasePrefix.TrimEnd().TrimStart()
     if (!($GhcupBasePrefix)) {
       Print-Msg -color Red -msg "No directory specified!"
     } elseif (!(Test-Path -LiteralPath ('{0}' -f $GhcupBasePrefix))) {
@@ -333,6 +334,7 @@ if ($CabalDir) {
     $CabalDirPrompt = Read-Host
     $CabDirEnv = ($defaultCabalDir,$CabalDirPrompt)[[bool]$CabalDirPrompt]
 
+    $CabDirEnv = $CabDirEnv.TrimEnd().TrimStart()
     if (!($CabDirEnv)) {
       Print-Msg -color Red -msg "No directory specified!"         
     } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
@@ -444,6 +446,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
         Print-Msg -color Magenta -msg 'Input existing MSys2 toolchain directory:' 
         $MsysDir = Read-Host
       }
+      $MsysDir = $MsysDir.TrimEnd().TrimStart()
       if (!($MsysDir)) {
         Print-Msg -color Red -msg "No directory specified!"         
       } elseif (!(Test-Path -LiteralPath ('{0}' -f $MsysDir))) {
