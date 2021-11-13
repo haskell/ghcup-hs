@@ -49,7 +49,7 @@ executable ghcup-gen
     , containers            ^>=0.6
     , filepath              ^>=1.4.2.1
     , ghcup                 ^>=0.1.17.3
-    , haskus-utils-variant  >=3.0      && <3.2
+    , haskus-utils-variant  ^>=3.2
     , libarchive            ^>=3.0.3.0
     , mtl                   ^>=2.2
     , optics                ^>=0.4
