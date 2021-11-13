@@ -43,7 +43,7 @@ cabal --version
 
 eghcup debug-info
 
-eghcup compile hls -j $(nproc) -v ${HLS_TARGET_VERSION} ${GHC_VERSION}
+eghcup compile hls -j $(nproc) -v ${HLS_TARGET_VERSION} --ghc ${GHC_VERSION}
 
 [ `$(eghcup whereis hls ${HLS_TARGET_VERSION}) --numeric-version` = "${HLS_TARGET_VERSION}" ] || [ `$(eghcup whereis hls ${HLS_TARGET_VERSION}) --numeric-version | sed 's/.0$//'` = "${HLS_TARGET_VERSION}" ]
 
