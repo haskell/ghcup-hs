@@ -296,7 +296,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Config configCommand     -> config configCommand settings keybindings runLogger
             Whereis whereisOptions
                     whereisCommand   -> whereis whereisCommand whereisOptions runAppState leanAppstate runLogger
-            Upgrade uOpts force'     -> upgrade uOpts force' runAppState runLogger
+            Upgrade uOpts force'     -> upgrade uOpts force' dirs runAppState runLogger
             ToolRequirements         -> toolRequirements runAppState runLogger
             ChangeLog changelogOpts  -> changelog changelogOpts runAppState runLogger
             Nuke                     -> nuke appState runLogger
@@ -339,6 +339,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
     (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer over)) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = Left tver }))
     (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer tver)) ver
+  alreadyInstalling (Upgrade _ _) (GHCup, _) = pure True
   alreadyInstalling _ _ = pure False
 
   cmp' :: ( HasLog env

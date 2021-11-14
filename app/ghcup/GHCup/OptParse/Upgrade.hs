@@ -113,17 +113,17 @@ runUpgrade runAppState =
 
 
 upgrade :: ( Monad m
-         , MonadMask m
-         , MonadUnliftIO m
-         , MonadFail m
-         )
+           , MonadMask m
+           , MonadUnliftIO m
+           , MonadFail m
+           )
         => UpgradeOpts
         -> Bool
+        -> Dirs
         -> (forall a. ReaderT AppState m (VEither UpgradeEffects a) -> m (VEither UpgradeEffects a))
         -> (ReaderT LeanAppState m () -> m ())
         -> m ExitCode
-upgrade uOpts force' runAppState runLogger = do
-  VRight Dirs{ .. }  <- runAppState (VRight <$> getDirs)
+upgrade uOpts force' Dirs{..} runAppState runLogger = do
   target <- case uOpts of
     UpgradeInplace  -> Just <$> liftIO getExecutablePath
     (UpgradeAt p)   -> pure $ Just p
