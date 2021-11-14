@@ -7,6 +7,7 @@
 * fix parsing of atypical GHC versions (e.g. `8.10.5-patch1`)
 * fix compiling HLS dynamically linked, also see [#245](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/245)
 * redo (and break) some of the `ghcup compile <tool>` interface, improving patch options and setting custom cabal.project files
+* avoid redundant update warnings wrt [#283](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/283)
 
 ## 0.1.17.3 -- 2021-10-27
 
