@@ -679,7 +679,7 @@ if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
 
 	do_cabal_config_init $ask_cabal_config_init_answer
 
-	edo cabal new-update
+	edo cabal new-update --ignore-project
 else # don't install ghc and cabal
 	case "${plat}" in
 			MSYS*|MINGW*)
