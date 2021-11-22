@@ -166,11 +166,10 @@ library
       GHCup.Utils.File.Posix
       GHCup.Utils.Posix
       GHCup.Utils.Prelude.Posix
-      System.Console.Terminal.Common
-      System.Console.Terminal.Posix
 
     build-depends:
       , bz2              >=0.5.0.5 && <1.1
+      , terminal-size    ^>=0.3.2.1
       , unix             ^>=2.7
       , unix-bytestring  ^>=0.3.7.3
 
