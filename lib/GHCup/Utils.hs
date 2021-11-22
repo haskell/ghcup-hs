@@ -1141,11 +1141,11 @@ ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir) = do
 
 -- | For ghc without arch triple, this is:
 --
---    - ghc-<ver> (e.g. ghc-8.10.4)
+--    - ghc
 --
 -- For ghc with arch triple:
 --
---    - <triple>-ghc-<ver> (e.g. arm-linux-gnueabihf-ghc-8.10.4)
+--    - <triple>-ghc (e.g. arm-linux-gnueabihf-ghc)
 ghcBinaryName :: GHCTargetVersion -> String
-ghcBinaryName (GHCTargetVersion (Just t) v') = T.unpack (t <> "-ghc-" <> prettyVer v' <> T.pack exeExt)
-ghcBinaryName (GHCTargetVersion Nothing  v') = T.unpack ("ghc-" <> prettyVer v' <> T.pack exeExt)
+ghcBinaryName (GHCTargetVersion (Just t) _) = T.unpack (t <> "-ghc" <> T.pack exeExt)
+ghcBinaryName (GHCTargetVersion Nothing  _) = T.unpack ("ghc" <> T.pack exeExt)
