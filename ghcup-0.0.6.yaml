@@ -2678,6 +2678,31 @@ ghcupDownloads:
               dlHash: e6ba12e0ecabf0df2567d88a0d247da238bc114bcccfca4195f5e86472c9330c
               dlSubdir:
                 RegexDir: "stack-.*"
+          FreeBSD:
+            '>= 12':
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3/stack-2.7.3-freebsd-x86_64.tar.gz
+              dlHash: 000ffd88795b628b1438266827894f6af1c5d020217610eda19962915dd935b3
           Linux_Alpine:
             unknown_versioning: *stack-273-64
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-273-32
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3/stack-2.7.3-linux-i386.tar.gz
+              dlHash: 507730fcee5289c90811633d48d3ec437f165eec9c700908bbfc1e21c226effd
+          Linux_Alpine:
+            unknown_versioning: *stack-273-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3/stack-2.7.3-linux-aarch64.tar.gz
+              dlHash: d9721a46fcff2d9873c1bb6310116e21b0a6923fc5c952849843d27f0225c2a2
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3/stack-2.7.3-osx-aarch64.tar.gz
+              dlHash: 9abaf77787cdad8c2db97a087c6295f197f256181602b4424f03220ae21b47d9
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3/stack-2.7.3-linux-armv7.tar.gz
+              dlHash: 3e22c66ea38525ca2ee5b0d222c8aa193c50152a53ff2c80ae179a40592512fe
 
