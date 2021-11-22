@@ -35,7 +35,6 @@ import           Data.Sequence                  ( Seq, (|>) )
 import           Data.List
 import           Data.Word8
 import           GHC.IO.Exception
-import           System.Console.Terminal.Common
 import           System.IO.Error
 import           System.FilePath
 import           System.Directory
@@ -51,7 +50,7 @@ import qualified Data.Sequence                 as Sq
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified System.Posix.Process          as SPP
-import qualified System.Console.Terminal.Posix as TP
+import qualified System.Console.Terminal.Size  as TP
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as BL
 import qualified "unix-bytestring" System.Posix.IO.ByteString
@@ -182,7 +181,7 @@ execLogged exe args chdir lfile env = do
       modify (swapRegs bs')
       liftIO TP.size >>= \case
         Nothing -> pure ()
-        Just (Window _ w) -> do
+        Just (TP.Window _ w) -> do
           regs <- get
           liftIO $ forM_ (Sq.zip regs (Sq.fromList [0..(Sq.length regs - 1)])) $ \(bs, i) -> do
               BS.putStr
