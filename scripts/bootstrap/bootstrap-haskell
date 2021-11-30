@@ -223,7 +223,8 @@ download_ghcup() {
             if freebsd-version | grep -E '^12.*' ; then
                 freebsd_ver=12
             elif freebsd-version | grep -E '^13.*' ; then
-                freebsd_ver=13
+                # TODO: missing FreeBSD13 version
+                freebsd_ver=12
             else
                 die "Unsupported FreeBSD version! Please report a bug at https://gitlab.haskell.org/haskell/ghcup-hs/-/issues"
             fi
