@@ -39,7 +39,6 @@ case "${plat}" in
 			;;
 		*)
 			: "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}"
-			export GHCUP_USE_XDG_DIRS
 
 			if [ -n "${GHCUP_USE_XDG_DIRS}" ] ; then
 				GHCUP_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/ghcup
