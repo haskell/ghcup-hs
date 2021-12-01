@@ -240,9 +240,7 @@ download_ghcup() {
 			_url=${base_url}/${ghver}/x86_64-freebsd${freebsd_ver}-ghcup-${ghver}
             ;;
         "Darwin"|"darwin")
-            # uname -m and arch seem to behave different under rosetta
-            # https://superuser.com/questions/835514/why-do-uname-p-and-uname-m-and-arch-output-different-architectures
-            case "$(arch)" in
+			case "${arch}" in
 				x86_64|amd64)
 					_url=${base_url}/${ghver}/x86_64-apple-darwin-ghcup-${ghver}
 					;;
