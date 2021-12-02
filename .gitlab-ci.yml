@@ -217,6 +217,9 @@ variables:
     - .freebsd13
     - .root_cleanup
   before_script:
+    - sudo pkg update
+    - sudo pkg install --yes compat12x-amd64
+    - sudo ln -s libncurses.so.6 /usr/local/lib/libncurses.so.6.2
     - ./.gitlab/before_script/freebsd/install_deps.sh
 
 .test_ghcup_version:windows:
@@ -595,6 +598,9 @@ release:freebsd13:
     - .release_ghcup
     - .root_cleanup
   before_script:
+    - sudo pkg update
+    - sudo pkg install --yes compat12x-amd64
+    - sudo ln -s libncurses.so.6 /usr/local/lib/libncurses.so.6.2
     - ./.gitlab/before_script/freebsd/install_deps.sh
   variables:
     ARTIFACT: "x86_64-portbld-freebsd-ghcup"
