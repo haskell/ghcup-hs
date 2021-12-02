@@ -2403,9 +2403,12 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/x86_64-apple-darwin-ghcup-0.1.17.4
               dlHash: f49841668e224381be8ee63579492ff01dc730019fd0d3047d2628103da9fcbb
           FreeBSD:
-            '>= 12':
+            '( >= 12 && < 13 )':
               dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/x86_64-freebsd12-ghcup-0.1.17.4
               dlHash: 3fd8b644ddee0614cd1aaac8e066f69f13647e76b381f61a68099e29f8e8db53
+            '( >= 13 )':
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/x86_64-freebsd13-ghcup-0.1.17.4
+              dlHash: 2245bcfbb6a20c400e11726e87610e73968d6611ddfceaa66ebe9ce6ef72e9cf
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/x86_64-mingw64-ghcup-0.1.17.4.exe
