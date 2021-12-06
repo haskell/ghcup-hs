@@ -12,8 +12,7 @@ organised tree-ish in `GHCup.Utils` and `GHCup.Utils.*`.
 Anything dealing with ghcup specific directories is in
 `GHCup.Utils.Dirs`.
 
-Download information on where to fetch bindists from is in the appropriate
-yaml files: `data/metadata/ghcup-<yaml-ver>.yaml`.
+Download information on where to fetch bindists from is in the [ghcup-metadata](https://github.com/haskell/ghcup-metadata) repository.
 
 ## Design decisions
 
