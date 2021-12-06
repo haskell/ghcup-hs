@@ -29,11 +29,11 @@ param (
     [switch]$InstallStack,
     # Whether to install hls as well
     [switch]$InstallHLS,
-    # Specify the bootstrap url (default: 'https://www.haskell.org/ghcup/sh/bootstrap-haskell')
-    [string]$InstallDir,
-    # Instead of installing a new MSys2, use an existing installation
-    [string]$BootstrapUrl,
     # Specify the install root (default: 'C:\')
+    [string]$InstallDir,
+    # Specify the bootstrap url (default: 'https://www.haskell.org/ghcup/sh/bootstrap-haskell')
+    [string]$BootstrapUrl,
+    # Instead of installing a new MSys2, use an existing installation
     [string]$ExistingMsys2Dir,
     # Specify the cabal root directory (default: '$InstallDir\cabal')
     [string]$CabalDir
