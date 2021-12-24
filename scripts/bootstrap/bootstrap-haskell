@@ -281,18 +281,18 @@ download_ghcup() {
 	# we may overwrite this in adjust_bashrc
 	cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
 		case ":\$PATH:" in
-			*:"${GHCUP_BIN}":*)
-				;;
-			*)
-				export PATH="${GHCUP_BIN}:\$PATH"
-				;;
+		    *:"${GHCUP_BIN}":*)
+		        ;;
+		    *)
+		        export PATH="${GHCUP_BIN}:\$PATH"
+		        ;;
 		esac
 		case ":\$PATH:" in
-			*:"\$HOME/.cabal/bin":*)
-				;;
-			*)
-				export PATH="\$HOME/.cabal/bin:\$PATH"
-				;;
+		    *:"\$HOME/.cabal/bin":*)
+		        ;;
+		    *)
+		        export PATH="\$HOME/.cabal/bin:\$PATH"
+		        ;;
 		esac
 		EOF
 
@@ -382,36 +382,36 @@ adjust_bashrc() {
 		1)
 			cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
 				case ":\$PATH:" in
-					*:"${GHCUP_BIN}":*)
-						;;
-					*)
-						export PATH="${GHCUP_BIN}:\$PATH"
-						;;
+				    *:"${GHCUP_BIN}":*)
+				        ;;
+				    *)
+				        export PATH="${GHCUP_BIN}:\$PATH"
+				        ;;
 				esac
 				case ":\$PATH:" in
-					*:"\$HOME/.cabal/bin":*)
-						;;
-					*)
-						export PATH="\$HOME/.cabal/bin:\$PATH"
-						;;
+				    *:"\$HOME/.cabal/bin":*)
+				        ;;
+				    *)
+				        export PATH="\$HOME/.cabal/bin:\$PATH"
+				        ;;
 				esac
 				EOF
 			;;
 		2)
 			cat <<-EOF > "${GHCUP_DIR}"/env || die "Failed to create env file"
 				case ":\$PATH:" in
-					*:"\$HOME/.cabal/bin":*)
-						;;
-					*)
-						export PATH="\$PATH:\$HOME/.cabal/bin"
-						;;
+				    *:"\$HOME/.cabal/bin":*)
+				        ;;
+				    *)
+				        export PATH="\$PATH:\$HOME/.cabal/bin"
+				        ;;
 				esac
 				case ":\$PATH:" in
-					*:"${GHCUP_BIN}":*)
-						;;
-					*)
-						export PATH="\$PATH:${GHCUP_BIN}"
-						;;
+				    *:"${GHCUP_BIN}":*)
+				        ;;
+				    *)
+				        export PATH="\$PATH:${GHCUP_BIN}"
+				        ;;
 				esac
 				EOF
 			;;
