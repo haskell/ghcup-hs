@@ -113,7 +113,7 @@ validate dls _ = do
         Cabal | v > [vver|2.4.1.0|]
               , arch `elem` [A_64, A_32] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)) >> addError
         GHC | Latest `elem` tags || Recommended `elem` tags
-            , arch `elem` [A_64, A_32] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch))
+            , arch `elem` [A_64] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch))
         _ -> lift $ logWarn $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)
 
   checkUniqueTags tool = do
