@@ -24,6 +24,14 @@ Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager
 
 If you want to know what these scripts do, check out the [source code at the repository](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
 
+### Which versions get installed?
+
+GHCup has two main channels for every tool: **recommended** and **latest**. By default, it installs *recommended*.
+
+*latest* follows the latest release of every tool, while *recommended* is at the discretion of the GHCup maintainers and based on community adoption (hackage libraries, tools like HLS, stackage support, etc.) and known bugs.
+
+Also see [tags and shortcuts](../guide/#tags-and-shortcuts) for more information.
+
 ## First steps
 
 1. To get started with creating a Haskell project, follow the [Getting Started with Haskell and Cabal](https://cabal.readthedocs.io/en/latest/getting-started.html) guide

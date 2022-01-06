@@ -32,6 +32,17 @@ ghcup install cabal
 ghcup upgrade
 ```
 
+### Tags and shortcuts
+
+GHCup has a number of tags and version shortcuts, that can be used as arguments to **install**/**set** etc.
+All of the following are valid arguments to `ghcup install ghc`:
+
+* `latest`, `recommended`
+* `base-4.15.1.0`
+* `9.0.2`, `9.0`, `9`
+
+If the argument is omitted, the default is `recommended`.
+
 ## Configuration
 
 A configuration file can be put in `~/.ghcup/config.yaml`. The default config file
