@@ -212,7 +212,7 @@ ghcCompileOpts =
             (fmap Left $ option
               str
               (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
-                "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
+                "Absolute path to patch directory (applies all .patch and .diff files in order using -p1. This order is determined by a quilt series file if it exists, or the patches are lexicographically ordered)"
               )
             )
           )
