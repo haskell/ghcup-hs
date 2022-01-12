@@ -879,20 +879,28 @@ makeOut args workdir = do
   executeOut mymake args workdir
 
 
--- | Try to apply patches in order. Fails with 'PatchFailed'
--- on first failure.
+-- | Try to apply patches in order. The order is determined by
+-- a quilt series file (in the patch directory) if one exists,
+-- else the patches are applied in lexicographical order.
+-- Fails with 'PatchFailed' on first failure.
 applyPatches :: (MonadReader env m, HasDirs env, HasLog env, MonadIO m)
              => FilePath   -- ^ dir containing patches
              -> FilePath   -- ^ dir to apply patches in
              -> Excepts '[PatchFailed] m ()
 applyPatches pdir ddir = do
-  patches <- (fmap . fmap) (pdir </>) $ liftIO $ findFiles
-      pdir
-      (makeRegexOpts compExtended
-                     execBlank
-                     ([s|.+\.(patch|diff)$|] :: ByteString)
-      )
-  forM_ (sort patches) $ \patch' -> applyPatch patch' ddir
+  let lexicographical = (fmap . fmap) (pdir </>) $ sort <$> findFiles
+        pdir
+        (makeRegexOpts compExtended
+                       execBlank
+                       ([s|.+\.(patch|diff)$|] :: ByteString)
+        )
+  let quilt = map (pdir </>) . lines <$> readFile (pdir </> "series")
+
+  patches <- liftIO $ quilt `catchIO` (\e ->
+    if isDoesNotExistError e || isPermissionError e then
+      lexicographical 
+    else throwIO e)
+  forM_ patches $ \patch' -> applyPatch patch' ddir
 
 
 applyPatch :: (MonadReader env m, HasDirs env, HasLog env, MonadIO m)
