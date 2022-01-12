@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 
 {-|
 Module      : GHCup.Utils.String.QQ

@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
-{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE ViewPatterns          #-}
 

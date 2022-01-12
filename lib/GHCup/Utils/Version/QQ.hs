@@ -4,7 +4,7 @@
 {-# LANGUAGE DeriveLift         #-}
 {-# LANGUAGE FlexibleInstances  #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 
 
 {-|

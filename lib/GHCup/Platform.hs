@@ -4,7 +4,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
-{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 
 
 {-|
