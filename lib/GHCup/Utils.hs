@@ -887,18 +887,19 @@ applyPatches :: (MonadReader env m, HasDirs env, HasLog env, MonadIO m)
              => FilePath   -- ^ dir containing patches
              -> FilePath   -- ^ dir to apply patches in
              -> Excepts '[PatchFailed] m ()
-applyPatches pdir ddir = do 
-  seriesExists <- liftIO (doesFileExist (pdir </> "series"))
-  patches <- if seriesExists
-    then
-      liftIO $ map (pdir </>) . lines <$> readFile (pdir </> "series")
-    else
-      (fmap . fmap) (pdir </>) $ liftIO $ sort <$> findFiles
+applyPatches pdir ddir = do
+  let lexicographical = (fmap . fmap) (pdir </>) $ sort <$> findFiles
         pdir
         (makeRegexOpts compExtended
                        execBlank
                        ([s|.+\.(patch|diff)$|] :: ByteString)
         )
+  let quilt = map (pdir </>) . lines <$> readFile (pdir </> "series")
+
+  patches <- liftIO $ quilt `catchIO` (\e ->
+    if isDoesNotExistError e || isPermissionError e then
+      lexicographical 
+    else throwIO e)
   forM_ patches $ \patch' -> applyPatch patch' ddir
 
 
