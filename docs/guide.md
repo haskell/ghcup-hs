@@ -149,6 +149,31 @@ and produce the binaries `ghc-8.10.2-eff` and `ghc-head` respectively.
 GHCup always needs to know which version the bindist corresponds to (this is not automatically
 detected).
 
+## Mirrors
+
+GHCup allows to use custom mirrors/download-info hosted by yourself or 3rd parties.
+
+To use a mirror, set the following option in `~/.ghcup/config.yaml`:
+
+```yml
+url-source:
+  # Accepts file/http/https scheme
+  OwnSource: "https://some-url/ghcup-0.0.6.yaml"
+```
+
+See [config.yaml](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/data/config.yaml)
+for more options.
+
+Alternatively you can do it via a cli switch:
+
+```sh
+ghcup --url-source=https://some-url/ghcup-0.0.6.yaml list
+```
+
+### Known mirrors
+
+1. [https://mirror.sjtu.edu.cn/docs/ghcup](https://mirror.sjtu.edu.cn/docs/ghcup)
+
 ## Isolated installs
 
 Ghcup also enables you to install a tool (GHC, Cabal, HLS, Stack) at an isolated location of your choosing.
