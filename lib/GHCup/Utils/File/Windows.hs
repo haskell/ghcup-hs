@@ -196,7 +196,8 @@ execLogged exe args chdir lfile env = do
           then pure ()
           else do
             void $ BS.appendFile logFile some
-            void $ BS.hPut stdout some
+            -- subprocess stdout also goes to stderr for logging
+            void $ BS.hPut stderr some
             go
         
 

@@ -35,6 +35,7 @@ import           Data.Sequence                  ( Seq, (|>) )
 import           Data.List
 import           Data.Word8
 import           GHC.IO.Exception
+import           System.IO                      ( stderr )
 import           System.IO.Error
 import           System.FilePath
 import           System.Directory
@@ -142,14 +143,14 @@ execLogged exe args chdir lfile env = do
   printToRegion :: Fd -> Fd -> Int -> MVar Bool -> Bool -> IO ()
   printToRegion fileFd fdIn size pState no_color = do
     -- init region
-    forM_ [1..size] $ \_ -> BS.putStr "\n"
+    forM_ [1..size] $ \_ -> BS.hPut stderr "\n"
 
     void $ flip runStateT mempty
       $ do
         handle
           (\(ex :: SomeException) -> do
             ps <- liftIO $ takeMVar pState
-            when ps (liftIO $ BS.putStr (pos1 <> moveLineUp size <> clearScreen))
+            when ps (liftIO $ BS.hPut stderr (pos1 <> moveLineUp size <> clearScreen))
             throw ex
           ) $ readTilEOF lineAction fdIn
 
@@ -184,7 +185,7 @@ execLogged exe args chdir lfile env = do
         Just (TP.Window _ w) -> do
           regs <- get
           liftIO $ forM_ (Sq.zip regs (Sq.fromList [0..(Sq.length regs - 1)])) $ \(bs, i) -> do
-              BS.putStr
+              BS.hPut stderr
               . overwriteNthLine (size - i)
               . trim w
               . blue
