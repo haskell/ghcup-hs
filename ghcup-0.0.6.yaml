@@ -1741,9 +1741,9 @@ ghcupDownloads:
             unknown_versioning: *ghc-8106-64-centos
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-x86_64-alpine3.10-linux-integer-simple.tar.xz
-              dlSubdir: ghc-8.10.6-x86_64-unknown-linux
-              dlHash: f6c86909f665c9a01b9703450a500a5206a951ee43e6a0a227eebe1da0987d6a
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/8.10.6/ghc-8.10.6-x86_64-alpine-linux-integer-gmp.tar.xz
+              dlSubdir: ghc-8.10.6
+              dlHash: 9abde42f1acb713d3423957c13af8c5e654f51126e66586f9b9c4df266c6c044
           Linux_AmazonLinux:
             unknown_versioning: *ghc-8106-64-centos
           Linux_UnknownLinux:
@@ -1842,9 +1842,9 @@ ghcupDownloads:
             unknown_versioning: *ghc-8107-64-centos
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-alpine3.10-linux-integer-simple.tar.xz
-              dlSubdir: ghc-8.10.7-x86_64-unknown-linux
-              dlHash: 16903df850ef73d5246f2ff169cbf57ecab76c2ac5acfa9928934282cfad575c
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/8.10.7/ghc-8.10.7-x86_64-alpine-linux-integer-gmp.tar.xz
+              dlSubdir: ghc-8.10.7
+              dlHash: fa9fbb921fba5a9482ac009800be43f0fe42c60e54fab55ded9f2327d624cb6d
           Linux_AmazonLinux:
             unknown_versioning: *ghc-8107-64-centos
           Linux_UnknownLinux:
@@ -1941,9 +1941,9 @@ ghcupDownloads:
             unknown_versioning: *ghc-901-64-centos
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-alpine3.10-linux-integer-simple.tar.xz
-              dlSubdir: ghc-9.0.1-x86_64-unknown-linux
-              dlHash: 7c1a0154c9e361b75be6cb0305533bb8a3b963c54e8092ffd1759e5710805a5c
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.0.1/ghc-9.0.1-x86_64-alpine-linux-integer-gmp.tar.xz
+              dlSubdir: ghc-9.0.1
+              dlHash: 33dd5221ead3c81711f2a21fbf97b411327c837f2d1b8753e2de5e6e63abb805
           Linux_AmazonLinux:
             unknown_versioning: *ghc-901-64-centos
           Linux_UnknownLinux:
