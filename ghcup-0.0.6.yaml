@@ -2133,9 +2133,9 @@ ghcupDownloads:
               dlHash: 649e04abd4fa35796070b35de1c353721507a49842b18663aa1c7adc6b4115d8
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-alpine3.12-linux-gmp.tar.xz
-              dlSubdir: ghc-9.2.1-x86_64-unknown-linux
-              dlHash: 952b37671ef2838961e53949f4eecb4667d57472720058922929005ea7dc5b15
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.2.1/ghc-9.2.1-x86_64-alpine-linux-integer-gmp.tar.xz
+              dlSubdir: ghc-9.2.1
+              dlHash: 03dc9e3ee8f2f00c0d6be7e36e733c0229bbcb7eedc970247ef413a8708ff5d7
         A_32:
           Linux_Debian:
             '< 10': &ghc-921-32-deb9
