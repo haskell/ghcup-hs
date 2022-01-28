@@ -11,8 +11,7 @@ source-repository-package
 
 constraints: http-io-streams -brotli,
              any.Cabal ==3.6.2.0,
-             any.aeson >= 2.0.1.0,
-             any.alex <=3.2.6
+             any.aeson >= 2.0.1.0
 
 package libarchive
   flags: -system-libarchive
