@@ -2741,7 +2741,7 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_UnknownLinux:
-            unknown_versioning:
+            unknown_versioning: &hls-1600-64
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.0.0/haskell-language-server-Linux-1.6.0.0.tar.gz
               dlHash: dba25f63264e05ee0b7e45526f0ffbfb9b16bea72c25c1f23fbea2be921a7e62
           Darwin:
@@ -2760,9 +2760,7 @@ ghcupDownloads:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.0.0/haskell-language-server-Windows-1.6.0.0.tar.gz
               dlHash: 9f1b4ea31602a775a8f5bfedcc6290d3e45dd695f389fd705c9fff96c63c8570
           Linux_Alpine:
-            unknown_versioning:
-              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.0.0/haskell-language-server-Linux-alpine-x86_64-1.6.0.0.tar.xz
-              dlHash: eef1a0bc8029e890d94857685d2c23b13bf62b5ee72183098f1753c2a1c5bdfb
+            unknown_versioning: *hls-1600-64
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
