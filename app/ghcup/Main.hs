@@ -140,7 +140,12 @@ main = do
         <> hidden
         )
   let listCommands = infoOption
-        "install set rm install-cabal list upgrade compile debug-info tool-requirements changelog"
+        ("install set rm install-cabal list"
+#ifndef DISABLE_UPGRADE
+          <> " upgrade"
+#endif
+          <> " compile debug-info tool-requirements changelog"
+        )
         (  long "list-commands"
         <> help "List available commands for shell completion"
         <> internal
@@ -238,10 +243,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                              alreadyInstalling' <- alreadyInstalling optCommand newTool
                              when (not alreadyInstalling') $
                                case t of
+#ifdef DISABLE_UPGRADE
+                                 GHCup -> pure ()
+#else
                                  GHCup -> runLogger $
                                             logWarn ("New GHCup version available: "
                                               <> prettyVer l
                                               <> ". To upgrade, run 'ghcup upgrade'")
+#endif
                                  _ -> runLogger $
                                         logWarn ("New "
                                           <> T.pack (prettyShow t)
@@ -296,7 +305,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Config configCommand     -> config configCommand settings keybindings runLogger
             Whereis whereisOptions
                     whereisCommand   -> whereis whereisCommand whereisOptions runAppState leanAppstate runLogger
+#ifndef DISABLE_UPGRADE
             Upgrade uOpts force'     -> upgrade uOpts force' dirs runAppState runLogger
+#endif
             ToolRequirements         -> toolRequirements runAppState runLogger
             ChangeLog changelogOpts  -> changelog changelogOpts runAppState runLogger
             Nuke                     -> nuke appState runLogger
@@ -339,7 +350,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
     (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer over)) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = Left tver }))
     (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer tver)) ver
+#ifndef DISABLE_UPGRADE
   alreadyInstalling (Upgrade _ _) (GHCup, _) = pure True
+#endif
   alreadyInstalling _ _ = pure False
 
   cmp' :: ( HasLog env

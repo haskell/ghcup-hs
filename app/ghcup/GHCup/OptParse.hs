@@ -15,7 +15,9 @@ module GHCup.OptParse (
   , module GHCup.OptParse.Config
   , module GHCup.OptParse.Whereis
   , module GHCup.OptParse.List
+#ifndef DISABLE_UPGRADE
   , module GHCup.OptParse.Upgrade
+#endif
   , module GHCup.OptParse.ChangeLog
   , module GHCup.OptParse.Prefetch
   , module GHCup.OptParse.GC
@@ -35,7 +37,9 @@ import           GHCup.OptParse.Compile
 import           GHCup.OptParse.Config
 import           GHCup.OptParse.Whereis
 import           GHCup.OptParse.List
+#ifndef DISABLE_UPGRADE
 import           GHCup.OptParse.Upgrade
+#endif
 import           GHCup.OptParse.ChangeLog
 import           GHCup.OptParse.Prefetch
 import           GHCup.OptParse.GC
@@ -89,7 +93,9 @@ data Command
   | Compile CompileCommand
   | Config ConfigCommand
   | Whereis WhereisOptions WhereisCommand
+#ifndef DISABLE_UPGRADE
   | Upgrade UpgradeOpts Bool
+#endif
   | ToolRequirements
   | ChangeLog ChangeLogOptions
   | Nuke
@@ -208,6 +214,7 @@ com =
            (info (List <$> listOpts <**> helper)
                  (progDesc "Show available GHCs and other tools")
            )
+#ifndef DISABLE_UPGRADE
       <> command
            "upgrade"
            (info
@@ -218,6 +225,7 @@ com =
              )
              (progDesc "Upgrade ghcup")
            )
+#endif
       <> command
            "compile"
            (   Compile
