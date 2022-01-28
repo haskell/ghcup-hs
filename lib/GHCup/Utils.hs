@@ -715,7 +715,7 @@ unpackToDir dfp av = do
       (untar . GZip.decompress =<< rf av)
     | ".tar.xz" `isSuffixOf` fn -> do
       filecontents <- liftE $ rf av
-      let decompressed = Lzma.decompress filecontents
+      let decompressed = Lzma.decompressWith (Lzma.defaultDecompressParams { Lzma.decompressAutoDecoder= True }) filecontents
       liftE $ untar decompressed
     | ".tar.bz2" `isSuffixOf` fn ->
       liftE (untar . BZip.decompress =<< rf av)
@@ -744,7 +744,7 @@ getArchiveFiles av = do
       (entries . GZip.decompress =<< rf av)
     | ".tar.xz" `isSuffixOf` fn -> do
       filecontents <- liftE $ rf av
-      let decompressed = Lzma.decompress filecontents
+      let decompressed = Lzma.decompressWith (Lzma.defaultDecompressParams { Lzma.decompressAutoDecoder= True }) filecontents
       liftE $ entries decompressed
     | ".tar.bz2" `isSuffixOf` fn ->
       liftE (entries . BZip.decompress =<< rf av)
