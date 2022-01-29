@@ -89,18 +89,6 @@ toolVersionArgument criteria tool =
   mv _          = "VERSION|TAG"
 
 
-toolVersionOption :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
-toolVersionOption criteria tool =
-  option (eitherReader toolVersionEither)
-    (  sh tool
-    <> completer (tagCompleter (fromMaybe GHC tool) [])
-    <> foldMap (completer . versionCompleter criteria) tool)
- where
-  sh (Just GHC) = long "ghc" <> metavar "GHC_VERSION|TAG"
-  sh (Just HLS) = long "hls" <> metavar "HLS_VERSION|TAG"
-  sh _          = long "version" <> metavar "VERSION|TAG"
-
-
 versionParser :: Parser GHCTargetVersion
 versionParser = option
   (eitherReader tVersionEither)
