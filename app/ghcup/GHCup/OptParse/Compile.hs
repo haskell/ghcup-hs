@@ -340,7 +340,12 @@ hlsCompileOpts =
             )
           )
         )
-    <*> some (toolVersionOption Nothing (Just GHC))
+    <*> some (
+          option (eitherReader toolVersionEither)
+            (  long "ghc" <> metavar "GHC_VERSION|TAG" <> help "For which GHC version to compile for (can be specified multiple times)"
+            <> completer (tagCompleter GHC [])
+            <> completer (versionCompleter Nothing GHC))
+        )
     <*> many (argument str (metavar "CABAL_ARGS" <> help "Additional arguments to cabal install, prefix with '-- ' (longopts)"))
 
 
