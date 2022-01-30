@@ -2730,8 +2730,7 @@ ghcupDownloads:
               dlHash: d28beb003581d5a2133099fd59c83a49af850e7b5cbca72fb3df088d218e0f2b
     1.6.0.0:
       viTags:
-        - Recommended
-        - Latest
+      - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#1600
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -2775,6 +2774,56 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.0.0/haskell-language-server-Linux-armv7-1.6.0.0.tar.xz
               dlHash: b4b73cfdd3fce33ecf5e9e75b40d7b01f0889eceef1b39e57f958579b194e2bf
+
+    1.6.1.0:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#1610
+      viPostInstall: *hls-post-install
+      viSourceDL:
+        dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-1.6.1.0-src.tar.gz
+        dlSubdir: haskell-language-server-1.6.1.0
+        dlHash: e5c336ad2de8d021c882cdac5bbc26bf6427df8d2a5bd244c05cf18296a9bfdc
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-Linux-1.6.1.0.tar.gz
+              dlHash: 03f13214216c39c09ed9d073317cbf7bdc98a75d0c4ee2fd526e446457591d25
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-macOS-1.6.1.0.tar.gz
+              dlHash: 287adf17a4d5704316a5dd441719a6f6ad657ab6ac660a17bfca0c07c283a6b8
+          FreeBSD:
+            '( >= 12 && < 13 )':
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-FreeBSD12-x86_64-1.6.1.0.tar.xz
+              dlHash: 3d765164b9f9ae5c9ce3b9ed1d04559767c189c5b4a02b0691731fd05fe5e6d0
+            '( >= 13 )':
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-FreeBSD13-x86_64-1.6.1.0.tar.xz
+              dlHash: be8a8f7b5775fada0c2313ec14e9763908ecc1d82b48522e76c356750fe752fb
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-Windows-1.6.1.0.tar.gz
+              dlHash: b5efc77facde2136a1c5fbc1fbe1affa270efd913f9f1a200fb82b5f5b111756
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-Linux-alpine-x86_64-1.6.1.0.tar.xz
+              dlHash: 9dcf35793b8ede815db9ecf13d94fa89dfb498dcda4281bbbb94ae4efe332cf5
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-Linux-aarch64-1.6.1.0.tar.xz
+              dlHash: 19318d240d2fa8ec3e22ae7c4746445b25e132cbb2eca2adc5e87f7544b5a7e4
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-macOS-aarch64-1.6.1.0.tar.xz
+              dlHash: feca2336d7b98d23ceff10438d26476c71ce6ce45e617195927556a24e1480bf
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-Linux-armv7-1.6.1.0.tar.xz
+              dlHash: ea174e82678c25a017ff564c5329a80dc18030139b9bfcad2da8fe888617446b
 
   Stack:
     2.5.1:
