@@ -224,66 +224,10 @@ For the full list of env variables and parameters to tweak the script behavior, 
 * [bootstrap-haskell for linux/darwin/freebsd](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell#L7)
 * [bootstrap-haskell.ps1 for windows](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell.ps1#L17)
 
-### Example github workflow
+### github workflows
 
-On github workflows you can use [https://github.com/haskell/actions/](https://github.com/haskell/actions/)
-
-If you want to install ghcup manually though, here's an example config:
-
-```yml
-name: Haskell CI
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
-jobs:
-  build-cabal:
-
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
-        ghc: ['8.10.7', '9.0.1']
-        cabal: ['3.4.0.0']
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - if: matrix.os == 'windows-latest'
-      name: Install ghcup on windows
-      run: Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false,$true,$true,$false,$false,$false,$false,"C:\"
-
-    - if: matrix.os == 'windows-latest'
-      name: Add ghcup to PATH
-      run: echo "/c/ghcup/bin" >> $GITHUB_PATH
-      shell: bash
-
-    - if: matrix.os != 'windows-latest'
-      name: Install ghcup on non-windows
-      run: curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
-
-    - name: Install ghc/cabal
-      run: |
-        ghcup install ghc ${{ matrix.ghc }}
-        ghcup install cabal ${{ matrix.cabal }}
-      shell: bash
-
-    - name: Update cabal index
-      run: cabal update
-      shell: bash
-
-    - name: Build
-      run: cabal build --enable-tests --enable-benchmarks
-      shell: bash
-
-    - name: Run tests
-      run: cabal test
-      shell: bash
-```
+On github workflows you can use [https://github.com/haskell/actions/](https://github.com/haskell/actions/).
+GHCup itself is also pre-installed on all platforms, but may use non-standard install locations.
 
 ## GPG verification
 
