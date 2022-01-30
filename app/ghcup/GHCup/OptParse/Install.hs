@@ -268,6 +268,64 @@ runInstTool appstate' mInstPlatform =
     @InstallEffects
 
 
+type InstallGHCEffects = '[ TagNotFound
+                          , NextVerNotFound
+                          , NoToolVersionSet
+                          , BuildFailed
+                          , DirNotEmpty
+                          , AlreadyInstalled
+
+                          , (AlreadyInstalled, NotInstalled)
+                          , (UnknownArchive, NotInstalled)
+                          , (ArchiveResult, NotInstalled)
+                          , (FileDoesNotExistError, NotInstalled)
+                          , (CopyError, NotInstalled)
+                          , (NotInstalled, NotInstalled)
+                          , (DirNotEmpty, NotInstalled)
+                          , (NoDownload, NotInstalled)
+                          , (BuildFailed, NotInstalled)
+                          , (TagNotFound, NotInstalled)
+                          , (DigestError, NotInstalled)
+                          , (GPGError, NotInstalled)
+                          , (DownloadFailed, NotInstalled)
+                          , (TarDirDoesNotExist, NotInstalled)
+                          , (NextVerNotFound, NotInstalled)
+                          , (NoToolVersionSet, NotInstalled)
+                          , (FileAlreadyExistsError, NotInstalled)
+                          , (ProcessError, NotInstalled)
+
+                          , (AlreadyInstalled, ())
+                          , (UnknownArchive, ())
+                          , (ArchiveResult, ())
+                          , (FileDoesNotExistError, ())
+                          , (CopyError, ())
+                          , (NotInstalled, ())
+                          , (DirNotEmpty, ())
+                          , (NoDownload, ())
+                          , (BuildFailed, ())
+                          , (TagNotFound, ())
+                          , (DigestError, ())
+                          , (GPGError, ())
+                          , (DownloadFailed, ())
+                          , (TarDirDoesNotExist, ())
+                          , (NextVerNotFound, ())
+                          , (NoToolVersionSet, ())
+                          , (FileAlreadyExistsError, ())
+                          , (ProcessError, ())
+
+                          , ((), NotInstalled)
+                          ]
+
+runInstGHC :: AppState
+           -> Maybe PlatformRequest
+           -> Excepts InstallGHCEffects (ResourceT (ReaderT AppState IO)) a
+           -> IO (VEither InstallGHCEffects a)
+runInstGHC appstate' mInstPlatform =
+  flip runReaderT (maybe appstate' (\x -> appstate'{ pfreq = x } :: AppState) mInstPlatform)
+  . runResourceT
+  . runE
+    @InstallGHCEffects
+
 
     -------------------
     --[ Entrypoints ]--
@@ -288,23 +346,25 @@ install installCommand settings getAppState' runLogger = case installCommand of
   installGHC InstallOptions{..} = do
     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
     (case instBindist of
-       Nothing -> runInstTool s' instPlatform $ do
+       Nothing -> runInstGHC s' instPlatform $ do
          (v, vi) <- liftE $ fromVersion instVer GHC
-         liftE $ installGHCBin
-                   (_tvVersion v)
-                   isolateDir
-                   forceInstall
-         when instSet $ void $ liftE $ setGHC v SetGHCOnly
-         pure vi
-       Just uri -> do
-         runInstTool s'{ settings = settings {noVerify = True}} instPlatform $ do
-           (v, vi) <- liftE $ fromVersion instVer GHC
-           liftE $ installGHCBindist
-                     (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
+         void $ liftE $ sequenceE (installGHCBin
                      (_tvVersion v)
                      isolateDir
                      forceInstall
-           when instSet $ void $ liftE $ setGHC v SetGHCOnly
+                   )
+                   $ when instSet $ void $ setGHC v SetGHCOnly
+         pure vi
+       Just uri -> do
+         runInstGHC s'{ settings = settings {noVerify = True}} instPlatform $ do
+           (v, vi) <- liftE $ fromVersion instVer GHC
+           void $ liftE $ sequenceE (installGHCBindist
+                       (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
+                       (_tvVersion v)
+                       isolateDir
+                       forceInstall
+                     )
+                     $ when instSet $ void $ setGHC v SetGHCOnly
            pure vi
       )
         >>= \case
@@ -313,14 +373,25 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 forM_ (_viPostInstall =<< vi) $ \msg ->
                   runLogger $ logInfo msg
                 pure ExitSuccess
+
+              VLeft (V (AlreadyInstalled _ v, ())) -> do
+                runLogger $ logWarn $
+                  "GHC ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install ghc --force " <> prettyVer v <> "'"
+                pure ExitSuccess
               VLeft (V (AlreadyInstalled _ v)) -> do
                 runLogger $ logWarn $
                   "GHC ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install ghc --force " <> prettyVer v <> "'"
                 pure ExitSuccess
+
               VLeft (V (DirNotEmpty fp)) -> do
                 runLogger $ logWarn $
                   "Install directory " <> T.pack fp <> " is not empty. Use 'ghcup install ghc --isolate " <> T.pack fp <> " --force ..." <> "' to install regardless."
                 pure $ ExitFailure 3
+              VLeft (V (DirNotEmpty fp, ())) -> do
+                runLogger $ logWarn $
+                  "Install directory " <> T.pack fp <> " is not empty. Use 'ghcup install ghc --isolate " <> T.pack fp <> " --force ..." <> "' to install regardless."
+                pure $ ExitFailure 3
+
               VLeft err@(V (BuildFailed tmpdir _)) -> do
                 case keepDirs settings of
                   Never -> runLogger (logError $ T.pack $ prettyShow err)
@@ -328,6 +399,14 @@ install installCommand settings getAppState' runLogger = case installCommand of
                     "Check the logs at " <> T.pack logsDir <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
                     "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 3
+              VLeft err@(V (BuildFailed tmpdir _, ())) -> do
+                case keepDirs settings of
+                  Never -> runLogger (logError $ T.pack $ prettyShow err)
+                  _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
+                    "Check the logs at " <> T.pack logsDir <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
+                    "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
+                pure $ ExitFailure 3
+
               VLeft e -> do
                 runLogger $ do
                   logError $ T.pack $ prettyShow e
