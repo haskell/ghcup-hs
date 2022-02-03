@@ -88,14 +88,15 @@ May or may not work, several issues:
 
 Unsupported. GHC may or may not work. Upgrade to WSL2.
 
-### MacOS <13
+### MacOS <10.13
 
-Not supported. Would require separate binaries, since >=13 binaries are incompatible.
+Not supported. Would require separate binaries, since >=10.13 binaries are incompatible.
 Please upgrade.
 
 ### MacOS aarch64
 
-HLS bindists are still experimental. Stack is theoretically supported, but has no binaries yet.
+HLS bindists are still experimental. Stack has only unofficial binaries for this platform.
+There are various issues with GHC itself.
 
 ### FreeBSD
 
@@ -104,7 +105,7 @@ HLS bindists are experimental.
 
 ### Linux ARMv7/AARCH64
 
-Lower availability of bindists. HLS only has experimental ones. Stack not supported currently.
+Lower availability of bindists. Stack and HLS binaries are experimental.
 
 ## Manual install
 
