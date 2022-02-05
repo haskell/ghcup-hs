@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 
 {-|
@@ -1252,7 +1253,7 @@ setHLS ver shls = do
     -- not for legacy
     SetHLS_XYZ -> liftE $ rmMinorHLSSymlinks ver
     -- legacy and new
-    SetHLSOnly -> liftE $ rmPlainHLS
+    SetHLSOnly -> liftE rmPlainHLS
 
   case shls of
     -- not for legacy
@@ -1267,7 +1268,6 @@ setHLS ver shls = do
                      else fname <> "~" <> T.unpack (prettyVer ver) <> exeExt
         lift $ createLink destL (binDir </> target)
 
-      pure ()
     -- legacy and new
     SetHLSOnly -> do
       -- set haskell-language-server-<ghcver> symlinks
@@ -1286,8 +1286,6 @@ setHLS ver shls = do
       lift $ createLink destL wrapper
 
       lift warnAboutHlsCompatibility
-
-      pure ()
 
 
 unsetHLS :: ( MonadMask m
@@ -2846,7 +2844,7 @@ rmHLSNoGHC = do
   hlses <- fmap rights getInstalledHLSs
   forM_ hlses $ \hls -> do
     hlsGHCs <- fmap mkTVer <$> hlsGHCVersions' hls
-    let candidates = filter (`notElem` ghcs) $ hlsGHCs
+    let candidates = filter (`notElem` ghcs) hlsGHCs
     if (length hlsGHCs - length candidates) <= 0
     then rmHLSVer hls
     else

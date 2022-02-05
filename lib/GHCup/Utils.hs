@@ -251,7 +251,7 @@ rmPlainHLS = do
   Dirs {..}  <- lift getDirs
 
   -- delete 'haskell-language-server-8.10.7'
-  hlsBins <- fmap (filter (\f -> not ("haskell-language-server-wrapper" `isPrefixOf` f) && not ('~' `elem` f)))
+  hlsBins <- fmap (filter (\f -> not ("haskell-language-server-wrapper" `isPrefixOf` f) && ('~' `notElem` f)))
     $ liftIO $ handleIO (\_ -> pure []) $ findFiles
       binDir
       (makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString))
@@ -518,7 +518,7 @@ hlsInstalled ver = do
 isLegacyHLS :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
 isLegacyHLS ver = do
   bdir <- ghcupHLSDir ver
-  not <$> (liftIO $ doesDirectoryExist bdir)
+  not <$> liftIO (doesDirectoryExist bdir)
 
 
 -- Return the currently set hls version, if any.
@@ -620,8 +620,8 @@ hlsInternalServerScripts :: (MonadReader env m, HasDirs env, MonadIO m, MonadThr
 hlsInternalServerScripts ver mghcVer = do
   dir <- ghcupHLSDir ver
   let bdir = dir </> "bin"
-  (fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer))
-    <$> (liftIO $ listDirectory bdir)
+  fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer)
+    <$> liftIO (listDirectory bdir)
 
 -- | Get all binaries for a hls version from the ~/.ghcup/hls/<ver>/lib/haskell-language-server-<ver>/bin directory, if any.
 -- Returns the full path.
@@ -633,8 +633,8 @@ hlsInternalServerBinaries ver mghcVer = do
   dir <- ghcupHLSDir ver
   let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString)
   (Just bdir) <- fmap headMay $ liftIO $ expandFilePath [Left (dir </> "lib"), Right regex, Left "bin"]
-  (fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer))
-    <$> (liftIO $ listDirectory bdir)
+  fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer)
+    <$> liftIO (listDirectory bdir)
 
 -- | Get all libraries for a hls version from the ~/.ghcup/hls/<ver>/lib/haskell-language-server-<ver>/lib/<ghc-ver>/
 -- directory, if any.
@@ -647,7 +647,7 @@ hlsInternalServerLibs ver ghcVer = do
   dir <- ghcupHLSDir ver
   let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString)
   (Just bdir) <- fmap headMay $ liftIO $ expandFilePath [Left (dir </> "lib"), Right regex, Left ("lib" </> T.unpack (prettyVer ghcVer))]
-  (fmap (bdir </>)) <$> (liftIO $ listDirectory bdir)
+  fmap (bdir </>) <$> liftIO (listDirectory bdir)
 
 
 -- | Get the wrapper binary for an hls version, if any.
