@@ -132,7 +132,7 @@ gc GCOptions{..} runAppState runLogger = runGC runAppState (do
   when gcOldGHC rmOldGHC
   lift $ when gcProfilingLibs rmProfilingLibs
   lift $ when gcShareDir rmShareDir
-  lift $ when gcHLSNoGHC rmHLSNoGHC
+  liftE $ when gcHLSNoGHC rmHLSNoGHC
   lift $ when gcCache rmCache
   lift $ when gcTmp rmTmp
    ) >>= \case

@@ -2836,21 +2836,31 @@ rmHLSNoGHC :: ( MonadReader env m
               , HasLog env
               , MonadIO m
               , MonadMask m
+              , MonadFail m
+              , MonadUnliftIO m
               )
-           => m ()
+           => Excepts '[NotInstalled] m ()
 rmHLSNoGHC = do
   Dirs {..} <- getDirs
   ghcs <- fmap rights getInstalledGHCs
   hlses <- fmap rights getInstalledHLSs
   forM_ hlses $ \hls -> do
     hlsGHCs <- fmap mkTVer <$> hlsGHCVersions' hls
-    forM_ hlsGHCs $ \ghc -> do 
-      when (ghc `notElem` ghcs) $ do
-        bins <- hlsServerBinaries hls (Just $ _tvVersion ghc)
-        forM_ bins $ \bin -> do
-          let f = binDir </> bin
+    let candidates = filter (`notElem` ghcs) $ hlsGHCs
+    if (length hlsGHCs - length candidates) <= 0
+    then rmHLSVer hls
+    else
+      forM_ candidates $ \ghc -> do
+        bins1 <- fmap (binDir </>) <$> hlsServerBinaries hls (Just $ _tvVersion ghc)
+        bins2 <- ifM (isLegacyHLS hls) (pure []) $ do
+          shs <- hlsInternalServerScripts hls (Just $ _tvVersion ghc)
+          bins <- hlsInternalServerBinaries hls (Just $ _tvVersion ghc)
+          libs <- hlsInternalServerLibs hls (_tvVersion ghc)
+          pure (shs ++ bins ++ libs)
+        forM_ (bins1 ++ bins2) $ \f -> do
           logDebug $ "rm " <> T.pack f
           rmFile f
+    pure ()
 
 
 rmCache :: ( MonadReader env m
