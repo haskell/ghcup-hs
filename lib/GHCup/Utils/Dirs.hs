@@ -335,6 +335,7 @@ useXDG :: IO Bool
 useXDG = isJust <$> lookupEnv "GHCUP_USE_XDG_DIRS"
 
 
+-- | Like 'relpath'. Assumes the inputs are resolved in case of symlinks.
 relativeSymlink :: FilePath  -- ^ the path in which to create the symlink
                 -> FilePath  -- ^ the symlink destination
                 -> FilePath

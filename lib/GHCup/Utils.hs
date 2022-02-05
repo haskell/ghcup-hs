@@ -137,7 +137,9 @@ ghcLinkDestination :: ( MonadReader env m
 ghcLinkDestination tool ver = do
   Dirs {..}  <- getDirs
   ghcd <- ghcupGHCDir ver
-  pure (relativeSymlink binDir (ghcd </> "bin" </> tool))
+  ghcd' <- liftIO $ canonicalizePath ghcd
+  binDir' <- liftIO $ canonicalizePath binDir
+  pure (relativeSymlink binDir' (ghcd' </> "bin" </> tool))
 
 
 -- | The symlink destination of a hls binary.
@@ -152,7 +154,9 @@ hlsLinkDestination :: ( MonadReader env m
 hlsLinkDestination tool ver = do
   Dirs {..}  <- getDirs
   hlsd <- ghcupHLSDir ver
-  pure (relativeSymlink binDir (hlsd </> "bin" </> tool))
+  hlsd' <- liftIO $ canonicalizePath hlsd
+  binDir' <- liftIO $ canonicalizePath binDir
+  pure (relativeSymlink binDir' (hlsd' </> "bin" </> tool))
 
 
 -- | Removes the minor GHC symlinks, e.g. ghc-8.6.5.
