@@ -6,7 +6,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE QuasiQuotes           #-}
 
 {-|
 Module      : GHCup
@@ -301,22 +300,6 @@ installPackedGHC dl msubdir inst ver forceInstall = do
   liftE $ runBuildAction tmpUnpack
                          (Just inst)
                          (installUnpackedGHC workdir inst ver)
- where
-  -- | Does basic checks for isolated installs
-  -- Isolated Directory:
-  --   1. if it doesn't exist -> proceed
-  --   2. if it exists and is empty -> proceed
-  --   3. if it exists and is non-empty -> panic and leave the house
-  installDestSanityCheck :: ( MonadIO m
-                            , MonadCatch m
-                            ) =>
-                            FilePath ->
-                            Excepts '[DirNotEmpty] m ()
-  installDestSanityCheck isoDir = do
-    hideErrorDef [doesNotExistErrorType] () $ do
-      contents <- liftIO $ getDirectoryContentsRecursive isoDir
-      unless (null contents) (throwE $ DirNotEmpty isoDir)
-
 
 
 -- | Install an unpacked GHC distribution. This only deals with the GHC
@@ -582,6 +565,8 @@ installHLSBindist :: ( MonadMask m
                         , TarDirDoesNotExist
                         , ArchiveResult
                         , FileAlreadyExistsError
+                        , ProcessError
+                        , DirNotEmpty
                         ]
                        m
                        ()
@@ -617,26 +602,55 @@ installHLSBindist dlinfo ver isoFilepath forceInstall = do
 
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
+  legacy <- liftIO $ isLegacyHLSBindist workdir
+
+  if
+    | not forceInstall
+    , not legacy
+    , (Just fp) <- isoFilepath -> liftE $ installDestSanityCheck fp
+    | otherwise -> pure ()
 
   case isoFilepath of
     Just isoDir -> do
       lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
-      liftE $ installHLSUnpacked workdir isoDir Nothing forceInstall
+      if legacy
+      then liftE $ installHLSUnpackedLegacy workdir isoDir Nothing forceInstall
+      else liftE $ installHLSUnpacked workdir isoDir ver
 
     Nothing -> do
-      liftE $ installHLSUnpacked workdir binDir (Just ver) forceInstall
+      if legacy
+      then liftE $ installHLSUnpackedLegacy workdir binDir (Just ver) forceInstall
+      else do
+        inst <- ghcupHLSDir ver
+        liftE $ installHLSUnpacked workdir inst ver
+        liftE $ setHLS ver SetHLS_XYZ
 
   liftE $ installHLSPostInst isoFilepath ver
 
+isLegacyHLSBindist :: FilePath -- ^ Path to the unpacked hls bindist
+                   -> IO Bool
+isLegacyHLSBindist path = do
+  not <$> doesFileExist (path </> "GNUmakefile")
 
 -- | Install an unpacked hls distribution.
-installHLSUnpacked :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
-              => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
-              -> FilePath      -- ^ Path to install to
-              -> Maybe Version -- ^ Nothing for isolated install
-              -> Bool          -- ^ is it a force install
-              -> Excepts '[CopyError, FileAlreadyExistsError] m ()
-installHLSUnpacked path inst mver' forceInstall = do
+installHLSUnpacked :: (MonadMask m, MonadUnliftIO m, MonadReader env m, MonadFail m, HasLog env, HasDirs env, HasSettings env, MonadCatch m, MonadIO m)
+                   => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
+                   -> FilePath      -- ^ Path to install to
+                   -> Version
+                   -> Excepts '[ProcessError, CopyError, FileAlreadyExistsError, NotInstalled] m ()
+installHLSUnpacked path inst _ = do
+  lift $ logInfo "Installing HLS"
+  liftIO $ createDirRecursive' inst
+  lEM $ make ["PREFIX=" <> inst, "install"] (Just path)
+
+-- | Install an unpacked hls distribution (legacy).
+installHLSUnpackedLegacy :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
+                         => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
+                         -> FilePath      -- ^ Path to install to
+                         -> Maybe Version -- ^ Nothing for isolated install
+                         -> Bool          -- ^ is it a force install
+                         -> Excepts '[CopyError, FileAlreadyExistsError] m ()
+installHLSUnpackedLegacy path inst mver' forceInstall = do
   lift $ logInfo "Installing HLS"
   liftIO $ createDirRecursive' inst
 
@@ -692,7 +706,7 @@ installHLSPostInst isoFilepath ver =
       -- create symlink if this is the latest version in a regular install
       hlsVers <- lift $ fmap rights getInstalledHLSs
       let lInstHLS = headMay . reverse . sort $ hlsVers
-      when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver
+      when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver SetHLSOnly
 
 
 -- | Installs hls binaries @haskell-language-server-\<ghcver\>@
@@ -725,6 +739,8 @@ installHLSBin :: ( MonadMask m
                     , TarDirDoesNotExist
                     , ArchiveResult
                     , FileAlreadyExistsError
+                    , ProcessError
+                    , DirNotEmpty
                     ]
                    m
                    ()
@@ -894,9 +910,9 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
       case isolateDir of
         Just isoDir -> do
           lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
-          liftE $ installHLSUnpacked installDir isoDir Nothing True
+          liftE $ installHLSUnpackedLegacy installDir isoDir Nothing True
         Nothing -> do
-          liftE $ installHLSUnpacked installDir binDir (Just installVer) True
+          liftE $ installHLSUnpackedLegacy installDir binDir (Just installVer) True
     )
 
   liftE $ installHLSPostInst isolateDir installVer
@@ -1088,9 +1104,9 @@ setGHC ver sghc = do
   -- first delete the old symlinks (this fixes compatibility issues
   -- with old ghcup)
   case sghc of
-    SetGHCOnly -> liftE $ rmPlain (_tvTarget ver)
-    SetGHC_XY  -> liftE $ rmMajorSymlinks ver
-    SetGHC_XYZ -> liftE $ rmMinorSymlinks ver
+    SetGHCOnly -> liftE $ rmPlainGHC (_tvTarget ver)
+    SetGHC_XY  -> liftE $ rmMajorGHCSymlinks ver
+    SetGHC_XYZ -> liftE $ rmMinorGHCSymlinks ver
 
   -- for ghc tools (ghc, ghci, haddock, ...)
   verfiles <- ghcToolFiles ver
@@ -1170,7 +1186,7 @@ unsetGHC :: ( MonadReader env m
             )
          => Maybe Text
          -> Excepts '[NotInstalled] m ()
-unsetGHC = rmPlain
+unsetGHC = rmPlainGHC
 
 
 -- | Set the @~\/.ghcup\/bin\/cabal@ symlink.
@@ -1222,35 +1238,54 @@ setHLS :: ( MonadReader env m
           , MonadUnliftIO m
           )
        => Version
+       -> SetHLS -- Nothing for legacy
        -> Excepts '[NotInstalled] m ()
-setHLS ver = do
+setHLS ver shls = do
+  whenM (lift $ not <$> hlsInstalled ver) (throwE (NotInstalled HLS (GHCTargetVersion Nothing ver)))
+
+  -- symlink destination
   Dirs {..} <- lift getDirs
 
-  -- Delete old symlinks, since these might have different ghc versions than the
-  -- selected version, so we could end up with stray or incorrect symlinks.
-  oldSyms <- lift hlsSymlinks
-  forM_ oldSyms $ \f -> do
-    lift $ logDebug $ "rm " <> T.pack (binDir </> f)
-    lift $ rmLink (binDir </> f)
+  -- first delete the old symlinks
+  case shls of
+    -- not for legacy
+    SetHLS_XYZ -> liftE $ rmMinorHLSSymlinks ver
+    -- legacy and new
+    SetHLSOnly -> liftE $ rmPlainHLS
 
-  -- set haskell-language-server-<ghcver> symlinks
-  bins <- lift $ hlsServerBinaries ver Nothing
-  when (null bins) $ throwE $ NotInstalled HLS (GHCTargetVersion Nothing ver)
+  case shls of
+    -- not for legacy
+    SetHLS_XYZ -> do
+      bins <- lift $ hlsInternalServerBinaries ver
 
-  forM_ bins $ \f -> do
-    let destL = f
-    let target = (<> exeExt) . head . splitOn "~" $ f
-    lift $ createLink destL (binDir </> target)
+      forM_ bins $ \f -> do
+        destL <- hlsLinkDestination f ver
+        let target = if "haskell-language-server-wrapper" `isPrefixOf` f
+                     then f <> "-" <> T.unpack (prettyVer ver) <> exeExt
+                     else f <> "~" <> T.unpack (prettyVer ver) <> exeExt
+        lift $ createLink destL (binDir </> target)
 
-  -- set haskell-language-server-wrapper symlink
-  let destL = "haskell-language-server-wrapper-" <> T.unpack (prettyVer ver) <> exeExt
-  let wrapper = binDir </> "haskell-language-server-wrapper" <> exeExt
+      pure ()
+    -- legacy and new
+    SetHLSOnly -> do
+      -- set haskell-language-server-<ghcver> symlinks
+      bins <- lift $ hlsServerBinaries ver Nothing
+      when (null bins) $ throwE $ NotInstalled HLS (GHCTargetVersion Nothing ver)
 
-  lift $ createLink destL wrapper
+      forM_ bins $ \f -> do
+        let destL = f
+        let target = (<> exeExt) . head . splitOn "~" $ f
+        lift $ createLink destL (binDir </> target)
 
-  lift warnAboutHlsCompatibility
+      -- set haskell-language-server-wrapper symlink
+      let destL = "haskell-language-server-wrapper-" <> T.unpack (prettyVer ver) <> exeExt
+      let wrapper = binDir </> "haskell-language-server-wrapper" <> exeExt
 
-  pure ()
+      lift $ createLink destL wrapper
+
+      lift warnAboutHlsCompatibility
+
+      pure ()
 
 
 unsetHLS :: ( MonadMask m
@@ -1720,14 +1755,14 @@ rmGHCVer ver = do
   -- this isn't atomic, order matters
   when isSetGHC $ do
     lift $ logInfo "Removing ghc symlinks"
-    liftE $ rmPlain (_tvTarget ver)
+    liftE $ rmPlainGHC (_tvTarget ver)
 
   lift $ logInfo "Removing ghc-x.y.z symlinks"
-  liftE $ rmMinorSymlinks ver
+  liftE $ rmMinorGHCSymlinks ver
 
   lift $ logInfo "Removing/rewiring ghc-x.y symlinks"
   -- first remove
-  handle (\(_ :: ParseError) -> pure ()) $ liftE $ rmMajorSymlinks ver
+  handle (\(_ :: ParseError) -> pure ()) $ liftE $ rmMajorGHCSymlinks ver
   -- then fix them (e.g. with an earlier version)
 
   lift $ logInfo $ "Removing directory recursively: " <> T.pack dir
@@ -1794,24 +1829,19 @@ rmHLSVer :: ( MonadMask m
 rmHLSVer ver = do
   whenM (lift $ fmap not $ hlsInstalled ver) $ throwE (NotInstalled HLS (GHCTargetVersion Nothing ver))
 
-  isHlsSet      <- lift hlsSet
+  isHlsSet <- lift hlsSet
 
-  Dirs {..} <- lift getDirs
-
-  bins <- lift $ hlsAllBinaries ver
-  forM_ bins $ \f -> lift $ recycleFile (binDir </> f)
+  liftE $ rmMinorHLSSymlinks ver
+  hlsDir <- ghcupHLSDir ver
+  recyclePathForcibly hlsDir
 
   when (Just ver == isHlsSet) $ do
     -- delete all set symlinks
-    oldSyms <- lift hlsSymlinks
-    forM_ oldSyms $ \f -> do
-      let fullF = binDir </> f
-      lift $ logDebug $ "rm " <> T.pack fullF
-      lift $ rmLink fullF
+    rmPlainHLS
     -- set latest hls
     hlsVers <- lift $ fmap rights getInstalledHLSs
     case headMay . reverse . sort $ hlsVers of
-      Just latestver -> setHLS latestver
+      Just latestver -> setHLS latestver SetHLSOnly
       Nothing        -> pure ()
 
 
@@ -2687,7 +2717,11 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
     HLS -> do
       whenM (lift $ fmap not $ hlsInstalled _tvVersion)
         $ throwE (NotInstalled HLS (GHCTargetVersion Nothing _tvVersion))
-      pure (binDir dirs </> "haskell-language-server-wrapper-" <> T.unpack (prettyVer _tvVersion) <> exeExt)
+      bdir <- lift $ ghcupHLSDir _tvVersion
+      liftIO $ doesDirectoryExist bdir >>= \case
+        True -> pure (bdir </> "bin" </> "haskell-language-server-wrapper" <> exeExt)
+        -- legacy
+        False -> pure (binDir dirs </> "haskell-language-server-wrapper-" <> T.unpack (prettyVer _tvVersion) <> exeExt)
 
     Stack -> do
       whenM (lift $ fmap not $ stackInstalled _tvVersion)

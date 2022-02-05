@@ -495,7 +495,7 @@ set' _ (_, ListResult {..}) = do
       case lTool of
         GHC   -> liftE $ setGHC (GHCTargetVersion lCross lVer) SetGHCOnly $> ()
         Cabal -> liftE $ setCabal lVer $> ()
-        HLS   -> liftE $ setHLS lVer $> ()
+        HLS   -> liftE $ setHLS lVer SetHLSOnly $> ()
         Stack -> liftE $ setStack lVer $> ()
         GHCup -> pure ()
     )
