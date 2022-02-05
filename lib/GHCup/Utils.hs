@@ -125,31 +125,34 @@ import qualified Data.List.NonEmpty            as NE
     ------------------------
 
 
--- | The symlink destination of a ghc tool.
-ghcLinkDestination :: ( MonadReader env m
-                      , HasDirs env
-                      , MonadThrow m, MonadIO m)
-                   => FilePath -- ^ the tool, such as 'ghc', 'haddock' etc.
-                   -> GHCTargetVersion
-                   -> m FilePath
-ghcLinkDestination tool ver = do
+-- | Create a relative symlink destination for the binary directory,
+-- given a target toolpath.
+binarySymLinkDestination :: ( MonadReader env m
+                            , HasDirs env
+                            , MonadThrow m
+                            , MonadIO m
+                            )
+                         => FilePath -- ^ the full toolpath
+                         -> m FilePath
+binarySymLinkDestination toolPath = do
   Dirs {..}  <- getDirs
-  ghcd <- ghcupGHCDir ver
-  pure (relativeSymlink binDir (ghcd </> "bin" </> tool))
+  toolPath' <- liftIO $ canonicalizePath toolPath
+  binDir' <- liftIO $ canonicalizePath binDir
+  pure (relativeSymlink binDir' toolPath')
 
 
 -- | Removes the minor GHC symlinks, e.g. ghc-8.6.5.
-rmMinorSymlinks :: ( MonadReader env m
-                   , HasDirs env
-                   , MonadIO m
-                   , HasLog env
-                   , MonadThrow m
-                   , MonadFail m
-                   , MonadMask m
-                   )
-                => GHCTargetVersion
-                -> Excepts '[NotInstalled] m ()
-rmMinorSymlinks tv@GHCTargetVersion{..} = do
+rmMinorGHCSymlinks :: ( MonadReader env m
+                      , HasDirs env
+                      , MonadIO m
+                      , HasLog env
+                      , MonadThrow m
+                      , MonadFail m
+                      , MonadMask m
+                      )
+                   => GHCTargetVersion
+                   -> Excepts '[NotInstalled] m ()
+rmMinorGHCSymlinks tv@GHCTargetVersion{..} = do
   Dirs {..}  <- lift getDirs
 
   files                         <- liftE $ ghcToolFiles tv
@@ -161,17 +164,17 @@ rmMinorSymlinks tv@GHCTargetVersion{..} = do
 
 
 -- | Removes the set ghc version for the given target, if any.
-rmPlain :: ( MonadReader env m
-           , HasDirs env
-           , HasLog env
-           , MonadThrow m
-           , MonadFail m
-           , MonadIO m
-           , MonadMask m
-           )
-        => Maybe Text -- ^ target
-        -> Excepts '[NotInstalled] m ()
-rmPlain target = do
+rmPlainGHC :: ( MonadReader env m
+              , HasDirs env
+              , HasLog env
+              , MonadThrow m
+              , MonadFail m
+              , MonadIO m
+              , MonadMask m
+              )
+           => Maybe Text -- ^ target
+           -> Excepts '[NotInstalled] m ()
+rmPlainGHC target = do
   Dirs {..}  <- lift getDirs
   mtv                           <- lift $ ghcSet target
   forM_ mtv $ \tv -> do
@@ -187,17 +190,17 @@ rmPlain target = do
 
 
 -- | Remove the major GHC symlink, e.g. ghc-8.6.
-rmMajorSymlinks :: ( MonadReader env m
-                   , HasDirs env
-                   , MonadIO m
-                   , HasLog env
-                   , MonadThrow m
-                   , MonadFail m
-                   , MonadMask m
-                   )
-                => GHCTargetVersion
-                -> Excepts '[NotInstalled] m ()
-rmMajorSymlinks tv@GHCTargetVersion{..} = do
+rmMajorGHCSymlinks :: ( MonadReader env m
+                      , HasDirs env
+                      , MonadIO m
+                      , HasLog env
+                      , MonadThrow m
+                      , MonadFail m
+                      , MonadMask m
+                      )
+                   => GHCTargetVersion
+                   -> Excepts '[NotInstalled] m ()
+rmMajorGHCSymlinks tv@GHCTargetVersion{..} = do
   Dirs {..}  <- lift getDirs
   (mj, mi) <- getMajorMinorV _tvVersion
   let v' = intToText mj <> "." <> intToText mi
@@ -209,6 +212,62 @@ rmMajorSymlinks tv@GHCTargetVersion{..} = do
     lift $ logDebug ("rm -f " <> T.pack fullF)
     lift $ hideError doesNotExistErrorType $ rmLink fullF
 
+
+-- | Removes the minor HLS files, e.g. 'haskell-language-server-8.10.7~1.6.1.0'
+-- and 'haskell-language-server-wrapper-1.6.1.0'.
+rmMinorHLSSymlinks :: ( MonadReader env m
+                      , HasDirs env
+                      , MonadIO m
+                      , HasLog env
+                      , MonadThrow m
+                      , MonadFail m
+                      , MonadMask m
+                      )
+                   => Version
+                   -> Excepts '[NotInstalled] m ()
+rmMinorHLSSymlinks ver = do
+  Dirs {..}  <- lift getDirs
+
+  hlsBins <- hlsAllBinaries ver
+  forM_ hlsBins $ \f -> do
+    let fullF = binDir </> f <> exeExt
+    lift $ logDebug ("rm -f " <> T.pack fullF)
+    -- on unix, this may be either a file (legacy) or a symlink
+    -- on windows, this is always a file... hence 'rmFile'
+    -- works consistently across platforms
+    lift $ rmFile fullF
+
+-- | Removes the set HLS version, if any.
+rmPlainHLS :: ( MonadReader env m
+              , HasDirs env
+              , HasLog env
+              , MonadThrow m
+              , MonadFail m
+              , MonadIO m
+              , MonadMask m
+              )
+           => Excepts '[NotInstalled] m ()
+rmPlainHLS = do
+  Dirs {..}  <- lift getDirs
+
+  -- delete 'haskell-language-server-8.10.7'
+  hlsBins <- fmap (filter (\f -> not ("haskell-language-server-wrapper" `isPrefixOf` f) && ('~' `notElem` f)))
+    $ liftIO $ handleIO (\_ -> pure []) $ findFiles
+      binDir
+      (makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString))
+  forM_ hlsBins $ \f -> do
+    let fullF = binDir </> f
+    lift $ logDebug ("rm -f " <> T.pack fullF)
+    if isWindows
+    then lift $ rmLink fullF
+    else lift $ rmFile fullF
+
+  -- 'haskell-language-server-wrapper'
+  let hlswrapper = binDir </> "haskell-language-server-wrapper" <> exeExt
+  lift $ logDebug ("rm -f " <> T.pack hlswrapper)
+  if isWindows
+  then lift $ hideError doesNotExistErrorType $ rmLink hlswrapper
+  else lift $ hideError doesNotExistErrorType $ rmFile hlswrapper
 
 
 
@@ -353,7 +412,8 @@ cabalSet = do
 
 
 -- | Get all installed hls, by matching on
--- @~\/.ghcup\/bin/haskell-language-server-wrapper-<\hlsver\>@.
+-- @~\/.ghcup\/bin/haskell-language-server-wrapper-<\hlsver\>@,
+-- as well as @~\/.ghcup\/hls\/<\hlsver\>@
 getInstalledHLSs :: (MonadReader env m, HasDirs env, MonadIO m, MonadCatch m)
                  => m [Either FilePath Version]
 getInstalledHLSs = do
@@ -364,13 +424,21 @@ getInstalledHLSs = do
                    execBlank
                    ([s|^haskell-language-server-wrapper-.*$|] :: ByteString)
     )
-  forM bins $ \f ->
+  legacy <- forM bins $ \f ->
     case
           version . T.pack <$> (stripSuffix exeExt =<< stripPrefix "haskell-language-server-wrapper-" f)
       of
         Just (Right r) -> pure $ Right r
         Just (Left  _) -> pure $ Left f
         Nothing        -> pure $ Left f
+
+  hlsdir <- ghcupHLSBaseDir
+  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectory hlsdir
+  new <- forM fs $ \f -> case parseGHCupHLSDir f of
+    Right r -> pure $ Right r
+    Left  _ -> pure $ Left f
+  pure (nub (new <> legacy))
+
 
 -- | Get all installed stacks, by matching on
 -- @~\/.ghcup\/bin/stack-<\stackver\>@.
@@ -447,6 +515,10 @@ hlsInstalled ver = do
   vers <- fmap rights getInstalledHLSs
   pure $ elem ver vers
 
+isLegacyHLS :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
+isLegacyHLS ver = do
+  bdir <- ghcupHLSDir ver
+  not <$> liftIO (doesDirectoryExist bdir)
 
 
 -- Return the currently set hls version, if any.
@@ -518,7 +590,7 @@ hlsGHCVersions' v' = do
   pure . sortBy (flip compare) . rights $ vers
 
 
--- | Get all server binaries for an hls version, if any.
+-- | Get all server binaries for an hls version from the ~/.ghcup/bin directory, if any.
 hlsServerBinaries :: (MonadReader env m, HasDirs env, MonadIO m)
                   => Version
                   -> Maybe Version   -- ^ optional GHC version
@@ -538,6 +610,44 @@ hlsServerBinaries ver mghcVer = do
         <> [s|$|] :: ByteString
       )
     )
+
+-- | Get all scripts for a hls version from the ~/.ghcup/hls/<ver>/bin directory, if any.
+-- Returns the full path.
+hlsInternalServerScripts :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m)
+                          => Version
+                          -> Maybe Version   -- ^ optional GHC version
+                          -> m [FilePath]
+hlsInternalServerScripts ver mghcVer = do
+  dir <- ghcupHLSDir ver
+  let bdir = dir </> "bin"
+  fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer)
+    <$> liftIO (listDirectory bdir)
+
+-- | Get all binaries for a hls version from the ~/.ghcup/hls/<ver>/lib/haskell-language-server-<ver>/bin directory, if any.
+-- Returns the full path.
+hlsInternalServerBinaries :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadFail m)
+                          => Version
+                          -> Maybe Version   -- ^ optional GHC version
+                          -> m [FilePath]
+hlsInternalServerBinaries ver mghcVer = do
+  dir <- ghcupHLSDir ver
+  let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString)
+  (Just bdir) <- fmap headMay $ liftIO $ expandFilePath [Left (dir </> "lib"), Right regex, Left "bin"]
+  fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer)
+    <$> liftIO (listDirectory bdir)
+
+-- | Get all libraries for a hls version from the ~/.ghcup/hls/<ver>/lib/haskell-language-server-<ver>/lib/<ghc-ver>/
+-- directory, if any.
+-- Returns the full path.
+hlsInternalServerLibs :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadFail m)
+                      => Version
+                      -> Version   -- ^ GHC version
+                      -> m [FilePath]
+hlsInternalServerLibs ver ghcVer = do
+  dir <- ghcupHLSDir ver
+  let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString)
+  (Just bdir) <- fmap headMay $ liftIO $ expandFilePath [Left (dir </> "lib"), Right regex, Left ("lib" </> T.unpack (prettyVer ghcVer))]
+  fmap (bdir </>) <$> liftIO (listDirectory bdir)
 
 
 -- | Get the wrapper binary for an hls version, if any.
@@ -569,22 +679,6 @@ hlsAllBinaries ver = do
   pure (maybeToList wrapper ++ hls)
 
 
--- | Get the active symlinks for hls.
-hlsSymlinks :: (MonadReader env m, HasDirs env, MonadIO m, MonadCatch m) => m [FilePath]
-hlsSymlinks = do
-  Dirs {..}  <- getDirs
-  oldSyms                       <- liftIO $ handleIO (\_ -> pure []) $ findFiles
-    binDir
-    (makeRegexOpts compExtended
-                   execBlank
-                   ([s|^haskell-language-server-.*$|] :: ByteString)
-    )
-  filterM
-    ( liftIO
-    . pathIsLink
-    . (binDir </>)
-    )
-    oldSyms
 
 
 
@@ -809,8 +903,16 @@ getLatestBaseVersion av pvpVer =
     --[ Other ]--
     -------------
 
+-- | Usually @~\/.ghcup\/ghc\/\<ver\>\/bin\/@
+ghcInternalBinDir :: (MonadReader env m, HasDirs env, MonadThrow m, MonadFail m, MonadIO m)
+                  => GHCTargetVersion
+                  -> m FilePath
+ghcInternalBinDir ver = do
+  ghcdir <- ghcupGHCDir ver
+  pure (ghcdir </> "bin")
 
--- | Get tool files from @~\/.ghcup\/bin\/ghc\/\<ver\>\/bin\/\*@
+
+-- | Get tool files from @~\/.ghcup\/ghc\/\<ver\>\/bin\/\*@
 -- while ignoring @*-\<ver\>@ symlinks and accounting for cross triple prefix.
 --
 -- Returns unversioned relative files without extension, e.g.:
@@ -820,11 +922,10 @@ ghcToolFiles :: (MonadReader env m, HasDirs env, MonadThrow m, MonadFail m, Mona
              => GHCTargetVersion
              -> Excepts '[NotInstalled] m [FilePath]
 ghcToolFiles ver = do
-  ghcdir <- lift $ ghcupGHCDir ver
-  let bindir = ghcdir </> "bin"
+  bindir <- ghcInternalBinDir ver
 
   -- fail if ghc is not installed
-  whenM (fmap not $ liftIO $ doesDirectoryExist ghcdir)
+  whenM (fmap not $ ghcInstalled ver)
         (throwE (NotInstalled GHC ver))
 
   files <- liftIO (listDirectory bindir >>= filterM (doesFileExist . (bindir </>)))
@@ -1157,3 +1258,19 @@ ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir) = do
 ghcBinaryName :: GHCTargetVersion -> String
 ghcBinaryName (GHCTargetVersion (Just t) _) = T.unpack (t <> "-ghc" <> T.pack exeExt)
 ghcBinaryName (GHCTargetVersion Nothing  _) = T.unpack ("ghc" <> T.pack exeExt)
+
+
+-- | Does basic checks for isolated installs
+-- Isolated Directory:
+--   1. if it doesn't exist -> proceed
+--   2. if it exists and is empty -> proceed
+--   3. if it exists and is non-empty -> panic and leave the house
+installDestSanityCheck :: ( MonadIO m
+                          , MonadCatch m
+                          ) =>
+                          FilePath ->
+                          Excepts '[DirNotEmpty] m ()
+installDestSanityCheck isoDir = do
+  hideErrorDef [doesNotExistErrorType] () $ do
+    contents <- liftIO $ getDirectoryContentsRecursive isoDir
+    unless (null contents) (throwE $ DirNotEmpty isoDir)

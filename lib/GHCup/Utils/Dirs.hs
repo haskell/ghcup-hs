@@ -20,8 +20,11 @@ module GHCup.Utils.Dirs
   , ghcupCacheDir
   , ghcupGHCBaseDir
   , ghcupGHCDir
+  , ghcupHLSBaseDir
+  , ghcupHLSDir
   , mkGhcupTmpDir
   , parseGHCupGHCDir
+  , parseGHCupHLSDir
   , relativeSymlink
   , withGHCupTmpDir
   , getConfigFilePath
@@ -46,6 +49,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource hiding (throwM)
 import           Data.Bifunctor
 import           Data.Maybe
+import           Data.Versions
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
@@ -244,6 +248,24 @@ parseGHCupGHCDir :: MonadThrow m => FilePath -> m GHCTargetVersion
 parseGHCupGHCDir (T.pack -> fp) =
   throwEither $ MP.parse ghcTargetVerP "" fp
 
+parseGHCupHLSDir :: MonadThrow m => FilePath -> m Version
+parseGHCupHLSDir (T.pack -> fp) =
+  throwEither $ MP.parse version' "" fp
+
+-- | ~/.ghcup/hls by default, for new-style installs.
+ghcupHLSBaseDir :: (MonadReader env m, HasDirs env) => m FilePath
+ghcupHLSBaseDir = do
+  Dirs {..}  <- getDirs
+  pure (baseDir </> "hls")
+
+-- | Gets '~/.ghcup/hls/<hls-ver>' for new-style installs.
+ghcupHLSDir :: (MonadReader env m, HasDirs env, MonadThrow m)
+            => Version
+            -> m FilePath
+ghcupHLSDir ver = do
+  basedir <- ghcupHLSBaseDir
+  let verdir = T.unpack $ prettyVer ver
+  pure (basedir </> verdir)
 
 mkGhcupTmpDir :: ( MonadReader env m
                  , HasDirs env
@@ -313,6 +335,7 @@ useXDG :: IO Bool
 useXDG = isJust <$> lookupEnv "GHCUP_USE_XDG_DIRS"
 
 
+-- | Like 'relpath'. Assumes the inputs are resolved in case of symlinks.
 relativeSymlink :: FilePath  -- ^ the path in which to create the symlink
                 -> FilePath  -- ^ the symlink destination
                 -> FilePath

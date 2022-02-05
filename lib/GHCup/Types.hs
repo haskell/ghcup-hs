@@ -484,6 +484,10 @@ data SetGHC = SetGHCOnly  -- ^ unversioned 'ghc'
             | SetGHC_XYZ  -- ^ ghc-x.y.z
             deriving (Eq, Show)
 
+data SetHLS = SetHLSOnly  -- ^ unversioned 'hls'
+            | SetHLS_XYZ  -- ^ haskell-language-server-a.b.c~x.y.z, where a.b.c is GHC version and x.y.z is HLS version
+            deriving (Eq, Show)
+
 
 data PlatformResult = PlatformResult
   { _platform      :: Platform

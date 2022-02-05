@@ -311,10 +311,10 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
           -> m ExitCode
   setHLS' SetOptions{ sToolVer } =
     case sToolVer of
-      (SetToolVersion v) -> runSetHLS runLeanAppState (liftE $ setHLS (_tvVersion v) >> pure v)
+      (SetToolVersion v) -> runSetHLS runLeanAppState (liftE $ setHLS (_tvVersion v) SetHLSOnly >> pure v)
       _ -> runSetHLS runAppState (do
           v <- liftE $ fst <$> fromVersion' sToolVer HLS
-          liftE $ setHLS (_tvVersion v)
+          liftE $ setHLS (_tvVersion v) SetHLSOnly
           pure v
         )
       >>= \case

@@ -469,8 +469,9 @@ install installCommand settings getAppState' runLogger = case installCommand of
        Just uri -> do
          runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
            (v, vi) <- liftE $ fromVersion instVer HLS
+           -- TODO: support legacy
            liftE $ installHLSBindist
-                     (DownloadInfo uri Nothing "")
+                     (DownloadInfo uri (Just $ RegexDir "haskell-language-server-*") "")
                      (_tvVersion v)
                      isolateDir
                      forceInstall
