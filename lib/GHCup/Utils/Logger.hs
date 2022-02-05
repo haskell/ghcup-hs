@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE QuasiQuotes      #-}
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE OverloadedStrings   #-}
 
@@ -18,7 +17,7 @@ module GHCup.Utils.Logger where
 
 import           GHCup.Types
 import           GHCup.Types.Optics
-import {-# SOURCE #-} GHCup.Utils.File.Common
+import {-# SOURCE #-} GHCup.Utils.File.Common (findFiles)
 import           GHCup.Utils.String.QQ
 
 import           Control.Exception.Safe

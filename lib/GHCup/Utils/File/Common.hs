@@ -1,11 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE ViewPatterns      #-}
 
-module GHCup.Utils.File.Common where
+module GHCup.Utils.File.Common (
+  module GHCup.Utils.File.Common
+  , ProcessError(..)
+  , CapturedProcess(..)
+  ) where
 
 import           GHCup.Utils.Prelude
+import           GHCup.Types(ProcessError(..), CapturedProcess(..))
 
 import           Control.Monad.Reader
 import           Data.Maybe
@@ -21,33 +25,6 @@ import           Text.Regex.Posix
 import qualified Data.Text                     as T
 import qualified Data.ByteString.Lazy          as BL
 import qualified Text.Megaparsec               as MP
-
-
-
-data ProcessError = NonZeroExit Int FilePath [String]
-                  | PTerminated FilePath [String]
-                  | PStopped FilePath [String]
-                  | NoSuchPid FilePath [String]
-                  deriving Show
-
-instance Pretty ProcessError where
-  pPrint (NonZeroExit e exe args) =
-    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "failed with exit code" <+> text (show e <> ".")
-  pPrint (PTerminated exe args) =
-    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "terminated."
-  pPrint (PStopped exe args) =
-    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "stopped."
-  pPrint (NoSuchPid exe args) =
-    text "Could not find PID for process running " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text "."
-
-data CapturedProcess = CapturedProcess
-  { _exitCode :: ExitCode
-  , _stdOut   :: BL.ByteString
-  , _stdErr   :: BL.ByteString
-  }
-  deriving (Eq, Show)
-
-makeLenses ''CapturedProcess
 
 
 

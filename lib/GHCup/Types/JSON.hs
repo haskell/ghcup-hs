@@ -22,10 +22,8 @@ Portability : portable
 module GHCup.Types.JSON where
 
 import           GHCup.Types
+import           GHCup.Types.JSON.Utils
 import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.Logger             () -- TH is broken shite and needs GHCup.Utils.Logger for linking, although we don't depend on the file.
-                                                   -- This is due to the boot file.
 
 import           Control.Applicative            ( (<|>) )
 import           Data.Aeson              hiding (Key)
@@ -40,6 +38,7 @@ import           Text.Casing
 
 import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
+import qualified Data.Text.Encoding.Error      as E
 import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
 
@@ -78,7 +77,7 @@ instance FromJSON Tag where
     x -> pure (UnknownTag x)
 
 instance ToJSON URI where
-  toJSON = toJSON . decUTF8Safe . serializeURIRef'
+  toJSON = toJSON . E.decodeUtf8With E.lenientDecode . serializeURIRef'
 
 instance FromJSON URI where
   parseJSON = withText "URL" $ \t ->

@@ -30,7 +30,7 @@ where
 import           GHCup.Types
 import           GHCup.Errors
 import           GHCup.Types.Optics
-import {-# SOURCE #-} GHCup.Utils.Logger
+import {-# SOURCE #-} GHCup.Utils.Logger (logWarn)
 #if defined(IS_WINDOWS)
 import           GHCup.Utils.Prelude.Windows
 #else
@@ -306,11 +306,6 @@ verToS = T.unpack . prettyVer
 
 intToText :: Integral a => a -> T.Text
 intToText = TL.toStrict . B.toLazyText . B.decimal
-
-
-removeLensFieldLabel :: String -> String
-removeLensFieldLabel str' =
-  maybe str' T.unpack . T.stripPrefix (T.pack "_") . T.pack $ str'
 
 
 pvpToVersion :: MonadThrow m => PVP -> Text -> m Version

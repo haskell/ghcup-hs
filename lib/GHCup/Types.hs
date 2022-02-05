@@ -6,6 +6,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 {-|
@@ -30,12 +31,15 @@ import           Data.Map.Strict                ( Map )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text)
+import           GHC.IO.Exception               ( ExitCode )
+import           Optics                         ( makeLenses )
+import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text, (<+>))
 import           URI.ByteString
 #if defined(BRICK)
 import           Graphics.Vty                   ( Key(..) )
 #endif
 
+import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Text                     as T
 import qualified GHC.Generics                  as GHC
 
@@ -600,3 +604,27 @@ data LoggerConfig = LoggerConfig
 
 instance NFData LoggerConfig where
   rnf (LoggerConfig !lcPrintDebug !_ !_ !fancyColors) = rnf (lcPrintDebug, fancyColors)
+
+data ProcessError = NonZeroExit Int FilePath [String]
+                  | PTerminated FilePath [String]
+                  | PStopped FilePath [String]
+                  | NoSuchPid FilePath [String]
+                  deriving Show
+
+instance Pretty ProcessError where
+  pPrint (NonZeroExit e exe args) =
+    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "failed with exit code" <+> text (show e <> ".")
+  pPrint (PTerminated exe args) =
+    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "terminated."
+  pPrint (PStopped exe args) =
+    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "stopped."
+  pPrint (NoSuchPid exe args) =
+    text "Could not find PID for process running " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text "."
+data CapturedProcess = CapturedProcess
+  { _exitCode :: ExitCode
+  , _stdOut   :: BL.ByteString
+  , _stdErr   :: BL.ByteString
+  }
+  deriving (Eq, Show)
+
+makeLenses ''CapturedProcess

@@ -65,6 +65,7 @@ library
     GHCup.Requirements
     GHCup.Types
     GHCup.Types.JSON
+    GHCup.Types.JSON.Utils
     GHCup.Types.Optics
     GHCup.Utils
     GHCup.Utils.Dirs

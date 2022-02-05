@@ -1,7 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE QuasiQuotes      #-}
 {-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE OverloadedStrings   #-}
 
 module GHCup.Utils.Logger where
 

@@ -17,7 +17,6 @@ import           GHCup.OptParse.Common
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.File
 import           GHCup.Utils.Logger
 import           GHCup.Utils.String.QQ
 
