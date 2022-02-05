@@ -13,7 +13,7 @@ import           Data.Text               ( Text )
 import           Data.Void
 import           GHC.IO.Exception
 import           Optics                  hiding ((<|), (|>))
-import           System.Directory
+import           System.Directory        hiding (findFiles)
 import           System.FilePath
 import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           Text.Regex.Posix
@@ -98,6 +98,21 @@ isInPath p = do
   if dir `elem` spaths
   then isJust <$> searchPath [dir] fn
   else pure False
+
+
+-- | Follows the first match in case of Regex.
+expandFilePath :: [Either FilePath Regex] -> IO [FilePath]
+expandFilePath = go ""
+ where
+  go :: FilePath -> [Either FilePath Regex] -> IO [FilePath]
+  go p [] = pure [p]
+  go p (x:xs) = do
+    case x of
+      Left s -> go (p </> s) xs
+      Right regex -> do
+        fps <- findFiles p regex
+        res <- forM fps $ \fp -> go (p </> fp) xs
+        pure $ mconcat res
 
 
 findFiles :: FilePath -> Regex -> IO [FilePath]

@@ -1125,9 +1125,10 @@ setGHC ver sghc = do
 
     -- create symlink
     forM_ mTargetFile $ \targetFile -> do
+      bindir <- ghcInternalBinDir ver
       let fullF = binDir </> targetFile  <> exeExt
-          fileWithExt = file <> exeExt
-      destL <- lift $ ghcLinkDestination fileWithExt ver
+          fileWithExt = bindir </> file <> exeExt
+      destL <- binarySymLinkDestination fileWithExt
       lift $ createLink destL fullF
 
   -- create symlink for share dir
@@ -1256,13 +1257,14 @@ setHLS ver shls = do
   case shls of
     -- not for legacy
     SetHLS_XYZ -> do
-      bins <- lift $ hlsInternalServerBinaries ver
+      bins <- lift $ hlsInternalServerScripts ver Nothing
 
       forM_ bins $ \f -> do
-        destL <- hlsLinkDestination f ver
-        let target = if "haskell-language-server-wrapper" `isPrefixOf` f
-                     then f <> "-" <> T.unpack (prettyVer ver) <> exeExt
-                     else f <> "~" <> T.unpack (prettyVer ver) <> exeExt
+        let fname = takeFileName f
+        destL <- binarySymLinkDestination f
+        let target = if "haskell-language-server-wrapper" `isPrefixOf` fname
+                     then fname <> "-" <> T.unpack (prettyVer ver) <> exeExt
+                     else fname <> "~" <> T.unpack (prettyVer ver) <> exeExt
         lift $ createLink destL (binDir </> target)
 
       pure ()
@@ -2717,11 +2719,11 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
     HLS -> do
       whenM (lift $ fmap not $ hlsInstalled _tvVersion)
         $ throwE (NotInstalled HLS (GHCTargetVersion Nothing _tvVersion))
-      bdir <- lift $ ghcupHLSDir _tvVersion
-      liftIO $ doesDirectoryExist bdir >>= \case
-        True -> pure (bdir </> "bin" </> "haskell-language-server-wrapper" <> exeExt)
-        -- legacy
-        False -> pure (binDir dirs </> "haskell-language-server-wrapper-" <> T.unpack (prettyVer _tvVersion) <> exeExt)
+      ifM (lift $ isLegacyHLS _tvVersion)
+        (pure (binDir dirs </> "haskell-language-server-wrapper-" <> T.unpack (prettyVer _tvVersion) <> exeExt))
+        $ do
+          bdir <- lift $ ghcupHLSDir _tvVersion
+          pure (bdir </> "bin" </> "haskell-language-server-wrapper" <> exeExt)
 
     Stack -> do
       whenM (lift $ fmap not $ stackInstalled _tvVersion)
