@@ -1,5 +1,17 @@
 # Revision history for ghcup
 
+## 0.1.17.5 -- ????-??-??
+
+* Support installation of dynamic HLS bindists wrt [HLS #2675](https://github.com/haskell/haskell-language-server/pull/2675) and [#237](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/237)
+* Fix XDG support when `~/.local/bin` is a symlink wrt [#311](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/311)
+* Add support for quilt-style patches wrt [#230](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/230), by James Hobson
+* Fix redundant upgrade warnings in `ghcup upgrade`
+* Fix `ghcup whereis ghc` for non-standard versions wrt [#289](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/289)
+* Don't print logs to stdout, but stderr
+* Allow unpacking legacy lzma archives wrt [#307](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/307)
+* Allow to disable self-upgrade functionality wrt [#305](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/305)
+* Fix `ghcup install ghc --set` when ghc is already installed wrt [#291](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/291)
+
 ## 0.1.17.4 -- 2021-11-13
 
 * add `--metadata-caching` option, allowing to also disable yaml metadata caching wrt [#278](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/278)
