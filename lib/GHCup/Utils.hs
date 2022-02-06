@@ -229,7 +229,7 @@ rmMinorHLSSymlinks ver = do
 
   hlsBins <- hlsAllBinaries ver
   forM_ hlsBins $ \f -> do
-    let fullF = binDir </> f <> exeExt
+    let fullF = binDir </> f
     lift $ logDebug ("rm -f " <> T.pack fullF)
     -- on unix, this may be either a file (legacy) or a symlink
     -- on windows, this is always a file... hence 'rmFile'
