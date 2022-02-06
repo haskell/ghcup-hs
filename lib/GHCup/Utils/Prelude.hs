@@ -472,7 +472,9 @@ recyclePathForcibly fp
       let dest = tmp </> takeFileName fp
       liftIO (moveFile fp dest)
           `catch`
-          (\e -> if isPermissionError e {- EXDEV on windows -} then recover (liftIO $ removePathForcibly fp) else throwIO e)
+          (\e -> if | isDoesNotExistError e -> pure ()
+                    | isPermissionError e {- EXDEV on windows -} -> recover (liftIO $ removePathForcibly fp)
+                    | otherwise -> throwIO e)
           `finally`
             liftIO (handleIO (\_ -> pure ()) $ removePathForcibly tmp)
   | otherwise = liftIO $ removePathForcibly fp
