@@ -616,14 +616,14 @@ installHLSBindist dlinfo ver isoFilepath forceInstall = do
       lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
       if legacy
       then liftE $ installHLSUnpackedLegacy workdir isoDir Nothing forceInstall
-      else liftE $ installHLSUnpacked workdir isoDir ver
+      else liftE $ runBuildAction tmpUnpack Nothing $ installHLSUnpacked workdir isoDir ver
 
     Nothing -> do
       if legacy
       then liftE $ installHLSUnpackedLegacy workdir binDir (Just ver) forceInstall
       else do
         inst <- ghcupHLSDir ver
-        liftE $ installHLSUnpacked workdir inst ver
+        liftE $ runBuildAction tmpUnpack Nothing $ installHLSUnpacked workdir inst ver
         liftE $ setHLS ver SetHLS_XYZ
 
   liftE $ installHLSPostInst isoFilepath ver
