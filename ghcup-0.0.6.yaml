@@ -2119,6 +2119,12 @@ ghcupDownloads:
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-921-64-fedora
             unknown_versioning: *ghc-921-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-922-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-9.2.2
+              dlHash: 4b67324507f5d14c23db3ed83c57f4e25d877e97d2b93cfe8e1a9fdf65e4efa1
+            unknown_versioning: *ghc-922-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-921-64-fedora
           Darwin:
