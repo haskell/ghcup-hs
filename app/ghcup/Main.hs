@@ -313,6 +313,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Nuke                     -> nuke appState runLogger
             Prefetch pfCom           -> prefetch pfCom runAppState runLogger
             GC gcOpts                -> gc gcOpts runAppState runLogger
+            Run runCommand           -> run runCommand runAppState runLogger
 
           case res of
             ExitSuccess        -> pure ()

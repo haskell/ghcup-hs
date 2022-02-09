@@ -126,15 +126,13 @@ import qualified Data.List.NonEmpty            as NE
 
 -- | Create a relative symlink destination for the binary directory,
 -- given a target toolpath.
-binarySymLinkDestination :: ( MonadReader env m
-                            , HasDirs env
-                            , MonadThrow m
+binarySymLinkDestination :: ( MonadThrow m
                             , MonadIO m
                             )
-                         => FilePath -- ^ the full toolpath
+                         => FilePath -- ^ binary dir
+                         -> FilePath -- ^ the full toolpath
                          -> m FilePath
-binarySymLinkDestination toolPath = do
-  Dirs {..}  <- getDirs
+binarySymLinkDestination binDir toolPath = do
   toolPath' <- liftIO $ canonicalizePath toolPath
   binDir' <- liftIO $ canonicalizePath binDir
   pure (relativeSymlink binDir' toolPath')
