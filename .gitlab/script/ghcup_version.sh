@@ -97,6 +97,7 @@ eghcup --numeric-version
 
 eghcup install ghc ${GHC_VERSION}
 [ `$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version` = "${GHC_VERSION}" ]
+[ `eghcup run --ghc ${GHC_VERSION} -- ghc --numeric-version` = "${GHC_VERSION}" ]
 eghcup set ghc ${GHC_VERSION}
 eghcup install cabal ${CABAL_VERSION}
 [ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
@@ -104,6 +105,14 @@ eghcup unset cabal
 "$GHCUP_BIN"/cabal --version && exit || echo yes
 eghcup set cabal ${CABAL_VERSION}
 [ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
+[ `eghcup run --cabal ${CABAL_VERSION} -- cabal --numeric-version` = "${CABAL_VERSION}" ]
+
+eghcup run --ghc 8.10.7 --cabal 3.4.0.0 --hls 1.6.1.0 --stack 2.7.3 --install --bindir "$(pwd)/.bin"
+expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghcup-run.files" | sort)
+actual=$(cd ".bin" && find | sort)
+[ "${actual}" = "${expected}" ]
+unset actual expected
+rm -rf .bin
 
 cabal --version
 
@@ -181,6 +190,8 @@ else
 		fi
 	fi
 fi
+
+
 
 # check that lazy loading works for 'whereis'
 cp "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml" "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml.bak"
