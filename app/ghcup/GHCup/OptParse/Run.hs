@@ -15,6 +15,7 @@ import           GHCup.Utils.File
 import           GHCup.OptParse.Common
 import           GHCup.Errors
 import           GHCup.Types
+import           GHCup.Types.Optics             ( getDirs )
 import           GHCup.Utils.Logger
 import           GHCup.Utils.String.QQ
 
@@ -309,8 +310,22 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
           cbin <- liftIO $ canonicalizePath bin
           lift $ createLink (relativeSymlink tmp cbin) (tmp </> "stack")
         HLS -> do
-          liftE $ setHLS (_tvVersion v) SetHLS_XYZ (Just tmp)
-          liftE $ setHLS (_tvVersion v) SetHLSOnly (Just tmp)
+          Dirs {..}  <- getDirs
+          let v' = _tvVersion v
+          legacy <- isLegacyHLS v'
+          if legacy
+          then do
+            -- TODO: factor this out
+            (Just hlsWrapper) <- hlsWrapperBinary v'
+            cw <- liftIO $ canonicalizePath (binDir </> hlsWrapper)
+            lift $ createLink (relativeSymlink tmp cw) (tmp </> takeFileName cw)
+            hlsBins <- hlsServerBinaries v' Nothing >>= liftIO . traverse (canonicalizePath . (binDir </>))
+            forM_ hlsBins $ \bin ->
+              lift $ createLink (relativeSymlink tmp bin) (tmp </> takeFileName bin)
+            liftE $ setHLS (_tvVersion v) SetHLSOnly (Just tmp)
+          else do
+            liftE $ setHLS (_tvVersion v) SetHLS_XYZ (Just tmp)
+            liftE $ setHLS (_tvVersion v) SetHLSOnly (Just tmp)
         GHCup -> pure ()
        
    addToPath path = do
