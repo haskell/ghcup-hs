@@ -205,9 +205,11 @@ run RunOptions{..} runAppState runLogger = runRUN runAppState (do
      [] -> liftIO $ putStr tmp
      (cmd:args) -> do
        newEnv <- liftIO $ addToPath tmp
-       if isWindows
-       then liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
-       else liftIO $ SPP.executeFile cmd True args (Just newEnv)
+#ifndef IS_WINDOWS
+       liftIO $ SPP.executeFile cmd True args (Just newEnv)
+#else
+       liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
+#endif
    pure ()
    ) >>= \case
             VRight _ -> do

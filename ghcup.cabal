@@ -267,6 +267,9 @@ executable ghcup
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
+  else
+    build-depends:
+      , unix             ^>=2.7
 
   if flag(no-exe)
     buildable: False
