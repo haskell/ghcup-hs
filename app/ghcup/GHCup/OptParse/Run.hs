@@ -161,6 +161,16 @@ type RunEffects = '[ AlreadyInstalled
                    , ProcessError
                    ]
 
+runLeanRUN :: (MonadUnliftIO m, MonadIO m)
+           => LeanAppState
+           -> Excepts RunEffects (ReaderT LeanAppState m) a
+           -> m (VEither RunEffects a)
+runLeanRUN leanAppstate =
+    -- Don't use runLeanAppState here, which is disabled on windows.
+    -- This is the only command on all platforms that doesn't need full appstate.
+    flip runReaderT leanAppstate
+    . runE
+      @RunEffects
 
 runRUN :: MonadUnliftIO m
       => (ReaderT AppState m (VEither RunEffects a) -> m (VEither RunEffects a))
@@ -189,75 +199,120 @@ run :: forall m.
        )
    => RunOptions
    -> (forall a. ReaderT AppState m (VEither RunEffects a) -> m (VEither RunEffects a))
+   -> LeanAppState
    -> (ReaderT LeanAppState m () -> m ())
    -> m ExitCode
-run RunOptions{..} runAppState runLogger = runRUN runAppState (do
-   tmp  <- case runBinDir of
+run RunOptions{..} runAppState leanAppstate runLogger = do
+   tmp <- case runBinDir of
      Just bdir -> do
        liftIO $ createDirRecursive' bdir
        liftIO $ canonicalizePath bdir
      Nothing -> liftIO (getTemporaryDirectory >>= \tmp -> createTempDirectory tmp "ghcup")
-   forM_ runGHCVer   $ addToolToDir tmp GHC
-   forM_ runCabalVer $ addToolToDir tmp Cabal
-   forM_ runHLSVer   $ addToolToDir tmp HLS
-   forM_ runStackVer $ addToolToDir tmp Stack
-   case runCOMMAND of
-     [] -> liftIO $ putStr tmp
-     (cmd:args) -> do
-       newEnv <- liftIO $ addToPath tmp
+   r <- addToolsToDir tmp
+   case r of
+     VRight _ -> do
+       case runCOMMAND of
+         [] -> liftIO $ putStr tmp
+         (cmd:args) -> do
+           newEnv <- liftIO $ addToPath tmp
 #ifndef IS_WINDOWS
-       liftIO $ SPP.executeFile cmd True args (Just newEnv)
+           liftIO $ SPP.executeFile cmd True args (Just newEnv)
 #else
-       liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
+           liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
 #endif
-   pure ()
-   ) >>= \case
-            VRight _ -> do
-                  pure ExitSuccess
-            VLeft e -> do
-              runLogger $ logError $ T.pack $ prettyShow e
-              pure $ ExitFailure 27
+       pure ExitSuccess
+     VLeft e -> do
+       runLogger $ logError $ T.pack $ prettyShow e
+       pure $ ExitFailure 27
   where
+   isToolTag :: ToolVersion -> Bool
+   isToolTag (ToolTag _) = True
+   isToolTag _           = False
+
    -- TODO: doesn't work for cross
-   addToolToDir tmp tool ver = do
-     (v, _) <- liftE $ fromVersion (Just ver) tool
-     isInstalled <- checkIfToolInstalled' tool v
-     case tool of
-       GHC -> do
-         unless isInstalled $ when (runInstTool' && isNothing (_tvTarget v)) $ void $ liftE $ installGHCBin
-           (_tvVersion v)
-           Nothing
-           False
-         void $ liftE $ setGHC v SetGHC_XYZ (Just tmp)
-         void $ liftE $ setGHC v SetGHCOnly (Just tmp)
-         pure ()
-       Cabal -> do
-         unless isInstalled $ when runInstTool' $ void $ liftE $ installCabalBin
-           (_tvVersion v)
-           Nothing
-           False
-         bin  <- liftE $ whereIsTool Cabal v
-         cbin <- liftIO $ canonicalizePath bin
-         lift $ createLink (relativeSymlink tmp cbin) (tmp </> "cabal")
-         pure ()
-       Stack -> do
-         unless isInstalled $ when runInstTool' $ void $ liftE $ installStackBin
-           (_tvVersion v)
-           Nothing
-           False
-         bin  <- liftE $ whereIsTool Stack v
-         cbin <- liftIO $ canonicalizePath bin
-         lift $ createLink (relativeSymlink tmp cbin) (tmp </> "stack")
-         pure ()
-       HLS -> do
-         unless isInstalled $ when runInstTool' $ void $ liftE $ installHLSBin
-           (_tvVersion v)
-           Nothing
-           False
-         liftE $ setHLS (_tvVersion v) SetHLS_XYZ (Just tmp)
-         liftE $ setHLS (_tvVersion v) SetHLSOnly (Just tmp)
-         pure ()
-       GHCup -> pure ()
+   addToolsToDir tmp
+     | or (fmap (maybe False isToolTag) [runGHCVer, runCabalVer, runHLSVer, runStackVer]) || runInstTool' = runRUN runAppState $ do
+         forM_ runGHCVer $ \ver -> do
+           (v, _) <- liftE $ fromVersion (Just ver) GHC
+           installTool GHC v
+           setTool GHC v tmp
+         forM_ runCabalVer $ \ver -> do
+           (v, _) <- liftE $ fromVersion (Just ver) Cabal
+           installTool Cabal v
+           setTool Cabal v tmp
+         forM_ runHLSVer $ \ver -> do
+           (v, _) <- liftE $ fromVersion (Just ver) HLS
+           installTool HLS v
+           setTool HLS v tmp
+         forM_ runStackVer $ \ver -> do
+           (v, _) <- liftE $ fromVersion (Just ver) Stack
+           installTool Stack v
+           setTool Stack v tmp
+     | otherwise = runLeanRUN leanAppstate $ do
+         case runGHCVer of
+            Just (ToolVersion v) ->
+              setTool GHC v tmp
+            Nothing -> pure ()
+            _ -> fail "Internal error"
+         case runCabalVer of
+            Just (ToolVersion v) ->
+              setTool Cabal v tmp
+            Nothing -> pure ()
+            _ -> fail "Internal error"
+         case runHLSVer of
+            Just (ToolVersion v) ->
+              setTool HLS v tmp
+            Nothing -> pure ()
+            _ -> fail "Internal error"
+         case runStackVer of
+            Just (ToolVersion v) ->
+              setTool Stack v tmp
+            Nothing -> pure ()
+            _ -> fail "Internal error"
+
+   installTool tool v = do
+      isInstalled <- checkIfToolInstalled' tool v
+      case tool of
+        GHC -> do
+          unless isInstalled $ when (runInstTool' && isNothing (_tvTarget v)) $ void $ liftE $ installGHCBin
+            (_tvVersion v)
+            Nothing
+            False
+        Cabal -> do
+          unless isInstalled $ when runInstTool' $ void $ liftE $ installCabalBin
+            (_tvVersion v)
+            Nothing
+            False
+        Stack -> do
+          unless isInstalled $ when runInstTool' $ void $ liftE $ installStackBin
+            (_tvVersion v)
+            Nothing
+            False
+        HLS -> do
+          unless isInstalled $ when runInstTool' $ void $ liftE $ installHLSBin
+            (_tvVersion v)
+            Nothing
+            False
+        GHCup -> pure ()
+
+   setTool tool v tmp =
+      case tool of
+        GHC -> do
+          void $ liftE $ setGHC v SetGHC_XYZ (Just tmp)
+          void $ liftE $ setGHC v SetGHCOnly (Just tmp)
+        Cabal -> do
+          bin  <- liftE $ whereIsTool Cabal v
+          cbin <- liftIO $ canonicalizePath bin
+          lift $ createLink (relativeSymlink tmp cbin) (tmp </> "cabal")
+        Stack -> do
+          bin  <- liftE $ whereIsTool Stack v
+          cbin <- liftIO $ canonicalizePath bin
+          lift $ createLink (relativeSymlink tmp cbin) (tmp </> "stack")
+        HLS -> do
+          liftE $ setHLS (_tvVersion v) SetHLS_XYZ (Just tmp)
+          liftE $ setHLS (_tvVersion v) SetHLSOnly (Just tmp)
+        GHCup -> pure ()
+       
    addToPath path = do
     cEnv <- Map.fromList <$> getEnvironment
     let paths          = ["PATH", "Path"]
