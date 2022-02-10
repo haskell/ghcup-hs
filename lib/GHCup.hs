@@ -1110,7 +1110,7 @@ setGHC ver sghc mBinDir = do
 
   -- first delete the old symlinks (this fixes compatibility issues
   -- with old ghcup)
-  when (mBinDir == Nothing) $
+  when (isNothing mBinDir) $
     case sghc of
       SetGHCOnly -> liftE $ rmPlainGHC (_tvTarget ver)
       SetGHC_XY  -> liftE $ rmMajorGHCSymlinks ver
@@ -1139,7 +1139,7 @@ setGHC ver sghc mBinDir = do
       destL <- binarySymLinkDestination binDir fileWithExt
       lift $ createLink destL fullF
 
-  when (mBinDir == Nothing) $ do
+  when (isNothing mBinDir) $ do
     -- create symlink for share dir
     when (isNothing . _tvTarget $ ver) $ lift $ symlinkShareDir ghcdir verS
 
@@ -1263,7 +1263,7 @@ setHLS ver shls mBinDir = do
       pure f
 
   -- first delete the old symlinks
-  when (mBinDir == Nothing) $
+  when (isNothing mBinDir) $
     case shls of
       -- not for legacy
       SetHLS_XYZ -> liftE $ rmMinorHLSSymlinks ver
@@ -1300,7 +1300,7 @@ setHLS ver shls mBinDir = do
 
       lift $ createLink destL wrapper
 
-      when (mBinDir == Nothing) $
+      when (isNothing mBinDir) $
         lift warnAboutHlsCompatibility
 
 

@@ -209,19 +209,27 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
        liftIO $ createDirRecursive' bdir
        liftIO $ canonicalizePath bdir
      Nothing -> liftIO (getTemporaryDirectory >>= \tmp -> createTempDirectory tmp "ghcup")
-   r <- addToolsToDir tmp
+   r <- do
+     addToolsToDir tmp
    case r of
      VRight _ -> do
        case runCOMMAND of
-         [] -> liftIO $ putStr tmp
+         [] -> do
+           liftIO $ putStr tmp
+           pure ExitSuccess
          (cmd:args) -> do
            newEnv <- liftIO $ addToPath tmp
 #ifndef IS_WINDOWS
-           liftIO $ SPP.executeFile cmd True args (Just newEnv)
+           void $ liftIO $ SPP.executeFile cmd True args (Just newEnv)
+           pure ExitSuccess
 #else
-           liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
+           r' <- runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
+           case r' of
+             VRight _ -> pure ExitSuccess
+             VLeft e -> do
+               runLogger $ logError $ T.pack $ prettyShow e
+               pure $ ExitFailure 28
 #endif
-       pure ExitSuccess
      VLeft e -> do
        runLogger $ logError $ T.pack $ prettyShow e
        pure $ ExitFailure 27
@@ -304,11 +312,11 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
         Cabal -> do
           bin  <- liftE $ whereIsTool Cabal v
           cbin <- liftIO $ canonicalizePath bin
-          lift $ createLink (relativeSymlink tmp cbin) (tmp </> "cabal")
+          lift $ createLink (relativeSymlink tmp cbin) (tmp </> ("cabal" <.> exeExt))
         Stack -> do
           bin  <- liftE $ whereIsTool Stack v
           cbin <- liftIO $ canonicalizePath bin
-          lift $ createLink (relativeSymlink tmp cbin) (tmp </> "stack")
+          lift $ createLink (relativeSymlink tmp cbin) (tmp </> ("stack" <.> exeExt))
         HLS -> do
           Dirs {..}  <- getDirs
           let v' = _tvVersion v
