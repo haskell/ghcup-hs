@@ -107,17 +107,19 @@ eghcup set cabal ${CABAL_VERSION}
 [ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
 [ `eghcup run --cabal ${CABAL_VERSION} -- cabal --numeric-version` = "${CABAL_VERSION}" ]
 
-if [ "${ARCH}" = "64" ] ; then
-	eghcup run --ghc 8.10.7 --cabal 3.4.1.0 --hls 1.6.1.0 --stack 2.7.3 --install --bindir "$(pwd)/.bin"
-	if [ "${OS}" == "WINDOWS" ] ; then
-		expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghcup-run.files.windows" | sort)
-	else
-		expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghcup-run.files" | sort)
+if [ "${OS}" != "FREEBSD" ] ; then
+	if [ "${ARCH}" = "64" ] ; then
+		eghcup run --ghc 8.10.7 --cabal 3.4.1.0 --hls 1.6.1.0 --stack 2.7.3 --install --bindir "$(pwd)/.bin"
+		if [ "${OS}" == "WINDOWS" ] ; then
+			expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghcup-run.files.windows" | sort)
+		else
+			expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghcup-run.files" | sort)
+		fi
+		actual=$(cd ".bin" && find . | sort)
+		[ "${actual}" = "${expected}" ]
+		unset actual expected
+		rm -rf .bin
 	fi
-	actual=$(cd ".bin" && find . | sort)
-	[ "${actual}" = "${expected}" ]
-	unset actual expected
-	rm -rf .bin
 fi
 
 cabal --version
