@@ -1,5 +1,5 @@
-./
-./cabal
+.
+./cabal.exe
 ./cabal.shim
 ./ghc-8.10.7.exe
 ./ghc-8.10.7.shim
@@ -77,5 +77,5 @@
 ./runhaskell-8.10.7.shim
 ./runhaskell.exe
 ./runhaskell.shim
-./stack
+./stack.exe
 ./stack.shim

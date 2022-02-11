@@ -114,7 +114,7 @@ if [ "${ARCH}" = "64" ] ; then
 	else
 		expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghcup-run.files" | sort)
 	fi
-	actual=$(cd ".bin" && find | sort)
+	actual=$(cd ".bin" && find . | sort)
 	[ "${actual}" = "${expected}" ]
 	unset actual expected
 	rm -rf .bin
@@ -148,7 +148,7 @@ else
 		eghcup --offline install ghc 8.10.3
 		if [ "${ARCH}" = "64" ] ; then
 			expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghc-8.10.3-linux.files" | sort)
-			actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find | sort)
+			actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find . | sort)
 			[ "${actual}" = "${expected}" ]
 			unset actual expected
 		fi
@@ -156,7 +156,7 @@ else
 		eghcup prefetch ghc 8.10.3
 		eghcup --offline install ghc 8.10.3
 		expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghc-8.10.3-windows.files" | sort)
-		actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find | sort)
+		actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find . | sort)
 		[ "${actual}" = "${expected}" ]
 		unset actual expected
 	else
