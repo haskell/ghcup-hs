@@ -200,6 +200,7 @@ executable ghcup
     GHCup.OptParse.Nuke
     GHCup.OptParse.Prefetch
     GHCup.OptParse.Rm
+    GHCup.OptParse.Run
     GHCup.OptParse.Set
     GHCup.OptParse.ToolRequirements
     GHCup.OptParse.UnSet
@@ -243,6 +244,7 @@ executable ghcup
     , resourcet             ^>=1.2.2
     , safe                  ^>=0.3.18
     , safe-exceptions       ^>=0.1
+    , temporary             ^>=1.3
     , template-haskell      >=2.7      && <2.18
     , text                  ^>=1.2.4.0
     , uri-bytestring        ^>=0.3.2.2
@@ -265,6 +267,9 @@ executable ghcup
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
+  else
+    build-depends:
+      , unix             ^>=2.7
 
   if flag(no-exe)
     buildable: False

@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 module GHCup.Utils.File.Common (
   module GHCup.Utils.File.Common

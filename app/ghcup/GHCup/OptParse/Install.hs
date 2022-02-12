@@ -352,7 +352,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                      isolateDir
                      forceInstall
                    )
-                   $ when instSet $ void $ setGHC v SetGHCOnly
+                   $ when instSet $ void $ setGHC v SetGHCOnly Nothing
          pure vi
        Just uri -> do
          runInstGHC s'{ settings = settings {noVerify = True}} instPlatform $ do
@@ -363,7 +363,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                        isolateDir
                        forceInstall
                      )
-                     $ when instSet $ void $ setGHC v SetGHCOnly
+                     $ when instSet $ void $ setGHC v SetGHCOnly Nothing
            pure vi
       )
         >>= \case

@@ -271,10 +271,10 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
           -> m ExitCode
   setGHC' SetOptions{ sToolVer } =
     case sToolVer of
-      (SetToolVersion v) -> runSetGHC runLeanAppState (liftE $ setGHC v SetGHCOnly >> pure v)
+      (SetToolVersion v) -> runSetGHC runLeanAppState (liftE $ setGHC v SetGHCOnly Nothing >> pure v)
       _ -> runSetGHC runAppState (do
           v <- liftE $ fst <$> fromVersion' sToolVer GHC
-          liftE $ setGHC v SetGHCOnly
+          liftE $ setGHC v SetGHCOnly Nothing
         )
       >>= \case
             VRight GHCTargetVersion{..} -> do
@@ -311,10 +311,10 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
           -> m ExitCode
   setHLS' SetOptions{ sToolVer } =
     case sToolVer of
-      (SetToolVersion v) -> runSetHLS runLeanAppState (liftE $ setHLS (_tvVersion v) SetHLSOnly >> pure v)
+      (SetToolVersion v) -> runSetHLS runLeanAppState (liftE $ setHLS (_tvVersion v) SetHLSOnly Nothing >> pure v)
       _ -> runSetHLS runAppState (do
           v <- liftE $ fst <$> fromVersion' sToolVer HLS
-          liftE $ setHLS (_tvVersion v) SetHLSOnly
+          liftE $ setHLS (_tvVersion v) SetHLSOnly Nothing
           pure v
         )
       >>= \case

@@ -466,7 +466,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
         let vi = getVersionInfo targetVer HLS dls
         when setCompile $ void $ liftE $
-          setHLS targetVer SetHLSOnly
+          setHLS targetVer SetHLSOnly Nothing
         pure (vi, targetVer)
         )
         >>= \case
@@ -517,7 +517,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
         let vi = getVersionInfo (_tvVersion targetVer) GHC dls
         when setCompile $ void $ liftE $
-          setGHC targetVer SetGHCOnly
+          setGHC targetVer SetGHCOnly Nothing
         pure (vi, targetVer)
         )
         >>= \case

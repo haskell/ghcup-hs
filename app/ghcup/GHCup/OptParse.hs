@@ -24,6 +24,7 @@ module GHCup.OptParse (
   , module GHCup.OptParse.DInfo
   , module GHCup.OptParse.Nuke
   , module GHCup.OptParse.ToolRequirements
+  , module GHCup.OptParse.Run
   , module GHCup.OptParse
 ) where
 
@@ -33,6 +34,7 @@ import           GHCup.OptParse.Install
 import           GHCup.OptParse.Set
 import           GHCup.OptParse.UnSet
 import           GHCup.OptParse.Rm
+import           GHCup.OptParse.Run
 import           GHCup.OptParse.Compile
 import           GHCup.OptParse.Config
 import           GHCup.OptParse.Whereis
@@ -104,6 +106,7 @@ data Command
 #endif
   | Prefetch PrefetchCommand
   | GC GCOptions
+  | Run RunOptions
 
 
 
@@ -263,6 +266,16 @@ com =
              (progDesc "Garbage collection"
              <> footerDoc ( Just $ text gcFooter ))
            )
+      <> command
+              "run"
+               (Run
+               <$>
+                 info
+                   (runOpts <**> helper)
+                   (progDesc "Run a command with the given tool in PATH"
+                   <> footerDoc ( Just $ text runFooter )
+                   )
+               )
       <> commandGroup "Main commands:"
       )
     <|> subparser

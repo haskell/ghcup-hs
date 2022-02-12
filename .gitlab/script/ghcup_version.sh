@@ -97,6 +97,7 @@ eghcup --numeric-version
 
 eghcup install ghc ${GHC_VERSION}
 [ `$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version` = "${GHC_VERSION}" ]
+[ `eghcup run --ghc ${GHC_VERSION} -- ghc --numeric-version` = "${GHC_VERSION}" ]
 eghcup set ghc ${GHC_VERSION}
 eghcup install cabal ${CABAL_VERSION}
 [ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
@@ -104,6 +105,22 @@ eghcup unset cabal
 "$GHCUP_BIN"/cabal --version && exit || echo yes
 eghcup set cabal ${CABAL_VERSION}
 [ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
+[ `eghcup run --cabal ${CABAL_VERSION} -- cabal --numeric-version` = "${CABAL_VERSION}" ]
+
+if [ "${OS}" != "FREEBSD" ] ; then
+	if [ "${ARCH}" = "64" ] ; then
+		eghcup run --ghc 8.10.7 --cabal 3.4.1.0 --hls 1.6.1.0 --stack 2.7.3 --install --bindir "$(pwd)/.bin"
+		if [ "${OS}" == "WINDOWS" ] ; then
+			expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghcup-run.files.windows" | sort)
+		else
+			expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghcup-run.files" | sort)
+		fi
+		actual=$(cd ".bin" && find . | sort)
+		[ "${actual}" = "${expected}" ]
+		unset actual expected
+		rm -rf .bin
+	fi
+fi
 
 cabal --version
 
@@ -133,7 +150,7 @@ else
 		eghcup --offline install ghc 8.10.3
 		if [ "${ARCH}" = "64" ] ; then
 			expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghc-8.10.3-linux.files" | sort)
-			actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find | sort)
+			actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find . | sort)
 			[ "${actual}" = "${expected}" ]
 			unset actual expected
 		fi
@@ -141,7 +158,7 @@ else
 		eghcup prefetch ghc 8.10.3
 		eghcup --offline install ghc 8.10.3
 		expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghc-8.10.3-windows.files" | sort)
-		actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find | sort)
+		actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find . | sort)
 		[ "${actual}" = "${expected}" ]
 		unset actual expected
 	else
@@ -181,6 +198,8 @@ else
 		fi
 	fi
 fi
+
+
 
 # check that lazy loading works for 'whereis'
 cp "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml" "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml.bak"

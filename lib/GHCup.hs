@@ -624,7 +624,7 @@ installHLSBindist dlinfo ver isoFilepath forceInstall = do
       else do
         inst <- ghcupHLSDir ver
         liftE $ runBuildAction tmpUnpack Nothing $ installHLSUnpacked workdir inst ver
-        liftE $ setHLS ver SetHLS_XYZ
+        liftE $ setHLS ver SetHLS_XYZ Nothing
 
   liftE $ installHLSPostInst isoFilepath ver
 
@@ -707,7 +707,7 @@ installHLSPostInst isoFilepath ver =
       -- create symlink if this is the latest version in a regular install
       hlsVers <- lift $ fmap rights getInstalledHLSs
       let lInstHLS = headMay . reverse . sort $ hlsVers
-      when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver SetHLSOnly
+      when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver SetHLSOnly Nothing
 
 
 -- | Installs hls binaries @haskell-language-server-\<ghcver\>@
@@ -1092,22 +1092,29 @@ setGHC :: ( MonadReader env m
           )
        => GHCTargetVersion
        -> SetGHC
+       -> Maybe FilePath  -- if set, signals that we're not operating in ~/.ghcup/bin
+                          -- and don't want mess with other versions
        -> Excepts '[NotInstalled] m GHCTargetVersion
-setGHC ver sghc = do
+setGHC ver sghc mBinDir = do
   let verS = T.unpack $ prettyVer (_tvVersion ver)
   ghcdir                        <- lift $ ghcupGHCDir ver
 
   whenM (lift $ not <$> ghcInstalled ver) (throwE (NotInstalled GHC ver))
 
   -- symlink destination
-  Dirs {..} <- lift getDirs
+  binDir <- case mBinDir of
+    Just x -> pure x
+    Nothing -> do
+      Dirs {binDir = f} <- lift getDirs
+      pure f
 
   -- first delete the old symlinks (this fixes compatibility issues
   -- with old ghcup)
-  case sghc of
-    SetGHCOnly -> liftE $ rmPlainGHC (_tvTarget ver)
-    SetGHC_XY  -> liftE $ rmMajorGHCSymlinks ver
-    SetGHC_XYZ -> liftE $ rmMinorGHCSymlinks ver
+  when (isNothing mBinDir) $
+    case sghc of
+      SetGHCOnly -> liftE $ rmPlainGHC (_tvTarget ver)
+      SetGHC_XY  -> liftE $ rmMajorGHCSymlinks ver
+      SetGHC_XYZ -> liftE $ rmMinorGHCSymlinks ver
 
   -- for ghc tools (ghc, ghci, haddock, ...)
   verfiles <- ghcToolFiles ver
@@ -1129,13 +1136,14 @@ setGHC ver sghc = do
       bindir <- ghcInternalBinDir ver
       let fullF = binDir </> targetFile  <> exeExt
           fileWithExt = bindir </> file <> exeExt
-      destL <- binarySymLinkDestination fileWithExt
+      destL <- binarySymLinkDestination binDir fileWithExt
       lift $ createLink destL fullF
 
-  -- create symlink for share dir
-  when (isNothing . _tvTarget $ ver) $ lift $ symlinkShareDir ghcdir verS
+  when (isNothing mBinDir) $ do
+    -- create symlink for share dir
+    when (isNothing . _tvTarget $ ver) $ lift $ symlinkShareDir ghcdir verS
 
-  when (sghc == SetGHCOnly) $ lift warnAboutHlsCompatibility
+    when (sghc == SetGHCOnly) $ lift warnAboutHlsCompatibility
 
   pure ver
 
@@ -1241,19 +1249,26 @@ setHLS :: ( MonadReader env m
           )
        => Version
        -> SetHLS -- Nothing for legacy
+       -> Maybe FilePath  -- if set, signals that we're not operating in ~/.ghcup/bin
+                          -- and don't want mess with other versions
        -> Excepts '[NotInstalled] m ()
-setHLS ver shls = do
+setHLS ver shls mBinDir = do
   whenM (lift $ not <$> hlsInstalled ver) (throwE (NotInstalled HLS (GHCTargetVersion Nothing ver)))
 
   -- symlink destination
-  Dirs {..} <- lift getDirs
+  binDir <- case mBinDir of
+    Just x -> pure x
+    Nothing -> do
+      Dirs {binDir = f} <- lift getDirs
+      pure f
 
   -- first delete the old symlinks
-  case shls of
-    -- not for legacy
-    SetHLS_XYZ -> liftE $ rmMinorHLSSymlinks ver
-    -- legacy and new
-    SetHLSOnly -> liftE rmPlainHLS
+  when (isNothing mBinDir) $
+    case shls of
+      -- not for legacy
+      SetHLS_XYZ -> liftE $ rmMinorHLSSymlinks ver
+      -- legacy and new
+      SetHLSOnly -> liftE rmPlainHLS
 
   case shls of
     -- not for legacy
@@ -1262,7 +1277,7 @@ setHLS ver shls = do
 
       forM_ bins $ \f -> do
         let fname = takeFileName f
-        destL <- binarySymLinkDestination f
+        destL <- binarySymLinkDestination binDir f
         let target = if "haskell-language-server-wrapper" `isPrefixOf` fname
                      then fname <> "-" <> T.unpack (prettyVer ver) <> exeExt
                      else fname <> "~" <> T.unpack (prettyVer ver) <> exeExt
@@ -1285,7 +1300,8 @@ setHLS ver shls = do
 
       lift $ createLink destL wrapper
 
-      lift warnAboutHlsCompatibility
+      when (isNothing mBinDir) $
+        lift warnAboutHlsCompatibility
 
 
 unsetHLS :: ( MonadMask m
@@ -1774,7 +1790,7 @@ rmGHCVer ver = do
     $ fmap Just
     $ getMajorMinorV (_tvVersion ver)
   forM_ v' $ \(mj, mi) -> lift (getGHCForPVP (PVP (fromIntegral mj :| [fromIntegral mi])) (_tvTarget ver))
-    >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
+    >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY Nothing)
 
   Dirs {..} <- lift getDirs
 
@@ -1841,7 +1857,7 @@ rmHLSVer ver = do
     -- set latest hls
     hlsVers <- lift $ fmap rights getInstalledHLSs
     case headMay . reverse . sort $ hlsVers of
-      Just latestver -> setHLS latestver SetHLSOnly
+      Just latestver -> setHLS latestver SetHLSOnly Nothing
       Nothing        -> pure ()
 
 
@@ -2275,7 +2291,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
       Nothing -> do
         reThrowAll GHCupSetError $ postGHCInstall installVer
         -- restore
-        when alreadySet $ liftE $ void $ setGHC installVer SetGHCOnly
+        when alreadySet $ liftE $ void $ setGHC installVer SetGHCOnly Nothing
         
       _ -> pure ()
 
@@ -2669,7 +2685,7 @@ postGHCInstall :: ( MonadReader env m
                => GHCTargetVersion
                -> Excepts '[NotInstalled] m ()
 postGHCInstall ver@GHCTargetVersion {..} = do
-  void $ liftE $ setGHC ver SetGHC_XYZ
+  void $ liftE $ setGHC ver SetGHC_XYZ Nothing
 
   -- Create ghc-x.y symlinks. This may not be the current
   -- version, create it regardless.
@@ -2678,7 +2694,7 @@ postGHCInstall ver@GHCTargetVersion {..} = do
     $ fmap Just
     $ getMajorMinorV _tvVersion
   forM_ v' $ \(mj, mi) -> lift (getGHCForPVP (PVP (fromIntegral mj :| [fromIntegral mi])) _tvTarget)
-    >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY)
+    >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY Nothing)
 
 
 -- | Reports the binary location of a given tool:
@@ -2739,13 +2755,21 @@ checkIfToolInstalled :: ( MonadIO m
                         Tool ->
                         Version ->
                         m Bool
+checkIfToolInstalled tool ver = checkIfToolInstalled' tool (mkTVer ver)
 
-checkIfToolInstalled tool ver =
+checkIfToolInstalled' :: ( MonadIO m
+                         , MonadReader env m
+                         , HasDirs env
+                         , MonadCatch m) =>
+                        Tool ->
+                        GHCTargetVersion ->
+                        m Bool
+checkIfToolInstalled' tool ver =
   case tool of
-    Cabal -> cabalInstalled ver
-    HLS   -> hlsInstalled ver
-    Stack -> stackInstalled ver
-    GHC   -> ghcInstalled $ mkTVer ver
+    Cabal -> cabalInstalled (_tvVersion ver)
+    HLS   -> hlsInstalled (_tvVersion ver)
+    Stack -> stackInstalled (_tvVersion ver)
+    GHC   -> ghcInstalled ver
     _     -> pure False
 
 throwIfFileAlreadyExists :: ( MonadIO m ) =>
