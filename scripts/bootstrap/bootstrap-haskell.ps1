@@ -403,16 +403,17 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     # Download the archive
     Print-Msg -msg 'Downloading Msys2 archive...'
     $archive = 'msys2-x86_64-latest.sfx.exe'
+    $archivePath = ('{0}\{1}' -f ([IO.Path]::GetTempPath()), "$archive")
     
     if (Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue) {
-      Exec "curl.exe" '-o' ('{0}\{1}' -f $env:TEMP, $archive) ('https://repo.msys2.org/distrib/{0}' -f $archive)
+      Exec "curl.exe" '-o' "$archivePath" ('https://repo.msys2.org/distrib/{0}' -f "$archive")
     } else {
-      Get-FileWCSynchronous -url ('https://repo.msys2.org/distrib/{0}' -f $archive) -destinationFolder "$env:TEMP" -includeStats
+      Get-FileWCSynchronous -url ('https://repo.msys2.org/distrib/{0}' -f $archive) -destinationFolder ([IO.Path]::GetTempPath()) -includeStats
     }
 
     Print-Msg -msg 'Extracting Msys2 archive...'
-    $null = & "$env:TEMP\$archive" '-y' ('-o{0}' -f $GhcupDir)  # Extract
-    Remove-Item -Path ('{0}/{1}' -f $env:TEMP, $archive)
+    $null = & "$archivePath" '-y' ('-o{0}' -f $GhcupDir)  # Extract
+    Remove-Item -Path "$archivePath"
 
     Print-Msg -msg 'Processing MSYS2 bash for first time use...'
     Exec "$Bash" '-lc' 'exit'
