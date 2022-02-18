@@ -2,6 +2,7 @@
 
 ## 0.1.17.5 -- ????-??-??
 
+* Implement `ghcup run` subcommand wrt [#137](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/137)
 * Support installation of dynamic HLS bindists wrt [HLS #2675](https://github.com/haskell/haskell-language-server/pull/2675) and [#237](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/237)
 * Fix XDG support when `~/.local/bin` is a symlink wrt [#311](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/311)
 * Add support for quilt-style patches wrt [#230](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/230), by James Hobson
