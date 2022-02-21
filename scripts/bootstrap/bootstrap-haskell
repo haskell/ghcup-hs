@@ -525,7 +525,7 @@ ask_cabal_config_init() {
 						esac
 					done
 				else
-					return 1
+					return 0
 				fi
 				;;
 	esac
@@ -543,8 +543,8 @@ do_cabal_config_init() {
 				adjust_cabal_config
 				;;
 			0)
-				echo "Make sure that your global cabal.config references the correct mingw64 paths (extra-prog-path, extra-include-dirs and extra-lib-dirs)."
-				echo "And set the environment variable GHCUP_MSYS2 to the root path of your msys2 installation."
+				warn "Make sure that your global cabal.config references the correct mingw64 paths (extra-prog-path, extra-include-dirs and extra-lib-dirs)."
+				warn "And set the environment variable GHCUP_MSYS2 to the root path of your msys2 installation."
 				sleep 5
 				return ;;
 			*) ;;
