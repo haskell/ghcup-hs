@@ -34,7 +34,7 @@ Also see [tags and shortcuts](../guide/#tags-and-shortcuts) for more information
 
 ## First steps
 
-1. To get started with creating a Haskell project, follow the [Getting Started with Haskell and Cabal](https://cabal.readthedocs.io/en/latest/getting-started.html) guide
+1. To get started with creating a Haskell project, follow the [Getting Started with Haskell and Cabal](https://cabal.readthedocs.io/en/stable/getting-started.html) guide
 2. To learn Haskell, try any of those:
     - A beginner friendly [4-lectures course](https://github.com/haskell-beginners-2022/course-plan) with exercises (by [Kowainik](https://kowainik.github.io/))
     - An in-depth university [CIS 194 Haskell course](https://www.cis.upenn.edu/~cis194/spring13/) including exercises (by [Brent Yorgey](https://byorgey.wordpress.com/))
