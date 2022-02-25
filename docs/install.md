@@ -51,9 +51,9 @@ On windows, double-click on the `Uninstall Haskell.ps1` PowerShell script on you
 GHCup supports the following tools, which are also known as the **Haskell Toolchain**:
 
 1. [GHC](https://www.haskell.org/ghc/)
-2. [cabal-install](https://cabal.readthedocs.io/en/latest/)
-3. [haskell-language-server](https://haskell-language-server.readthedocs.io/en/latest/)
-4. [stack](https://docs.haskellstack.org/en/latest/README/)
+2. [cabal-install](https://cabal.readthedocs.io/en/stable/)
+3. [haskell-language-server](https://haskell-language-server.readthedocs.io/en/stable/)
+4. [stack](https://docs.haskellstack.org/en/stable/README/)
 
 ## Supported platforms
 
