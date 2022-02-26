@@ -36,3 +36,4 @@ symlink ${ver}/x86_64-mingw64-ghcup-${ver}.exe x86_64-mingw64-ghcup.exe
 EOF
 
 curl -X PURGE https://downloads.haskell.org/~ghcup/
+curl -X PURGE https://downloads.haskell.org/ghcup/

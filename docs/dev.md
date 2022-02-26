@@ -94,21 +94,25 @@ Every subcommand now lives in its own module under [GHCup.OptParse.MyCommand](ht
 
 3. Add ChangeLog entry
 
-4. Commit and git push with tag. Wait for tests to succeed and release artifacts to build.
+4. If a new ghcup yaml version is needed, create one at [ghcup-metadata repo](https://github.com/haskell/ghcup-metadata) and push to a temporary release branch, then update the `data/metadata` submodule in ghcup-hs repo to that branch, so CI can pass
 
-5. Download release artifacts and upload them `downloads.haskell.org/~ghcup` along with checksum files (`sha256sum --tag * > SHA256SUMS && gpg --detach-sign -u <your-email> SHA256SUMS`)
+5. Commit and git push with tag. Wait for tests to succeed and release artifacts to build.
 
-6. Add ghcup release artifacts to ALL yaml files, see [ghcup-metadata repo](https://github.com/haskell/ghcup-metadata)
+6. Download release artifacts and upload them `downloads.haskell.org/~ghcup` along with checksum files (also check `scripts/releasing/pull_release_artifacts.sh` and `scripts/releasing/sftp-upload-artifacts.sh`)
 
-7. Upload the final `ghcup-<ver>.yaml` (and a detached GPG sig of it) to `webhost.haskell.org/ghcup/data/` (for yaml versions <= 0.0.6) as well as [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata) (for all versions).
+7. Add ghcup release artifacts to ALL yaml files, see [ghcup-metadata repo](https://github.com/haskell/ghcup-metadata)
 
-8. Update version in `scripts/bootstrap/bootstrap-haskell` (`ghver` variable at the top of the script)
+8. Upload the final `ghcup-<ver>.yaml` (and a detached GPG sig of it) to `webhost.haskell.org/ghcup/data/` (for yaml versions <= 0.0.6) as well as [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata) (for all versions).
 
-9. Upload `scripts/bootstrap/bootstrap-haskell` and `scripts/bootstrap/bootstrap-haskell.ps1` to `webhost.haskell.org/ghcup/sh/`
+9. Update version in `scripts/bootstrap/bootstrap-haskell` (`ghver` variable at the top of the script)
 
-10. Update the top-level ghcup symlinks at `downloads.haskell.org/~ghcup` (see `scripts/update-sftp.sh`)
+10. Upload `scripts/bootstrap/bootstrap-haskell` and `scripts/bootstrap/bootstrap-haskell.ps1` to `webhost.haskell.org/ghcup/sh/`
 
-11. Post on reddit/discourse/etc. and collect rewards
+11. Update the top-level ghcup symlinks at `downloads.haskell.org/~ghcup` (see `scripts/releasing/sftp-symlink-artifacts.sh`)
+
+12. Update the `data/metadata` submodule in ghcup-hs repo to master
+
+13. Post on reddit/discourse/etc. and collect rewards
 
 # Documentation
 

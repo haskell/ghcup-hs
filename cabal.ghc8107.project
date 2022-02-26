@@ -8,6 +8,11 @@ package ghcup
     tests: True
     flags: +tui
 
+source-repository-package
+  type: git
+  location: https://github.com/bgamari/terminal-size.git
+  tag: 34ea816bd63f75f800eedac12c6908c6f3736036
+
 constraints: http-io-streams -brotli,
              any.Cabal ==3.6.2.0,
              any.aeson >= 2.0.1.0

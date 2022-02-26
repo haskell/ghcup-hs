@@ -15,6 +15,9 @@ variables:
   # Bump to invalidate GitLab CI cache.
   CACHE_REV: 0
 
+  GIT_SUBMODULE_STRATEGY: recursive
+
+
 ############################################################
 # CI Step
 ############################################################
