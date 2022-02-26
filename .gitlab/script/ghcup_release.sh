@@ -36,7 +36,8 @@ mkdir out
 binary=$(ecabal new-exec -w ghc-${GHC_VERSION} --verbose=0 --offline sh -- -c 'command -v ghcup')
 ver=$("${binary}" --numeric-version)
 if [ "${OS}" = "DARWIN" ] ; then
-	strip "${binary}"
+	# due to some code signing issues on M1s, we just skip stripping altogether
+	:
 else
 	strip -s "${binary}"
 fi
