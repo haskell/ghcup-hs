@@ -2065,8 +2065,8 @@ ghcupDownloads:
               dlHash: 35899ab2338b52fac84d49f16edbbb7701498e93ee8012309c7d6f2f138bb993
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/aarch64-apple-darwin-ghcup-0.1.17.5
-              dlHash: e25730a1b6a95bf4548f92cd84906955474a9243445a636b8d63e5a89a557db2
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/aarch64-apple-darwin-ghcup-0.1.17.5-2
+              dlHash: 54238c1db6f4101664b91190067549b8b13b250fd24eac1474b7b2c185222c73
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
