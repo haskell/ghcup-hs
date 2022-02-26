@@ -1,6 +1,6 @@
 # Revision history for ghcup
 
-## 0.1.17.5 -- ????-??-??
+## 0.1.17.5 -- 2022-02-26
 
 * Implement `ghcup run` subcommand wrt [#137](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/137)
 * Support installation of dynamic HLS bindists wrt [HLS #2675](https://github.com/haskell/haskell-language-server/pull/2675) and [#237](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/237)
