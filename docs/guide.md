@@ -259,48 +259,14 @@ You can also pass the mode via `ghcup --gpg <strict|lax|none>`.
    
 ## Tips and tricks
 
-### with_ghc wrapper (e.g. for HLS)
+### Execute command with certain GHC in PATH
 
-Due to some HLS [bugs](https://github.com/mpickering/hie-bios/issues/194) it's necessary that the `ghc` in PATH
-is the one defined in `cabal.project`. With some simple shell functions, we can start our editor with the appropriate
-path prepended.
-
-For bash, in e.g. `~/.bashrc` define:
+If you don't want to explicitly switch the active GHC all the time and are using
+tools that rely on the plain `ghc` binary, GHCup provides an easy way to execute
+commands with a certain toolchain prepended to PATH, e.g.:
 
 ```sh
-with_ghc() {
-  local np=$(ghcup --offline whereis -d ghc $1 || { ghcup --cache install ghc $1 && ghcup whereis -d ghc $1 ;})
-  if [ -e "${np}" ] ; then
-    shift
-    PATH="$np:$PATH" "$@"
-  else
-    >&2 echo "Cannot find or install GHC version $1"
-    return 1
-  fi
-}
+ghcup run --ghc 8.10.7 --cabal latest --hls latest --stack latest --install -- code Setup.hs
 ```
 
-For fish shell, in e.g. `~/.config/fish/config.fish` define:
-
-```fish
-function with_ghc
-  set --local np (ghcup --offline whereis -d ghc $argv[1] ; or begin ghcup --cache install ghc $argv[1] ; and ghcup whereis -d ghc $argv[1] ; end)
-  if test -e "$np"
-    PATH="$np:$PATH" $argv[2..-1]
-  else
-    echo "Cannot find or install GHC version $argv[1]" 1>&2
-    return 1
-  end
-end
-```
-
-Then start a new shell and issue:
-
-```sh
-# replace 'code' with your editor
-with_ghc 8.10.5 code path/to/haskell/source
-```
-
-Cabal and HLS will now see `8.10.5` as the primary GHC, without the need to
-run `ghcup set` all the time when switching between projects.
-
+This will execute vscode with GHC set to 8.10.7 and all other tools to their latest version.
