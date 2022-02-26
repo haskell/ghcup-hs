@@ -88,7 +88,7 @@ Every subcommand now lives in its own module under [GHCup.OptParse.MyCommand](ht
 
 # Releasing
 
-1. Update version in `ghcup.cabal` and `boostrap-haskell` (`ghver` variable at the top of the script)
+1. Update version in `ghcup.cabal`
 
 2. Update `GHCup.Version` module. `ghcupURL` must only be updated if we change the `GHCupInfo` type or the YAML representation of it. The version of the YAML represents the change increments. `ghcUpVer` is the current application version, read from `ghcup.cabal`.
 
@@ -102,11 +102,13 @@ Every subcommand now lives in its own module under [GHCup.OptParse.MyCommand](ht
 
 7. Upload the final `ghcup-<ver>.yaml` (and a detached GPG sig of it) to `webhost.haskell.org/ghcup/data/` (for yaml versions <= 0.0.6) as well as [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata) (for all versions).
 
-8. Upload `bootstrap-haskell` and `bootstrap-haskell.ps1` to `webhost.haskell.org/ghcup/sh/`
+8. Update version in `scripts/bootstrap/bootstrap-haskell` (`ghver` variable at the top of the script)
 
-9. Update the top-level ghcup symlinks at `downloads.haskell.org/~ghcup`
+9. Upload `scripts/bootstrap/bootstrap-haskell` and `scripts/bootstrap/bootstrap-haskell.ps1` to `webhost.haskell.org/ghcup/sh/`
 
-10. Post on reddit/discourse/etc. and collect rewards
+10. Update the top-level ghcup symlinks at `downloads.haskell.org/~ghcup` (see `scripts/update-sftp.sh`)
+
+11. Post on reddit/discourse/etc. and collect rewards
 
 # Documentation
 
