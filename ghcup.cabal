@@ -50,7 +50,7 @@ flag no-exe
 
 flag disable-upgrade
   description:
-    Build the brick powered tui (ghcup tui). This is disabled on windows.
+    Disable upgrade functionality. This is mainly to support brew packagers.
 
   default:     False
   manual:      True
