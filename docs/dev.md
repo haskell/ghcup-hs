@@ -112,7 +112,9 @@ Every subcommand now lives in its own module under [GHCup.OptParse.MyCommand](ht
 
 12. Update the `data/metadata` submodule in ghcup-hs repo to master
 
-13. Post on reddit/discourse/etc. and collect rewards
+13. Do hackage release
+
+14. Post on reddit/discourse/etc. and collect rewards
 
 # Documentation
 
