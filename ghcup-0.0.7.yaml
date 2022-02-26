@@ -2489,7 +2489,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-armv7-linux-deb10.tar.xz
               dlHash: 694ba7c14f8d720c6e790ab0488dbff2d8a07d9c6de97b4deeba31088f825bc2
   GHCup:
-    0.1.17.4:
+    0.1.17.5:
       viTags:
       - Recommended
       - Latest
@@ -2499,46 +2499,46 @@ ghcupDownloads:
         A_64:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-64
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/x86_64-linux-ghcup-0.1.17.4
-              dlHash: a737cdf850d4874659050968b42745229f44b32cb40f7f3ad90b3820bb969582
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/x86_64-linux-ghcup-0.1.17.5
+              dlHash: 7541bcf0b402f99d05cd1937f9fef69aec45c3153e42606671825be248484fb5
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/x86_64-apple-darwin-ghcup-0.1.17.4
-              dlHash: f49841668e224381be8ee63579492ff01dc730019fd0d3047d2628103da9fcbb
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/x86_64-apple-darwin-ghcup-0.1.17.5
+              dlHash: 8b5159775de08a5f268f4be217fbb6f427ff8d8977197af209211b81ca0fe27f
           FreeBSD:
             '( >= 12 && < 13 )':
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/x86_64-freebsd12-ghcup-0.1.17.4
-              dlHash: 3fd8b644ddee0614cd1aaac8e066f69f13647e76b381f61a68099e29f8e8db53
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/x86_64-freebsd12-ghcup-0.1.17.5
+              dlHash: babb7366abb17bcb5d4fc1500039040f1b957073d618db3f1473b0bae6abc6bb
             '( >= 13 )':
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/x86_64-freebsd13-ghcup-0.1.17.4
-              dlHash: 2245bcfbb6a20c400e11726e87610e73968d6611ddfceaa66ebe9ce6ef72e9cf
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/x86_64-freebsd13-ghcup-0.1.17.5
+              dlHash: fccffae46e8e7a97ac49ce1a6b1174ee11f58603da9345becd8021baa4439bb9
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/x86_64-mingw64-ghcup-0.1.17.4.exe
-              dlHash: e39791a87f4c1561082214b722c982ba92c4c25e1f686f2083872e096cd05280
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/x86_64-mingw64-ghcup-0.1.17.5.exe
+              dlHash: 7a6f0264c097044ede7d4208e153cf9fc6e06e49525e237dc32e2abd87ad3430
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-32
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/i386-linux-ghcup-0.1.17.4
-              dlHash: 889357956397a4f77eb320e39fc1c628c7c51bd7934095bc87792959ecd0e62d
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/i386-linux-ghcup-0.1.17.5
+              dlHash: 5a2b1d2ceb32857866689ee1a1e29c5747333882a4e952d80eccf49482d3daab
           Linux_Alpine:
             unknown_versioning: *ghcup-32
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/aarch64-linux-ghcup-0.1.17.4
-              dlHash: 5a3075337e638245d182d9d27030cddbd3cb5e3ab8e3e88cd3ae412d2974c4a2
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/aarch64-linux-ghcup-0.1.17.5
+              dlHash: 35899ab2338b52fac84d49f16edbbb7701498e93ee8012309c7d6f2f138bb993
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/aarch64-apple-darwin-ghcup-0.1.17.4
-              dlHash: 6e7a9c009d152e291ad67f6399ccba87a71f9e9698a9cda3b1854b85bf3c6565
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/aarch64-apple-darwin-ghcup-0.1.17.5
+              dlHash: e25730a1b6a95bf4548f92cd84906955474a9243445a636b8d63e5a89a557db2
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.4/armv7-linux-ghcup-0.1.17.4
-              dlHash: 1ae599a96daf8de717b80a0bf8e7575b533b4baadb5f5720e478146b58e90a2a
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/armv7-linux-ghcup-0.1.17.5
+              dlHash: e342532e29f592c8ef2f85645fb304d090e34523e6bac91c62e048a8483269f5
   HLS:
     1.1.0:
       viTags:
