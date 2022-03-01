@@ -29,6 +29,7 @@ import           System.Environment
 import           System.Exit
 import           System.IO                      ( stderr )
 import           Text.Regex.Posix
+import           Generate
 import           Validate
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
@@ -44,6 +45,7 @@ data Options = Options
 
 data Command = ValidateYAML ValidateYAMLOpts
              | ValidateTarballs ValidateYAMLOpts TarballFilter
+             | GenerateHlsGhc ValidateYAMLOpts
 
 
 data Input
@@ -108,6 +110,12 @@ com = subparser
          ((ValidateTarballs <$> validateYAMLOpts <*> tarballFilterP) <**> helper)
          (progDesc "Validate all tarballs (download and checksum)")
        )
+  <> command
+       "generate-hls-ghcs"
+       (info
+         ((GenerateHlsGhc <$> validateYAMLOpts) <**> helper)
+         (progDesc "Generate a list of HLS-GHC support")
+       )
   )
 
 
@@ -137,6 +145,7 @@ main = do
     >>= \Options {..} -> case optCommand of
           ValidateYAML vopts -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ validate dl m)
           ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ validateTarballs tarballFilter dl m)
+          GenerateHlsGhc vopts -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ generate dl m)
   pure ()
 
  where

@@ -23,6 +23,7 @@ source-repository head
 executable ghcup-gen
   main-is:            Main.hs
   other-modules:      Validate
+                      Generate
   default-language:   Haskell2010
   default-extensions:
     DeriveGeneric
@@ -51,6 +52,7 @@ executable ghcup-gen
     , ghcup                 ^>=0.1.17.3
     , haskus-utils-variant  ^>=3.2
     , libarchive            ^>=3.0.3.0
+    , megaparsec            ^>=9.0
     , mtl                   ^>=2.2
     , optics                ^>=0.4
     , optparse-applicative  >=0.15.1.0 && <0.17
