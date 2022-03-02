@@ -296,18 +296,6 @@ download_ghcup() {
 		esac
 		EOF
 
-    case "${plat}" in
-        "Darwin"|"darwin")
-			case "${arch}" in
-				aarch64|arm64|armv8l)
-                    codesign -s - "${GHCUP_BIN}"/ghcup
-                    ;;
-                *) : ;;
-            esac
-            ;;
-        *) : ;;
-    esac
-
 	# shellcheck disable=SC1090
     edo . "${GHCUP_DIR}"/env
     eghcup upgrade
