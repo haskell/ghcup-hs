@@ -1028,6 +1028,17 @@ darwinNotarization Darwin path = exec
   Nothing
 darwinNotarization _ _ = pure $ Right ()
 
+darwinCodeSign :: (MonadReader env m, HasDirs env, MonadIO m)
+                   => Platform
+                   -> FilePath
+                   -> m (Either ProcessError ())
+darwinCodeSign Darwin path = exec
+  "codesign"
+  ["-s", "-", path]
+  Nothing
+  Nothing
+darwinCodeSign _ _ = pure $ Right ()
+
 
 getChangeLog :: GHCupDownloads -> Tool -> Either Version Tag -> Maybe URI
 getChangeLog dls tool (Left v') =

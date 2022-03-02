@@ -2626,6 +2626,7 @@ upgradeGHCup :: ( MonadMask m
 upgradeGHCup mtarget force' = do
   Dirs {..} <- lift getDirs
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  PlatformRequest {..} <- lift getPlatformReq
 
   lift $ logInfo "Upgrading GHCup..."
   let latestVer = fromJust $ fst <$> getLatest dls GHCup
@@ -2645,6 +2646,7 @@ upgradeGHCup mtarget force' = do
   copyFileE p
                                                            destFile
   lift $ chmod_755 destFile
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinCodeSign _rPlatform destFile
 
   liftIO (isInPath destFile) >>= \b -> unless b $
     lift $ logWarn $ T.pack (takeFileName destFile) <> " is not in PATH! You have to add it in order to use ghcup."
