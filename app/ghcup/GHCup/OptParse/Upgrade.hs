@@ -72,6 +72,7 @@ upgradeOptsP =
               str
               (short 't' <> long "target" <> metavar "TARGET_DIR" <> help
                 "Absolute filepath to write ghcup into"
+                <> completer (bashCompleter "file")
               )
         )
     <|> pure UpgradeGHCupDir

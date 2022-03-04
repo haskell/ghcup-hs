@@ -76,6 +76,7 @@ changelogP =
             )
             (short 't' <> long "tool" <> metavar "<ghc|cabal|ghcup>" <> help
               "Open changelog for given tool (default: ghc)"
+              <> completer toolCompleter
             )
           )
     <*> optional (toolVersionArgument Nothing Nothing)

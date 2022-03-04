@@ -165,6 +165,7 @@ ghcCompileOpts =
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
             "The tool version to compile"
+            <> (completer $ versionCompleter Nothing GHC)
           )
           ) <|>
           (Right <$> (GitBranch <$> option
@@ -185,12 +186,14 @@ ghcCompileOpts =
           <> metavar "BOOTSTRAP_GHC"
           <> help
                "The GHC version (or full path) to bootstrap with (must be installed)"
+          <> (completer $ versionCompleter Nothing GHC)
           )
     <*> optional
           (option
             (eitherReader (readEither @Int))
             (short 'j' <> long "jobs" <> metavar "JOBS" <> help
               "How many jobs to use for make"
+              <> (completer $ listCompleter $ fmap show ([1..12] :: [Int]))
             )
           )
     <*> optional
@@ -198,6 +201,7 @@ ghcCompileOpts =
             str
             (short 'c' <> long "config" <> metavar "CONFIG" <> help
               "Absolute path to build config file"
+             <> completer (bashCompleter "file")
             )
           )
     <*> (optional
@@ -206,6 +210,7 @@ ghcCompileOpts =
               (eitherReader uriParser)
               (long "patch" <> metavar "PATCH_URI" <> help
                 "URI to a patch (https/http/file)"
+               <> completer fileUri
               )
             )
             <|>
@@ -213,6 +218,7 @@ ghcCompileOpts =
               str
               (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
                 "Absolute path to patch directory (applies all .patch and .diff files in order using -p1. This order is determined by a quilt series file if it exists, or the patches are lexicographically ordered)"
+               <> completer (bashCompleter "directory")
               )
             )
           )
@@ -238,6 +244,7 @@ ghcCompileOpts =
             )
             (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION" <> help
               "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
+            <> (completer $ versionCompleter Nothing GHC)
             )
           )
     <*> optional
@@ -257,6 +264,7 @@ ghcCompileOpts =
             <> long "isolate"
             <> metavar "DIR"
             <> help "install in an isolated directory instead of the default one, no symlinks to this installation will be made"
+            <> completer (bashCompleter "directory")
             )
            )
 
@@ -269,6 +277,7 @@ hlsCompileOpts =
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
             "The tool version to compile"
+            <> (completer $ versionCompleter Nothing HLS)
           )
           ) <|>
           (Right <$> (GitBranch <$> option
@@ -283,6 +292,7 @@ hlsCompileOpts =
             (eitherReader (readEither @Int))
             (short 'j' <> long "jobs" <> metavar "JOBS" <> help
               "How many jobs to use for make"
+              <> (completer $ listCompleter $ fmap show ([1..12] :: [Int]))
             )
           )
     <*> flag
@@ -298,6 +308,7 @@ hlsCompileOpts =
             )
             (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION" <> help
               "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
+            <> (completer $ versionCompleter Nothing HLS)
             )
           )
     <*> optional
@@ -307,6 +318,7 @@ hlsCompileOpts =
             <> long "isolate"
             <> metavar "DIR"
             <> help "install in an isolated directory instead of the default one, no symlinks to this installation will be made"
+            <> completer (bashCompleter "directory")
             )
            )
     <*> optional
@@ -314,6 +326,7 @@ hlsCompileOpts =
             ((fmap Right $ eitherReader uriParser) <|> (fmap Left str))
             (long "cabal-project" <> metavar "CABAL_PROJECT" <> help
               "If relative filepath, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. Otherwise expects a full URI with https/http/file scheme."
+              <> completer fileUri
             )
           )
     <*> optional
@@ -321,6 +334,7 @@ hlsCompileOpts =
             (eitherReader uriParser)
             (long "cabal-project-local" <> metavar "CABAL_PROJECT_LOCAL" <> help
               "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
+              <> completer fileUri
             )
           )
     <*> (optional
@@ -329,6 +343,7 @@ hlsCompileOpts =
               (eitherReader uriParser)
               (long "patch" <> metavar "PATCH_URI" <> help
                 "URI to a patch (https/http/file)"
+              <> completer fileUri
               )
             )
             <|>
@@ -336,6 +351,7 @@ hlsCompileOpts =
               str
               (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
                 "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
+              <> completer (bashCompleter "directory")
               )
             )
           )

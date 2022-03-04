@@ -69,6 +69,7 @@ listOpts =
             (eitherReader toolParser)
             (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|stack>" <> help
               "Tool to list versions for. Default is all"
+              <> completer (toolCompleter)
             )
           )
     <*> optional
@@ -78,6 +79,7 @@ listOpts =
             <> long "show-criteria"
             <> metavar "<installed|set|available>"
             <> help "Show only installed/set/available tool versions"
+              <> completer (listCompleter ["installed", "set", "available"])
             )
           )
     <*> switch
