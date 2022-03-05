@@ -189,6 +189,7 @@ installOpts tool =
                     (eitherReader uriParser)
                     (short 'u' <> long "url" <> metavar "BINDIST_URL" <> help
                       "Install the specified version from this bindist"
+                      <> completer (toolDlCompleter (fromMaybe GHC tool))
                     )
                   )
             <*> (Just <$> toolVersionArgument Nothing tool)
@@ -208,6 +209,7 @@ installOpts tool =
            <> long "isolate"
            <> metavar "DIR"
            <> help "install in an isolated dir instead of the default one"
+           <> completer (bashCompleter "directory")
            )
           )
     <*> switch

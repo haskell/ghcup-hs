@@ -3,6 +3,8 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE NumericUnderscores #-}
 
 module GHCup.OptParse.Common where
 
@@ -14,36 +16,54 @@ import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
+import           GHCup.Utils.File
 import           GHCup.Utils.Logger
 import           GHCup.Utils.MegaParsec
 import           GHCup.Utils.Prelude
 
+import           Control.DeepSeq
+import           Control.Concurrent
+import           Control.Concurrent.Async
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
 import           Control.Monad.Reader
+import           Data.Aeson
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.Key    as KM
+import qualified Data.Aeson.KeyMap as KM
+#else
+import qualified Data.HashMap.Strict as KM
+#endif
+import           Data.ByteString.Lazy           ( ByteString )
 import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
 import           Data.Functor
-import           Data.List                      ( nub, sort, sortBy )
+import           Data.List                      ( nub, sort, sortBy, isPrefixOf, stripPrefix )
 import           Data.Maybe
 import           Data.Text                      ( Text )
 import           Data.Versions           hiding ( str )
 import           Data.Void
+import qualified Data.Vector      as V
+import           GHC.IO.Exception
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           Safe
+import           System.Process                  ( readProcess )
 import           System.FilePath
+import           Text.HTML.TagSoup       hiding ( Tag )
 import           URI.ByteString
 
 import qualified Data.ByteString.UTF8          as UTF8
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 import qualified Text.Megaparsec               as MP
+import qualified System.FilePath.Posix         as FP
 import GHCup.Version
+import Control.Exception (evaluate)
 
 
     -------------
@@ -277,6 +297,109 @@ gpgParser s' | t == T.pack "strict" = Right GPGStrict
     --[ Completers ]--
     ------------------
 
+
+toolCompleter :: Completer
+toolCompleter = listCompleter ["ghc", "cabal", "hls", "stack"]
+
+
+fileUri :: Completer
+fileUri = mkCompleter $ \case
+  "" -> pure ["https://", "http://", "file:///"]
+  xs
+   | "file://" `isPrefixOf` xs -> fmap ("file://" <>) <$>
+      case stripPrefix "file://" xs of
+        Nothing -> pure []
+        Just r ->  do
+          let cmd = unwords ["compgen", "-A", "file", "--", requote r]
+          result <- tryIO $ readProcess "bash" ["-c", cmd] ""
+          return . lines . either (const []) id $ result
+   | otherwise -> pure []
+ where
+  -- | Strongly quote the string we pass to compgen.
+  --
+  -- We need to do this so bash doesn't expand out any ~ or other
+  -- chars we want to complete on, or emit an end of line error
+  -- when seeking the close to the quote.
+  -- 
+  -- NOTE: copied from https://hackage.haskell.org/package/optparse-applicative-0.17.0.0/docs/src/Options.Applicative.Builder.Completer.html#requote
+  requote :: String -> String
+  requote s =
+    let
+      -- Bash doesn't appear to allow "mixed" escaping
+      -- in bash completions. So we don't have to really
+      -- worry about people swapping between strong and
+      -- weak quotes.
+      unescaped =
+        case s of
+          -- It's already strongly quoted, so we
+          -- can use it mostly as is, but we must
+          -- ensure it's closed off at the end and
+          -- there's no single quotes in the
+          -- middle which might confuse bash.
+          ('\'': rs) -> unescapeN rs
+
+          -- We're weakly quoted.
+          ('"': rs)  -> unescapeD rs
+
+          -- We're not quoted at all.
+          -- We need to unescape some characters like
+          -- spaces and quotation marks.
+          elsewise   -> unescapeU elsewise
+    in
+      strong unescaped
+
+    where
+      strong ss = '\'' : foldr go "'" ss
+        where
+          -- If there's a single quote inside the
+          -- command: exit from the strong quote and
+          -- emit it the quote escaped, then resume.
+          go '\'' t = "'\\''" ++ t
+          go h t    = h : t
+
+      -- Unescape a strongly quoted string
+      -- We have two recursive functions, as we
+      -- can enter and exit the strong escaping.
+      unescapeN = goX
+        where
+          goX ('\'' : xs) = goN xs
+          goX (x : xs) = x : goX xs
+          goX [] = []
+
+          goN ('\\' : '\'' : xs) = '\'' : goN xs
+          goN ('\'' : xs) = goX xs
+          goN (x : xs) = x : goN xs
+          goN [] = []
+
+      -- Unescape an unquoted string
+      unescapeU = goX
+        where
+          goX [] = []
+          goX ('\\' : x : xs) = x : goX xs
+          goX (x : xs) = x : goX xs
+
+      -- Unescape a weakly quoted string
+      unescapeD = goX
+        where
+          -- Reached an escape character
+          goX ('\\' : x : xs)
+            -- If it's true escapable, strip the
+            -- slashes, as we're going to strong
+            -- escape instead.
+            | x `elem` ("$`\"\\\n" :: String) = x : goX xs
+            | otherwise = '\\' : x : goX xs
+          -- We've ended quoted section, so we
+          -- don't recurse on goX, it's done.
+          goX ('"' : xs)
+            = xs
+          -- Not done, but not a special character
+          -- just continue the fold.
+          goX (x : xs)
+            = x : goX xs
+          goX []
+            = []
+
+
 tagCompleter :: Tool -> [String] -> Completer
 tagCompleter tool add = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
@@ -332,6 +455,145 @@ versionCompleter criteria tool = listIOCompleter $ do
 
       installedVersions <- runEnv $ listVersions (Just tool) criteria
       return $ T.unpack . prettyVer . lVer <$> installedVersions
+
+
+toolDlCompleter :: Tool -> Completer
+toolDlCompleter tool = mkCompleter $ \case
+  "" -> pure $ initUrl tool
+  word
+    -- downloads.haskell.org
+    | "https://downloads.haskell.org/" `isPrefixOf` word ->
+        fmap (completePrefix word) . prefixMatch (FP.takeFileName word) <$> fromHRef word
+
+    -- github releases
+    | "https://github.com/haskell/haskell-language-server/releases/download/" `isPrefixOf` word
+    , let xs = splitPath word
+    , (length xs == 6 && last word == '/') || (length xs == 7 && last word /= '/') ->
+        fmap (\x -> completePrefix word x <> "/") . prefixMatch (FP.takeFileName word) <$> getGithubReleases "haskell" "haskell-language-server"
+    | "https://github.com/commercialhaskell/stack/releases/download/" == word
+    , let xs = splitPath word
+    , (length xs == 6 && last word == '/') || (length xs == 7 && last word /= '/') ->
+        fmap (\x -> completePrefix word x <> "/") . prefixMatch (FP.takeFileName word) <$> getGithubReleases "commercialhaskell" "stack"
+
+    -- github release assets
+    | "https://github.com/haskell/haskell-language-server/releases/download/" `isPrefixOf` word
+    , let xs = splitPath word
+    , (length xs == 7 && last word == '/') || length xs == 8
+    , let rel = xs !! 6
+    , length rel > 1 -> do
+        fmap (completePrefix word) . prefixMatch (FP.takeFileName word) <$> getGithubAssets "haskell" "haskell-language-server" (init rel)
+    | "https://github.com/commercialhaskell/stack/releases/download/" `isPrefixOf` word
+    , let xs = splitPath word
+    , (length xs == 7 && last word == '/') || length xs == 8
+    , let rel = xs !! 6
+    , length rel > 1 -> do
+        fmap (completePrefix word) . prefixMatch (FP.takeFileName word) <$> getGithubAssets "commercialhaskell" "stack" (init rel)
+
+    -- github
+    | "https://github.com/c" `isPrefixOf` word -> pure ["https://github.com/commercialhaskell/stack/releases/download/"]
+    | "https://github.com/h" `isPrefixOf` word -> pure ["https://github.com/haskell/haskell-language-server/releases/download/"]
+    | "https://g" `isPrefixOf` word
+    , tool == Stack -> pure ["https://github.com/commercialhaskell/stack/releases/download/"]
+    | "https://g" `isPrefixOf` word
+    , tool == HLS -> pure ["https://github.com/haskell/haskell-language-server/releases/download/"]
+
+    | "https://d" `isPrefixOf` word -> pure $ filter ("https://downloads.haskell.org/" `isPrefixOf`) $ initUrl tool
+
+    | "h" `isPrefixOf` word -> pure $ initUrl tool
+
+    | otherwise -> pure []
+ where
+  initUrl :: Tool -> [String]
+  initUrl GHC   = [ "https://downloads.haskell.org/~ghc/"
+                  , "https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/"
+                  ]
+  initUrl Cabal = [ "https://downloads.haskell.org/~cabal/"
+                  , "https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/"
+                  ]
+  initUrl GHCup = [ "https://downloads.haskell.org/~ghcup/" ]
+  initUrl HLS   = [ "https://github.com/haskell/haskell-language-server/releases/download/"
+                  , "https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/"
+                  ]
+  initUrl Stack = [ "https://github.com/commercialhaskell/stack/releases/download/"
+                  , "https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/"
+                  ]
+
+  completePrefix :: String -- ^ url, e.g.    'https://github.com/haskell/haskell-languag'
+                 -> String -- ^ match, e.g.  'haskell-language-server'
+                 -> String -- ^ result, e.g. 'https://github.com/haskell/haskell-language-server'
+  completePrefix url match =
+    let base = FP.takeDirectory url
+        fn   = FP.takeFileName url
+    in if fn `isPrefixOf` match then base <> "/" <> match else url
+
+  prefixMatch :: String -> [String] -> [String]
+  prefixMatch pref = filter (pref `isPrefixOf`)
+
+  fromHRef :: String -> IO [String]
+  fromHRef url = withCurl (FP.takeDirectory url) 2_000_000 $ \stdout ->
+      pure
+        . fmap (T.unpack . decUTF8Safe' . fromAttrib "href")
+        . filter isTagOpen
+        . filter (~== ("<a href>" :: String))
+        . parseTags
+        $ stdout
+
+  withCurl :: String                      -- ^ url
+           -> Int                         -- ^ delay
+           -> (ByteString -> IO [String]) -- ^ callback
+           -> IO [String]
+  withCurl url delay cb = do
+    let limit = threadDelay delay
+    race limit (executeOut "curl" ["-fL", url] Nothing) >>= \case
+      Right (CapturedProcess {_exitCode, _stdOut}) -> do
+        case _exitCode of
+          ExitSuccess ->
+            (try @_ @SomeException . cb $ _stdOut) >>= \case
+              Left _ ->  pure []
+              Right r' -> do
+                r <- try @_ @SomeException
+                  . evaluate
+                  . force
+                  $ r'
+                either (\_ -> pure []) pure r
+          ExitFailure _ -> pure []
+      Left _ -> pure []
+
+  getGithubReleases :: String
+                    -> String
+                    -> IO [String]
+  getGithubReleases owner repo = withCurl url 3_000_000 $ \stdout -> do
+    Just xs <- pure $ decode' @Array stdout
+    fmap V.toList $ forM xs $ \x -> do
+      (Object r) <- pure x
+      Just (String name) <- pure $ KM.lookup (mkval "tag_name") r
+      pure $ T.unpack name
+   where
+    url = "https://api.github.com/repos/" <> owner <> "/" <> repo <> "/releases"
+
+  getGithubAssets :: String
+                  -> String
+                  -> String
+                  -> IO [String]
+  getGithubAssets owner repo tag = withCurl url 3_000_000 $ \stdout -> do
+    Just xs <- pure $ decode' @Object stdout
+    Just (Array assets) <- pure $ KM.lookup (mkval "assets") xs
+    as <- fmap V.toList $ forM assets $ \val -> do
+      (Object asset) <- pure val
+      Just (String name) <- pure $ KM.lookup (mkval "name") asset
+      pure $ T.unpack name
+    pure as
+   where
+    url = "https://api.github.com/repos/" <> owner <> "/" <> repo <> "/releases/tags/" <> tag
+
+
+#if MIN_VERSION_aeson(2,0,0)
+  mkval = KM.fromString
+#else
+  mkval = id
+#endif
+
+
 
 
 

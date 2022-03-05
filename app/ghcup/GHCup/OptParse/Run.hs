@@ -72,6 +72,7 @@ data RunOptions = RunOptions
     ---------------
 
           
+    
 runOpts :: Parser RunOptions
 runOpts =
   RunOptions
@@ -82,22 +83,34 @@ runOpts =
     <*> optional
           (option
             (eitherReader toolVersionEither)
-            (metavar "GHC_VERSION" <> long "ghc" <> help "The ghc version")
+            (metavar "GHC_VERSION" <> long "ghc" <> help "The ghc version"
+            <> completer (tagCompleter GHC [])
+            <> (completer $ versionCompleter Nothing GHC)
+            )
           )
     <*> optional
           (option
             (eitherReader toolVersionEither)
-            (metavar "CABAL_VERSION" <> long "cabal" <> help "The cabal version")
+            (metavar "CABAL_VERSION" <> long "cabal" <> help "The cabal version"
+            <> completer (tagCompleter Cabal [])
+            <> (completer $ versionCompleter Nothing Cabal)
+            )
           )
     <*> optional
           (option
             (eitherReader toolVersionEither)
-            (metavar "HLS_VERSION" <> long "hls" <> help "The HLS version")
+            (metavar "HLS_VERSION" <> long "hls" <> help "The HLS version"
+            <> completer (tagCompleter HLS [])
+            <> (completer $ versionCompleter Nothing HLS)
+            )
           )
     <*> optional
           (option
             (eitherReader toolVersionEither)
-            (metavar "STACK_VERSION" <> long "stack" <> help "The stack version")
+            (metavar "STACK_VERSION" <> long "stack" <> help "The stack version"
+            <> completer (tagCompleter Stack [])
+            <> (completer $ versionCompleter Nothing Stack)
+            )
           )
     <*> optional
           (option
@@ -106,6 +119,7 @@ runOpts =
            <> long "bindir"
            <> metavar "DIR"
            <> help "directory where to create the tool symlinks (default: newly created system temp dir)"
+           <> completer (bashCompleter "directory")
            )
           )
     <*> many (argument str (metavar "COMMAND" <> help "The command to run, with arguments (use longopts --). If omitted, just prints the created bin/ dir to stdout and exits."))
