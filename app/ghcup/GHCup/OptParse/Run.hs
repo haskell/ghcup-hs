@@ -338,7 +338,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
           if legacy
           then do
             -- TODO: factor this out
-            (Just hlsWrapper) <- hlsWrapperBinary v'
+            hlsWrapper <- liftE @_ @'[NotInstalled] $ hlsWrapperBinary v' !? (NotInstalled HLS (mkTVer v'))
             cw <- liftIO $ canonicalizePath (binDir </> hlsWrapper)
             lift $ createLink (relativeSymlink tmp cw) (tmp </> takeFileName cw)
             hlsBins <- hlsServerBinaries v' Nothing >>= liftIO . traverse (canonicalizePath . (binDir </>))
