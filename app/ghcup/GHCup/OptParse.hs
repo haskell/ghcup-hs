@@ -144,13 +144,14 @@ opts =
           <> metavar "<internal|curl|wget>"
           <> help
           "Downloader to use (default: internal)"
+          <> completer (listCompleter ["internal", "curl", "wget"])
 #else
           <> metavar "<curl|wget>"
           <> help
           "Downloader to use (default: curl)"
+          <> completer (listCompleter ["curl", "wget"])
 #endif
           <> hidden
-          <> completer (listCompleter ["curl", "wget"])
           ))
     <*> invertableSwitch "offline" 'o' False (help "Don't do any network calls, trying cached assets and failing if missing.")
     <*> optional (option
