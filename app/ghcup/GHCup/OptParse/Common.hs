@@ -52,6 +52,7 @@ import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           Safe
+import           System.Directory
 import           System.Process                  ( readProcess )
 import           System.FilePath
 import           Text.HTML.TagSoup       hiding ( Tag )
@@ -301,20 +302,34 @@ gpgParser s' | t == T.pack "strict" = Right GPGStrict
 toolCompleter :: Completer
 toolCompleter = listCompleter ["ghc", "cabal", "hls", "stack"]
 
-
 fileUri :: Completer
-fileUri = mkCompleter $ \case
-  "" -> pure ["https://", "http://", "file:///"]
+fileUri = mkCompleter fileUri'
+
+fileUri' :: String -> IO [String]
+fileUri' = \case
+  "" -> do
+    pwd <- getCurrentDirectory
+    pure ["https://", "http://", "file:///", "file://" <> pwd <> "/"]
   xs
-   | "file://" `isPrefixOf` xs -> fmap ("file://" <>) <$>
+   | "file:///" `isPrefixOf` xs -> fmap ("file://" <>) <$>
       case stripPrefix "file://" xs of
         Nothing -> pure []
         Just r ->  do
-          let cmd = unwords ["compgen", "-A", "file", "--", requote r]
-          result <- tryIO $ readProcess "bash" ["-c", cmd] ""
-          return . lines . either (const []) id $ result
+          pwd <- getCurrentDirectory
+          dirs  <- compgen "directory" r ["-S", "/"]
+          files <- filter (\f -> (f <> "/") `notElem` dirs) <$> compgen "file" r []
+          pure (dirs <> files <> if r `isPrefixOf` pwd then [pwd <> "/"] else [])
+   | xs `isPrefixOf` "file:///" -> pure ["file:///"]
+   | xs `isPrefixOf` "https://" -> pure ["https://"]
+   | xs `isPrefixOf` "http://"  -> pure ["http://"]
    | otherwise -> pure []
  where
+  compgen :: String -> String -> [String] -> IO [String]
+  compgen action' r opts = do
+    let cmd = unwords $ ["compgen", "-A", action'] <> opts <> ["--", requote r]
+    result <- tryIO $ readProcess "bash" ["-c", cmd] ""
+    return . lines . either (const []) id $ result
+
   -- | Strongly quote the string we pass to compgen.
   --
   -- We need to do this so bash doesn't expand out any ~ or other
@@ -459,8 +474,9 @@ versionCompleter criteria tool = listIOCompleter $ do
 
 toolDlCompleter :: Tool -> Completer
 toolDlCompleter tool = mkCompleter $ \case
-  "" -> pure $ initUrl tool
+  "" -> pure (initUrl tool <> ["https://", "http://", "file:///"])
   word
+    | "file://" `isPrefixOf` word -> fileUri' word
     -- downloads.haskell.org
     | "https://downloads.haskell.org/" `isPrefixOf` word ->
         fmap (completePrefix word) . prefixMatch (FP.takeFileName word) <$> fromHRef word
@@ -500,6 +516,10 @@ toolDlCompleter tool = mkCompleter $ \case
     | "https://d" `isPrefixOf` word -> pure $ filter ("https://downloads.haskell.org/" `isPrefixOf`) $ initUrl tool
 
     | "h" `isPrefixOf` word -> pure $ initUrl tool
+
+    | word `isPrefixOf` "file:///" -> pure ["file:///"]
+    | word `isPrefixOf` "https://" -> pure ["https://"]
+    | word `isPrefixOf` "http://"  -> pure ["http://"]
 
     | otherwise -> pure []
  where

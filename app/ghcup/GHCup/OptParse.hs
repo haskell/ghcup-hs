@@ -124,6 +124,7 @@ opts =
             <> metavar "URL"
             <> help "Alternative ghcup download info url"
             <> internal
+            <> completer fileUri
             )
           )
     <*> (fmap . fmap) not (invertableSwitch "verify" 'n' True (help "Disable tarball checksum verification (default: enabled)"))
@@ -134,6 +135,7 @@ opts =
           <> help
                "Keep build directories? (default: errors)"
           <> hidden
+          <> completer (listCompleter ["always", "errors", "never"])
           ))
     <*> optional (option
           (eitherReader downloaderParser)
@@ -148,6 +150,7 @@ opts =
           "Downloader to use (default: curl)"
 #endif
           <> hidden
+          <> completer (listCompleter ["curl", "wget"])
           ))
     <*> invertableSwitch "offline" 'o' False (help "Don't do any network calls, trying cached assets and failing if missing.")
     <*> optional (option
@@ -156,6 +159,7 @@ opts =
           <> metavar "<strict|lax|none>"
           <> help
           "GPG verification (default: none)"
+          <> completer (listCompleter ["strict", "lax", "none"])
           ))
     <*> com
  where
