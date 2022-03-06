@@ -3077,3 +3077,8 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-osx-aarch64.tar.gz
               dlHash: cea34367981ed6f5629d23d17957920b1a06cc0a00580ba62e960a64087f25fe
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-armv7.tar.gz
+              dlHash: 8be2342deea5309a32e28a0c5eb341ea9557401f08484676036471250ca12e21
