@@ -2899,9 +2899,7 @@ ghcupDownloads:
           Linux_Alpine:
             unknown_versioning: *stack-271-64
     2.7.3:
-      viTags:
-        - Latest
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v273
       viPostInstall: *stack-post
       viArch:
@@ -2951,4 +2949,51 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3/stack-2.7.3-linux-armv7.tar.gz
               dlHash: 3e22c66ea38525ca2ee5b0d222c8aa193c50152a53ff2c80ae179a40592512fe
-
+    2.7.5:
+      viTags:
+        - Latest
+        - Recommended
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v275
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-275-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-linux-x86_64-static.tar.gz
+              dlHash: 2a02fefefcc1758033d0aea566a521a290e3c68739ce9894bd6492a346af79c5
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-osx-x86_64.tar.gz
+              dlHash: 94176b71425d76b94b088515103316ae1ff96d123344b1f4609c103d0d5bdcc4
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-windows-x86_64.tar.gz
+              dlHash: c9b07982590d63db2310a44bfcf33c9f8bd84a0828abc17b2a394e90fbf6a914
+              dlSubdir:
+                RegexDir: "stack-.*"
+          FreeBSD:
+            '>= 12':
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-freebsd-x86_64.tar.gz
+              dlHash: fceb15b22d3dbd8d25cb84ad66a2eb71a5034f7e2c47a74f25141994feee7c36
+          Linux_Alpine:
+            unknown_versioning: *stack-275-64
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-275-32
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-i386.tar.gz
+              dlHash: a679eaebe627444fe17fc794ddfb3fe9ee4281a4e9e9137cb04318873e23a2f6
+          Linux_Alpine:
+            unknown_versioning: *stack-275-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-aarch64.tar.gz
+              dlHash: f362fa4786b17252004b2619ec96b9687e561dc4e55c2612c53d60be767cabba
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-osx-aarch64.tar.gz
+              dlHash: cea34367981ed6f5629d23d17957920b1a06cc0a00580ba62e960a64087f25fe
