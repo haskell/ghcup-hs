@@ -1,5 +1,11 @@
 # Revision history for ghcup
 
+## 0.1.17.6 -- ????-??-??
+
+* Vastly improve shell completions wrt [#242](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/242)
+* Fix 'ghcup install cabal/hls/stack --set' wrt [#324](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/324)
+* Fix bad error message wrt [#323](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/323)
+
 ## 0.1.17.5 -- 2022-02-26
 
 * Implement `ghcup run` subcommand wrt [#137](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/137)
