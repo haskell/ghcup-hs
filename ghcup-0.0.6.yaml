@@ -2089,8 +2089,7 @@ ghcupDownloads:
               dlHash: b1fcab17fe48326d2ff302d70c12bc4cf4d570dfbbce68ab57c719cfec882b05
     9.2.1:
       viTags:
-      - Latest
-      - base-4.16.0.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.2.1/docs/html/users_guide/index.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-src.tar.xz
@@ -2121,11 +2120,11 @@ ghcupDownloads:
             '( >= 27 && < 28 )': *ghc-921-64-fedora
             unknown_versioning: *ghc-921-64-fedora
           Linux_CentOS:
-            '( >= 7 && < 8 )': &ghc-922-64-centos
+            '( >= 7 && < 8 )': &ghc-921-64-centos
               dlUri: https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-centos7-linux.tar.xz
               dlSubdir: ghc-9.2.1
               dlHash: 4b67324507f5d14c23db3ed83c57f4e25d877e97d2b93cfe8e1a9fdf65e4efa1
-            unknown_versioning: *ghc-922-64-centos
+            unknown_versioning: *ghc-921-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-921-64-fedora
           Darwin:
@@ -2178,6 +2177,86 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.2.1/ghc-9.2.1-armv7-linux-deb10.tar.xz
               dlSubdir: ghc-9.2.1
               dlHash: 3bde9deeb6969ff0f5aea566d2602edc57f5f3ca158b4c03f039c44d8c51ea0f
+    9.2.2:
+      viTags:
+      - Latest
+      - base-4.16.1.0
+      viChangeLog: https://downloads.haskell.org/~ghc/9.2.2/docs/html/users_guide/index.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-src.tar.xz
+        dlSubdir: ghc-9.2.2
+        dlHash: 902463a4cc6ee479af9358b9f8b2ee3237b03e934a1ea65b6d1fcf3e0d749ea6
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '< 10': &ghc-922-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-9.2.2
+              dlHash: 91052766a8bec6a1a8529eda9ff587ce821a071cf52705e1b8caa3d38d3913f4
+            '>= 10': &ghc-922-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-9.2.2
+              dlHash: fb61dea556a2023dc2d50ee61a22144bb23e4229a378e533065124c218f40cfc
+            unknown_versioning: *ghc-922-64-deb10
+          Linux_Ubuntu:
+            unknown_versioning: &ghc-922-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-fedora27-linux.tar.xz
+              dlSubdir: ghc-9.2.2
+              dlHash: eab2b4e3ca99eb7cc81aa3136e9e0b245ba6b3e9057f02a2d289fbf60856eb10
+            '( >= 16 && < 19 )': *ghc-922-64-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-922-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *ghc-922-64-fedora
+            unknown_versioning: *ghc-922-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-922-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-9.2.2
+              dlHash: 5100aa7dea87aaf2ed596be83c93165d7199492f6db431d874fcfa07e8ac76ab
+            unknown_versioning: *ghc-922-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-922-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-9.2.2-x86_64-apple-darwin
+              dlHash: 934abbd6083d3aeb5ff081955682d7711d9e79db57b1613eb229c325dd06f83f
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-unknown-mingw32.zip
+              dlSubdir: ghc-9.2.2-x86_64-unknown-mingw32
+              dlHash: 5ca4b69e74e62ed57b737949fa8c4e991c24703f1477521f842a6297d36dab10
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-alpine3.12-linux-gmp.tar.xz
+              dlSubdir: ghc-9.2.2-x86_64-unknown-linux
+              dlHash: 624523826e24eae33c03490267cddecc1d80c047f2a3f4b03580f1040112d5c0
+        A_32:
+          Linux_Debian:
+            '< 10': &ghc-922-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-9.2.2
+              dlHash: 24234486ed4508161c6f88f4750a36d38b135b0c6e5fe78efe2d85c612ecaf9e
+            unknown_versioning: *ghc-922-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-922-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-922-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-922-32-deb9
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-9.2.2
+              dlHash: f3621ccba7ae48fcd67a9505f61bb5ccfb05c4cbfecd5a6ea65fe3f150af0e98
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-aarch64-apple-darwin.tar.xz
+              dlSubdir: ghc-9.2.2-aarch64-apple-darwin
+              dlHash: d1f04f7cc062ed134f863305c67dfe2c42df46ed658dd34f9dd552186f194e5c
   Cabal:
     2.4.1.0:
       viTags:
@@ -2532,7 +2611,7 @@ ghcupDownloads:
               dlHash: 35899ab2338b52fac84d49f16edbbb7701498e93ee8012309c7d6f2f138bb993
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/aarch64-apple-darwin-ghcup-0.1.17.5-2
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.5/aarch64-apple-darwin-ghcup-0.1.17.5
               dlHash: 54238c1db6f4101664b91190067549b8b13b250fd24eac1474b7b2c185222c73
         A_ARM:
           Linux_UnknownLinux:
@@ -2899,9 +2978,7 @@ ghcupDownloads:
           Linux_Alpine:
             unknown_versioning: *stack-271-64
     2.7.3:
-      viTags:
-        - Latest
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v273
       viPostInstall: *stack-post
       viArch:
@@ -2951,4 +3028,51 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3/stack-2.7.3-linux-armv7.tar.gz
               dlHash: 3e22c66ea38525ca2ee5b0d222c8aa193c50152a53ff2c80ae179a40592512fe
-
+    2.7.5:
+      viTags:
+        - Latest
+        - Recommended
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v275
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-275-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-linux-x86_64-static.tar.gz
+              dlHash: 2a02fefefcc1758033d0aea566a521a290e3c68739ce9894bd6492a346af79c5
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-osx-x86_64.tar.gz
+              dlHash: 94176b71425d76b94b088515103316ae1ff96d123344b1f4609c103d0d5bdcc4
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-windows-x86_64.tar.gz
+              dlHash: c9b07982590d63db2310a44bfcf33c9f8bd84a0828abc17b2a394e90fbf6a914
+              dlSubdir:
+                RegexDir: "stack-.*"
+          FreeBSD:
+            '>= 12':
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-freebsd-x86_64.tar.gz
+              dlHash: fceb15b22d3dbd8d25cb84ad66a2eb71a5034f7e2c47a74f25141994feee7c36
+          Linux_Alpine:
+            unknown_versioning: *stack-275-64
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-275-32
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-i386.tar.gz
+              dlHash: a679eaebe627444fe17fc794ddfb3fe9ee4281a4e9e9137cb04318873e23a2f6
+          Linux_Alpine:
+            unknown_versioning: *stack-275-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-aarch64.tar.gz
+              dlHash: f362fa4786b17252004b2619ec96b9687e561dc4e55c2612c53d60be767cabba
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-osx-aarch64.tar.gz
+              dlHash: cea34367981ed6f5629d23d17957920b1a06cc0a00580ba62e960a64087f25fe
