@@ -302,14 +302,17 @@ gpgParser s' | t == T.pack "strict" = Right GPGStrict
 toolCompleter :: Completer
 toolCompleter = listCompleter ["ghc", "cabal", "hls", "stack"]
 
-fileUri :: Completer
-fileUri = mkCompleter fileUri'
+gitFileUri :: [String] -> Completer
+gitFileUri add = mkCompleter $ fileUri' (["git://"] <> add)
 
-fileUri' :: String -> IO [String]
-fileUri' = \case
+fileUri :: Completer
+fileUri = mkCompleter $ fileUri' []
+
+fileUri' :: [String] -> String -> IO [String]
+fileUri' add = \case
   "" -> do
     pwd <- getCurrentDirectory
-    pure ["https://", "http://", "file:///", "file://" <> pwd <> "/"]
+    pure $ ["https://", "http://", "file:///", "file://" <> pwd <> "/"] <> add
   xs
    | "file:///" `isPrefixOf` xs -> fmap ("file://" <>) <$>
       case stripPrefix "file://" xs of
@@ -476,7 +479,7 @@ toolDlCompleter :: Tool -> Completer
 toolDlCompleter tool = mkCompleter $ \case
   "" -> pure (initUrl tool <> ["https://", "http://", "file:///"])
   word
-    | "file://" `isPrefixOf` word -> fileUri' word
+    | "file://" `isPrefixOf` word -> fileUri' [] word
     -- downloads.haskell.org
     | "https://downloads.haskell.org/" `isPrefixOf` word ->
         fmap (completePrefix word) . prefixMatch (FP.takeFileName word) <$> fromHRef word
