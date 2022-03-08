@@ -43,10 +43,44 @@ data Options = Options
   { optCommand :: Command
   }
 
+
+formatParser :: Parser Format
+formatParser =
+    option
+    (eitherReader formatP)
+          (long "format" <> metavar "FORMAT" <> help
+            "Which format to use (JSON | YAML). Yaml is default."
+            <> value FormatJSON
+          )
+ where
+  formatP :: String -> Either String Format
+  formatP s' | t == T.pack "json" = Right FormatJSON
+             | t == T.pack "yaml" = Right FormatYAML
+             | t == T.pack "yml"  = Right FormatYAML
+             | otherwise          = Left ("Unknown format value: " <> s')
+    where t = T.toLower (T.pack s')
+
+
 data Command = ValidateYAML ValidateYAMLOpts
              | ValidateTarballs ValidateYAMLOpts TarballFilter
-             | GenerateHlsGhc ValidateYAMLOpts
+             | GenerateHlsGhc ValidateYAMLOpts Format Output
 
+
+fileOutput :: Parser Output
+fileOutput =
+  FileOutput
+    <$> strOption
+          (long "output-file" <> short 'o' <> metavar "FILENAME" <> help
+            "Output file to write to"
+          )
+
+stdOutput :: Parser Output
+stdOutput = flag'
+  StdOut
+  (short 'o' <> long "stdout" <> help "Output to stdout (default)")
+
+outputP :: Parser Output
+outputP = fileOutput <|> stdOutput
 
 data Input
   = FileInput FilePath -- optsparse-applicative doesn't handle ByteString correctly anyway
@@ -113,7 +147,7 @@ com = subparser
   <> command
        "generate-hls-ghcs"
        (info
-         ((GenerateHlsGhc <$> validateYAMLOpts) <**> helper)
+         ((GenerateHlsGhc <$> validateYAMLOpts <*> formatParser <*> outputP) <**> helper)
          (progDesc "Generate a list of HLS-GHC support")
        )
   )
@@ -145,7 +179,7 @@ main = do
     >>= \Options {..} -> case optCommand of
           ValidateYAML vopts -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ validate dl m)
           ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ validateTarballs tarballFilter dl m)
-          GenerateHlsGhc vopts -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ generate dl m)
+          GenerateHlsGhc vopts format output -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ generate dl m format output)
   pure ()
 
  where

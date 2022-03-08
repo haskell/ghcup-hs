@@ -9,55 +9,45 @@
 
 module Generate where
 
-import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Version.QQ
+
 
 import           Codec.Archive
-import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader.Class
-import           Control.Monad.Trans.Class      ( lift )
-import           Control.Monad.Trans.Reader     ( runReaderT )
 import           Control.Monad.Trans.Resource   ( runResourceT
                                                 , MonadUnliftIO
                                                 )
-import           Data.Containers.ListUtils      ( nubOrd )
+import qualified Data.Aeson.Encode.Pretty     as Aeson
 import           Data.ByteString                ( ByteString )
-import           Data.IORef
 import           Data.Either
 import           Data.Maybe
 import           Data.List
 import           Data.Map.Strict                ( Map )
 import           Data.Versions
 import           Haskus.Utils.Variant.Excepts
-import           Optics
-import           System.FilePath
 import           System.Exit
-import           Text.ParserCombinators.ReadP
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 import           GHCup.Utils.String.QQ
 
-import qualified Data.ByteString               as BS
+import qualified Data.ByteString.Lazy          as BSL
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
-import qualified Data.Version                  as V
 import qualified Data.Yaml.Pretty              as YAML
 import qualified Text.Megaparsec               as MP
 
+data Format = FormatJSON
+            | FormatYAML
 
-
-data GhcHlsVersions = GhcHlsVersions {
-
-}
+data Output
+  = FileOutput FilePath -- optsparse-applicative doesn't handle ByteString correctly anyway
+  | StdOut
 
 type HlsGhcVersions = Map Version (Map Architecture (Map Platform Version))
 
@@ -74,8 +64,10 @@ generate :: ( MonadFail m
             )
          => GHCupDownloads
          -> M.Map GlobalTool DownloadInfo
+         -> Format
+         -> Output
          -> m ExitCode
-generate dls _ = do
+generate dls _ format output = do
   let hlses = dls M.! HLS
   r <- forM hlses $ \(_viArch -> archs) ->
          forM archs $ \plats ->
@@ -97,5 +89,10 @@ generate dls _ = do
                                 <$> filter (match regex) files
                pure ghcs
              pure r
-  liftIO $ BS.putStr $ YAML.encodePretty YAML.defConfig r
+  let w = case format of
+            FormatYAML -> BSL.fromStrict $ YAML.encodePretty YAML.defConfig r
+            FormatJSON -> Aeson.encodePretty r
+  case output of
+    StdOut -> liftIO $ BSL.putStr w
+    FileOutput f -> liftIO $ BSL.writeFile f w
   pure ExitSuccess

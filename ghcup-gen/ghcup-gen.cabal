@@ -45,6 +45,7 @@ executable ghcup-gen
     -fwarn-incomplete-record-updates -threaded
 
   build-depends:
+    , aeson-pretty          ^>=0.8.9
     , base                  >=4.13     && <5
     , bytestring            ^>=0.10
     , containers            ^>=0.6
