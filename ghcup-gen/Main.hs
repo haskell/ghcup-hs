@@ -64,6 +64,7 @@ formatParser =
 data Command = ValidateYAML ValidateYAMLOpts
              | ValidateTarballs ValidateYAMLOpts TarballFilter
              | GenerateHlsGhc ValidateYAMLOpts Format Output
+             | GenerateToolTable ValidateYAMLOpts Output
 
 
 fileOutput :: Parser Output
@@ -150,6 +151,12 @@ com = subparser
          ((GenerateHlsGhc <$> validateYAMLOpts <*> formatParser <*> outputP) <**> helper)
          (progDesc "Generate a list of HLS-GHC support")
        )
+  <> command
+       "generate-table"
+       (info
+         ((GenerateToolTable <$> validateYAMLOpts <*> outputP) <**> helper)
+         (progDesc "Generate a markdown table of available tool versions")
+       )
   )
 
 
@@ -175,24 +182,26 @@ main = do
 
   let appstate = AppState (Settings True 0 False Never Curl True GHCupURL False GPGNone False) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq loggerConfig
 
+  let withValidateYamlOpts vopts f = case vopts of
+        ValidateYAMLOpts { vInput = Nothing } ->
+          B.getContents >>= valAndExit f
+        ValidateYAMLOpts { vInput = Just StdInput } ->
+          B.getContents >>= valAndExit f
+        ValidateYAMLOpts { vInput = Just (FileInput file) } ->
+          B.readFile file >>= valAndExit f
+      valAndExit f contents = do
+        ginfo <- case Y.decodeEither' contents of
+          Right r -> pure r
+          Left  e -> die (color Red $ displayException e)
+        r <- flip runReaderT appstate { ghcupInfo = ginfo } f
+        exitWith r
+
   _ <- customExecParser (prefs showHelpOnError) (info (opts <**> helper) idm)
     >>= \Options {..} -> case optCommand of
-          ValidateYAML vopts -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ validate dl m)
-          ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ validateTarballs tarballFilter dl m)
-          GenerateHlsGhc vopts format output -> withValidateYamlOpts vopts (\dl m -> flip runReaderT appstate $ generate dl m format output)
+          ValidateYAML vopts -> withValidateYamlOpts vopts validate
+          ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (validateTarballs tarballFilter)
+          GenerateHlsGhc vopts format output -> withValidateYamlOpts vopts (generateHLSGhc format output)
+          GenerateToolTable vopts output -> withValidateYamlOpts vopts (generateTable output)
   pure ()
 
  where
-  withValidateYamlOpts vopts f = case vopts of
-    ValidateYAMLOpts { vInput = Nothing } ->
-      B.getContents >>= valAndExit f
-    ValidateYAMLOpts { vInput = Just StdInput } ->
-      B.getContents >>= valAndExit f
-    ValidateYAMLOpts { vInput = Just (FileInput file) } ->
-      B.readFile file >>= valAndExit f
-  valAndExit f contents = do
-    (GHCupInfo _ av gt) <- case Y.decodeEither' contents of
-      Right r -> pure r
-      Left  e -> die (color Red $ displayException e)
-    f av gt
-      >>= exitWith

@@ -58,11 +58,18 @@ addError = do
   liftIO $ modifyIORef ref (+ 1)
 
 
-validate :: (Monad m, MonadReader env m, HasLog env, MonadThrow m, MonadIO m, MonadUnliftIO m)
-         => GHCupDownloads
-         -> M.Map GlobalTool DownloadInfo
-         -> m ExitCode
-validate dls _ = do
+validate :: ( Monad m
+            , MonadReader env m
+            , HasLog env
+            , MonadThrow m
+            , MonadIO m
+            , MonadUnliftIO m
+            , HasGHCupInfo env
+            )
+         => m ExitCode
+validate = do
+  GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
+
   ref <- liftIO $ newIORef 0
 
   -- verify binary downloads --
@@ -117,6 +124,7 @@ validate dls _ = do
         _ -> lift $ logWarn $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)
 
   checkUniqueTags tool = do
+    GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
     let allTags = _viTags =<< M.elems (availableToolVersions dls tool)
     let nonUnique =
           fmap fst
@@ -145,6 +153,7 @@ validate dls _ = do
     isUniqueTag (UnknownTag _) = False
 
   checkGHCVerIsValid = do
+    GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
     let ghcVers = toListOf (ix GHC % to M.keys % folded) dls
     forM_ ghcVers $ \v ->
       case [ x | (x,"") <- readP_to_S V.parseVersion (T.unpack . prettyVer $ v) ] of
@@ -155,6 +164,7 @@ validate dls _ = do
 
   -- a tool must have at least one of each mandatory tags
   checkMandatoryTags tool = do
+    GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
     let allTags = _viTags =<< M.elems (availableToolVersions dls tool)
     forM_ [Latest, Recommended] $ \t -> case t `elem` allTags of
       False -> do
@@ -164,6 +174,7 @@ validate dls _ = do
 
   -- all GHC versions must have a base tag
   checkGHCHasBaseVersion = do
+    GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
     let allTags = M.toList $ availableToolVersions dls GHC
     forM allTags $ \(ver, _viTags -> tags) -> case any isBase tags of
       False -> do
@@ -190,12 +201,12 @@ validateTarballs :: ( Monad m
                     , MonadMask m
                     , Alternative m
                     , MonadFail m
+                    , HasGHCupInfo env
                     )
                  => TarballFilter
-                 -> GHCupDownloads
-                 -> M.Map GlobalTool DownloadInfo
                  -> m ExitCode
-validateTarballs (TarballFilter etool versionRegex) dls gt = do
+validateTarballs (TarballFilter etool versionRegex) = do
+  GHCupInfo { _ghcupDownloads = dls, _globalTools = gt } <- getGHCupInfo
   ref <- liftIO $ newIORef 0
 
    -- download/verify all tarballs

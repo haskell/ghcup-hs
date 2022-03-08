@@ -9,6 +9,7 @@
 
 module Generate where
 
+import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Types
@@ -17,7 +18,7 @@ import           GHCup.Utils
 
 
 import           Codec.Archive
-import           Control.Exception.Safe
+import           Control.Exception.Safe      hiding ( handle )
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader.Class
@@ -33,6 +34,7 @@ import           Data.Map.Strict                ( Map )
 import           Data.Versions
 import           Haskus.Utils.Variant.Excepts
 import           System.Exit
+import           System.IO
 import           Text.Regex.Posix
 import           GHCup.Utils.String.QQ
 
@@ -51,23 +53,23 @@ data Output
 
 type HlsGhcVersions = Map Version (Map Architecture (Map Platform Version))
 
-generate :: ( MonadFail m
-            , MonadMask m
-            , Monad m
-            , MonadReader env m
-            , HasSettings env
-            , HasDirs env
-            , HasLog env
-            , MonadThrow m
-            , MonadIO m
-            , MonadUnliftIO m
-            )
-         => GHCupDownloads
-         -> M.Map GlobalTool DownloadInfo
-         -> Format
-         -> Output
-         -> m ExitCode
-generate dls _ format output = do
+generateHLSGhc :: ( MonadFail m
+                  , MonadMask m
+                  , Monad m
+                  , MonadReader env m
+                  , HasSettings env
+                  , HasDirs env
+                  , HasLog env
+                  , MonadThrow m
+                  , MonadIO m
+                  , MonadUnliftIO m
+                  , HasGHCupInfo env
+                  )
+               => Format
+               -> Output
+               -> m ExitCode
+generateHLSGhc format output = do
+  GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
   let hlses = dls M.! HLS
   r <- forM hlses $ \(_viArch -> archs) ->
          forM archs $ \plats ->
@@ -96,3 +98,49 @@ generate dls _ format output = do
     StdOut -> liftIO $ BSL.putStr w
     FileOutput f -> liftIO $ BSL.writeFile f w
   pure ExitSuccess
+
+
+generateTable :: ( MonadFail m
+                 , MonadMask m
+                 , Monad m
+                 , MonadReader env m
+                 , HasSettings env
+                 , HasDirs env
+                 , HasLog env
+                 , MonadThrow m
+                 , MonadIO m
+                 , HasPlatformReq env
+                 , HasGHCupInfo env
+                 , MonadUnliftIO m
+                 )
+              => Output
+              -> m ExitCode
+generateTable output = do
+  handle <- case output of
+              StdOut -> pure stdout
+              FileOutput fp -> liftIO $ openFile fp WriteMode
+              
+  forM_ [GHC,Cabal,HLS,Stack] $ \tool -> do
+    liftIO $ hPutStrLn handle $ "<table>"
+    liftIO $ hPutStrLn handle $ "<thead><tr><th>" <> show tool <> " Version</th><th>Tags</th></tr></thead>"
+    liftIO $ hPutStrLn handle $ "<tbody>"
+    vers <- listVersions (Just tool) Nothing
+    forM_ (filter (\ListResult{..} -> not lStray) vers) $ \ListResult{..} -> do
+      liftIO $ hPutStrLn handle $
+          "<tr><td>"
+        <> T.unpack (prettyVer lVer)
+        <> "</td><td>"
+        <> intercalate ", " (filter (/= "") . fmap printTag $ sort lTag)
+        <> "</td></tr>"
+      pure ()
+    liftIO $ hPutStrLn handle $ "</tbody>"
+    liftIO $ hPutStrLn handle $ "</table>"
+    liftIO $ hPutStrLn handle $ ""
+  pure ExitSuccess
+ where
+  printTag Recommended        = "<span style=\"color:green\">recommended</span>"
+  printTag Latest             = "<span style=\"color:blue\">latest</span>"
+  printTag Prerelease         = "<span style=\"color:red\">prerelease</span>"
+  printTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
+  printTag (UnknownTag t    ) = t
+  printTag Old                = ""
