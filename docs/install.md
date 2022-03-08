@@ -50,10 +50,90 @@ On windows, double-click on the `Uninstall Haskell.ps1` PowerShell script on you
 
 GHCup supports the following tools, which are also known as the **Haskell Toolchain**:
 
-1. [GHC](https://www.haskell.org/ghc/)
-2. [cabal-install](https://cabal.readthedocs.io/en/stable/)
-3. [haskell-language-server](https://haskell-language-server.readthedocs.io/en/stable/)
-4. [stack](https://docs.haskellstack.org/en/stable/README/)
+<details>
+  <summary>Show all supported <a href='https://www.haskell.org/ghc/'>GHC</a> versions</summary>
+  
+<table>
+<thead><tr><th>GHC Version</th><th>Tags</th></tr></thead>
+<tbody>
+<tr><td>7.10.3</td><td>base-4.8.2.0</td></tr>
+<tr><td>8.0.2</td><td>base-4.9.1.0</td></tr>
+<tr><td>8.2.2</td><td>base-4.10.1.0</td></tr>
+<tr><td>8.4.1</td><td>base-4.11.0.0</td></tr>
+<tr><td>8.4.2</td><td>base-4.11.1.0</td></tr>
+<tr><td>8.4.3</td><td>base-4.11.1.0</td></tr>
+<tr><td>8.4.4</td><td>base-4.11.1.0</td></tr>
+<tr><td>8.6.1</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.6.2</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.6.3</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.6.4</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.6.5</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.8.1</td><td>base-4.13.0.0</td></tr>
+<tr><td>8.8.2</td><td>base-4.13.0.0</td></tr>
+<tr><td>8.8.3</td><td>base-4.13.0.0</td></tr>
+<tr><td>8.8.4</td><td>base-4.13.0.0</td></tr>
+<tr><td>8.10.1</td><td>base-4.14.0.0</td></tr>
+<tr><td>8.10.2</td><td>base-4.14.1.0</td></tr>
+<tr><td>8.10.3</td><td>base-4.14.1.0</td></tr>
+<tr><td>8.10.4</td><td>base-4.14.1.0</td></tr>
+<tr><td>8.10.5</td><td>base-4.14.2.0</td></tr>
+<tr><td>8.10.6</td><td>base-4.14.3.0</td></tr>
+<tr><td>8.10.7</td><td><span style="color:green">recommended</span>, base-4.14.3.0</td></tr>
+<tr><td>9.0.1</td><td>base-4.15.0.0</td></tr>
+<tr><td>9.0.2</td><td>base-4.15.1.0</td></tr>
+<tr><td>9.2.1</td><td>base-4.16.0.0</td></tr>
+<tr><td>9.2.2</td><td><span style="color:yellow">latest</span>, base-4.16.1.0</td></tr>
+</tbody>
+</table>
+
+</details>
+
+<details>
+  <summary>Show all supported <a href='https://cabal.readthedocs.io/en/stable/'>cabal-install</a> versions</summary>
+  <table>
+<thead><tr><th>Cabal Version</th><th>Tags</th></tr></thead>
+<tbody>
+<tr><td>2.4.1.0</td><td></td></tr>
+<tr><td>3.0.0.0</td><td></td></tr>
+<tr><td>3.2.0.0</td><td></td></tr>
+<tr><td>3.4.0.0</td><td></td></tr>
+<tr><td>3.4.1.0</td><td></td></tr>
+<tr><td>3.6.0.0</td><td></td></tr>
+<tr><td>3.6.2.0</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+</tbody>
+</table>
+
+</details>
+
+<details>
+  <summary>Show all supported <a href='https://haskell-language-server.readthedocs.io/en/stable/'>HLS</a> versions</summary>
+<table>
+<thead><tr><th>HLS Version</th><th>Tags</th></tr></thead>
+<tbody>
+<tr><td>1.1.0</td><td></td></tr>
+<tr><td>1.2.0</td><td></td></tr>
+<tr><td>1.3.0</td><td></td></tr>
+<tr><td>1.4.0</td><td></td></tr>
+<tr><td>1.5.0</td><td></td></tr>
+<tr><td>1.5.1</td><td></td></tr>
+<tr><td>1.6.0.0</td><td></td></tr>
+<tr><td>1.6.1.0</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+</tbody>
+</table>
+</details>
+
+<details>
+  <summary>Show all supported <a href='https://docs.haskellstack.org/en/stable/README/'>Stack</a> versions</summary>
+<table>
+<thead><tr><th>Stack Version</th><th>Tags</th></tr></thead>
+<tbody>
+<tr><td>2.5.1</td><td></td></tr>
+<tr><td>2.7.1</td><td></td></tr>
+<tr><td>2.7.3</td><td></td></tr>
+<tr><td>2.7.5</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+</tbody>
+</table>
+</details>
 
 ## Supported platforms
 
