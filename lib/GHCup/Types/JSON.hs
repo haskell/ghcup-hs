@@ -79,6 +79,38 @@ instance FromJSON Tag where
 instance ToJSON URI where
   toJSON = toJSON . E.decodeUtf8With E.lenientDecode . serializeURIRef'
 
+instance FromJSON URLSource where
+  parseJSON v =
+        parseGHCupURL v
+    <|> parseOwnSourceLegacy v
+    <|> parseOwnSourceNew1 v
+    <|> parseOwnSourceNew2 v
+    <|> parseOwnSpec v
+    <|> legacyParseAddSource v
+    <|> newParseAddSource v
+   where
+    parseOwnSourceLegacy = withObject "URLSource" $ \o -> do
+      r :: URI <- o .: "OwnSource"
+      pure (OwnSource [Right r])
+    parseOwnSourceNew1 = withObject "URLSource" $ \o -> do
+      r :: [URI] <- o .: "OwnSource"
+      pure (OwnSource (fmap Right r))
+    parseOwnSourceNew2 = withObject "URLSource" $ \o -> do
+      r :: [Either GHCupInfo URI] <- o .: "OwnSource"
+      pure (OwnSource r)
+    parseOwnSpec = withObject "URLSource" $ \o -> do
+      r :: GHCupInfo <- o .: "OwnSpec"
+      pure (OwnSpec r)
+    parseGHCupURL = withObject "URLSource" $ \o -> do
+      _ :: [Value] <- o .: "GHCupURL"
+      pure GHCupURL
+    legacyParseAddSource = withObject "URLSource" $ \o -> do
+      r :: Either GHCupInfo URI <- o .: "AddSource"
+      pure (AddSource [r])
+    newParseAddSource = withObject "URLSource" $ \o -> do
+      r :: [Either GHCupInfo URI] <- o .: "AddSource"
+      pure (AddSource r)
+
 instance FromJSON URI where
   parseJSON = withText "URL" $ \t ->
     case parseURI strictURIParserOptions (encodeUtf8 t) of
@@ -314,7 +346,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requir
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
-deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
+deriveToJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "u-") . T.pack . kebab $ str' } ''UserSettings

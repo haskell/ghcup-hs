@@ -121,28 +121,25 @@ getDownloadsF = do
   Settings { urlSource } <- lift getSettings
   case urlSource of
     GHCupURL -> liftE $ getBase ghcupURL
-    (OwnSource url) -> liftE $ getBase url
+    (OwnSource exts) -> do
+      ext  <- liftE $ mapM (either pure getBase) exts
+      mergeGhcupInfo ext
     (OwnSpec av) -> pure av
-    (AddSource (Left ext)) -> do
+    (AddSource exts) -> do
       base <- liftE $ getBase ghcupURL
-      pure (mergeGhcupInfo base ext)
-    (AddSource (Right uri)) -> do
-      base <- liftE $ getBase ghcupURL
-      ext  <- liftE $ getBase uri
-      pure (mergeGhcupInfo base ext)
+      ext  <- liftE $ mapM (either pure getBase) exts
+      mergeGhcupInfo (base:ext)
 
-    where
-
-  mergeGhcupInfo :: GHCupInfo -- ^ base to merge with
-                 -> GHCupInfo -- ^ extension overwriting the base
-                 -> GHCupInfo
-  mergeGhcupInfo (GHCupInfo tr base base2) (GHCupInfo _ ext ext2) =
-    let newDownloads = M.mapWithKey (\k a -> case M.lookup k ext of
-                                        Just a' -> M.union a' a
-                                        Nothing -> a
-                                    ) base
-        newGlobalTools = M.union base2 ext2
-    in GHCupInfo tr newDownloads newGlobalTools
+ where
+  mergeGhcupInfo :: MonadFail m
+                 => [GHCupInfo]
+                 -> m GHCupInfo
+  mergeGhcupInfo [] = fail "mergeGhcupInfo: internal error: need at least one GHCupInfo"
+  mergeGhcupInfo xs@(GHCupInfo{}: _) =
+    let newDownloads   = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_ghcupDownloads   <$> xs)
+        newGlobalTools = M.unionsWith (\_ a2 -> a2              ) (_globalTools      <$> xs)
+        newToolReqs    = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_toolRequirements <$> xs)
+    in pure $ GHCupInfo newToolReqs newDownloads newGlobalTools
 
 
 yamlFromCache :: (MonadReader env m, HasDirs env) => URI -> m FilePath
