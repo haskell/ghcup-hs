@@ -82,7 +82,7 @@ toSettings options = do
          keepDirs    = fromMaybe (fromMaybe (Types.keepDirs defaultSettings) uKeepDirs) optKeepDirs
          downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
-         urlSource   = maybe (fromMaybe (Types.urlSource defaultSettings) uUrlSource) OwnSource optUrlSource
+         urlSource   = maybe (fromMaybe (Types.urlSource defaultSettings) uUrlSource) (OwnSource . (:[]) . Right) optUrlSource
          noNetwork   = fromMaybe (fromMaybe (Types.noNetwork defaultSettings) uNoNetwork) optNoNetwork
          gpgSetting  = fromMaybe (fromMaybe (Types.gpgSetting defaultSettings) uGPGSetting) optGpg
      in (Settings {..}, keyBindings)

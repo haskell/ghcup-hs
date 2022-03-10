@@ -48,12 +48,16 @@ url-source:
 
   ## Example 1: Read download info from this location instead
   ## Accepts file/http/https scheme
+  ## Can also be an array of URLs or an array of 'Either GHCupInfo URL', in
+  ## which case they are merged right-biased (overwriting duplicate versions).
   # OwnSource: "file:///home/jule/git/ghcup-hs/ghcup-0.0.3.yaml"
 
-  ## Example 2: Add custom tarballs to the default downloads, overwriting duplicate versions
+  ## Example 2: Add custom tarballs to the default downloads, overwriting duplicate versions.
+  ## Can also be an array of 'Either GHCupInfo URL', also see Example 3.
   # AddSource:
     # Left:
-      # toolRequirements: {} # this is ignored
+      # globalTools: {}
+      # toolRequirements: {}
       # ghcupDownloads:
         # GHC:
           # 9.10.2:
@@ -66,6 +70,8 @@ url-source:
                     # dlSubdir: ghc-7.10.3
                     # dlHash: 01cfbad8dff1e8b34a5fdca8caeaf843b56e36af919e29cd68870d2588563db5
 
-  ## Example 3: Add a custom download file to the default downloads, overwriting duplicate versions
+  ## Example 3: Add multiple custom download files to the default downloads via right-biased merge (overwriting duplicate
+  ## versions).
   # AddSource:
-    # Right: "file:///home/jule/git/ghcup-hs/ghcup-custom.yaml"
+    # - Right: "file:///home/jule/git/ghcup-hs/ghcup-prereleases.yaml"
+    # - Right: "file:///home/jule/git/ghcup-hs/ghcup-custom.yaml"

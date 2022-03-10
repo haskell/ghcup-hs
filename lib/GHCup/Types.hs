@@ -286,9 +286,9 @@ instance Pretty TarDir where
 
 -- | Where to fetch GHCupDownloads from.
 data URLSource = GHCupURL
-               | OwnSource URI
+               | OwnSource [Either GHCupInfo URI] -- ^ complete source list
                | OwnSpec GHCupInfo
-               | AddSource (Either GHCupInfo URI) -- ^ merge with GHCupURL
+               | AddSource [Either GHCupInfo URI] -- ^ merge with GHCupURL
                deriving (GHC.Generic, Show)
 
 instance NFData URLSource
