@@ -49,6 +49,7 @@ executable ghcup-gen
     , base                  >=4.13     && <5
     , bytestring            ^>=0.10
     , containers            ^>=0.6
+    , deepseq               ^>=1.4
     , filepath              ^>=1.4.2.1
     , ghcup                 ^>=0.1.17.3
     , haskus-utils-variant  ^>=3.2

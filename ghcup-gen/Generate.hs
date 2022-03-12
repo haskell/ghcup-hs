@@ -18,6 +18,8 @@ import           GHCup.Utils
 
 
 import           Codec.Archive
+import           Control.DeepSeq
+import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe      hiding ( handle )
 import           Control.Monad
 import           Control.Monad.IO.Class
@@ -82,12 +84,14 @@ generateHLSGhc format output = do
                       , ArchiveResult
                       ] $ do
                fp <- liftE $ downloadCached dli Nothing
-               files <- liftE $ getArchiveFiles fp
-               let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-([0-9]+\.)*([0-9]+)$|] :: ByteString)
+               filesL <- liftE $ getArchiveFiles fp
+               files <- liftIO $ evaluate $ force filesL
+               let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-([0-9]+\.)*([0-9]+)(\.exe)?$|] :: ByteString)
                let ghcs = rights $ MP.parse version' ""
                                  . T.pack
                                  . fromJust
                                  . stripPrefix "haskell-language-server-"
+                                 . stripExe
                                 <$> filter (match regex) files
                pure ghcs
              pure r
@@ -98,7 +102,11 @@ generateHLSGhc format output = do
     StdOut -> liftIO $ BSL.putStr w
     FileOutput f -> liftIO $ BSL.writeFile f w
   pure ExitSuccess
-
+ where
+  stripExe :: String -> String
+  stripExe f = case reverse f of
+                 ('e':'x':'e':'.':r) -> reverse r
+                 _ -> f
 
 generateTable :: ( MonadFail m
                  , MonadMask m

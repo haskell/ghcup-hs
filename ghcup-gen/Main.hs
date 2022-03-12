@@ -170,7 +170,7 @@ main = do
                                   , fancyColors   = not no_color
                                   }
   dirs <- liftIO getAllDirs
-  let leanAppstate = LeanAppState (Settings True 0 False Never Curl True GHCupURL False GPGNone False) dirs defaultKeyBindings loggerConfig
+  let leanAppstate = LeanAppState (Settings True 0 False Never Curl True GHCupURL False GPGNone True) dirs defaultKeyBindings loggerConfig
 
   pfreq <- (
     flip runReaderT leanAppstate . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] $ platformRequest
@@ -180,7 +180,7 @@ main = do
               flip runReaderT leanAppstate $ logError $ T.pack $ prettyShow e
               liftIO $ exitWith (ExitFailure 2)
 
-  let appstate = AppState (Settings True 0 False Never Curl True GHCupURL False GPGNone False) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq loggerConfig
+  let appstate = AppState (Settings True 0 False Never Curl True GHCupURL False GPGNone True) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq loggerConfig
 
   let withValidateYamlOpts vopts f = case vopts of
         ValidateYAMLOpts { vInput = Nothing } ->
