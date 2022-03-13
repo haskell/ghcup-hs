@@ -138,7 +138,7 @@ versionArgument criteria tool = argument (eitherReader tVersionEither) (metavar 
 -- the help is shown only for --no-recursive.
 invertableSwitch
     :: String              -- ^ long option
-    -> Char                -- ^ short option for the non-default option
+    -> Maybe Char          -- ^ short option for the non-default option
     -> Bool                -- ^ is switch enabled by default?
     -> Mod FlagFields Bool -- ^ option modifier
     -> Parser (Maybe Bool)
@@ -149,14 +149,14 @@ invertableSwitch longopt shortopt defv optmod = invertableSwitch' longopt shorto
 -- | Allows providing option modifiers for both --foo and --no-foo.
 invertableSwitch'
     :: String              -- ^ long option (eg "foo")
-    -> Char                -- ^ short option for the non-default option
+    -> Maybe Char          -- ^ short option for the non-default option
     -> Bool                -- ^ is switch enabled by default?
     -> Mod FlagFields Bool -- ^ option modifier for --foo
     -> Mod FlagFields Bool -- ^ option modifier for --no-foo
     -> Parser (Maybe Bool)
 invertableSwitch' longopt shortopt defv enmod dismod = optional
-    ( flag' True ( enmod <> long longopt <> if defv then mempty else short shortopt)
-    <|> flag' False (dismod <> long nolongopt <> if defv then short shortopt else mempty)
+    ( flag' True ( enmod <> long longopt <> if defv then mempty else maybe mempty short shortopt)
+    <|> flag' False (dismod <> long nolongopt <> if defv then maybe mempty short shortopt else mempty)
     )
   where
     nolongopt = "no-" ++ longopt

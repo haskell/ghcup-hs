@@ -197,12 +197,8 @@ installOpts tool =
             )
         <|> pure (Nothing, Nothing)
         )
-    <*> flag
-          False
-          True
-          (long "set" <> help
-            "Set as active version after install"
-          )
+    <*> fmap (fromMaybe setDefault) (invertableSwitch "set" Nothing setDefault
+      (help $ if not setDefault then "Set as active version after install" else "Don't set as active version after install"))
     <*> optional
           (option
            (eitherReader isolateParser)
@@ -215,6 +211,11 @@ installOpts tool =
           )
     <*> switch
           (short 'f' <> long "force" <> help "Force install")
+ where
+  setDefault = case tool of
+    Nothing  -> False
+    Just GHC -> False
+    Just _   -> True
           
 
 

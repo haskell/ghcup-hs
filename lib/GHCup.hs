@@ -468,10 +468,6 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
     Nothing -> do                 -- regular install
       liftE $ installCabalUnpacked workdir binDir (Just ver) forceInstall
 
-      -- create symlink if this is the latest version for regular installs
-      cVers <- lift $ fmap rights getInstalledCabals
-      let lInstCabal = headMay . reverse . sort $ cVers
-      when (maybe True (ver >=) lInstCabal) $ liftE $ setCabal ver
       
 -- | Install an unpacked cabal distribution.Symbol
 installCabalUnpacked :: (MonadCatch m, HasLog env, MonadIO m, MonadReader env m)
@@ -626,7 +622,6 @@ installHLSBindist dlinfo ver isoFilepath forceInstall = do
         liftE $ runBuildAction tmpUnpack Nothing $ installHLSUnpacked workdir inst ver
         liftE $ setHLS ver SetHLS_XYZ Nothing
 
-  liftE $ installHLSPostInst isoFilepath ver
 
 isLegacyHLSBindist :: FilePath -- ^ Path to the unpacked hls bindist
                    -> IO Bool
@@ -695,19 +690,6 @@ installHLSUnpackedLegacy path inst mver' forceInstall = do
     
   lift $ chmod_755 destWrapperPath
 
-
-installHLSPostInst :: (MonadReader env m, HasDirs env, HasLog env, MonadIO m, MonadCatch m, MonadMask m, MonadFail m, MonadUnliftIO m)
-                   => Maybe FilePath
-                   -> Version
-                   -> Excepts '[NotInstalled] m ()
-installHLSPostInst isoFilepath ver = 
-  case isoFilepath of
-    Just _ -> pure ()
-    Nothing -> do
-      -- create symlink if this is the latest version in a regular install
-      hlsVers <- lift $ fmap rights getInstalledHLSs
-      let lInstHLS = headMay . reverse . sort $ hlsVers
-      when (maybe True (ver >=) lInstHLS) $ liftE $ setHLS ver SetHLSOnly Nothing
 
 
 -- | Installs hls binaries @haskell-language-server-\<ghcver\>@
@@ -916,8 +898,6 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
           liftE $ installHLSUnpackedLegacy installDir binDir (Just installVer) True
     )
 
-  liftE $ installHLSPostInst isolateDir installVer
-
   pure installVer
 
 
@@ -1033,11 +1013,6 @@ installStackBindist dlinfo ver isoFilepath forceInstall = do
       liftE $ installStackUnpacked workdir isoDir Nothing forceInstall
     Nothing -> do                     -- regular install
       liftE $ installStackUnpacked workdir binDir (Just ver) forceInstall
-
-      -- create symlink if this is the latest version and a regular install
-      sVers <- lift $ fmap rights getInstalledStacks
-      let lInstStack = headMay . reverse . sort $ sVers
-      when (maybe True (ver >=) lInstStack) $ liftE $ setStack ver
 
 
 -- | Install an unpacked stack distribution.
