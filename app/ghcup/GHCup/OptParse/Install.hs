@@ -398,7 +398,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                      isolateDir
                      forceInstall
                    )
-                   $ when instSet $ void $ setGHC v SetGHCOnly Nothing
+                   $ when instSet $ when (isNothing isolateDir) $ void $ setGHC v SetGHCOnly Nothing
          pure vi
        Just uri -> do
          runInstGHC s'{ settings = settings {noVerify = True}} instPlatform $ do
@@ -409,7 +409,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                        isolateDir
                        forceInstall
                      )
-                     $ when instSet $ void $ setGHC v SetGHCOnly Nothing
+                     $ when instSet $ when (isNothing isolateDir) $ void $ setGHC v SetGHCOnly Nothing
            pure vi
       )
         >>= \case
@@ -469,7 +469,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                                     v
                                     isolateDir
                                     forceInstall
-                                  ) $ when instSet $ void $ setCabal v
+                                  ) $ when instSet $ when (isNothing isolateDir) $ void $ setCabal v
          pure vi
        Just uri -> do
          runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
@@ -479,7 +479,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                                       v
                                       isolateDir
                                       forceInstall
-                                    ) $ when instSet $ void $ setCabal v
+                                    ) $ when instSet $ when (isNothing isolateDir) $ void $ setCabal v
            pure vi
       )
       >>= \case
@@ -520,7 +520,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                                     v
                                     isolateDir
                                     forceInstall
-                                  ) $ when instSet $ void $ setHLS v SetHLSOnly Nothing
+                                  ) $ when instSet $ when (isNothing isolateDir) $ void $ setHLS v SetHLSOnly Nothing
          pure vi
        Just uri -> do
          runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
@@ -531,7 +531,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                                       v
                                       isolateDir
                                       forceInstall
-                                    ) $ when instSet $ void $ setHLS v SetHLSOnly Nothing
+                                    ) $ when instSet $ when (isNothing isolateDir) $ void $ setHLS v SetHLSOnly Nothing
            pure vi
       )
       >>= \case
@@ -580,7 +580,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                                      v
                                      isolateDir
                                      forceInstall
-                                   ) $ when instSet $ void $ setStack v
+                                   ) $ when instSet $ when (isNothing isolateDir) $ void $ setStack v
           pure vi
         Just uri -> do
           runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
@@ -590,7 +590,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                                        v
                                        isolateDir
                                        forceInstall
-                                     ) $ when instSet $ void $ setStack v
+                                     ) $ when instSet $ when (isNothing isolateDir) $ void $ setStack v
             pure vi
       )
       >>= \case
