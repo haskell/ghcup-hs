@@ -113,8 +113,8 @@ data Command
 opts :: Parser Options
 opts =
   Options
-    <$> invertableSwitch "verbose" 'v' False (help "Enable verbosity (default: disabled)")
-    <*> invertableSwitch "cache" 'c' False (help "Cache downloads in ~/.ghcup/cache (default: disabled)")
+    <$> invertableSwitch "verbose" (Just 'v') False (help "Enable verbosity (default: disabled)")
+    <*> invertableSwitch "cache" (Just 'c') False (help "Cache downloads in ~/.ghcup/cache (default: disabled)")
     <*> optional (option auto (long "metadata-caching" <> help "How long the yaml metadata caching interval is (in seconds), 0 to disable" <> internal))
     <*> optional
           (option
@@ -127,7 +127,7 @@ opts =
             <> completer fileUri
             )
           )
-    <*> (fmap . fmap) not (invertableSwitch "verify" 'n' True (help "Disable tarball checksum verification (default: enabled)"))
+    <*> (fmap . fmap) not (invertableSwitch "verify" (Just 'n') True (help "Disable tarball checksum verification (default: enabled)"))
     <*> optional (option
           (eitherReader keepOnParser)
           (  long "keep"
@@ -153,7 +153,7 @@ opts =
 #endif
           <> hidden
           ))
-    <*> invertableSwitch "offline" 'o' False (help "Don't do any network calls, trying cached assets and failing if missing.")
+    <*> invertableSwitch "offline" (Just 'o') False (help "Don't do any network calls, trying cached assets and failing if missing.")
     <*> optional (option
           (eitherReader gpgParser)
           (  long "gpg"

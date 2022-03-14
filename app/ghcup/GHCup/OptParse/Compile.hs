@@ -234,12 +234,7 @@ ghcCompileOpts =
             )
           )
     <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to configure, prefix with '-- ' (longopts)"))
-    <*> flag
-          False
-          True
-          (long "set" <> help
-            "Set as active version after install"
-          )
+    <*> fmap (fromMaybe False) (invertableSwitch "set" Nothing False (help "Set as active version after install"))
     <*> optional
           (option
             (eitherReader
@@ -300,12 +295,7 @@ hlsCompileOpts =
               <> (completer $ listCompleter $ fmap show ([1..12] :: [Int]))
             )
           )
-    <*> flag
-          False
-          True
-          (long "set" <> help
-            "Set as active version after install"
-          )
+    <*> fmap (fromMaybe True) (invertableSwitch "set" Nothing True (help "Don't set as active version after install"))
     <*> optional
           (option
             (eitherReader
