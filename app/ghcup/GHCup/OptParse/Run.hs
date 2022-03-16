@@ -377,11 +377,12 @@ run RunOptions{..} runAppState leanAppstate runLogger = runE @RunEffects ( do
    predictableTmpDir Toolchain{..} = do
       tmp <- getTemporaryDirectory
       pure $ tmp
-        </> ("ghcup"
-              <> maybe "" (("_ghc-"   <>) . T.unpack . tVerToText) ghcVer
-              <> maybe "" (("_cabal-" <>) . T.unpack . tVerToText) cabalVer
-              <> maybe "" (("_hls-"   <>) . T.unpack . tVerToText) hlsVer
-              <> maybe "" (("_stack-" <>) . T.unpack . tVerToText) stackVer
+        </> ("ghcup-" <> intercalate "_"
+              (  maybe [] ( (:[]) . ("ghc-"   <>) . T.unpack . tVerToText) ghcVer
+              <> maybe [] ( (:[]) . ("cabal-" <>) . T.unpack . tVerToText) cabalVer
+              <> maybe [] ( (:[]) . ("hls-"   <>) . T.unpack . tVerToText) hlsVer
+              <> maybe [] ( (:[]) . ("stack-" <>) . T.unpack . tVerToText) stackVer
+              )
             )
 
 
