@@ -5,6 +5,11 @@
 * Vastly improve shell completions wrt [#242](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/242)
 * Fix 'ghcup install cabal/hls/stack --set' wrt [#324](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/324)
 * Fix bad error message wrt [#323](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/323)
+* Use predictable /tmp names for `ghcup run`, fixes [#329](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/329)
+* Fix bug with isolated installation of not previously installed versions
+* Add `--no-set` to install commands, fixes [#330](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/330)
+* Fix serious bug in `ghcup list --raw-format -t <tool> -c installed`
+* Overhaul metadata merging and add `ghcup config add-release-channel URI` wrt [#328](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/328)
 
 ## 0.1.17.5 -- 2022-02-26
 
