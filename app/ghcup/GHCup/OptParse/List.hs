@@ -143,7 +143,7 @@ printListResult no_color raw lr = do
             )
         $ lr
   let cols =
-        foldr (\xs ys -> zipWith (:) xs ys) (replicate (length rows) []) rows
+        foldr (\xs ys -> zipWith (:) xs ys) (cycle [[]]) rows
       lengths = fmap (maximum . fmap strWidth) cols
       padded  = fmap (\xs -> zipWith padTo xs lengths) rows
 
