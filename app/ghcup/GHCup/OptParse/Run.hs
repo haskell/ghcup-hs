@@ -15,7 +15,7 @@ import           GHCup.Utils.File
 import           GHCup.OptParse.Common
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Types.Optics             ( getDirs )
+import           GHCup.Types.Optics
 import           GHCup.Utils.Logger
 import           GHCup.Utils.String.QQ
 
@@ -187,14 +187,16 @@ runLeanRUN leanAppstate =
       @RunEffects
 
 runRUN :: MonadUnliftIO m
-      => (ReaderT AppState m (VEither RunEffects a) -> m (VEither RunEffects a))
+      => IO AppState
       -> Excepts RunEffects (ResourceT (ReaderT AppState m)) a
       -> m (VEither RunEffects a)
-runRUN runAppState =
-  runAppState
+runRUN appState action' = do
+  s' <- liftIO appState
+  flip runReaderT s'
     . runResourceT
     . runE
       @RunEffects
+    $ action'
 
 
 
@@ -212,52 +214,77 @@ run :: forall m.
        , MonadUnliftIO m
        )
    => RunOptions
-   -> (forall a. ReaderT AppState m (VEither RunEffects a) -> m (VEither RunEffects a))
+   -> IO AppState
    -> LeanAppState
    -> (ReaderT LeanAppState m () -> m ())
    -> m ExitCode
-run RunOptions{..} runAppState leanAppstate runLogger = runE @RunEffects ( do
-   toolchain <- Excepts resolveToolchain
-   tmp <- case runBinDir of
-     Just bindir -> do
-       liftIO $ createDirRecursive' bindir
-       liftIO $ canonicalizePath bindir
-     Nothing -> do
-       d <- liftIO $ predictableTmpDir toolchain
-       liftIO $ createDirRecursive' d
-       liftIO $ canonicalizePath d
-   Excepts $ installToolChain toolchain tmp
-   pure tmp
-   ) >>= \case
-     VRight tmp -> do
-       case runCOMMAND of
-         [] -> do
-           liftIO $ putStr tmp
-           pure ExitSuccess
-         (cmd:args) -> do
-           newEnv <- liftIO $ addToPath tmp
+run RunOptions{..} runAppState leanAppstate runLogger = do
+   r <- if or (fmap (maybe False isToolTag) [runGHCVer, runCabalVer, runHLSVer, runStackVer]) || runInstTool'
+        then runRUN runAppState $ do
+         toolchain <- liftE resolveToolchainFull
+         tmp <- case runBinDir of
+           Just bindir -> do
+             liftIO $ createDirRecursive' bindir
+             liftIO $ canonicalizePath bindir
+           Nothing -> do
+             d <- liftIO $ predictableTmpDir toolchain
+             liftIO $ createDirRecursive' d
+             liftIO $ canonicalizePath d
+         liftE $ installToolChainFull toolchain tmp
+         pure tmp
+        else runLeanRUN leanAppstate $ do
+         toolchain <- resolveToolchain
+         tmp <- case runBinDir of
+           Just bindir -> do
+             liftIO $ createDirRecursive' bindir
+             liftIO $ canonicalizePath bindir
+           Nothing -> do
+             d <- liftIO $ predictableTmpDir toolchain
+             liftIO $ createDirRecursive' d
+             liftIO $ canonicalizePath d
+         liftE $ installToolChain toolchain tmp
+         pure tmp
+   case r of
+         VRight tmp -> do
+           case runCOMMAND of
+             [] -> do
+               liftIO $ putStr tmp
+               pure ExitSuccess
+             (cmd:args) -> do
+               newEnv <- liftIO $ addToPath tmp
 #ifndef IS_WINDOWS
-           void $ liftIO $ SPP.executeFile cmd True args (Just newEnv)
-           pure ExitSuccess
+               void $ liftIO $ SPP.executeFile cmd True args (Just newEnv)
+               pure ExitSuccess
 #else
-           r' <- runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
-           case r' of
-             VRight _ -> pure ExitSuccess
-             VLeft e -> do
-               runLogger $ logError $ T.pack $ prettyShow e
-               pure $ ExitFailure 28
+               r' <- runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
+               case r' of
+                 VRight _ -> pure ExitSuccess
+                 VLeft e -> do
+                   runLogger $ logError $ T.pack $ prettyShow e
+                   pure $ ExitFailure 28
 #endif
-     VLeft e -> do
-       runLogger $ logError $ T.pack $ prettyShow e
-       pure $ ExitFailure 27
+         VLeft e -> do
+           runLogger $ logError $ T.pack $ prettyShow e
+           pure $ ExitFailure 27
+
   where
+
    isToolTag :: ToolVersion -> Bool
    isToolTag (ToolTag _) = True
    isToolTag _           = False
 
    -- TODO: doesn't work for cross
-   resolveToolchain
-     | or (fmap (maybe False isToolTag) [runGHCVer, runCabalVer, runHLSVer, runStackVer]) || runInstTool' = runRUN runAppState $ do
+   resolveToolchainFull :: ( MonadFail m
+                           , MonadThrow m
+                           , MonadIO m
+                           , MonadCatch m
+                           )
+                        => Excepts
+                             '[ TagNotFound
+                              , NextVerNotFound
+                              , NoToolVersionSet
+                              ] (ResourceT (ReaderT AppState m)) Toolchain
+   resolveToolchainFull = do
          ghcVer <- forM runGHCVer $ \ver -> do
            (v, _) <- liftE $ fromVersion (Just ver) GHC
            pure v
@@ -271,7 +298,8 @@ run RunOptions{..} runAppState leanAppstate runLogger = runE @RunEffects ( do
            (v, _) <- liftE $ fromVersion (Just ver) Stack
            pure v
          pure Toolchain{..}
-     | otherwise = runLeanRUN leanAppstate $ do
+
+   resolveToolchain = do
          ghcVer <- case runGHCVer of
             Just (ToolVersion v) -> pure $ Just v
             Nothing -> pure Nothing
@@ -290,8 +318,33 @@ run RunOptions{..} runAppState leanAppstate runLogger = runE @RunEffects ( do
             _ -> fail "Internal error"
          pure Toolchain{..}
 
-   installToolChain Toolchain{..} tmp
-     | or (fmap (maybe False isToolTag) [runGHCVer, runCabalVer, runHLSVer, runStackVer]) || runInstTool' = runRUN runAppState $ do
+   installToolChainFull :: ( MonadFail m
+                           , MonadThrow m
+                           , MonadIO m
+                           , MonadCatch m
+                           )
+                        => Toolchain
+                        -> FilePath
+                        -> Excepts
+                             '[ TagNotFound
+                              , NextVerNotFound
+                              , NoToolVersionSet
+                              , UnknownArchive
+                              , TarDirDoesNotExist
+                              , ProcessError
+                              , NotInstalled
+                              , NoDownload
+                              , GPGError
+                              , DownloadFailed
+                              , DirNotEmpty
+                              , DigestError
+                              , BuildFailed
+                              , ArchiveResult
+                              , AlreadyInstalled
+                              , FileAlreadyExistsError
+                              , CopyError
+                              ] (ResourceT (ReaderT AppState m)) ()
+   installToolChainFull Toolchain{..} tmp = do
          forM_ [(GHC,) <$> ghcVer, (Cabal,) <$> cabalVer, (HLS,) <$> hlsVer, (Stack,) <$> stackVer] $ \mt -> do
            isInstalled <- maybe (pure False) (\(tool, v) -> lift $ checkIfToolInstalled' tool v) mt
            case mt of
@@ -320,7 +373,16 @@ run RunOptions{..} runAppState leanAppstate runLogger = runE @RunEffects ( do
                  False
                setTool HLS v tmp
              _ -> pure ()
-     | otherwise = runLeanRUN leanAppstate $ do
+
+   installToolChain :: ( MonadFail m
+                       , MonadThrow m
+                       , MonadIO m
+                       , MonadCatch m
+                       )
+                    => Toolchain
+                    -> FilePath
+                    -> Excepts '[NotInstalled] (ReaderT LeanAppState m) ()
+   installToolChain Toolchain{..} tmp = do
          forM_ [(GHC,) <$> ghcVer, (Cabal,) <$> cabalVer, (HLS,) <$> hlsVer, (Stack,) <$> stackVer] $ \mt -> do
            case mt of
              Just (GHC, v)   -> setTool GHC v tmp
