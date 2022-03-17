@@ -235,7 +235,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   Interactive -> pure ()
 #endif
                   -- check for new tools
-                  _ -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
+                  _
+                    | Just False <- optVerbose -> pure ()
+                    | otherwise -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
                          Nothing -> void . flip runReaderT s' . runE @'[TagNotFound, NextVerNotFound, NoToolVersionSet] $ do
                            newTools <- lift checkForUpdates 
                            forM_ newTools $ \newTool@(t, l) -> do
