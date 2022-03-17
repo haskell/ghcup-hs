@@ -98,7 +98,7 @@ data Command
 #ifndef DISABLE_UPGRADE
   | Upgrade UpgradeOpts Bool
 #endif
-  | ToolRequirements
+  | ToolRequirements ToolReqOpts
   | ChangeLog ChangeLogOptions
   | Nuke
 #if defined(BRICK)
@@ -289,8 +289,8 @@ com =
               ((\_ -> DInfo) <$> info helper (progDesc "Show debug info"))
           <> command
                "tool-requirements"
-               (   (\_ -> ToolRequirements)
-               <$> info helper
+               (   ToolRequirements
+               <$> info (toolReqP <**> helper)
                         (progDesc "Show the requirements for ghc/cabal")
                )
           <> command

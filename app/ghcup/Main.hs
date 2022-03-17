@@ -228,7 +228,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   Nuke -> pure ()
                   Whereis _ _ -> pure ()
                   DInfo -> pure ()
-                  ToolRequirements -> pure ()
+                  ToolRequirements _ -> pure ()
                   ChangeLog _ -> pure ()
                   UnSet _ -> pure ()
 #if defined(BRICK)
@@ -308,7 +308,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 #ifndef DISABLE_UPGRADE
             Upgrade uOpts force'     -> upgrade uOpts force' dirs runAppState runLogger
 #endif
-            ToolRequirements         -> toolRequirements runAppState runLogger
+            ToolRequirements topts   -> toolRequirements topts runAppState runLogger
             ChangeLog changelogOpts  -> changelog changelogOpts runAppState runLogger
             Nuke                     -> nuke appState runLogger
             Prefetch pfCom           -> prefetch pfCom runAppState runLogger

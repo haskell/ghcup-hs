@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module GHCup.OptParse.ToolRequirements where
 
@@ -11,6 +12,7 @@ module GHCup.OptParse.ToolRequirements where
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils.Logger
+import           GHCup.Utils.String.QQ
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -33,6 +35,41 @@ import GHCup.Requirements
 import System.IO
 
 
+
+    ---------------
+    --[ Options ]--
+    ---------------
+
+
+data ToolReqOpts = ToolReqOpts
+  { tlrRaw :: Bool
+  }
+
+
+
+
+    ---------------
+    --[ Parsers ]--
+    ---------------
+
+          
+toolReqP :: Parser ToolReqOpts
+toolReqP =
+  ToolReqOpts
+    <$> switch (short 'r' <> long "raw-format" <> help "machine-parsable format")
+
+
+
+
+    --------------
+    --[ Footer ]--
+    --------------
+
+
+toolReqFooter :: String
+toolReqFooter = [s|Discussion:
+  Print tool requirements on the current platform.
+  If you want to pass this to your package manage, use '--raw-format'.|]
 
 
 
@@ -66,14 +103,17 @@ toolRequirements :: ( Monad m
                     , MonadFail m
                     , Alternative m
                     )
-                 => (ReaderT AppState m (VEither ToolRequirementsEffects ()) -> m (VEither ToolRequirementsEffects ()))
+                 => ToolReqOpts
+                 -> (ReaderT AppState m (VEither ToolRequirementsEffects ()) -> m (VEither ToolRequirementsEffects ()))
                  -> (ReaderT LeanAppState m () -> m ())
                  -> m ExitCode
-toolRequirements runAppState runLogger = runToolRequirements runAppState (do
+toolRequirements ToolReqOpts{..} runAppState runLogger = runToolRequirements runAppState (do
     GHCupInfo { .. } <- lift getGHCupInfo
     platform' <- liftE getPlatform
-    req      <- getCommonRequirements platform' _toolRequirements ?? NoToolRequirements
-    liftIO $ T.hPutStr stdout (prettyRequirements req)
+    req       <- getCommonRequirements platform' _toolRequirements ?? NoToolRequirements
+    if tlrRaw
+    then liftIO $ T.hPutStr stdout (rawRequirements req)
+    else liftIO $ T.hPutStr stdout (prettyRequirements req)
   )
     >>= \case
           VRight _ -> pure ExitSuccess

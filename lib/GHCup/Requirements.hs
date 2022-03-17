@@ -67,3 +67,9 @@ prettyRequirements Requirements {..} =
         else ""
       n = if not . T.null $ _notes then "\n  Note: " <> _notes else ""
   in  "System requirements " <> d <> n
+
+rawRequirements :: Requirements -> T.Text
+rawRequirements Requirements {..} =
+  if not . null $ _distroPKGs
+  then T.intercalate " " _distroPKGs
+  else ""
