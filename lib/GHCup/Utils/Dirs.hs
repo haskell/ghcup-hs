@@ -339,13 +339,15 @@ useXDG = isJust <$> lookupEnv "GHCUP_USE_XDG_DIRS"
 relativeSymlink :: FilePath  -- ^ the path in which to create the symlink
                 -> FilePath  -- ^ the symlink destination
                 -> FilePath
-relativeSymlink p1 p2 =
-  let d1      = splitDirectories p1
-      d2      = splitDirectories p2
-      common  = takeWhile (\(x, y) -> x == y) $ zip d1 d2
-      cPrefix = drop (length common) d1
-  in  joinPath (replicate (length cPrefix) "..")
-        <> joinPath ([pathSeparator] : drop (length common) d2)
+relativeSymlink p1 p2
+  | isWindows = p2 -- windows quickly gets into MAX_PATH issues so we don't care about relative symlinks
+  | otherwise =
+    let d1      = splitDirectories p1
+        d2      = splitDirectories p2
+        common  = takeWhile (\(x, y) -> x == y) $ zip d1 d2
+        cPrefix = drop (length common) d1
+    in  joinPath (replicate (length cPrefix) "..")
+          <> joinPath ([pathSeparator] : drop (length common) d2)
 
 
 cleanupTrash :: ( MonadIO m
