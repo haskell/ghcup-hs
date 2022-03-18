@@ -472,20 +472,20 @@ adjust_bashrc() {
 					sed -i -e '/# ghcup-env$/ s/^#*/#/' "$(posix_realpath "${GHCUP_PROFILE_FILE}")"
 					case $1 in
 						1)
-							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+							printf "\n%s" "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 							;;
 						2)
-							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; set -gx PATH \$HOME/.cabal/bin \$PATH $GHCUP_BIN # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+							printf "\n%s" "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; set -gx PATH \$HOME/.cabal/bin \$PATH $GHCUP_BIN # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 							;;
 					esac
 					;;
 				bash)
-					echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 					sed -i -e '/# ghcup-env$/ s/^#*/#/' "$(posix_realpath "${GHCUP_PROFILE_FILE}")"
+					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 					case "${plat}" in
 						"Darwin"|"darwin")
 							if ! grep -q "ghcup-env" "${HOME}/.bash_profile" ; then
-								echo "[[ -f ~/.bashrc ]] && source ~/.bashrc # ghcup-env" >> "${HOME}/.bash_profile"
+								printf "\n%s" "[[ -f ~/.bashrc ]] && source ~/.bashrc # ghcup-env" >> "${HOME}/.bash_profile"
 							fi
 							;;
 						MSYS*|MINGW*)
@@ -499,8 +499,8 @@ adjust_bashrc() {
 					;;
 
 				zsh)
-					echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 					sed -i -e '/# ghcup-env$/ s/^#*/#/' "$(posix_realpath "${GHCUP_PROFILE_FILE}")"
+					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 					;;
 			esac
 			echo
