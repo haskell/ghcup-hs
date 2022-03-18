@@ -10,6 +10,7 @@
 * Add `--no-set` to install commands, fixes [#330](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/330)
 * Fix serious bug in `ghcup list --raw-format -t <tool> -c installed`
 * Overhaul metadata merging and add `ghcup config add-release-channel URI` wrt [#328](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/328)
+* Fix max path issues on windows with `ghcup run`
 
 ## 0.1.17.5 -- 2022-02-26
 
