@@ -181,6 +181,48 @@ _done() {
 	exit 0
 }
 
+# @FUNCTION: posix_realpath
+# @USAGE: <file>
+# @DESCRIPTION:
+# Portably gets the realpath and prints it to stdout.
+# This was initially inspired by
+#   https://gist.github.com/tvlooy/cbfbdb111a4ebad8b93e
+#   and
+#   https://stackoverflow.com/a/246128
+#
+# If the file does not exist, just prints it appended to the current directory.
+# @STDOUT: realpath of the given file
+posix_realpath() {
+    [ -z "$1" ] && die "Internal error: no argument given to posix_realpath"
+    current_loop=0
+    max_loops=50
+    mysource=$1
+
+    while [ -h "${mysource}" ]; do
+        current_loop=$((current_loop+1))
+        mydir="$( cd -P "$( dirname "${mysource}" )" > /dev/null 2>&1 && pwd )"
+        mysource="$(readlink "${mysource}")"
+        [ "${mysource%${mysource#?}}"x != '/x' ] && mysource="${mydir}/${mysource}"
+
+        if [ ${current_loop} -gt ${max_loops} ] ; then
+            (>&2 echo "${1}: Too many levels of symbolic links")
+			echo "$1"
+            return
+        fi
+    done
+    mydir="$( cd -P "$( dirname "${mysource}" )" > /dev/null 2>&1 && pwd )"
+
+    # TODO: better distinguish between "does not exist" and "permission denied"
+    if [ -z "${mydir}" ] ; then
+        (>&2 echo "${1}: Permission denied")
+		echo "$(pwd)/$1"
+    else
+        echo "${mydir%/}/$(basename "${mysource}")"
+    fi
+
+    unset current_loop max_loops mysource mydir
+}
+
 download_ghcup() {
 
     case "${plat}" in
@@ -427,7 +469,7 @@ adjust_bashrc() {
 					;;
 				fish)
 					mkdir -p "${GHCUP_PROFILE_FILE%/*}"
-					sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
+					sed -i -e '/# ghcup-env$/ s/^#*/#/' "$(posix_realpath "${GHCUP_PROFILE_FILE}")"
 					case $1 in
 						1)
 							echo "set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX \$HOME ; set -gx PATH \$HOME/.cabal/bin $GHCUP_BIN \$PATH # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
@@ -438,8 +480,8 @@ adjust_bashrc() {
 					esac
 					;;
 				bash)
-					sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
 					echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+					sed -i -e '/# ghcup-env$/ s/^#*/#/' "$(posix_realpath "${GHCUP_PROFILE_FILE}")"
 					case "${plat}" in
 						"Darwin"|"darwin")
 							if ! grep -q "ghcup-env" "${HOME}/.bash_profile" ; then
@@ -457,8 +499,8 @@ adjust_bashrc() {
 					;;
 
 				zsh)
-					sed -i -e '/# ghcup-env$/ s/^#*/#/' "${GHCUP_PROFILE_FILE}"
 					echo "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+					sed -i -e '/# ghcup-env$/ s/^#*/#/' "$(posix_realpath "${GHCUP_PROFILE_FILE}")"
 					;;
 			esac
 			echo
