@@ -22,6 +22,8 @@ For Windows, run this in a PowerShell session:
 Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true
 ```
 
+There's also a [youtube video](https://www.youtube.com/watch?v=bB4fmQiUYPw) explaining installation on windows.
+
 If you want to know what these scripts do, check out the [source code at the repository](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
 
 ### Which versions get installed?
@@ -35,102 +37,96 @@ Also see [tags and shortcuts](../guide/#tags-and-shortcuts) for more information
 ## First steps
 
 1. To get started with creating a Haskell project, follow the [Getting Started with Haskell and Cabal](https://cabal.readthedocs.io/en/stable/getting-started.html) guide
-2. To learn Haskell, try any of those:
+2. To understand the difference and overlap of `stack` and `cabal`, read on [here](https://gist.github.com/merijn/8152d561fb8b011f9313c48d876ceb07)
+3. To learn Haskell, try any of those:
     - A beginner friendly [4-lectures course](https://github.com/haskell-beginners-2022/course-plan) with exercises (by [Kowainik](https://kowainik.github.io/))
     - An in-depth university [CIS 194 Haskell course](https://www.cis.upenn.edu/~cis194/spring13/) including exercises (by [Brent Yorgey](https://byorgey.wordpress.com/))
-3. To learn more about Haskell Toolchain management, check out the [ghcup user guide](./guide.md)
+4. To learn more about Haskell Toolchain management, check out the [ghcup user guide](./guide.md)
 
 ## Uninstallation
 
 On linux, just run `ghcup nuke`, then make sure any ghcup added lines in your `~/.bashrc` (or similar) are removed.
 
-On windows, double-click on the `Uninstall Haskell.ps1` PowerShell script on your Desktop.
+On windows, right click on the `Uninstall Haskell.ps1` PowerShell script on your Desktop and select *Run with PowerShell*.
 
 ## Supported tools
 
 GHCup supports the following tools, which are also known as the **Haskell Toolchain**:
 
-<details>
-  <summary>Show all supported <a href='https://www.haskell.org/ghc/'>GHC</a> versions</summary>
-  
+<details> <summary>Show all supported <a href='https://www.haskell.org/ghc/'>GHC</a> versions</summary>
 <table>
 <thead><tr><th>GHC Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>7.10.3</td><td>base-4.8.2.0</td></tr>
-<tr><td>8.0.2</td><td>base-4.9.1.0</td></tr>
-<tr><td>8.2.2</td><td>base-4.10.1.0</td></tr>
-<tr><td>8.4.1</td><td>base-4.11.0.0</td></tr>
-<tr><td>8.4.2</td><td>base-4.11.1.0</td></tr>
-<tr><td>8.4.3</td><td>base-4.11.1.0</td></tr>
-<tr><td>8.4.4</td><td>base-4.11.1.0</td></tr>
-<tr><td>8.6.1</td><td>base-4.12.0.0</td></tr>
-<tr><td>8.6.2</td><td>base-4.12.0.0</td></tr>
-<tr><td>8.6.3</td><td>base-4.12.0.0</td></tr>
-<tr><td>8.6.4</td><td>base-4.12.0.0</td></tr>
-<tr><td>8.6.5</td><td>base-4.12.0.0</td></tr>
-<tr><td>8.8.1</td><td>base-4.13.0.0</td></tr>
-<tr><td>8.8.2</td><td>base-4.13.0.0</td></tr>
-<tr><td>8.8.3</td><td>base-4.13.0.0</td></tr>
-<tr><td>8.8.4</td><td>base-4.13.0.0</td></tr>
-<tr><td>8.10.1</td><td>base-4.14.0.0</td></tr>
-<tr><td>8.10.2</td><td>base-4.14.1.0</td></tr>
-<tr><td>8.10.3</td><td>base-4.14.1.0</td></tr>
-<tr><td>8.10.4</td><td>base-4.14.1.0</td></tr>
-<tr><td>8.10.5</td><td>base-4.14.2.0</td></tr>
-<tr><td>8.10.6</td><td>base-4.14.3.0</td></tr>
-<tr><td>8.10.7</td><td><span style="color:green">recommended</span>, base-4.14.3.0</td></tr>
-<tr><td>9.0.1</td><td>base-4.15.0.0</td></tr>
-<tr><td>9.0.2</td><td>base-4.15.1.0</td></tr>
-<tr><td>9.2.1</td><td>base-4.16.0.0</td></tr>
 <tr><td>9.2.2</td><td><span style="color:blue">latest</span>, base-4.16.1.0</td></tr>
+<tr><td>9.2.1</td><td>base-4.16.0.0</td></tr>
+<tr><td>9.0.2</td><td>base-4.15.1.0</td></tr>
+<tr><td>9.0.1</td><td>base-4.15.0.0</td></tr>
+<tr><td>8.10.7</td><td><span style="color:green">recommended</span>, base-4.14.3.0</td></tr>
+<tr><td>8.10.6</td><td>base-4.14.3.0</td></tr>
+<tr><td>8.10.5</td><td>base-4.14.2.0</td></tr>
+<tr><td>8.10.4</td><td>base-4.14.1.0</td></tr>
+<tr><td>8.10.3</td><td>base-4.14.1.0</td></tr>
+<tr><td>8.10.2</td><td>base-4.14.1.0</td></tr>
+<tr><td>8.10.1</td><td>base-4.14.0.0</td></tr>
+<tr><td>8.8.4</td><td>base-4.13.0.0</td></tr>
+<tr><td>8.8.3</td><td>base-4.13.0.0</td></tr>
+<tr><td>8.8.2</td><td>base-4.13.0.0</td></tr>
+<tr><td>8.8.1</td><td>base-4.13.0.0</td></tr>
+<tr><td>8.6.5</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.6.4</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.6.3</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.6.2</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.6.1</td><td>base-4.12.0.0</td></tr>
+<tr><td>8.4.4</td><td>base-4.11.1.0</td></tr>
+<tr><td>8.4.3</td><td>base-4.11.1.0</td></tr>
+<tr><td>8.4.2</td><td>base-4.11.1.0</td></tr>
+<tr><td>8.4.1</td><td>base-4.11.0.0</td></tr>
+<tr><td>8.2.2</td><td>base-4.10.1.0</td></tr>
+<tr><td>8.0.2</td><td>base-4.9.1.0</td></tr>
+<tr><td>7.10.3</td><td>base-4.8.2.0</td></tr>
 </tbody>
 </table>
-
 </details>
 
-<details>
-  <summary>Show all supported <a href='https://cabal.readthedocs.io/en/stable/'>cabal-install</a> versions</summary>
-  <table>
+<details> <summary>Show all supported <a href='https://cabal.readthedocs.io/en/stable/'>cabal-install</a> versions</summary>
+<table>
 <thead><tr><th>Cabal Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>2.4.1.0</td><td></td></tr>
-<tr><td>3.0.0.0</td><td></td></tr>
-<tr><td>3.2.0.0</td><td></td></tr>
-<tr><td>3.4.0.0</td><td></td></tr>
-<tr><td>3.4.1.0</td><td></td></tr>
-<tr><td>3.6.0.0</td><td></td></tr>
 <tr><td>3.6.2.0</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>3.6.0.0</td><td></td></tr>
+<tr><td>3.4.1.0</td><td></td></tr>
+<tr><td>3.4.0.0</td><td></td></tr>
+<tr><td>3.2.0.0</td><td></td></tr>
+<tr><td>3.0.0.0</td><td></td></tr>
+<tr><td>2.4.1.0</td><td></td></tr>
 </tbody>
 </table>
-
 </details>
 
-<details>
-  <summary>Show all supported <a href='https://haskell-language-server.readthedocs.io/en/stable/'>HLS</a> versions</summary>
+<details> <summary>Show all supported <a href='https://haskell-language-server.readthedocs.io/en/stable/'>HLS</a> versions</summary>
 <table>
 <thead><tr><th>HLS Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>1.1.0</td><td></td></tr>
-<tr><td>1.2.0</td><td></td></tr>
-<tr><td>1.3.0</td><td></td></tr>
-<tr><td>1.4.0</td><td></td></tr>
-<tr><td>1.5.0</td><td></td></tr>
-<tr><td>1.5.1</td><td></td></tr>
-<tr><td>1.6.0.0</td><td></td></tr>
 <tr><td>1.6.1.0</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>1.6.0.0</td><td></td></tr>
+<tr><td>1.5.1</td><td></td></tr>
+<tr><td>1.5.0</td><td></td></tr>
+<tr><td>1.4.0</td><td></td></tr>
+<tr><td>1.3.0</td><td></td></tr>
+<tr><td>1.2.0</td><td></td></tr>
+<tr><td>1.1.0</td><td></td></tr>
 </tbody>
 </table>
 </details>
 
-<details>
-  <summary>Show all supported <a href='https://docs.haskellstack.org/en/stable/README/'>Stack</a> versions</summary>
+<details> <summary>Show all supported <a href='https://docs.haskellstack.org/en/stable/README/'>Stack</a> versions</summary>
 <table>
 <thead><tr><th>Stack Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>2.5.1</td><td></td></tr>
-<tr><td>2.7.1</td><td></td></tr>
-<tr><td>2.7.3</td><td></td></tr>
 <tr><td>2.7.5</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>2.7.3</td><td></td></tr>
+<tr><td>2.7.1</td><td></td></tr>
+<tr><td>2.5.1</td><td></td></tr>
 </tbody>
 </table>
 </details>
