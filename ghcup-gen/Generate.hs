@@ -129,10 +129,15 @@ generateTable output = do
               FileOutput fp -> liftIO $ openFile fp WriteMode
               
   forM_ [GHC,Cabal,HLS,Stack] $ \tool -> do
+    case tool of
+      GHC -> liftIO $ hPutStrLn handle $ "<details> <summary>Show all supported <a href='https://www.haskell.org/ghc/'>GHC</a> versions</summary>"
+      Cabal -> liftIO $ hPutStrLn handle $ "<details> <summary>Show all supported <a href='https://cabal.readthedocs.io/en/stable/'>cabal-install</a> versions</summary>"
+      HLS -> liftIO $ hPutStrLn handle $ "<details> <summary>Show all supported <a href='https://haskell-language-server.readthedocs.io/en/stable/'>HLS</a> versions</summary>"
+      Stack -> liftIO $ hPutStrLn handle $ "<details> <summary>Show all supported <a href='https://docs.haskellstack.org/en/stable/README/'>Stack</a> versions</summary>"
     liftIO $ hPutStrLn handle $ "<table>"
     liftIO $ hPutStrLn handle $ "<thead><tr><th>" <> show tool <> " Version</th><th>Tags</th></tr></thead>"
     liftIO $ hPutStrLn handle $ "<tbody>"
-    vers <- listVersions (Just tool) Nothing
+    vers <- reverse <$> listVersions (Just tool) Nothing
     forM_ (filter (\ListResult{..} -> not lStray) vers) $ \ListResult{..} -> do
       liftIO $ hPutStrLn handle $
           "<tr><td>"
@@ -143,6 +148,7 @@ generateTable output = do
       pure ()
     liftIO $ hPutStrLn handle $ "</tbody>"
     liftIO $ hPutStrLn handle $ "</table>"
+    liftIO $ hPutStrLn handle $ "</details>"
     liftIO $ hPutStrLn handle $ ""
   pure ExitSuccess
  where
