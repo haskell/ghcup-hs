@@ -7,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ExplicitForAll #-}
 
 module GHCup.OptParse.Config where
 
@@ -17,6 +18,7 @@ import           GHCup.Utils
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.Logger
 import           GHCup.Utils.String.QQ
+import           GHCup.OptParse.Common
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -27,10 +29,11 @@ import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Maybe
 import           Haskus.Utils.Variant.Excepts
-import           Options.Applicative     hiding ( style )
+import           Options.Applicative     hiding ( style, ParseError )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
+import           URI.ByteString          hiding ( uriParser )
 
 import qualified Data.Text                     as T
 import qualified Data.ByteString.UTF8          as UTF8
@@ -49,6 +52,7 @@ data ConfigCommand
   = ShowConfig
   | SetConfig String (Maybe String)
   | InitConfig
+  | AddReleaseChannel URI
 
 
 
@@ -62,6 +66,7 @@ configP = subparser
       (  command "init" initP
       <> command "set"  setP -- [set] KEY VALUE at help lhs
       <> command "show" showP
+      <> command "add-release-channel" addP
       )
     <|> argsP -- add show for a single option
     <|> pure ShowConfig
@@ -70,6 +75,8 @@ configP = subparser
   showP = info (pure ShowConfig) (progDesc "Show current config (default)")
   setP  = info argsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
   argsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
+  addP  = info (AddReleaseChannel <$> argument (eitherReader uriParser) (metavar "URI" <> completer fileUri))
+    (progDesc "Add a release channel from a URI")
 
 
 
@@ -114,23 +121,18 @@ formatConfig :: UserSettings -> String
 formatConfig = UTF8.toString . Y.encode
 
 
-updateSettings :: Monad m => UTF8.ByteString -> Settings -> Excepts '[JSONError] m Settings
-updateSettings config' settings = do
-  settings' <- lE' (JSONDecodeError . displayException) . Y.decodeEither' $ config'
-  pure $ mergeConf settings' settings
-  where
-   mergeConf :: UserSettings -> Settings -> Settings
-   mergeConf UserSettings{..} Settings{..} =
-     let cache'      = fromMaybe cache uCache
-         metaCache'  = fromMaybe metaCache uMetaCache
-         noVerify'   = fromMaybe noVerify uNoVerify
-         keepDirs'   = fromMaybe keepDirs uKeepDirs
-         downloader' = fromMaybe downloader uDownloader
-         verbose'    = fromMaybe verbose uVerbose
-         urlSource'  = fromMaybe urlSource uUrlSource
-         noNetwork'  = fromMaybe noNetwork uNoNetwork
-         gpgSetting' = fromMaybe gpgSetting uGPGSetting
-     in Settings cache' metaCache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor
+updateSettings :: UserSettings -> Settings -> Settings
+updateSettings UserSettings{..} Settings{..} =
+   let cache'      = fromMaybe cache uCache
+       metaCache'  = fromMaybe metaCache uMetaCache
+       noVerify'   = fromMaybe noVerify uNoVerify
+       keepDirs'   = fromMaybe keepDirs uKeepDirs
+       downloader' = fromMaybe downloader uDownloader
+       verbose'    = fromMaybe verbose uVerbose
+       urlSource'  = fromMaybe urlSource uUrlSource
+       noNetwork'  = fromMaybe noNetwork uNoNetwork
+       gpgSetting' = fromMaybe gpgSetting uGPGSetting
+   in Settings cache' metaCache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor
 
 
 
@@ -140,7 +142,7 @@ updateSettings config' settings = do
 
 
 
-config :: ( Monad m
+config :: forall m. ( Monad m
           , MonadMask m
           , MonadUnliftIO m
           , MonadFail m
@@ -161,27 +163,42 @@ config configCommand settings keybindings runLogger = case configCommand of
     liftIO $ putStrLn $ formatConfig $ fromSettings settings (Just keybindings)
     pure ExitSuccess
 
-  (SetConfig k (Just v)) ->
-    case v of
-      "" -> do
-        runLogger $ logError "Empty values are not allowed"
-        pure $ ExitFailure 55
-      _  -> doConfig (k <> ": " <> v <> "\n")
+  (SetConfig k mv) -> do
+    r <- runE @'[JSONError, ParseError] $ do
+      case mv of
+        Just "" ->
+          throwE $ ParseError "Empty values are not allowed"
+        Nothing -> do
+          usersettings <- decodeSettings k
+          lift $ doConfig usersettings
+          pure ()
+        Just v -> do
+          usersettings <- decodeSettings (k <> ": " <> v <> "\n")
+          lift $ doConfig usersettings
+          pure ()
+    case r of
+      VRight _ -> pure ExitSuccess
+      VLeft (V (JSONDecodeError e)) -> do
+        runLogger $ logError $ "Error decoding config: " <> T.pack e
+        pure $ ExitFailure 65
+      VLeft _ -> pure $ ExitFailure 65
 
-  (SetConfig json Nothing) -> doConfig json
+  AddReleaseChannel uri -> do
+    case urlSource settings of
+      AddSource xs -> do
+        doConfig (defaultUserSettings { uUrlSource = Just $ AddSource (xs <> [Right uri]) })
+        pure ExitSuccess
+      _ -> do
+        doConfig (defaultUserSettings { uUrlSource = Just $ AddSource [Right uri] })
+        pure ExitSuccess
 
  where
-  doConfig val = do
-    r <- runE @'[JSONError] $ do
-      settings' <- updateSettings (UTF8.fromString val) settings
-      path <- liftIO getConfigFilePath
-      liftIO $ writeFile path $ formatConfig $ fromSettings settings' (Just keybindings)
-      lift $ runLogger $ logDebug $ T.pack $ show settings'
-      pure ()
+  doConfig :: MonadIO m => UserSettings -> m ()
+  doConfig usersettings = do
+    let settings' = updateSettings usersettings settings
+    path <- liftIO getConfigFilePath
+    liftIO $ writeFile path $ formatConfig $ fromSettings settings' (Just keybindings)
+    runLogger $ logDebug $ T.pack $ show settings'
+    pure ()
 
-    case r of
-        VRight _ -> pure ExitSuccess
-        VLeft (V (JSONDecodeError e)) -> do
-          runLogger $ logError $ "Error decoding config: " <> T.pack e
-          pure $ ExitFailure 65
-        VLeft _ -> pure $ ExitFailure 65
+  decodeSettings = lE' (JSONDecodeError . displayException) . Y.decodeEither' . UTF8.fromString

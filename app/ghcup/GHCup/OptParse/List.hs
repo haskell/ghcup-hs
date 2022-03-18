@@ -143,11 +143,11 @@ printListResult no_color raw lr = do
             )
         $ lr
   let cols =
-        foldr (\xs ys -> zipWith (:) xs ys) (cycle [[]]) rows
+        foldr (\xs ys -> zipWith (:) xs ys) (repeat []) rows
       lengths = fmap (maximum . fmap strWidth) cols
       padded  = fmap (\xs -> zipWith padTo xs lengths) rows
 
-  forM_ padded $ \row -> putStrLn $ unwords row
+  forM_ (if raw then rows else padded) $ \row -> putStrLn $ unwords row
  where
 
   padTo str' x =

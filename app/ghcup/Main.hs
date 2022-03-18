@@ -82,7 +82,7 @@ toSettings options = do
          keepDirs    = fromMaybe (fromMaybe (Types.keepDirs defaultSettings) uKeepDirs) optKeepDirs
          downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
-         urlSource   = maybe (fromMaybe (Types.urlSource defaultSettings) uUrlSource) OwnSource optUrlSource
+         urlSource   = maybe (fromMaybe (Types.urlSource defaultSettings) uUrlSource) (OwnSource . (:[]) . Right) optUrlSource
          noNetwork   = fromMaybe (fromMaybe (Types.noNetwork defaultSettings) uNoNetwork) optNoNetwork
          gpgSetting  = fromMaybe (fromMaybe (Types.gpgSetting defaultSettings) uGPGSetting) optGpg
      in (Settings {..}, keyBindings)
@@ -235,7 +235,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                   Interactive -> pure ()
 #endif
                   -- check for new tools
-                  _ -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
+                  _
+                    | Just False <- optVerbose -> pure ()
+                    | otherwise -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
                          Nothing -> void . flip runReaderT s' . runE @'[TagNotFound, NextVerNotFound, NoToolVersionSet] $ do
                            newTools <- lift checkForUpdates 
                            forM_ newTools $ \newTool@(t, l) -> do
@@ -313,7 +315,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
             Nuke                     -> nuke appState runLogger
             Prefetch pfCom           -> prefetch pfCom runAppState runLogger
             GC gcOpts                -> gc gcOpts runAppState runLogger
-            Run runCommand           -> run runCommand runAppState leanAppstate runLogger
+            Run runCommand           -> run runCommand appState leanAppstate runLogger
 
           case res of
             ExitSuccess        -> pure ()
