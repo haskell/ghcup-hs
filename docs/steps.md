@@ -4,7 +4,6 @@ In this guide we'll take a look at a few core tools that are installed
 with the Haskell toolchain, namely, `ghc`, `runghc` and `ghci`.
 These tools can be used to compile, interpret or explore Haskell programs.
 
-
 First, let's start by opening your system's command line interface
 and running `ghc --version` to make sure we have successfully
 installed a Haskell toolchain:
@@ -322,6 +321,12 @@ For further information about how to manage Haskell projects
 see the [Cabal user guide](https://cabal.readthedocs.io/en/stable/getting-started.html).
 
 # Where to go from here
+
+<div class="text-center main-buttons">
+<a href="https://hackage.haskell.org/" class="btn btn-primary" role="button">Discover Haskell packages</a>
+<a href="https://hackage.haskell.org/package/base" class="btn btn-primary" role="button">The standard library</a>
+<a href="https://haskell-language-server.readthedocs.io/en/stable/installation.html" class="btn btn-primary" role="button">Editor setup with HLS</a>
+</div>
 
 ## How to learn Haskell proper
 

@@ -1,6 +1,6 @@
 # User Guide
 
-`ghcup --help` is your friend.
+This is a more in-depth guide specific to GHCup. `ghcup --help` is your friend.
 
 ## Basic usage
 
