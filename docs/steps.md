@@ -251,6 +251,8 @@ Hello, Haskell!
 someFunc
 ```
 
+### Adding dependencies
+
 Now let's add a dependency and adjust our library module. Open `haskell-project.cabal`
 and find the library section:
 
@@ -288,6 +290,8 @@ someFunc = do
   contents <- listDirectory "src"
   putStrLn (show contents)
 ```
+
+### Adding modules
 
 To add a module to your package, adjust `exposed-modules`, like so
 
