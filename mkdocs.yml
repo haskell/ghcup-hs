@@ -13,7 +13,8 @@ theme:
 
 nav:
   - Home: index.md
-  - "Getting Started": install.md
+  - "Getting started": install.md
+  - "First steps": steps.md
   - "User Guide": guide.md
   - "Developer Guide": dev.md
   - About: about.md
