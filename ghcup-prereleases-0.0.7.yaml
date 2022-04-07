@@ -1,0 +1,51 @@
+---
+globalTools: {}
+toolRequirements: {}
+ghcupDownloads:
+  Cabal:
+    3.7.0.0:
+      viTags:
+        - Prerelease
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3720-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-x86_64-linux-alpine.tar.xz
+              dlHash: c9e28e1578dfb851918e523040cb0f913df747fe95e24d089bcf7cd821c21885
+          Linux_Alpine:
+            unknown_versioning: *cabal-3720-32
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-x86_64-darwin.tar.xz
+              dlHash: 9b30b1231b280cdd95c60ac2d94d4bec6ccf07febd294d4f8e9e2d001fe1c55c
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-x86_64-freebsd12.tar.xz
+              dlHash: ac482eb709af36ee0f11aebd3dc38fbc5fa5f767ea854c028257fabf39154005
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-x86_64-windows.zip
+              dlSubdir:
+              dlHash: 98efc1acd61c7cf262d9eb618548f463698016f9d67fbb7ad7501097206f29cf
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3720-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-i386-linux-alpine.tar.xz
+              dlHash: bf189ad094b02e42ef23b53384ecef7b1c27fea8323f9e09c00abab353f19d55
+          Linux_Alpine:
+            unknown_versioning: *cabal-3720-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-aarch64-linux-deb10.tar.xz
+              dlHash: 58306000d96674927ca2d811d3d4ee027d26e9b67f67de4e3de547de2042c3fc
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-aarch64-darwin.tar.xz
+              dlHash: 324b8bf3a6f010b5c7083f1460e1e65881fecf5efd99ce21e4e7c73a020ab0bf
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-armv7-linux-deb1.tar.xz
+              dlHash: 51dc486776a0047bc7b0122f468625e5d64189fac1948a6ba4e8ce85f47703ac
+
