@@ -43,13 +43,6 @@ All of the following are valid arguments to `ghcup install ghc`:
 
 If the argument is omitted, the default is `recommended`.
 
-## Configuration
-
-A configuration file can be put in `~/.ghcup/config.yaml`. The default config file
-explaining all possible configurations can be found in this repo: [config.yaml](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/data/config.yaml).
-
-Partial configuration is fine. Command line options always override the config file settings.
-
 ## Manpages
 
 For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man` provider, then issue `man ghc`. Manpages only work for the currently set ghc.
@@ -63,6 +56,40 @@ For bash: install `shell-completions/bash`
 as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
 and make sure your bashrc sources the startup script
 (`/usr/share/bash-completion/bash_completion` on some distros).
+
+# Configuration
+
+A configuration file can be put in `~/.ghcup/config.yaml`. The default config file
+explaining all possible configurations can be found in this repo: [config.yaml](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/data/config.yaml).
+
+Partial configuration is fine. Command line options always override the config file settings.
+
+## Env variables
+
+This is the complete list of env variables that change GHCup behavior:
+
+* `GHCUP_USE_XDG_DIRS`: see [XDG support](#xdg-support) above
+* `TMPDIR`: where ghcup does the work (unpacking, building, ...)
+* `GHCUP_INSTALL_BASE_PREFIX`: the base of ghcup (default: `$HOME`)
+* `GHCUP_CURL_OPTS`: additional options that can be passed to curl
+* `GHCUP_WGET_OPTS`: additional options that can be passed to wget
+* `GHCUP_GPG_OPTS`: additional options that can be passed to gpg
+* `GHCUP_SKIP_UPDATE_CHECK`: Skip the (possibly annoying) update check when you run a command
+* `CC`/`LD` etc.: full environment is passed to the build system when compiling GHC via GHCup
+
+### XDG support
+
+To enable XDG style directories, set the environment variable `GHCUP_USE_XDG_DIRS` to anything.
+
+Then you can control the locations via XDG environment variables as such:
+
+* `XDG_DATA_HOME`: GHCs will be unpacked in `ghcup/ghc` subdir (default: `~/.local/share`)
+* `XDG_CACHE_HOME`: logs and download files will be stored in `ghcup` subdir (default: `~/.cache`)
+* `XDG_BIN_HOME`: binaries end up here (default: `~/.local/bin`)
+* `XDG_CONFIG_HOME`: the config file is stored in `ghcup` subdir as `config.yaml` (default: `~/.config`)
+
+**Note that `ghcup` makes some assumptions about structure of files in `XDG_BIN_HOME`. So if you have other tools
+installing e.g. stack/cabal/ghc into it, this will likely clash. In that case consider disabling XDG support.**
 
 ## Caching
 
@@ -82,6 +109,92 @@ have a 5 minutes cache per default depending on the last access time of the file
 ### Clearing the cache
 
 If you experience problems, consider clearing the cache via `ghcup gc --cache`.
+
+## Metadata
+
+The metadata are the files that describe tool versions, where to download them etc. and
+can be viewed here: [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata)
+
+### Mirrors
+
+GHCup allows to use custom mirrors/download-info hosted by yourself or 3rd parties.
+
+To use a mirror, set the following option in `~/.ghcup/config.yaml`:
+
+```yml
+url-source:
+  # Accepts file/http/https scheme
+  OwnSource: "https://some-url/ghcup-0.0.6.yaml"
+```
+
+See [config.yaml](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/data/config.yaml)
+for more options.
+
+Alternatively you can do it via a cli switch:
+
+```sh
+ghcup --url-source=https://some-url/ghcup-0.0.6.yaml list
+```
+
+#### Known mirrors
+
+1. [https://mirror.sjtu.edu.cn/docs/ghcup](https://mirror.sjtu.edu.cn/docs/ghcup)
+
+### (Pre-)Release channels
+
+A release channel is basically just a metadata file location. You can add additional release
+channels that complement the default one, such as the **prerelease channel** like so:
+
+```sh
+ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml
+```
+
+This will result in `~/.ghcup/config.yaml` to contain this record:
+
+```yml
+url-source:
+  AddSource:
+  - Right: https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml
+```
+
+You can add as many channels as you like. They are combined under *Last*, so versions from the prerelease channel
+here overwrite the default ones, if any.
+
+To remove the channel, delete the entire `url-source` section or set it back to the default:
+
+```yml
+url-source:
+  GHCupURL: []
+```
+
+If you want to combine your release channel with a mirror, you'd do it like so:
+
+```yml
+url-source:
+  OwnSource:
+  # base metadata
+  - "https://mirror.sjtu.edu.cn/ghcup/yaml/ghcup/data/ghcup-0.0.6.yaml"
+  # prerelease channel
+  - "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
+```
+
+# More on installation
+
+## Installing custom bindists
+
+There are a couple of good use cases to install custom bindists:
+
+1. manually built bindists (e.g. with patches)
+    - example: `ghcup install ghc -u 'file:///home/mearwald/tmp/ghc-eff-patches/ghc-8.10.2-x86_64-deb10-linux.tar.xz' 8.10.2-eff`
+2. GHC head CI bindists
+    - example: `ghcup install ghc -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
+3. DWARF bindists
+    - example: `ghcup install ghc -u 'https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux-dwarf.tar.xz' 8.10.2-dwarf`
+
+Since the version parser is pretty lax, `8.10.2-eff` and `head` are both valid versions
+and produce the binaries `ghc-8.10.2-eff` and `ghc-head` respectively.
+GHCup always needs to know which version the bindist corresponds to (this is not automatically
+detected).
 
 ## Compiling GHC from source
 
@@ -105,74 +218,6 @@ Consult the GHC documentation on the [prerequisites](https://gitlab.haskell.org/
 For distributions with non-standard locations of cross toolchain and
 libraries, this may need some tweaking of `build.mk` or configure args.
 See `ghcup compile ghc --help` for further information.
-
-## XDG support
-
-To enable XDG style directories, set the environment variable `GHCUP_USE_XDG_DIRS` to anything.
-
-Then you can control the locations via XDG environment variables as such:
-
-* `XDG_DATA_HOME`: GHCs will be unpacked in `ghcup/ghc` subdir (default: `~/.local/share`)
-* `XDG_CACHE_HOME`: logs and download files will be stored in `ghcup` subdir (default: `~/.cache`)
-* `XDG_BIN_HOME`: binaries end up here (default: `~/.local/bin`)
-* `XDG_CONFIG_HOME`: the config file is stored in `ghcup` subdir as `config.yaml` (default: `~/.config`)
-
-**Note that `ghcup` makes some assumptions about structure of files in `XDG_BIN_HOME`. So if you have other tools
-installing e.g. stack/cabal/ghc into it, this will likely clash. In that case consider disabling XDG support.**
-
-## Env variables
-
-This is the complete list of env variables that change GHCup behavior:
-
-* `GHCUP_USE_XDG_DIRS`: see [XDG support](#xdg-support) above
-* `TMPDIR`: where ghcup does the work (unpacking, building, ...)
-* `GHCUP_INSTALL_BASE_PREFIX`: the base of ghcup (default: `$HOME`)
-* `GHCUP_CURL_OPTS`: additional options that can be passed to curl
-* `GHCUP_WGET_OPTS`: additional options that can be passed to wget
-* `GHCUP_GPG_OPTS`: additional options that can be passed to gpg
-* `GHCUP_SKIP_UPDATE_CHECK`: Skip the (possibly annoying) update check when you run a command
-* `CC`/`LD` etc.: full environment is passed to the build system when compiling GHC via GHCup
-
-## Installing custom bindists
-
-There are a couple of good use cases to install custom bindists:
-
-1. manually built bindists (e.g. with patches)
-    - example: `ghcup install ghc -u 'file:///home/mearwald/tmp/ghc-eff-patches/ghc-8.10.2-x86_64-deb10-linux.tar.xz' 8.10.2-eff`
-2. GHC head CI bindists
-    - example: `ghcup install ghc -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
-3. DWARF bindists
-    - example: `ghcup install ghc -u 'https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux-dwarf.tar.xz' 8.10.2-dwarf`
-
-Since the version parser is pretty lax, `8.10.2-eff` and `head` are both valid versions
-and produce the binaries `ghc-8.10.2-eff` and `ghc-head` respectively.
-GHCup always needs to know which version the bindist corresponds to (this is not automatically
-detected).
-
-## Mirrors
-
-GHCup allows to use custom mirrors/download-info hosted by yourself or 3rd parties.
-
-To use a mirror, set the following option in `~/.ghcup/config.yaml`:
-
-```yml
-url-source:
-  # Accepts file/http/https scheme
-  OwnSource: "https://some-url/ghcup-0.0.6.yaml"
-```
-
-See [config.yaml](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/data/config.yaml)
-for more options.
-
-Alternatively you can do it via a cli switch:
-
-```sh
-ghcup --url-source=https://some-url/ghcup-0.0.6.yaml list
-```
-
-### Known mirrors
-
-1. [https://mirror.sjtu.edu.cn/docs/ghcup](https://mirror.sjtu.edu.cn/docs/ghcup)
 
 ## Isolated installs
 
@@ -257,9 +302,9 @@ gpg-setting: GPGLax # GPGStrict | GPGLax | GPGNone
 In `GPGStrict` mode, ghcup will fail if verification fails. In `GPGLax` mode it will just print a warning.
 You can also pass the mode via `ghcup --gpg <strict|lax|none>`.
    
-## Tips and tricks
+# Tips and tricks
 
-### Execute command with certain GHC in PATH
+## ghcup run
 
 If you don't want to explicitly switch the active GHC all the time and are using
 tools that rely on the plain `ghc` binary, GHCup provides an easy way to execute
