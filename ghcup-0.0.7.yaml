@@ -2007,19 +2007,19 @@ ghcupDownloads:
         A_64:
           Linux_Debian:
             '< 10': &ghc-902-64-deb9
-              dlUri: https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-deb9-linux.tar.xz
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.0.2/ghc-9.0.2-x86_64-deb9-linux.tar.xz
               dlSubdir: ghc-9.0.2
-              dlHash: 805f5628ce6cec678ba77ff48c924831ebdf75ec2c66368e8935a618913a150e
+              dlHash: 026257de3443017acf1ab5b7301e902331d8239f066babbe546067f6d6201763
             '>= 10': &ghc-902-64-deb10
-              dlUri: https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-deb10-linux.tar.xz
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.0.2/ghc-9.0.2-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-9.0.2
-              dlHash: 5d0b9414b10cfb918453bcd01c5ea7a1824fe95948b08498d6780f20ba247afc
+              dlHash: a33263c3f819de606da079d191ddc3b86cbf503a14c6c0eec1a4ae1899008fdc
             unknown_versioning: *ghc-902-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &ghc-902-64-fedora
-              dlUri: https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-fedora27-linux.tar.xz
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.0.2/ghc-9.0.2-x86_64-fedora27-linux.tar.xz
               dlSubdir: ghc-9.0.2
-              dlHash: f42f7bf075665a3971fa0d9b881f1400725e9e6cc3b5067cb83442f578c62691
+              dlHash: b2670e9f278e10355b0475c2cc3b8842490f1bca3c70c306f104aa60caff37b0
             '( >= 16 && < 19 )': *ghc-902-64-deb9
           Linux_Mint:
             unknown_versioning: *ghc-902-64-deb10
@@ -2061,9 +2061,9 @@ ghcupDownloads:
         A_32:
           Linux_Debian:
             '< 10': &ghc-902-32-deb9
-              dlUri: https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-i386-deb9-linux.tar.xz
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.0.2/ghc-9.0.2-i386-deb9-linux.tar.xz
               dlSubdir: ghc-9.0.2
-              dlHash: fdeb9f8928fbe994064778a8e1e85bb1a58a6cd3dd7b724fcc2a1dcfda6cad47
+              dlHash: 0a4cc87cd241d37727fae053c02bab20ddaf94cea4c28f4522cca0e9e5d9741c
             unknown_versioning: *ghc-902-32-deb9
           Linux_Ubuntu:
             unknown_versioning: *ghc-902-32-deb9
@@ -2226,9 +2226,9 @@ ghcupDownloads:
               dlHash: 934abbd6083d3aeb5ff081955682d7711d9e79db57b1613eb229c325dd06f83f
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-unknown-mingw32.zip
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.2.2/ghc-9.2.2-x86_64-unknown-mingw32.tar.xz
               dlSubdir: ghc-9.2.2-x86_64-unknown-mingw32
-              dlHash: 5ca4b69e74e62ed57b737949fa8c4e991c24703f1477521f842a6297d36dab10
+              dlHash: 22f30fe0e4c91e6cf3bc4f7b31dc07a4d1602e1dc136b657df3983c28bae7877
           Linux_Alpine:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-alpine3.12-linux-gmp.tar.xz
