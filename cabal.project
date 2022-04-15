@@ -15,7 +15,9 @@ source-repository-package
 
 constraints: http-io-streams -brotli,
              any.Cabal ==3.6.2.0,
-             any.aeson >= 2.0.1.0
+             any.aeson >= 2.0.1.0,
+             -- https://github.com/typeable/generic-arbitrary/issues/14
+             any.generic-arbitrary < 0.2.1
 
 package libarchive
   flags: -system-libarchive
