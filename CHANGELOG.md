@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## 0.1.17.7 -- ????-??-??
+
+* Fix `ghcup run` on windows wrt [#345](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/345)
+
 ## 0.1.17.6 -- 2022-03-18
 
 * Vastly improve shell completions wrt [#242](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/242)
