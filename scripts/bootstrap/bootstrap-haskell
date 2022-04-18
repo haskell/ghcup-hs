@@ -16,6 +16,7 @@
 #   * BOOTSTRAP_HASKELL_INSTALL_HLS - whether to install latest hls
 #   * BOOTSTRAP_HASKELL_ADJUST_BASHRC - whether to adjust PATH in bashrc (prepend)
 #   * BOOTSTRAP_HASKELL_ADJUST_CABAL_CONFIG - whether to adjust mingw paths in cabal.config on windows
+#   * GHCUP_BASE_URL - the base url for ghcup binary download (use this to overwrite https://downloads.haskell.org/~ghcup with a mirror)
 
 # License: LGPL-3.0
 
@@ -26,7 +27,7 @@
 plat="$(uname -s)"
 arch=$(uname -m)
 ghver="0.1.17.6"
-base_url="https://downloads.haskell.org/~ghcup"
+: "${GHCUP_BASE_URL:=https://downloads.haskell.org/~ghcup}"
 
 export GHCUP_SKIP_UPDATE_CHECK=yes
 
@@ -235,26 +236,26 @@ download_ghcup() {
 					# we could be in a 32bit docker container, in which
 					# case uname doesn't give us what we want
 					if [ "$(getconf LONG_BIT)" = "32" ] ; then
-						_url=${base_url}/${ghver}/i386-linux-ghcup-${ghver}
+						_url=${GHCUP_BASE_URL}/${ghver}/i386-linux-ghcup-${ghver}
 					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
-						_url=${base_url}/${ghver}/x86_64-linux-ghcup-${ghver}
+						_url=${GHCUP_BASE_URL}/${ghver}/x86_64-linux-ghcup-${ghver}
 					else
 						die "Unknown long bit size: $(getconf LONG_BIT)"
 					fi
 					;;
 				i*86)
-					_url=${base_url}/${ghver}/i386-linux-ghcup-${ghver}
+					_url=${GHCUP_BASE_URL}/${ghver}/i386-linux-ghcup-${ghver}
 					;;
 				armv7*|*armv8l*)
-					_url=${base_url}/${ghver}/armv7-linux-ghcup-${ghver}
+					_url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
 					;;
 				aarch64|arm64)
 					# we could be in a 32bit docker container, in which
 					# case uname doesn't give us what we want
 					if [ "$(getconf LONG_BIT)" = "32" ] ; then
-						_url=${base_url}/${ghver}/armv7-linux-ghcup-${ghver}
+						_url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
 					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
-						_url=${base_url}/${ghver}/aarch64-linux-ghcup-${ghver}
+						_url=${GHCUP_BASE_URL}/${ghver}/aarch64-linux-ghcup-${ghver}
 					else
 						die "Unknown long bit size: $(getconf LONG_BIT)"
 					fi
@@ -281,15 +282,15 @@ download_ghcup() {
 				*) die "Unknown architecture: ${arch}"
 					;;
 			esac
-			_url=${base_url}/${ghver}/x86_64-freebsd${freebsd_ver}-ghcup-${ghver}
+			_url=${GHCUP_BASE_URL}/${ghver}/x86_64-freebsd${freebsd_ver}-ghcup-${ghver}
             ;;
         "Darwin"|"darwin")
 			case "${arch}" in
 				x86_64|amd64)
-					_url=${base_url}/${ghver}/x86_64-apple-darwin-ghcup-${ghver}
+					_url=${GHCUP_BASE_URL}/${ghver}/x86_64-apple-darwin-ghcup-${ghver}
 					;;
 				aarch64|arm64|armv8l)
-					_url=${base_url}/${ghver}/aarch64-apple-darwin-ghcup-${ghver}
+					_url=${GHCUP_BASE_URL}/${ghver}/aarch64-apple-darwin-ghcup-${ghver}
 					;;
 				i*86)
 					die "i386 currently not supported!"
@@ -301,7 +302,7 @@ download_ghcup() {
         MSYS*|MINGW*)
 			case "${arch}" in
 				x86_64|amd64)
-					_url=${base_url}/${ghver}/x86_64-mingw64-ghcup-${ghver}.exe
+					_url=${GHCUP_BASE_URL}/${ghver}/x86_64-mingw64-ghcup-${ghver}.exe
 					;;
 				*) die "Unknown architecture: ${arch}"
 					;;
