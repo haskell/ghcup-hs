@@ -1,6 +1,6 @@
 # Revision history for ghcup
 
-## 0.1.17.7 -- ????-??-??
+## 0.1.17.7 -- 2022-04-21
 
 * Fix `ghcup run` on windows wrt [#345](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/345)
 
