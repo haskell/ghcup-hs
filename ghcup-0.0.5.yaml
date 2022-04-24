@@ -2040,7 +2040,7 @@ ghcupDownloads:
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/0.1.17.7/x86_64-apple-darwin-ghcup-0.1.17.7
-              dlHash: d3d0644dc5d9b51ed1c345fc006e936e9284b3181e5a9cccf4cf70a7184398fe
+              dlHash: 9702f30c9374a122d79f7ef11170b34deb248a0f3cd92d671c0aab747be4add7
           FreeBSD:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/0.1.17.7/x86_64-freebsd12-ghcup-0.1.17.7
