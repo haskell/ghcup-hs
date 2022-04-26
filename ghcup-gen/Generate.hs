@@ -36,6 +36,7 @@ import           Data.Map.Strict                ( Map )
 import           Data.Versions
 import           Haskus.Utils.Variant.Excepts
 import           System.Exit
+import           System.FilePath
 import           System.IO
 import           Text.Regex.Posix
 import           GHCup.Utils.String.QQ
@@ -84,17 +85,29 @@ generateHLSGhc format output = do
                       , ArchiveResult
                       ] $ do
                fp <- liftE $ downloadCached dli Nothing
+               let subd = _dlSubdir dli
                filesL <- liftE $ getArchiveFiles fp
                files <- liftIO $ evaluate $ force filesL
-               let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-([0-9]+\.)*([0-9]+)(\.exe)?$|] :: ByteString)
-               let ghcs = rights $ MP.parse version' ""
-                                 . T.pack
-                                 . fromJust
-                                 . stripPrefix "haskell-language-server-"
-                                 . stripExe
-                                <$> filter (match regex) files
-               pure ghcs
-             pure r
+               case subd of
+                         Just (RealDir d)
+                           | d </> "GNUmakefile" `elem` files
+                           -> do let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-([0-9]+\.)*([0-9]+)(\.in)$|] :: ByteString)
+                                 pure (rights $ MP.parse version' ""
+                                      . T.pack
+                                      . fromJust
+                                      . stripPrefix "haskell-language-server-"
+                                      . stripIn
+                                     <$> filter (match regex) (fromJust . stripPrefix (d <> "/") <$> files)
+                                      )
+                         _ -> do let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-([0-9]+\.)*([0-9]+)(\.exe)?$|] :: ByteString)
+                                 pure (rights $ MP.parse version' ""
+                                      . T.pack
+                                      . fromJust
+                                      . stripPrefix "haskell-language-server-"
+                                      . stripExe
+                                     <$> filter (match regex) files
+                                      )
+             pure (sort r)
   let w = case format of
             FormatYAML -> BSL.fromStrict $ YAML.encodePretty YAML.defConfig r
             FormatJSON -> Aeson.encodePretty r
@@ -106,6 +119,10 @@ generateHLSGhc format output = do
   stripExe :: String -> String
   stripExe f = case reverse f of
                  ('e':'x':'e':'.':r) -> reverse r
+                 _ -> f
+  stripIn :: String -> String
+  stripIn f = case reverse f of
+                 ('n':'i':'.':r) -> reverse r
                  _ -> f
 
 generateTable :: ( MonadFail m

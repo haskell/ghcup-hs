@@ -2863,9 +2863,7 @@ ghcupDownloads:
               dlHash: b4b73cfdd3fce33ecf5e9e75b40d7b01f0889eceef1b39e57f958579b194e2bf
 
     1.6.1.0:
-      viTags:
-        - Recommended
-        - Latest
+      viTags: []
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#1610
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -2911,7 +2909,67 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-Linux-armv7-1.6.1.0.tar.xz
               dlHash: ea174e82678c25a017ff564c5329a80dc18030139b9bfcad2da8fe888617446b
-
+    1.7.0.0:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#1700
+      viPostInstall: *hls-post-install
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-src.tar.gz
+        dlSubdir: haskell-language-server-1.7.0.0
+        dlHash: 2974994866383fb0ffa892047dfe67d9dbaa268e647689d58b92f3593d6d7b7f
+      viArch:
+        A_64:
+          Linux_Debian:
+            '< 10': &hls-170-64-deb9
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-x86_64-linux-deb9.tar.xz
+              dlSubdir: haskell-language-server-1.7.0.0
+              dlHash: ad3f99776f9ad37509b1961bb36fc2f19a851abb6c34847edd56bc554dc7ea56
+            '>= 10': &hls-170-64-deb10
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-x86_64-linux-deb10.tar.xz
+              dlSubdir: haskell-language-server-1.7.0.0
+              dlHash: ad8050776698dd6539a70f274c426fcb6e52c1be8414821c612748fa149182d7
+            unknown_versioning: *hls-170-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &hls-170-64-fedora
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-x86_64-linux-fedora27.tar.xz
+              dlSubdir: haskell-language-server-1.7.0.0
+              dlHash: cad0a9800004e7dc78eae824118f92efc33b9ed30f20f1e9584b57695ff93e50
+            '( >= 16 && < 19 )': *hls-170-64-deb9
+          Linux_Mint:
+            unknown_versioning: *hls-170-64-deb10
+          Linux_Fedora:
+            '( >= 27 && < 28 )': *hls-170-64-fedora
+            unknown_versioning: *hls-170-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &hls-170-64-centos
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-x86_64-linux-centos7.tar.xz
+              dlSubdir: haskell-language-server-1.7.0.0
+              dlHash: 7c74931af640c6e6d7c20a2aa0ea6cc31025dbc6026a07daba3d35ca59be6f02
+            unknown_versioning: *hls-170-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *hls-170-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-x86_64-darwin.tar.xz
+              dlSubdir: haskell-language-server-1.7.0.0
+              dlHash: 3183ac97b80823256585bf740a79a7fdd9dca08e5b71eaf7497085eec0c8a572
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-x86_64-unknown-mingw32.zip
+              dlHash: 9ce7b791c6eb66c0730affa57a79e3ec3e7b32f3f6f9e1684dec3feff71098af
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-aarch64-linux-deb10.tar.xz
+              dlSubdir: haskell-language-server-1.7.0.0
+              dlHash: 486a71744e4c79428ea5b19186d3beb0fb9d36d6f38909f9da7d92c09ed00b1f
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-aarch64-darwin.tar.xz
+              dlSubdir: haskell-language-server-1.7.0.0
+              dlHash: d82030533f69b862cc6149d7a9b32dfa81fc6a803cb089c59f00ef94efcce3bb
   Stack:
     2.5.1:
       viTags:
