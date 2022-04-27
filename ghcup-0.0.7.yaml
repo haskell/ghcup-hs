@@ -2957,8 +2957,8 @@ ghcupDownloads:
               dlHash: 3183ac97b80823256585bf740a79a7fdd9dca08e5b71eaf7497085eec0c8a572
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-x86_64-unknown-mingw32.zip
-              dlHash: 9d20c6fdc2eab12ffbf355af4a96bdf8c5e7583b837ca1c7c8e153b05e5f338e
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/hls/1.7.0.0/haskell-language-server-1.7.0.0-x86_64-unknown-mingw32.zip
+              dlHash: 109168ee61a8e0613d8f223583e149aff0812053c3adbacd0a23b468dc7f0518
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
