@@ -2958,7 +2958,7 @@ ghcupDownloads:
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-x86_64-unknown-mingw32.zip
-              dlHash: 9ce7b791c6eb66c0730affa57a79e3ec3e7b32f3f6f9e1684dec3feff71098af
+              dlHash: 9d20c6fdc2eab12ffbf355af4a96bdf8c5e7583b837ca1c7c8e153b05e5f338e
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
