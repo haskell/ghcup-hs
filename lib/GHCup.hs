@@ -2603,7 +2603,7 @@ upgradeGHCup mtarget force' = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
   lift $ logInfo "Upgrading GHCup..."
-  let latestVer = fromJust $ fst <$> getLatest dls GHCup
+  let latestVer = fst (fromJust (getLatest dls GHCup))
   (Just ghcupPVPVer) <- pure $ pvpToVersion ghcUpVer ""
   when (not force' && (latestVer <= ghcupPVPVer)) $ throwE NoUpdate
   dli   <- liftE $ getDownloadInfo GHCup latestVer
