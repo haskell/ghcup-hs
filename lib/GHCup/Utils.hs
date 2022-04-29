@@ -317,10 +317,10 @@ ghcSet mtarget = do
            MP.setInput rest
            pure x
          )
-        <* pathSep
+        <* MP.some pathSep
         <* MP.takeRest
         <* MP.eof
-    ghcSubPath = pathSep <* MP.chunk "ghc" *> pathSep
+    ghcSubPath = MP.some pathSep <* MP.chunk "ghc" *> MP.some pathSep
 
 -- | Get all installed GHCs by reading ~/.ghcup/ghc/<dir>.
 -- If a dir cannot be parsed, returns left.
@@ -398,10 +398,10 @@ cabalSet = do
   cabalParse = MP.chunk "cabal-" *> version'
   -- parses any path component ending with path separator,
   -- e.g. "foo/"
-  stripPathComponet = parseUntil1 pathSep *> pathSep
+  stripPathComponet = parseUntil1 pathSep *> MP.some pathSep
   -- parses an absolute path up until the last path separator,
   -- e.g. "/bar/baz/foo" -> "/bar/baz/", leaving "foo"
-  stripAbsolutePath = pathSep *> MP.many (MP.try stripPathComponet)
+  stripAbsolutePath = MP.some pathSep *> MP.many (MP.try stripPathComponet)
   -- parses a relative path up until the last path separator,
   -- e.g. "bar/baz/foo" -> "bar/baz/", leaving "foo"
   stripRelativePath = MP.many (MP.try stripPathComponet)
@@ -492,10 +492,10 @@ stackSet = do
     cabalParse = MP.chunk "stack-" *> version'
     -- parses any path component ending with path separator,
     -- e.g. "foo/"
-    stripPathComponet = parseUntil1 pathSep *> pathSep
+    stripPathComponet = parseUntil1 pathSep *> MP.some pathSep
     -- parses an absolute path up until the last path separator,
     -- e.g. "/bar/baz/foo" -> "/bar/baz/", leaving "foo"
-    stripAbsolutePath = pathSep *> MP.many (MP.try stripPathComponet)
+    stripAbsolutePath = MP.some pathSep *> MP.many (MP.try stripPathComponet)
     -- parses a relative path up until the last path separator,
     -- e.g. "bar/baz/foo" -> "bar/baz/", leaving "foo"
     stripRelativePath = MP.many (MP.try stripPathComponet)
@@ -543,10 +543,10 @@ hlsSet = do
     cabalParse = MP.chunk "haskell-language-server-wrapper-" *> version'
     -- parses any path component ending with path separator,
     -- e.g. "foo/"
-    stripPathComponet = parseUntil1 pathSep *> pathSep
+    stripPathComponet = parseUntil1 pathSep *> MP.some pathSep
     -- parses an absolute path up until the last path separator,
     -- e.g. "/bar/baz/foo" -> "/bar/baz/", leaving "foo"
-    stripAbsolutePath = pathSep *> MP.many (MP.try stripPathComponet)
+    stripAbsolutePath = MP.some pathSep *> MP.many (MP.try stripPathComponet)
     -- parses a relative path up until the last path separator,
     -- e.g. "bar/baz/foo" -> "bar/baz/", leaving "foo"
     stripRelativePath = MP.many (MP.try stripPathComponet)
