@@ -126,10 +126,10 @@ _eghcup() {
 	fi
     if [ -z "${BOOTSTRAP_HASKELL_VERBOSE}" ] ; then
         # shellcheck disable=SC2086
-        "${GHCUP_BIN}/ghcup" ${args} "$@"
+        "ghcup" ${args} "$@"
     else
         # shellcheck disable=SC2086
-        "${GHCUP_BIN}/ghcup" ${args} --verbose "$@"
+        "ghcup" ${args} --verbose "$@"
     fi
 }
 
@@ -228,99 +228,100 @@ posix_realpath() {
 }
 
 download_ghcup() {
+    if ! command -V "ghcup" >/dev/null 2>&1 ; then
+        case "${plat}" in
+            "linux"|"Linux")
+                case "${arch}" in
+                    x86_64|amd64)
+                        # we could be in a 32bit docker container, in which
+                        # case uname doesn't give us what we want
+                        if [ "$(getconf LONG_BIT)" = "32" ] ; then
+                            _url=${GHCUP_BASE_URL}/${ghver}/i386-linux-ghcup-${ghver}
+                        elif [ "$(getconf LONG_BIT)" = "64" ] ; then
+                            _url=${GHCUP_BASE_URL}/${ghver}/x86_64-linux-ghcup-${ghver}
+                        else
+                            die "Unknown long bit size: $(getconf LONG_BIT)"
+                        fi
+                        ;;
+                    i*86)
+                        _url=${GHCUP_BASE_URL}/${ghver}/i386-linux-ghcup-${ghver}
+                        ;;
+                    armv7*|*armv8l*)
+                        _url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
+                        ;;
+                    aarch64|arm64)
+                        # we could be in a 32bit docker container, in which
+                        # case uname doesn't give us what we want
+                        if [ "$(getconf LONG_BIT)" = "32" ] ; then
+                            _url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
+                        elif [ "$(getconf LONG_BIT)" = "64" ] ; then
+                            _url=${GHCUP_BASE_URL}/${ghver}/aarch64-linux-ghcup-${ghver}
+                        else
+                            die "Unknown long bit size: $(getconf LONG_BIT)"
+                        fi
+                        ;;
+                    *) die "Unknown architecture: ${arch}"
+                        ;;
+                esac
+                ;;
+            "FreeBSD"|"freebsd")
+                if freebsd-version | grep -E '^12.*' ; then
+                    freebsd_ver=12
+                elif freebsd-version | grep -E '^13.*' ; then
+                    freebsd_ver=13
+                else
+                    die "Unsupported FreeBSD version! Please report a bug at https://gitlab.haskell.org/haskell/ghcup-hs/-/issues"
+                fi
 
-    case "${plat}" in
-        "linux"|"Linux")
-			case "${arch}" in
-				x86_64|amd64)
-					# we could be in a 32bit docker container, in which
-					# case uname doesn't give us what we want
-					if [ "$(getconf LONG_BIT)" = "32" ] ; then
-						_url=${GHCUP_BASE_URL}/${ghver}/i386-linux-ghcup-${ghver}
-					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
-						_url=${GHCUP_BASE_URL}/${ghver}/x86_64-linux-ghcup-${ghver}
-					else
-						die "Unknown long bit size: $(getconf LONG_BIT)"
-					fi
-					;;
-				i*86)
-					_url=${GHCUP_BASE_URL}/${ghver}/i386-linux-ghcup-${ghver}
-					;;
-				armv7*|*armv8l*)
-					_url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
-					;;
-				aarch64|arm64)
-					# we could be in a 32bit docker container, in which
-					# case uname doesn't give us what we want
-					if [ "$(getconf LONG_BIT)" = "32" ] ; then
-						_url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
-					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
-						_url=${GHCUP_BASE_URL}/${ghver}/aarch64-linux-ghcup-${ghver}
-					else
-						die "Unknown long bit size: $(getconf LONG_BIT)"
-					fi
-					;;
-				*) die "Unknown architecture: ${arch}"
-					;;
-			esac
-			;;
-        "FreeBSD"|"freebsd")
-            if freebsd-version | grep -E '^12.*' ; then
-                freebsd_ver=12
-            elif freebsd-version | grep -E '^13.*' ; then
-                freebsd_ver=13
-            else
-                die "Unsupported FreeBSD version! Please report a bug at https://gitlab.haskell.org/haskell/ghcup-hs/-/issues"
-            fi
-
-			case "${arch}" in
-				x86_64|amd64)
-					;;
-				i*86)
-					die "i386 currently not supported!"
-					;;
-				*) die "Unknown architecture: ${arch}"
-					;;
-			esac
-			_url=${GHCUP_BASE_URL}/${ghver}/x86_64-freebsd${freebsd_ver}-ghcup-${ghver}
-            ;;
-        "Darwin"|"darwin")
-			case "${arch}" in
-				x86_64|amd64)
-					_url=${GHCUP_BASE_URL}/${ghver}/x86_64-apple-darwin-ghcup-${ghver}
-					;;
-				aarch64|arm64|armv8l)
-					_url=${GHCUP_BASE_URL}/${ghver}/aarch64-apple-darwin-ghcup-${ghver}
-					;;
-				i*86)
-					die "i386 currently not supported!"
-					;;
-				*) die "Unknown architecture: ${arch}"
-					;;
-			esac
-			;;
-        MSYS*|MINGW*)
-			case "${arch}" in
-				x86_64|amd64)
-					_url=${GHCUP_BASE_URL}/${ghver}/x86_64-mingw64-ghcup-${ghver}.exe
-					;;
-				*) die "Unknown architecture: ${arch}"
-					;;
-			esac
-			;;
-        *) die "Unknown platform: ${plat}"
-			;;
-    esac
-    case "${plat}" in
-        MSYS*|MINGW*)
-			edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup.exe
-			edo chmod +x "${GHCUP_BIN}"/ghcup.exe
-			;;
-		*)
-			edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup
-			edo chmod +x "${GHCUP_BIN}"/ghcup
-			;;
-	esac
+                case "${arch}" in
+                    x86_64|amd64)
+                        ;;
+                    i*86)
+                        die "i386 currently not supported!"
+                        ;;
+                    *) die "Unknown architecture: ${arch}"
+                        ;;
+                esac
+                _url=${GHCUP_BASE_URL}/${ghver}/x86_64-freebsd${freebsd_ver}-ghcup-${ghver}
+                ;;
+            "Darwin"|"darwin")
+                case "${arch}" in
+                    x86_64|amd64)
+                        _url=${GHCUP_BASE_URL}/${ghver}/x86_64-apple-darwin-ghcup-${ghver}
+                        ;;
+                    aarch64|arm64|armv8l)
+                        _url=${GHCUP_BASE_URL}/${ghver}/aarch64-apple-darwin-ghcup-${ghver}
+                        ;;
+                    i*86)
+                        die "i386 currently not supported!"
+                        ;;
+                    *) die "Unknown architecture: ${arch}"
+                        ;;
+                esac
+                ;;
+            MSYS*|MINGW*)
+                case "${arch}" in
+                    x86_64|amd64)
+                        _url=${GHCUP_BASE_URL}/${ghver}/x86_64-mingw64-ghcup-${ghver}.exe
+                        ;;
+                    *) die "Unknown architecture: ${arch}"
+                        ;;
+                esac
+                ;;
+            *) die "Unknown platform: ${plat}"
+                ;;
+        esac
+        case "${plat}" in
+            MSYS*|MINGW*)
+                edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup.exe
+                edo chmod +x "${GHCUP_BIN}"/ghcup.exe
+                ;;
+            *)
+                edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup
+                edo chmod +x "${GHCUP_BIN}"/ghcup
+                ;;
+        esac
+    fi
 
 	edo mkdir -p "${GHCUP_DIR}"
 
@@ -344,7 +345,9 @@ download_ghcup() {
 
 	# shellcheck disable=SC1090
     edo . "${GHCUP_DIR}"/env
-    eghcup upgrade
+    if [ -z "${BOOTSTRAP_HASKELL_NO_UPGRADE}" ] ; then
+        ghcup upgrade || yellow "Failed to upgrade ghcup, continuing anyway"
+    fi
 }
 
 # Figures out the users login shell and sets
@@ -733,13 +736,7 @@ fi
 
 edo mkdir -p "${GHCUP_BIN}"
 
-if command -V "ghcup" >/dev/null 2>&1 ; then
-    if [ -z "${BOOTSTRAP_HASKELL_NO_UPGRADE}" ] ; then
-        _eghcup upgrade || download_ghcup
-    fi
-else
-	download_ghcup
-fi
+download_ghcup
 
 echo
 if [ -n "${BOOTSTRAP_HASKELL_YAML}" ] ; then (>&2 ghcup -s "${BOOTSTRAP_HASKELL_YAML}" tool-requirements) ; else (>&2 ghcup tool-requirements) ; fi
