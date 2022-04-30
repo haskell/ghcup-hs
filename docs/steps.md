@@ -16,6 +16,8 @@ The Glorious Glasgow Haskell Compilation System, version 8.10.7
 If this fails, consult [the Getting started page](../install) for information on
 how to install Haskell on your computer.
 
+This guide is partly based on [Gil Mizrahi's blog](https://gilmi.me/blog/post/2021/08/14/hs-core-tools).
+
 ## Compiling programs with ghc
 
 Running `ghc` invokes the Glasgow Haskell Compiler (GHC), and can be used to
