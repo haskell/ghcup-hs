@@ -283,7 +283,7 @@ hlsCompileOpts =
           (short 'g' <> long "git-ref" <> metavar "GIT_REFERENCE" <> help
             "The git commit/branch/ref to build from"
           ) <*>
-          optional (option str (short 'r' <> long "repository" <> metavar "GIT_REPOSITORY" <> help "The git repository to build from (defaults to GHC upstream)"
+          optional (option str (short 'r' <> long "repository" <> metavar "GIT_REPOSITORY" <> help "The git repository to build from (defaults to HLS upstream)"
             <> completer (gitFileUri ["https://github.com/haskell/haskell-language-server.git"])
           ))
           )))
