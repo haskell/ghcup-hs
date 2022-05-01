@@ -1238,7 +1238,8 @@ ghcupDownloads:
               dlHash: 3c4cd72b4806045779739e8f5d1658e30e57123d88c2c8966422cdbcae448470
             '( >= 16 && < 19 )': *ghc-8101-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-8101-64-fedora
+            '< 20': *ghc-8101-64-deb9
+            '>= 20': *ghc-8101-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-8101-64-fedora
             unknown_versioning: *ghc-8101-64-fedora
@@ -1333,7 +1334,8 @@ ghcupDownloads:
               dlHash: 8c675da83e9b3c2f64ebb407b5f9ebb2c1f21aa5d701020614fdce644a542e3b
             '( >= 16 && < 19 )': *ghc-8102-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-8102-64-fedora
+            '< 20': *ghc-8102-64-deb9
+            '>= 20': *ghc-8102-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-8102-64-fedora
             unknown_versioning: *ghc-8102-64-fedora
@@ -1428,7 +1430,8 @@ ghcupDownloads:
               dlHash: f8739b12008712d6b6a9ffc6c39f9d05af77ef3bcb932c9aff20fa0893c8c159
             '( >= 16 && < 19 )': *ghc-8103-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-8103-64-deb10
+            '< 20': *ghc-8103-64-deb9
+            '>= 20': *ghc-8103-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-8103-64-fedora
             unknown_versioning: *ghc-8103-64-fedora
@@ -1524,7 +1527,8 @@ ghcupDownloads:
               dlHash: a189eed900a8717d6d7906bafd10b9a9a9688ad942d1c75e19df480376dff9ea
             '( >= 16 && < 19 )': *ghc-8104-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-8104-64-deb10
+            '< 20': *ghc-8104-64-deb9
+            '>= 20': *ghc-8104-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-8104-64-fedora
             unknown_versioning: *ghc-8104-64-fedora
@@ -1625,7 +1629,8 @@ ghcupDownloads:
               dlHash: 73528ebfb219b50aa9042ee51a0a2bd764828d605f058404989d0b645752d210
             '( >= 16 && < 19 )': *ghc-8105-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-8105-64-deb10
+            '< 20': *ghc-8105-64-deb9
+            '>= 20': *ghc-8105-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-8105-64-fedora
             unknown_versioning: *ghc-8105-64-fedora
@@ -1727,7 +1732,8 @@ ghcupDownloads:
               dlHash: c452b84565cfc07c476694dd0fd389ed6d2b83619490b3c238f6bded438eddb1
             '( >= 16 && < 19 )': *ghc-8106-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-8106-64-deb10
+            '< 20': *ghc-8106-64-deb9
+            '>= 20': *ghc-8106-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-8106-64-fedora
             unknown_versioning: *ghc-8106-64-fedora
@@ -1828,7 +1834,8 @@ ghcupDownloads:
               dlHash: b6ed67049a23054a8042e65c9976d5e196e5ee4e83b29b2ee35c8a22ab1e5b73
             '( >= 16 && < 19 )': *ghc-8107-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-8107-64-deb10
+            '< 20': *ghc-8107-64-deb9
+            '>= 20': *ghc-8107-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-8107-64-fedora
             unknown_versioning: *ghc-8107-64-fedora
@@ -1928,7 +1935,8 @@ ghcupDownloads:
               dlHash: 1fb8e27eeec51b4cdbfd1b3c16727adc5f77388d3e925e63799d8232647f316d
             '( >= 16 && < 19 )': *ghc-901-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-901-64-deb10
+            '< 20': *ghc-901-64-deb9
+            '>= 20': *ghc-901-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-901-64-fedora
             unknown_versioning: *ghc-901-64-fedora
@@ -2022,7 +2030,8 @@ ghcupDownloads:
               dlHash: b2670e9f278e10355b0475c2cc3b8842490f1bca3c70c306f104aa60caff37b0
             '( >= 16 && < 19 )': *ghc-902-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-902-64-deb10
+            '< 20': *ghc-902-64-deb9
+            '>= 20': *ghc-902-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-902-64-fedora
             unknown_versioning: *ghc-902-64-fedora
@@ -2116,7 +2125,8 @@ ghcupDownloads:
               dlHash: e37cd1fe64006dd42f418dacbae3fea0938ce0905407cfc7c3ea61054f5d5329
             '( >= 16 && < 19 )': *ghc-921-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-921-64-deb10
+            '< 20': *ghc-921-64-deb9
+            '>= 20': *ghc-921-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-921-64-fedora
             unknown_versioning: *ghc-921-64-fedora
@@ -2207,7 +2217,8 @@ ghcupDownloads:
               dlHash: eab2b4e3ca99eb7cc81aa3136e9e0b245ba6b3e9057f02a2d289fbf60856eb10
             '( >= 16 && < 19 )': *ghc-922-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-922-64-deb10
+            '< 20': *ghc-922-64-deb9
+            '>= 20': *ghc-922-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *ghc-922-64-fedora
             unknown_versioning: *ghc-922-64-fedora
@@ -2939,6 +2950,9 @@ ghcupDownloads:
             '( >= 16 && < 19 )': *hls-170-64-deb9
           Linux_Mint:
             unknown_versioning: *hls-170-64-deb10
+          Linux_Mint:
+            '< 20': *hls-170-64-deb9
+            '>= 20': *hls-170-64-fedora
           Linux_Fedora:
             '( >= 27 && < 28 )': *hls-170-64-fedora
             unknown_versioning: *hls-170-64-fedora
