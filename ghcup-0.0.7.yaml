@@ -2949,8 +2949,6 @@ ghcupDownloads:
               dlHash: cad0a9800004e7dc78eae824118f92efc33b9ed30f20f1e9584b57695ff93e50
             '( >= 16 && < 19 )': *hls-170-64-deb9
           Linux_Mint:
-            unknown_versioning: *hls-170-64-deb10
-          Linux_Mint:
             '< 20': *hls-170-64-deb9
             '>= 20': *hls-170-64-fedora
           Linux_Fedora:
