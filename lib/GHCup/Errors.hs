@@ -27,6 +27,7 @@ import           Data.CaseInsensitive           ( CI )
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           Haskus.Utils.Variant
+import           System.FilePath
 import           Text.PrettyPrint               hiding ( (<>) )
 import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           URI.ByteString
@@ -291,6 +292,24 @@ instance Pretty HadrianNotFound where
   pPrint HadrianNotFound =
     text "Could not find Hadrian build files. Does this GHC version support Hadrian builds?"
 
+data GHCupShadowed = GHCupShadowed
+                       FilePath  -- shadow binary
+                       FilePath  -- upgraded binary
+                       Version   -- upgraded version
+  deriving Show
+
+instance Pretty GHCupShadowed where
+  pPrint (GHCupShadowed sh up _) =
+    text ("ghcup is shadowed by "
+         <> sh
+         <> ". The upgrade will not be in effect, unless you remove "
+         <> sh
+         <> " or make sure "
+         <> takeDirectory up
+         <> " comes before "
+         <> takeDirectory sh
+         <> " in PATH."
+         )
 
     -------------------------
     --[ High-level errors ]--
