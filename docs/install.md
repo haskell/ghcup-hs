@@ -105,7 +105,8 @@ GHCup supports the following tools, which are also known as the **Haskell Toolch
 <table>
 <thead><tr><th>HLS Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>1.6.1.0</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>1.7.0.0</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>1.6.1.0</td><td></td></tr>
 <tr><td>1.6.0.0</td><td></td></tr>
 <tr><td>1.5.1</td><td></td></tr>
 <tr><td>1.5.0</td><td></td></tr>
