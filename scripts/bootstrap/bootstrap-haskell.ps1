@@ -239,7 +239,27 @@ if ($Silent -and !($InstallDir)) {
   }
 } else {
   while ($true) {
-    Print-Msg -color Magenta -msg ('Where to install to (this should be a short Path, preferably a Drive like ''C:\''){1}Press enter to accept the default [{0}]:' -f $defaultGhcupBasePrefix, "`n")
+	Print-Msg -color Magenta -msg (@'
+Welcome to Haskell!
+
+This script will download and install the following programs:
+  * ghcup - The Haskell toolchain installer
+  * ghc   - The Glasgow Haskell Compiler
+  * msys2 - A linux-style toolchain environment required for many operations
+  * cabal - The Cabal build tool for managing Haskell software
+  * stack - (optional) A cross-platform program for developing Haskell projects
+  * hls   - (optional) A language server for developers to integrate with their editor/IDE
+
+Please not that ANTIVIRUS may interfere with the installation. If you experience problems, consider
+disabling it temporarily.
+
+Where to install to (this should be a short Path, preferably a Drive like 'C:\')?
+If you accept this path, binaries will be installed into '{0}ghcup\bin' and msys2 into '{0}ghcup\msys64'.
+Press enter to accept the default [{0}]:
+
+'@ -f $defaultGhcupBasePrefix)
+
+
     $basePrefixPrompt = Read-Host
     $GhcupBasePrefix = ($defaultGhcupBasePrefix,$basePrefixPrompt)[[bool]$basePrefixPrompt]
     if (!($GhcupBasePrefix.EndsWith('\'))) {
