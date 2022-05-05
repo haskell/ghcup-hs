@@ -2237,9 +2237,9 @@ ghcupDownloads:
               dlHash: 934abbd6083d3aeb5ff081955682d7711d9e79db57b1613eb229c325dd06f83f
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.2.2/ghc-9.2.2-x86_64-unknown-mingw32.tar.xz
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.2.2/ghc-9.2.2-x86_64-unknown-mingw32.tar.gz
               dlSubdir: ghc-9.2.2-x86_64-unknown-mingw32
-              dlHash: 22f30fe0e4c91e6cf3bc4f7b31dc07a4d1602e1dc136b657df3983c28bae7877
+              dlHash: 666de668f037b823a8585586cbeff337fcf5847c001cbed796735fd77e06f113
           Linux_Alpine:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-alpine3.12-linux-gmp.tar.xz
