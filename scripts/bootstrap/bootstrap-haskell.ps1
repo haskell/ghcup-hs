@@ -250,7 +250,7 @@ This script will download and install the following programs:
   * stack - (optional) A cross-platform program for developing Haskell projects
   * hls   - (optional) A language server for developers to integrate with their editor/IDE
 
-Please not that ANTIVIRUS may interfere with the installation. If you experience problems, consider
+Please note that ANTIVIRUS may interfere with the installation. If you experience problems, consider
 disabling it temporarily.
 
 Where to install to (this should be a short Path, preferably a Drive like 'C:\')?
