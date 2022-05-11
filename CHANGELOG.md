@@ -1,6 +1,6 @@
 # Revision history for ghcup
 
-## 0.1.17.8 -- XXXX-XX-XX
+## 0.1.17.8 -- 2022-05-11
 
 * Fix a serious (but hard to trigger) bug when combining `--isolate <DIR>` with `--force`, please make sure to upgrade or avoid `--force`
 * Fix HLS build not cleaning up properly on failed installations, fixes [#361](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/361)
