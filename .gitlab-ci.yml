@@ -134,6 +134,7 @@ variables:
   extends:
     - .test_ghcup_version
     - .debian
+    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/linux/install_deps.sh
 
@@ -141,6 +142,7 @@ variables:
   extends:
     - .test_ghcup_version
     - .alpine:32bit
+    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/linux/alpine/install_deps.sh
 
@@ -148,6 +150,7 @@ variables:
   extends:
     - .test_ghcup_version
     - .linux:armv7
+    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/linux/install_deps.sh
 
@@ -155,6 +158,7 @@ variables:
   extends:
     - .test_ghcup_version
     - .linux:aarch64
+    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/linux/install_deps.sh
 
