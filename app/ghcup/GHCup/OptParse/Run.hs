@@ -351,25 +351,25 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
              Just (GHC, v) -> do
                unless isInstalled $ when (runInstTool' && isNothing (_tvTarget v)) $ void $ liftE $ installGHCBin
                  (_tvVersion v)
-                 Nothing
+                 GHCupInternal
                  False
                setTool GHC v tmp
              Just (Cabal, v) -> do
                unless isInstalled $ when runInstTool' $ void $ liftE $ installCabalBin
                  (_tvVersion v)
-                 Nothing
+                 GHCupInternal
                  False
                setTool Cabal v tmp
              Just (Stack, v) -> do
                unless isInstalled $ when runInstTool' $ void $ liftE $ installStackBin
                  (_tvVersion v)
-                 Nothing
+                 GHCupInternal
                  False
                setTool Stack v tmp
              Just (HLS, v) -> do
                unless isInstalled $ when runInstTool' $ void $ liftE $ installHLSBin
                  (_tvVersion v)
-                 Nothing
+                 GHCupInternal
                  False
                setTool HLS v tmp
              _ -> pure ()
