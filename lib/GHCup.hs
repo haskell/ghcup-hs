@@ -627,7 +627,8 @@ installHLSBindist dlinfo ver installDir forceInstall = do
       then liftE $ installHLSUnpackedLegacy workdir (GHCupDir binDir) ver forceInstall
       else do
         inst <- ghcupHLSDir ver
-        liftE $ runBuildAction tmpUnpack Nothing $ installHLSUnpacked workdir (GHCupDir inst) ver
+        liftE $ runBuildAction tmpUnpack (Just inst)
+              $ installHLSUnpacked workdir (GHCupDir inst) ver
         liftE $ setHLS ver SetHLS_XYZ Nothing
 
 
