@@ -100,7 +100,7 @@ eghcup set ghc ${GHC_VERSION}
 eghcup install cabal ${CABAL_VERSION}
 [ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
 eghcup unset cabal
-"$GHCUP_BIN"/cabal --version && exit || echo yes
+"$GHCUP_BIN"/cabal --version && exit 1 || echo yes
 eghcup set cabal ${CABAL_VERSION}
 [ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
 [ `eghcup run --cabal ${CABAL_VERSION} -- cabal --numeric-version` = "${CABAL_VERSION}" ]
@@ -170,7 +170,7 @@ else
 	eghcup set ${GHC_VERSION}
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 	eghcup unset ghc
-    "$GHCUP_BIN"/ghc --numeric-version && exit || echo yes
+    "$GHCUP_BIN"/ghc --numeric-version && exit 1 || echo yes
 	eghcup set ${GHC_VERSION}
 	eghcup --offline rm 8.10.3
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
@@ -189,12 +189,12 @@ else
 			eghcup install hls
 			haskell-language-server-wrapper --version
 			eghcup unset hls
-			"$GHCUP_BIN"/haskell-language-server-wrapper --version && exit || echo yes
+			"$GHCUP_BIN"/haskell-language-server-wrapper --version && exit 1 || echo yes
 
 			eghcup install stack
 			stack --version
-			eghcup unset hls
-			"$GHCUP_BIN"/stack --version && exit || echo yes
+			eghcup unset stack
+			"$GHCUP_BIN"/stack --version && exit 1 || echo yes
 		fi
 	fi
 fi
