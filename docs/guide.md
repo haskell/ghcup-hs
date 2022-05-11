@@ -57,6 +57,13 @@ as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
 and make sure your bashrc sources the startup script
 (`/usr/share/bash-completion/bash_completion` on some distros).
 
+## Portability
+
+`ghcup` is very portable. There are a few exceptions though:
+
+1. `ghcup tui` is only available on non-windows platforms
+2. legacy subcommands `ghcup install` (without a tool identifier) and `ghcup install-cabal` may be removed in the future
+
 # Configuration
 
 A configuration file can be put in `~/.ghcup/config.yaml`. The default config file

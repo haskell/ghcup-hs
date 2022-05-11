@@ -59,15 +59,16 @@ data UpgradeOpts = UpgradeInplace
     --[ Parsers ]--
     ---------------
 
-          
+
 upgradeOptsP :: Parser UpgradeOpts
 upgradeOptsP =
   flag'
       UpgradeInplace
       (short 'i' <> long "inplace" <> help
-        "Upgrade ghcup in-place (wherever it's at)"
+        "Upgrade ghcup in-place"
       )
-    <|> (   UpgradeAt
+    <|>
+      (   UpgradeAt
         <$> option
               str
               (short 't' <> long "target" <> metavar "TARGET_DIR" <> help
@@ -92,6 +93,7 @@ type UpgradeEffects = '[ DigestError
                        , FileDoesNotExistError
                        , CopyError
                        , DownloadFailed
+                       , GHCupShadowed
                        ]
 
 
@@ -120,18 +122,19 @@ upgrade :: ( Monad m
            )
         => UpgradeOpts
         -> Bool
+        -> Bool
         -> Dirs
         -> (forall a. ReaderT AppState m (VEither UpgradeEffects a) -> m (VEither UpgradeEffects a))
         -> (ReaderT LeanAppState m () -> m ())
         -> m ExitCode
-upgrade uOpts force' Dirs{..} runAppState runLogger = do
+upgrade uOpts force' fatal Dirs{..} runAppState runLogger = do
   target <- case uOpts of
     UpgradeInplace  -> Just <$> liftIO getExecutablePath
     (UpgradeAt p)   -> pure $ Just p
     UpgradeGHCupDir -> pure (Just (binDir </> "ghcup" <> exeExt))
 
   runUpgrade runAppState (do
-    v' <- liftE $ upgradeGHCup target force'
+    v' <- liftE $ upgradeGHCup target force' fatal
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
     pure (v', dls)
     ) >>= \case

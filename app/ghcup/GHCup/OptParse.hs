@@ -96,7 +96,7 @@ data Command
   | Config ConfigCommand
   | Whereis WhereisOptions WhereisCommand
 #ifndef DISABLE_UPGRADE
-  | Upgrade UpgradeOpts Bool
+  | Upgrade UpgradeOpts Bool Bool
 #endif
   | ToolRequirements ToolReqOpts
   | ChangeLog ChangeLogOptions
@@ -222,18 +222,18 @@ com =
            (info (List <$> listOpts <**> helper)
                  (progDesc "Show available GHCs and other tools")
            )
-#ifndef DISABLE_UPGRADE
       <> command
            "upgrade"
            (info
              (    (Upgrade <$> upgradeOptsP <*> switch
                     (short 'f' <> long "force" <> help "Force update")
+                    <*> switch
+                    (long "fail-if-shadowed" <> help "Fails after upgrading if the upgraded ghcup binary is shadowed by something else in PATH (useful for CI)")
                   )
              <**> helper
              )
              (progDesc "Upgrade ghcup")
            )
-#endif
       <> command
            "compile"
            (   Compile

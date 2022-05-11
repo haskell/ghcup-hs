@@ -2587,6 +2587,7 @@ upgradeGHCup :: ( MonadMask m
              => Maybe FilePath    -- ^ full file destination to write ghcup into
              -> Bool              -- ^ whether to force update regardless
                                   --   of currently installed version
+             -> Bool              -- ^ whether to throw an error if ghcup is shadowed
              -> Excepts
                   '[ CopyError
                    , DigestError
@@ -2595,10 +2596,11 @@ upgradeGHCup :: ( MonadMask m
                    , DownloadFailed
                    , NoDownload
                    , NoUpdate
+                   , GHCupShadowed
                    ]
                   m
                   Version
-upgradeGHCup mtarget force' = do
+upgradeGHCup mtarget force' fatal = do
   Dirs {..} <- lift getDirs
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
@@ -2625,15 +2627,18 @@ upgradeGHCup mtarget force' = do
     lift $ logWarn $ T.pack (takeFileName destFile) <> " is not in PATH! You have to add it in order to use ghcup."
   liftIO (isShadowed destFile) >>= \case
     Nothing -> pure ()
-    Just pa -> lift $ logWarn $ "ghcup is shadowed by "
-      <> T.pack pa
-      <> ". The upgrade will not be in effect, unless you remove "
-      <> T.pack pa
-      <> " or make sure "
-      <> T.pack destDir
-      <> " comes before "
-      <> T.pack (takeFileName pa)
-      <> " in PATH."
+    Just pa
+      | fatal -> throwE (GHCupShadowed pa destFile latestVer)
+      | otherwise ->
+        lift $ logWarn $ "ghcup is shadowed by "
+          <> T.pack pa
+          <> ". The upgrade will not be in effect, unless you remove "
+          <> T.pack pa
+          <> " or make sure "
+          <> T.pack destDir
+          <> " comes before "
+          <> T.pack (takeDirectory pa)
+          <> " in PATH."
 
   pure latestVer
 

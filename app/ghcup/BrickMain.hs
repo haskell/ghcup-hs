@@ -437,6 +437,7 @@ install' _ (_, ListResult {..}) = do
               , TarDirDoesNotExist
               , FileAlreadyExistsError
               , ProcessError
+              , GHCupShadowed
               ]
 
   run (do
@@ -452,7 +453,7 @@ install' _ (_, ListResult {..}) = do
           liftE $ installCabalBin lVer Nothing False $> (vi, dirs, ce)
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
-          liftE $ upgradeGHCup Nothing False $> (vi, dirs, ce)
+          liftE $ upgradeGHCup Nothing False False $> (vi, dirs, ce)
         HLS   -> do
           let vi = getVersionInfo lVer HLS dls
           liftE $ installHLSBin lVer Nothing False $> (vi, dirs, ce)
