@@ -264,6 +264,19 @@ if [ "${ARCH}" = "64" ] ; then
 		eghcup install hls -i "$(pwd)/isolated" 1.3.0
 		[ "$(isolated/haskell-language-server-wrapper --numeric-version)" = "1.3.0" ] ||
 			[ "$(isolated/haskell-language-server-wrapper --numeric-version)" = "1.3.0.0" ]
+
+		# test that isolated installs don't clean up target directory
+		cat <<EOF > "${GHCUP_BIN}/gmake"
+#!/bin/bash
+exit 1
+EOF
+		chmod +x "${GHCUP_BIN}/gmake"
+		mkdir isolated_tainted/
+		touch isolated_tainted/lol
+
+		! eghcup install ghc -i "$(pwd)/isolated_tainted" 8.10.5 --force
+		[ -e "$(pwd)/isolated_tainted/lol" ]
+		rm "${GHCUP_BIN}/gmake"
 	fi
 fi
 
