@@ -2,8 +2,8 @@
 
 ## 0.1.17.8 -- XXXX-XX-XX
 
+* Fix a serious (but hard to trigger) bug when combining `--isolate <DIR>` with `--force`, please make sure to upgrade or avoid `--force`
 * Fix HLS build not cleaning up properly on failed installations, fixes [#361](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/361)
-    - this also fixes a significant bug on installation failure when combining `--isolate DIR` with `--force`
 * Fix parsing of symlinks with multiple slashes, wrt [#353](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/353)
 * Re-enable upgrade functionality for all configurations wrt [MR #250](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/250) and [VSCode haskell issue #601](https://github.com/haskell/vscode-haskell/issues/601)
 * Fix `ghcup run --ghc 8.10` (for short versions) wrt [#360](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/360)
