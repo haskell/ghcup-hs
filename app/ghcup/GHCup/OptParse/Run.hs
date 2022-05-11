@@ -61,6 +61,7 @@ data RunOptions = RunOptions
   , runHLSVer     :: Maybe ToolVersion
   , runStackVer   :: Maybe ToolVersion
   , runBinDir     :: Maybe FilePath
+  , runQuick      :: Bool
   , runCOMMAND    :: [String]
   }
 
@@ -70,8 +71,8 @@ data RunOptions = RunOptions
     --[ Parsers ]--
     ---------------
 
-          
-    
+
+
 runOpts :: Parser RunOptions
 runOpts =
   RunOptions
@@ -121,6 +122,8 @@ runOpts =
            <> completer (bashCompleter "directory")
            )
           )
+    <*> switch
+          (short 'q' <> long "quick" <> help "Avoid any expensive work (such as downloads, version/tag resolution etc.). Disables --install.")
     <*> many (argument str (metavar "COMMAND" <> help "The command to run, with arguments (use longopts --). If omitted, just prints the created bin/ dir to stdout and exits."))
           
 
@@ -219,29 +222,15 @@ run :: forall m.
    -> (ReaderT LeanAppState m () -> m ())
    -> m ExitCode
 run RunOptions{..} runAppState leanAppstate runLogger = do
-   r <- if or (fmap (maybe False isToolTag) [runGHCVer, runCabalVer, runHLSVer, runStackVer]) || runInstTool'
+   r <- if not runQuick
         then runRUN runAppState $ do
          toolchain <- liftE resolveToolchainFull
-         tmp <- case runBinDir of
-           Just bindir -> do
-             liftIO $ createDirRecursive' bindir
-             liftIO $ canonicalizePath bindir
-           Nothing -> do
-             d <- liftIO $ predictableTmpDir toolchain
-             liftIO $ createDirRecursive' d
-             liftIO $ canonicalizePath d
+         tmp <- liftIO $ createTmpDir toolchain
          liftE $ installToolChainFull toolchain tmp
          pure tmp
         else runLeanRUN leanAppstate $ do
          toolchain <- resolveToolchain
-         tmp <- case runBinDir of
-           Just bindir -> do
-             liftIO $ createDirRecursive' bindir
-             liftIO $ canonicalizePath bindir
-           Nothing -> do
-             d <- liftIO $ predictableTmpDir toolchain
-             liftIO $ createDirRecursive' d
-             liftIO $ canonicalizePath d
+         tmp <- liftIO $ createTmpDir toolchain
          liftE $ installToolChain toolchain tmp
          pure tmp
    case r of
@@ -269,9 +258,16 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
 
   where
 
-   isToolTag :: ToolVersion -> Bool
-   isToolTag (ToolTag _) = True
-   isToolTag _           = False
+   createTmpDir :: Toolchain -> IO FilePath
+   createTmpDir toolchain =
+     case runBinDir of
+           Just bindir -> do
+             createDirRecursive' bindir
+             canonicalizePath bindir
+           Nothing -> do
+             d <- predictableTmpDir toolchain
+             createDirRecursive' d
+             canonicalizePath d
 
    -- TODO: doesn't work for cross
    resolveToolchainFull :: ( MonadFail m
