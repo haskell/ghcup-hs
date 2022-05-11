@@ -228,6 +228,8 @@ See `ghcup compile ghc --help` for further information.
 
 ## Isolated installs
 
+**Before using isolated installs, make sure to have at least GHCup version 0.1.17.8!**
+
 Ghcup also enables you to install a tool (GHC, Cabal, HLS, Stack) at an isolated location of your choosing.
 These installs, as the name suggests, are separate from your main installs and DO NOT conflict with them.
 
