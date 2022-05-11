@@ -1265,9 +1265,10 @@ ghcBinaryName (GHCTargetVersion Nothing  _) = T.unpack ("ghc" <> T.pack exeExt)
 installDestSanityCheck :: ( MonadIO m
                           , MonadCatch m
                           ) =>
-                          FilePath ->
+                          InstallDirResolved ->
                           Excepts '[DirNotEmpty] m ()
-installDestSanityCheck isoDir = do
+installDestSanityCheck (IsolateDirResolved isoDir) = do
   hideErrorDef [doesNotExistErrorType] () $ do
     contents <- liftIO $ getDirectoryContentsRecursive isoDir
     unless (null contents) (throwE $ DirNotEmpty isoDir)
+installDestSanityCheck _ = pure ()

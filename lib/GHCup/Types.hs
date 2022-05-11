@@ -628,3 +628,16 @@ data CapturedProcess = CapturedProcess
   deriving (Eq, Show)
 
 makeLenses ''CapturedProcess
+
+
+data InstallDir = IsolateDir FilePath
+                | GHCupInternal
+  deriving (Eq, Show)
+
+data InstallDirResolved = IsolateDirResolved FilePath
+                        | GHCupDir FilePath
+  deriving (Eq, Show)
+
+fromInstallDir :: InstallDirResolved -> FilePath
+fromInstallDir (IsolateDirResolved fp) = fp
+fromInstallDir (GHCupDir fp) = fp

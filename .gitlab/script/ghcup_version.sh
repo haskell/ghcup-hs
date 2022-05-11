@@ -176,6 +176,8 @@ else
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 
 
+	ls -lah "$GHCUP_BIN"
+
 	if [ "${OS}" = "DARWIN" ] ; then
 		eghcup install hls
 		$(eghcup whereis hls) --version

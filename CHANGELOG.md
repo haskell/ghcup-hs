@@ -2,6 +2,9 @@
 
 ## 0.1.17.8 -- XXXX-XX-XX
 
+* Fix HLS build not cleaning up properly on failed installations, fixes [#361](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/361)
+    - this also fixes a significant bug on installation failure when combining `--isolate DIR` with `--force`
+* Fix parsing of symlinks with multiple slashes, wrt [#353](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/353)
 * Re-enable upgrade functionality for all configurations wrt [#250](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/250)
 
 ## 0.1.17.7 -- 2022-04-21

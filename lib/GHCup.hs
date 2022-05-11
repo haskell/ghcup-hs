@@ -187,7 +187,7 @@ installGHCBindist :: ( MonadFail m
                      )
                   => DownloadInfo    -- ^ where/how to download
                   -> Version         -- ^ the version to install
-                  -> Maybe FilePath  -- ^ isolated filepath if user passed any
+                  -> InstallDir
                   -> Bool            -- ^ Force install
                   -> Excepts
                        '[ AlreadyInstalled
@@ -205,22 +205,22 @@ installGHCBindist :: ( MonadFail m
                         ]
                        m
                        ()
-installGHCBindist dlinfo ver isoFilepath forceInstall = do
+installGHCBindist dlinfo ver installDir forceInstall = do
   let tver = mkTVer ver
 
   lift $ logDebug $ "Requested to install GHC with " <> prettyVer ver
 
   regularGHCInstalled <- lift $ checkIfToolInstalled GHC ver
-  
+
   if
     | not forceInstall
     , regularGHCInstalled
-    , Nothing <- isoFilepath -> do
+    , GHCupInternal <- installDir -> do
         throwE $ AlreadyInstalled GHC ver
 
     | forceInstall
     , regularGHCInstalled
-    , Nothing <- isoFilepath -> do
+    , GHCupInternal <- installDir -> do
         lift $ logInfo "Removing the currently installed GHC version first!"
         liftE $ rmGHCVer tver
 
@@ -229,17 +229,18 @@ installGHCBindist dlinfo ver isoFilepath forceInstall = do
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
 
-  -- prepare paths
-  ghcdir <- lift $ ghcupGHCDir tver
 
   toolchainSanityChecks
 
-  case isoFilepath of
-    Just isoDir -> do                        -- isolated install
+  case installDir of
+    IsolateDir isoDir -> do                        -- isolated install
       lift $ logInfo $ "isolated installing GHC to " <> T.pack isoDir
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) isoDir ver forceInstall
-    Nothing -> do                            -- regular install
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) ghcdir ver forceInstall
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (IsolateDirResolved isoDir) ver forceInstall
+    GHCupInternal -> do                            -- regular install
+      -- prepare paths
+      ghcdir <- lift $ ghcupGHCDir tver
+
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (GHCupDir ghcdir) ver forceInstall
 
       -- make symlinks & stuff when regular install,
       liftE $ postGHCInstall tver
@@ -271,7 +272,7 @@ installPackedGHC :: ( MonadMask m
                     )
                  => FilePath          -- ^ Path to the packed GHC bindist
                  -> Maybe TarDir      -- ^ Subdir of the archive
-                 -> FilePath          -- ^ Path to install to
+                 -> InstallDirResolved
                  -> Version           -- ^ The GHC version
                  -> Bool              -- ^ Force install
                  -> Excepts
@@ -297,9 +298,13 @@ installPackedGHC dl msubdir inst ver forceInstall = do
   workdir <- maybe (pure tmpUnpack)
                    (liftE . intoSubdir tmpUnpack)
                    msubdir
-  
+
   liftE $ runBuildAction tmpUnpack
-                         (Just inst)
+                         (case inst of
+                           IsolateDirResolved _ -> Nothing -- don't clean up for isolated installs, since that'd potentially delete other
+                                                   -- user files if '--force' is supplied
+                           GHCupDir d -> Just d
+                           )
                          (installUnpackedGHC workdir inst ver)
 
 
@@ -315,11 +320,11 @@ installUnpackedGHC :: ( MonadReader env m
                       , MonadUnliftIO m
                       , MonadMask m
                       )
-                   => FilePath      -- ^ Path to the unpacked GHC bindist (where the configure script resides)
-                   -> FilePath      -- ^ Path to install to
-                   -> Version       -- ^ The GHC version
+                   => FilePath            -- ^ Path to the unpacked GHC bindist (where the configure script resides)
+                   -> InstallDirResolved  -- ^ Path to install to
+                   -> Version             -- ^ The GHC version
                    -> Excepts '[ProcessError] m ()
-installUnpackedGHC path inst ver
+installUnpackedGHC path (fromInstallDir -> inst) ver
   | isWindows = do
       lift $ logInfo "Installing GHC (this may take a while)"
       -- Windows bindists are relocatable and don't need
@@ -340,7 +345,7 @@ installUnpackedGHC path inst ver
 
       lift $ logInfo "Installing GHC (this may take a while)"
       lEM $ execLogged "sh"
-                       ("./configure" : ("--prefix=" <> inst) 
+                       ("./configure" : ("--prefix=" <> inst)
                         : alpineArgs
                        )
                        (Just path)
@@ -369,7 +374,7 @@ installGHCBin :: ( MonadFail m
                  , MonadUnliftIO m
                  )
               => Version         -- ^ the version to install
-              -> Maybe FilePath  -- ^ isolated install filepath, if user passed any
+              -> InstallDir
               -> Bool            -- ^ force install
               -> Excepts
                    '[ AlreadyInstalled
@@ -387,9 +392,9 @@ installGHCBin :: ( MonadFail m
                     ]
                    m
                    ()
-installGHCBin ver isoFilepath forceInstall = do
+installGHCBin ver installDir forceInstall = do
   dlinfo <- liftE $ getDownloadInfo GHC ver
-  liftE $ installGHCBindist dlinfo ver isoFilepath forceInstall
+  liftE $ installGHCBindist dlinfo ver installDir forceInstall
 
 
 -- | Like 'installCabalBin', except takes the 'DownloadInfo' as
@@ -408,8 +413,8 @@ installCabalBindist :: ( MonadMask m
                        )
                     => DownloadInfo
                     -> Version
-                    -> Maybe FilePath -- ^ isolated install filepath, if user provides any.
-                    -> Bool           -- ^ Force install 
+                    -> InstallDir
+                    -> Bool           -- ^ Force install
                     -> Excepts
                          '[ AlreadyInstalled
                           , CopyError
@@ -425,7 +430,7 @@ installCabalBindist :: ( MonadMask m
                           ]
                          m
                          ()
-installCabalBindist dlinfo ver isoFilepath forceInstall = do
+installCabalBindist dlinfo ver installDir forceInstall = do
   lift $ logDebug $ "Requested to install cabal version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
@@ -437,18 +442,18 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
   if
     | not forceInstall
     , regularCabalInstalled
-    ,  Nothing <- isoFilepath -> do
+    , GHCupInternal <- installDir -> do
         throwE $ AlreadyInstalled Cabal ver
-        
+
     | forceInstall
     , regularCabalInstalled
-    , Nothing <- isoFilepath -> do
+    , GHCupInternal <- installDir -> do
         lift $ logInfo "Removing the currently installed version first!"
         liftE $ rmCabalVer ver
 
     | otherwise -> pure ()
 
-               
+
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
 
@@ -460,34 +465,37 @@ installCabalBindist dlinfo ver isoFilepath forceInstall = do
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
 
-  case isoFilepath of
-    Just isoDir -> do             -- isolated install
+  case installDir of
+    IsolateDir isoDir -> do             -- isolated install
       lift $ logInfo $ "isolated installing Cabal to " <> T.pack isoDir
-      liftE $ installCabalUnpacked workdir isoDir Nothing forceInstall
+      liftE $ installCabalUnpacked workdir (IsolateDirResolved isoDir) ver forceInstall
 
-    Nothing -> do                 -- regular install
-      liftE $ installCabalUnpacked workdir binDir (Just ver) forceInstall
+    GHCupInternal -> do                 -- regular install
+      liftE $ installCabalUnpacked workdir (GHCupDir binDir) ver forceInstall
 
-      
+
 -- | Install an unpacked cabal distribution.Symbol
 installCabalUnpacked :: (MonadCatch m, HasLog env, MonadIO m, MonadReader env m)
               => FilePath      -- ^ Path to the unpacked cabal bindist (where the executable resides)
-              -> FilePath      -- ^ Path to install to
-              -> Maybe Version -- ^ Nothing for isolated install
+              -> InstallDirResolved      -- ^ Path to install to
+              -> Version
               -> Bool          -- ^ Force Install
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
-installCabalUnpacked path inst mver' forceInstall = do
+installCabalUnpacked path inst ver forceInstall = do
   lift $ logInfo "Installing cabal"
   let cabalFile = "cabal"
-  liftIO $ createDirRecursive' inst
+  liftIO $ createDirRecursive' (fromInstallDir inst)
   let destFileName = cabalFile
-        <> maybe "" (("-" <>) . T.unpack . prettyVer) mver'
+        <> (case inst of
+              IsolateDirResolved _ -> ""
+              GHCupDir _ -> ("-" <>) . T.unpack . prettyVer $ ver
+           )
         <> exeExt
-  let destPath = inst </> destFileName
+  let destPath = fromInstallDir inst </> destFileName
 
   unless forceInstall          -- Overwrite it when it IS a force install
     (liftE $ throwIfFileAlreadyExists destPath)
-    
+
   copyFileE
     (path </> cabalFile <> exeExt)
     destPath
@@ -510,7 +518,7 @@ installCabalBin :: ( MonadMask m
                    , MonadFail m
                    )
                 => Version
-                -> Maybe FilePath -- isolated install Path, if user provided any
+                -> InstallDir
                 -> Bool           -- force install
                 -> Excepts
                      '[ AlreadyInstalled
@@ -527,9 +535,9 @@ installCabalBin :: ( MonadMask m
                       ]
                      m
                      ()
-installCabalBin ver isoFilepath forceInstall = do
+installCabalBin ver installDir forceInstall = do
   dlinfo <- liftE $ getDownloadInfo Cabal ver
-  installCabalBindist dlinfo ver isoFilepath forceInstall
+  installCabalBindist dlinfo ver installDir forceInstall
 
 
 -- | Like 'installHLSBin, except takes the 'DownloadInfo' as
@@ -548,8 +556,8 @@ installHLSBindist :: ( MonadMask m
                      )
                   => DownloadInfo
                   -> Version
-                  -> Maybe FilePath -- ^ isolated install path, if user passed any
-                  -> Bool           -- ^ Force install
+                  -> InstallDir -- ^ isolated install path, if user passed any
+                  -> Bool       -- ^ Force install
                   -> Excepts
                        '[ AlreadyInstalled
                         , CopyError
@@ -567,7 +575,7 @@ installHLSBindist :: ( MonadMask m
                         ]
                        m
                        ()
-installHLSBindist dlinfo ver isoFilepath forceInstall = do
+installHLSBindist dlinfo ver installDir forceInstall = do
   lift $ logDebug $ "Requested to install hls version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
@@ -578,17 +586,17 @@ installHLSBindist dlinfo ver isoFilepath forceInstall = do
   if
     | not forceInstall
     , regularHLSInstalled
-    , Nothing <- isoFilepath -> do      -- regular install
+    , GHCupInternal <- installDir -> do        -- regular install
         throwE $ AlreadyInstalled HLS ver
 
     | forceInstall
     , regularHLSInstalled
-    , Nothing <- isoFilepath -> do      -- regular forced install
+    , GHCupInternal <- installDir -> do        -- regular forced install
         lift $ logInfo "Removing the currently installed version of HLS before force installing!"
         liftE $ rmHLSVer ver
 
     | otherwise -> pure ()
-    
+
   -- download (or use cached version)
   dl <- liftE $ downloadCached dlinfo Nothing
 
@@ -604,22 +612,23 @@ installHLSBindist dlinfo ver isoFilepath forceInstall = do
   if
     | not forceInstall
     , not legacy
-    , (Just fp) <- isoFilepath -> liftE $ installDestSanityCheck fp
+    , (IsolateDir fp) <- installDir -> liftE $ installDestSanityCheck (IsolateDirResolved fp)
     | otherwise -> pure ()
 
-  case isoFilepath of
-    Just isoDir -> do
+  case installDir of
+    IsolateDir isoDir -> do
       lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
       if legacy
-      then liftE $ installHLSUnpackedLegacy workdir isoDir Nothing forceInstall
-      else liftE $ runBuildAction tmpUnpack Nothing $ installHLSUnpacked workdir isoDir ver
+      then liftE $ installHLSUnpackedLegacy workdir (IsolateDirResolved isoDir) ver forceInstall
+      else liftE $ runBuildAction tmpUnpack Nothing $ installHLSUnpacked workdir (IsolateDirResolved isoDir) ver
 
-    Nothing -> do
+    GHCupInternal -> do
       if legacy
-      then liftE $ installHLSUnpackedLegacy workdir binDir (Just ver) forceInstall
+      then liftE $ installHLSUnpackedLegacy workdir (GHCupDir binDir) ver forceInstall
       else do
         inst <- ghcupHLSDir ver
-        liftE $ runBuildAction tmpUnpack Nothing $ installHLSUnpacked workdir inst ver
+        liftE $ runBuildAction tmpUnpack (Just inst)
+              $ installHLSUnpacked workdir (GHCupDir inst) ver
         liftE $ setHLS ver SetHLS_XYZ Nothing
 
 
@@ -631,10 +640,10 @@ isLegacyHLSBindist path = do
 -- | Install an unpacked hls distribution.
 installHLSUnpacked :: (MonadMask m, MonadUnliftIO m, MonadReader env m, MonadFail m, HasLog env, HasDirs env, HasSettings env, MonadCatch m, MonadIO m)
                    => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
-                   -> FilePath      -- ^ Path to install to
+                   -> InstallDirResolved      -- ^ Path to install to
                    -> Version
                    -> Excepts '[ProcessError, CopyError, FileAlreadyExistsError, NotInstalled] m ()
-installHLSUnpacked path inst _ = do
+installHLSUnpacked path (fromInstallDir -> inst) _ = do
   lift $ logInfo "Installing HLS"
   liftIO $ createDirRecursive' inst
   lEM $ make ["PREFIX=" <> inst, "install"] (Just path)
@@ -642,13 +651,13 @@ installHLSUnpacked path inst _ = do
 -- | Install an unpacked hls distribution (legacy).
 installHLSUnpackedLegacy :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
                          => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
-                         -> FilePath      -- ^ Path to install to
-                         -> Maybe Version -- ^ Nothing for isolated install
+                         -> InstallDirResolved      -- ^ Path to install to
+                         -> Version
                          -> Bool          -- ^ is it a force install
                          -> Excepts '[CopyError, FileAlreadyExistsError] m ()
-installHLSUnpackedLegacy path inst mver' forceInstall = do
+installHLSUnpackedLegacy path installDir ver forceInstall = do
   lift $ logInfo "Installing HLS"
-  liftIO $ createDirRecursive' inst
+  liftIO $ createDirRecursive' (fromInstallDir installDir)
 
   -- install haskell-language-server-<ghcver>
   bins@(_:_) <- liftIO $ findFiles
@@ -659,15 +668,18 @@ installHLSUnpackedLegacy path inst mver' forceInstall = do
     )
   forM_ bins $ \f -> do
     let toF = dropSuffix exeExt f
-              <> maybe "" (("~" <>) . T.unpack . prettyVer) mver'
+              <> (case installDir of
+                   IsolateDirResolved _ -> ""
+                   GHCupDir _ -> ("~" <>) . T.unpack . prettyVer $ ver
+                 )
               <> exeExt
 
     let srcPath = path </> f
-    let destPath = inst </> toF
+    let destPath = fromInstallDir installDir </> toF
 
     unless forceInstall   -- if it is a force install, overwrite it.
       (liftE $ throwIfFileAlreadyExists destPath)
-      
+
     copyFileE
       srcPath
       destPath
@@ -676,18 +688,21 @@ installHLSUnpackedLegacy path inst mver' forceInstall = do
   -- install haskell-language-server-wrapper
   let wrapper = "haskell-language-server-wrapper"
       toF = wrapper
-            <> maybe "" (("-" <>) . T.unpack . prettyVer) mver'
+            <> (case installDir of
+                 IsolateDirResolved _ -> ""
+                 GHCupDir _ -> ("-" <>) . T.unpack . prettyVer $ ver
+               )
             <> exeExt
       srcWrapperPath = path </> wrapper <> exeExt
-      destWrapperPath = inst </> toF
+      destWrapperPath = fromInstallDir installDir </> toF
 
   unless forceInstall
     (liftE $ throwIfFileAlreadyExists destWrapperPath)
-      
+
   copyFileE
     srcWrapperPath
     destWrapperPath
-    
+
   lift $ chmod_755 destWrapperPath
 
 
@@ -708,7 +723,7 @@ installHLSBin :: ( MonadMask m
                  , MonadFail m
                  )
               => Version
-              -> Maybe FilePath  -- isolated install Dir (if any)
+              -> InstallDir
               -> Bool            -- force install
               -> Excepts
                    '[ AlreadyInstalled
@@ -727,9 +742,9 @@ installHLSBin :: ( MonadMask m
                     ]
                    m
                    ()
-installHLSBin ver isoFilepath forceInstall = do
+installHLSBin ver installDir forceInstall = do
   dlinfo <- liftE $ getDownloadInfo HLS ver
-  installHLSBindist dlinfo ver isoFilepath forceInstall
+  installHLSBindist dlinfo ver installDir forceInstall
 
 
 compileHLS :: ( MonadMask m
@@ -749,7 +764,7 @@ compileHLS :: ( MonadMask m
            -> [Version]
            -> Maybe Int
            -> Maybe Version
-           -> Maybe FilePath
+           -> InstallDir
            -> Maybe (Either FilePath URI)
            -> Maybe URI
            -> Maybe (Either FilePath [URI])  -- ^ patches
@@ -764,7 +779,7 @@ compileHLS :: ( MonadMask m
                        , BuildFailed
                        , NotInstalled
                        ] m Version
-compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patches cabalArgs = do
+compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patches cabalArgs = do
   PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   Dirs { .. } <- lift getDirs
@@ -805,7 +820,7 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
                   , "origin"
                   , fromString rep ]
 
-        let fetch_args = 
+        let fetch_args =
                   [ "fetch"
                   , "--depth"
                   , "1"
@@ -837,8 +852,8 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
     workdir
     Nothing
     (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed workdir) $ do
-      let installDir = workdir </> "out"
-      liftIO $ createDirRecursive' installDir
+      let tmpInstallDir = workdir </> "out"
+      liftIO $ createDirRecursive' tmpInstallDir
 
       -- apply patches
       liftE $ applyAnyPatch patches workdir
@@ -861,8 +876,8 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
         cpl <- liftE $ download uri Nothing Nothing tmpUnpack (Just (cp <.> "local")) False
         copyFileE cpl (workdir </> cp <.> "local")
       artifacts <- forM (sort ghcs) $ \ghc -> do
-        let ghcInstallDir = installDir </> T.unpack (prettyVer ghc)
-        liftIO $ createDirRecursive' installDir
+        let ghcInstallDir = tmpInstallDir </> T.unpack (prettyVer ghc)
+        liftIO $ createDirRecursive' tmpInstallDir
         lift $ logInfo $ "Building HLS " <> prettyVer installVer <> " for GHC version " <> prettyVer ghc
         liftE $ lEM @_ @'[ProcessError] $
           execLogged "cabal" ( [ "v2-install"
@@ -885,17 +900,17 @@ compileHLS targetHLS ghcs jobs ov isolateDir cabalProject cabalProjectLocal patc
 
       forM_ artifacts $ \artifact -> do
         liftIO $ renameFile (artifact </> "haskell-language-server" <.> exeExt)
-          (installDir </> "haskell-language-server-" <> takeFileName artifact <.> exeExt)
+          (tmpInstallDir </> "haskell-language-server-" <> takeFileName artifact <.> exeExt)
         liftIO $ renameFile (artifact </> "haskell-language-server-wrapper" <.> exeExt)
-          (installDir </> "haskell-language-server-wrapper" <.> exeExt)
+          (tmpInstallDir </> "haskell-language-server-wrapper" <.> exeExt)
         liftIO $ rmPathForcibly artifact
 
-      case isolateDir of
-        Just isoDir -> do
+      case installDir of
+        IsolateDir isoDir -> do
           lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
-          liftE $ installHLSUnpackedLegacy installDir isoDir Nothing True
-        Nothing -> do
-          liftE $ installHLSUnpackedLegacy installDir binDir (Just installVer) True
+          liftE $ installHLSUnpackedLegacy tmpInstallDir (IsolateDirResolved isoDir) installVer True
+        GHCupInternal -> do
+          liftE $ installHLSUnpackedLegacy tmpInstallDir (GHCupDir binDir) installVer True
     )
 
   pure installVer
@@ -919,7 +934,7 @@ installStackBin :: ( MonadMask m
                    , MonadFail m
                    )
                 => Version
-                -> Maybe FilePath  -- ^ isolate install Dir (if any)
+                -> InstallDir
                 -> Bool            -- ^ Force install
                 -> Excepts
                      '[ AlreadyInstalled
@@ -936,9 +951,9 @@ installStackBin :: ( MonadMask m
                       ]
                      m
                      ()
-installStackBin ver isoFilepath forceInstall = do
+installStackBin ver installDir forceInstall = do
   dlinfo <- liftE $ getDownloadInfo Stack ver
-  installStackBindist dlinfo ver isoFilepath forceInstall
+  installStackBindist dlinfo ver installDir forceInstall
 
 
 -- | Like 'installStackBin', except takes the 'DownloadInfo' as
@@ -957,7 +972,7 @@ installStackBindist :: ( MonadMask m
                        )
                     => DownloadInfo
                     -> Version
-                    -> Maybe FilePath -- ^ isolate install Dir (if any)
+                    -> InstallDir
                     -> Bool           -- ^ Force install
                     -> Excepts
                          '[ AlreadyInstalled
@@ -974,7 +989,7 @@ installStackBindist :: ( MonadMask m
                           ]
                          m
                          ()
-installStackBindist dlinfo ver isoFilepath forceInstall = do
+installStackBindist dlinfo ver installDir forceInstall = do
   lift $ logDebug $ "Requested to install stack version " <> prettyVer ver
 
   PlatformRequest {..} <- lift getPlatformReq
@@ -985,12 +1000,12 @@ installStackBindist dlinfo ver isoFilepath forceInstall = do
   if
     | not forceInstall
     , regularStackInstalled
-    , Nothing <- isoFilepath -> do
+    , GHCupInternal <- installDir -> do
         throwE $ AlreadyInstalled Stack ver
 
     | forceInstall
     , regularStackInstalled
-    , Nothing <- isoFilepath -> do
+    , GHCupInternal <- installDir -> do
         lift $ logInfo "Removing the currently installed version of Stack first!"
         liftE $ rmStackVer ver
 
@@ -1007,33 +1022,36 @@ installStackBindist dlinfo ver isoFilepath forceInstall = do
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
 
-  case isoFilepath of
-    Just isoDir -> do                 -- isolated install
+  case installDir of
+    IsolateDir isoDir -> do                 -- isolated install
       lift $ logInfo $ "isolated installing Stack to " <> T.pack isoDir
-      liftE $ installStackUnpacked workdir isoDir Nothing forceInstall
-    Nothing -> do                     -- regular install
-      liftE $ installStackUnpacked workdir binDir (Just ver) forceInstall
+      liftE $ installStackUnpacked workdir (IsolateDirResolved isoDir) ver forceInstall
+    GHCupInternal -> do                     -- regular install
+      liftE $ installStackUnpacked workdir (GHCupDir binDir) ver forceInstall
 
 
 -- | Install an unpacked stack distribution.
 installStackUnpacked :: (MonadReader env m, HasLog env, MonadCatch m, MonadIO m)
               => FilePath      -- ^ Path to the unpacked stack bindist (where the executable resides)
-              -> FilePath      -- ^ Path to install to
-              -> Maybe Version -- ^ Nothing for isolated installs
+              -> InstallDirResolved
+              -> Version
               -> Bool          -- ^ Force install
               -> Excepts '[CopyError, FileAlreadyExistsError] m ()
-installStackUnpacked path inst mver' forceInstall = do
+installStackUnpacked path installDir ver forceInstall = do
   lift $ logInfo "Installing stack"
   let stackFile = "stack"
-  liftIO $ createDirRecursive' inst
+  liftIO $ createDirRecursive' (fromInstallDir installDir)
   let destFileName = stackFile
-                     <> maybe "" (("-" <>) .  T.unpack . prettyVer) mver'
+                     <> (case installDir of
+                          IsolateDirResolved _ -> ""
+                          GHCupDir _ -> ("-" <>) .  T.unpack . prettyVer $ ver
+                        )
                      <> exeExt
-      destPath = inst </> destFileName
+      destPath = fromInstallDir installDir </> destFileName
 
   unless forceInstall
     (liftE $ throwIfFileAlreadyExists destPath)
-      
+
   copyFileE
     (path </> stackFile <> exeExt)
     destPath
@@ -1099,7 +1117,7 @@ setGHC ver sghc mBinDir = do
       SetGHC_XY  -> do
         handle
             (\(e :: ParseError) -> lift $ logWarn (T.pack $ displayException e) >> pure Nothing)
-          $ do 
+          $ do
             (mj, mi) <- getMajorMinorV (_tvVersion ver)
             let major' = intToText mj <> "." <> intToText mi
             pure $ Just (file <> "-" <> T.unpack major')
@@ -1223,7 +1241,7 @@ setHLS :: ( MonadReader env m
           , MonadUnliftIO m
           )
        => Version
-       -> SetHLS -- Nothing for legacy
+       -> SetHLS
        -> Maybe FilePath  -- if set, signals that we're not operating in ~/.ghcup/bin
                           -- and don't want mess with other versions
        -> Excepts '[NotInstalled] m ()
@@ -1357,7 +1375,7 @@ warnAboutHlsCompatibility = do
         "Haskell IDE support may not work until this is fixed." <> "\n" <>
         "Install a different HLS version, or install and set one of the following GHCs:" <> "\n" <>
         T.pack (prettyShow supportedGHC)
-        
+
     _ -> return ()
 
     ------------------
@@ -1962,7 +1980,7 @@ rmGhcupDirs = do
 
   handleRm $ rmEnvFile  envFilePath
   handleRm $ rmConfFile confFilePath
-  
+
   -- for xdg dirs, the order matters here
   handleRm $ rmDir logsDir
   handleRm $ rmDir cacheDir
@@ -2036,7 +2054,7 @@ rmGhcupDirs = do
       cs <- liftIO $ listDirectory fp >>= filterM doesDirectoryExist . fmap (fp </>)
       forM_ cs removeEmptyDirsRecursive
       hideError InappropriateType $ removeDirIfEmptyOrIsSymlink fp
-        
+
 
     -- we expect only files inside cache/log dir
     -- we report remaining files/dirs later,
@@ -2121,7 +2139,7 @@ compileGHC :: ( MonadMask m
            -> [Text]                   -- ^ additional args to ./configure
            -> Maybe String             -- ^ build flavour
            -> Bool
-           -> Maybe FilePath           -- ^ isolate dir
+           -> InstallDir
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
@@ -2146,7 +2164,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadrian isolateDir
+compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadrian installDir
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -2187,7 +2205,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                     , "origin"
                     , fromString rep ]
 
-          let fetch_args = 
+          let fetch_args =
                     [ "fetch"
                     , "--depth"
                     , "1"
@@ -2219,18 +2237,18 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
     alreadySet <- fmap (== Just installVer) $ lift $ ghcSet (_tvTarget installVer)
 
     when alreadyInstalled $ do
-      case isolateDir of
-        Just isoDir ->
+      case installDir of
+        IsolateDir isoDir ->
           lift $ logWarn $ "GHC " <> T.pack (prettyShow installVer) <> " already installed. Isolate installing to " <> T.pack isoDir
-        Nothing ->
+        GHCupInternal ->
           lift $ logWarn $ "GHC " <> T.pack (prettyShow installVer) <> " already installed. Will overwrite existing version."
       lift $ logWarn
         "...waiting for 10 seconds before continuing, you can still abort..."
       liftIO $ threadDelay 10000000 -- give the user a sec to intervene
 
-    ghcdir <- case isolateDir of
-      Just isoDir -> pure isoDir
-      Nothing -> lift $ ghcupGHCDir installVer
+    ghcdir <- case installDir of
+      IsolateDir isoDir -> pure $ IsolateDirResolved isoDir
+      GHCupInternal -> GHCupDir <$> lift (ghcupGHCDir installVer)
 
     (mBindist, bmk) <- liftE $ runBuildAction
       tmpUnpack
@@ -2243,13 +2261,13 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
         pure (b, bmk)
       )
 
-    case isolateDir of
-      Nothing ->
+    case installDir of
+      GHCupInternal ->
         -- only remove old ghc in regular installs
         when alreadyInstalled $ do
           lift $ logInfo "Deleting existing installation"
           liftE $ rmGHCVer installVer
-          
+
       _ -> pure ()
 
     forM_ mBindist $ \bindist -> do
@@ -2259,21 +2277,21 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                                (installVer ^. tvVersion)
                                False       -- not a force install, since we already overwrite when compiling.
 
-    liftIO $ B.writeFile (ghcdir </> ghcUpSrcBuiltFile) bmk
-    
-    case isolateDir of
+    liftIO $ B.writeFile (fromInstallDir ghcdir </> ghcUpSrcBuiltFile) bmk
+
+    case installDir of
       -- set and make symlinks for regular (non-isolated) installs
-      Nothing -> do
+      GHCupInternal -> do
         reThrowAll GHCupSetError $ postGHCInstall installVer
         -- restore
         when alreadySet $ liftE $ void $ setGHC installVer SetGHCOnly Nothing
-        
+
       _ -> pure ()
 
     pure installVer
 
  where
-  defaultConf = 
+  defaultConf =
     let cross_mk = $(LitE . StringL <$> (qAddDependentFile "data/build_mk/cross" >> runIO (readFile "data/build_mk/cross")))
         default_mk = $(LitE . StringL <$> (qAddDependentFile "data/build_mk/default" >> runIO (readFile "data/build_mk/default")))
     in case targetGhc of
@@ -2292,7 +2310,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                            )
                         => GHCTargetVersion
                         -> FilePath
-                        -> FilePath
+                        -> InstallDirResolved
                         -> Excepts
                              '[ FileDoesNotExistError
                               , HadrianNotFound
@@ -2351,7 +2369,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                         )
                      => GHCTargetVersion
                      -> FilePath
-                     -> FilePath
+                     -> InstallDirResolved
                      -> Excepts
                           '[ FileDoesNotExistError
                            , HadrianNotFound
@@ -2486,7 +2504,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                       )
                    => GHCTargetVersion
                    -> FilePath
-                   -> FilePath
+                   -> InstallDirResolved
                    -> Excepts
                         '[ FileDoesNotExistError
                          , InvalidBuildConfig
@@ -2497,7 +2515,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                          ]
                         m
                         ()
-  configureBindist tver workdir ghcdir = do
+  configureBindist tver workdir (fromInstallDir -> ghcdir) = do
     lift $ logInfo [s|configuring build|]
 
     if | _tvVersion tver >= [vver|8.8.0|] -> do

@@ -216,7 +216,7 @@ installOpts tool =
     Nothing  -> False
     Just GHC -> False
     Just _   -> True
-          
+
 
 
 
@@ -395,7 +395,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
          (v, vi) <- liftE $ fromVersion instVer GHC
          void $ liftE $ sequenceE (installGHCBin
                      (_tvVersion v)
-                     isolateDir
+                     (maybe GHCupInternal IsolateDir isolateDir)
                      forceInstall
                    )
                    $ when instSet $ when (isNothing isolateDir) $ void $ setGHC v SetGHCOnly Nothing
@@ -406,7 +406,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
            void $ liftE $ sequenceE (installGHCBindist
                        (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
                        (_tvVersion v)
-                       isolateDir
+                       (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
                      )
                      $ when instSet $ when (isNothing isolateDir) $ void $ setGHC v SetGHCOnly Nothing
@@ -467,7 +467,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
          void $ liftE $ sequenceE (installCabalBin
                                     v
-                                    isolateDir
+                                    (maybe GHCupInternal IsolateDir isolateDir)
                                     forceInstall
                                   ) $ when instSet $ when (isNothing isolateDir) $ void $ setCabal v
          pure vi
@@ -477,7 +477,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
            void $ liftE $ sequenceE (installCabalBindist
                                       (DownloadInfo uri Nothing "")
                                       v
-                                      isolateDir
+                                      (maybe GHCupInternal IsolateDir isolateDir)
                                       forceInstall
                                     ) $ when instSet $ when (isNothing isolateDir) $ void $ setCabal v
            pure vi
@@ -518,7 +518,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
          void $ liftE $ sequenceE (installHLSBin
                                     v
-                                    isolateDir
+                                    (maybe GHCupInternal IsolateDir isolateDir)
                                     forceInstall
                                   ) $ when instSet $ when (isNothing isolateDir) $ void $ setHLS v SetHLSOnly Nothing
          pure vi
@@ -529,7 +529,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
            void $ liftE $ sequenceE (installHLSBindist
                                       (DownloadInfo uri (Just $ RegexDir "haskell-language-server-*") "")
                                       v
-                                      isolateDir
+                                      (maybe GHCupInternal IsolateDir isolateDir)
                                       forceInstall
                                     ) $ when instSet $ when (isNothing isolateDir) $ void $ setHLS v SetHLSOnly Nothing
            pure vi
@@ -578,7 +578,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
           void $ liftE $ sequenceE (installStackBin
                                      v
-                                     isolateDir
+                                     (maybe GHCupInternal IsolateDir isolateDir)
                                      forceInstall
                                    ) $ when instSet $ when (isNothing isolateDir) $ void $ setStack v
           pure vi
@@ -588,7 +588,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
             void $ liftE $ sequenceE (installStackBindist
                                        (DownloadInfo uri Nothing "")
                                        v
-                                       isolateDir
+                                       (maybe GHCupInternal IsolateDir isolateDir)
                                        forceInstall
                                      ) $ when instSet $ when (isNothing isolateDir) $ void $ setStack v
             pure vi

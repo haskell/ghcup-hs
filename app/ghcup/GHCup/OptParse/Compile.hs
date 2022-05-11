@@ -469,7 +469,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     ghcs
                     jobs
                     ovewrwiteVer
-                    isolateDir
+                    (maybe GHCupInternal IsolateDir isolateDir)
                     cabalProject
                     cabalProjectLocal
                     patches
@@ -524,7 +524,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     addConfArgs
                     buildFlavour
                     hadrian
-                    isolateDir
+                    (maybe GHCupInternal IsolateDir isolateDir)
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
         let vi = getVersionInfo (_tvVersion targetVer) GHC dls
         when setCompile $ void $ liftE $

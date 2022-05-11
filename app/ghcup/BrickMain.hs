@@ -447,19 +447,19 @@ install' _ (_, ListResult {..}) = do
       case lTool of
         GHC   -> do
           let vi = getVersionInfo lVer GHC dls
-          liftE $ installGHCBin lVer Nothing False $> (vi, dirs, ce)
+          liftE $ installGHCBin lVer GHCupInternal False $> (vi, dirs, ce)
         Cabal -> do
           let vi = getVersionInfo lVer Cabal dls
-          liftE $ installCabalBin lVer Nothing False $> (vi, dirs, ce)
+          liftE $ installCabalBin lVer GHCupInternal False $> (vi, dirs, ce)
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
           liftE $ upgradeGHCup Nothing False False $> (vi, dirs, ce)
         HLS   -> do
           let vi = getVersionInfo lVer HLS dls
-          liftE $ installHLSBin lVer Nothing False $> (vi, dirs, ce)
+          liftE $ installHLSBin lVer GHCupInternal False $> (vi, dirs, ce)
         Stack -> do
           let vi = getVersionInfo lVer Stack dls
-          liftE $ installStackBin lVer Nothing False $> (vi, dirs, ce)
+          liftE $ installStackBin lVer GHCupInternal False $> (vi, dirs, ce)
     )
     >>= \case
           VRight (vi, Dirs{..}, Just ce) -> do
