@@ -217,6 +217,8 @@ if [ "${OS}" = "LINUX" ] ; then
 	fi
 fi
 
+eghcup gc -c
+
 sha_sum() {
 	if [ "${OS}" = "FREEBSD" ] ; then
 		sha256 "$@"
