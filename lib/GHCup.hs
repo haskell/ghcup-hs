@@ -324,13 +324,16 @@ installUnpackedGHC :: ( MonadReader env m
                    -> InstallDirResolved  -- ^ Path to install to
                    -> Version             -- ^ The GHC version
                    -> Excepts '[ProcessError] m ()
-installUnpackedGHC path (fromInstallDir -> inst) ver
+installUnpackedGHC path inst ver
   | isWindows = do
       lift $ logInfo "Installing GHC (this may take a while)"
       -- Windows bindists are relocatable and don't need
       -- to run configure.
       -- We also must make sure to preserve mtime to not confuse ghc-pkg.
-      lift $ withRunInIO $ \run -> flip onException (run $ recyclePathForcibly inst) $ copyDirectoryRecursive path inst $ \source dest -> do
+      lift $ withRunInIO $ \run -> flip onException (case inst of
+                                                      IsolateDirResolved _ -> pure ()
+                                                      GHCupDir d -> run $ recyclePathForcibly d
+                                                    ) $ copyDirectoryRecursive path (fromInstallDir inst) $ \source dest -> do
         mtime <- getModificationTime source
         moveFilePortable source dest
         setModificationTime dest mtime
@@ -345,7 +348,7 @@ installUnpackedGHC path (fromInstallDir -> inst) ver
 
       lift $ logInfo "Installing GHC (this may take a while)"
       lEM $ execLogged "sh"
-                       ("./configure" : ("--prefix=" <> inst)
+                       ("./configure" : ("--prefix=" <> fromInstallDir inst)
                         : alpineArgs
                        )
                        (Just path)
