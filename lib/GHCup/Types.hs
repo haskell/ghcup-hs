@@ -443,6 +443,7 @@ data Dirs = Dirs
   , cacheDir :: FilePath
   , logsDir  :: FilePath
   , confDir  :: FilePath
+  , dbDir    :: FilePath
   , recycleDir :: FilePath -- mainly used on windows
   }
   deriving (Show, GHC.Generic)

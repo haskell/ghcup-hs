@@ -20,6 +20,7 @@
 - ignore: {name: "Avoid lambda"}
 - ignore: {name: "Use uncurry"}
 - ignore: {name: "Use replicateM"}
+- ignore: {name: "Use unless"}
 - ignore: {name: "Redundant irrefutable pattern"}
 
 

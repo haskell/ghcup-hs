@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                   #-}
+{-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -71,7 +72,7 @@ import           GHC.IO.Exception
 import           Haskus.Utils.Variant.Excepts
 import           Optics
 import           Safe
-import           System.Directory      hiding   ( findFiles )
+import           System.Directory      hiding   ( findFiles, copyFile )
 import           System.FilePath
 import           System.IO.Error
 import           Text.Regex.Posix
@@ -86,6 +87,9 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 import qualified Data.List.NonEmpty            as NE
+import Text.PrettyPrint.HughesPJClass (prettyShow)
+import Control.DeepSeq (force)
+import GHC.IO (evaluate)
 
 
 -- $setup
@@ -1051,14 +1055,11 @@ runBuildAction :: ( MonadReader env m
                   , MonadCatch m
                   )
                => FilePath        -- ^ build directory (cleaned up depending on Settings)
-               -> Maybe FilePath  -- ^ dir to *always* clean up on exception
                -> Excepts e m a
                -> Excepts e m a
-runBuildAction bdir instdir action = do
+runBuildAction bdir action = do
   Settings {..} <- lift getSettings
   let exAction = do
-        forM_ instdir $ \dir ->
-          hideError doesNotExistErrorType $ recyclePathForcibly dir
         when (keepDirs == Never)
           $ rmBDir bdir
   v <-
@@ -1088,6 +1089,26 @@ cleanUpOnError bdir action = do
   let exAction = when (keepDirs == Never) $ rmBDir bdir
   flip onException (lift exAction) $ onE_ exAction action
 
+
+-- | Clean up the given directory if the action fails,
+-- depending on the Settings.
+cleanFinally :: ( MonadReader env m
+                  , HasDirs env
+                  , HasSettings env
+                  , MonadIO m
+                  , MonadMask m
+                  , HasLog env
+                  , MonadUnliftIO m
+                  , MonadFail m
+                  , MonadCatch m
+                  )
+               => FilePath        -- ^ build directory (cleaned up depending on Settings)
+               -> Excepts e m a
+               -> Excepts e m a
+cleanFinally bdir action = do
+  Settings {..} <- lift getSettings
+  let exAction = when (keepDirs == Never) $ rmBDir bdir
+  flip finally (lift exAction) $ onE_ exAction action
 
 
 -- | Remove a build directory, ignoring if it doesn't exist and gracefully
@@ -1194,7 +1215,7 @@ createLink link exe
       rmLink exe
 
       logDebug $ "ln -s " <> T.pack fullLink <> " " <> T.pack exe
-      liftIO $ copyFile shimGen exe
+      liftIO $ copyFile shimGen exe False
       liftIO $ writeFile shim shimContents
   | otherwise = do
       logDebug $ "rm -f " <> T.pack exe
@@ -1234,7 +1255,7 @@ ensureGlobalTools
 
 -- | Ensure ghcup directory structure exists.
 ensureDirectories :: Dirs -> IO ()
-ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir) = do
+ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir dbDir) = do
   createDirRecursive' baseDir
   createDirRecursive' (baseDir </> "ghc")
   createDirRecursive' binDir
@@ -1242,6 +1263,7 @@ ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir) = do
   createDirRecursive' logsDir
   createDirRecursive' confDir
   createDirRecursive' trashDir
+  createDirRecursive' dbDir
   pure ()
 
 
@@ -1272,3 +1294,52 @@ installDestSanityCheck (IsolateDirResolved isoDir) = do
     contents <- liftIO $ getDirectoryContentsRecursive isoDir
     unless (null contents) (throwE $ DirNotEmpty isoDir)
 installDestSanityCheck _ = pure ()
+
+
+-- | Write installed files into database.
+recordInstalledFiles :: ( MonadIO m
+                        , MonadReader env m
+                        , HasDirs env
+                        , MonadFail m
+                        )
+                     => [FilePath]
+                     -> Tool
+                     -> GHCTargetVersion
+                     -> m ()
+recordInstalledFiles files tool v' = do
+  dest <- recordedInstallationFile tool v'
+  liftIO $ createDirectoryIfMissing True (takeDirectory dest)
+  -- TODO: what if the filepath has newline? :)
+  let contents = unlines files
+  liftIO $ writeFile dest contents
+  pure ()
+
+
+-- | Returns 'Nothing' for legacy installs.
+getInstalledFiles :: ( MonadIO m
+                     , MonadCatch m
+                     , MonadReader env m
+                     , HasDirs env
+                     , MonadFail m
+                     )
+                  => Tool
+                  -> GHCTargetVersion
+                  -> m (Maybe [FilePath])
+getInstalledFiles t v' = hideErrorDef [doesNotExistErrorType] Nothing $ do
+  f <- recordedInstallationFile t v'
+  (force -> !c) <- liftIO
+    (readFile f >>= evaluate)
+  pure (Just $ lines c)
+
+
+recordedInstallationFile :: ( MonadReader env m
+                            , HasDirs env
+                            )
+                         => Tool
+                         -> GHCTargetVersion
+                         -> m FilePath
+recordedInstallationFile t v' = do
+  Dirs {..}  <- getDirs
+  pure (dbDir </> prettyShow t </> T.unpack (tVerToText v'))
+
+

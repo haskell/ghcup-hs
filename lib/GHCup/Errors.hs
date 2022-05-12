@@ -146,6 +146,13 @@ instance Pretty NotInstalled where
   pPrint (NotInstalled tool ver) =
     text "The version" <+> pPrint ver <+> text "of the tool" <+> pPrint tool <+> text "is not installed."
 
+data UninstallFailed = UninstallFailed FilePath [FilePath]
+  deriving Show
+
+instance Pretty UninstallFailed where
+  pPrint (UninstallFailed dir files) =
+    text "The following files survived uninstallation: " <+> pPrint files <+> text "...consider removing" <+> pPrint dir <+> text "manually."
+
 -- | An executable was expected to be in PATH, but was not found.
 data NotFoundInPATH = NotFoundInPATH FilePath
   deriving Show

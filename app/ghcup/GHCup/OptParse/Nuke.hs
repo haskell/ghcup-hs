@@ -42,7 +42,7 @@ import Control.Concurrent (threadDelay)
     ---------------------------
 
 
-type NukeEffects = '[ NotInstalled ]
+type NukeEffects = '[ NotInstalled, UninstallFailed ]
 
 
 runNuke :: AppState

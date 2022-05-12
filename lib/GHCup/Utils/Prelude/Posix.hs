@@ -17,4 +17,4 @@ moveFilePortable :: FilePath -> FilePath -> IO ()
 moveFilePortable from to = do
   copyFile from to
   removeFile from
-  
+

@@ -77,7 +77,7 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           Safe                    hiding ( at )
-import           System.Directory        hiding ( findFiles )
+import           System.Directory        hiding ( findFiles, copyFile )
 import           System.Environment
 import           System.FilePath
 import           System.IO.Error
@@ -202,6 +202,7 @@ installGHCBindist :: ( MonadFail m
                         , DirNotEmpty
                         , ArchiveResult
                         , ProcessError
+                        , UninstallFailed
                         ]
                        m
                        ()
@@ -269,6 +270,7 @@ installPackedGHC :: ( MonadMask m
                     , MonadIO m
                     , MonadUnliftIO m
                     , MonadFail m
+                    , MonadResource m
                     )
                  => FilePath          -- ^ Path to the packed GHC bindist
                  -> Maybe TarDir      -- ^ Subdir of the archive
@@ -300,12 +302,7 @@ installPackedGHC dl msubdir inst ver forceInstall = do
                    msubdir
 
   liftE $ runBuildAction tmpUnpack
-                         (case inst of
-                           IsolateDirResolved _ -> Nothing -- don't clean up for isolated installs, since that'd potentially delete other
-                                                   -- user files if '--force' is supplied
-                           GHCupDir d -> Just d
-                           )
-                         (installUnpackedGHC workdir inst ver)
+                         (installUnpackedGHC workdir inst ver forceInstall)
 
 
 -- | Install an unpacked GHC distribution. This only deals with the GHC
@@ -319,21 +316,27 @@ installUnpackedGHC :: ( MonadReader env m
                       , MonadIO m
                       , MonadUnliftIO m
                       , MonadMask m
+                      , MonadResource m
+                      , MonadFail m
                       )
                    => FilePath            -- ^ Path to the unpacked GHC bindist (where the configure script resides)
                    -> InstallDirResolved  -- ^ Path to install to
                    -> Version             -- ^ The GHC version
+                   -> Bool                -- ^ Force install
                    -> Excepts '[ProcessError] m ()
-installUnpackedGHC path (fromInstallDir -> inst) ver
+installUnpackedGHC path inst ver forceInstall
   | isWindows = do
       lift $ logInfo "Installing GHC (this may take a while)"
       -- Windows bindists are relocatable and don't need
       -- to run configure.
       -- We also must make sure to preserve mtime to not confuse ghc-pkg.
-      lift $ withRunInIO $ \run -> flip onException (run $ recyclePathForcibly inst) $ copyDirectoryRecursive path inst $ \source dest -> do
+      fs <- lift $ withRunInIO $ \_ -> mergeFileTreeAll path (fromInstallDir inst) $ \source dest -> do
         mtime <- getModificationTime source
         moveFilePortable source dest
         setModificationTime dest mtime
+      case inst of
+        IsolateDirResolved _ -> pure ()
+        _ -> recordInstalledFiles fs GHC (mkTVer ver)
   | otherwise = do
       PlatformRequest {..} <- lift getPlatformReq
 
@@ -345,13 +348,21 @@ installUnpackedGHC path (fromInstallDir -> inst) ver
 
       lift $ logInfo "Installing GHC (this may take a while)"
       lEM $ execLogged "sh"
-                       ("./configure" : ("--prefix=" <> inst)
+                       ("./configure" : ("--prefix=" <> fromInstallDir inst)
                         : alpineArgs
                        )
                        (Just path)
                        "ghc-configure"
                        Nothing
-      lEM $ make ["install"] (Just path)
+      tmpInstallDest <- lift withGHCupTmpDir
+      lEM $ make ["DESTDIR=" <> tmpInstallDest, "install"] (Just path)
+      lift $ logInfo $ "Merging file tree from \"" <> T.pack tmpInstallDest <> "\" to \"" <> T.pack (fromInstallDir inst) <> "\""
+      fs <- mergeFileTreeAll (tmpInstallDest </> dropDrive (fromInstallDir inst))
+        (fromInstallDir inst)
+        (\f t -> liftIO $ install f t (not forceInstall))
+      case inst of
+        IsolateDirResolved _ -> pure ()
+        _ -> recordInstalledFiles fs GHC (mkTVer ver)
       pure ()
 
 
@@ -389,6 +400,7 @@ installGHCBin :: ( MonadFail m
                     , DirNotEmpty
                     , ArchiveResult
                     , ProcessError
+                    , UninstallFailed
                     ]
                    m
                    ()
@@ -493,12 +505,10 @@ installCabalUnpacked path inst ver forceInstall = do
         <> exeExt
   let destPath = fromInstallDir inst </> destFileName
 
-  unless forceInstall          -- Overwrite it when it IS a force install
-    (liftE $ throwIfFileAlreadyExists destPath)
-
   copyFileE
     (path </> cabalFile <> exeExt)
     destPath
+    (not forceInstall)
   lift $ chmod_755 destPath
 
 -- | Installs cabal into @~\/.ghcup\/bin/cabal-\<ver\>@ and
@@ -572,6 +582,7 @@ installHLSBindist :: ( MonadMask m
                         , FileAlreadyExistsError
                         , ProcessError
                         , DirNotEmpty
+                        , UninstallFailed
                         ]
                        m
                        ()
@@ -620,15 +631,15 @@ installHLSBindist dlinfo ver installDir forceInstall = do
       lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
       if legacy
       then liftE $ installHLSUnpackedLegacy workdir (IsolateDirResolved isoDir) ver forceInstall
-      else liftE $ runBuildAction tmpUnpack Nothing $ installHLSUnpacked workdir (IsolateDirResolved isoDir) ver
+      else liftE $ runBuildAction tmpUnpack $ installHLSUnpacked workdir (IsolateDirResolved isoDir) ver forceInstall
 
     GHCupInternal -> do
       if legacy
       then liftE $ installHLSUnpackedLegacy workdir (GHCupDir binDir) ver forceInstall
       else do
         inst <- ghcupHLSDir ver
-        liftE $ runBuildAction tmpUnpack (Just inst)
-              $ installHLSUnpacked workdir (GHCupDir inst) ver
+        liftE $ runBuildAction tmpUnpack
+              $ installHLSUnpacked workdir (GHCupDir inst) ver forceInstall
         liftE $ setHLS ver SetHLS_XYZ Nothing
 
 
@@ -638,15 +649,32 @@ isLegacyHLSBindist path = do
   not <$> doesFileExist (path </> "GNUmakefile")
 
 -- | Install an unpacked hls distribution.
-installHLSUnpacked :: (MonadMask m, MonadUnliftIO m, MonadReader env m, MonadFail m, HasLog env, HasDirs env, HasSettings env, MonadCatch m, MonadIO m)
+installHLSUnpacked :: ( MonadMask m
+                      , MonadUnliftIO m
+                      , MonadReader env m
+                      , MonadFail m
+                      , HasLog env
+                      , HasDirs env
+                      , HasSettings env
+                      , MonadCatch m
+                      , MonadIO m
+                      , MonadResource m
+                      )
                    => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
                    -> InstallDirResolved      -- ^ Path to install to
                    -> Version
+                   -> Bool
                    -> Excepts '[ProcessError, CopyError, FileAlreadyExistsError, NotInstalled] m ()
-installHLSUnpacked path (fromInstallDir -> inst) _ = do
+installHLSUnpacked path inst ver forceInstall = do
   lift $ logInfo "Installing HLS"
-  liftIO $ createDirRecursive' inst
-  lEM $ make ["PREFIX=" <> inst, "install"] (Just path)
+  tmpInstallDest <- lift withGHCupTmpDir
+  lEM $ make ["DESTDIR=" <> tmpInstallDest, "PREFIX=" <> fromInstallDir inst, "install"] (Just path)
+  fs <- mergeFileTreeAll (tmpInstallDest </> dropDrive (fromInstallDir inst))
+                   (fromInstallDir inst)
+                   (\f t -> liftIO $ install f t (not forceInstall))
+  case inst of
+    IsolateDirResolved _ -> pure ()
+    _ -> recordInstalledFiles fs HLS (mkTVer ver)
 
 -- | Install an unpacked hls distribution (legacy).
 installHLSUnpackedLegacy :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
@@ -677,12 +705,10 @@ installHLSUnpackedLegacy path installDir ver forceInstall = do
     let srcPath = path </> f
     let destPath = fromInstallDir installDir </> toF
 
-    unless forceInstall   -- if it is a force install, overwrite it.
-      (liftE $ throwIfFileAlreadyExists destPath)
-
     copyFileE
       srcPath
       destPath
+      (not forceInstall)
     lift $ chmod_755 destPath
 
   -- install haskell-language-server-wrapper
@@ -696,12 +722,10 @@ installHLSUnpackedLegacy path installDir ver forceInstall = do
       srcWrapperPath = path </> wrapper <> exeExt
       destWrapperPath = fromInstallDir installDir </> toF
 
-  unless forceInstall
-    (liftE $ throwIfFileAlreadyExists destWrapperPath)
-
   copyFileE
     srcWrapperPath
     destWrapperPath
+    (not forceInstall)
 
   lift $ chmod_755 destWrapperPath
 
@@ -739,6 +763,7 @@ installHLSBin :: ( MonadMask m
                     , FileAlreadyExistsError
                     , ProcessError
                     , DirNotEmpty
+                    , UninstallFailed
                     ]
                    m
                    ()
@@ -850,7 +875,6 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
 
   liftE $ runBuildAction
     workdir
-    Nothing
     (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed workdir) $ do
       let tmpInstallDir = workdir </> "out"
       liftIO $ createDirRecursive' tmpInstallDir
@@ -862,19 +886,19 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
       cp <- case cabalProject of
         Just (Left cp)
           | isAbsolute cp -> do
-              copyFileE cp (workdir </> "cabal.project")
+              copyFileE cp (workdir </> "cabal.project") False
               pure "cabal.project"
           | otherwise -> pure (takeFileName cp)
         Just (Right uri) -> do
           tmpUnpack <- lift withGHCupTmpDir
           cp <- liftE $ download uri Nothing Nothing tmpUnpack (Just "cabal.project") False
-          copyFileE cp (workdir </> "cabal.project")
+          copyFileE cp (workdir </> "cabal.project") False
           pure "cabal.project"
         Nothing -> pure "cabal.project"
       forM_ cabalProjectLocal $ \uri -> do
         tmpUnpack <- lift withGHCupTmpDir
         cpl <- liftE $ download uri Nothing Nothing tmpUnpack (Just (cp <.> "local")) False
-        copyFileE cpl (workdir </> cp <.> "local")
+        copyFileE cpl (workdir </> cp <.> "local") False
       artifacts <- forM (sort ghcs) $ \ghc -> do
         let ghcInstallDir = tmpInstallDir </> T.unpack (prettyVer ghc)
         liftIO $ createDirRecursive' tmpInstallDir
@@ -1049,12 +1073,10 @@ installStackUnpacked path installDir ver forceInstall = do
                      <> exeExt
       destPath = fromInstallDir installDir </> destFileName
 
-  unless forceInstall
-    (liftE $ throwIfFileAlreadyExists destPath)
-
   copyFileE
     (path </> stackFile <> exeExt)
     destPath
+    (not forceInstall)
   lift $ chmod_755 destPath
 
 
@@ -1754,12 +1776,11 @@ rmGHCVer :: ( MonadReader env m
             , MonadUnliftIO m
             )
          => GHCTargetVersion
-         -> Excepts '[NotInstalled] m ()
+         -> Excepts '[NotInstalled, UninstallFailed] m ()
 rmGHCVer ver = do
   isSetGHC <- lift $ fmap (== Just ver) $ ghcSet (_tvTarget ver)
 
   whenM (lift $ fmap not $ ghcInstalled ver) (throwE (NotInstalled GHC ver))
-  dir <- lift $ ghcupGHCDir ver
 
   -- this isn't atomic, order matters
   when isSetGHC $ do
@@ -1774,8 +1795,19 @@ rmGHCVer ver = do
   handle (\(_ :: ParseError) -> pure ()) $ liftE $ rmMajorGHCSymlinks ver
   -- then fix them (e.g. with an earlier version)
 
-  lift $ logInfo $ "Removing directory recursively: " <> T.pack dir
-  lift $ recyclePathForcibly dir
+  dir <- lift $ ghcupGHCDir ver
+  lift (getInstalledFiles GHC ver) >>= \case
+    Just files -> do
+      lift $ logInfo $ "Removing files safely from: " <> T.pack dir
+      forM_ files (liftIO . deleteFile . (\f -> dir </> dropDrive f))
+      f <- recordedInstallationFile GHC ver
+      liftIO $ deleteFile f
+      removeEmptyDirsRecursive dir
+      survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory dir
+      when (not (null survivors)) $ throwE $ UninstallFailed dir survivors
+    Nothing -> do
+      lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack dir
+      lift $ recyclePathForcibly dir
 
   v' <-
     handle
@@ -1834,23 +1866,37 @@ rmHLSVer :: ( MonadMask m
             , MonadUnliftIO m
             )
          => Version
-         -> Excepts '[NotInstalled] m ()
+         -> Excepts '[NotInstalled, UninstallFailed] m ()
 rmHLSVer ver = do
   whenM (lift $ fmap not $ hlsInstalled ver) $ throwE (NotInstalled HLS (GHCTargetVersion Nothing ver))
 
   isHlsSet <- lift hlsSet
 
   liftE $ rmMinorHLSSymlinks ver
-  hlsDir <- ghcupHLSDir ver
-  recyclePathForcibly hlsDir
 
   when (Just ver == isHlsSet) $ do
     -- delete all set symlinks
-    rmPlainHLS
+    liftE rmPlainHLS
+
+  hlsDir <- ghcupHLSDir ver
+  lift (getInstalledFiles HLS (mkTVer ver)) >>= \case
+    Just files -> do
+      lift $ logInfo $ "Removing files safely from: " <> T.pack hlsDir
+      forM_ files (liftIO . deleteFile . (\f -> hlsDir </> dropDrive f))
+      f <- recordedInstallationFile HLS (mkTVer ver)
+      liftIO $ deleteFile f
+      removeEmptyDirsRecursive hlsDir
+      survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory hlsDir
+      when (not (null survivors)) $ throwE $ UninstallFailed hlsDir survivors
+    Nothing -> do
+      lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack hlsDir
+      recyclePathForcibly hlsDir
+
+  when (Just ver == isHlsSet) $ do
     -- set latest hls
     hlsVers <- lift $ fmap rights getInstalledHLSs
     case headMay . reverse . sort $ hlsVers of
-      Just latestver -> setHLS latestver SetHLSOnly Nothing
+      Just latestver -> liftE $ setHLS latestver SetHLSOnly Nothing
       Nothing        -> pure ()
 
 
@@ -1946,15 +1992,15 @@ rmTool :: ( MonadReader env m
           , MonadMask m
           , MonadUnliftIO m)
           => ListResult
-          -> Excepts '[NotInstalled ] m ()
+          -> Excepts '[NotInstalled, UninstallFailed] m ()
 rmTool ListResult {lVer, lTool, lCross} = do
   case lTool of
     GHC ->
       let ghcTargetVersion = GHCTargetVersion lCross lVer
       in rmGHCVer ghcTargetVersion
     HLS -> rmHLSVer lVer
-    Cabal -> rmCabalVer lVer
-    Stack -> rmStackVer lVer
+    Cabal -> liftE $ rmCabalVer lVer
+    Stack -> liftE $ rmStackVer lVer
     GHCup -> lift rmGhcup
 
 
@@ -2005,12 +2051,12 @@ rmGhcupDirs = do
     rmEnvFile :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmEnvFile enFilePath = do
       logInfo "Removing Ghcup Environment File"
-      hideErrorDef [permissionErrorType] () $ deleteFile enFilePath
+      hideErrorDef [permissionErrorType] () $ deleteFile' enFilePath
 
     rmConfFile :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmConfFile confFilePath = do
       logInfo "removing Ghcup Config File"
-      hideErrorDef [permissionErrorType] () $ deleteFile confFilePath
+      hideErrorDef [permissionErrorType] () $ deleteFile' confFilePath
 
     rmDir :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmDir dir =
@@ -2020,7 +2066,7 @@ rmGhcupDirs = do
       hideErrorDef [doesNotExistErrorType] () $ do
         logInfo $ "removing " <> T.pack dir
         contents <- liftIO $ getDirectoryContentsRecursive dir
-        forM_ contents (deleteFile . (dir </>))
+        forM_ contents (deleteFile' . (dir </>))
 
     rmBinDir :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmBinDir binDir
@@ -2049,35 +2095,33 @@ rmGhcupDirs = do
         compareFn :: FilePath -> FilePath -> Ordering
         compareFn fp1 fp2 = compare (calcDepth fp1) (calcDepth fp2)
 
-    removeEmptyDirsRecursive :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
-    removeEmptyDirsRecursive fp = do
-      cs <- liftIO $ listDirectory fp >>= filterM doesDirectoryExist . fmap (fp </>)
-      forM_ cs removeEmptyDirsRecursive
-      hideError InappropriateType $ removeDirIfEmptyOrIsSymlink fp
+-- we expect only files inside cache/log dir
+-- we report remaining files/dirs later,
+-- hence the force/quiet mode in these delete functions below.
 
+deleteFile' :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m) => FilePath -> m ()
+deleteFile' filepath = do
+  hideError doesNotExistErrorType
+    $ hideError InappropriateType $ rmFile filepath
 
-    -- we expect only files inside cache/log dir
-    -- we report remaining files/dirs later,
-    -- hence the force/quiet mode in these delete functions below.
+removeDirIfEmptyOrIsSymlink :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
+removeDirIfEmptyOrIsSymlink filepath =
+  hideError UnsatisfiedConstraints $
+  handleIO' InappropriateType
+        (handleIfSym filepath)
+        (liftIO $ rmDirectory filepath)
+  where
+    handleIfSym fp e = do
+      isSym <- liftIO $ pathIsSymbolicLink fp
+      if isSym
+      then deleteFile' fp
+      else liftIO $ ioError e
 
-    deleteFile :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m) => FilePath -> m ()
-    deleteFile filepath = do
-      hideError doesNotExistErrorType
-        $ hideError InappropriateType $ rmFile filepath
-
-    removeDirIfEmptyOrIsSymlink :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
-    removeDirIfEmptyOrIsSymlink filepath =
-      hideError UnsatisfiedConstraints $
-      handleIO' InappropriateType
-            (handleIfSym filepath)
-            (liftIO $ rmDirectory filepath)
-      where
-        handleIfSym fp e = do
-          isSym <- liftIO $ pathIsSymbolicLink fp
-          if isSym
-          then deleteFile fp
-          else liftIO $ ioError e
-
+removeEmptyDirsRecursive :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
+removeEmptyDirsRecursive fp = do
+  cs <- liftIO $ listDirectory fp >>= filterM doesDirectoryExist . fmap (fp </>)
+  forM_ cs removeEmptyDirsRecursive
+  hideError InappropriateType $ removeDirIfEmptyOrIsSymlink fp
 
 
     ------------------
@@ -2161,6 +2205,7 @@ compileGHC :: ( MonadMask m
                  , ProcessError
                  , CopyError
                  , BuildFailed
+                 , UninstallFailed
                  ]
                 m
                 GHCTargetVersion
@@ -2252,7 +2297,6 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
     (mBindist, bmk) <- liftE $ runBuildAction
       tmpUnpack
-      Nothing
       (do
         b <- if hadrian
              then compileHadrianBindist tver workdir ghcdir
@@ -2387,7 +2431,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
       Just bc -> liftIOException
         doesNotExistErrorType
         (FileDoesNotExistError bc)
-        (liftIO $ copyFile bc (build_mk workdir))
+        (liftIO $ copyFile bc (build_mk workdir) False)
       Nothing ->
         liftIO $ T.writeFile (build_mk workdir) (addBuildFlavourToConf defaultConf)
 
@@ -2453,8 +2497,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                             <> ".tar"
                             <> takeExtension tar)
     let tarPath = cacheDir </> tarName
-    copyFileE (workdir </> tar)
-                                                             tarPath
+    copyFileE (workdir </> tar) tarPath False
     lift $ logInfo $ "Copied bindist to " <> T.pack tarPath
     pure tarPath
 
@@ -2637,8 +2680,7 @@ upgradeGHCup mtarget force' fatal = do
   lift $ logDebug $ "rm -f " <> T.pack destFile
   lift $ hideError NoSuchThing $ recycleFile destFile
   lift $ logDebug $ "cp " <> T.pack p <> " " <> T.pack destFile
-  copyFileE p
-                                                           destFile
+  copyFileE p destFile False
   lift $ chmod_755 destFile
 
   liftIO (isInPath destFile) >>= \b -> unless b $
@@ -2793,7 +2835,7 @@ rmOldGHC :: ( MonadReader env m
             , MonadMask m
             , MonadUnliftIO m
             )
-         => Excepts '[NotInstalled] m ()
+         => Excepts '[NotInstalled, UninstallFailed] m ()
 rmOldGHC = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   let oldGHCs = mkTVer <$> toListOf (ix GHC % getTagged Old % to fst) dls
@@ -2859,7 +2901,7 @@ rmHLSNoGHC :: ( MonadReader env m
               , MonadFail m
               , MonadUnliftIO m
               )
-           => Excepts '[NotInstalled] m ()
+           => Excepts '[NotInstalled, UninstallFailed] m ()
 rmHLSNoGHC = do
   Dirs {..} <- getDirs
   ghcs <- fmap rights getInstalledGHCs

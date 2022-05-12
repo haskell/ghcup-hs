@@ -58,7 +58,7 @@ import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
 import           System.IO.Error
 import           System.IO.Temp
 import           System.IO.Unsafe
-import           System.Directory
+import           System.Directory           hiding ( copyFile )
 import           System.FilePath
 
 import           Control.Retry
@@ -412,7 +412,7 @@ copyDirectoryRecursive srcDir destDir doCopy = do
     copyFilesWith targetDir srcFiles = do
 
       -- Create parent directories for everything
-      let dirs = map (targetDir </>) . nub . map (takeDirectory . snd) $ srcFiles
+      let dirs = map (targetDir </>) . nub . map takeDirectory $ fmap snd srcFiles
       traverse_ (createDirectoryIfMissing True) dirs
 
       -- Copy all the files
@@ -428,6 +428,7 @@ copyDirectoryRecursive srcDir destDir doCopy = do
 -- parent directories. The list is generated lazily so is not well defined if
 -- the source directory structure changes before the list is used.
 --
+-- TODO: use streamly
 getDirectoryContentsRecursive :: FilePath -> IO [FilePath]
 getDirectoryContentsRecursive topdir = recurseDirectories [""]
   where
@@ -547,10 +548,6 @@ recover action =
     ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
     ]
     (\_ -> action)
-
-
-copyFileE :: (CopyError :< xs, MonadCatch m, MonadIO m) => FilePath -> FilePath -> Excepts xs m ()
-copyFileE from = handleIO (throwE . CopyError . show) . liftIO . copyFile from
 
 
 -- | Gathering monoidal values
@@ -763,3 +760,20 @@ breakOn needle haystack | needle `isPrefixOf` haystack = ([], haystack)
 breakOn _ [] = ([], [])
 breakOn needle (x:xs) = first (x:) $ breakOn needle xs
 
+
+-- |Like `bracket`, but allows to have different clean-up
+-- actions depending on whether the in-between computation
+-- has raised an exception or not.
+bracketeer :: IO a        -- ^ computation to run first
+           -> (a -> IO b) -- ^ computation to run last, when
+                          --   no exception was raised
+           -> (a -> IO b) -- ^ computation to run last,
+                          --   when an exception was raised
+           -> (a -> IO c) -- ^ computation to run in-between
+           -> IO c
+bracketeer before after afterEx thing =
+  mask $ \restore -> do
+    a <- before
+    r <- restore (thing a) `onException` afterEx a
+    _ <- after a
+    return r

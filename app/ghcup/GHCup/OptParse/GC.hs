@@ -98,7 +98,7 @@ gcFooter = [s|Discussion:
     ---------------------------
 
 
-type GCEffects = '[ NotInstalled ]
+type GCEffects = '[ NotInstalled, UninstallFailed ]
 
 
 runGC :: MonadUnliftIO m
@@ -129,7 +129,7 @@ gc :: ( Monad m
    -> (ReaderT LeanAppState m () -> m ())
    -> m ExitCode
 gc GCOptions{..} runAppState runLogger = runGC runAppState (do
-  when gcOldGHC rmOldGHC
+  when gcOldGHC (liftE rmOldGHC)
   lift $ when gcProfilingLibs rmProfilingLibs
   lift $ when gcShareDir rmShareDir
   liftE $ when gcHLSNoGHC rmHLSNoGHC

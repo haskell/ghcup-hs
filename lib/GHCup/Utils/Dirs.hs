@@ -53,8 +53,8 @@ import           Data.Versions
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
-import           System.Directory                                                
-import           System.DiskSpace                                                
+import           System.Directory
+import           System.DiskSpace
 import           System.Environment
 import           System.FilePath
 import           System.IO.Temp
@@ -180,6 +180,26 @@ ghcupLogsDir
         else ghcupBaseDir <&> (</> "logs")
 
 
+-- | Defaults to '~/.ghcup/db.
+--
+-- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_CACHE_HOME/ghcup/db as per xdg spec.
+ghcupDbDir :: IO FilePath
+ghcupDbDir
+  | isWindows = ghcupBaseDir <&> (</> "db")
+  | otherwise = do
+      xdg <- useXDG
+      if xdg
+        then do
+          bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
+            Just r  -> pure r
+            Nothing -> do
+              home <- liftIO getHomeDirectory
+              pure (home </> ".cache")
+          pure (bdir </> "ghcup" </> "db")
+        else ghcupBaseDir <&> (</> "db")
+
+
 -- | '~/.ghcup/trash'.
 -- Mainly used on windows to improve file removal operations
 ghcupRecycleDir :: IO FilePath
@@ -195,6 +215,7 @@ getAllDirs = do
   logsDir    <- ghcupLogsDir
   confDir    <- ghcupConfigDir
   recycleDir <- ghcupRecycleDir
+  dbDir      <- ghcupDbDir
   pure Dirs { .. }
 
 

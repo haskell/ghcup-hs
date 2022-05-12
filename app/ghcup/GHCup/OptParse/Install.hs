@@ -257,6 +257,7 @@ type InstallEffects = '[ AlreadyInstalled
                        , NoToolVersionSet
                        , FileAlreadyExistsError
                        , ProcessError
+                       , UninstallFailed
 
                        , (AlreadyInstalled, ())
                        , (UnknownArchive, ())
@@ -264,9 +265,9 @@ type InstallEffects = '[ AlreadyInstalled
                        , (FileDoesNotExistError, ())
                        , (CopyError, ())
                        , (NotInstalled, ())
+                       , (UninstallFailed, ())
                        , (DirNotEmpty, ())
                        , (NoDownload, ())
-                       , (NotInstalled, ())
                        , (BuildFailed, ())
                        , (TagNotFound, ())
                        , (DigestError, ())
@@ -287,6 +288,7 @@ type InstallEffects = '[ AlreadyInstalled
                        , (DirNotEmpty, NotInstalled)
                        , (NoDownload, NotInstalled)
                        , (NotInstalled, NotInstalled)
+                       , (UninstallFailed, NotInstalled)
                        , (BuildFailed, NotInstalled)
                        , (TagNotFound, NotInstalled)
                        , (DigestError, NotInstalled)
@@ -319,6 +321,7 @@ type InstallGHCEffects = '[ TagNotFound
                           , BuildFailed
                           , DirNotEmpty
                           , AlreadyInstalled
+                          , UninstallFailed
 
                           , (AlreadyInstalled, NotInstalled)
                           , (UnknownArchive, NotInstalled)
@@ -328,6 +331,7 @@ type InstallGHCEffects = '[ TagNotFound
                           , (NotInstalled, NotInstalled)
                           , (DirNotEmpty, NotInstalled)
                           , (NoDownload, NotInstalled)
+                          , (UninstallFailed, NotInstalled)
                           , (BuildFailed, NotInstalled)
                           , (TagNotFound, NotInstalled)
                           , (DigestError, NotInstalled)
@@ -347,6 +351,7 @@ type InstallGHCEffects = '[ TagNotFound
                           , (NotInstalled, ())
                           , (DirNotEmpty, ())
                           , (NoDownload, ())
+                          , (UninstallFailed, ())
                           , (BuildFailed, ())
                           , (TagNotFound, ())
                           , (DigestError, ())

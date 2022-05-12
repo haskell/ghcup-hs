@@ -127,7 +127,7 @@ rmFooter = [s|Discussion:
     ---------------------------
 
 
-type RmEffects = '[ NotInstalled ]
+type RmEffects = '[ NotInstalled, UninstallFailed ]
 
 
 runRm :: (ReaderT env m (VEither RmEffects a) -> m (VEither RmEffects a))

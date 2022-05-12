@@ -31,12 +31,13 @@ import           Data.List
 import           Foreign.C.Error
 import           GHC.IO.Exception
 import           GHC.IO.Handle
-import           System.Directory
+import           System.Directory         hiding ( copyFile )
 import           System.Environment
 import           System.FilePath
 import           System.IO
 import           System.Process
- 
+
+import qualified System.Win32.File             as WS
 import qualified Control.Exception             as EX
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as BL
@@ -269,3 +270,16 @@ isBrokenSymlink fp = do
       -- this drops 'symDir' if 'tfp' is absolute
       (takeDirectory fp </> tfp)
   else pure False
+
+
+copyFile :: FilePath   -- ^ source file
+         -> FilePath   -- ^ destination file
+         -> Bool       -- ^ fail if file exists
+         -> IO ()
+copyFile = WS.copyFile
+
+deleteFile :: FilePath -> IO ()
+deleteFile = WS.deleteFile
+
+install :: FilePath -> FilePath -> Bool -> IO ()
+install = copyFile

@@ -438,6 +438,7 @@ install' _ (_, ListResult {..}) = do
               , FileAlreadyExistsError
               , ProcessError
               , GHCupShadowed
+              , UninstallFailed
               ]
 
   run (do
@@ -512,7 +513,7 @@ del' :: (MonadReader AppState m, MonadIO m, MonadFail m, MonadMask m, MonadUnlif
 del' _ (_, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
 
-  let run = runE @'[NotInstalled]
+  let run = runE @'[NotInstalled, UninstallFailed]
 
   run (do
       let vi = getVersionInfo lVer lTool dls

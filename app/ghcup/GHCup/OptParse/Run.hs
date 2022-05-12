@@ -176,6 +176,7 @@ type RunEffects = '[ AlreadyInstalled
                    , NoToolVersionSet
                    , FileAlreadyExistsError
                    , ProcessError
+                   , UninstallFailed
                    ]
 
 runLeanRUN :: (MonadUnliftIO m, MonadIO m)
@@ -339,6 +340,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                               , AlreadyInstalled
                               , FileAlreadyExistsError
                               , CopyError
+                              , UninstallFailed
                               ] (ResourceT (ReaderT AppState m)) ()
    installToolChainFull Toolchain{..} tmp = do
          forM_ [(GHC,) <$> ghcVer, (Cabal,) <$> cabalVer, (HLS,) <$> hlsVer, (Stack,) <$> stackVer] $ \mt -> do

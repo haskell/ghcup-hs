@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 
@@ -15,14 +16,11 @@ import           Data.Maybe
 import           Data.Text               ( Text )
 import           Data.Void
 import           GHC.IO.Exception
-import           Optics                  hiding ((<|), (|>))
-import           System.Directory        hiding (findFiles)
+import           System.Directory        hiding (findFiles, copyFile)
 import           System.FilePath
-import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
-import qualified Data.ByteString.Lazy          as BL
 import qualified Text.Megaparsec               as MP
 
 
@@ -109,3 +107,5 @@ findFiles' path parser = do
 
 checkFileAlreadyExists :: (MonadIO m) => FilePath -> m Bool
 checkFileAlreadyExists fp = liftIO $ doesFileExist fp
+
+

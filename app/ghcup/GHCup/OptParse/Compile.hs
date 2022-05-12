@@ -388,6 +388,7 @@ type GHCEffects = '[ AlreadyInstalled
                   , ProcessError
                   , CopyError
                   , BuildFailed
+                  , UninstallFailed
                   ]
 type HLSEffects = '[ AlreadyInstalled
                   , BuildFailed
@@ -406,6 +407,7 @@ type HLSEffects = '[ AlreadyInstalled
                   , NotInstalled
                   , DirNotEmpty
                   , ArchiveResult
+                  , UninstallFailed
                   ]
 
 

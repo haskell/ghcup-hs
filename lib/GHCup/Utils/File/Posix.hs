@@ -34,12 +34,16 @@ import           Data.IORef
 import           Data.Sequence                  ( Seq, (|>) )
 import           Data.List
 import           Data.Word8
+import           Foreign.C.String
+import           Foreign.C.Types
 import           GHC.IO.Exception
-import           System.IO                      ( stderr )
+import           System.IO                      ( stderr, hClose, hSetBinaryMode )
 import           System.IO.Error
 import           System.FilePath
-import           System.Directory
+import           System.Directory      hiding   ( copyFile )
 import           System.Posix.Directory
+import           System.Posix.Error             ( throwErrnoPathIfMinus1Retry )
+import           System.Posix.Internals         ( withFilePath )
 import           System.Posix.Files
 import           System.Posix.IO
 import           System.Posix.Process           ( ProcessStatus(..) )
@@ -50,12 +54,20 @@ import qualified Control.Exception             as EX
 import qualified Data.Sequence                 as Sq
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
+import qualified System.Posix.Files            as PF
 import qualified System.Posix.Process          as SPP
+import qualified System.Posix.IO               as SPI
 import qualified System.Console.Terminal.Size  as TP
+import qualified System.Posix as Posix
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as BL
 import qualified "unix-bytestring" System.Posix.IO.ByteString
                                                as SPIB
+import qualified Streamly.FileSystem.Handle    as FH
+import qualified Streamly.Internal.FileSystem.Handle
+                                               as IFH
+import qualified Streamly.Prelude              as S
+import qualified GHCup.Utils.File.Posix.Foreign as FD
 
 
 
@@ -399,3 +411,155 @@ isBrokenSymlink fp = do
     Right b -> pure b
     Left e | isDoesNotExistError e -> pure False
            | otherwise -> throwIO e
+
+copyFile :: FilePath   -- ^ source file
+         -> FilePath   -- ^ destination file
+         -> Bool       -- ^ fail if file exists
+         -> IO ()
+copyFile from to fail' = do
+  bracket
+      (do
+        fd     <- openFd' from SPI.ReadOnly [FD.oNofollow] Nothing
+        handle' <- SPI.fdToHandle fd
+        pure (fd, handle')
+      )
+      (\(_, handle') -> hClose handle')
+    $ \(fromFd, fH) -> do
+        sourceFileMode <- fileMode
+          <$> getFdStatus fromFd
+        let dflags =
+              [ FD.oNofollow
+              , case fail' of
+                True    -> FD.oExcl
+                False   -> FD.oTrunc
+              ]
+        bracketeer
+            (do
+              fd     <- openFd' to SPI.WriteOnly dflags $ Just sourceFileMode
+              handle' <- SPI.fdToHandle fd
+              pure (fd, handle')
+            )
+            (\(_, handle') -> hClose handle')
+            (\(_, handle') -> do
+              hClose handle'
+              case fail' of
+                   -- if we created the file and copying failed, it's
+                   -- safe to clean up
+                True  -> PF.removeLink to
+                False -> pure ()
+            )
+          $ \(_, tH) -> do
+              hSetBinaryMode fH True
+              hSetBinaryMode tH True
+              streamlyCopy (fH, tH)
+ where
+  streamlyCopy (fH, tH) =
+    S.fold (FH.writeChunks tH) $ IFH.toChunksWithBufferOf (256 * 1024) fH
+
+foreign import ccall unsafe "open"
+   c_open :: CString -> CInt -> Posix.CMode -> IO CInt
+
+
+open_  :: CString
+       -> Posix.OpenMode
+       -> [FD.Flags]
+       -> Maybe Posix.FileMode
+       -> IO Posix.Fd
+open_ str how optional_flags maybe_mode = do
+    fd <- c_open str all_flags mode_w
+    return (Posix.Fd fd)
+  where
+    all_flags  = FD.unionFlags $ optional_flags ++ [open_mode] ++ creat
+
+
+    (creat, mode_w) = case maybe_mode of
+                        Nothing -> ([],0)
+                        Just x  -> ([FD.oCreat], x)
+
+    open_mode = case how of
+                   Posix.ReadOnly  -> FD.oRdonly
+                   Posix.WriteOnly -> FD.oWronly
+                   Posix.ReadWrite -> FD.oRdwr
+
+
+-- |Open and optionally create this file. See 'System.Posix.Files'
+-- for information on how to use the 'FileMode' type.
+--
+-- Note that passing @Just x@ as the 4th argument triggers the
+-- `oCreat` status flag, which must be set when you pass in `oExcl`
+-- to the status flags. Also see the manpage for @open(2)@.
+openFd' :: FilePath
+        -> Posix.OpenMode
+        -> [FD.Flags]               -- ^ status flags of @open(2)@
+        -> Maybe Posix.FileMode  -- ^ @Just x@ => creates the file with the given modes, Nothing => the file must exist.
+        -> IO Posix.Fd
+openFd' name how optional_flags maybe_mode =
+   withFilePath name $ \str ->
+     throwErrnoPathIfMinus1Retry "openFd" name $
+       open_ str how optional_flags maybe_mode
+
+
+-- |Deletes the given file. Raises `eISDIR`
+-- if run on a directory. Does not follow symbolic links.
+--
+-- Throws:
+--
+--    - `InappropriateType` for wrong file type (directory)
+--    - `NoSuchThing` if the file does not exist
+--    - `PermissionDenied` if the directory cannot be read
+--
+-- Notes: calls `unlink`
+deleteFile :: FilePath -> IO ()
+deleteFile = removeLink
+
+
+-- |Recreate a symlink.
+--
+-- In `Overwrite` copy mode only files and empty directories are deleted.
+--
+-- Safety/reliability concerns:
+--
+--    * `Overwrite` mode is inherently non-atomic
+--
+-- Throws:
+--
+--    - `InvalidArgument` if source file is wrong type (not a symlink)
+--    - `PermissionDenied` if output directory cannot be written to
+--    - `PermissionDenied` if source directory cannot be opened
+--    - `SameFile` if source and destination are the same file
+--      (`HPathIOException`)
+--
+--
+-- Throws in `Strict` mode only:
+--
+--    - `AlreadyExists` if destination already exists
+--
+-- Throws in `Overwrite` mode only:
+--
+--    - `UnsatisfiedConstraints` if destination file is non-empty directory
+--
+-- Notes:
+--
+--    - calls `symlink`
+recreateSymlink :: FilePath   -- ^ the old symlink file
+                -> FilePath   -- ^ destination file
+                -> Bool       -- ^ fail if destination file exists
+                -> IO ()
+recreateSymlink symsource newsym fail' = do
+  sympoint <- readSymbolicLink symsource
+  case fail' of
+    True  -> pure ()
+    False ->
+      hideError doesNotExistErrorType $ deleteFile newsym
+  createSymbolicLink sympoint newsym
+
+
+-- copys files, recreates symlinks, fails on all other types
+install :: FilePath -> FilePath -> Bool -> IO ()
+install from to fail' = do
+  fs <- PF.getSymbolicLinkStatus from
+  decide fs
+ where
+  decide fs | PF.isRegularFile fs     = copyFile from to fail'
+            | PF.isSymbolicLink fs    = recreateSymlink from to fail'
+            | otherwise               = ioError $ mkIOError illegalOperationErrorType "install: not a regular file or symlink" Nothing (Just from)
