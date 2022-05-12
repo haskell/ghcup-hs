@@ -2605,8 +2605,8 @@ ghcupDownloads:
               dlHash: 109b05f2d36f320a640163aabee729b24efca4eef0d8ffa4d2eff5b272203d98
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.8/x86_64-mingw64-ghcup-0.1.17.8.exe
-              dlHash: ea2b8392ebc54aea3388b90740fda100d7e02d22c8102c8d6a2cdaef0a9273c2
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.17.8/x86_64-mingw64-ghcup-0.1.17.8-p1.exe
+              dlHash: 6b5aef92965b847519ed74dc47807fbc22b92c5bfda64b6a5053abe5e2349f04
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
