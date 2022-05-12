@@ -99,7 +99,7 @@ data HLSCompileOptions = HLSCompileOptions
     --[ Parsers ]--
     ---------------
 
-          
+
 compileP :: Parser CompileCommand
 compileP = subparser
   (  command
@@ -541,11 +541,11 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 pure ExitSuccess
               VLeft (V (AlreadyInstalled _ v)) -> do
                 runLogger $ logWarn $
-                  "GHC ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install ghc --force " <> prettyVer v <> "'"
+                  "GHC ver " <> prettyVer v <> " already installed, remove it first to reinstall"
                 pure ExitSuccess
               VLeft (V (DirNotEmpty fp)) -> do
-                runLogger $ logWarn $
-                  "Install directory " <> T.pack fp <> " is not empty. Use 'ghcup install ghc --isolate " <> T.pack fp <> " --force ..." <> "' to install regardless."
+                runLogger $ logError $
+                  "Install directory " <> T.pack fp <> " is not empty."
                 pure $ ExitFailure 3
               VLeft err@(V (BuildFailed tmpdir _)) -> do
                 case keepDirs settings of
