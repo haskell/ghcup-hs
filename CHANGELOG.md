@@ -1,5 +1,13 @@
 # Revision history for ghcup
 
+## 0.1.17.10 -- 2022-05-12
+
+* windows hotfix (hackage-only release)
+
+## 0.1.17.9 -- 2022-05-12
+
+* broken sdist (hackage-only release)
+
 ## 0.1.17.8 -- 2022-05-11
 
 * Fix a serious (but hard to trigger) bug when combining `--isolate <DIR>` with `--force`, please make sure to upgrade or avoid `--force`
