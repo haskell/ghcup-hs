@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE DataKinds  #-}
+{-# LANGUAGE MultiWayIf  #-}
 
 {-|
 Module      : GHCup.Utils.File.Posix
@@ -418,41 +420,25 @@ copyFile :: FilePath   -- ^ source file
          -> IO ()
 copyFile from to fail' = do
   bracket
-      (do
-        fd     <- openFd' from SPI.ReadOnly [FD.oNofollow] Nothing
-        handle' <- SPI.fdToHandle fd
-        pure (fd, handle')
-      )
-      (\(_, handle') -> hClose handle')
+    (openFdHandle from SPI.ReadOnly [FD.oNofollow] Nothing)
+    (hClose . snd)
     $ \(fromFd, fH) -> do
-        sourceFileMode <- fileMode
-          <$> getFdStatus fromFd
-        let dflags =
-              [ FD.oNofollow
-              , case fail' of
-                True    -> FD.oExcl
-                False   -> FD.oTrunc
-              ]
-        bracketeer
-            (do
-              fd     <- openFd' to SPI.WriteOnly dflags $ Just sourceFileMode
-              handle' <- SPI.fdToHandle fd
-              pure (fd, handle')
-            )
-            (\(_, handle') -> hClose handle')
-            (\(_, handle') -> do
-              hClose handle'
-              case fail' of
-                   -- if we created the file and copying failed, it's
-                   -- safe to clean up
-                True  -> PF.removeLink to
-                False -> pure ()
-            )
+        sourceFileMode <- fileMode <$> getFdStatus fromFd
+        let dflags = [ FD.oNofollow
+                     , if fail' then FD.oExcl else FD.oTrunc
+                     ]
+        bracket
+          (openFdHandle to SPI.WriteOnly dflags $ Just sourceFileMode)
+          (hClose . snd)
           $ \(_, tH) -> do
               hSetBinaryMode fH True
               hSetBinaryMode tH True
               streamlyCopy (fH, tH)
  where
+  openFdHandle fp omode flags fM = do
+    fd      <- openFd' fp omode flags fM
+    handle' <- SPI.fdToHandle fd
+    pure (fd, handle')
   streamlyCopy (fH, tH) =
     S.fold (FH.writeChunks tH) $ IFH.toChunksWithBufferOf (256 * 1024) fH
 
@@ -563,3 +549,4 @@ install from to fail' = do
   decide fs | PF.isRegularFile fs     = copyFile from to fail'
             | PF.isSymbolicLink fs    = recreateSymlink from to fail'
             | otherwise               = ioError $ mkIOError illegalOperationErrorType "install: not a regular file or symlink" Nothing (Just from)
+

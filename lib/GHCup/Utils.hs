@@ -1033,6 +1033,8 @@ darwinNotarization Darwin path = exec
 darwinNotarization _ _ = pure $ Right ()
 
 
+
+
 getChangeLog :: GHCupDownloads -> Tool -> Either Version Tag -> Maybe URI
 getChangeLog dls tool (Left v') =
   preview (ix tool % ix v' % viChangeLog % _Just) dls

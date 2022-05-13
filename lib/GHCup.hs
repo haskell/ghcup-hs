@@ -359,7 +359,8 @@ installUnpackedGHC path inst ver forceInstall
       lift $ logInfo $ "Merging file tree from \"" <> T.pack tmpInstallDest <> "\" to \"" <> T.pack (fromInstallDir inst) <> "\""
       fs <- mergeFileTreeAll (tmpInstallDest </> dropDrive (fromInstallDir inst))
         (fromInstallDir inst)
-        (\f t -> liftIO $ install f t (not forceInstall))
+        (\f t -> liftIO (install f t (not forceInstall)))
+      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromInstallDir inst)
       case inst of
         IsolateDirResolved _ -> pure ()
         _ -> recordInstalledFiles fs GHC (mkTVer ver)
@@ -659,6 +660,7 @@ installHLSUnpacked :: ( MonadMask m
                       , MonadCatch m
                       , MonadIO m
                       , MonadResource m
+                      , HasPlatformReq env
                       )
                    => FilePath      -- ^ Path to the unpacked hls bindist (where the executable resides)
                    -> InstallDirResolved      -- ^ Path to install to
@@ -666,12 +668,14 @@ installHLSUnpacked :: ( MonadMask m
                    -> Bool
                    -> Excepts '[ProcessError, CopyError, FileAlreadyExistsError, NotInstalled] m ()
 installHLSUnpacked path inst ver forceInstall = do
+  PlatformRequest { .. } <- lift getPlatformReq
   lift $ logInfo "Installing HLS"
   tmpInstallDest <- lift withGHCupTmpDir
   lEM $ make ["DESTDIR=" <> tmpInstallDest, "PREFIX=" <> fromInstallDir inst, "install"] (Just path)
   fs <- mergeFileTreeAll (tmpInstallDest </> dropDrive (fromInstallDir inst))
                    (fromInstallDir inst)
-                   (\f t -> liftIO $ install f t (not forceInstall))
+                   (\f t -> liftIO (install f t (not forceInstall)))
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromInstallDir inst)
   case inst of
     IsolateDirResolved _ -> pure ()
     _ -> recordInstalledFiles fs HLS (mkTVer ver)

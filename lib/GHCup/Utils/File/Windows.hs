@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE DataKinds  #-}
 
 {-|
 Module      : GHCup.Utils.File.Windows
