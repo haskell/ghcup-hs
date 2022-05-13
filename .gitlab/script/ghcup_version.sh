@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -eux
 
@@ -7,6 +7,7 @@ set -eux
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
 
 CI_PROJECT_DIR=$(pwd)
+
 
 ecabal() {
 	cabal "$@"
@@ -94,16 +95,17 @@ rm -rf "${GHCUP_DIR}"
 eghcup --numeric-version
 
 eghcup install ghc ${GHC_VERSION}
-[ `$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version` = "${GHC_VERSION}" ]
-[ `eghcup run --ghc ${GHC_VERSION} -- ghc --numeric-version` = "${GHC_VERSION}" ]
+ls -lah "$(eghcup whereis -d ghc ${GHC_VERSION})"
+[ "`$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version`" = "${GHC_VERSION}" ]
+[ "`eghcup run --ghc ${GHC_VERSION} -- ghc --numeric-version`" = "${GHC_VERSION}" ]
 eghcup set ghc ${GHC_VERSION}
 eghcup install cabal ${CABAL_VERSION}
-[ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
+[ "`$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version`" = "${CABAL_VERSION}" ]
 eghcup unset cabal
 "$GHCUP_BIN"/cabal --version && exit 1 || echo yes
 eghcup set cabal ${CABAL_VERSION}
-[ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
-[ `eghcup run --cabal ${CABAL_VERSION} -- cabal --numeric-version` = "${CABAL_VERSION}" ]
+[ "`$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version`" = "${CABAL_VERSION}" ]
+[ "`eghcup run --cabal ${CABAL_VERSION} -- cabal --numeric-version`" = "${CABAL_VERSION}" ]
 
 if [ "${OS}" != "FREEBSD" ] ; then
 	if [ "${ARCH}" = "64" ] ; then
