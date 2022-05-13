@@ -44,7 +44,6 @@ import           Data.Vector                    ( Vector
 import           Data.Versions           hiding ( str )
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
-import           System.Directory               ( canonicalizePath )
 import           System.FilePath
 import           System.Exit
 import           System.IO.Unsafe

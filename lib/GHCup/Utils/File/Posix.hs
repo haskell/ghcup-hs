@@ -17,6 +17,7 @@ Some of these functions use sophisticated logging.
 -}
 module GHCup.Utils.File.Posix where
 
+import           GHCup.Utils.Dirs
 import           GHCup.Utils.File.Common
 import           GHCup.Utils.Prelude
 import           GHCup.Utils.Logger
@@ -42,7 +43,6 @@ import           GHC.IO.Exception
 import           System.IO                      ( stderr, hClose, hSetBinaryMode )
 import           System.IO.Error
 import           System.FilePath
-import           System.Directory      hiding   ( copyFile )
 import           System.Posix.Directory
 import           System.Posix.Error             ( throwErrnoPathIfMinus1Retry )
 import           System.Posix.Internals         ( withFilePath )
@@ -56,6 +56,7 @@ import qualified Control.Exception             as EX
 import qualified Data.Sequence                 as Sq
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
+import qualified System.Posix.Directory        as PD
 import qualified System.Posix.Files            as PF
 import qualified System.Posix.Process          as SPP
 import qualified System.Posix.IO               as SPI
@@ -101,7 +102,7 @@ execLogged exe args chdir lfile env = do
   Settings {..} <- getSettings
   Dirs {..} <- getDirs
   logDebug $ T.pack $ "Running " <> exe <> " with arguments " <> show args
-  let logfile = logsDir </> lfile <> ".log"
+  let logfile = fromGHCupPath logsDir </> lfile <> ".log"
   liftIO $ bracket (openFd logfile WriteOnly (Just newFilePerms) defaultFileFlags{ append = True })
                    closeFd
                    (action verbose noColor)
@@ -550,3 +551,6 @@ install from to fail' = do
             | PF.isSymbolicLink fs    = recreateSymlink from to fail'
             | otherwise               = ioError $ mkIOError illegalOperationErrorType "install: not a regular file or symlink" Nothing (Just from)
 
+
+removeEmptyDirectory :: FilePath -> IO ()
+removeEmptyDirectory = PD.removeDirectory

@@ -19,6 +19,7 @@ module GHCup.Utils.File (
 #endif
 ) where
 
+import GHCup.Utils.Dirs
 import GHCup.Utils.File.Common
 #if IS_WINDOWS
 import GHCup.Utils.File.Windows
@@ -32,7 +33,6 @@ import           GHC.IO                         ( evaluate )
 import           Control.Exception.Safe
 import           Haskus.Utils.Variant.Excepts
 import           Control.Monad.Reader
-import           System.Directory        hiding (findFiles, copyFile)
 import           System.FilePath
 
 import Data.List (nub)
@@ -42,9 +42,9 @@ import Control.DeepSeq (force)
 
 -- | Like 'mergeFileTree', except reads the entire source base dir to determine files to copy recursively.
 mergeFileTreeAll :: MonadIO m
-                 => FilePath                        -- ^ source base directory from which to install findFiles
+                 => GHCupPath                       -- ^ source base directory from which to install findFiles
                  -> FilePath                        -- ^ destination base dir
-                 -> (FilePath -> FilePath -> m ()) -- ^ file copy operation
+                 -> (FilePath -> FilePath -> m ())  -- ^ file copy operation
                  -> m [FilePath]
 mergeFileTreeAll sourceBase destBase copyOp = do
   (force -> !sourceFiles) <- liftIO
@@ -54,12 +54,12 @@ mergeFileTreeAll sourceBase destBase copyOp = do
 
 
 mergeFileTree :: MonadIO m
-              => FilePath                        -- ^ source base directory from which to install findFiles
+              => GHCupPath                       -- ^ source base directory from which to install findFiles
               -> [FilePath]                      -- ^ relative filepaths from source base directory
               -> FilePath                        -- ^ destination base dir
-              -> (FilePath -> FilePath -> m ()) -- ^ file copy operation
+              -> (FilePath -> FilePath -> m ())  -- ^ file copy operation
               -> m ()
-mergeFileTree sourceBase sources destBase copyOp = do
+mergeFileTree (fromGHCupPath -> sourceBase) sources destBase copyOp = do
   -- These checks are not atomic, but we perform them to have
   -- the opportunity to abort before copying has started.
   --

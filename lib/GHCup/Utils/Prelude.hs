@@ -27,6 +27,7 @@ module GHCup.Utils.Prelude
   )
 where
 
+import {-# SOURCE #-} GHCup.Utils.Dirs (GHCupPath, fromGHCupPath, createTempGHCupDirectory, appendGHCupPath, removePathForcibly, removeDirectory)
 import           GHCup.Types
 import           GHCup.Errors
 import           GHCup.Types.Optics
@@ -44,9 +45,8 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
-import           Data.List                      ( nub, intercalate, stripPrefix, isPrefixOf, dropWhileEnd, intersperse )
+import           Data.List                      ( intercalate, stripPrefix, isPrefixOf, dropWhileEnd, intersperse )
 import           Data.Maybe
-import           Data.Foldable
 import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
 import           Data.String
 import           Data.Text                      ( Text )
@@ -56,9 +56,12 @@ import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
 import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
 import           System.IO.Error
-import           System.IO.Temp
 import           System.IO.Unsafe
-import           System.Directory           hiding ( copyFile )
+import           System.Directory hiding ( removeDirectory
+                                         , removeDirectoryRecursive
+                                         , removePathForcibly
+                                         , copyFile
+                                         )
 import           System.FilePath
 
 import           Control.Retry
@@ -397,30 +400,6 @@ createDirRecursive' p =
       _ -> throwIO e
 
 
--- | Recursively copy the contents of one directory to another path.
---
--- This is a rip-off of Cabal library.
-copyDirectoryRecursive :: FilePath -> FilePath -> (FilePath -> FilePath -> IO ()) -> IO ()
-copyDirectoryRecursive srcDir destDir doCopy = do
-  srcFiles <- getDirectoryContentsRecursive srcDir
-  copyFilesWith destDir [ (srcDir, f)
-                          | f <- srcFiles ]
-  where
-    -- | Common implementation of 'copyFiles', 'installOrdinaryFiles',
-    -- 'installExecutableFiles' and 'installMaybeExecutableFiles'.
-    copyFilesWith :: FilePath -> [(FilePath, FilePath)] -> IO ()
-    copyFilesWith targetDir srcFiles = do
-
-      -- Create parent directories for everything
-      let dirs = map (targetDir </>) . nub . map takeDirectory $ fmap snd srcFiles
-      traverse_ (createDirectoryIfMissing True) dirs
-
-      -- Copy all the files
-      sequence_ [ let src  = srcBase   </> srcFile
-                      dest = targetDir </> srcFile
-                   in doCopy src dest
-                | (srcBase, srcFile) <- srcFiles ]
-
 
 -- | List all the files in a directory and all subdirectories.
 --
@@ -429,8 +408,12 @@ copyDirectoryRecursive srcDir destDir doCopy = do
 -- the source directory structure changes before the list is used.
 --
 -- TODO: use streamly
-getDirectoryContentsRecursive :: FilePath -> IO [FilePath]
-getDirectoryContentsRecursive topdir = recurseDirectories [""]
+getDirectoryContentsRecursive :: GHCupPath -> IO [FilePath]
+getDirectoryContentsRecursive (fromGHCupPath -> topdir) = getDirectoryContentsRecursiveUnsafe topdir
+
+
+getDirectoryContentsRecursiveUnsafe :: FilePath -> IO [FilePath]
+getDirectoryContentsRecursiveUnsafe topdir = recurseDirectories [""]
   where
     recurseDirectories :: [FilePath] -> IO [FilePath]
     recurseDirectories []         = return []
@@ -464,14 +447,14 @@ recyclePathForcibly :: ( MonadIO m
                        , HasDirs env
                        , MonadMask m
                        )
-                    => FilePath
+                    => GHCupPath
                     -> m ()
 recyclePathForcibly fp
   | isWindows = do
       Dirs { recycleDir } <- getDirs
-      tmp <- liftIO $ createTempDirectory recycleDir "recyclePathForcibly"
-      let dest = tmp </> takeFileName fp
-      liftIO (moveFile fp dest)
+      tmp <- liftIO $ createTempGHCupDirectory recycleDir "recyclePathForcibly"
+      let dest = tmp `appendGHCupPath` takeFileName (fromGHCupPath fp)
+      liftIO (moveFile (fromGHCupPath fp) (fromGHCupPath dest))
           `catch`
           (\e -> if | isDoesNotExistError e -> pure ()
                     | isPermissionError e || ioeGetErrorType e == UnsupportedOperation {- EXDEV on windows -} -> recover (liftIO $ removePathForcibly fp)
@@ -484,7 +467,7 @@ recyclePathForcibly fp
 rmPathForcibly :: ( MonadIO m
                   , MonadMask m
                   )
-               => FilePath
+               => GHCupPath
                -> m ()
 rmPathForcibly fp
   | isWindows = recover (liftIO $ removePathForcibly fp)
@@ -492,7 +475,7 @@ rmPathForcibly fp
 
 
 rmDirectory :: (MonadIO m, MonadMask m)
-            => FilePath
+            => GHCupPath
             -> m ()
 rmDirectory fp
   | isWindows = recover (liftIO $ removeDirectory fp)
@@ -512,11 +495,11 @@ recycleFile fp
   | isWindows = do
       Dirs { recycleDir } <- getDirs
       liftIO $ whenM (doesDirectoryExist fp) $ ioError (IOError Nothing InappropriateType "recycleFile" "" Nothing (Just fp))
-      tmp <- liftIO $ createTempDirectory recycleDir "recycleFile"
-      let dest = tmp </> takeFileName fp
+      tmp <- liftIO $ createTempGHCupDirectory recycleDir "recycleFile"
+      let dest = fromGHCupPath tmp </> takeFileName fp
       liftIO (moveFile fp dest)
         `catch`
-          (\e -> if isPermissionError e || ioeGetErrorType e == UnsupportedOperation {- EXDEV on windows -} then recover (liftIO $ removePathForcibly fp) else throwIO e)
+          (\e -> if isPermissionError e || ioeGetErrorType e == UnsupportedOperation {- EXDEV on windows -} then recover (liftIO $ rmFile fp) else throwIO e)
         `finally`
           liftIO (handleIO (\_ -> pure ()) $ removePathForcibly tmp)
   | otherwise = liftIO $ removeFile fp

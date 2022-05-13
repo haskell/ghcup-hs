@@ -17,7 +17,7 @@ Some of these functions use sophisticated logging.
 module GHCup.Utils.File.Windows where
 
 import {-# SOURCE #-} GHCup.Utils ( getLinkTarget, pathIsLink )
-import           GHCup.Utils.Dirs
+import           GHCup.Utils.Dirs    hiding ( copyFile )
 import           GHCup.Utils.File.Common
 import           GHCup.Utils.Logger
 import           GHCup.Types
@@ -32,7 +32,6 @@ import           Data.List
 import           Foreign.C.Error
 import           GHC.IO.Exception
 import           GHC.IO.Handle
-import           System.Directory         hiding ( copyFile )
 import           System.Environment
 import           System.FilePath
 import           System.IO
@@ -284,3 +283,6 @@ deleteFile = WS.deleteFile
 
 install :: FilePath -> FilePath -> Bool -> IO ()
 install = copyFile
+
+removeEmptyDirectory :: FilePath -> IO ()
+removeEmptyDirectory = WS.removeDirectory

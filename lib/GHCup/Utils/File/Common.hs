@@ -9,6 +9,7 @@ module GHCup.Utils.File.Common (
   ) where
 
 import           GHCup.Utils.Prelude
+import {-# SOURCE #-} GHCup.Utils.Dirs          ( GHCupPath )
 import           GHCup.Types(ProcessError(..), CapturedProcess(..))
 
 import           Control.Monad.Reader
@@ -16,7 +17,11 @@ import           Data.Maybe
 import           Data.Text               ( Text )
 import           Data.Void
 import           GHC.IO.Exception
-import           System.Directory        hiding (findFiles, copyFile)
+import           System.Directory hiding ( removeDirectory
+                                         , removeDirectoryRecursive
+                                         , removePathForcibly
+                                         , findFiles
+                                         )
 import           System.FilePath
 import           Text.Regex.Posix
 
@@ -94,7 +99,7 @@ findFiles path regex = do
   contents <- listDirectory path
   pure $ filter (match regex) contents
 
-findFilesDeep :: FilePath -> Regex -> IO [FilePath]
+findFilesDeep :: GHCupPath -> Regex -> IO [FilePath]
 findFilesDeep path regex = do
   contents <- getDirectoryContentsRecursive path
   pure $ filter (match regex) contents

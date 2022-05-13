@@ -32,7 +32,6 @@ import           Data.List                      ( intercalate )
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
-import           System.Directory
 import           System.FilePath
 import           System.Environment
 import           System.Exit

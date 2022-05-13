@@ -17,6 +17,7 @@ import           GHCup
 import           GHCup.Errors
 import           GHCup.OptParse.Common
 import           GHCup.Types
+import           GHCup.Utils
 import           GHCup.Utils.Logger
 import           GHCup.Utils.String.QQ
 
@@ -299,7 +300,7 @@ whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
                 pure $ ExitFailure 30
 
     (WhereisBaseDir, _) -> do
-      liftIO $ putStr baseDir
+      liftIO $ putStr $ fromGHCupPath baseDir
       pure ExitSuccess
 
     (WhereisBinDir, _) -> do
@@ -307,13 +308,13 @@ whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
       pure ExitSuccess
 
     (WhereisCacheDir, _) -> do
-      liftIO $ putStr cacheDir
+      liftIO $ putStr $ fromGHCupPath cacheDir
       pure ExitSuccess
 
     (WhereisLogsDir, _) -> do
-      liftIO $ putStr logsDir
+      liftIO $ putStr $ fromGHCupPath logsDir
       pure ExitSuccess
 
     (WhereisConfDir, _) -> do
-      liftIO $ putStr confDir
+      liftIO $ putStr $ fromGHCupPath confDir
       pure ExitSuccess

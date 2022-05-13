@@ -1,6 +1,10 @@
 module GHCup.Utils.Prelude.Posix where
 
-import System.Directory
+import           System.Directory hiding ( removeDirectory
+                                         , removeDirectoryRecursive
+                                         , removePathForcibly
+                                         , findFiles
+                                         )
 import System.Posix.Files
 
 

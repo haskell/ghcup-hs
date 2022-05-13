@@ -220,7 +220,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 let s' = AppState settings dirs keybindings ghcupInfo pfreq loggerConfig
 
                 race_ (liftIO $ runReaderT cleanupTrash s')
-                      (threadDelay 5000000 >> runLogger (logWarn $ "Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in " <> T.pack recycleDir <> " manually"))
+                      (threadDelay 5000000 >> runLogger (logWarn $ "Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in " <> T.pack (fromGHCupPath recycleDir) <> " manually"))
 
                 case optCommand of
                   Nuke -> pure ()

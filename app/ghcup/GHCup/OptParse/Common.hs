@@ -52,7 +52,6 @@ import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           Safe
-import           System.Directory
 import           System.Process                  ( readProcess )
 import           System.FilePath
 import           Text.HTML.TagSoup       hiding ( Tag )

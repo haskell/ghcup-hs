@@ -77,11 +77,9 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           Safe                    hiding ( at )
-import           System.Directory        hiding ( findFiles, copyFile )
 import           System.Environment
 import           System.FilePath
 import           System.IO.Error
-import           System.IO.Temp
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 import           URI.ByteString
@@ -293,8 +291,8 @@ installPackedGHC dl msubdir inst ver forceInstall = do
 
   -- unpack
   tmpUnpack <- lift mkGhcupTmpDir
-  liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
-  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+  liftE $ cleanUpOnError tmpUnpack (unpackToDir (fromGHCupPath tmpUnpack) dl)
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
 
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack)
@@ -319,7 +317,7 @@ installUnpackedGHC :: ( MonadReader env m
                       , MonadResource m
                       , MonadFail m
                       )
-                   => FilePath            -- ^ Path to the unpacked GHC bindist (where the configure script resides)
+                   => GHCupPath           -- ^ Path to the unpacked GHC bindist (where the configure script resides)
                    -> InstallDirResolved  -- ^ Path to install to
                    -> Version             -- ^ The GHC version
                    -> Bool                -- ^ Force install
@@ -351,13 +349,13 @@ installUnpackedGHC path inst ver forceInstall
                        ("./configure" : ("--prefix=" <> fromInstallDir inst)
                         : alpineArgs
                        )
-                       (Just path)
+                       (Just $ fromGHCupPath path)
                        "ghc-configure"
                        Nothing
       tmpInstallDest <- lift withGHCupTmpDir
-      lEM $ make ["DESTDIR=" <> tmpInstallDest, "install"] (Just path)
-      lift $ logInfo $ "Merging file tree from \"" <> T.pack tmpInstallDest <> "\" to \"" <> T.pack (fromInstallDir inst) <> "\""
-      fs <- mergeFileTreeAll (tmpInstallDest </> dropDrive (fromInstallDir inst))
+      lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "install"] (Just $ fromGHCupPath path)
+      lift $ logInfo $ "Merging file tree from \"" <> T.pack (fromGHCupPath tmpInstallDest) <> "\" to \"" <> T.pack (fromInstallDir inst) <> "\""
+      fs <- mergeFileTreeAll (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
         (fromInstallDir inst)
         (\f t -> liftIO (install f t (not forceInstall)))
       liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromInstallDir inst)
@@ -472,11 +470,11 @@ installCabalBindist dlinfo ver installDir forceInstall = do
 
   -- unpack
   tmpUnpack <- lift withGHCupTmpDir
-  liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
-  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+  liftE $ cleanUpOnError tmpUnpack (unpackToDir (fromGHCupPath tmpUnpack) dl)
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
 
   -- the subdir of the archive where we do the work
-  workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
+  workdir <- fromGHCupPath <$> maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
 
   case installDir of
     IsolateDir isoDir -> do             -- isolated install
@@ -484,7 +482,7 @@ installCabalBindist dlinfo ver installDir forceInstall = do
       liftE $ installCabalUnpacked workdir (IsolateDirResolved isoDir) ver forceInstall
 
     GHCupInternal -> do                 -- regular install
-      liftE $ installCabalUnpacked workdir (GHCupDir binDir) ver forceInstall
+      liftE $ installCabalUnpacked workdir (GHCupBinDir binDir) ver forceInstall
 
 
 -- | Install an unpacked cabal distribution.Symbol
@@ -501,7 +499,7 @@ installCabalUnpacked path inst ver forceInstall = do
   let destFileName = cabalFile
         <> (case inst of
               IsolateDirResolved _ -> ""
-              GHCupDir _ -> ("-" <>) . T.unpack . prettyVer $ ver
+              _ -> ("-" <>) . T.unpack . prettyVer $ ver
            )
         <> exeExt
   let destPath = fromInstallDir inst </> destFileName
@@ -614,11 +612,11 @@ installHLSBindist dlinfo ver installDir forceInstall = do
 
   -- unpack
   tmpUnpack <- lift withGHCupTmpDir
-  liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
-  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+  liftE $ cleanUpOnError tmpUnpack (unpackToDir (fromGHCupPath tmpUnpack) dl)
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
 
   -- the subdir of the archive where we do the work
-  workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
+  workdir <- fromGHCupPath <$> maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
   legacy <- liftIO $ isLegacyHLSBindist workdir
 
   if
@@ -636,7 +634,7 @@ installHLSBindist dlinfo ver installDir forceInstall = do
 
     GHCupInternal -> do
       if legacy
-      then liftE $ installHLSUnpackedLegacy workdir (GHCupDir binDir) ver forceInstall
+      then liftE $ installHLSUnpackedLegacy workdir (GHCupBinDir binDir) ver forceInstall
       else do
         inst <- ghcupHLSDir ver
         liftE $ runBuildAction tmpUnpack
@@ -671,8 +669,8 @@ installHLSUnpacked path inst ver forceInstall = do
   PlatformRequest { .. } <- lift getPlatformReq
   lift $ logInfo "Installing HLS"
   tmpInstallDest <- lift withGHCupTmpDir
-  lEM $ make ["DESTDIR=" <> tmpInstallDest, "PREFIX=" <> fromInstallDir inst, "install"] (Just path)
-  fs <- mergeFileTreeAll (tmpInstallDest </> dropDrive (fromInstallDir inst))
+  lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "PREFIX=" <> fromInstallDir inst, "install"] (Just path)
+  fs <- mergeFileTreeAll (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
                    (fromInstallDir inst)
                    (\f t -> liftIO (install f t (not forceInstall)))
   liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromInstallDir inst)
@@ -702,7 +700,7 @@ installHLSUnpackedLegacy path installDir ver forceInstall = do
     let toF = dropSuffix exeExt f
               <> (case installDir of
                    IsolateDirResolved _ -> ""
-                   GHCupDir _ -> ("~" <>) . T.unpack . prettyVer $ ver
+                   _ -> ("~" <>) . T.unpack . prettyVer $ ver
                  )
               <> exeExt
 
@@ -720,7 +718,7 @@ installHLSUnpackedLegacy path installDir ver forceInstall = do
       toF = wrapper
             <> (case installDir of
                  IsolateDirResolved _ -> ""
-                 GHCupDir _ -> ("-" <>) . T.unpack . prettyVer $ ver
+                 _ -> ("-" <>) . T.unpack . prettyVer $ ver
                )
             <> exeExt
       srcWrapperPath = path </> wrapper <> exeExt
@@ -827,8 +825,8 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
 
       -- unpack
       tmpUnpack <- lift mkGhcupTmpDir
-      liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
-      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+      liftE $ cleanUpOnError tmpUnpack (unpackToDir (fromGHCupPath tmpUnpack) dl)
+      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
 
       workdir <- maybe (pure tmpUnpack)
                        (liftE . intoSubdir tmpUnpack)
@@ -839,7 +837,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
     -- clone from git
     Right GitBranch{..} -> do
       tmpUnpack <- lift mkGhcupTmpDir
-      let git args = execLogged "git" ("--no-pager":args) (Just tmpUnpack) "git" Nothing
+      let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
       tver <- reThrowAll @_ @'[ProcessError] DownloadFailed $ do
         let rep = fromMaybe "https://github.com/haskell/haskell-language-server.git" repo
         lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
@@ -859,7 +857,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
         lEM $ git fetch_args
 
         lEM $ git [ "checkout", "FETCH_HEAD" ]
-        (Just gpd) <- parseGenericPackageDescriptionMaybe <$> liftIO (B.readFile (tmpUnpack </> "haskell-language-server.cabal"))
+        (Just gpd) <- parseGenericPackageDescriptionMaybe <$> liftIO (B.readFile (fromGHCupPath tmpUnpack </> "haskell-language-server.cabal"))
         pure . (\c -> Version Nothing c [] Nothing)
           . NE.fromList . fmap (NE.fromList . (:[]) . digits . fromIntegral)
           . versionNumbers
@@ -868,7 +866,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
           . packageDescription
           $ gpd
 
-      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
       lift $ logInfo $ "Git version " <> T.pack ref <> " corresponds to HLS version " <> prettyVer tver
 
       pure (tmpUnpack, tver)
@@ -879,30 +877,30 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
 
   liftE $ runBuildAction
     workdir
-    (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed workdir) $ do
-      let tmpInstallDir = workdir </> "out"
+    (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed $ fromGHCupPath workdir) $ do
+      let tmpInstallDir = fromGHCupPath workdir </> "out"
       liftIO $ createDirRecursive' tmpInstallDir
 
       -- apply patches
-      liftE $ applyAnyPatch patches workdir
+      liftE $ applyAnyPatch patches (fromGHCupPath workdir)
 
       -- set up project files
       cp <- case cabalProject of
         Just (Left cp)
           | isAbsolute cp -> do
-              copyFileE cp (workdir </> "cabal.project") False
+              copyFileE cp (fromGHCupPath workdir </> "cabal.project") False
               pure "cabal.project"
           | otherwise -> pure (takeFileName cp)
         Just (Right uri) -> do
           tmpUnpack <- lift withGHCupTmpDir
-          cp <- liftE $ download uri Nothing Nothing tmpUnpack (Just "cabal.project") False
-          copyFileE cp (workdir </> "cabal.project") False
+          cp <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpUnpack) (Just "cabal.project") False
+          copyFileE cp (fromGHCupPath workdir </> "cabal.project") False
           pure "cabal.project"
         Nothing -> pure "cabal.project"
       forM_ cabalProjectLocal $ \uri -> do
         tmpUnpack <- lift withGHCupTmpDir
-        cpl <- liftE $ download uri Nothing Nothing tmpUnpack (Just (cp <.> "local")) False
-        copyFileE cpl (workdir </> cp <.> "local") False
+        cpl <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpUnpack) (Just (cp <.> "local")) False
+        copyFileE cpl (fromGHCupPath workdir </> cp <.> "local") False
       artifacts <- forM (sort ghcs) $ \ghc -> do
         let ghcInstallDir = tmpInstallDir </> T.unpack (prettyVer ghc)
         liftIO $ createDirRecursive' tmpInstallDir
@@ -923,7 +921,9 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
                                  "exe:haskell-language-server"
                                , "exe:haskell-language-server-wrapper"]
                              )
-          (Just workdir) "cabal" Nothing
+                             (Just $ fromGHCupPath workdir)
+                             "cabal"
+                             Nothing
         pure ghcInstallDir
 
       forM_ artifacts $ \artifact -> do
@@ -931,14 +931,14 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
           (tmpInstallDir </> "haskell-language-server-" <> takeFileName artifact <.> exeExt)
         liftIO $ renameFile (artifact </> "haskell-language-server-wrapper" <.> exeExt)
           (tmpInstallDir </> "haskell-language-server-wrapper" <.> exeExt)
-        liftIO $ rmPathForcibly artifact
+        liftIO $ hideError NoSuchThing $ rmFile artifact
 
       case installDir of
         IsolateDir isoDir -> do
           lift $ logInfo $ "isolated installing HLS to " <> T.pack isoDir
           liftE $ installHLSUnpackedLegacy tmpInstallDir (IsolateDirResolved isoDir) installVer True
         GHCupInternal -> do
-          liftE $ installHLSUnpackedLegacy tmpInstallDir (GHCupDir binDir) installVer True
+          liftE $ installHLSUnpackedLegacy tmpInstallDir (GHCupBinDir binDir) installVer True
     )
 
   pure installVer
@@ -1044,8 +1044,8 @@ installStackBindist dlinfo ver installDir forceInstall = do
 
   -- unpack
   tmpUnpack <- lift withGHCupTmpDir
-  liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
-  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+  liftE $ cleanUpOnError tmpUnpack (unpackToDir (fromGHCupPath tmpUnpack) dl)
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
 
   -- the subdir of the archive where we do the work
   workdir <- maybe (pure tmpUnpack) (liftE . intoSubdir tmpUnpack) (view dlSubdir dlinfo)
@@ -1055,12 +1055,12 @@ installStackBindist dlinfo ver installDir forceInstall = do
       lift $ logInfo $ "isolated installing Stack to " <> T.pack isoDir
       liftE $ installStackUnpacked workdir (IsolateDirResolved isoDir) ver forceInstall
     GHCupInternal -> do                     -- regular install
-      liftE $ installStackUnpacked workdir (GHCupDir binDir) ver forceInstall
+      liftE $ installStackUnpacked workdir (GHCupBinDir binDir) ver forceInstall
 
 
 -- | Install an unpacked stack distribution.
 installStackUnpacked :: (MonadReader env m, HasLog env, MonadCatch m, MonadIO m)
-              => FilePath      -- ^ Path to the unpacked stack bindist (where the executable resides)
+              => GHCupPath      -- ^ Path to the unpacked stack bindist (where the executable resides)
               -> InstallDirResolved
               -> Version
               -> Bool          -- ^ Force install
@@ -1072,13 +1072,13 @@ installStackUnpacked path installDir ver forceInstall = do
   let destFileName = stackFile
                      <> (case installDir of
                           IsolateDirResolved _ -> ""
-                          GHCupDir _ -> ("-" <>) .  T.unpack . prettyVer $ ver
+                          _ -> ("-" <>) .  T.unpack . prettyVer $ ver
                         )
                      <> exeExt
       destPath = fromInstallDir installDir </> destFileName
 
   copyFileE
-    (path </> stackFile <> exeExt)
+    (fromGHCupPath path </> stackFile <> exeExt)
     destPath
     (not forceInstall)
   lift $ chmod_755 destPath
@@ -1160,7 +1160,7 @@ setGHC ver sghc mBinDir = do
 
   when (isNothing mBinDir) $ do
     -- create symlink for share dir
-    when (isNothing . _tvTarget $ ver) $ lift $ symlinkShareDir ghcdir verS
+    when (isNothing . _tvTarget $ ver) $ lift $ symlinkShareDir (fromGHCupPath ghcdir) verS
 
     when (sghc == SetGHCOnly) $ lift warnAboutHlsCompatibility
 
@@ -1180,7 +1180,7 @@ setGHC ver sghc mBinDir = do
                   -> m ()
   symlinkShareDir ghcdir ver' = do
     Dirs {..} <- getDirs
-    let destdir = baseDir
+    let destdir = fromGHCupPath baseDir
     case sghc of
       SetGHCOnly -> do
         let sharedir     = "share"
@@ -1799,19 +1799,20 @@ rmGHCVer ver = do
   handle (\(_ :: ParseError) -> pure ()) $ liftE $ rmMajorGHCSymlinks ver
   -- then fix them (e.g. with an earlier version)
 
-  dir <- lift $ ghcupGHCDir ver
+  dir' <- lift $ ghcupGHCDir ver
+  let dir = fromGHCupPath dir'
   lift (getInstalledFiles GHC ver) >>= \case
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack dir
       forM_ files (liftIO . deleteFile . (\f -> dir </> dropDrive f))
       f <- recordedInstallationFile GHC ver
-      liftIO $ deleteFile f
+      liftIO $ hideError doesNotExistErrorType $ deleteFile f
       removeEmptyDirsRecursive dir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory dir
       when (not (null survivors)) $ throwE $ UninstallFailed dir survivors
     Nothing -> do
       lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack dir
-      lift $ recyclePathForcibly dir
+      lift $ recyclePathForcibly dir'
 
   v' <-
     handle
@@ -1823,7 +1824,7 @@ rmGHCVer ver = do
 
   Dirs {..} <- lift getDirs
 
-  lift $ hideError doesNotExistErrorType $ rmDirectoryLink (baseDir </> "share")
+  lift $ hideError doesNotExistErrorType $ rmDirectoryLink (fromGHCupPath baseDir </> "share")
 
 
 -- | Delete a cabal version. Will try to fix the @cabal@ symlink
@@ -1882,7 +1883,8 @@ rmHLSVer ver = do
     -- delete all set symlinks
     liftE rmPlainHLS
 
-  hlsDir <- ghcupHLSDir ver
+  hlsDir' <- ghcupHLSDir ver
+  let hlsDir = fromGHCupPath hlsDir'
   lift (getInstalledFiles HLS (mkTVer ver)) >>= \case
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack hlsDir
@@ -1894,7 +1896,7 @@ rmHLSVer ver = do
       when (not (null survivors)) $ throwE $ UninstallFailed hlsDir survivors
     Nothing -> do
       lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack hlsDir
-      recyclePathForcibly hlsDir
+      recyclePathForcibly hlsDir'
 
   when (Just ver == isHlsSet) $ do
     -- set latest hls
@@ -1974,7 +1976,7 @@ rmGhcup = do
     tempFilepath <- mkGhcupTmpDir
     hideError UnsupportedOperation $
               liftIO $ hideError NoSuchThing $
-              moveFile ghcupFilepath (tempFilepath </> "ghcup")
+              moveFile ghcupFilepath (fromGHCupPath tempFilepath </> "ghcup")
   else
     -- delete it.
     hideError doesNotExistErrorType $ rmFile ghcupFilepath
@@ -2024,7 +2026,7 @@ rmGhcupDirs = do
     , recycleDir
     } <- getDirs
 
-  let envFilePath = baseDir </> "env"
+  let envFilePath = fromGHCupPath baseDir </> "env"
 
   confFilePath <- getConfigFilePath
 
@@ -2038,14 +2040,14 @@ rmGhcupDirs = do
   handleRm $ rmBinDir binDir
   handleRm $ rmDir recycleDir
   when isWindows $ do
-    logInfo $ "removing " <> T.pack (baseDir </> "msys64")
-    handleRm $ rmPathForcibly (baseDir </> "msys64")
+    logInfo $ "removing " <> T.pack (fromGHCupPath baseDir </> "msys64")
+    handleRm $ rmPathForcibly (baseDir `appendGHCupPath` "msys64")
 
-  handleRm $ removeEmptyDirsRecursive baseDir
+  handleRm $ removeEmptyDirsRecursive (fromGHCupPath baseDir)
 
   -- report files in baseDir that are left-over after
   -- the standard location deletions above
-  hideErrorDef [doesNotExistErrorType] [] $ reportRemainingFiles baseDir
+  hideErrorDef [doesNotExistErrorType] [] $ reportRemainingFiles (fromGHCupPath baseDir)
 
   where
     handleRm :: (MonadReader env m, MonadCatch m, HasLog env, MonadIO m)  => m () -> m ()
@@ -2062,15 +2064,15 @@ rmGhcupDirs = do
       logInfo "removing Ghcup Config File"
       hideErrorDef [permissionErrorType] () $ deleteFile' confFilePath
 
-    rmDir :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
+    rmDir :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => GHCupPath -> m ()
     rmDir dir =
       -- 'getDirectoryContentsRecursive' is lazy IO. In case
       -- an error leaks through, we catch it here as well,
       -- althought 'deleteFile' should already handle it.
       hideErrorDef [doesNotExistErrorType] () $ do
-        logInfo $ "removing " <> T.pack dir
+        logInfo $ "removing " <> T.pack (fromGHCupPath dir)
         contents <- liftIO $ getDirectoryContentsRecursive dir
-        forM_ contents (deleteFile' . (dir </>))
+        forM_ contents (deleteFile' . (fromGHCupPath dir </>))
 
     rmBinDir :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmBinDir binDir
@@ -2085,7 +2087,7 @@ rmGhcupDirs = do
     reportRemainingFiles dir = do
       -- force the files so the errors don't leak
       (force -> !remainingFiles) <- liftIO
-        (getDirectoryContentsRecursive dir >>= evaluate)
+        (getDirectoryContentsRecursiveUnsafe dir >>= evaluate)
       let normalizedFilePaths = fmap normalise remainingFiles
       let sortedByDepthRemainingFiles = sortBy (flip compareFn) normalizedFilePaths
       let remainingFilesAbsolute = fmap (dir </>) sortedByDepthRemainingFiles
@@ -2113,7 +2115,7 @@ removeDirIfEmptyOrIsSymlink filepath =
   hideError UnsatisfiedConstraints $
   handleIO' InappropriateType
         (handleIfSym filepath)
-        (liftIO $ rmDirectory filepath)
+        (liftIO $ removeEmptyDirectory filepath)
   where
     handleIfSym fp e = do
       isSym <- liftIO $ pathIsSymbolicLink fp
@@ -2147,10 +2149,10 @@ getDebugInfo :: ( Alternative m
                   DebugInfo
 getDebugInfo = do
   Dirs {..} <- lift getDirs
-  let diBaseDir  = baseDir
+  let diBaseDir  = fromGHCupPath baseDir
   let diBinDir   = binDir
-  diGHCDir       <- lift ghcupGHCBaseDir
-  let diCacheDir = cacheDir
+  diGHCDir       <- fromGHCupPath <$> lift ghcupGHCBaseDir
+  let diCacheDir = fromGHCupPath cacheDir
   diArch         <- lE getArchitecture
   diPlatform     <- liftE getPlatform
   pure $ DebugInfo { .. }
@@ -2231,20 +2233,20 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
         -- unpack
         tmpUnpack <- lift mkGhcupTmpDir
-        liftE $ cleanUpOnError tmpUnpack (unpackToDir tmpUnpack dl)
-        liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+        liftE $ cleanUpOnError tmpUnpack (unpackToDir (fromGHCupPath tmpUnpack) dl)
+        liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform $ fromGHCupPath tmpUnpack
 
         workdir <- maybe (pure tmpUnpack)
                          (liftE . intoSubdir tmpUnpack)
                          (view dlSubdir dlInfo)
-        liftE $ applyAnyPatch patches workdir
+        liftE $ applyAnyPatch patches (fromGHCupPath workdir)
 
         pure (workdir, tmpUnpack, tver)
 
       -- clone from git
       Right GitBranch{..} -> do
         tmpUnpack <- lift mkGhcupTmpDir
-        let git args = execLogged "git" ("--no-pager":args) (Just tmpUnpack) "git" Nothing
+        let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
         tver <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, DownloadFailed, GPGError] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
           lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
@@ -2265,16 +2267,16 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
           lEM $ git [ "checkout", "FETCH_HEAD" ]
           lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
-          liftE $ applyAnyPatch patches tmpUnpack
-          lEM $ execWithGhcEnv "python3" ["./boot"] (Just tmpUnpack) "ghc-bootstrap"
-          lEM $ execWithGhcEnv "sh" ["./configure"] (Just tmpUnpack) "ghc-bootstrap"
+          liftE $ applyAnyPatch patches (fromGHCupPath tmpUnpack)
+          lEM $ execWithGhcEnv "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
+          lEM $ execWithGhcEnv "sh" ["./configure"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
           CapturedProcess {..} <- lift $ makeOut
-            ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just tmpUnpack)
+            ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just $ fromGHCupPath tmpUnpack)
           case _exitCode of
             ExitSuccess -> throwEither . MP.parse ghcProjectVersion "" . decUTF8Safe' $ _stdOut
             ExitFailure c -> fail ("Could not figure out GHC project version. Exit code was: " <> show c <> ". Error was: " <> T.unpack (decUTF8Safe' _stdErr))
 
-        liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform tmpUnpack
+        liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
         lift $ logInfo $ "Git version " <> T.pack ref <> " corresponds to GHC version " <> prettyVer tver
 
         pure (tmpUnpack, tmpUnpack, GHCTargetVersion Nothing tver)
@@ -2303,9 +2305,9 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
       tmpUnpack
       (do
         b <- if hadrian
-             then compileHadrianBindist tver workdir ghcdir
-             else compileMakeBindist tver workdir ghcdir
-        bmk <- liftIO $ handleIO (\_ -> pure "") $ B.readFile (build_mk workdir)
+             then compileHadrianBindist tver (fromGHCupPath workdir) ghcdir
+             else compileMakeBindist tver (fromGHCupPath workdir) ghcdir
+        bmk <- liftIO $ handleIO (\_ -> pure "") $ B.readFile (build_mk $ fromGHCupPath workdir)
         pure (b, bmk)
       )
 
@@ -2500,7 +2502,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                             <> T.unpack cDigest
                             <> ".tar"
                             <> takeExtension tar)
-    let tarPath = cacheDir </> tarName
+    let tarPath = fromGHCupPath cacheDir </> tarName
     copyFileE (workdir </> tar) tarPath False
     lift $ logInfo $ "Copied bindist to " <> T.pack tarPath
     pure tarPath
@@ -2674,7 +2676,7 @@ upgradeGHCup mtarget force' fatal = do
   (Just ghcupPVPVer) <- pure $ pvpToVersion ghcUpVer ""
   when (not force' && (latestVer <= ghcupPVPVer)) $ throwE NoUpdate
   dli   <- liftE $ getDownloadInfo GHCup latestVer
-  tmp   <- lift withGHCupTmpDir
+  tmp   <- fromGHCupPath <$> lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt
   p <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) tmp (Just fn) False
   let destDir = takeDirectory destFile
@@ -2768,7 +2770,7 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
     GHC -> do
       whenM (lift $ fmap not $ ghcInstalled ver)
         $ throwE (NotInstalled GHC ver)
-      bdir <- lift $ ghcupGHCDir ver
+      bdir <- fromGHCupPath <$> lift (ghcupGHCDir ver)
       pure (bdir </> "bin" </> ghcBinaryName ver)
     Cabal -> do
       whenM (lift $ fmap not $ cabalInstalled _tvVersion)
@@ -2780,7 +2782,7 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
       ifM (lift $ isLegacyHLS _tvVersion)
         (pure (binDir dirs </> "haskell-language-server-wrapper-" <> T.unpack (prettyVer _tvVersion) <> exeExt))
         $ do
-          bdir <- lift $ ghcupHLSDir _tvVersion
+          bdir <- fromGHCupPath <$> lift (ghcupHLSDir _tvVersion)
           pure (bdir </> "bin" </> "haskell-language-server-wrapper" <> exeExt)
 
     Stack -> do
@@ -2866,6 +2868,7 @@ rmProfilingLibs = do
   forM_ regexes $ \regex ->
     forM_ ghcs $ \ghc -> do
       d <- ghcupGHCDir ghc
+      -- TODO: audit findFilesDeep
       matches <- liftIO $ handleIO (\_ -> pure []) $ findFilesDeep
         d
         (makeRegexOpts compExtended
@@ -2873,7 +2876,7 @@ rmProfilingLibs = do
                        regex
         )
       forM_ matches $ \m -> do
-        let p = d </> m
+        let p = fromGHCupPath d </> m
         logDebug $ "rm " <> T.pack p
         rmFile p
 
@@ -2892,8 +2895,8 @@ rmShareDir = do
   ghcs <- fmap rights getInstalledGHCs
   forM_ ghcs $ \ghc -> do
     d <- ghcupGHCDir ghc
-    let p = d </> "share"
-    logDebug $ "rm -rf " <> T.pack p
+    let p = d `appendGHCupPath` "share"
+    logDebug $ "rm -rf " <> T.pack (fromGHCupPath p)
     rmPathForcibly p
 
 
@@ -2938,9 +2941,9 @@ rmCache :: ( MonadReader env m
         => m ()
 rmCache = do
   Dirs {..} <- getDirs
-  contents <- liftIO $ listDirectory cacheDir
+  contents <- liftIO $ listDirectory (fromGHCupPath cacheDir)
   forM_ contents $ \f -> do
-    let p = cacheDir </> f
+    let p = fromGHCupPath cacheDir </> f
     logDebug $ "rm " <> T.pack p
     rmFile p
 
@@ -2953,17 +2956,10 @@ rmTmp :: ( MonadReader env m
          )
       => m ()
 rmTmp = do
-  tmpdir <- liftIO getCanonicalTemporaryDirectory
-  ghcup_dirs <- liftIO $ handleIO (\_ -> pure []) $ findFiles
-    tmpdir
-    (makeRegexOpts compExtended
-                   execBlank
-                   ([s|^ghcup-.*$|] :: ByteString)
-    )
+  ghcup_dirs <- liftIO getGHCupTmpDirs
   forM_ ghcup_dirs $ \f -> do
-    let p = tmpdir </> f
-    logDebug $ "rm -rf " <> T.pack p
-    rmPathForcibly p
+    logDebug $ "rm -rf " <> T.pack (fromGHCupPath f)
+    rmPathForcibly f
 
 
 applyAnyPatch :: ( MonadReader env m
@@ -2982,7 +2978,7 @@ applyAnyPatch :: ( MonadReader env m
 applyAnyPatch Nothing _                   = pure ()
 applyAnyPatch (Just (Left pdir)) workdir  = liftE $ applyPatches pdir workdir
 applyAnyPatch (Just (Right uris)) workdir = do
-  tmpUnpack <- lift withGHCupTmpDir
+  tmpUnpack <- fromGHCupPath <$> lift withGHCupTmpDir
   forM_ uris $ \uri -> do
     patch <- liftE $ download uri Nothing Nothing tmpUnpack Nothing False
     liftE $ applyPatch patch workdir

@@ -494,7 +494,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 case keepDirs settings of
                   Never -> runLogger $ logError $ T.pack $ prettyShow err
                   _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
-                        "Check the logs at " <> T.pack logsDir <> " and the build directory "
+                        "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory "
                         <> T.pack tmpdir <> " for more clues." <> "\n" <>
                         "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 9
@@ -553,7 +553,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 case keepDirs settings of
                   Never -> runLogger $ logError $ T.pack $ prettyShow err
                   _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
-                        "Check the logs at " <> T.pack logsDir <> " and the build directory "
+                        "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory "
                         <> T.pack tmpdir <> " for more clues." <> "\n" <>
                         "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 9

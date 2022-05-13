@@ -17,6 +17,7 @@ module GHCup.Utils.Logger where
 
 import           GHCup.Types
 import           GHCup.Types.Optics
+import {-# SOURCE #-} GHCup.Utils.Dirs (fromGHCupPath)
 import {-# SOURCE #-} GHCup.Utils.File.Common (findFiles)
 import           GHCup.Utils.String.QQ
 
@@ -117,14 +118,14 @@ initGHCupFileLogging :: ( MonadReader env m
                         ) => m FilePath
 initGHCupFileLogging = do
   Dirs { logsDir } <- getDirs
-  let logfile = logsDir </> "ghcup.log"
+  let logfile = fromGHCupPath logsDir </> "ghcup.log"
   logFiles <- liftIO $ findFiles
-    logsDir
+    (fromGHCupPath logsDir)
     (makeRegexOpts compExtended
                    execBlank
                    ([s|^.*\.log$|] :: B.ByteString)
     )
-  forM_ logFiles $ hideError doesNotExistErrorType . recycleFile . (logsDir </>)
+  forM_ logFiles $ hideError doesNotExistErrorType . recycleFile . (fromGHCupPath logsDir </>)
 
   liftIO $ writeFile logfile ""
   pure logfile

@@ -23,6 +23,7 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
+import           GHCup.Utils.Dirs
 import           GHCup.Utils.File
 import           GHCup.Utils.Logger
 import           GHCup.Utils.Prelude
@@ -46,7 +47,6 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.Info
-import           System.Directory
 import           System.OsRelease
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
