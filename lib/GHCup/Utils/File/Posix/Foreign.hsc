@@ -56,22 +56,3 @@ pathMax = #{const PATH_MAX}
 unionFlags :: [Flags] -> CInt
 unionFlags = fromIntegral . foldl' ((. unFlags) . (.|.)) 0
 
-
-pattern DtBlk :: DirType
-pattern DtBlk <- dtBlk
-pattern DtChr :: DirType
-pattern DtChr <- dtChr
-pattern DtDir :: DirType
-pattern DtDir <- dtdir
-pattern DtFifo :: DirType
-pattern DtFifo <- dtFifo
-pattern DtLnk :: DirType
-pattern DtLnk <- dtLnk
-pattern DtReg :: DirType
-pattern DtReg <- dtReg
-pattern DtSock :: DirType
-pattern DtSock <- dtSock
-pattern DtUnknown :: DirType
-pattern DtUnknown <- dtUnknown
-
-{-# COMPLETE DtBlk, DtChr, DtDir, DtFifo, DtLnk, DtReg, DtSock, DtUnknown #-}

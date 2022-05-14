@@ -127,6 +127,7 @@ import           Data.Versions
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
+import           Safe
 import           System.Directory hiding ( removeDirectory
                                          , removeDirectoryRecursive
                                          , removePathForcibly
@@ -180,7 +181,7 @@ getGHCupTmpDirs = do
                    execBlank
                    ([s|^ghcup-.*$|] :: ByteString)
     )
-  pure (fmap (\p -> GHCupPath (tmpdir </> p)) $ filter (("ghcup-" `isPrefixOf`)  . takeDirectory) $ ghcup_dirs)
+  pure (fmap (\p -> GHCupPath (tmpdir </> p)) $ filter (maybe False ("ghcup-" `isPrefixOf`) . lastMay . splitPath) ghcup_dirs)
 
 
     ------------------------------

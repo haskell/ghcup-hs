@@ -23,10 +23,11 @@ import           GHCup.Utils.Prelude
 import           GHCup.Utils.Logger
 import           GHCup.Types
 import           GHCup.Types.Optics
+import           GHCup.Utils.File.Posix.Traversals
 
 import           Control.Concurrent
 import           Control.Concurrent.Async
-import           Control.Exception              ( evaluate )
+import qualified Control.Exception              as E
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.Reader
@@ -71,6 +72,12 @@ import qualified Streamly.Internal.FileSystem.Handle
                                                as IFH
 import qualified Streamly.Prelude              as S
 import qualified GHCup.Utils.File.Posix.Foreign as FD
+import qualified Streamly.Internal.Data.Stream.StreamD.Type
+                                               as D
+import           Streamly.Internal.Data.Unfold.Type
+import qualified Streamly.Internal.Data.Unfold as U
+import           Streamly.Internal.Control.Concurrent ( withRunInIO )
+import           Streamly.Internal.Data.IOFinalizer   ( newIOFinalizer, runIOFinalizer )
 
 
 
@@ -277,7 +284,7 @@ captureOutStreams action = do
 
         -- execute the action
         a <- action
-        void $ evaluate a
+        void $ E.evaluate a
 
       -- close everything we don't need
       closeFd childStdoutWrite
@@ -554,3 +561,61 @@ install from to fail' = do
 
 removeEmptyDirectory :: FilePath -> IO ()
 removeEmptyDirectory = PD.removeDirectory
+
+
+-- | Create an 'Unfold' of directory contents.
+unfoldDirContents :: (MonadMask m, MonadIO m, S.MonadAsync m) => Unfold m FilePath (FD.DirType, FilePath)
+unfoldDirContents = U.bracket (liftIO . openDirStream) (liftIO . closeDirStream) (Unfold step return)
+ where
+  {-# INLINE [0] step #-}
+  step dirstream = do
+    (typ, e) <- liftIO $ readDirEnt dirstream
+    return $ if
+      | null e    -> D.Stop
+      | "." == e  -> D.Skip dirstream
+      | ".." == e -> D.Skip dirstream
+      | otherwise -> D.Yield (typ, e) dirstream
+
+
+getDirectoryContentsRecursiveDFSUnsafe :: (MonadMask m, MonadIO m, S.MonadAsync m)
+                                       => FilePath
+                                       -> S.SerialT m FilePath
+getDirectoryContentsRecursiveDFSUnsafe fp = go ""
+ where
+  go cd = flip S.concatMap (S.unfold unfoldDirContents (fp </> cd)) $ \(t, f) ->
+    if | t == FD.dtDir -> go (cd </> f)
+       | otherwise     -> pure (cd </> f)
+
+
+getDirectoryContentsRecursiveUnfold :: (MonadMask m, MonadIO m, S.MonadAsync m) => Unfold m FilePath FilePath
+getDirectoryContentsRecursiveUnfold = Unfold step (\s -> return (s, Nothing, [""]))
+ where
+  {-# INLINE [0] step #-}
+  step (_, Nothing, []) = return D.Stop
+
+  step (topdir, Just (cdir, dirstream, finalizer), dirs) = flip onException (runIOFinalizer finalizer) $ do
+    (dt, f) <- liftIO $ readDirEnt dirstream
+    if | FD.dtUnknown == dt -> do
+           runIOFinalizer finalizer
+           return $ D.Skip (topdir, Nothing, dirs)
+       | f == "." || f == ".."
+                        -> return $ D.Skip               (topdir, Just (cdir, dirstream, finalizer), dirs)
+       | FD.dtDir == dt -> return $ D.Skip               (topdir, Just (cdir, dirstream, finalizer), (cdir </> f):dirs)
+       | otherwise      -> return $ D.Yield (cdir </> f) (topdir, Just (cdir, dirstream, finalizer), dirs)
+
+  step (topdir, Nothing, dir:dirs) = do
+    (s, f) <- acquire (topdir </> dir)
+    return $ D.Skip (topdir, Just (dir, s, f), dirs)
+
+  acquire dir =
+    withRunInIO $ \run -> mask_ $ run $ do
+        dirstream <- liftIO $ openDirStream dir
+        ref <- newIOFinalizer (liftIO $ closeDirStream dirstream)
+        return (dirstream, ref)
+
+getDirectoryContentsRecursiveBFSUnsafe :: (MonadMask m, MonadIO m, S.MonadAsync m)
+                                       => FilePath
+                                       -> S.SerialT m FilePath
+getDirectoryContentsRecursiveBFSUnsafe = S.unfold getDirectoryContentsRecursiveUnfold
+
+

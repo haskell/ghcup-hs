@@ -42,8 +42,6 @@ import           GHCup.Version
 
 import           Codec.Archive                  ( ArchiveResult )
 import           Control.Applicative
-import           Control.DeepSeq                ( force )
-import           Control.Exception              ( evaluate )
 import           Control.Exception.Safe
 import           Control.Monad
 #if !MIN_VERSION_base(4,13,0)
@@ -52,7 +50,6 @@ import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
-import           Control.Monad.IO.Unlift        ( MonadUnliftIO( withRunInIO ) )
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.List
@@ -94,6 +91,7 @@ import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
+import qualified Streamly.Prelude              as S
 import GHCup.Utils.MegaParsec
 import Control.Concurrent (threadDelay)
 
@@ -328,13 +326,10 @@ installUnpackedGHC path inst ver forceInstall
       -- Windows bindists are relocatable and don't need
       -- to run configure.
       -- We also must make sure to preserve mtime to not confuse ghc-pkg.
-      fs <- lift $ withRunInIO $ \_ -> mergeFileTreeAll path (fromInstallDir inst) $ \source dest -> do
+      lift $ mergeFileTree path inst GHC (mkTVer ver) $ \source dest -> liftIO $ do
         mtime <- getModificationTime source
         moveFilePortable source dest
         setModificationTime dest mtime
-      case inst of
-        IsolateDirResolved _ -> pure ()
-        _ -> recordInstalledFiles fs GHC (mkTVer ver)
   | otherwise = do
       PlatformRequest {..} <- lift getPlatformReq
 
@@ -355,13 +350,12 @@ installUnpackedGHC path inst ver forceInstall
       tmpInstallDest <- lift withGHCupTmpDir
       lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "install"] (Just $ fromGHCupPath path)
       lift $ logInfo $ "Merging file tree from \"" <> T.pack (fromGHCupPath tmpInstallDest) <> "\" to \"" <> T.pack (fromInstallDir inst) <> "\""
-      fs <- mergeFileTreeAll (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
-        (fromInstallDir inst)
-        (\f t -> liftIO (install f t (not forceInstall)))
-      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromInstallDir inst)
-      case inst of
-        IsolateDirResolved _ -> pure ()
-        _ -> recordInstalledFiles fs GHC (mkTVer ver)
+      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpInstallDest)
+      lift $ mergeFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
+        inst
+        GHC
+        (mkTVer ver)
+        (\f t -> liftIO $ install f t (not forceInstall))
       pure ()
 
 
@@ -670,13 +664,12 @@ installHLSUnpacked path inst ver forceInstall = do
   lift $ logInfo "Installing HLS"
   tmpInstallDest <- lift withGHCupTmpDir
   lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "PREFIX=" <> fromInstallDir inst, "install"] (Just path)
-  fs <- mergeFileTreeAll (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
-                   (fromInstallDir inst)
-                   (\f t -> liftIO (install f t (not forceInstall)))
-  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromInstallDir inst)
-  case inst of
-    IsolateDirResolved _ -> pure ()
-    _ -> recordInstalledFiles fs HLS (mkTVer ver)
+  liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpInstallDest)
+  lift $ mergeFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
+                   inst
+                   HLS
+                   (mkTVer ver)
+                   (\f t -> liftIO $ install f t (not forceInstall))
 
 -- | Install an unpacked hls distribution (legacy).
 installHLSUnpackedLegacy :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
@@ -1804,11 +1797,11 @@ rmGHCVer ver = do
   lift (getInstalledFiles GHC ver) >>= \case
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack dir
-      forM_ files (liftIO . deleteFile . (\f -> dir </> dropDrive f))
-      f <- recordedInstallationFile GHC ver
-      liftIO $ hideError doesNotExistErrorType $ deleteFile f
+      forM_ files (lift . recycleFile . (\f -> dir </> dropDrive f))
       removeEmptyDirsRecursive dir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory dir
+      f <- recordedInstallationFile GHC ver
+      lift $ recycleFile f
       when (not (null survivors)) $ throwE $ UninstallFailed dir survivors
     Nothing -> do
       lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack dir
@@ -1888,11 +1881,11 @@ rmHLSVer ver = do
   lift (getInstalledFiles HLS (mkTVer ver)) >>= \case
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack hlsDir
-      forM_ files (liftIO . deleteFile . (\f -> hlsDir </> dropDrive f))
-      f <- recordedInstallationFile HLS (mkTVer ver)
-      liftIO $ deleteFile f
+      forM_ files (lift . recycleFile . (\f -> hlsDir </> dropDrive f))
       removeEmptyDirsRecursive hlsDir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory hlsDir
+      f <- recordedInstallationFile HLS (mkTVer ver)
+      lift $ recycleFile f
       when (not (null survivors)) $ throwE $ UninstallFailed hlsDir survivors
     Nothing -> do
       lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack hlsDir
@@ -2071,8 +2064,7 @@ rmGhcupDirs = do
       -- althought 'deleteFile' should already handle it.
       hideErrorDef [doesNotExistErrorType] () $ do
         logInfo $ "removing " <> T.pack (fromGHCupPath dir)
-        contents <- liftIO $ getDirectoryContentsRecursive dir
-        forM_ contents (deleteFile' . (fromGHCupPath dir </>))
+        liftIO $ flip S.mapM_ (getDirectoryContentsRecursive dir) $ deleteFile' . (fromGHCupPath dir </>)
 
     rmBinDir :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmBinDir binDir
@@ -2083,11 +2075,9 @@ rmGhcupDirs = do
             then removeDirIfEmptyOrIsSymlink binDir
             else pure ()
 
-    reportRemainingFiles :: MonadIO m => FilePath -> m [FilePath]
+    reportRemainingFiles :: (MonadMask m, MonadIO m) => FilePath -> m [FilePath]
     reportRemainingFiles dir = do
-      -- force the files so the errors don't leak
-      (force -> !remainingFiles) <- liftIO
-        (getDirectoryContentsRecursiveUnsafe dir >>= evaluate)
+      remainingFiles <- liftIO $ S.toList (getDirectoryContentsRecursiveUnsafe dir)
       let normalizedFilePaths = fmap normalise remainingFiles
       let sortedByDepthRemainingFiles = sortBy (flip compareFn) normalizedFilePaths
       let remainingFilesAbsolute = fmap (dir </>) sortedByDepthRemainingFiles
@@ -2105,7 +2095,7 @@ rmGhcupDirs = do
 -- we report remaining files/dirs later,
 -- hence the force/quiet mode in these delete functions below.
 
-deleteFile' :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m) => FilePath -> m ()
+deleteFile' :: (MonadMask m, MonadIO m) => FilePath -> m ()
 deleteFile' filepath = do
   hideError doesNotExistErrorType
     $ hideError InappropriateType $ rmFile filepath

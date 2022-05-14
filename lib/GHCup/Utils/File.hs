@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -9,14 +8,27 @@
 
 module GHCup.Utils.File (
   mergeFileTree,
-  mergeFileTreeAll,
   copyFileE,
+  findFilesDeep,
+  getDirectoryContentsRecursive,
+  getDirectoryContentsRecursiveBFS,
+  getDirectoryContentsRecursiveDFS,
+  getDirectoryContentsRecursiveUnsafe,
+  getDirectoryContentsRecursiveBFSUnsafe,
+  getDirectoryContentsRecursiveDFSUnsafe,
+  recordedInstallationFile,
   module GHCup.Utils.File.Common,
-#if IS_WINDOWS
-  module GHCup.Utils.File.Windows
-#else
-  module GHCup.Utils.File.Posix
-#endif
+
+  executeOut,
+  execLogged,
+  exec,
+  toProcessError,
+  chmod_755,
+  isBrokenSymlink,
+  copyFile,
+  deleteFile,
+  install,
+  removeEmptyDirectory,
 ) where
 
 import GHCup.Utils.Dirs
@@ -27,77 +39,122 @@ import GHCup.Utils.File.Windows
 import GHCup.Utils.File.Posix
 #endif
 import           GHCup.Errors
+import           GHCup.Types
+import           GHCup.Types.Optics
 import           GHCup.Utils.Prelude
 
-import           GHC.IO                         ( evaluate )
+import           Text.Regex.Posix
 import           Control.Exception.Safe
 import           Haskus.Utils.Variant.Excepts
 import           Control.Monad.Reader
 import           System.FilePath
+import           Text.PrettyPrint.HughesPJClass (prettyShow)
 
-import Data.List (nub)
-import Data.Foldable (traverse_)
-import Control.DeepSeq (force)
-
-
--- | Like 'mergeFileTree', except reads the entire source base dir to determine files to copy recursively.
-mergeFileTreeAll :: MonadIO m
-                 => GHCupPath                       -- ^ source base directory from which to install findFiles
-                 -> FilePath                        -- ^ destination base dir
-                 -> (FilePath -> FilePath -> m ())  -- ^ file copy operation
-                 -> m [FilePath]
-mergeFileTreeAll sourceBase destBase copyOp = do
-  (force -> !sourceFiles) <- liftIO
-    (getDirectoryContentsRecursive sourceBase >>= evaluate)
-  mergeFileTree sourceBase sourceFiles destBase copyOp
-  pure sourceFiles
+import qualified Data.Text                     as T
+import qualified Streamly.Prelude              as S
 
 
-mergeFileTree :: MonadIO m
+mergeFileTree :: (MonadMask m, S.MonadAsync m, MonadReader env m, HasDirs env)
               => GHCupPath                       -- ^ source base directory from which to install findFiles
-              -> [FilePath]                      -- ^ relative filepaths from source base directory
-              -> FilePath                        -- ^ destination base dir
+              -> InstallDirResolved              -- ^ destination base dir
+              -> Tool
+              -> GHCTargetVersion
               -> (FilePath -> FilePath -> m ())  -- ^ file copy operation
               -> m ()
-mergeFileTree (fromGHCupPath -> sourceBase) sources destBase copyOp = do
+mergeFileTree sourceBase destBase tool v' copyOp = do
   -- These checks are not atomic, but we perform them to have
   -- the opportunity to abort before copying has started.
   --
   -- The actual copying might still fail.
-  liftIO baseCheck
-  liftIO destCheck
-  liftIO sourcesCheck
+  liftIO $ baseCheck (fromGHCupPath sourceBase)
+  liftIO $ destCheck (fromInstallDir destBase)
 
-  -- finally copy
-  copy
+  recFile <- recordedInstallationFile tool v'
+  case destBase of
+    IsolateDirResolved _ -> pure ()
+    _ -> do
+      whenM (liftIO $ doesFileExist recFile) $ throwIO $ userError ("mergeFileTree: DB file " <> recFile <> " already exists!")
+      liftIO $ createDirectoryIfMissing True (takeDirectory recFile)
+
+  flip S.mapM_ (getDirectoryContentsRecursive sourceBase) $ \f -> do
+    copy f
+    recordInstalledFile f recFile
+    pure f
 
  where
-  copy = do
-    let dirs = map (destBase </>) . nub . fmap takeDirectory $ sources
-    traverse_ (liftIO . createDirectoryIfMissing True) dirs
+  recordInstalledFile f recFile = do
+    case destBase of
+      IsolateDirResolved _ -> pure ()
+      _ -> liftIO $ appendFile recFile (f <> "\n")
 
-    forM_ sources $ \source -> do
-      let dest = destBase </> source
-          src  = sourceBase </> source
-      copyOp src dest
+  copy source = do
+    let dest = fromInstallDir destBase </> source
+        src  = fromGHCupPath sourceBase </> source
 
-  baseCheck = do
-      when (isRelative sourceBase)
-        $ throwIO $ userError ("mergeFileTree: source base directory " <> sourceBase <> " is not absolute!")
-      whenM (not <$> doesDirectoryExist sourceBase)
-        $ throwIO $ userError ("mergeFileTree: source base directory " <> sourceBase <> " does not exist!")
-  destCheck = do
-      when (isRelative destBase)
-        $ throwIO $ userError ("mergeFileTree: destination base directory " <> destBase <> " is not absolute!")
-      whenM (doesDirectoryExist destBase)
-        $ throwIO $ userError ("mergeFileTree: destination base directory " <> destBase <> " does already exist!")
-  sourcesCheck =
-    forM_ sources $ \source -> do
-      -- TODO: use Excepts or HPath
-      when (isAbsolute source)
-        $ throwIO $ userError ("mergeFileTree: source file " <> source <> " is not relative!")
-      whenM (not <$> doesFileExist (sourceBase </> source))
-        $ throwIO $ userError ("mergeFileTree: source file " <> (sourceBase </> source) <> " does not exist!")
+    when (isAbsolute source)
+      $ throwIO $ userError ("mergeFileTree: source file " <> source <> " is not relative!")
+
+    liftIO . createDirectoryIfMissing True . takeDirectory $ dest
+
+    copyOp src dest
+
+
+  baseCheck src = do
+      when (isRelative src)
+        $ throwIO $ userError ("mergeFileTree: source base directory " <> src <> " is not absolute!")
+      whenM (not <$> doesDirectoryExist src)
+        $ throwIO $ userError ("mergeFileTree: source base directory " <> src <> " does not exist!")
+  destCheck dest = do
+      when (isRelative dest)
+        $ throwIO $ userError ("mergeFileTree: destination base directory " <> dest <> " is not absolute!")
+
+
 
 copyFileE :: (CopyError :< xs, MonadCatch m, MonadIO m) => FilePath -> FilePath -> Bool -> Excepts xs m ()
 copyFileE from to = handleIO (throwE . CopyError . show) . liftIO . copyFile from to
+
+
+-- | List all the files in a directory and all subdirectories.
+--
+-- The order places files in sub-directories after all the files in their
+-- parent directories. The list is generated lazily so is not well defined if
+-- the source directory structure changes before the list is used.
+--
+-- depth first
+getDirectoryContentsRecursiveDFS :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+                                 => GHCupPath
+                                 -> S.SerialT m FilePath
+getDirectoryContentsRecursiveDFS (fromGHCupPath -> fp) = getDirectoryContentsRecursiveDFSUnsafe fp
+
+-- breadth first
+getDirectoryContentsRecursiveBFS :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+                                 => GHCupPath
+                                 -> S.SerialT m FilePath
+getDirectoryContentsRecursiveBFS (fromGHCupPath -> fp) = getDirectoryContentsRecursiveBFSUnsafe fp
+
+
+getDirectoryContentsRecursive :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+                              => GHCupPath
+                              -> S.SerialT m FilePath
+getDirectoryContentsRecursive = getDirectoryContentsRecursiveBFS
+
+getDirectoryContentsRecursiveUnsafe :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+                                    => FilePath
+                                    -> S.SerialT m FilePath
+getDirectoryContentsRecursiveUnsafe = getDirectoryContentsRecursiveBFSUnsafe
+
+findFilesDeep :: GHCupPath -> Regex -> IO [FilePath]
+findFilesDeep path regex =
+  S.toList $ S.filter (match regex) $ getDirectoryContentsRecursive path
+
+
+recordedInstallationFile :: ( MonadReader env m
+                            , HasDirs env
+                            )
+                         => Tool
+                         -> GHCTargetVersion
+                         -> m FilePath
+recordedInstallationFile t v' = do
+  Dirs {..}  <- getDirs
+  pure (fromGHCupPath dbDir </> prettyShow t </> T.unpack (tVerToText v'))
+

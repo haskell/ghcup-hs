@@ -35,6 +35,8 @@ git describe --always
 
 ### build
 
+rm -rf "${GHCUP_DIR}"/share
+
 ecabal update
 
 if [ "${OS}" = "DARWIN" ] ; then

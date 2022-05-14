@@ -31,4 +31,7 @@ package cabal-plan
 package aeson
   flags: +ordered-keymap
 
+package streamly
+  flags: +use-unliftio
+
 allow-newer: base, ghc-prim, template-haskell, language-c

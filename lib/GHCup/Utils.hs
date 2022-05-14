@@ -86,7 +86,7 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 import qualified Data.List.NonEmpty            as NE
-import Text.PrettyPrint.HughesPJClass (prettyShow)
+import qualified Streamly.Prelude              as S
 import Control.DeepSeq (force)
 import GHC.IO (evaluate)
 
@@ -853,7 +853,7 @@ intoSubdir :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m, MonadCatc
            -> Excepts '[TarDirDoesNotExist] m GHCupPath
 intoSubdir bdir tardir = case tardir of
   RealDir pr -> do
-    whenM (fmap not . liftIO . doesDirectoryExist $ (fromGHCupPath (bdir `appendGHCupPath` pr)))
+    whenM (fmap not . liftIO . doesDirectoryExist $ fromGHCupPath (bdir `appendGHCupPath` pr))
           (throwE $ TarDirDoesNotExist tardir)
     pure (bdir `appendGHCupPath` pr)
   RegexDir r -> do
@@ -1286,33 +1286,15 @@ ghcBinaryName (GHCTargetVersion Nothing  _) = T.unpack ("ghc" <> T.pack exeExt)
 --   3. if it exists and is non-empty -> panic and leave the house
 installDestSanityCheck :: ( MonadIO m
                           , MonadCatch m
+                          , MonadMask m
                           ) =>
                           InstallDirResolved ->
                           Excepts '[DirNotEmpty] m ()
 installDestSanityCheck (IsolateDirResolved isoDir) = do
   hideErrorDef [doesNotExistErrorType] () $ do
-    contents <- liftIO $ getDirectoryContentsRecursiveUnsafe isoDir
-    unless (null contents) (throwE $ DirNotEmpty isoDir)
+    empty' <- liftIO $ S.null $ getDirectoryContentsRecursiveUnsafe isoDir
+    when (not empty') (throwE $ DirNotEmpty isoDir)
 installDestSanityCheck _ = pure ()
-
-
--- | Write installed files into database.
-recordInstalledFiles :: ( MonadIO m
-                        , MonadReader env m
-                        , HasDirs env
-                        , MonadFail m
-                        )
-                     => [FilePath]
-                     -> Tool
-                     -> GHCTargetVersion
-                     -> m ()
-recordInstalledFiles files tool v' = do
-  dest <- recordedInstallationFile tool v'
-  liftIO $ createDirectoryIfMissing True (takeDirectory dest)
-  -- TODO: what if the filepath has newline? :)
-  let contents = unlines files
-  liftIO $ writeFile dest contents
-  pure ()
 
 
 -- | Returns 'Nothing' for legacy installs.
@@ -1330,16 +1312,5 @@ getInstalledFiles t v' = hideErrorDef [doesNotExistErrorType] Nothing $ do
   (force -> !c) <- liftIO
     (readFile f >>= evaluate)
   pure (Just $ lines c)
-
-
-recordedInstallationFile :: ( MonadReader env m
-                            , HasDirs env
-                            )
-                         => Tool
-                         -> GHCTargetVersion
-                         -> m FilePath
-recordedInstallationFile t v' = do
-  Dirs {..}  <- getDirs
-  pure (fromGHCupPath dbDir </> prettyShow t </> T.unpack (tVerToText v'))
 
 

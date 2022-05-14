@@ -56,7 +56,6 @@ import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
 import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
 import           System.IO.Error
-import           System.IO.Unsafe
 import           System.Directory hiding ( removeDirectory
                                          , removeDirectoryRecursive
                                          , removePathForcibly
@@ -79,6 +78,7 @@ import qualified Data.Text.Lazy                as TL
 import qualified Data.Text.Lazy.Builder        as B
 import qualified Data.Text.Lazy.Builder.Int    as B
 import qualified Data.Text.Lazy.Encoding       as TLE
+
 
 
 -- $setup
@@ -398,45 +398,6 @@ createDirRecursive' p =
           True -> pure ()
           _ -> throwIO e
       _ -> throwIO e
-
-
-
--- | List all the files in a directory and all subdirectories.
---
--- The order places files in sub-directories after all the files in their
--- parent directories. The list is generated lazily so is not well defined if
--- the source directory structure changes before the list is used.
---
--- TODO: use streamly
-getDirectoryContentsRecursive :: GHCupPath -> IO [FilePath]
-getDirectoryContentsRecursive (fromGHCupPath -> topdir) = getDirectoryContentsRecursiveUnsafe topdir
-
-
-getDirectoryContentsRecursiveUnsafe :: FilePath -> IO [FilePath]
-getDirectoryContentsRecursiveUnsafe topdir = recurseDirectories [""]
-  where
-    recurseDirectories :: [FilePath] -> IO [FilePath]
-    recurseDirectories []         = return []
-    recurseDirectories (dir:dirs) = unsafeInterleaveIO $ do
-      (files, dirs') <- collect [] [] =<< getDirectoryContents (topdir </> dir)
-      files' <- recurseDirectories (dirs' ++ dirs)
-      return (files ++ files')
-
-      where
-        collect files dirs' []              = return (reverse files
-                                                     ,reverse dirs')
-        collect files dirs' (entry:entries) | ignore entry
-                                            = collect files dirs' entries
-        collect files dirs' (entry:entries) = do
-          let dirEntry = dir </> entry
-          isDirectory <- doesDirectoryExist (topdir </> dirEntry)
-          if isDirectory
-            then collect files (dirEntry:dirs') entries
-            else collect (dirEntry:files) dirs' entries
-
-        ignore ['.']      = True
-        ignore ['.', '.'] = True
-        ignore _          = False
 
 
 -- https://github.com/haskell/directory/issues/110
