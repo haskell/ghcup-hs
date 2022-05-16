@@ -288,10 +288,11 @@ GHCup itself is also pre-installed on all platforms, but may use non-standard in
 GHCup supports verifying the GPG signature of the metadata file. The metadata file then contains SHA256 hashes of all downloads, so
 this is cryptographically secure.
 
-First, obtain the gpg key:
+First, obtain the gpg keys:
 
 ```sh
-gpg --batch --keyserver keys.openpgp.org --recv-keys 7784930957807690A66EBDBE3786C5262ECB4A3F
+gpg --batch --keyserver keys.openpgp.org     --recv-keys 7784930957807690A66EBDBE3786C5262ECB4A3F
+gpg --batch --keyserver keyserver.ubuntu.com --recv-keys FE5AB6C91FEA597C3B31180B73EDE9E8CFBAEF01
 ```
 
 Then verify the gpg key in one of these ways:

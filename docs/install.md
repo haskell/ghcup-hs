@@ -187,7 +187,7 @@ Lower availability of bindists. Stack and HLS binaries are experimental.
 Download the binary for your platform at [https://downloads.haskell.org/~ghcup/](https://downloads.haskell.org/~ghcup/)
 and place it into your `PATH` anywhere.
 
-If you want to GPG verify the binaries, import the following key first: `7784930957807690A66EBDBE3786C5262ECB4A3F`.
+If you want to GPG verify the binaries, import the following keys first: `7784930957807690A66EBDBE3786C5262ECB4A3F` and `FE5AB6C91FEA597C3B31180B73EDE9E8CFBAEF01`.
 
 Then adjust your `PATH` in `~/.bashrc` (or similar, depending on your shell) like so:
 
