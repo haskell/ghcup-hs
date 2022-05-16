@@ -2017,6 +2017,7 @@ rmGhcupDirs = do
     , logsDir
     , cacheDir
     , recycleDir
+    , dbDir
     } <- getDirs
 
   let envFilePath = fromGHCupPath baseDir </> "env"
@@ -2027,11 +2028,12 @@ rmGhcupDirs = do
   handleRm $ rmConfFile confFilePath
 
   -- for xdg dirs, the order matters here
-  handleRm $ rmDir logsDir
-  handleRm $ rmDir cacheDir
+  handleRm $ rmPathForcibly logsDir
+  handleRm $ rmPathForcibly cacheDir
 
   handleRm $ rmBinDir binDir
-  handleRm $ rmDir recycleDir
+  handleRm $ rmPathForcibly recycleDir
+  handleRm $ rmPathForcibly dbDir
   when isWindows $ do
     logInfo $ "removing " <> T.pack (fromGHCupPath baseDir </> "msys64")
     handleRm $ rmPathForcibly (baseDir `appendGHCupPath` "msys64")
@@ -2056,15 +2058,6 @@ rmGhcupDirs = do
     rmConfFile confFilePath = do
       logInfo "removing Ghcup Config File"
       hideErrorDef [permissionErrorType] () $ deleteFile' confFilePath
-
-    rmDir :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => GHCupPath -> m ()
-    rmDir dir =
-      -- 'getDirectoryContentsRecursive' is lazy IO. In case
-      -- an error leaks through, we catch it here as well,
-      -- althought 'deleteFile' should already handle it.
-      hideErrorDef [doesNotExistErrorType] () $ do
-        logInfo $ "removing " <> T.pack (fromGHCupPath dir)
-        liftIO $ flip S.mapM_ (getDirectoryContentsRecursive dir) $ deleteFile' . (fromGHCupPath dir </>)
 
     rmBinDir :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmBinDir binDir

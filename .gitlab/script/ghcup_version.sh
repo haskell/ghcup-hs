@@ -289,7 +289,19 @@ fi
 eghcup upgrade
 eghcup upgrade -f
 
+mkdir no_nuke/
+mkdir no_nuke/bar
+echo 'foo' > no_nuke/file
+echo 'bar' > no_nuke/bar/file
+ln -s "$CI_PROJECT_DIR"/no_nuke/ "${GHCUP_DIR}"/cache/no_nuke
+ln -s "$CI_PROJECT_DIR"/no_nuke/ "${GHCUP_DIR}"/logs/no_nuke
 
 # nuke
 eghcup nuke
 [ ! -e "${GHCUP_DIR}" ]
+
+# make sure nuke doesn't resolve symlinks
+[ -e "$CI_PROJECT_DIR"/no_nuke/file ]
+[ -e "$CI_PROJECT_DIR"/no_nuke/bar/file ]
+
+
