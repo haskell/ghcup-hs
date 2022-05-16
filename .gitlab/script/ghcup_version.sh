@@ -216,7 +216,7 @@ eghcup rm $(ghc --numeric-version)
 # https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/116
 if [ "${OS}" = "LINUX" ] ; then
 	if [ "${ARCH}" = "64" ] ; then
-		eghcup install cabal -u https://oleg.fi/cabal-install-3.4.0.0-rc4/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz 3.4.0.0-rc4
+		eghcup install cabal -u https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-x86_64-linux-alpine.tar.xz 3.4.0.0-rc4
 		eghcup rm cabal 3.4.0.0-rc4
 	fi
 fi
