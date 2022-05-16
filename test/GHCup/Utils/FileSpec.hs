@@ -16,14 +16,14 @@ spec :: Spec
 spec = do
   describe "GHCup.Utils.File" $ do
     it "getDirectoryContentsRecursiveBFS" $ do
-      l1 <- sort <$> S.toList (getDirectoryContentsRecursiveBFSUnsafe ".")
-      l2 <- sort <$> getDirectoryContentsRecursiveLazy "."
+      l1 <- sort <$> S.toList (getDirectoryContentsRecursiveBFSUnsafe "lib")
+      l2 <- sort <$> getDirectoryContentsRecursiveLazy "lib"
       not (null l1) `shouldBe` True
       not (null l2) `shouldBe` True
       l1 `shouldBe` l2
     it "getDirectoryContentsRecursiveDFS" $ do
-      l1 <- sort <$> S.toList (getDirectoryContentsRecursiveDFSUnsafe ".")
-      l2 <- sort <$> getDirectoryContentsRecursiveLazy "."
+      l1 <- sort <$> S.toList (getDirectoryContentsRecursiveDFSUnsafe "lib")
+      l2 <- sort <$> getDirectoryContentsRecursiveLazy "lib"
       not (null l1) `shouldBe` True
       not (null l2) `shouldBe` True
       l1 `shouldBe` l2
