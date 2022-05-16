@@ -57,6 +57,9 @@ flags:
   cabal-plan:
     exe: false
 
+  streamly:
+    use-unliftio: true
+
 ghc-options:
   "$locals": -O2
   streamly: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16
