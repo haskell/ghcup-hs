@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE DataKinds  #-}
 {-# LANGUAGE MultiWayIf  #-}
+{-# LANGUAGE CApiFFI #-}
 
 {-|
 Module      : GHCup.Utils.File.Posix
@@ -450,7 +451,7 @@ copyFile from to fail' = do
   streamlyCopy (fH, tH) =
     S.fold (FH.writeChunks tH) $ IFH.toChunksWithBufferOf (256 * 1024) fH
 
-foreign import ccall unsafe "open"
+foreign import capi unsafe "fcntl.h open"
    c_open :: CString -> CInt -> Posix.CMode -> IO CInt
 
 
