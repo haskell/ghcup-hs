@@ -329,9 +329,9 @@ installUnpackedGHC path inst ver forceInstall
       -- to run configure.
       -- We also must make sure to preserve mtime to not confuse ghc-pkg.
       liftE $ mergeFileTree path inst GHC (mkTVer ver) $ \source dest -> liftIO $ do
-        mtime <- getModificationTime source
+        mtime <- ifM (pathIsSymbolicLink source) (pure Nothing) (Just <$> getModificationTime source)
         moveFilePortable source dest
-        setModificationTime dest mtime
+        forM_ mtime $ setModificationTime dest
   | otherwise = do
       PlatformRequest {..} <- lift getPlatformReq
 
@@ -356,7 +356,11 @@ installUnpackedGHC path inst ver forceInstall
         inst
         GHC
         (mkTVer ver)
-        (\f t -> liftIO $ install f t (not forceInstall))
+        (\f t -> liftIO $ do
+            mtime <- ifM (pathIsSymbolicLink f) (pure Nothing) (Just <$> getModificationTime f)
+            install f t (not forceInstall)
+            forM_ mtime $ setModificationTime t)
+
       pure ()
 
 
@@ -672,7 +676,10 @@ installHLSUnpacked path inst ver forceInstall = do
                    inst
                    HLS
                    (mkTVer ver)
-                   (\f t -> liftIO $ install f t (not forceInstall))
+                   (\f t -> liftIO $ do
+                       mtime <- ifM (pathIsSymbolicLink f) (pure Nothing) (Just <$> getModificationTime f)
+                       install f t (not forceInstall)
+                       forM_ mtime $ setModificationTime t)
 
 -- | Install an unpacked hls distribution (legacy).
 installHLSUnpackedLegacy :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
