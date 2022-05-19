@@ -647,3 +647,17 @@ fromInstallDir :: InstallDirResolved -> FilePath
 fromInstallDir (IsolateDirResolved fp) = fp
 fromInstallDir (GHCupDir fp) = fromGHCupPath fp
 fromInstallDir (GHCupBinDir fp) = fp
+
+
+isSafeDir :: InstallDirResolved -> Bool
+isSafeDir (IsolateDirResolved _) = False
+isSafeDir (GHCupDir _)           = True
+isSafeDir (GHCupBinDir _)        = False
+
+
+
+
+
+
+
+

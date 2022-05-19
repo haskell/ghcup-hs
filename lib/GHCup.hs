@@ -199,6 +199,7 @@ installGHCBindist :: ( MonadFail m
                         , ArchiveResult
                         , ProcessError
                         , UninstallFailed
+                        , MergeFileTreeError
                         ]
                        m
                        ()
@@ -280,6 +281,7 @@ installPackedGHC :: ( MonadMask m
                        , DirNotEmpty
                        , ArchiveResult
                        , ProcessError
+                       , MergeFileTreeError
                        ] m ()
 installPackedGHC dl msubdir inst ver forceInstall = do
   PlatformRequest {..} <- lift getPlatformReq
@@ -319,14 +321,14 @@ installUnpackedGHC :: ( MonadReader env m
                    -> InstallDirResolved  -- ^ Path to install to
                    -> Version             -- ^ The GHC version
                    -> Bool                -- ^ Force install
-                   -> Excepts '[ProcessError] m ()
+                   -> Excepts '[ProcessError, MergeFileTreeError] m ()
 installUnpackedGHC path inst ver forceInstall
   | isWindows = do
       lift $ logInfo "Installing GHC (this may take a while)"
       -- Windows bindists are relocatable and don't need
       -- to run configure.
       -- We also must make sure to preserve mtime to not confuse ghc-pkg.
-      lift $ mergeFileTree path inst GHC (mkTVer ver) $ \source dest -> liftIO $ do
+      liftE $ mergeFileTree path inst GHC (mkTVer ver) $ \source dest -> liftIO $ do
         mtime <- getModificationTime source
         moveFilePortable source dest
         setModificationTime dest mtime
@@ -349,9 +351,8 @@ installUnpackedGHC path inst ver forceInstall
                        Nothing
       tmpInstallDest <- lift withGHCupTmpDir
       lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "install"] (Just $ fromGHCupPath path)
-      lift $ logInfo $ "Merging file tree from \"" <> T.pack (fromGHCupPath tmpInstallDest) <> "\" to \"" <> T.pack (fromInstallDir inst) <> "\""
       liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpInstallDest)
-      lift $ mergeFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
+      liftE $ mergeFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
         inst
         GHC
         (mkTVer ver)
@@ -394,6 +395,7 @@ installGHCBin :: ( MonadFail m
                     , ArchiveResult
                     , ProcessError
                     , UninstallFailed
+                    , MergeFileTreeError
                     ]
                    m
                    ()
@@ -576,6 +578,7 @@ installHLSBindist :: ( MonadMask m
                         , ProcessError
                         , DirNotEmpty
                         , UninstallFailed
+                        , MergeFileTreeError
                         ]
                        m
                        ()
@@ -658,14 +661,14 @@ installHLSUnpacked :: ( MonadMask m
                    -> InstallDirResolved      -- ^ Path to install to
                    -> Version
                    -> Bool
-                   -> Excepts '[ProcessError, CopyError, FileAlreadyExistsError, NotInstalled] m ()
+                   -> Excepts '[ProcessError, CopyError, FileAlreadyExistsError, NotInstalled, MergeFileTreeError] m ()
 installHLSUnpacked path inst ver forceInstall = do
   PlatformRequest { .. } <- lift getPlatformReq
   lift $ logInfo "Installing HLS"
   tmpInstallDest <- lift withGHCupTmpDir
   lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "PREFIX=" <> fromInstallDir inst, "install"] (Just path)
   liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpInstallDest)
-  lift $ mergeFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
+  liftE $ mergeFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
                    inst
                    HLS
                    (mkTVer ver)
@@ -759,6 +762,7 @@ installHLSBin :: ( MonadMask m
                     , ProcessError
                     , DirNotEmpty
                     , UninstallFailed
+                    , MergeFileTreeError
                     ]
                    m
                    ()
@@ -1798,7 +1802,7 @@ rmGHCVer ver = do
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack dir
       forM_ files (lift . recycleFile . (\f -> dir </> dropDrive f))
-      removeEmptyDirsRecursive dir
+      removeEmptyDirsRecursive (liftIO . removeEmptyDirectory) dir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory dir
       f <- recordedInstallationFile GHC ver
       lift $ recycleFile f
@@ -1882,7 +1886,7 @@ rmHLSVer ver = do
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack hlsDir
       forM_ files (lift . recycleFile . (\f -> hlsDir </> dropDrive f))
-      removeEmptyDirsRecursive hlsDir
+      removeEmptyDirsRecursive (liftIO . removeEmptyDirectory) hlsDir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory hlsDir
       f <- recordedInstallationFile HLS (mkTVer ver)
       lift $ recycleFile f
@@ -2038,7 +2042,7 @@ rmGhcupDirs = do
     logInfo $ "removing " <> T.pack (fromGHCupPath baseDir </> "msys64")
     handleRm $ rmPathForcibly (baseDir `appendGHCupPath` "msys64")
 
-  handleRm $ removeEmptyDirsRecursive (fromGHCupPath baseDir)
+  handleRm $ removeEmptyDirsRecursive removeDirIfEmptyOrIsSymlink (fromGHCupPath baseDir)
 
   -- report files in baseDir that are left-over after
   -- the standard location deletions above
@@ -2052,12 +2056,12 @@ rmGhcupDirs = do
     rmEnvFile :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmEnvFile enFilePath = do
       logInfo "Removing Ghcup Environment File"
-      hideErrorDef [permissionErrorType] () $ deleteFile' enFilePath
+      hideErrorDef [permissionErrorType] () $ rmFileForce enFilePath
 
     rmConfFile :: (HasLog env, MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmConfFile confFilePath = do
       logInfo "removing Ghcup Config File"
-      hideErrorDef [permissionErrorType] () $ deleteFile' confFilePath
+      hideErrorDef [permissionErrorType] () $ rmFileForce confFilePath
 
     rmBinDir :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
     rmBinDir binDir
@@ -2084,33 +2088,7 @@ rmGhcupDirs = do
         compareFn :: FilePath -> FilePath -> Ordering
         compareFn fp1 fp2 = compare (calcDepth fp1) (calcDepth fp2)
 
--- we expect only files inside cache/log dir
--- we report remaining files/dirs later,
--- hence the force/quiet mode in these delete functions below.
 
-deleteFile' :: (MonadMask m, MonadIO m) => FilePath -> m ()
-deleteFile' filepath = do
-  hideError doesNotExistErrorType
-    $ hideError InappropriateType $ rmFile filepath
-
-removeDirIfEmptyOrIsSymlink :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
-removeDirIfEmptyOrIsSymlink filepath =
-  hideError UnsatisfiedConstraints $
-  handleIO' InappropriateType
-        (handleIfSym filepath)
-        (liftIO $ removeEmptyDirectory filepath)
-  where
-    handleIfSym fp e = do
-      isSym <- liftIO $ pathIsSymbolicLink fp
-      if isSym
-      then deleteFile' fp
-      else liftIO $ ioError e
-
-removeEmptyDirsRecursive :: (MonadReader env m, HasDirs env, MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
-removeEmptyDirsRecursive fp = do
-  cs <- liftIO $ listDirectory fp >>= filterM doesDirectoryExist . fmap (fp </>)
-  forM_ cs removeEmptyDirsRecursive
-  hideError InappropriateType $ removeDirIfEmptyOrIsSymlink fp
 
 
     ------------------
@@ -2195,6 +2173,7 @@ compileGHC :: ( MonadMask m
                  , CopyError
                  , BuildFailed
                  , UninstallFailed
+                 , MergeFileTreeError
                  ]
                 m
                 GHCTargetVersion

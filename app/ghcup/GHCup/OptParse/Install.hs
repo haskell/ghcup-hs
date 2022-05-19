@@ -259,6 +259,7 @@ type InstallEffects = '[ AlreadyInstalled
                        , FileAlreadyExistsError
                        , ProcessError
                        , UninstallFailed
+                       , MergeFileTreeError
 
                        , (AlreadyInstalled, ())
                        , (UnknownArchive, ())
@@ -267,6 +268,7 @@ type InstallEffects = '[ AlreadyInstalled
                        , (CopyError, ())
                        , (NotInstalled, ())
                        , (UninstallFailed, ())
+                       , (MergeFileTreeError, ())
                        , (DirNotEmpty, ())
                        , (NoDownload, ())
                        , (BuildFailed, ())
@@ -290,6 +292,7 @@ type InstallEffects = '[ AlreadyInstalled
                        , (NoDownload, NotInstalled)
                        , (NotInstalled, NotInstalled)
                        , (UninstallFailed, NotInstalled)
+                       , (MergeFileTreeError, NotInstalled)
                        , (BuildFailed, NotInstalled)
                        , (TagNotFound, NotInstalled)
                        , (DigestError, NotInstalled)
@@ -323,6 +326,7 @@ type InstallGHCEffects = '[ TagNotFound
                           , DirNotEmpty
                           , AlreadyInstalled
                           , UninstallFailed
+                          , MergeFileTreeError
 
                           , (AlreadyInstalled, NotInstalled)
                           , (UnknownArchive, NotInstalled)
@@ -333,6 +337,7 @@ type InstallGHCEffects = '[ TagNotFound
                           , (DirNotEmpty, NotInstalled)
                           , (NoDownload, NotInstalled)
                           , (UninstallFailed, NotInstalled)
+                          , (MergeFileTreeError, NotInstalled)
                           , (BuildFailed, NotInstalled)
                           , (TagNotFound, NotInstalled)
                           , (DigestError, NotInstalled)
@@ -353,6 +358,7 @@ type InstallGHCEffects = '[ TagNotFound
                           , (DirNotEmpty, ())
                           , (NoDownload, ())
                           , (UninstallFailed, ())
+                          , (MergeFileTreeError, ())
                           , (BuildFailed, ())
                           , (TagNotFound, ())
                           , (DigestError, ())

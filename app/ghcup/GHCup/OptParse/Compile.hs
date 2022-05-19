@@ -389,6 +389,7 @@ type GHCEffects = '[ AlreadyInstalled
                   , CopyError
                   , BuildFailed
                   , UninstallFailed
+                  , MergeFileTreeError
                   ]
 type HLSEffects = '[ AlreadyInstalled
                   , BuildFailed
@@ -408,6 +409,7 @@ type HLSEffects = '[ AlreadyInstalled
                   , DirNotEmpty
                   , ArchiveResult
                   , UninstallFailed
+                  , MergeFileTreeError
                   ]
 
 

@@ -1,8 +1,10 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
@@ -29,6 +31,9 @@ module GHCup.Utils.File (
   deleteFile,
   install,
   removeEmptyDirectory,
+  removeDirIfEmptyOrIsSymlink,
+  removeEmptyDirsRecursive,
+  rmFileForce
 ) where
 
 import GHCup.Utils.Dirs
@@ -52,40 +57,87 @@ import           Text.PrettyPrint.HughesPJClass (prettyShow)
 
 import qualified Data.Text                     as T
 import qualified Streamly.Prelude              as S
+import Control.DeepSeq (force)
+import Control.Exception (evaluate)
+import GHC.IO.Exception
+import System.IO.Error
+import GHCup.Utils.Logger
 
 
-mergeFileTree :: (MonadMask m, S.MonadAsync m, MonadReader env m, HasDirs env)
+-- | Merge one file tree to another given a copy operation.
+--
+-- Records every successfully installed file into the destination
+-- returned by 'recordedInstallationFile'.
+--
+-- If any copy operation fails, the record file is deleted, as well
+-- as the partially installed files.
+mergeFileTree :: ( MonadMask m
+                 , S.MonadAsync m
+                 , MonadReader env m
+                 , HasDirs env
+                 , HasLog env
+                 , MonadCatch m
+                 )
               => GHCupPath                       -- ^ source base directory from which to install findFiles
               -> InstallDirResolved              -- ^ destination base dir
               -> Tool
               -> GHCTargetVersion
               -> (FilePath -> FilePath -> m ())  -- ^ file copy operation
-              -> m ()
+              -> Excepts '[MergeFileTreeError] m ()
+mergeFileTree _ (GHCupBinDir fp) _ _ _ =
+  throwIO $ userError ("mergeFileTree: internal error, called on " <> fp)
 mergeFileTree sourceBase destBase tool v' copyOp = do
-  -- These checks are not atomic, but we perform them to have
-  -- the opportunity to abort before copying has started.
-  --
-  -- The actual copying might still fail.
-  liftIO $ baseCheck (fromGHCupPath sourceBase)
-  liftIO $ destCheck (fromInstallDir destBase)
-
+  lift $ logInfo $ "Merging file tree from \""
+       <> T.pack (fromGHCupPath sourceBase)
+       <> "\" to \""
+       <> T.pack (fromInstallDir destBase)
+       <> "\""
   recFile <- recordedInstallationFile tool v'
-  case destBase of
-    IsolateDirResolved _ -> pure ()
-    _ -> do
-      whenM (liftIO $ doesFileExist recFile) $ throwIO $ userError ("mergeFileTree: DB file " <> recFile <> " already exists!")
+
+  wrapInExcepts $ do
+    -- These checks are not atomic, but we perform them to have
+    -- the opportunity to abort before copying has started.
+    --
+    -- The actual copying might still fail.
+    liftIO $ baseCheck (fromGHCupPath sourceBase)
+    liftIO $ destCheck (fromInstallDir destBase)
+
+    -- we only record for non-isolated installs
+    when (isSafeDir destBase) $ do
+      whenM (liftIO $ doesFileExist recFile)
+        $ throwIO $ userError ("mergeFileTree: DB file " <> recFile <> " already exists!")
       liftIO $ createDirectoryIfMissing True (takeDirectory recFile)
 
-  flip S.mapM_ (getDirectoryContentsRecursive sourceBase) $ \f -> do
-    copy f
-    recordInstalledFile f recFile
-    pure f
+  -- we want the cleanup action to leak through in case of exception
+  onE_ (cleanupOnPartialInstall recFile) $ wrapInExcepts $ do
+    logDebug "Starting merge"
+    lift $ flip S.mapM_ (getDirectoryContentsRecursive sourceBase) $ \f -> do
+      copy f
+      logDebug $ T.pack "Recording installed file: " <> T.pack f
+      recordInstalledFile f recFile
+      pure f
 
  where
-  recordInstalledFile f recFile = do
-    case destBase of
-      IsolateDirResolved _ -> pure ()
-      _ -> liftIO $ appendFile recFile (f <> "\n")
+  wrapInExcepts = handleIO (\e -> throwE $ MergeFileTreeError e (fromGHCupPath sourceBase) (fromInstallDir destBase))
+
+  cleanupOnPartialInstall recFile = when (isSafeDir destBase) $ do
+    (force -> !l) <- hideErrorDef [NoSuchThing] [] $ lines <$> liftIO
+      (readFile recFile >>= evaluate)
+    logDebug "Deleting recorded files due to partial install"
+    forM_ l $ \f -> do
+      let dest = fromInstallDir destBase </> dropDrive f
+      logDebug $ "rm -f " <> T.pack f
+      hideError NoSuchThing $ rmFile dest
+      pure ()
+    logDebug $ "rm -f " <> T.pack recFile
+    hideError NoSuchThing $ rmFile recFile
+    logDebug $ "rm -f " <> T.pack (fromInstallDir destBase)
+    hideError UnsatisfiedConstraints $ hideError NoSuchThing $
+      removeEmptyDirsRecursive (hideError UnsatisfiedConstraints . liftIO . removeEmptyDirectory) (fromInstallDir destBase)
+
+
+  recordInstalledFile f recFile = when (isSafeDir destBase) $
+    liftIO $ appendFile recFile (f <> "\n")
 
   copy source = do
     let dest = fromInstallDir destBase </> source
@@ -158,3 +210,28 @@ recordedInstallationFile t v' = do
   Dirs {..}  <- getDirs
   pure (fromGHCupPath dbDir </> prettyShow t </> T.unpack (tVerToText v'))
 
+removeDirIfEmptyOrIsSymlink :: (MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
+removeDirIfEmptyOrIsSymlink filepath =
+  hideError UnsatisfiedConstraints $
+  handleIO' InappropriateType
+        (handleIfSym filepath)
+        (liftIO $ removeEmptyDirectory filepath)
+  where
+    handleIfSym fp e = do
+      isSym <- liftIO $ pathIsSymbolicLink fp
+      if isSym
+      then rmFileForce fp
+      else liftIO $ ioError e
+
+removeEmptyDirsRecursive :: (MonadMask m, MonadIO m, MonadCatch m) => (FilePath -> m ()) -> FilePath -> m ()
+removeEmptyDirsRecursive rmOpt = go
+ where
+  go fp = do
+    cs <- liftIO $ listDirectory fp >>= filterM doesDirectoryExist . fmap (fp </>)
+    forM_ cs go
+    hideError InappropriateType $ rmOpt fp
+
+rmFileForce :: (MonadMask m, MonadIO m) => FilePath -> m ()
+rmFileForce filepath = do
+  hideError doesNotExistErrorType
+    $ hideError InappropriateType $ rmFile filepath

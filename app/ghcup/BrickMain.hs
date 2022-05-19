@@ -438,6 +438,7 @@ install' _ (_, ListResult {..}) = do
               , ProcessError
               , GHCupShadowed
               , UninstallFailed
+              , MergeFileTreeError
               ]
 
   run (do
