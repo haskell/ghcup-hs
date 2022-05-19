@@ -1809,7 +1809,7 @@ rmGHCVer ver = do
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack dir
       forM_ files (lift . recycleFile . (\f -> dir </> dropDrive f))
-      removeEmptyDirsRecursive (liftIO . removeEmptyDirectory) dir
+      removeEmptyDirsRecursive dir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory dir
       f <- recordedInstallationFile GHC ver
       lift $ recycleFile f
@@ -1893,7 +1893,7 @@ rmHLSVer ver = do
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack hlsDir
       forM_ files (lift . recycleFile . (\f -> hlsDir </> dropDrive f))
-      removeEmptyDirsRecursive (liftIO . removeEmptyDirectory) hlsDir
+      removeEmptyDirsRecursive hlsDir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory hlsDir
       f <- recordedInstallationFile HLS (mkTVer ver)
       lift $ recycleFile f
@@ -2049,7 +2049,7 @@ rmGhcupDirs = do
     logInfo $ "removing " <> T.pack (fromGHCupPath baseDir </> "msys64")
     handleRm $ rmPathForcibly (baseDir `appendGHCupPath` "msys64")
 
-  handleRm $ removeEmptyDirsRecursive removeDirIfEmptyOrIsSymlink (fromGHCupPath baseDir)
+  handleRm $ removeEmptyDirsRecursive (fromGHCupPath baseDir)
 
   -- report files in baseDir that are left-over after
   -- the standard location deletions above

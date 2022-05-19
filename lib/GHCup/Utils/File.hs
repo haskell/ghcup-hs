@@ -133,7 +133,7 @@ mergeFileTree sourceBase destBase tool v' copyOp = do
     hideError NoSuchThing $ rmFile recFile
     logDebug $ "rm -f " <> T.pack (fromInstallDir destBase)
     hideError UnsatisfiedConstraints $ hideError NoSuchThing $
-      removeEmptyDirsRecursive (hideError UnsatisfiedConstraints . liftIO . removeEmptyDirectory) (fromInstallDir destBase)
+      removeEmptyDirsRecursive (fromInstallDir destBase)
 
 
   recordInstalledFile f recFile = when (isSafeDir destBase) $
@@ -223,13 +223,13 @@ removeDirIfEmptyOrIsSymlink filepath =
       then rmFileForce fp
       else liftIO $ ioError e
 
-removeEmptyDirsRecursive :: (MonadMask m, MonadIO m, MonadCatch m) => (FilePath -> m ()) -> FilePath -> m ()
-removeEmptyDirsRecursive rmOpt = go
+removeEmptyDirsRecursive :: (MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
+removeEmptyDirsRecursive = go
  where
   go fp = do
     cs <- liftIO $ listDirectory fp >>= filterM doesDirectoryExist . fmap (fp </>)
     forM_ cs go
-    hideError InappropriateType $ rmOpt fp
+    liftIO $ removeEmptyDirectory fp
 
 rmFileForce :: (MonadMask m, MonadIO m) => FilePath -> m ()
 rmFileForce filepath = do

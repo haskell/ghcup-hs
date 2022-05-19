@@ -289,6 +289,7 @@ fi
 eghcup upgrade
 eghcup upgrade -f
 
+# test that doing fishy symlinks into GHCup dir doesn't cause weird stuff on 'ghcup nuke'
 mkdir no_nuke/
 mkdir no_nuke/bar
 echo 'foo' > no_nuke/file
