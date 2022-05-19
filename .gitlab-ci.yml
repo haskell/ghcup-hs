@@ -206,7 +206,7 @@ variables:
     # otherwise we seem to get intel binaries
     - export HOMEBREW_CHANGE_ARCH_TO_ARM=1
     # update and install packages
-    - /bin/bash ./.gitlab/script/brew.sh llvm autoconf automake
+    - /bin/bash ./.gitlab/script/brew.sh llvm autoconf automake coreutils
     # extract cabal cache
     - ./.gitlab/script/ci.sh extract_cabal_cache
   script: |
@@ -574,7 +574,7 @@ release:darwin:aarch64:
     # otherwise we seem to get intel binaries
     - export HOMEBREW_CHANGE_ARCH_TO_ARM=1
     # update and install packages
-    - /bin/bash ./.gitlab/script/brew.sh llvm autoconf automake
+    - /bin/bash ./.gitlab/script/brew.sh llvm autoconf automake coreutils
   script: |
     export PATH="$CI_PROJECT_DIR/.brew/opt/llvm/bin:$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
     export CC=$CI_PROJECT_DIR/.brew/opt/llvm/bin/clang
