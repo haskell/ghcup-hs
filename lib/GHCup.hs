@@ -1808,7 +1808,7 @@ rmGHCVer ver = do
   lift (getInstalledFiles GHC ver) >>= \case
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack dir
-      forM_ files (lift . recycleFile . (\f -> dir </> dropDrive f))
+      forM_ files (lift . hideError NoSuchThing . recycleFile . (\f -> dir </> dropDrive f))
       removeEmptyDirsRecursive dir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory dir
       f <- recordedInstallationFile GHC ver
@@ -1892,7 +1892,7 @@ rmHLSVer ver = do
   lift (getInstalledFiles HLS (mkTVer ver)) >>= \case
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack hlsDir
-      forM_ files (lift . recycleFile . (\f -> hlsDir </> dropDrive f))
+      forM_ files (lift . hideError NoSuchThing . recycleFile . (\f -> hlsDir </> dropDrive f))
       removeEmptyDirsRecursive hlsDir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory hlsDir
       f <- recordedInstallationFile HLS (mkTVer ver)
