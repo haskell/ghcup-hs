@@ -293,8 +293,18 @@ copyFile = WS.copyFile
 deleteFile :: FilePath -> IO ()
 deleteFile = WS.deleteFile
 
+
 install :: FilePath -> FilePath -> Bool -> IO ()
-install = copyFile
+install = moveFile
+
+
+moveFile :: FilePath -> FilePath -> IO ()
+moveFile from to = Win32.moveFileEx from (Just to) 0
+
+
+moveFilePortable :: FilePath -> FilePath -> IO ()
+moveFilePortable = Win32.moveFile
+
 
 removeEmptyDirectory :: FilePath -> IO ()
 removeEmptyDirectory = WS.removeDirectory

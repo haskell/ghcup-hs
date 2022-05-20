@@ -40,10 +40,11 @@ import           Data.Sequence                  ( Seq, (|>) )
 import           Data.List
 import           Data.Word8
 import           Foreign.C.String
+import           Foreign.C.Error
 import           Foreign.C.Types
 import           GHC.IO.Exception
 import           System.IO                      ( stderr, hClose, hSetBinaryMode )
-import           System.IO.Error
+import           System.IO.Error      hiding    ( catchIOError )
 import           System.FilePath
 import           System.Posix.Directory
 import           System.Posix.Error             ( throwErrnoPathIfMinus1Retry )
@@ -559,6 +560,28 @@ install from to fail' = do
             | PF.isSymbolicLink fs    = recreateSymlink from to fail'
             | otherwise               = ioError $ mkIOError illegalOperationErrorType "install: not a regular file or symlink" Nothing (Just from)
 
+moveFile :: FilePath -> FilePath -> IO ()
+moveFile = rename
+
+
+moveFilePortable :: FilePath -> FilePath -> IO ()
+moveFilePortable from to = do
+  catchErrno [eXDEV] (moveFile from to) $ do
+    copyFile from to True
+    removeFile from
+
+
+catchErrno :: [Errno] -- ^ errno to catch
+           -> IO a    -- ^ action to try, which can raise an IOException
+           -> IO a    -- ^ action to carry out in case of an IOException and
+                      --   if errno matches
+           -> IO a
+catchErrno en a1 a2 =
+  catchIOError a1 $ \e -> do
+    errno <- getErrno
+    if errno `elem` en
+      then a2
+      else ioError e
 
 removeEmptyDirectory :: FilePath -> IO ()
 removeEmptyDirectory = PD.removeDirectory

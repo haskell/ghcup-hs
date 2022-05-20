@@ -1255,15 +1255,17 @@ ensureGlobalTools
 
 -- | Ensure ghcup directory structure exists.
 ensureDirectories :: Dirs -> IO ()
-ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir dbDir) = do
+ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir dbDir tmpDir) = do
   createDirRecursive' (fromGHCupPath baseDir)
   createDirRecursive' (fromGHCupPath baseDir </> "ghc")
+  createDirRecursive' (fromGHCupPath baseDir </> "hls")
   createDirRecursive' binDir
   createDirRecursive' (fromGHCupPath cacheDir)
   createDirRecursive' (fromGHCupPath logsDir)
   createDirRecursive' (fromGHCupPath confDir)
   createDirRecursive' (fromGHCupPath trashDir)
   createDirRecursive' (fromGHCupPath dbDir)
+  createDirRecursive' (fromGHCupPath tmpDir)
   pure ()
 
 

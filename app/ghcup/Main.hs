@@ -155,7 +155,6 @@ main = do
   versions. It maintains a self-contained ~/.ghcup directory.
 
 ENV variables:
-  * TMPDIR: where ghcup does the work (unpacking, building, ...)
   * GHCUP_INSTALL_BASE_PREFIX: the base of ghcup (default: $HOME)
   * GHCUP_USE_XDG_DIRS: set to anything to use XDG style directories
 

@@ -56,26 +56,26 @@ data GCOptions = GCOptions
     --[ Parsers ]--
     ---------------
 
-          
+
 gcP :: Parser GCOptions
 gcP =
   GCOptions
-  <$> 
+  <$>
     switch
       (short 'o' <> long "ghc-old" <> help "Remove GHC versions marked as 'old'")
-  <*> 
+  <*>
     switch
       (short 'p' <> long "profiling-libs" <> help "Remove profiling libs of GHC versions")
-  <*> 
+  <*>
     switch
       (short 's' <> long "share-dir" <> help "Remove GHC share directories (documentation)")
-  <*> 
+  <*>
     switch
       (short 'h' <> long "hls-no-ghc" <> help "Remove HLS versions that don't have a corresponding installed GHC version")
-  <*> 
+  <*>
     switch
       (short 'c' <> long "cache" <> help "GC the GHCup cache")
-  <*> 
+  <*>
     switch
       (short 't' <> long "tmpdirs" <> help "Remove tmpdir leftovers")
 

@@ -2029,6 +2029,7 @@ rmGhcupDirs = do
     , cacheDir
     , recycleDir
     , dbDir
+    , tmpDir
     } <- getDirs
 
   let envFilePath = fromGHCupPath baseDir </> "env"
@@ -2040,6 +2041,7 @@ rmGhcupDirs = do
 
   -- for xdg dirs, the order matters here
   handleRm $ rmPathForcibly logsDir
+  handleRm $ rmPathForcibly tmpDir
   handleRm $ rmPathForcibly cacheDir
 
   handleRm $ rmBinDir binDir

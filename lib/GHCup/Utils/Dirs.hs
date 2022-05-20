@@ -99,6 +99,9 @@ module GHCup.Utils.Dirs
   , setAccessTime
   , setModificationTime
   , isSymbolicLink
+
+  -- uhm
+  , rmPathForcibly
   )
 where
 
@@ -135,7 +138,6 @@ import           System.Directory hiding ( removeDirectory
                                          )
 import qualified System.Directory              as SD
 
-import           System.DiskSpace
 import           System.Environment
 import           System.FilePath
 import           System.IO.Temp
@@ -145,7 +147,6 @@ import qualified Data.ByteString               as BS
 import qualified Data.Text                     as T
 import qualified Data.Yaml.Aeson               as Y
 import qualified Text.Megaparsec               as MP
-import Control.Concurrent (threadDelay)
 
 
 
@@ -174,7 +175,7 @@ createTempGHCupDirectory (GHCupPath gp) d = GHCupPath <$> createTempDirectory gp
 
 getGHCupTmpDirs :: IO [GHCupPath]
 getGHCupTmpDirs = do
-  tmpdir <- getCanonicalTemporaryDirectory
+  tmpdir <- fromGHCupPath <$> ghcupTMPDir
   ghcup_dirs <- handleIO (\_ -> pure []) $ findFiles
     tmpdir
     (makeRegexOpts compExtended
@@ -323,6 +324,25 @@ ghcupRecycleDir :: IO GHCupPath
 ghcupRecycleDir = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "trash"))
 
 
+-- | Defaults to '~/.ghcup/tmp.
+--
+-- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_CACHE_HOME/ghcup/tmp as per xdg spec.
+ghcupTMPDir :: IO GHCupPath
+ghcupTMPDir
+  | isWindows = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "tmp"))
+  | otherwise = do
+      xdg <- useXDG
+      if xdg
+        then do
+          bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
+            Just r  -> pure r
+            Nothing -> do
+              home <- liftIO getHomeDirectory
+              pure (home </> ".cache")
+          pure (GHCupPath (bdir </> "ghcup" </> "tmp"))
+        else ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "tmp"))
+
 
 getAllDirs :: IO Dirs
 getAllDirs = do
@@ -332,6 +352,7 @@ getAllDirs = do
   logsDir    <- ghcupLogsDir
   confDir    <- ghcupConfigDir
   recycleDir <- ghcupRecycleDir
+  tmpDir     <- ghcupTMPDir
   dbDir      <- ghcupDbDir
   pure Dirs { .. }
 
@@ -405,6 +426,7 @@ ghcupHLSDir ver = do
   let verdir = T.unpack $ prettyVer ver
   pure (basedir `appendGHCupPath` verdir)
 
+
 mkGhcupTmpDir :: ( MonadReader env m
                  , HasDirs env
                  , MonadUnliftIO m
@@ -415,29 +437,8 @@ mkGhcupTmpDir :: ( MonadReader env m
                  , MonadIO m)
               => m GHCupPath
 mkGhcupTmpDir = GHCupPath <$> do
-  tmpdir <- liftIO getCanonicalTemporaryDirectory
-
-  let minSpace = 5000 -- a rough guess, aight?
-  space <- handleIO (\_ -> pure Nothing) $ fmap Just $ liftIO $ getAvailSpace tmpdir
-  when (maybe False (toBytes minSpace >) space) $ do
-    logWarn ("Possibly insufficient disk space on "
-      <> T.pack tmpdir
-      <> ". At least "
-      <> T.pack (show minSpace)
-      <> " MB are recommended, but only "
-      <> toMB (fromJust space)
-      <> " are free. Consider freeing up disk space or setting TMPDIR env variable.")
-    logWarn
-      "...waiting for 10 seconds before continuing anyway, you can still abort..."
-    liftIO $ threadDelay 10000000 -- give the user a sec to intervene
-
-  liftIO $ createTempDirectory tmpdir "ghcup"
- where
-  toBytes mb = mb * 1024 * 1024
-  toMB b = T.pack $ show (truncate' (fromIntegral b / (1024 * 1024) :: Double) 2)
-  truncate' :: Double -> Int -> Double
-  truncate' x n = fromIntegral (floor (x * t) :: Integer) / t
-      where t = 10^n
+  Dirs { tmpDir } <- getDirs
+  liftIO $ createTempDirectory (fromGHCupPath tmpDir) "ghcup"
 
 
 withGHCupTmpDir :: ( MonadReader env m
@@ -520,5 +521,14 @@ removeDirectoryRecursive (GHCupPath fp) = SD.removeDirectoryRecursive fp
 removePathForcibly :: GHCupPath -> IO ()
 removePathForcibly (GHCupPath fp) = SD.removePathForcibly fp
 
+
+rmPathForcibly :: ( MonadIO m
+                  , MonadMask m
+                  )
+               => GHCupPath
+               -> m ()
+rmPathForcibly fp
+  | isWindows = recover (liftIO $ removePathForcibly fp)
+  | otherwise = liftIO $ removePathForcibly fp
 
 

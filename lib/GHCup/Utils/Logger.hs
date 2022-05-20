@@ -19,6 +19,7 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 import {-# SOURCE #-} GHCup.Utils.Dirs (fromGHCupPath)
 import {-# SOURCE #-} GHCup.Utils.File.Common (findFiles)
+import {-# SOURCE #-} GHCup.Utils.File (recycleFile)
 import           GHCup.Utils.String.QQ
 
 import           Control.Exception.Safe

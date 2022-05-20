@@ -441,13 +441,14 @@ defaultSettings = Settings False defaultMetaCache False Never Curl False GHCupUR
 instance NFData Settings
 
 data Dirs = Dirs
-  { baseDir  :: GHCupPath
-  , binDir   :: FilePath
-  , cacheDir :: GHCupPath
-  , logsDir  :: GHCupPath
-  , confDir  :: GHCupPath
-  , dbDir    :: GHCupPath
+  { baseDir    :: GHCupPath
+  , binDir     :: FilePath
+  , cacheDir   :: GHCupPath
+  , logsDir    :: GHCupPath
+  , confDir    :: GHCupPath
+  , dbDir      :: GHCupPath
   , recycleDir :: GHCupPath -- mainly used on windows
+  , tmpDir     :: GHCupPath
   }
   deriving (Show, GHC.Generic)
 

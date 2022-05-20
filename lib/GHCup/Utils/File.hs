@@ -33,7 +33,15 @@ module GHCup.Utils.File (
   removeEmptyDirectory,
   removeDirIfEmptyOrIsSymlink,
   removeEmptyDirsRecursive,
-  rmFileForce
+  rmFileForce,
+  createDirRecursive',
+  recyclePathForcibly,
+  rmDirectory,
+  recycleFile,
+  rmFile,
+  rmDirectoryLink,
+  moveFilePortable,
+  moveFile
 ) where
 
 import GHCup.Utils.Dirs
@@ -235,3 +243,98 @@ rmFileForce :: (MonadMask m, MonadIO m) => FilePath -> m ()
 rmFileForce filepath = do
   hideError doesNotExistErrorType
     $ hideError InappropriateType $ rmFile filepath
+
+-- | More permissive version of 'createDirRecursive'. This doesn't
+-- error when the destination is a symlink to a directory.
+createDirRecursive' :: FilePath -> IO ()
+createDirRecursive' p =
+  handleIO (\e -> if isAlreadyExistsError e then isSymlinkDir e else throwIO e)
+    . createDirectoryIfMissing True
+    $ p
+
+ where
+  isSymlinkDir e = do
+    ft <- pathIsSymbolicLink p
+    case ft of
+      True -> do
+        rp <- canonicalizePath p
+        rft <- doesDirectoryExist rp
+        case rft of
+          True -> pure ()
+          _ -> throwIO e
+      _ -> throwIO e
+
+
+-- https://github.com/haskell/directory/issues/110
+-- https://github.com/haskell/directory/issues/96
+-- https://www.sqlite.org/src/info/89f1848d7f
+recyclePathForcibly :: ( MonadIO m
+                       , MonadReader env m
+                       , HasDirs env
+                       , MonadMask m
+                       )
+                    => GHCupPath
+                    -> m ()
+recyclePathForcibly fp
+  | isWindows = do
+      Dirs { recycleDir } <- getDirs
+      tmp <- liftIO $ createTempGHCupDirectory recycleDir "recyclePathForcibly"
+      let dest = tmp `appendGHCupPath` takeFileName (fromGHCupPath fp)
+      liftIO (moveFile (fromGHCupPath fp) (fromGHCupPath dest))
+          `catch`
+          (\e -> if | isDoesNotExistError e -> pure ()
+                    | isPermissionError e || ioeGetErrorType e == UnsupportedOperation {- EXDEV on windows -} -> recover (liftIO $ removePathForcibly fp)
+                    | otherwise -> throwIO e)
+          `finally`
+            liftIO (handleIO (\_ -> pure ()) $ removePathForcibly tmp)
+  | otherwise = liftIO $ removePathForcibly fp
+
+
+
+rmDirectory :: (MonadIO m, MonadMask m)
+            => GHCupPath
+            -> m ()
+rmDirectory fp
+  | isWindows = recover (liftIO $ removeDirectory fp)
+  | otherwise = liftIO $ removeDirectory fp
+
+
+-- https://www.sqlite.org/src/info/89f1848d7f
+-- https://github.com/haskell/directory/issues/96
+recycleFile :: ( MonadIO m
+               , MonadMask m
+               , MonadReader env m
+               , HasDirs env
+               )
+            => FilePath
+            -> m ()
+recycleFile fp
+  | isWindows = do
+      Dirs { recycleDir } <- getDirs
+      liftIO $ whenM (doesDirectoryExist fp) $ ioError (IOError Nothing InappropriateType "recycleFile" "" Nothing (Just fp))
+      tmp <- liftIO $ createTempGHCupDirectory recycleDir "recycleFile"
+      let dest = fromGHCupPath tmp </> takeFileName fp
+      liftIO (moveFile fp dest)
+        `catch`
+          (\e -> if isPermissionError e || ioeGetErrorType e == UnsupportedOperation {- EXDEV on windows -} then recover (liftIO $ rmFile fp) else throwIO e)
+        `finally`
+          liftIO (handleIO (\_ -> pure ()) $ removePathForcibly tmp)
+  | otherwise = liftIO $ removeFile fp
+
+
+rmFile :: ( MonadIO m
+          , MonadMask m
+          )
+      => FilePath
+      -> m ()
+rmFile fp
+  | isWindows = recover (liftIO $ removeFile fp)
+  | otherwise = liftIO $ removeFile fp
+
+
+rmDirectoryLink :: (MonadIO m, MonadMask m, MonadReader env m, HasDirs env)
+                => FilePath
+                -> m ()
+rmDirectoryLink fp
+  | isWindows = recover (liftIO $ removeDirectoryLink fp)
+  | otherwise = liftIO $ removeDirectoryLink fp
