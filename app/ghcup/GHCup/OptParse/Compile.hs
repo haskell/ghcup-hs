@@ -13,13 +13,12 @@ module GHCup.OptParse.Compile where
 
 import           GHCup
 import           GHCup.Errors
-import           GHCup.Utils.File
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
-import           GHCup.Utils.Logger
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
 import           GHCup.OptParse.Common
-import           GHCup.Utils.String.QQ
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )

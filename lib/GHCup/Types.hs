@@ -26,8 +26,7 @@ module GHCup.Types
   )
   where
 
-import {-# SOURCE #-} GHCup.Utils.Dirs          ( fromGHCupPath )
-import {-# SOURCE #-} GHCup.Utils.Dirs          ( GHCupPath )
+import {-# SOURCE #-} GHCup.Utils.Dirs          ( fromGHCupPath, GHCupPath )
 
 import           Control.DeepSeq                ( NFData, rnf )
 import           Data.Map.Strict                ( Map )

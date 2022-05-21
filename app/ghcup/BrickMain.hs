@@ -13,9 +13,10 @@ import           GHCup.Errors
 import           GHCup.Types.Optics ( getDirs )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude ( decUTF8Safe )
-import           GHCup.Utils.File
+import           GHCup.Prelude ( decUTF8Safe )
+import           GHCup.Prelude.File
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.Process
 
 import           Brick
 import           Brick.Widgets.Border

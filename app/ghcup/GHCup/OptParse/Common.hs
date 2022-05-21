@@ -16,10 +16,10 @@ import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
-import           GHCup.Utils.File
-import           GHCup.Utils.Logger
-import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Prelude
+import           GHCup.Prelude
+import           GHCup.Prelude.Process
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.MegaParsec
 
 import           Control.DeepSeq
 import           Control.Concurrent

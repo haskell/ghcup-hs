@@ -30,7 +30,7 @@ Any instance of the IsString type is permitted.
 (For GHC versions 6, write "[$s||]" instead of "[s||]".)
 
 -}
-module GHCup.Utils.String.QQ
+module GHCup.Prelude.String.QQ
   ( s
   )
 where

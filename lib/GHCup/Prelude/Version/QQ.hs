@@ -16,7 +16,7 @@ Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : portable
 -}
-module GHCup.Utils.Version.QQ where
+module GHCup.Prelude.Version.QQ where
 
 import           Data.Data
 import           Data.Text                      ( Text )

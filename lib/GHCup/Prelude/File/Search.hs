@@ -2,13 +2,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 
-module GHCup.Utils.File.Common (
-  module GHCup.Utils.File.Common
+module GHCup.Prelude.File.Search (
+  module GHCup.Prelude.File.Search
   , ProcessError(..)
   , CapturedProcess(..)
   ) where
 
-import           GHCup.Utils.Prelude
 import           GHCup.Types(ProcessError(..), CapturedProcess(..))
 
 import           Control.Monad.Reader
@@ -27,6 +26,8 @@ import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
 import qualified Text.Megaparsec               as MP
+import Control.Exception.Safe (handleIO)
+import System.Directory.Internal.Prelude (ioeGetErrorType)
 
 
 
@@ -38,7 +39,7 @@ searchPath paths needle = go paths
  where
   go [] = pure Nothing
   go (x : xs) =
-    hideErrorDefM [InappropriateType, PermissionDenied, NoSuchThing] (go xs)
+    handleIO (\e -> if ioeGetErrorType e `elem` [InappropriateType, PermissionDenied, NoSuchThing] then go xs else ioError e)
       $ do
           contents <- listDirectory x
           findM (isMatch x) contents >>= \case
@@ -51,6 +52,12 @@ searchPath paths needle = go paths
 
   isExecutable :: FilePath -> IO Bool
   isExecutable file = executable <$> getPermissions file
+
+  -- TODO: inlined from GHCup.Prelude
+  findM ~p = foldr (\x -> ifM (p x) (pure $ Just x)) (pure Nothing)
+  ifM ~b ~t ~f = do
+    b' <- b
+    if b' then t else f
 
 
 -- | Check wether a binary is shadowed by another one that comes before
@@ -104,9 +111,5 @@ findFiles' :: FilePath -> MP.Parsec Void Text a -> IO [FilePath]
 findFiles' path parser = do
   contents <- listDirectory path
   pure $ filter (\fp -> either (const False) (const True) $ MP.parse parser "" (T.pack fp)) contents
-
-
-checkFileAlreadyExists :: (MonadIO m) => FilePath -> m Bool
-checkFileAlreadyExists fp = liftIO $ doesFileExist fp
 
 

@@ -7,7 +7,7 @@
 {-# OPTIONS_GHC -Wall #-}
 
 
-module GHCup.Utils.File.Posix.Traversals (
+module GHCup.Prelude.File.Posix.Traversals (
 -- lower-level stuff
   readDirEnt
 , unpackDirStream
@@ -17,7 +17,7 @@ module GHCup.Utils.File.Posix.Traversals (
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>))
 #endif
-import GHCup.Utils.File.Posix.Foreign
+import GHCup.Prelude.File.Posix.Foreign
 
 import Unsafe.Coerce (unsafeCoerce)
 import Foreign.C.Error

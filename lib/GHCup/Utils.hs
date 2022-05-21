@@ -23,18 +23,18 @@ module GHCup.Utils
   ( module GHCup.Utils.Dirs
   , module GHCup.Utils
 #if defined(IS_WINDOWS)
-  , module GHCup.Utils.Windows
+  , module GHCup.Prelude.Windows
 #else
-  , module GHCup.Utils.Posix
+  , module GHCup.Prelude.Posix
 #endif
   )
 where
 
 
 #if defined(IS_WINDOWS)
-import GHCup.Utils.Windows
+import GHCup.Prelude.Windows
 #else
-import GHCup.Utils.Posix
+import GHCup.Prelude.Posix
 #endif
 import           GHCup.Download
 import           GHCup.Errors
@@ -42,11 +42,13 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
-import           GHCup.Utils.File
-import           GHCup.Utils.Logger
-import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
+import           GHCup.Version
+import           GHCup.Prelude
+import           GHCup.Prelude.File
+import           GHCup.Prelude.Logger.Internal
+import           GHCup.Prelude.MegaParsec
+import           GHCup.Prelude.Process
+import           GHCup.Prelude.String.QQ
 
 import           Codec.Archive           hiding ( Directory )
 import           Control.Applicative
@@ -75,6 +77,7 @@ import           Safe
 import           System.FilePath
 import           System.IO.Error
 import           Text.Regex.Posix
+import           Text.PrettyPrint.HughesPJClass (prettyShow)
 import           URI.ByteString
 
 import qualified Codec.Compression.BZip        as BZip
@@ -99,14 +102,14 @@ import GHC.IO (evaluate)
 -- >>> import System.Directory
 -- >>> import URI.ByteString
 -- >>> import qualified Data.Text as T
--- >>> import GHCup.Utils.Prelude
+-- >>> import GHCup.Prelude
 -- >>> import GHCup.Download
 -- >>> import GHCup.Version
 -- >>> import GHCup.Errors
 -- >>> import GHCup.Types
 -- >>> import GHCup.Types.Optics
 -- >>> import Optics
--- >>> import GHCup.Utils.Version.QQ
+-- >>> import GHCup.Prelude.Version.QQ
 -- >>> import qualified Data.Text.Encoding as E
 -- >>> import Control.Monad.Reader
 -- >>> import Haskus.Utils.Variant.Excepts
@@ -1019,6 +1022,28 @@ applyPatch patch ddir = do
     !? PatchFailed
 
 
+applyAnyPatch :: ( MonadReader env m
+                 , HasDirs env
+                 , HasLog env
+                 , HasSettings env
+                 , MonadUnliftIO m
+                 , MonadCatch m
+                 , MonadResource m
+                 , MonadThrow m
+                 , MonadMask m
+                 , MonadIO m)
+              => Maybe (Either FilePath [URI])
+              -> FilePath
+              -> Excepts '[PatchFailed, DownloadFailed, DigestError, GPGError] m ()
+applyAnyPatch Nothing _                   = pure ()
+applyAnyPatch (Just (Left pdir)) workdir  = liftE $ applyPatches pdir workdir
+applyAnyPatch (Just (Right uris)) workdir = do
+  tmpUnpack <- fromGHCupPath <$> lift withGHCupTmpDir
+  forM_ uris $ \uri -> do
+    patch <- liftE $ download uri Nothing Nothing tmpUnpack Nothing False
+    liftE $ applyPatch patch workdir
+
+
 -- | https://gitlab.haskell.org/ghc/ghc/-/issues/17353
 darwinNotarization :: (MonadReader env m, HasDirs env, MonadIO m)
                    => Platform
@@ -1134,97 +1159,6 @@ getVersionInfo v' tool =
     )
 
 
--- | The file extension for executables.
-exeExt :: String
-exeExt
-  | isWindows = ".exe"
-  | otherwise = ""
-
--- | The file extension for executables.
-exeExt' :: ByteString
-exeExt'
-  | isWindows = ".exe"
-  | otherwise = ""
-
-
-
-
--- | On unix, we can use symlinks, so we just get the
--- symbolic link target.
---
--- On windows, we have to emulate symlinks via shims,
--- see 'createLink'.
-getLinkTarget :: FilePath -> IO FilePath
-getLinkTarget fp
-  | isWindows = do
-      content <- readFile (dropExtension fp <.> "shim")
-      [p] <- pure . filter ("path = " `isPrefixOf`) . lines $ content
-      pure $ stripNewline $ dropPrefix "path = " p
-  | otherwise = getSymbolicLinkTarget fp
-
-
--- | Checks whether the path is a link.
-pathIsLink :: FilePath -> IO Bool
-pathIsLink fp
-  | isWindows = doesPathExist (dropExtension fp <.> "shim")
-  | otherwise = pathIsSymbolicLink fp
-
-
-rmLink :: (MonadReader env m, HasDirs env, MonadIO m, MonadMask m) => FilePath -> m ()
-rmLink fp
-  | isWindows = do
-      hideError doesNotExistErrorType . recycleFile $ fp
-      hideError doesNotExistErrorType . recycleFile $ (dropExtension fp <.> "shim")
-  | otherwise = hideError doesNotExistErrorType . recycleFile $ fp
-
-
--- | Creates a symbolic link on unix and a fake symlink on windows for
--- executables, which:
---     1. is a shim exe
---     2. has a corresponding .shim file in the same directory that
---        contains the target
---
--- This overwrites previously existing files.
---
--- On windows, this requires that 'ensureGlobalTools' was run beforehand.
-createLink :: ( MonadMask m
-              , MonadThrow m
-              , HasLog env
-              , MonadIO m
-              , MonadReader env m
-              , HasDirs env
-              , MonadUnliftIO m
-              , MonadFail m
-              )
-           => FilePath      -- ^ path to the target executable
-           -> FilePath      -- ^ path to be created
-           -> m ()
-createLink link exe
-  | isWindows = do
-      dirs <- getDirs
-      let shimGen = fromGHCupPath (cacheDir dirs) </> "gs.exe"
-
-      let shim = dropExtension exe <.> "shim"
-          -- For hardlinks, link needs to be absolute.
-          -- If link is relative, it's relative to the target exe.
-          -- Note that (</>) drops lhs when rhs is absolute.
-          fullLink = takeDirectory exe </> link
-          shimContents = "path = " <> fullLink
-
-      logDebug $ "rm -f " <> T.pack exe
-      rmLink exe
-
-      logDebug $ "ln -s " <> T.pack fullLink <> " " <> T.pack exe
-      liftIO $ copyFile shimGen exe False
-      liftIO $ writeFile shim shimContents
-  | otherwise = do
-      logDebug $ "rm -f " <> T.pack exe
-      hideError doesNotExistErrorType $ recycleFile exe
-
-      logDebug $ "ln -s " <> T.pack link <> " " <> T.pack exe
-      liftIO $ createFileLink link exe
-
-
 ensureGlobalTools :: ( MonadMask m
                      , MonadThrow m
                      , HasLog env
@@ -1316,3 +1250,28 @@ getInstalledFiles t v' = hideErrorDef [doesNotExistErrorType] Nothing $ do
   pure (Just $ lines c)
 
 
+-- | Warn if the installed and set HLS is not compatible with the installed and
+-- set GHC version.
+warnAboutHlsCompatibility :: ( MonadReader env m
+                             , HasDirs env
+                             , HasLog env
+                             , MonadThrow m
+                             , MonadCatch m
+                             , MonadIO m
+                             )
+                          => m ()
+warnAboutHlsCompatibility = do
+  supportedGHC <- hlsGHCVersions
+  currentGHC   <- fmap _tvVersion <$> ghcSet Nothing
+  currentHLS   <- hlsSet
+
+  case (currentGHC, currentHLS) of
+    (Just gv, Just hv) | gv `notElem` supportedGHC -> do
+      logWarn $
+        "GHC " <> T.pack (prettyShow gv) <> " is not compatible with " <>
+        "Haskell Language Server " <> T.pack (prettyShow hv) <> "." <> "\n" <>
+        "Haskell IDE support may not work until this is fixed." <> "\n" <>
+        "Install a different HLS version, or install and set one of the following GHCs:" <> "\n" <>
+        T.pack (prettyShow supportedGHC)
+
+    _ -> return ()

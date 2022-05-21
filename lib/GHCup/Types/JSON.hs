@@ -23,7 +23,7 @@ module GHCup.Types.JSON where
 
 import           GHCup.Types
 import           GHCup.Types.JSON.Utils
-import           GHCup.Utils.MegaParsec
+import           GHCup.Prelude.MegaParsec
 
 import           Control.Applicative            ( (<|>) )
 import           Data.Aeson              hiding (Key)

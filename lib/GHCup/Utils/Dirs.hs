@@ -99,9 +99,6 @@ module GHCup.Utils.Dirs
   , setAccessTime
   , setModificationTime
   , isSymbolicLink
-
-  -- uhm
-  , rmPathForcibly
   )
 where
 
@@ -110,11 +107,15 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
-import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.File.Common
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude.MegaParsec
+import           GHCup.Prelude.File.Search
+import           GHCup.Prelude.String.QQ
+import           GHCup.Prelude.Logger.Internal (logWarn, logDebug)
+#if defined(IS_WINDOWS)
+import           GHCup.Prelude.Windows ( isWindows )
+#else
+import           GHCup.Prelude.Posix   ( isWindows )
+#endif
 
 import           Control.DeepSeq (NFData, rnf)
 import           Control.Exception.Safe
@@ -147,6 +148,7 @@ import qualified Data.ByteString               as BS
 import qualified Data.Text                     as T
 import qualified Data.Yaml.Aeson               as Y
 import qualified Text.Megaparsec               as MP
+import System.IO.Error (ioeGetErrorType)
 
 
 
@@ -371,10 +373,15 @@ ghcupConfigFile :: (MonadIO m)
                 => Excepts '[JSONError] m UserSettings
 ghcupConfigFile = do
   filepath <- getConfigFilePath
-  contents <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> BS.readFile filepath
+  contents <- liftIO $ handleIO (\e -> if NoSuchThing == ioeGetErrorType e then pure Nothing else liftIO $ ioError e) $ Just <$> BS.readFile filepath
   case contents of
       Nothing -> pure defaultUserSettings
-      Just contents' -> lE' JSONDecodeError . first displayException . Y.decodeEither' $ contents'
+      Just contents' -> liftE
+        . veitherToExcepts @_ @'[JSONError]
+        . either (VLeft . V) VRight
+        . first (JSONDecodeError . displayException)
+        . Y.decodeEither'
+        $ contents'
 
 
     -------------------------
@@ -410,6 +417,12 @@ parseGHCupGHCDir (T.pack -> fp) =
 parseGHCupHLSDir :: MonadThrow m => FilePath -> m Version
 parseGHCupHLSDir (T.pack -> fp) =
   throwEither $ MP.parse version' "" fp
+
+-- TODO: inlined from GHCup.Prelude
+throwEither :: (Exception a, MonadThrow m) => Either a b -> m b
+throwEither a = case a of
+  Left  e -> throwM e
+  Right r -> pure r
 
 -- | ~/.ghcup/hls by default, for new-style installs.
 ghcupHLSBaseDir :: (MonadReader env m, HasDirs env) => m GHCupPath
@@ -459,7 +472,7 @@ withGHCupTmpDir = snd <$> withRunInIO (\run ->
         (\fp ->
             handleIO (\e -> run
                 $ logDebug ("Resource cleanup failed for " <> T.pack (fromGHCupPath fp) <> ", error was: " <> T.pack (displayException e)))
-            . rmPathForcibly
+            . removePathForcibly
             $ fp))
 
 
@@ -522,13 +535,5 @@ removePathForcibly :: GHCupPath -> IO ()
 removePathForcibly (GHCupPath fp) = SD.removePathForcibly fp
 
 
-rmPathForcibly :: ( MonadIO m
-                  , MonadMask m
-                  )
-               => GHCupPath
-               -> m ()
-rmPathForcibly fp
-  | isWindows = recover (liftIO $ removePathForcibly fp)
-  | otherwise = liftIO $ removePathForcibly fp
 
 

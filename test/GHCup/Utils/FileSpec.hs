@@ -1,6 +1,6 @@
 module GHCup.Utils.FileSpec where
 
-import           GHCup.Utils.File
+import           GHCup.Prelude.File
 
 import           Data.List
 import           System.Directory

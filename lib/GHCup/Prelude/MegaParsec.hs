@@ -10,7 +10,7 @@ Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : portable
 -}
-module GHCup.Utils.MegaParsec where
+module GHCup.Prelude.MegaParsec where
 
 import           GHCup.Types
 

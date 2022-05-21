@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
-module GHCup.Utils.File (
+module GHCup.Prelude.File (
   mergeFileTree,
   copyFileE,
   findFilesDeep,
@@ -19,12 +19,8 @@ module GHCup.Utils.File (
   getDirectoryContentsRecursiveBFSUnsafe,
   getDirectoryContentsRecursiveDFSUnsafe,
   recordedInstallationFile,
-  module GHCup.Utils.File.Common,
+  module GHCup.Prelude.File.Search,
 
-  executeOut,
-  execLogged,
-  exec,
-  toProcessError,
   chmod_755,
   isBrokenSymlink,
   copyFile,
@@ -41,25 +37,38 @@ module GHCup.Utils.File (
   rmFile,
   rmDirectoryLink,
   moveFilePortable,
-  moveFile
+  moveFile,
+  rmPathForcibly,
+
+  exeExt,
+  exeExt',
+  getLinkTarget,
+  pathIsLink,
+  rmLink,
+  createLink
 ) where
 
 import GHCup.Utils.Dirs
-import GHCup.Utils.File.Common
+import GHCup.Prelude.Logger.Internal (logInfo, logDebug)
+import GHCup.Prelude.Internal
+import GHCup.Prelude.File.Search
 #if IS_WINDOWS
-import GHCup.Utils.File.Windows
+import GHCup.Prelude.File.Windows
+import GHCup.Prelude.Windows
 #else
-import GHCup.Utils.File.Posix
+import GHCup.Prelude.File.Posix
+import GHCup.Prelude.Posix
 #endif
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
-import           GHCup.Utils.Prelude
 
 import           Text.Regex.Posix
+import           Control.Monad.IO.Unlift        ( MonadUnliftIO )
 import           Control.Exception.Safe
-import           Haskus.Utils.Variant.Excepts
 import           Control.Monad.Reader
+import           Data.ByteString                ( ByteString )
+import           Haskus.Utils.Variant.Excepts
 import           System.FilePath
 import           Text.PrettyPrint.HughesPJClass (prettyShow)
 
@@ -69,7 +78,6 @@ import Control.DeepSeq (force)
 import Control.Exception (evaluate)
 import GHC.IO.Exception
 import System.IO.Error
-import GHCup.Utils.Logger
 
 
 -- | Merge one file tree to another given a copy operation.
@@ -338,3 +346,81 @@ rmDirectoryLink :: (MonadIO m, MonadMask m, MonadReader env m, HasDirs env)
 rmDirectoryLink fp
   | isWindows = recover (liftIO $ removeDirectoryLink fp)
   | otherwise = liftIO $ removeDirectoryLink fp
+
+
+rmPathForcibly :: ( MonadIO m
+                  , MonadMask m
+                  )
+               => GHCupPath
+               -> m ()
+rmPathForcibly fp
+  | isWindows = recover (liftIO $ removePathForcibly fp)
+  | otherwise = liftIO $ removePathForcibly fp
+
+
+-- | The file extension for executables.
+exeExt :: String
+exeExt
+  | isWindows = ".exe"
+  | otherwise = ""
+
+-- | The file extension for executables.
+exeExt' :: ByteString
+exeExt'
+  | isWindows = ".exe"
+  | otherwise = ""
+
+
+rmLink :: (MonadReader env m, HasDirs env, MonadIO m, MonadMask m) => FilePath -> m ()
+rmLink fp
+  | isWindows = do
+      hideError doesNotExistErrorType . recycleFile $ fp
+      hideError doesNotExistErrorType . recycleFile $ (dropExtension fp <.> "shim")
+  | otherwise = hideError doesNotExistErrorType . recycleFile $ fp
+
+
+-- | Creates a symbolic link on unix and a fake symlink on windows for
+-- executables, which:
+--     1. is a shim exe
+--     2. has a corresponding .shim file in the same directory that
+--        contains the target
+--
+-- This overwrites previously existing files.
+--
+-- On windows, this requires that 'ensureGlobalTools' was run beforehand.
+createLink :: ( MonadMask m
+              , MonadThrow m
+              , HasLog env
+              , MonadIO m
+              , MonadReader env m
+              , HasDirs env
+              , MonadUnliftIO m
+              , MonadFail m
+              )
+           => FilePath      -- ^ path to the target executable
+           -> FilePath      -- ^ path to be created
+           -> m ()
+createLink link exe
+  | isWindows = do
+      dirs <- getDirs
+      let shimGen = fromGHCupPath (cacheDir dirs) </> "gs.exe"
+
+      let shim = dropExtension exe <.> "shim"
+          -- For hardlinks, link needs to be absolute.
+          -- If link is relative, it's relative to the target exe.
+          -- Note that (</>) drops lhs when rhs is absolute.
+          fullLink = takeDirectory exe </> link
+          shimContents = "path = " <> fullLink
+
+      logDebug $ "rm -f " <> T.pack exe
+      rmLink exe
+
+      logDebug $ "ln -s " <> T.pack fullLink <> " " <> T.pack exe
+      liftIO $ copyFile shimGen exe False
+      liftIO $ writeFile shim shimContents
+  | otherwise = do
+      logDebug $ "rm -f " <> T.pack exe
+      hideError doesNotExistErrorType $ recycleFile exe
+
+      logDebug $ "ln -s " <> T.pack link <> " " <> T.pack exe
+      liftIO $ createFileLink link exe

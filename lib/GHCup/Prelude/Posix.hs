@@ -1,4 +1,4 @@
-module GHCup.Utils.Posix where
+module GHCup.Prelude.Posix where
 
 
 -- | Enables ANSI support on windows, does nothing on unix.
@@ -11,4 +11,9 @@ module GHCup.Utils.Posix where
 -- Rip-off of https://docs.rs/ansi_term/0.12.1/x86_64-pc-windows-msvc/src/ansi_term/windows.rs.html#10-61
 enableAnsiSupport :: IO (Either String Bool)
 enableAnsiSupport = pure (Right True)
+
+isWindows, isNotWindows :: Bool
+isWindows = False
+isNotWindows = not isWindows
+
 

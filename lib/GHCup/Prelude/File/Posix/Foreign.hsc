@@ -1,6 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 
-module GHCup.Utils.File.Posix.Foreign where
+module GHCup.Prelude.File.Posix.Foreign where
 
 import Data.Bits
 import Data.List (foldl')

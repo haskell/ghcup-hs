@@ -34,9 +34,10 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
-import           GHCup.Utils.File
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
+import           GHCup.Prelude
+import           GHCup.Prelude.File
+import           GHCup.Prelude.Logger.Internal
+import           GHCup.Prelude.Process
 import           GHCup.Version
 
 import           Control.Applicative

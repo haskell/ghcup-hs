@@ -12,9 +12,11 @@ module GHCup.OptParse.ChangeLog where
 
 
 import           GHCup.Types
-import           GHCup.Utils.Logger
 import           GHCup.OptParse.Common
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
+import           GHCup.Prelude.Process (exec)
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -34,8 +36,6 @@ import GHCup.Types.Optics
 import GHCup.Utils
 import Data.Versions
 import URI.ByteString (serializeURIRef')
-import GHCup.Utils.Prelude
-import GHCup.Utils.File (exec)
 import Data.Char (toLower)
 
 

@@ -24,10 +24,10 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
-import           GHCup.Utils.File
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.Process
+import           GHCup.Prelude.String.QQ
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )

@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE OverloadedStrings     #-}
 
-module GHCup.Utils.Windows where
+module GHCup.Prelude.Windows where
 
 
 import           Control.Exception.Safe
@@ -45,4 +45,9 @@ enableAnsiSupport = handleIO (pure . Left . displayException) $ do
   then setConsoleMode h (m .|. eNABLE_VIRTUAL_TERMINAL_PROCESSING)
     >> pure (Right False)
   else pure (Right True)
+
+
+isWindows, isNotWindows :: Bool
+isWindows = True
+isNotWindows = not isWindows
 

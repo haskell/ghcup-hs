@@ -19,8 +19,8 @@ import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils.Dirs
-import           GHCup.Utils.Logger
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
 
 import           Codec.Archive
 #if !MIN_VERSION_base(4,13,0)

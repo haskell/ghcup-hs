@@ -44,31 +44,39 @@ flag internal-downloader
   manual:      True
 
 flag no-exe
-  description: Don't build any executables 
+  description: Don't build any executables
   default:     False
   manual:      True
 
 library
   exposed-modules:
     GHCup
+    GHCup.Cabal
     GHCup.Download
     GHCup.Download.Utils
     GHCup.Errors
+    GHCup.GHC
+    GHCup.HLS
+    GHCup.List
     GHCup.Platform
+    GHCup.Prelude
+    GHCup.Prelude.File
+    GHCup.Prelude.File.Search
+    GHCup.Prelude.Internal
+    GHCup.Prelude.Logger
+    GHCup.Prelude.Logger.Internal
+    GHCup.Prelude.MegaParsec
+    GHCup.Prelude.Process
+    GHCup.Prelude.String.QQ
+    GHCup.Prelude.Version.QQ
     GHCup.Requirements
+    GHCup.Stack
     GHCup.Types
     GHCup.Types.JSON
     GHCup.Types.JSON.Utils
     GHCup.Types.Optics
     GHCup.Utils
     GHCup.Utils.Dirs
-    GHCup.Utils.File
-    GHCup.Utils.File.Common
-    GHCup.Utils.Logger
-    GHCup.Utils.MegaParsec
-    GHCup.Utils.Prelude
-    GHCup.Utils.String.QQ
-    GHCup.Utils.Version.QQ
     GHCup.Version
 
   hs-source-dirs:     lib
@@ -155,9 +163,9 @@ library
   if os(windows)
     cpp-options:   -DIS_WINDOWS
     other-modules:
-      GHCup.Utils.File.Windows
-      GHCup.Utils.Prelude.Windows
-      GHCup.Utils.Windows
+      GHCup.Prelude.File.Windows
+      GHCup.Prelude.Process.Windows
+      GHCup.Prelude.Windows
 
     build-depends:
       , bzlib
@@ -166,11 +174,11 @@ library
 
   else
     other-modules:
-      GHCup.Utils.File.Posix
-      GHCup.Utils.File.Posix.Foreign
-      GHCup.Utils.File.Posix.Traversals
-      GHCup.Utils.Posix
-      GHCup.Utils.Prelude.Posix
+      GHCup.Prelude.File.Posix
+      GHCup.Prelude.File.Posix.Foreign
+      GHCup.Prelude.File.Posix.Traversals
+      GHCup.Prelude.Posix
+      GHCup.Prelude.Process.Posix
 
     c-sources:     cbits/dirutils.c
     build-depends:

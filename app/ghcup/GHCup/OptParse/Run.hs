@@ -10,14 +10,17 @@ module GHCup.OptParse.Run where
 
 import           GHCup
 import           GHCup.Utils
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.File
 import           GHCup.OptParse.Common
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
-import           GHCup.Utils.Logger
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude
+import           GHCup.Prelude.File
+#ifdef IS_WINDOWS
+import           GHCup.Prelude.Process
+#endif
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
 
 import           Control.Exception.Safe         ( MonadMask, MonadCatch )
 #if !MIN_VERSION_base(4,13,0)
