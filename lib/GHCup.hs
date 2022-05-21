@@ -328,10 +328,11 @@ installUnpackedGHC path inst ver forceInstall
       -- Windows bindists are relocatable and don't need
       -- to run configure.
       -- We also must make sure to preserve mtime to not confuse ghc-pkg.
-      liftE $ mergeFileTree path inst GHC (mkTVer ver) $ \source dest -> liftIO $ do
-        mtime <- ifM (pathIsSymbolicLink source) (pure Nothing) (Just <$> getModificationTime source)
-        moveFilePortable source dest
-        forM_ mtime $ setModificationTime dest
+      liftE $ mergeFileTree path inst GHC (mkTVer ver) $ \source dest -> do
+        mtime <- liftIO $ ifM (pathIsSymbolicLink source) (pure Nothing) (Just <$> getModificationTime source)
+        when forceInstall $ hideError doesNotExistErrorType $ hideError InappropriateType $ recycleFile dest
+        liftIO $ moveFilePortable source dest
+        forM_ mtime $ liftIO . setModificationTime dest
   | otherwise = do
       PlatformRequest {..} <- lift getPlatformReq
 
