@@ -710,6 +710,10 @@ installHLSUnpackedLegacy path installDir ver forceInstall = do
     let srcPath = path </> f
     let destPath = fromInstallDir installDir </> toF
 
+    -- destination could be an existing symlink
+    -- for new make-based HLSes
+    liftIO $ rmFileForce destPath
+
     copyFileE
       srcPath
       destPath
@@ -727,6 +731,7 @@ installHLSUnpackedLegacy path installDir ver forceInstall = do
       srcWrapperPath = path </> wrapper <> exeExt
       destWrapperPath = fromInstallDir installDir </> toF
 
+  liftIO $ rmFileForce destWrapperPath
   copyFileE
     srcWrapperPath
     destWrapperPath
@@ -935,7 +940,6 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
           (tmpInstallDir </> "haskell-language-server-" <> takeFileName artifact <.> exeExt)
         liftIO $ renameFile (artifact </> "haskell-language-server-wrapper" <.> exeExt)
           (tmpInstallDir </> "haskell-language-server-wrapper" <.> exeExt)
-        liftIO $ hideError NoSuchThing $ rmFile artifact
 
       case installDir of
         IsolateDir isoDir -> do
