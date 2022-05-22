@@ -11,7 +11,7 @@ module GHCup.OptParse.List where
 
 
 import           GHCup
-import           GHCup.Utils.Prelude
+import           GHCup.Prelude
 import           GHCup.Types
 import           GHCup.OptParse.Common
 

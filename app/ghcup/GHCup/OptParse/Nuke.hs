@@ -14,7 +14,7 @@ module GHCup.OptParse.Nuke where
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Logger
+import           GHCup.Prelude.Logger
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -42,7 +42,7 @@ import Control.Concurrent (threadDelay)
     ---------------------------
 
 
-type NukeEffects = '[ NotInstalled ]
+type NukeEffects = '[ NotInstalled, UninstallFailed ]
 
 
 runNuke :: AppState

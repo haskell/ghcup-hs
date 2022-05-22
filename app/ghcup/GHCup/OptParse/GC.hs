@@ -14,8 +14,8 @@ module GHCup.OptParse.GC where
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Logger
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -56,26 +56,26 @@ data GCOptions = GCOptions
     --[ Parsers ]--
     ---------------
 
-          
+
 gcP :: Parser GCOptions
 gcP =
   GCOptions
-  <$> 
+  <$>
     switch
       (short 'o' <> long "ghc-old" <> help "Remove GHC versions marked as 'old'")
-  <*> 
+  <*>
     switch
       (short 'p' <> long "profiling-libs" <> help "Remove profiling libs of GHC versions")
-  <*> 
+  <*>
     switch
       (short 's' <> long "share-dir" <> help "Remove GHC share directories (documentation)")
-  <*> 
+  <*>
     switch
       (short 'h' <> long "hls-no-ghc" <> help "Remove HLS versions that don't have a corresponding installed GHC version")
-  <*> 
+  <*>
     switch
       (short 'c' <> long "cache" <> help "GC the GHCup cache")
-  <*> 
+  <*>
     switch
       (short 't' <> long "tmpdirs" <> help "Remove tmpdir leftovers")
 
@@ -98,7 +98,7 @@ gcFooter = [s|Discussion:
     ---------------------------
 
 
-type GCEffects = '[ NotInstalled ]
+type GCEffects = '[ NotInstalled, UninstallFailed ]
 
 
 runGC :: MonadUnliftIO m
@@ -129,7 +129,7 @@ gc :: ( Monad m
    -> (ReaderT LeanAppState m () -> m ())
    -> m ExitCode
 gc GCOptions{..} runAppState runLogger = runGC runAppState (do
-  when gcOldGHC rmOldGHC
+  when gcOldGHC (liftE rmOldGHC)
   lift $ when gcProfilingLibs rmProfilingLibs
   lift $ when gcShareDir rmShareDir
   liftE $ when gcHLSNoGHC rmHLSNoGHC

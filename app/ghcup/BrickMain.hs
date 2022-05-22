@@ -13,9 +13,10 @@ import           GHCup.Errors
 import           GHCup.Types.Optics ( getDirs )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude ( decUTF8Safe )
-import           GHCup.Utils.File
+import           GHCup.Prelude ( decUTF8Safe )
+import           GHCup.Prelude.File
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.Process
 
 import           Brick
 import           Brick.Widgets.Border
@@ -44,7 +45,6 @@ import           Data.Vector                    ( Vector
 import           Data.Versions           hiding ( str )
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
-import           System.Directory               ( canonicalizePath )
 import           System.FilePath
 import           System.Exit
 import           System.IO.Unsafe
@@ -438,6 +438,8 @@ install' _ (_, ListResult {..}) = do
               , FileAlreadyExistsError
               , ProcessError
               , GHCupShadowed
+              , UninstallFailed
+              , MergeFileTreeError
               ]
 
   run (do
@@ -512,7 +514,7 @@ del' :: (MonadReader AppState m, MonadIO m, MonadFail m, MonadMask m, MonadUnlif
 del' _ (_, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
 
-  let run = runE @'[NotInstalled]
+  let run = runE @'[NotInstalled, UninstallFailed]
 
   run (do
       let vi = getVersionInfo lVer lTool dls

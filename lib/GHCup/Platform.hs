@@ -23,10 +23,11 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.File
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
+import           GHCup.Utils.Dirs
+import           GHCup.Prelude
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.Process
+import           GHCup.Prelude.String.QQ
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -46,7 +47,6 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.Info
-import           System.Directory
 import           System.OsRelease
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix

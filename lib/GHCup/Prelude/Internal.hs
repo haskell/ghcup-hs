@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeOperators       #-}
 
 {-|
-Module      : GHCup.Utils.Prelude
+Module      : GHCup.Prelude.Internal
 Description : MegaParsec utilities
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
@@ -15,27 +15,11 @@ Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : portable
 
-GHCup specific prelude. Lots of Excepts functionality.
+Stuff that doesn't need GHCup modules, so we can avoid
+recursive imports.
 -}
-module GHCup.Utils.Prelude
-  (module GHCup.Utils.Prelude,
-#if defined(IS_WINDOWS)
-   module GHCup.Utils.Prelude.Windows
-#else
-   module GHCup.Utils.Prelude.Posix
-#endif
-  )
-where
+module GHCup.Prelude.Internal where
 
-import           GHCup.Types
-import           GHCup.Errors
-import           GHCup.Types.Optics
-import {-# SOURCE #-} GHCup.Utils.Logger (logWarn)
-#if defined(IS_WINDOWS)
-import           GHCup.Utils.Prelude.Windows
-#else
-import           GHCup.Utils.Prelude.Posix
-#endif
 
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -44,22 +28,15 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
-import           Data.List                      ( nub, intercalate, stripPrefix, isPrefixOf, dropWhileEnd, intersperse )
+import           Data.List                      ( intercalate, stripPrefix, isPrefixOf, dropWhileEnd )
 import           Data.Maybe
-import           Data.Foldable
-import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
 import           Data.String
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           Data.Word8                  hiding ( isDigit )
 import           Haskus.Utils.Types.List
 import           Haskus.Utils.Variant.Excepts
-import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
 import           System.IO.Error
-import           System.IO.Temp
-import           System.IO.Unsafe
-import           System.Directory
-import           System.FilePath
 
 import           Control.Retry
 import           GHC.IO.Exception
@@ -68,7 +45,6 @@ import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as L
 import qualified Data.Strict.Maybe             as S
 import qualified Data.List.Split               as Split
-import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Data.Text.Encoding.Error      as E
@@ -76,6 +52,7 @@ import qualified Data.Text.Lazy                as TL
 import qualified Data.Text.Lazy.Builder        as B
 import qualified Data.Text.Lazy.Builder.Int    as B
 import qualified Data.Text.Lazy.Encoding       as TLE
+
 
 
 -- $setup
@@ -181,13 +158,6 @@ lEM' :: forall e' e es a m
      -> Excepts es m a
 lEM' f em = lift em >>= lE . first f
 
--- for some obscure reason... this won't type-check if we move it to a different module
-catchWarn :: forall es m env . ( Pretty (V es)
-                             , MonadReader env m
-                             , HasLog env
-                             , MonadIO m
-                             , Monad m) => Excepts es m () -> Excepts '[] m ()
-catchWarn = catchAllE @_ @es (\v -> lift $ logWarn (T.pack . prettyShow $ v))
 
 fromEither :: Either a b -> VEither '[a] b
 fromEither = either (VLeft . V) VRight
@@ -308,56 +278,6 @@ intToText :: Integral a => a -> T.Text
 intToText = TL.toStrict . B.toLazyText . B.decimal
 
 
-pvpToVersion :: MonadThrow m => PVP -> Text -> m Version
-pvpToVersion pvp_ rest =
-  either (\_ -> throwM $ ParseError "Couldn't convert PVP to Version") pure . version . (<> rest) . prettyPVP $ pvp_
-
--- | Convert a version to a PVP and unparsable rest.
---
--- -- prop> \v -> let (Just (pvp', r)) = versionToPVP v in pvpToVersion pvp' r === Just v
-versionToPVP :: MonadThrow m => Version -> m (PVP, Text)
-versionToPVP (Version (Just _) _ _ _) = throwM $ ParseError "Unexpected epoch"
-versionToPVP v = either (\_ -> (, rest v) <$> alternative v) (pure . (, mempty)) . pvp . prettyVer $ v
- where
-  alternative :: MonadThrow m => Version -> m PVP
-  alternative v' = case NE.takeWhile isDigit (_vChunks v') of
-    [] -> throwM $ ParseError "Couldn't convert Version to PVP"
-    xs -> pure $ pvpFromList (unsafeDigit <$> xs)
-
-  rest :: Version -> Text
-  rest (Version _ cs pr me) =
-    let chunks = NE.dropWhile isDigit cs
-        ver = intersperse (T.pack ".") . chunksAsT $ chunks
-        me' = maybe [] (\m -> [T.pack "+",m]) me
-        pr' = foldable [] (T.pack "-" :) $ intersperse (T.pack ".") (chunksAsT pr)
-        prefix = case (ver, pr', me') of
-                   (_:_, _, _) -> T.pack "."
-                   _           -> T.pack ""
-    in prefix <> mconcat (ver <> pr' <> me')
-   where
-    chunksAsT :: Functor t => t VChunk -> t Text
-    chunksAsT = fmap (foldMap f)
-      where
-        f :: VUnit -> Text
-        f (Digits i) = T.pack $ show i
-        f (Str s)    = s
-
-    foldable :: Foldable f => f b -> (f a -> f b) -> f a -> f b
-    foldable d g f | null f    = d
-                   | otherwise = g f
-
-
-
-  isDigit :: VChunk -> Bool
-  isDigit (Digits _ :| []) = True
-  isDigit _                = False
-
-  unsafeDigit :: VChunk -> Int
-  unsafeDigit (Digits x :| []) = fromIntegral x
-  unsafeDigit _ = error "unsafeDigit: wrong input"
-
-pvpFromList :: [Int] -> PVP
-pvpFromList = PVP . NE.fromList . fmap fromIntegral
 
 -- | Safe 'decodeUtf8With'. Replaces an invalid input byte with
 -- the Unicode replacement character U+FFFD.
@@ -376,167 +296,6 @@ escapeVerRex = B.pack . go . B.unpack . verToBS
   go (x : xs) | x == _period = [_backslash, _period] ++ go xs
               | otherwise    = x : go xs
 
--- | More permissive version of 'createDirRecursive'. This doesn't
--- error when the destination is a symlink to a directory.
-createDirRecursive' :: FilePath -> IO ()
-createDirRecursive' p =
-  handleIO (\e -> if isAlreadyExistsError e then isSymlinkDir e else throwIO e)
-    . createDirectoryIfMissing True
-    $ p
-
- where
-  isSymlinkDir e = do
-    ft <- pathIsSymbolicLink p
-    case ft of
-      True -> do
-        rp <- canonicalizePath p
-        rft <- doesDirectoryExist rp
-        case rft of
-          True -> pure ()
-          _ -> throwIO e
-      _ -> throwIO e
-
-
--- | Recursively copy the contents of one directory to another path.
---
--- This is a rip-off of Cabal library.
-copyDirectoryRecursive :: FilePath -> FilePath -> (FilePath -> FilePath -> IO ()) -> IO ()
-copyDirectoryRecursive srcDir destDir doCopy = do
-  srcFiles <- getDirectoryContentsRecursive srcDir
-  copyFilesWith destDir [ (srcDir, f)
-                          | f <- srcFiles ]
-  where
-    -- | Common implementation of 'copyFiles', 'installOrdinaryFiles',
-    -- 'installExecutableFiles' and 'installMaybeExecutableFiles'.
-    copyFilesWith :: FilePath -> [(FilePath, FilePath)] -> IO ()
-    copyFilesWith targetDir srcFiles = do
-
-      -- Create parent directories for everything
-      let dirs = map (targetDir </>) . nub . map (takeDirectory . snd) $ srcFiles
-      traverse_ (createDirectoryIfMissing True) dirs
-
-      -- Copy all the files
-      sequence_ [ let src  = srcBase   </> srcFile
-                      dest = targetDir </> srcFile
-                   in doCopy src dest
-                | (srcBase, srcFile) <- srcFiles ]
-
-
--- | List all the files in a directory and all subdirectories.
---
--- The order places files in sub-directories after all the files in their
--- parent directories. The list is generated lazily so is not well defined if
--- the source directory structure changes before the list is used.
---
-getDirectoryContentsRecursive :: FilePath -> IO [FilePath]
-getDirectoryContentsRecursive topdir = recurseDirectories [""]
-  where
-    recurseDirectories :: [FilePath] -> IO [FilePath]
-    recurseDirectories []         = return []
-    recurseDirectories (dir:dirs) = unsafeInterleaveIO $ do
-      (files, dirs') <- collect [] [] =<< getDirectoryContents (topdir </> dir)
-      files' <- recurseDirectories (dirs' ++ dirs)
-      return (files ++ files')
-
-      where
-        collect files dirs' []              = return (reverse files
-                                                     ,reverse dirs')
-        collect files dirs' (entry:entries) | ignore entry
-                                            = collect files dirs' entries
-        collect files dirs' (entry:entries) = do
-          let dirEntry = dir </> entry
-          isDirectory <- doesDirectoryExist (topdir </> dirEntry)
-          if isDirectory
-            then collect files (dirEntry:dirs') entries
-            else collect (dirEntry:files) dirs' entries
-
-        ignore ['.']      = True
-        ignore ['.', '.'] = True
-        ignore _          = False
-
-
--- https://github.com/haskell/directory/issues/110
--- https://github.com/haskell/directory/issues/96
--- https://www.sqlite.org/src/info/89f1848d7f
-recyclePathForcibly :: ( MonadIO m
-                       , MonadReader env m
-                       , HasDirs env
-                       , MonadMask m
-                       )
-                    => FilePath
-                    -> m ()
-recyclePathForcibly fp
-  | isWindows = do
-      Dirs { recycleDir } <- getDirs
-      tmp <- liftIO $ createTempDirectory recycleDir "recyclePathForcibly"
-      let dest = tmp </> takeFileName fp
-      liftIO (moveFile fp dest)
-          `catch`
-          (\e -> if | isDoesNotExistError e -> pure ()
-                    | isPermissionError e || ioeGetErrorType e == UnsupportedOperation {- EXDEV on windows -} -> recover (liftIO $ removePathForcibly fp)
-                    | otherwise -> throwIO e)
-          `finally`
-            liftIO (handleIO (\_ -> pure ()) $ removePathForcibly tmp)
-  | otherwise = liftIO $ removePathForcibly fp
-
-
-rmPathForcibly :: ( MonadIO m
-                  , MonadMask m
-                  )
-               => FilePath
-               -> m ()
-rmPathForcibly fp
-  | isWindows = recover (liftIO $ removePathForcibly fp)
-  | otherwise = liftIO $ removePathForcibly fp
-
-
-rmDirectory :: (MonadIO m, MonadMask m)
-            => FilePath
-            -> m ()
-rmDirectory fp
-  | isWindows = recover (liftIO $ removeDirectory fp)
-  | otherwise = liftIO $ removeDirectory fp
-
-
--- https://www.sqlite.org/src/info/89f1848d7f
--- https://github.com/haskell/directory/issues/96
-recycleFile :: ( MonadIO m
-               , MonadMask m
-               , MonadReader env m
-               , HasDirs env
-               )
-            => FilePath
-            -> m ()
-recycleFile fp
-  | isWindows = do
-      Dirs { recycleDir } <- getDirs
-      liftIO $ whenM (doesDirectoryExist fp) $ ioError (IOError Nothing InappropriateType "recycleFile" "" Nothing (Just fp))
-      tmp <- liftIO $ createTempDirectory recycleDir "recycleFile"
-      let dest = tmp </> takeFileName fp
-      liftIO (moveFile fp dest)
-        `catch`
-          (\e -> if isPermissionError e || ioeGetErrorType e == UnsupportedOperation {- EXDEV on windows -} then recover (liftIO $ removePathForcibly fp) else throwIO e)
-        `finally`
-          liftIO (handleIO (\_ -> pure ()) $ removePathForcibly tmp)
-  | otherwise = liftIO $ removeFile fp
-
-
-rmFile :: ( MonadIO m
-          , MonadMask m
-          )
-      => FilePath
-      -> m ()
-rmFile fp
-  | isWindows = recover (liftIO $ removeFile fp)
-  | otherwise = liftIO $ removeFile fp
-
-
-rmDirectoryLink :: (MonadIO m, MonadMask m, MonadReader env m, HasDirs env)
-                => FilePath
-                -> m ()
-rmDirectoryLink fp
-  | isWindows = recover (liftIO $ removeDirectoryLink fp)
-  | otherwise = liftIO $ removeDirectoryLink fp
 
 
 recover :: (MonadIO m, MonadMask m) => m a -> m a
@@ -547,10 +306,6 @@ recover action =
     ,\_ -> Handler (\e -> pure (ioeGetErrorType e == UnsatisfiedConstraints))
     ]
     (\_ -> action)
-
-
-copyFileE :: (CopyError :< xs, MonadCatch m, MonadIO m) => FilePath -> FilePath -> Excepts xs m ()
-copyFileE from = handleIO (throwE . CopyError . show) . liftIO . copyFile from
 
 
 -- | Gathering monoidal values
@@ -762,4 +517,3 @@ breakOn :: Eq a => [a] -> [a] -> ([a], [a])
 breakOn needle haystack | needle `isPrefixOf` haystack = ([], haystack)
 breakOn _ [] = ([], [])
 breakOn needle (x:xs) = first (x:) $ breakOn needle xs
-

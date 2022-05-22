@@ -26,6 +26,8 @@ module GHCup.Types
   )
   where
 
+import {-# SOURCE #-} GHCup.Utils.Dirs          ( fromGHCupPath, GHCupPath )
+
 import           Control.DeepSeq                ( NFData, rnf )
 import           Data.Map.Strict                ( Map )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
@@ -438,12 +440,14 @@ defaultSettings = Settings False defaultMetaCache False Never Curl False GHCupUR
 instance NFData Settings
 
 data Dirs = Dirs
-  { baseDir  :: FilePath
-  , binDir   :: FilePath
-  , cacheDir :: FilePath
-  , logsDir  :: FilePath
-  , confDir  :: FilePath
-  , recycleDir :: FilePath -- mainly used on windows
+  { baseDir    :: GHCupPath
+  , binDir     :: FilePath
+  , cacheDir   :: GHCupPath
+  , logsDir    :: GHCupPath
+  , confDir    :: GHCupPath
+  , dbDir      :: GHCupPath
+  , recycleDir :: GHCupPath -- mainly used on windows
+  , tmpDir     :: GHCupPath
   }
   deriving (Show, GHC.Generic)
 
@@ -635,9 +639,25 @@ data InstallDir = IsolateDir FilePath
   deriving (Eq, Show)
 
 data InstallDirResolved = IsolateDirResolved FilePath
-                        | GHCupDir FilePath
+                        | GHCupDir GHCupPath
+                        | GHCupBinDir FilePath
   deriving (Eq, Show)
 
 fromInstallDir :: InstallDirResolved -> FilePath
 fromInstallDir (IsolateDirResolved fp) = fp
-fromInstallDir (GHCupDir fp) = fp
+fromInstallDir (GHCupDir fp) = fromGHCupPath fp
+fromInstallDir (GHCupBinDir fp) = fp
+
+
+isSafeDir :: InstallDirResolved -> Bool
+isSafeDir (IsolateDirResolved _) = False
+isSafeDir (GHCupDir _)           = True
+isSafeDir (GHCupBinDir _)        = False
+
+
+
+
+
+
+
+

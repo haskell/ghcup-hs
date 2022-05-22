@@ -18,8 +18,9 @@ import           GHCup.OptParse.Common
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Logger
-import           GHCup.Utils.String.QQ
+import           GHCup.Utils.Dirs
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
 
 import           Codec.Archive
 #if !MIN_VERSION_base(4,13,0)
@@ -257,6 +258,8 @@ type InstallEffects = '[ AlreadyInstalled
                        , NoToolVersionSet
                        , FileAlreadyExistsError
                        , ProcessError
+                       , UninstallFailed
+                       , MergeFileTreeError
 
                        , (AlreadyInstalled, ())
                        , (UnknownArchive, ())
@@ -264,9 +267,10 @@ type InstallEffects = '[ AlreadyInstalled
                        , (FileDoesNotExistError, ())
                        , (CopyError, ())
                        , (NotInstalled, ())
+                       , (UninstallFailed, ())
+                       , (MergeFileTreeError, ())
                        , (DirNotEmpty, ())
                        , (NoDownload, ())
-                       , (NotInstalled, ())
                        , (BuildFailed, ())
                        , (TagNotFound, ())
                        , (DigestError, ())
@@ -287,6 +291,8 @@ type InstallEffects = '[ AlreadyInstalled
                        , (DirNotEmpty, NotInstalled)
                        , (NoDownload, NotInstalled)
                        , (NotInstalled, NotInstalled)
+                       , (UninstallFailed, NotInstalled)
+                       , (MergeFileTreeError, NotInstalled)
                        , (BuildFailed, NotInstalled)
                        , (TagNotFound, NotInstalled)
                        , (DigestError, NotInstalled)
@@ -319,6 +325,8 @@ type InstallGHCEffects = '[ TagNotFound
                           , BuildFailed
                           , DirNotEmpty
                           , AlreadyInstalled
+                          , UninstallFailed
+                          , MergeFileTreeError
 
                           , (AlreadyInstalled, NotInstalled)
                           , (UnknownArchive, NotInstalled)
@@ -328,6 +336,8 @@ type InstallGHCEffects = '[ TagNotFound
                           , (NotInstalled, NotInstalled)
                           , (DirNotEmpty, NotInstalled)
                           , (NoDownload, NotInstalled)
+                          , (UninstallFailed, NotInstalled)
+                          , (MergeFileTreeError, NotInstalled)
                           , (BuildFailed, NotInstalled)
                           , (TagNotFound, NotInstalled)
                           , (DigestError, NotInstalled)
@@ -347,6 +357,8 @@ type InstallGHCEffects = '[ TagNotFound
                           , (NotInstalled, ())
                           , (DirNotEmpty, ())
                           , (NoDownload, ())
+                          , (UninstallFailed, ())
+                          , (MergeFileTreeError, ())
                           , (BuildFailed, ())
                           , (TagNotFound, ())
                           , (DigestError, ())
@@ -441,21 +453,21 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 case keepDirs settings of
                   Never -> runLogger (logError $ T.pack $ prettyShow err)
                   _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
-                    "Check the logs at " <> T.pack logsDir <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
+                    "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
                     "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 3
               VLeft err@(V (BuildFailed tmpdir _, ())) -> do
                 case keepDirs settings of
                   Never -> runLogger (logError $ T.pack $ prettyShow err)
                   _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
-                    "Check the logs at " <> T.pack logsDir <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
+                    "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
                     "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 3
 
               VLeft e -> do
                 runLogger $ do
                   logError $ T.pack $ prettyShow e
-                  logError $ "Also check the logs in " <> T.pack logsDir
+                  logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
                 pure $ ExitFailure 3
 
 
@@ -507,7 +519,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
             VLeft e -> do
               runLogger $ do
                 logError $ T.pack $ prettyShow e
-                logError $ "Also check the logs in " <> T.pack logsDir
+                logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
               pure $ ExitFailure 4
 
   installHLS :: InstallOptions -> IO ExitCode
@@ -567,7 +579,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
             VLeft e -> do
               runLogger $ do
                 logError $ T.pack $ prettyShow e
-                logError $ "Also check the logs in " <> T.pack logsDir
+                logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
               pure $ ExitFailure 4
 
   installStack :: InstallOptions -> IO ExitCode
@@ -618,6 +630,6 @@ install installCommand settings getAppState' runLogger = case installCommand of
             VLeft e -> do
               runLogger $ do
                 logError $ T.pack $ prettyShow e
-                logError $ "Also check the logs in " <> T.pack logsDir
+                logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
               pure $ ExitFailure 4
 

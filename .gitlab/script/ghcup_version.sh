@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -eux
 
@@ -7,6 +7,7 @@ set -eux
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
 
 CI_PROJECT_DIR=$(pwd)
+
 
 ecabal() {
 	cabal "$@"
@@ -33,6 +34,8 @@ fi
 git describe --always
 
 ### build
+
+rm -rf "${GHCUP_DIR}"/share
 
 ecabal update
 
@@ -94,16 +97,17 @@ rm -rf "${GHCUP_DIR}"
 eghcup --numeric-version
 
 eghcup install ghc ${GHC_VERSION}
-[ `$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version` = "${GHC_VERSION}" ]
-[ `eghcup run --ghc ${GHC_VERSION} -- ghc --numeric-version` = "${GHC_VERSION}" ]
+ls -lah "$(eghcup whereis -d ghc ${GHC_VERSION})"
+[ "`$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version`" = "${GHC_VERSION}" ]
+[ "`eghcup run --ghc ${GHC_VERSION} -- ghc --numeric-version`" = "${GHC_VERSION}" ]
 eghcup set ghc ${GHC_VERSION}
 eghcup install cabal ${CABAL_VERSION}
-[ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
+[ "`$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version`" = "${CABAL_VERSION}" ]
 eghcup unset cabal
 "$GHCUP_BIN"/cabal --version && exit 1 || echo yes
 eghcup set cabal ${CABAL_VERSION}
-[ `$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version` = "${CABAL_VERSION}" ]
-[ `eghcup run --cabal ${CABAL_VERSION} -- cabal --numeric-version` = "${CABAL_VERSION}" ]
+[ "`$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version`" = "${CABAL_VERSION}" ]
+[ "`eghcup run --cabal ${CABAL_VERSION} -- cabal --numeric-version`" = "${CABAL_VERSION}" ]
 
 if [ "${OS}" != "FREEBSD" ] ; then
 	if [ "${ARCH}" = "64" ] ; then
@@ -212,7 +216,7 @@ eghcup rm $(ghc --numeric-version)
 # https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/116
 if [ "${OS}" = "LINUX" ] ; then
 	if [ "${ARCH}" = "64" ] ; then
-		eghcup install cabal -u https://oleg.fi/cabal-install-3.4.0.0-rc4/cabal-install-3.4.0.0-x86_64-ubuntu-16.04.tar.xz 3.4.0.0-rc4
+		eghcup install cabal -u https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-x86_64-linux-alpine.tar.xz 3.4.0.0-rc4
 		eghcup rm cabal 3.4.0.0-rc4
 	fi
 fi
@@ -285,7 +289,20 @@ fi
 eghcup upgrade
 eghcup upgrade -f
 
+# test that doing fishy symlinks into GHCup dir doesn't cause weird stuff on 'ghcup nuke'
+mkdir no_nuke/
+mkdir no_nuke/bar
+echo 'foo' > no_nuke/file
+echo 'bar' > no_nuke/bar/file
+ln -s "$CI_PROJECT_DIR"/no_nuke/ "${GHCUP_DIR}"/cache/no_nuke
+ln -s "$CI_PROJECT_DIR"/no_nuke/ "${GHCUP_DIR}"/logs/no_nuke
 
 # nuke
 eghcup nuke
 [ ! -e "${GHCUP_DIR}" ]
+
+# make sure nuke doesn't resolve symlinks
+[ -e "$CI_PROJECT_DIR"/no_nuke/file ]
+[ -e "$CI_PROJECT_DIR"/no_nuke/bar/file ]
+
+

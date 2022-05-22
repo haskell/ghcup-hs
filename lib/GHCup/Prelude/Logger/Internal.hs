@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 
 {-|
-Module      : GHCup.Utils.Logger
+Module      : GHCup.Utils.Logger.Internal
 Description : logger definition
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
@@ -11,16 +11,13 @@ Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : portable
 
-Here we define our main logger.
+Breaking import cycles.
 -}
-module GHCup.Utils.Logger where
+module GHCup.Prelude.Logger.Internal where
 
 import           GHCup.Types
 import           GHCup.Types.Optics
-import {-# SOURCE #-} GHCup.Utils.File.Common (findFiles)
-import           GHCup.Utils.String.QQ
 
-import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
@@ -28,12 +25,7 @@ import           Data.Text               ( Text )
 import           Optics
 import           Prelude                 hiding ( appendFile )
 import           System.Console.Pretty
-import           System.FilePath
-import           System.IO.Error
-import           Text.Regex.Posix
 
-import qualified Data.ByteString               as B
-import GHCup.Utils.Prelude
 import qualified Data.Text                     as T
 
 logInfo :: ( MonadReader env m
@@ -91,7 +83,7 @@ logInternal logLevel msg = do
   let strs = T.split (== '\n') msg
   let out = case strs of
               [] -> T.empty
-              (x:xs) -> 
+              (x:xs) ->
                   foldr (\a b -> a <> "\n" <> b) mempty
                 . ((l <> " " <> x) :)
                 . fmap (\line' -> style' "[ ...   ] " <> line' )
@@ -109,22 +101,3 @@ logInternal logLevel msg = do
   let outr = lr <> " " <> msg <> "\n"
   liftIO $ fileOutter outr
 
-
-initGHCupFileLogging :: ( MonadReader env m
-                        , HasDirs env
-                        , MonadIO m
-                        , MonadMask m
-                        ) => m FilePath
-initGHCupFileLogging = do
-  Dirs { logsDir } <- getDirs
-  let logfile = logsDir </> "ghcup.log"
-  logFiles <- liftIO $ findFiles
-    logsDir
-    (makeRegexOpts compExtended
-                   execBlank
-                   ([s|^.*\.log$|] :: B.ByteString)
-    )
-  forM_ logFiles $ hideError doesNotExistErrorType . recycleFile . (logsDir </>)
-
-  liftIO $ writeFile logfile ""
-  pure logfile

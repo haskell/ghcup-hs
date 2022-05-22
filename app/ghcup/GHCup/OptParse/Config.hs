@@ -7,7 +7,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ExplicitForAll #-}
 
 module GHCup.OptParse.Config where
 
@@ -15,9 +14,9 @@ module GHCup.OptParse.Config where
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.Logger
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
 import           GHCup.OptParse.Common
 
 #if !MIN_VERSION_base(4,13,0)

@@ -17,8 +17,8 @@ import           GHCup.OptParse.Common
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Logger
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )

@@ -10,7 +10,7 @@ module GHCup.Download.Utils where
 import           GHCup.Errors
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.Prelude
+import           GHCup.Prelude
 
 import           Control.Applicative
 import           Control.Monad

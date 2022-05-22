@@ -10,14 +10,17 @@ module GHCup.OptParse.Run where
 
 import           GHCup
 import           GHCup.Utils
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.File
 import           GHCup.OptParse.Common
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
-import           GHCup.Utils.Logger
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude
+import           GHCup.Prelude.File
+#ifdef IS_WINDOWS
+import           GHCup.Prelude.Process
+#endif
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
 
 import           Control.Exception.Safe         ( MonadMask, MonadCatch )
 #if !MIN_VERSION_base(4,13,0)
@@ -32,7 +35,6 @@ import           Data.List                      ( intercalate )
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
-import           System.Directory
 import           System.FilePath
 import           System.Environment
 import           System.Exit
@@ -176,6 +178,8 @@ type RunEffects = '[ AlreadyInstalled
                    , NoToolVersionSet
                    , FileAlreadyExistsError
                    , ProcessError
+                   , UninstallFailed
+                   , MergeFileTreeError
                    ]
 
 runLeanRUN :: (MonadUnliftIO m, MonadIO m)
@@ -339,6 +343,8 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                               , AlreadyInstalled
                               , FileAlreadyExistsError
                               , CopyError
+                              , UninstallFailed
+                              , MergeFileTreeError
                               ] (ResourceT (ReaderT AppState m)) ()
    installToolChainFull Toolchain{..} tmp = do
          forM_ [(GHC,) <$> ghcVer, (Cabal,) <$> cabalVer, (HLS,) <$> hlsVer, (Stack,) <$> stackVer] $ \mt -> do

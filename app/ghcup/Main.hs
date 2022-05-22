@@ -22,9 +22,9 @@ import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics      hiding ( toolRequirements )
 import           GHCup.Utils
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.String.QQ
 import           GHCup.Version
 
 import           Cabal.Plan ( findPlanJson, SearchPlanJson(..) )
@@ -155,7 +155,6 @@ main = do
   versions. It maintains a self-contained ~/.ghcup directory.
 
 ENV variables:
-  * TMPDIR: where ghcup does the work (unpacking, building, ...)
   * GHCUP_INSTALL_BASE_PREFIX: the base of ghcup (default: $HOME)
   * GHCUP_USE_XDG_DIRS: set to anything to use XDG style directories
 
@@ -220,7 +219,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                 let s' = AppState settings dirs keybindings ghcupInfo pfreq loggerConfig
 
                 race_ (liftIO $ runReaderT cleanupTrash s')
-                      (threadDelay 5000000 >> runLogger (logWarn $ "Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in " <> T.pack recycleDir <> " manually"))
+                      (threadDelay 5000000 >> runLogger (logWarn $ "Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in " <> T.pack (fromGHCupPath recycleDir) <> " manually"))
 
                 case optCommand of
                   Nuke -> pure ()

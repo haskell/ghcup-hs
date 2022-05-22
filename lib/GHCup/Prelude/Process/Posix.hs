@@ -1,29 +1,31 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE DataKinds  #-}
+{-# LANGUAGE MultiWayIf  #-}
+{-# LANGUAGE CApiFFI #-}
 
 {-|
 Module      : GHCup.Utils.File.Posix
-Description : File and unix APIs
+Description : Process handling for unix
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : POSIX
-
-This module handles file and executable handling.
-Some of these functions use sophisticated logging.
 -}
-module GHCup.Utils.File.Posix where
+module GHCup.Prelude.Process.Posix where
 
-import           GHCup.Utils.File.Common
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.Logger
+import           GHCup.Utils.Dirs
+import           GHCup.Prelude.File
+import           GHCup.Prelude.File.Posix
+import           GHCup.Prelude
+import           GHCup.Prelude.Logger
 import           GHCup.Types
 import           GHCup.Types.Optics
 
 import           Control.Concurrent
 import           Control.Concurrent.Async
-import           Control.Exception              ( evaluate )
+import qualified Control.Exception              as E
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.Reader
@@ -36,11 +38,9 @@ import           Data.List
 import           Data.Word8
 import           GHC.IO.Exception
 import           System.IO                      ( stderr )
-import           System.IO.Error
+import           System.IO.Error      hiding    ( catchIOError )
 import           System.FilePath
-import           System.Directory
 import           System.Posix.Directory
-import           System.Posix.Files
 import           System.Posix.IO
 import           System.Posix.Process           ( ProcessStatus(..) )
 import           System.Posix.Types
@@ -87,7 +87,7 @@ execLogged exe args chdir lfile env = do
   Settings {..} <- getSettings
   Dirs {..} <- getDirs
   logDebug $ T.pack $ "Running " <> exe <> " with arguments " <> show args
-  let logfile = logsDir </> lfile <> ".log"
+  let logfile = fromGHCupPath logsDir </> lfile <> ".log"
   liftIO $ bracket (openFd logfile WriteOnly (Just newFilePerms) defaultFileFlags{ append = True })
                    closeFd
                    (action verbose noColor)
@@ -262,7 +262,7 @@ captureOutStreams action = do
 
         -- execute the action
         a <- action
-        void $ evaluate a
+        void $ E.evaluate a
 
       -- close everything we don't need
       closeFd childStdoutWrite
@@ -360,42 +360,3 @@ toProcessError exe args mps = case mps of
 
 
 
-chmod_755 :: (MonadReader env m, HasLog env, MonadIO m) => FilePath -> m ()
-chmod_755 fp = do
-  let exe_mode =
-          nullFileMode
-            `unionFileModes` ownerExecuteMode
-            `unionFileModes` ownerReadMode
-            `unionFileModes` ownerWriteMode
-            `unionFileModes` groupExecuteMode
-            `unionFileModes` groupReadMode
-            `unionFileModes` otherExecuteMode
-            `unionFileModes` otherReadMode
-  logDebug ("chmod 755 " <> T.pack fp)
-  liftIO $ setFileMode fp exe_mode
-
-
--- |Default permissions for a new file.
-newFilePerms :: FileMode
-newFilePerms =
-  ownerWriteMode
-    `unionFileModes` ownerReadMode
-    `unionFileModes` groupWriteMode
-    `unionFileModes` groupReadMode
-    `unionFileModes` otherWriteMode
-    `unionFileModes` otherReadMode
-
-
--- | Checks whether the binary is a broken link.
-isBrokenSymlink :: FilePath -> IO Bool
-isBrokenSymlink fp = do
-  try (pathIsSymbolicLink fp) >>= \case
-    Right True -> do
-      let symDir = takeDirectory fp
-      tfp <- getSymbolicLinkTarget fp
-      not <$> doesPathExist
-        -- this drops 'symDir' if 'tfp' is absolute
-        (symDir </> tfp)
-    Right b -> pure b
-    Left e | isDoesNotExistError e -> pure False
-           | otherwise -> throwIO e

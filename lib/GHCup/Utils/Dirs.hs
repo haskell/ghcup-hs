@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE ViewPatterns          #-}
+{-# LANGUAGE QuasiQuotes           #-}
 
 {-|
 Module      : GHCup.Utils.Dirs
@@ -30,6 +31,74 @@ module GHCup.Utils.Dirs
   , getConfigFilePath
   , useXDG
   , cleanupTrash
+
+  , GHCupPath
+  , appendGHCupPath
+  , fromGHCupPath
+  , createTempGHCupDirectory
+  , getGHCupTmpDirs
+
+  , removeDirectory
+  , removeDirectoryRecursive
+  , removePathForcibly
+
+  -- System.Directory re-exports
+  , createDirectory
+  , createDirectoryIfMissing
+  , renameDirectory
+  , listDirectory
+  , getDirectoryContents
+  , getCurrentDirectory
+  , setCurrentDirectory
+  , withCurrentDirectory
+  , getHomeDirectory
+  , XdgDirectory(..)
+  , getXdgDirectory
+  , XdgDirectoryList(..)
+  , getXdgDirectoryList
+  , getAppUserDataDirectory
+  , getUserDocumentsDirectory
+  , getTemporaryDirectory
+  , removeFile
+  , renameFile
+  , renamePath
+  , getFileSize
+  , canonicalizePath
+  , makeAbsolute
+  , makeRelativeToCurrentDirectory
+  , doesPathExist
+  , doesFileExist
+  , doesDirectoryExist
+  , findExecutable
+  , findExecutables
+  , findExecutablesInDirectories
+  , findFile
+  , findFileWith
+  , findFilesWith
+  , exeExtension
+  , createFileLink
+  , createDirectoryLink
+  , removeDirectoryLink
+  , pathIsSymbolicLink
+  , getSymbolicLinkTarget
+  , Permissions
+  , emptyPermissions
+  , readable
+  , writable
+  , executable
+  , searchable
+  , setOwnerReadable
+  , setOwnerWritable
+  , setOwnerExecutable
+  , setOwnerSearchable
+  , getPermissions
+  , setPermissions
+  , copyPermissions
+  , getAccessTime
+  , getModificationTime
+  , setAccessTime
+  , setModificationTime
+  , isSymbolicLink
   )
 where
 
@@ -38,33 +107,84 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
-import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
+import           GHCup.Prelude.MegaParsec
+import           GHCup.Prelude.File.Search
+import           GHCup.Prelude.String.QQ
+import           GHCup.Prelude.Logger.Internal (logWarn, logDebug)
+#if defined(IS_WINDOWS)
+import           GHCup.Prelude.Windows ( isWindows )
+#else
+import           GHCup.Prelude.Posix   ( isWindows )
+#endif
 
+import           Control.DeepSeq (NFData, rnf)
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource hiding (throwM)
+import           Data.List
+import           Data.ByteString                ( ByteString )
 import           Data.Bifunctor
 import           Data.Maybe
 import           Data.Versions
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
-import           System.Directory                                                
-import           System.DiskSpace                                                
+import           Safe
+import           System.Directory hiding ( removeDirectory
+                                         , removeDirectoryRecursive
+                                         , removePathForcibly
+                                         , findFiles
+                                         )
+import qualified System.Directory              as SD
+
 import           System.Environment
 import           System.FilePath
 import           System.IO.Temp
+import           Text.Regex.Posix
 
 import qualified Data.ByteString               as BS
 import qualified Data.Text                     as T
 import qualified Data.Yaml.Aeson               as Y
 import qualified Text.Megaparsec               as MP
-import Control.Concurrent (threadDelay)
+import System.IO.Error (ioeGetErrorType)
 
+
+
+    ---------------------------
+    --[ GHCupPath utilities ]--
+    ---------------------------
+
+-- | A 'GHCupPath' is a safe sub-path that can be recursively deleted.
+--
+-- The constructor is not exported.
+newtype GHCupPath = GHCupPath FilePath
+  deriving (Show, Eq, Ord)
+
+instance NFData GHCupPath where
+  rnf (GHCupPath fp) = rnf fp
+
+appendGHCupPath :: GHCupPath -> FilePath -> GHCupPath
+appendGHCupPath (GHCupPath gp) fp = GHCupPath (gp </> fp)
+
+fromGHCupPath :: GHCupPath -> FilePath
+fromGHCupPath (GHCupPath gp) = gp
+
+createTempGHCupDirectory :: GHCupPath -> FilePath -> IO GHCupPath
+createTempGHCupDirectory (GHCupPath gp) d = GHCupPath <$> createTempDirectory gp d
+
+
+getGHCupTmpDirs :: IO [GHCupPath]
+getGHCupTmpDirs = do
+  tmpdir <- fromGHCupPath <$> ghcupTMPDir
+  ghcup_dirs <- handleIO (\_ -> pure []) $ findFiles
+    tmpdir
+    (makeRegexOpts compExtended
+                   execBlank
+                   ([s|^ghcup-.*$|] :: ByteString)
+    )
+  pure (fmap (\p -> GHCupPath (tmpdir </> p)) $ filter (maybe False ("ghcup-" `isPrefixOf`) . lastMay . splitPath) ghcup_dirs)
 
 
     ------------------------------
@@ -76,11 +196,11 @@ import Control.Concurrent (threadDelay)
 --
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_DATA_HOME/ghcup' as per xdg spec.
-ghcupBaseDir :: IO FilePath
+ghcupBaseDir :: IO GHCupPath
 ghcupBaseDir
   | isWindows = do
       bdir <- fromMaybe "C:\\" <$> lookupEnv "GHCUP_INSTALL_BASE_PREFIX"
-      pure (bdir </> "ghcup")
+      pure (GHCupPath (bdir </> "ghcup"))
   | otherwise = do
       xdg <- useXDG
       if xdg
@@ -90,19 +210,19 @@ ghcupBaseDir
             Nothing -> do
               home <- liftIO getHomeDirectory
               pure (home </> ".local" </> "share")
-          pure (bdir </> "ghcup")
+          pure (GHCupPath (bdir </> "ghcup"))
         else do
           bdir <- lookupEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
             Just r  -> pure r
             Nothing -> liftIO getHomeDirectory
-          pure (bdir </> ".ghcup")
+          pure (GHCupPath (bdir </> ".ghcup"))
 
 
 -- | ~/.ghcup by default
 --
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CONFIG_HOME/ghcup' as per xdg spec.
-ghcupConfigDir :: IO FilePath
+ghcupConfigDir :: IO GHCupPath
 ghcupConfigDir
   | isWindows = ghcupBaseDir
   | otherwise = do
@@ -114,12 +234,12 @@ ghcupConfigDir
             Nothing -> do
               home <- liftIO getHomeDirectory
               pure (home </> ".config")
-          pure (bdir </> "ghcup")
+          pure (GHCupPath (bdir </> "ghcup"))
         else do
           bdir <- lookupEnv "GHCUP_INSTALL_BASE_PREFIX" >>= \case
             Just r  -> pure r
             Nothing -> liftIO getHomeDirectory
-          pure (bdir </> ".ghcup")
+          pure (GHCupPath (bdir </> ".ghcup"))
 
 
 -- | If 'GHCUP_USE_XDG_DIRS' is set (to anything),
@@ -127,7 +247,7 @@ ghcupConfigDir
 -- (which, sadly is not strictly xdg spec).
 ghcupBinDir :: IO FilePath
 ghcupBinDir
-  | isWindows = ghcupBaseDir <&> (</> "bin")
+  | isWindows = (fromGHCupPath <$> ghcupBaseDir) <&> (</> "bin")
   | otherwise = do
       xdg <- useXDG
       if xdg
@@ -137,16 +257,16 @@ ghcupBinDir
             Nothing -> do
               home <- liftIO getHomeDirectory
               pure (home </> ".local" </> "bin")
-        else ghcupBaseDir <&> (</> "bin")
+        else (fromGHCupPath <$> ghcupBaseDir) <&> (</> "bin")
 
 
 -- | Defaults to '~/.ghcup/cache'.
 --
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CACHE_HOME/ghcup' as per xdg spec.
-ghcupCacheDir :: IO FilePath
+ghcupCacheDir :: IO GHCupPath
 ghcupCacheDir
-  | isWindows = ghcupBaseDir <&> (</> "cache")
+  | isWindows = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "cache"))
   | otherwise = do
       xdg <- useXDG
       if xdg
@@ -156,17 +276,17 @@ ghcupCacheDir
             Nothing -> do
               home <- liftIO getHomeDirectory
               pure (home </> ".cache")
-          pure (bdir </> "ghcup")
-        else ghcupBaseDir <&> (</> "cache")
+          pure (GHCupPath (bdir </> "ghcup"))
+        else ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "cache"))
 
 
 -- | Defaults to '~/.ghcup/logs'.
 --
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CACHE_HOME/ghcup/logs' as per xdg spec.
-ghcupLogsDir :: IO FilePath
+ghcupLogsDir :: IO GHCupPath
 ghcupLogsDir
-  | isWindows = ghcupBaseDir <&> (</> "logs")
+  | isWindows = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "logs"))
   | otherwise = do
       xdg <- useXDG
       if xdg
@@ -176,15 +296,54 @@ ghcupLogsDir
             Nothing -> do
               home <- liftIO getHomeDirectory
               pure (home </> ".cache")
-          pure (bdir </> "ghcup" </> "logs")
-        else ghcupBaseDir <&> (</> "logs")
+          pure (GHCupPath (bdir </> "ghcup" </> "logs"))
+        else ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "logs"))
+
+
+-- | Defaults to '~/.ghcup/db.
+--
+-- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_CACHE_HOME/ghcup/db as per xdg spec.
+ghcupDbDir :: IO GHCupPath
+ghcupDbDir
+  | isWindows = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "db"))
+  | otherwise = do
+      xdg <- useXDG
+      if xdg
+        then do
+          bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
+            Just r  -> pure r
+            Nothing -> do
+              home <- liftIO getHomeDirectory
+              pure (home </> ".cache")
+          pure (GHCupPath (bdir </> "ghcup" </> "db"))
+        else ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "db"))
 
 
 -- | '~/.ghcup/trash'.
 -- Mainly used on windows to improve file removal operations
-ghcupRecycleDir :: IO FilePath
-ghcupRecycleDir = ghcupBaseDir <&> (</> "trash")
+ghcupRecycleDir :: IO GHCupPath
+ghcupRecycleDir = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "trash"))
 
+
+-- | Defaults to '~/.ghcup/tmp.
+--
+-- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
+-- then uses 'XDG_CACHE_HOME/ghcup/tmp as per xdg spec.
+ghcupTMPDir :: IO GHCupPath
+ghcupTMPDir
+  | isWindows = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "tmp"))
+  | otherwise = do
+      xdg <- useXDG
+      if xdg
+        then do
+          bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
+            Just r  -> pure r
+            Nothing -> do
+              home <- liftIO getHomeDirectory
+              pure (home </> ".cache")
+          pure (GHCupPath (bdir </> "ghcup" </> "tmp"))
+        else ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "tmp"))
 
 
 getAllDirs :: IO Dirs
@@ -195,6 +354,8 @@ getAllDirs = do
   logsDir    <- ghcupLogsDir
   confDir    <- ghcupConfigDir
   recycleDir <- ghcupRecycleDir
+  tmpDir     <- ghcupTMPDir
+  dbDir      <- ghcupDbDir
   pure Dirs { .. }
 
 
@@ -206,16 +367,21 @@ getAllDirs = do
 getConfigFilePath :: (MonadIO m) => m FilePath
 getConfigFilePath = do
   confDir <- liftIO ghcupConfigDir
-  pure $ confDir </> "config.yaml"
+  pure $ fromGHCupPath confDir </> "config.yaml"
 
 ghcupConfigFile :: (MonadIO m)
                 => Excepts '[JSONError] m UserSettings
 ghcupConfigFile = do
   filepath <- getConfigFilePath
-  contents <- liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ Just <$> BS.readFile filepath
+  contents <- liftIO $ handleIO (\e -> if NoSuchThing == ioeGetErrorType e then pure Nothing else liftIO $ ioError e) $ Just <$> BS.readFile filepath
   case contents of
       Nothing -> pure defaultUserSettings
-      Just contents' -> lE' JSONDecodeError . first displayException . Y.decodeEither' $ contents'
+      Just contents' -> liftE
+        . veitherToExcepts @_ @'[JSONError]
+        . either (VLeft . V) VRight
+        . first (JSONDecodeError . displayException)
+        . Y.decodeEither'
+        $ contents'
 
 
     -------------------------
@@ -224,10 +390,10 @@ ghcupConfigFile = do
 
 
 -- | ~/.ghcup/ghc by default.
-ghcupGHCBaseDir :: (MonadReader env m, HasDirs env) => m FilePath
+ghcupGHCBaseDir :: (MonadReader env m, HasDirs env) => m GHCupPath
 ghcupGHCBaseDir = do
   Dirs {..}  <- getDirs
-  pure (baseDir </> "ghc")
+  pure (baseDir `appendGHCupPath` "ghc")
 
 
 -- | Gets '~/.ghcup/ghc/<ghcupGHCDir>'.
@@ -236,11 +402,11 @@ ghcupGHCBaseDir = do
 --   * 8.8.4
 ghcupGHCDir :: (MonadReader env m, HasDirs env, MonadThrow m)
             => GHCTargetVersion
-            -> m FilePath
+            -> m GHCupPath
 ghcupGHCDir ver = do
   ghcbasedir <- ghcupGHCBaseDir
   let verdir = T.unpack $ tVerToText ver
-  pure (ghcbasedir </> verdir)
+  pure (ghcbasedir `appendGHCupPath` verdir)
 
 
 -- | See 'ghcupToolParser'.
@@ -252,20 +418,27 @@ parseGHCupHLSDir :: MonadThrow m => FilePath -> m Version
 parseGHCupHLSDir (T.pack -> fp) =
   throwEither $ MP.parse version' "" fp
 
+-- TODO: inlined from GHCup.Prelude
+throwEither :: (Exception a, MonadThrow m) => Either a b -> m b
+throwEither a = case a of
+  Left  e -> throwM e
+  Right r -> pure r
+
 -- | ~/.ghcup/hls by default, for new-style installs.
-ghcupHLSBaseDir :: (MonadReader env m, HasDirs env) => m FilePath
+ghcupHLSBaseDir :: (MonadReader env m, HasDirs env) => m GHCupPath
 ghcupHLSBaseDir = do
   Dirs {..}  <- getDirs
-  pure (baseDir </> "hls")
+  pure (baseDir `appendGHCupPath` "hls")
 
 -- | Gets '~/.ghcup/hls/<hls-ver>' for new-style installs.
 ghcupHLSDir :: (MonadReader env m, HasDirs env, MonadThrow m)
             => Version
-            -> m FilePath
+            -> m GHCupPath
 ghcupHLSDir ver = do
   basedir <- ghcupHLSBaseDir
   let verdir = T.unpack $ prettyVer ver
-  pure (basedir </> verdir)
+  pure (basedir `appendGHCupPath` verdir)
+
 
 mkGhcupTmpDir :: ( MonadReader env m
                  , HasDirs env
@@ -275,31 +448,10 @@ mkGhcupTmpDir :: ( MonadReader env m
                  , MonadThrow m
                  , MonadMask m
                  , MonadIO m)
-              => m FilePath
-mkGhcupTmpDir = do
-  tmpdir <- liftIO getCanonicalTemporaryDirectory
-
-  let minSpace = 5000 -- a rough guess, aight?
-  space <- handleIO (\_ -> pure Nothing) $ fmap Just $ liftIO $ getAvailSpace tmpdir
-  when (maybe False (toBytes minSpace >) space) $ do
-    logWarn ("Possibly insufficient disk space on "
-      <> T.pack tmpdir
-      <> ". At least "
-      <> T.pack (show minSpace)
-      <> " MB are recommended, but only "
-      <> toMB (fromJust space)
-      <> " are free. Consider freeing up disk space or setting TMPDIR env variable.")
-    logWarn
-      "...waiting for 10 seconds before continuing anyway, you can still abort..."
-    liftIO $ threadDelay 10000000 -- give the user a sec to intervene
-
-  liftIO $ createTempDirectory tmpdir "ghcup"
- where
-  toBytes mb = mb * 1024 * 1024
-  toMB b = T.pack $ show (truncate' (fromIntegral b / (1024 * 1024) :: Double) 2)
-  truncate' :: Double -> Int -> Double
-  truncate' x n = fromIntegral (floor (x * t) :: Integer) / t
-      where t = 10^n
+              => m GHCupPath
+mkGhcupTmpDir = GHCupPath <$> do
+  Dirs { tmpDir } <- getDirs
+  liftIO $ createTempDirectory (fromGHCupPath tmpDir) "ghcup"
 
 
 withGHCupTmpDir :: ( MonadReader env m
@@ -312,15 +464,15 @@ withGHCupTmpDir :: ( MonadReader env m
                    , MonadThrow m
                    , MonadMask m
                    , MonadIO m)
-                => m FilePath
+                => m GHCupPath
 withGHCupTmpDir = snd <$> withRunInIO (\run ->
   run
     $ allocate
         (run mkGhcupTmpDir)
         (\fp ->
             handleIO (\e -> run
-                $ logDebug ("Resource cleanup failed for " <> T.pack fp <> ", error was: " <> T.pack (displayException e)))
-            . rmPathForcibly
+                $ logDebug ("Resource cleanup failed for " <> T.pack (fromGHCupPath fp) <> ", error was: " <> T.pack (displayException e)))
+            . removePathForcibly
             $ fp))
 
 
@@ -360,12 +512,28 @@ cleanupTrash :: ( MonadIO m
              => m ()
 cleanupTrash = do
   Dirs { recycleDir } <- getDirs
-  contents <- liftIO $ listDirectory recycleDir
+  contents <- liftIO $ listDirectory (fromGHCupPath recycleDir)
   if null contents
   then pure ()
   else do
-    logWarn ("Removing leftover files in " <> T.pack recycleDir)
+    logWarn ("Removing leftover files in " <> T.pack (fromGHCupPath recycleDir))
     forM_ contents (\fp -> handleIO (\e ->
         logDebug ("Resource cleanup failed for " <> T.pack fp <> ", error was: " <> T.pack (displayException e))
-      ) $ liftIO $ removePathForcibly (recycleDir </> fp))
+      ) $ liftIO $ removePathForcibly (recycleDir `appendGHCupPath` fp))
+
+
+
+-- System.Directory re-exports with GHCupPath
+
+removeDirectory :: GHCupPath -> IO ()
+removeDirectory (GHCupPath fp) = SD.removeDirectory fp
+
+removeDirectoryRecursive :: GHCupPath -> IO ()
+removeDirectoryRecursive (GHCupPath fp) = SD.removeDirectoryRecursive fp
+
+removePathForcibly :: GHCupPath -> IO ()
+removePathForcibly (GHCupPath fp) = SD.removePathForcibly fp
+
+
+
 

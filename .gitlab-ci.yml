@@ -13,7 +13,7 @@ variables:
 
   # Sequential version number of all cached things.
   # Bump to invalidate GitLab CI cache.
-  CACHE_REV: 0
+  CACHE_REV: 1
 
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -125,6 +125,10 @@ variables:
       - test/golden
       - dist-newstyle/cache/
     when: on_failure
+  cache:
+    key: ghcup-test-$CACHE_REV
+    paths:
+      - cabal-cache
 
 # .test_ghcup_scoop:
   # script:
@@ -134,72 +138,77 @@ variables:
   extends:
     - .test_ghcup_version
     - .debian
-    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/linux/install_deps.sh
+    - ./.gitlab/script/ci.sh extract_cabal_cache
+  after_script:
+    - ./.gitlab/script/ci.sh save_cabal_cache
+    - bash ./.gitlab/after_script.sh
 
 .test_ghcup_version:linux32:
   extends:
     - .test_ghcup_version
     - .alpine:32bit
-    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/linux/alpine/install_deps.sh
+    - ./.gitlab/script/ci.sh extract_cabal_cache
+  after_script:
+    - ./.gitlab/script/ci.sh save_cabal_cache
+    - bash ./.gitlab/after_script.sh
 
 .test_ghcup_version:armv7:
   extends:
     - .test_ghcup_version
     - .linux:armv7
-    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/linux/install_deps.sh
+    - ./.gitlab/script/ci.sh extract_cabal_cache
+  after_script:
+    - ./.gitlab/script/ci.sh save_cabal_cache
+    - bash ./.gitlab/after_script.sh
 
 .test_ghcup_version:aarch64:
   extends:
     - .test_ghcup_version
     - .linux:aarch64
-    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/linux/install_deps.sh
+    - ./.gitlab/script/ci.sh extract_cabal_cache
+  after_script:
+    - ./.gitlab/script/ci.sh save_cabal_cache
+    - bash ./.gitlab/after_script.sh
 
 .test_ghcup_version:darwin:
   extends:
     - .test_ghcup_version
     - .darwin
-    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/darwin/install_deps.sh
+    - ./.gitlab/script/ci.sh extract_cabal_cache
+  after_script:
+    - ./.gitlab/script/ci.sh save_cabal_cache
+    - bash ./.gitlab/after_script.sh
 
 .test_ghcup_version:darwin:aarch64:
   extends:
     - .test_ghcup_version
     - .darwin:aarch64
-    - .root_cleanup
   cache:
     key: darwin-brew-$CACHE_REV
     paths:
-      - .brew
-      - .brew_cache
+      - brew_cache
+    key: ghcup-test-$CACHE_REV
+    paths:
+      - cabal-cache
   before_script:
-    # Install brew locally in the project dir. Packages will also be installed here.
-    - '[ -e "$CI_PROJECT_DIR/.brew" ] || git clone --depth=1 https://github.com/Homebrew/brew $CI_PROJECT_DIR/.brew'
-    - export PATH="$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
-
+    # extract brew cache
+    - ./.gitlab/script/ci.sh extract_brew_cache
     # otherwise we seem to get intel binaries
     - export HOMEBREW_CHANGE_ARCH_TO_ARM=1
-
-    # make sure to not pollute the machine with temp files etc
-    - mkdir -p $CI_PROJECT_DIR/.brew_cache
-    - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.brew_cache
-    - mkdir -p $CI_PROJECT_DIR/.brew_logs
-    - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.brew_logs
-    - mkdir -p /private/tmp/.brew_tmp
-    - export HOMEBREW_TEMP=/private/tmp/.brew_tmp
-
     # update and install packages
-    - brew update
-    - brew install llvm
-    - brew install autoconf automake coreutils
+    - /bin/bash ./.gitlab/script/brew.sh llvm autoconf automake coreutils
+    # extract cabal cache
+    - ./.gitlab/script/ci.sh extract_cabal_cache
   script: |
     export PATH="$CI_PROJECT_DIR/.brew/opt/llvm/bin:$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
     export CC=$CI_PROJECT_DIR/.brew/opt/llvm/bin/clang
@@ -209,40 +218,51 @@ variables:
     export RANLIB=$CI_PROJECT_DIR/.brew/opt/llvm/bin/llvm-ranlib
     ./.gitlab/before_script/darwin/install_deps.sh
     ./.gitlab/script/ghcup_version.sh
+  after_script:
+    - ./.gitlab/script/ci.sh save_cabal_cache
+    - ./.gitlab/script/ci.sh save_brew_cache
+    - bash ./.gitlab/after_script.sh
 
 .test_ghcup_version:freebsd12:
   extends:
     - .test_ghcup_version
     - .freebsd12
-    - .root_cleanup
   before_script:
     - ./.gitlab/before_script/freebsd/install_deps.sh
+    - ./.gitlab/script/ci.sh extract_cabal_cache
+  after_script:
+    - ./.gitlab/script/ci.sh save_cabal_cache
+    - bash ./.gitlab/after_script.sh
 
 .test_ghcup_version:freebsd13:
   extends:
     - .test_ghcup_version
     - .freebsd13
-    - .root_cleanup
   before_script:
     - sudo pkg update
     - sudo pkg install --yes compat12x-amd64
     - sudo ln -s libncurses.so.6 /usr/local/lib/libncurses.so.6.2
     - ./.gitlab/before_script/freebsd/install_deps.sh
+    - ./.gitlab/script/ci.sh extract_cabal_cache
+  after_script:
+    - ./.gitlab/script/ci.sh save_cabal_cache
+    - bash ./.gitlab/after_script.sh
 
 .test_ghcup_version:windows:
   extends:
     - .test_ghcup_version
     - .windows
-    - .root_cleanup
   before_script:
-    - set CABAL_DIR="$CI_PROJECT_DIR/cabal"
     - bash ./.gitlab/before_script/windows/install_deps.sh
+    - bash ./.gitlab/script/ci.sh extract_cabal_cache
+  after_script:
+    - bash ./.gitlab/script/ci.sh save_cabal_cache
+    - bash ./.gitlab/after_script.sh
 
 # .test_ghcup_scoop:windows:
   # extends:
     # - .windows
     # - .test_ghcup_scoop
-    # - .root_cleanup
 
 .release_ghcup:
   script:
@@ -262,9 +282,12 @@ variables:
 test:linux:stack:
   stage: test
   before_script:
+    - ./.gitlab/script/ci.sh extract_stack_cache
     - ./.gitlab/before_script/linux/install_deps_minimal.sh
   script:
     - ./.gitlab/script/ghcup_stack.sh
+  after_script:
+    - ./.gitlab/script/ci.sh save_stack_cache
   extends:
     - .debian
   needs: []
@@ -294,6 +317,7 @@ test:windows:bootstrap_powershell_script:
     - "[Environment]::SetEnvironmentVariable('GHCUP_MSYS2', $null, [System.EnvironmentVariableTarget]::User)"
     - "[Environment]::SetEnvironmentVariable('CABAL_DIR', $null, [System.EnvironmentVariableTarget]::User)"
     - bash ./.gitlab/after_script.sh
+    - bash ./.gitlab/script/ci.sh save_cabal_cache
   variables:
     GHC_VERSION: "8.10.7"
     CABAL_VERSION: "3.6.2.0"
@@ -540,28 +564,17 @@ release:darwin:aarch64:
   cache:
     key: darwin-brew-$CACHE_REV
     paths:
-      - .brew
-      - .brew_cache
+      - brew_cache
+    key: ghcup-test-$CACHE_REV
+    paths:
+      - cabal-cache
   before_script:
-    # Install brew locally in the project dir. Packages will also be installed here.
-    - '[ -e "$CI_PROJECT_DIR/.brew" ] || git clone --depth=1 https://github.com/Homebrew/brew $CI_PROJECT_DIR/.brew'
-    - export PATH="$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
-
+    - ./.gitlab/script/ci.sh extract_brew_cache
+    - ./.gitlab/script/ci.sh extract_cabal_cache
     # otherwise we seem to get intel binaries
     - export HOMEBREW_CHANGE_ARCH_TO_ARM=1
-
-    # make sure to not pollute the machine with temp files etc
-    - mkdir -p $CI_PROJECT_DIR/.brew_cache
-    - export HOMEBREW_CACHE=$CI_PROJECT_DIR/.brew_cache
-    - mkdir -p $CI_PROJECT_DIR/.brew_logs
-    - export HOMEBREW_LOGS=$CI_PROJECT_DIR/.brew_logs
-    - mkdir -p /private/tmp/.brew_tmp
-    - export HOMEBREW_TEMP=/private/tmp/.brew_tmp
-
     # update and install packages
-    - brew update
-    - brew install llvm
-    - brew install autoconf automake
+    - /bin/bash ./.gitlab/script/brew.sh llvm autoconf automake coreutils
   script: |
     export PATH="$CI_PROJECT_DIR/.brew/opt/llvm/bin:$CI_PROJECT_DIR/.brew/bin:$CI_PROJECT_DIR/.brew/sbin:$PATH"
     export CC=$CI_PROJECT_DIR/.brew/opt/llvm/bin/clang
@@ -571,6 +584,9 @@ release:darwin:aarch64:
     export RANLIB=$CI_PROJECT_DIR/.brew/opt/llvm/bin/llvm-ranlib
     ./.gitlab/before_script/darwin/install_deps.sh
     ./.gitlab/script/ghcup_release.sh
+  after_script:
+    - ./.gitlab/script/ci.sh save_cabal_cache
+    - ./.gitlab/script/ci.sh save_brew_cache
   variables:
     ARTIFACT: "aarch64-apple-darwin-ghcup"
     GHC_VERSION: "8.10.7"

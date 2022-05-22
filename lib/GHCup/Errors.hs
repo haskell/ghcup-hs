@@ -105,6 +105,15 @@ instance Pretty CopyError where
   pPrint (CopyError reason) =
     text ("Unable to copy a file. Reason was: " ++ reason)
 
+-- | Unable to merge file trees.
+data MergeFileTreeError = MergeFileTreeError IOException FilePath FilePath
+  deriving Show
+
+instance Pretty MergeFileTreeError where
+  pPrint (MergeFileTreeError e from to) =
+    text "Failed to merge file tree from" <+> text from <+> text "to" <+> text to <+> text "\nexception was:" <+> text (displayException e)
+     <+> text "\n...tried to clean up" <+> text to <+> text ". Make sure it's gone."
+
 -- | Unable to find a tag of a tool.
 data TagNotFound = TagNotFound Tag Tool
   deriving Show
@@ -145,6 +154,13 @@ data NotInstalled = NotInstalled Tool GHCTargetVersion
 instance Pretty NotInstalled where
   pPrint (NotInstalled tool ver) =
     text "The version" <+> pPrint ver <+> text "of the tool" <+> pPrint tool <+> text "is not installed."
+
+data UninstallFailed = UninstallFailed FilePath [FilePath]
+  deriving Show
+
+instance Pretty UninstallFailed where
+  pPrint (UninstallFailed dir files) =
+    text "The following files survived uninstallation: " <+> pPrint files <+> text "...consider removing" <+> pPrint dir <+> text "manually."
 
 -- | An executable was expected to be in PATH, but was not found.
 data NotFoundInPATH = NotFoundInPATH FilePath

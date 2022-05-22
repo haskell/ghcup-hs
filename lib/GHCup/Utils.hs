@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                   #-}
+{-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -22,18 +23,18 @@ module GHCup.Utils
   ( module GHCup.Utils.Dirs
   , module GHCup.Utils
 #if defined(IS_WINDOWS)
-  , module GHCup.Utils.Windows
+  , module GHCup.Prelude.Windows
 #else
-  , module GHCup.Utils.Posix
+  , module GHCup.Prelude.Posix
 #endif
   )
 where
 
 
 #if defined(IS_WINDOWS)
-import GHCup.Utils.Windows
+import GHCup.Prelude.Windows
 #else
-import GHCup.Utils.Posix
+import GHCup.Prelude.Posix
 #endif
 import           GHCup.Download
 import           GHCup.Errors
@@ -41,11 +42,13 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
-import           GHCup.Utils.File
-import           GHCup.Utils.Logger
-import           GHCup.Utils.MegaParsec
-import           GHCup.Utils.Prelude
-import           GHCup.Utils.String.QQ
+import           GHCup.Version
+import           GHCup.Prelude
+import           GHCup.Prelude.File
+import           GHCup.Prelude.Logger.Internal
+import           GHCup.Prelude.MegaParsec
+import           GHCup.Prelude.Process
+import           GHCup.Prelude.String.QQ
 
 import           Codec.Archive           hiding ( Directory )
 import           Control.Applicative
@@ -71,10 +74,10 @@ import           GHC.IO.Exception
 import           Haskus.Utils.Variant.Excepts
 import           Optics
 import           Safe
-import           System.Directory      hiding   ( findFiles )
 import           System.FilePath
 import           System.IO.Error
 import           Text.Regex.Posix
+import           Text.PrettyPrint.HughesPJClass (prettyShow)
 import           URI.ByteString
 
 import qualified Codec.Compression.BZip        as BZip
@@ -86,6 +89,9 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 import qualified Data.List.NonEmpty            as NE
+import qualified Streamly.Prelude              as S
+import Control.DeepSeq (force)
+import GHC.IO (evaluate)
 
 
 -- $setup
@@ -96,14 +102,14 @@ import qualified Data.List.NonEmpty            as NE
 -- >>> import System.Directory
 -- >>> import URI.ByteString
 -- >>> import qualified Data.Text as T
--- >>> import GHCup.Utils.Prelude
+-- >>> import GHCup.Prelude
 -- >>> import GHCup.Download
 -- >>> import GHCup.Version
 -- >>> import GHCup.Errors
 -- >>> import GHCup.Types
 -- >>> import GHCup.Types.Optics
 -- >>> import Optics
--- >>> import GHCup.Utils.Version.QQ
+-- >>> import GHCup.Prelude.Version.QQ
 -- >>> import qualified Data.Text.Encoding as E
 -- >>> import Control.Monad.Reader
 -- >>> import Haskus.Utils.Variant.Excepts
@@ -277,14 +283,14 @@ rmPlainHLS = do
 ghcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => GHCTargetVersion -> m Bool
 ghcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
-  liftIO $ doesDirectoryExist ghcdir
+  liftIO $ doesDirectoryExist (fromGHCupPath ghcdir)
 
 
 -- | Whether the given GHC version is installed from source.
 ghcSrcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => GHCTargetVersion -> m Bool
 ghcSrcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
-  liftIO $ doesFileExist (ghcdir </> ghcUpSrcBuiltFile)
+  liftIO $ doesFileExist (fromGHCupPath ghcdir </> ghcUpSrcBuiltFile)
 
 
 -- | Whether the given GHC version is set as the current.
@@ -327,7 +333,7 @@ ghcSet mtarget = do
 getInstalledGHCs :: (MonadReader env m, HasDirs env, MonadIO m) => m [Either FilePath GHCTargetVersion]
 getInstalledGHCs = do
   ghcdir <- ghcupGHCBaseDir
-  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectory ghcdir
+  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectory (fromGHCupPath ghcdir)
   forM fs $ \f -> case parseGHCupGHCDir f of
     Right r -> pure $ Right r
     Left  _ -> pure $ Left f
@@ -430,7 +436,7 @@ getInstalledHLSs = do
         Nothing        -> pure $ Left f
 
   hlsdir <- ghcupHLSBaseDir
-  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectory hlsdir
+  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectory (fromGHCupPath hlsdir)
   new <- forM fs $ \f -> case parseGHCupHLSDir f of
     Right r -> pure $ Right r
     Left  _ -> pure $ Left f
@@ -515,7 +521,7 @@ hlsInstalled ver = do
 isLegacyHLS :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
 isLegacyHLS ver = do
   bdir <- ghcupHLSDir ver
-  not <$> liftIO (doesDirectoryExist bdir)
+  not <$> liftIO (doesDirectoryExist $ fromGHCupPath bdir)
 
 
 -- Return the currently set hls version, if any.
@@ -616,7 +622,7 @@ hlsInternalServerScripts :: (MonadReader env m, HasDirs env, MonadIO m, MonadThr
                           -> m [FilePath]
 hlsInternalServerScripts ver mghcVer = do
   dir <- ghcupHLSDir ver
-  let bdir = dir </> "bin"
+  let bdir = fromGHCupPath dir </> "bin"
   fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer)
     <$> liftIO (listDirectory bdir)
 
@@ -627,7 +633,7 @@ hlsInternalServerBinaries :: (MonadReader env m, HasDirs env, MonadIO m, MonadTh
                           -> Maybe Version   -- ^ optional GHC version
                           -> m [FilePath]
 hlsInternalServerBinaries ver mghcVer = do
-  dir <- ghcupHLSDir ver
+  dir <- fromGHCupPath <$> ghcupHLSDir ver
   let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString)
   (Just bdir) <- fmap headMay $ liftIO $ expandFilePath [Left (dir </> "lib"), Right regex, Left "bin"]
   fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer)
@@ -641,7 +647,7 @@ hlsInternalServerLibs :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow 
                       -> Version   -- ^ GHC version
                       -> m [FilePath]
 hlsInternalServerLibs ver ghcVer = do
-  dir <- ghcupHLSDir ver
+  dir <- fromGHCupPath <$> ghcupHLSDir ver
   let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString)
   (Just bdir) <- fmap headMay $ liftIO $ expandFilePath [Left (dir </> "lib"), Right regex, Left ("lib" </> T.unpack (prettyVer ghcVer))]
   fmap (bdir </>) <$> liftIO (listDirectory bdir)
@@ -845,21 +851,21 @@ getArchiveFiles av = do
 
 
 intoSubdir :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m, MonadCatch m)
-           => FilePath       -- ^ unpacked tar dir
+           => GHCupPath       -- ^ unpacked tar dir
            -> TarDir         -- ^ how to descend
-           -> Excepts '[TarDirDoesNotExist] m FilePath
+           -> Excepts '[TarDirDoesNotExist] m GHCupPath
 intoSubdir bdir tardir = case tardir of
   RealDir pr -> do
-    whenM (fmap not . liftIO . doesDirectoryExist $ (bdir </> pr))
+    whenM (fmap not . liftIO . doesDirectoryExist $ fromGHCupPath (bdir `appendGHCupPath` pr))
           (throwE $ TarDirDoesNotExist tardir)
-    pure (bdir </> pr)
+    pure (bdir `appendGHCupPath` pr)
   RegexDir r -> do
     let rs = split (`elem` pathSeparators) r
     foldlM
       (\y x ->
-        (handleIO (\_ -> pure []) . liftIO . findFiles y . regex $ x) >>= (\case
+        (handleIO (\_ -> pure []) . liftIO . findFiles (fromGHCupPath y) . regex $ x) >>= (\case
           []      -> throwE $ TarDirDoesNotExist tardir
-          (p : _) -> pure (y </> p)) . sort
+          (p : _) -> pure (y `appendGHCupPath` p)) . sort
       )
       bdir
       rs
@@ -905,7 +911,7 @@ ghcInternalBinDir :: (MonadReader env m, HasDirs env, MonadThrow m, MonadFail m,
                   => GHCTargetVersion
                   -> m FilePath
 ghcInternalBinDir ver = do
-  ghcdir <- ghcupGHCDir ver
+  ghcdir <- fromGHCupPath <$> ghcupGHCDir ver
   pure (ghcdir </> "bin")
 
 
@@ -1016,6 +1022,28 @@ applyPatch patch ddir = do
     !? PatchFailed
 
 
+applyAnyPatch :: ( MonadReader env m
+                 , HasDirs env
+                 , HasLog env
+                 , HasSettings env
+                 , MonadUnliftIO m
+                 , MonadCatch m
+                 , MonadResource m
+                 , MonadThrow m
+                 , MonadMask m
+                 , MonadIO m)
+              => Maybe (Either FilePath [URI])
+              -> FilePath
+              -> Excepts '[PatchFailed, DownloadFailed, DigestError, GPGError] m ()
+applyAnyPatch Nothing _                   = pure ()
+applyAnyPatch (Just (Left pdir)) workdir  = liftE $ applyPatches pdir workdir
+applyAnyPatch (Just (Right uris)) workdir = do
+  tmpUnpack <- fromGHCupPath <$> lift withGHCupTmpDir
+  forM_ uris $ \uri -> do
+    patch <- liftE $ download uri Nothing Nothing tmpUnpack Nothing False
+    liftE $ applyPatch patch workdir
+
+
 -- | https://gitlab.haskell.org/ghc/ghc/-/issues/17353
 darwinNotarization :: (MonadReader env m, HasDirs env, MonadIO m)
                    => Platform
@@ -1029,6 +1057,8 @@ darwinNotarization Darwin path = exec
 darwinNotarization _ _ = pure $ Right ()
 
 
+
+
 getChangeLog :: GHCupDownloads -> Tool -> Either Version Tag -> Maybe URI
 getChangeLog dls tool (Left v') =
   preview (ix tool % ix v' % viChangeLog % _Just) dls
@@ -1039,7 +1069,6 @@ getChangeLog dls tool (Right tag) =
 -- | Execute a build action while potentially cleaning up:
 --
 --   1. the build directory, depending on the KeepDirs setting
---   2. the install destination, depending on whether the build failed
 runBuildAction :: ( MonadReader env m
                   , HasDirs env
                   , HasSettings env
@@ -1050,15 +1079,12 @@ runBuildAction :: ( MonadReader env m
                   , MonadFail m
                   , MonadCatch m
                   )
-               => FilePath        -- ^ build directory (cleaned up depending on Settings)
-               -> Maybe FilePath  -- ^ dir to *always* clean up on exception
+               => GHCupPath        -- ^ build directory (cleaned up depending on Settings)
                -> Excepts e m a
                -> Excepts e m a
-runBuildAction bdir instdir action = do
+runBuildAction bdir action = do
   Settings {..} <- lift getSettings
   let exAction = do
-        forM_ instdir $ \dir ->
-          hideError doesNotExistErrorType $ recyclePathForcibly dir
         when (keepDirs == Never)
           $ rmBDir bdir
   v <-
@@ -1080,7 +1106,7 @@ cleanUpOnError :: ( MonadReader env m
                   , MonadFail m
                   , MonadCatch m
                   )
-               => FilePath        -- ^ build directory (cleaned up depending on Settings)
+               => GHCupPath        -- ^ build directory (cleaned up depending on Settings)
                -> Excepts e m a
                -> Excepts e m a
 cleanUpOnError bdir action = do
@@ -1089,13 +1115,33 @@ cleanUpOnError bdir action = do
   flip onException (lift exAction) $ onE_ exAction action
 
 
+-- | Clean up the given directory if the action fails,
+-- depending on the Settings.
+cleanFinally :: ( MonadReader env m
+                  , HasDirs env
+                  , HasSettings env
+                  , MonadIO m
+                  , MonadMask m
+                  , HasLog env
+                  , MonadUnliftIO m
+                  , MonadFail m
+                  , MonadCatch m
+                  )
+               => GHCupPath        -- ^ build directory (cleaned up depending on Settings)
+               -> Excepts e m a
+               -> Excepts e m a
+cleanFinally bdir action = do
+  Settings {..} <- lift getSettings
+  let exAction = when (keepDirs == Never) $ rmBDir bdir
+  flip finally (lift exAction) $ onE_ exAction action
+
 
 -- | Remove a build directory, ignoring if it doesn't exist and gracefully
 -- printing other errors without crashing.
-rmBDir :: (MonadReader env m, HasLog env, MonadUnliftIO m, MonadIO m) => FilePath -> m ()
+rmBDir :: (MonadReader env m, HasLog env, MonadUnliftIO m, MonadIO m) => GHCupPath -> m ()
 rmBDir dir = withRunInIO (\run -> run $
            liftIO $ handleIO (\e -> run $ logWarn $
-               "Couldn't remove build dir " <> T.pack dir <> ", error was: " <> T.pack (displayException e))
+               "Couldn't remove build dir " <> T.pack (fromGHCupPath dir) <> ", error was: " <> T.pack (displayException e))
            $ hideError doesNotExistErrorType
            $ rmPathForcibly dir)
 
@@ -1111,97 +1157,6 @@ getVersionInfo v' tool =
     % to Map.elems
     % _head
     )
-
-
--- | The file extension for executables.
-exeExt :: String
-exeExt
-  | isWindows = ".exe"
-  | otherwise = ""
-
--- | The file extension for executables.
-exeExt' :: ByteString
-exeExt'
-  | isWindows = ".exe"
-  | otherwise = ""
-
-
-
-
--- | On unix, we can use symlinks, so we just get the
--- symbolic link target.
---
--- On windows, we have to emulate symlinks via shims,
--- see 'createLink'.
-getLinkTarget :: FilePath -> IO FilePath
-getLinkTarget fp
-  | isWindows = do
-      content <- readFile (dropExtension fp <.> "shim")
-      [p] <- pure . filter ("path = " `isPrefixOf`) . lines $ content
-      pure $ stripNewline $ dropPrefix "path = " p
-  | otherwise = getSymbolicLinkTarget fp
-
-
--- | Checks whether the path is a link.
-pathIsLink :: FilePath -> IO Bool
-pathIsLink fp
-  | isWindows = doesPathExist (dropExtension fp <.> "shim")
-  | otherwise = pathIsSymbolicLink fp
-
-
-rmLink :: (MonadReader env m, HasDirs env, MonadIO m, MonadMask m) => FilePath -> m ()
-rmLink fp
-  | isWindows = do
-      hideError doesNotExistErrorType . recycleFile $ fp
-      hideError doesNotExistErrorType . recycleFile $ (dropExtension fp <.> "shim")
-  | otherwise = hideError doesNotExistErrorType . recycleFile $ fp
-
-
--- | Creates a symbolic link on unix and a fake symlink on windows for
--- executables, which:
---     1. is a shim exe
---     2. has a corresponding .shim file in the same directory that
---        contains the target
---
--- This overwrites previously existing files.
---
--- On windows, this requires that 'ensureGlobalTools' was run beforehand.
-createLink :: ( MonadMask m
-              , MonadThrow m
-              , HasLog env
-              , MonadIO m
-              , MonadReader env m
-              , HasDirs env
-              , MonadUnliftIO m
-              , MonadFail m
-              )
-           => FilePath      -- ^ path to the target executable
-           -> FilePath      -- ^ path to be created
-           -> m ()
-createLink link exe
-  | isWindows = do
-      dirs <- getDirs
-      let shimGen = cacheDir dirs </> "gs.exe"
-
-      let shim = dropExtension exe <.> "shim"
-          -- For hardlinks, link needs to be absolute.
-          -- If link is relative, it's relative to the target exe.
-          -- Note that (</>) drops lhs when rhs is absolute.
-          fullLink = takeDirectory exe </> link
-          shimContents = "path = " <> fullLink
-
-      logDebug $ "rm -f " <> T.pack exe
-      rmLink exe
-
-      logDebug $ "ln -s " <> T.pack fullLink <> " " <> T.pack exe
-      liftIO $ copyFile shimGen exe
-      liftIO $ writeFile shim shimContents
-  | otherwise = do
-      logDebug $ "rm -f " <> T.pack exe
-      hideError doesNotExistErrorType $ recycleFile exe
-
-      logDebug $ "ln -s " <> T.pack link <> " " <> T.pack exe
-      liftIO $ createFileLink link exe
 
 
 ensureGlobalTools :: ( MonadMask m
@@ -1225,8 +1180,8 @@ ensureGlobalTools
       let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
       void $ (\DigestError{} -> do
           lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
-          lift $ logDebug ("rm -f " <> T.pack (cacheDir dirs </> "gs.exe"))
-          lift $ hideError doesNotExistErrorType $ recycleFile (cacheDir dirs </> "gs.exe")
+          lift $ logDebug ("rm -f " <> T.pack (fromGHCupPath (cacheDir dirs) </> "gs.exe"))
+          lift $ hideError doesNotExistErrorType $ recycleFile (fromGHCupPath (cacheDir dirs) </> "gs.exe")
           liftE @'[GPGError, DigestError , DownloadFailed] $ dl
         ) `catchE` liftE @'[GPGError, DigestError , DownloadFailed] dl
   | otherwise = pure ()
@@ -1234,14 +1189,17 @@ ensureGlobalTools
 
 -- | Ensure ghcup directory structure exists.
 ensureDirectories :: Dirs -> IO ()
-ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir) = do
-  createDirRecursive' baseDir
-  createDirRecursive' (baseDir </> "ghc")
+ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir dbDir tmpDir) = do
+  createDirRecursive' (fromGHCupPath baseDir)
+  createDirRecursive' (fromGHCupPath baseDir </> "ghc")
+  createDirRecursive' (fromGHCupPath baseDir </> "hls")
   createDirRecursive' binDir
-  createDirRecursive' cacheDir
-  createDirRecursive' logsDir
-  createDirRecursive' confDir
-  createDirRecursive' trashDir
+  createDirRecursive' (fromGHCupPath cacheDir)
+  createDirRecursive' (fromGHCupPath logsDir)
+  createDirRecursive' (fromGHCupPath confDir)
+  createDirRecursive' (fromGHCupPath trashDir)
+  createDirRecursive' (fromGHCupPath dbDir)
+  createDirRecursive' (fromGHCupPath tmpDir)
   pure ()
 
 
@@ -1264,11 +1222,56 @@ ghcBinaryName (GHCTargetVersion Nothing  _) = T.unpack ("ghc" <> T.pack exeExt)
 --   3. if it exists and is non-empty -> panic and leave the house
 installDestSanityCheck :: ( MonadIO m
                           , MonadCatch m
+                          , MonadMask m
                           ) =>
                           InstallDirResolved ->
                           Excepts '[DirNotEmpty] m ()
 installDestSanityCheck (IsolateDirResolved isoDir) = do
   hideErrorDef [doesNotExistErrorType] () $ do
-    contents <- liftIO $ getDirectoryContentsRecursive isoDir
-    unless (null contents) (throwE $ DirNotEmpty isoDir)
+    empty' <- liftIO $ S.null $ getDirectoryContentsRecursiveUnsafe isoDir
+    when (not empty') (throwE $ DirNotEmpty isoDir)
 installDestSanityCheck _ = pure ()
+
+
+-- | Returns 'Nothing' for legacy installs.
+getInstalledFiles :: ( MonadIO m
+                     , MonadCatch m
+                     , MonadReader env m
+                     , HasDirs env
+                     , MonadFail m
+                     )
+                  => Tool
+                  -> GHCTargetVersion
+                  -> m (Maybe [FilePath])
+getInstalledFiles t v' = hideErrorDef [doesNotExistErrorType] Nothing $ do
+  f <- recordedInstallationFile t v'
+  (force -> !c) <- liftIO
+    (readFile f >>= evaluate)
+  pure (Just $ lines c)
+
+
+-- | Warn if the installed and set HLS is not compatible with the installed and
+-- set GHC version.
+warnAboutHlsCompatibility :: ( MonadReader env m
+                             , HasDirs env
+                             , HasLog env
+                             , MonadThrow m
+                             , MonadCatch m
+                             , MonadIO m
+                             )
+                          => m ()
+warnAboutHlsCompatibility = do
+  supportedGHC <- hlsGHCVersions
+  currentGHC   <- fmap _tvVersion <$> ghcSet Nothing
+  currentHLS   <- hlsSet
+
+  case (currentGHC, currentHLS) of
+    (Just gv, Just hv) | gv `notElem` supportedGHC -> do
+      logWarn $
+        "GHC " <> T.pack (prettyShow gv) <> " is not compatible with " <>
+        "Haskell Language Server " <> T.pack (prettyShow hv) <> "." <> "\n" <>
+        "Haskell IDE support may not work until this is fixed." <> "\n" <>
+        "Install a different HLS version, or install and set one of the following GHCs:" <> "\n" <>
+        T.pack (prettyShow supportedGHC)
+
+    _ -> return ()

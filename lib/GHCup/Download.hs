@@ -34,9 +34,10 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
-import           GHCup.Utils.File
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Prelude
+import           GHCup.Prelude
+import           GHCup.Prelude.File
+import           GHCup.Prelude.Logger.Internal
+import           GHCup.Prelude.Process
 import           GHCup.Version
 
 import           Control.Applicative
@@ -69,7 +70,6 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           Safe
-import           System.Directory
 import           System.Environment
 import           System.Exit
 import           System.FilePath
@@ -145,7 +145,7 @@ getDownloadsF = do
 yamlFromCache :: (MonadReader env m, HasDirs env) => URI -> m FilePath
 yamlFromCache uri = do
   Dirs{..} <- getDirs
-  pure (cacheDir </> (T.unpack . decUTF8Safe . urlBaseName . view pathL' $ uri))
+  pure (fromGHCupPath cacheDir </> (T.unpack . decUTF8Safe . urlBaseName . view pathL' $ uri))
 
 
 etagsFile :: FilePath -> FilePath
@@ -242,7 +242,7 @@ getBase uri = do
     Settings { metaCache } <- lift getSettings
 
        -- for local files, let's short-circuit and ignore access time
-    if | scheme == "file" -> liftE $ download uri' Nothing Nothing cacheDir Nothing True
+    if | scheme == "file" -> liftE $ download uri' Nothing Nothing (fromGHCupPath cacheDir) Nothing True
        | e -> do
           accessTime <- fmap utcTimeToPOSIXSeconds $ liftIO $ getAccessTime json_file
           let sinceLastAccess = utcTimeToPOSIXSeconds currentTime - accessTime
@@ -581,7 +581,7 @@ downloadCached dli mfn = do
     True -> downloadCached' dli mfn Nothing
     False -> do
       tmp <- lift withGHCupTmpDir
-      liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) tmp mfn False
+      liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (fromGHCupPath tmp) mfn False
 
 
 downloadCached' :: ( MonadReader env m
@@ -599,7 +599,7 @@ downloadCached' :: ( MonadReader env m
                 -> Excepts '[DigestError , DownloadFailed, GPGError] m FilePath
 downloadCached' dli mfn mDestDir = do
   Dirs { cacheDir } <- lift getDirs
-  let destDir = fromMaybe cacheDir mDestDir
+  let destDir = fromMaybe (fromGHCupPath cacheDir) mDestDir
   let fn = fromMaybe ((T.unpack . decUTF8Safe) $ urlBaseName $ view (dlUri % pathL') dli) mfn
   let cachfile = destDir </> fn
   fileExists <- liftIO $ doesFileExist cachfile

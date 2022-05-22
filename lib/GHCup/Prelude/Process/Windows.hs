@@ -1,24 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE DataKinds  #-}
 
 {-|
-Module      : GHCup.Utils.File.Windows
-Description : File and windows APIs
+Module      : GHCup.Utils.Process.Windows
+Description : Process handling for windows
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0
 Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : Windows
-
-This module handles file and executable handling.
-Some of these functions use sophisticated logging.
 -}
-module GHCup.Utils.File.Windows where
+module GHCup.Prelude.Process.Windows where
 
-import {-# SOURCE #-} GHCup.Utils ( getLinkTarget, pathIsLink )
 import           GHCup.Utils.Dirs
-import           GHCup.Utils.File.Common
-import           GHCup.Utils.Logger
+import           GHCup.Prelude.File.Search
+import           GHCup.Prelude.Logger.Internal
 import           GHCup.Types
 import           GHCup.Types.Optics
 
@@ -31,17 +28,17 @@ import           Data.List
 import           Foreign.C.Error
 import           GHC.IO.Exception
 import           GHC.IO.Handle
-import           System.Directory
 import           System.Environment
 import           System.FilePath
 import           System.IO
 import           System.Process
- 
+
 import qualified Control.Exception             as EX
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
+
 
 
 
@@ -164,8 +161,8 @@ execLogged :: ( MonadReader env m
 execLogged exe args chdir lfile env = do
   Dirs {..} <- getDirs
   logDebug $ T.pack $ "Running " <> exe <> " with arguments " <> show args
-  let stdoutLogfile = logsDir </> lfile <> ".stdout.log"
-      stderrLogfile = logsDir </> lfile <> ".stderr.log"
+  let stdoutLogfile = fromGHCupPath logsDir </> lfile <> ".stdout.log"
+      stderrLogfile = fromGHCupPath logsDir </> lfile <> ".stderr.log"
   cp <- createProcessWithMingwPath ((proc exe args)
     { cwd = chdir
     , env = env
@@ -199,7 +196,7 @@ execLogged exe args chdir lfile env = do
             -- subprocess stdout also goes to stderr for logging
             void $ BS.hPut stderr some
             go
-        
+
 
 -- | Thin wrapper around `executeFile`.
 exec :: MonadIO m
@@ -228,12 +225,6 @@ execShell exe args chdir env = do
   pure $ toProcessError cmd [] exit_code
 
 
-chmod_755 :: MonadIO m => FilePath -> m ()
-chmod_755 fp =
-  let perm = setOwnerWritable True emptyPermissions
-  in liftIO $ setPermissions fp perm
-
-
 createProcessWithMingwPath :: MonadIO m
                           => CreateProcess
                           -> m CreateProcess
@@ -256,16 +247,5 @@ ghcupMsys2Dir =
     Just fp -> pure fp
     Nothing -> do
       baseDir <- liftIO ghcupBaseDir
-      pure (baseDir </> "msys64")
+      pure (fromGHCupPath baseDir </> "msys64")
 
--- | Checks whether the binary is a broken link.
-isBrokenSymlink :: FilePath -> IO Bool
-isBrokenSymlink fp = do
-  b <- pathIsLink fp
-  if b
-  then do
-    tfp <- getLinkTarget fp
-    not <$> doesPathExist
-      -- this drops 'symDir' if 'tfp' is absolute
-      (takeDirectory fp </> tfp)
-  else pure False
