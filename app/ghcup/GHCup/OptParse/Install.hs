@@ -358,13 +358,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
                   runLogger $ logInfo msg
                 pure ExitSuccess
 
-              VLeft (V (AlreadyInstalled _ v)) -> do
-                runLogger $ logWarn $
-                  "GHC ver " <> prettyVer v <> " already installed, remove it first to reinstall"
+              VLeft e@(V (AlreadyInstalled _ _)) -> do
+                runLogger $ logWarn $ T.pack $ prettyShow e
                 pure ExitSuccess
-              VLeft (V (AlreadyInstalled _ v)) -> do
-                runLogger $ logWarn $
-                  "GHC ver " <> prettyVer v <> " already installed, remove it first to reinstall"
+              VLeft e@(V (AlreadyInstalled _ _)) -> do
+                runLogger $ logWarn $ T.pack $ prettyShow e
                 pure ExitSuccess
 
               VLeft (V (DirNotEmpty fp)) -> do
@@ -427,17 +425,15 @@ install installCommand settings getAppState' runLogger = case installCommand of
               forM_ (_viPostInstall =<< vi) $ \msg ->
                 runLogger $ logInfo msg
               pure ExitSuccess
-            VLeft (V (AlreadyInstalled _ v)) -> do
-              runLogger $ logWarn $
-                "Cabal ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install cabal --force " <> prettyVer v <> "'"
+            VLeft e@(V (AlreadyInstalled _ _)) -> do
+              runLogger $ logWarn $ T.pack $ prettyShow e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install cabal --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
-            VLeft (V (AlreadyInstalled _ v)) -> do
-              runLogger $ logWarn $
-                "Cabal ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install cabal --force " <> prettyVer v <> "'"
+            VLeft e@(V (AlreadyInstalled _ _)) -> do
+              runLogger $ logWarn $ T.pack $ prettyShow e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
@@ -479,25 +475,15 @@ install installCommand settings getAppState' runLogger = case installCommand of
               forM_ (_viPostInstall =<< vi) $ \msg ->
                 runLogger $ logInfo msg
               pure ExitSuccess
-            VLeft (V (AlreadyInstalled _ v)) -> do
-              runLogger $ logWarn $
-                  "HLS ver "
-                <> prettyVer v
-                <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install hls --force "
-                <> prettyVer v
-                <> "'"
+            VLeft e@(V (AlreadyInstalled _ _)) -> do
+              runLogger $ logWarn $ T.pack $ prettyShow e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install hls --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
-            VLeft (V (AlreadyInstalled _ v)) -> do
-              runLogger $ logWarn $
-                  "HLS ver "
-                <> prettyVer v
-                <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install hls --force "
-                <> prettyVer v
-                <> "'"
+            VLeft e@(V (AlreadyInstalled _ _)) -> do
+              runLogger $ logWarn $ T.pack $ prettyShow e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
@@ -538,17 +524,15 @@ install installCommand settings getAppState' runLogger = case installCommand of
               forM_ (_viPostInstall =<< vi) $ \msg ->
                 runLogger $ logInfo msg
               pure ExitSuccess
-            VLeft (V (AlreadyInstalled _ v)) -> do
-              runLogger $ logWarn $
-                "Stack ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install stack --force " <> prettyVer v <> "'"
+            VLeft e@(V (AlreadyInstalled _ _)) -> do
+              runLogger $ logWarn $ T.pack $ prettyShow e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install stack --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
-            VLeft (V (AlreadyInstalled _ v)) -> do
-              runLogger $ logWarn $
-                "Stack ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install stack --force " <> prettyVer v <> "'"
+            VLeft e@(V (AlreadyInstalled _ _)) -> do
+              runLogger $ logWarn $ T.pack $ prettyShow e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $

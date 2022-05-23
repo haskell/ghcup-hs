@@ -137,7 +137,9 @@ data AlreadyInstalled = AlreadyInstalled Tool Version
 
 instance Pretty AlreadyInstalled where
   pPrint (AlreadyInstalled tool ver') =
-    pPrint tool <+> text "-" <+> pPrint ver' <+> text "is already installed"
+    pPrint tool <+> text "-" <+> pPrint ver' <+> text "is already installed;"
+    <+> text "if you really want to reinstall it, you may want to run 'ghcup install cabal --force" <+> (pPrint ver' <> text "'")
+
 
 -- | The Directory is supposed to be empty, but wasn't.
 data DirNotEmpty = DirNotEmpty {path :: FilePath}
