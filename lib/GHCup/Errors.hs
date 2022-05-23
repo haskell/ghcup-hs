@@ -308,19 +308,21 @@ instance Pretty HadrianNotFound where
   pPrint HadrianNotFound =
     text "Could not find Hadrian build files. Does this GHC version support Hadrian builds?"
 
-data GHCupShadowed = GHCupShadowed
+data ToolShadowed = ToolShadowed
+                       Tool
                        FilePath  -- shadow binary
                        FilePath  -- upgraded binary
                        Version   -- upgraded version
   deriving Show
 
-instance Pretty GHCupShadowed where
-  pPrint (GHCupShadowed sh up _) =
-    text ("ghcup is shadowed by "
+instance Pretty ToolShadowed where
+  pPrint (ToolShadowed tool sh up _) =
+    text (prettyShow tool
+         <> " is shadowed by "
          <> sh
-         <> ". The upgrade will not be in effect, unless you remove "
+         <> ".\nThe upgrade will not be in effect, unless you remove "
          <> sh
-         <> " or make sure "
+         <> "\nor make sure "
          <> takeDirectory up
          <> " comes before "
          <> takeDirectory sh

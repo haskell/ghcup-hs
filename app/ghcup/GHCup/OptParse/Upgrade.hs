@@ -94,7 +94,7 @@ type UpgradeEffects = '[ DigestError
                        , FileDoesNotExistError
                        , CopyError
                        , DownloadFailed
-                       , GHCupShadowed
+                       , ToolShadowed
                        ]
 
 

@@ -437,7 +437,7 @@ install' _ (_, ListResult {..}) = do
               , TarDirDoesNotExist
               , FileAlreadyExistsError
               , ProcessError
-              , GHCupShadowed
+              , ToolShadowed
               , UninstallFailed
               , MergeFileTreeError
               ]

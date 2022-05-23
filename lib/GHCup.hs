@@ -77,6 +77,7 @@ import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
 import qualified Streamly.Prelude              as S
+import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
 
@@ -291,7 +292,7 @@ upgradeGHCup :: ( MonadMask m
                    , DownloadFailed
                    , NoDownload
                    , NoUpdate
-                   , GHCupShadowed
+                   , ToolShadowed
                    ]
                   m
                   Version
@@ -322,17 +323,9 @@ upgradeGHCup mtarget force' fatal = do
   liftIO (isShadowed destFile) >>= \case
     Nothing -> pure ()
     Just pa
-      | fatal -> throwE (GHCupShadowed pa destFile latestVer)
+      | fatal -> throwE (ToolShadowed GHCup pa destFile latestVer)
       | otherwise ->
-        lift $ logWarn $ "ghcup is shadowed by "
-          <> T.pack pa
-          <> ". The upgrade will not be in effect, unless you remove "
-          <> T.pack pa
-          <> " or make sure "
-          <> T.pack destDir
-          <> " comes before "
-          <> T.pack (takeDirectory pa)
-          <> " in PATH."
+        lift $ logWarn $ T.pack $ prettyShow (ToolShadowed GHCup pa destFile latestVer)
 
   pure latestVer
 

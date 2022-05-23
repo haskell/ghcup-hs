@@ -50,6 +50,7 @@ import           System.FilePath
 import           System.IO.Error
 
 import qualified Data.Text                     as T
+import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
 
@@ -229,6 +230,10 @@ setCabal ver = do
   -- create link
   let destL = targetFile
   lift $ createLink destL cabalbin
+
+  liftIO (isShadowed cabalbin) >>= \case
+    Nothing -> pure ()
+    Just pa -> lift $ logWarn $ T.pack $ prettyShow (ToolShadowed Cabal pa cabalbin ver)
 
   pure ()
 

@@ -50,6 +50,7 @@ import           System.FilePath
 import           System.IO.Error
 
 import qualified Data.Text                     as T
+import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
 
@@ -228,6 +229,10 @@ setStack ver = do
   let stackbin = binDir </> "stack" <> exeExt
 
   lift $ createLink targetFile stackbin
+
+  liftIO (isShadowed stackbin) >>= \case
+    Nothing -> pure ()
+    Just pa -> lift $ logWarn $ T.pack $ prettyShow (ToolShadowed Cabal pa stackbin ver)
 
   pure ()
 

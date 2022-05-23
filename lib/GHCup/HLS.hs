@@ -68,6 +68,7 @@ import qualified Data.List.NonEmpty            as NE
 import qualified Data.ByteString               as B
 import qualified Data.Text                     as T
 import qualified Text.Megaparsec               as MP
+import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
 
@@ -548,6 +549,10 @@ setHLS ver shls mBinDir = do
 
       when (isNothing mBinDir) $
         lift warnAboutHlsCompatibility
+
+      liftIO (isShadowed wrapper) >>= \case
+        Nothing -> pure ()
+        Just pa -> lift $ logWarn $ T.pack $ prettyShow (ToolShadowed HLS pa wrapper ver)
 
 
 unsetHLS :: ( MonadMask m

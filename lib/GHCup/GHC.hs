@@ -442,6 +442,11 @@ setGHC ver sghc mBinDir = do
       destL <- binarySymLinkDestination binDir fileWithExt
       lift $ createLink destL fullF
 
+      when (targetFile == "ghc") $
+        liftIO (isShadowed fullF) >>= \case
+          Nothing -> pure ()
+          Just pa -> lift $ logWarn $ T.pack $ prettyShow (ToolShadowed GHC pa fullF (_tvVersion ver))
+
   when (isNothing mBinDir) $ do
     -- create symlink for share dir
     when (isNothing . _tvTarget $ ver) $ lift $ symlinkShareDir (fromGHCupPath ghcdir) verS
