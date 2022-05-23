@@ -7,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ViewPatterns      #-}
+{-# LANGUAGE TypeOperators     #-}
 
 module GHCup.OptParse.Install where
 
@@ -19,6 +20,7 @@ import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils.Dirs
+import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 
@@ -260,51 +262,7 @@ type InstallEffects = '[ AlreadyInstalled
                        , ProcessError
                        , UninstallFailed
                        , MergeFileTreeError
-
-                       , (AlreadyInstalled, ())
-                       , (UnknownArchive, ())
-                       , (ArchiveResult, ())
-                       , (FileDoesNotExistError, ())
-                       , (CopyError, ())
-                       , (NotInstalled, ())
-                       , (UninstallFailed, ())
-                       , (MergeFileTreeError, ())
-                       , (DirNotEmpty, ())
-                       , (NoDownload, ())
-                       , (BuildFailed, ())
-                       , (TagNotFound, ())
-                       , (DigestError, ())
-                       , (GPGError, ())
-                       , (DownloadFailed, ())
-                       , (TarDirDoesNotExist, ())
-                       , (NextVerNotFound, ())
-                       , (NoToolVersionSet, ())
-                       , (FileAlreadyExistsError, ())
-                       , (ProcessError, ())
-
-                       , (AlreadyInstalled, NotInstalled)
-                       , (UnknownArchive, NotInstalled)
-                       , (ArchiveResult, NotInstalled)
-                       , (FileDoesNotExistError, NotInstalled)
-                       , (CopyError, NotInstalled)
-                       , (NotInstalled, NotInstalled)
-                       , (DirNotEmpty, NotInstalled)
-                       , (NoDownload, NotInstalled)
-                       , (NotInstalled, NotInstalled)
-                       , (UninstallFailed, NotInstalled)
-                       , (MergeFileTreeError, NotInstalled)
-                       , (BuildFailed, NotInstalled)
-                       , (TagNotFound, NotInstalled)
-                       , (DigestError, NotInstalled)
-                       , (GPGError, NotInstalled)
-                       , (DownloadFailed, NotInstalled)
-                       , (TarDirDoesNotExist, NotInstalled)
-                       , (NextVerNotFound, NotInstalled)
-                       , (NoToolVersionSet, NotInstalled)
-                       , (FileAlreadyExistsError, NotInstalled)
-                       , (ProcessError, NotInstalled)
-
-                       , ((), NotInstalled)
+                       , InstallSetError
                        ]
 
 
@@ -319,58 +277,27 @@ runInstTool appstate' mInstPlatform =
     @InstallEffects
 
 
-type InstallGHCEffects = '[ TagNotFound
-                          , NextVerNotFound
-                          , NoToolVersionSet
+type InstallGHCEffects = '[ AlreadyInstalled
+                          , ArchiveResult
                           , BuildFailed
+                          , CopyError
+                          , DigestError
                           , DirNotEmpty
-                          , AlreadyInstalled
-                          , UninstallFailed
+                          , DownloadFailed
+                          , FileAlreadyExistsError
+                          , FileDoesNotExistError
+                          , GPGError
                           , MergeFileTreeError
-
-                          , (AlreadyInstalled, NotInstalled)
-                          , (UnknownArchive, NotInstalled)
-                          , (ArchiveResult, NotInstalled)
-                          , (FileDoesNotExistError, NotInstalled)
-                          , (CopyError, NotInstalled)
-                          , (NotInstalled, NotInstalled)
-                          , (DirNotEmpty, NotInstalled)
-                          , (NoDownload, NotInstalled)
-                          , (UninstallFailed, NotInstalled)
-                          , (MergeFileTreeError, NotInstalled)
-                          , (BuildFailed, NotInstalled)
-                          , (TagNotFound, NotInstalled)
-                          , (DigestError, NotInstalled)
-                          , (GPGError, NotInstalled)
-                          , (DownloadFailed, NotInstalled)
-                          , (TarDirDoesNotExist, NotInstalled)
-                          , (NextVerNotFound, NotInstalled)
-                          , (NoToolVersionSet, NotInstalled)
-                          , (FileAlreadyExistsError, NotInstalled)
-                          , (ProcessError, NotInstalled)
-
-                          , (AlreadyInstalled, ())
-                          , (UnknownArchive, ())
-                          , (ArchiveResult, ())
-                          , (FileDoesNotExistError, ())
-                          , (CopyError, ())
-                          , (NotInstalled, ())
-                          , (DirNotEmpty, ())
-                          , (NoDownload, ())
-                          , (UninstallFailed, ())
-                          , (MergeFileTreeError, ())
-                          , (BuildFailed, ())
-                          , (TagNotFound, ())
-                          , (DigestError, ())
-                          , (GPGError, ())
-                          , (DownloadFailed, ())
-                          , (TarDirDoesNotExist, ())
-                          , (NextVerNotFound, ())
-                          , (NoToolVersionSet, ())
-                          , (FileAlreadyExistsError, ())
-                          , (ProcessError, ())
-
-                          , ((), NotInstalled)
+                          , NextVerNotFound
+                          , NoDownload
+                          , NoToolVersionSet
+                          , NotInstalled
+                          , ProcessError
+                          , TagNotFound
+                          , TarDirDoesNotExist
+                          , UninstallFailed
+                          , UnknownArchive
+                          , InstallSetError
                           ]
 
 runInstGHC :: AppState
@@ -405,23 +332,23 @@ install installCommand settings getAppState' runLogger = case installCommand of
     (case instBindist of
        Nothing -> runInstGHC s' instPlatform $ do
          (v, vi) <- liftE $ fromVersion instVer GHC
-         void $ liftE $ sequenceE (installGHCBin
+         liftE $ runBothE' (installGHCBin
                      (_tvVersion v)
                      (maybe GHCupInternal IsolateDir isolateDir)
                      forceInstall
                    )
-                   $ when instSet $ when (isNothing isolateDir) $ void $ setGHC v SetGHCOnly Nothing
+                   $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setGHC v SetGHCOnly Nothing
          pure vi
        Just uri -> do
          runInstGHC s'{ settings = settings {noVerify = True}} instPlatform $ do
            (v, vi) <- liftE $ fromVersion instVer GHC
-           void $ liftE $ sequenceE (installGHCBindist
+           liftE $ runBothE' (installGHCBindist
                        (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
                        (_tvVersion v)
                        (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
                      )
-                     $ when instSet $ when (isNothing isolateDir) $ void $ setGHC v SetGHCOnly Nothing
+                     $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setGHC v SetGHCOnly Nothing
            pure vi
       )
         >>= \case
@@ -431,7 +358,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                   runLogger $ logInfo msg
                 pure ExitSuccess
 
-              VLeft (V (AlreadyInstalled _ v, ())) -> do
+              VLeft (V (AlreadyInstalled _ v)) -> do
                 runLogger $ logWarn $
                   "GHC ver " <> prettyVer v <> " already installed, remove it first to reinstall"
                 pure ExitSuccess
@@ -444,7 +371,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 runLogger $ logError $
                   "Install directory " <> T.pack fp <> " is not empty."
                 pure $ ExitFailure 3
-              VLeft (V (DirNotEmpty fp, ())) -> do
+              VLeft (V (DirNotEmpty fp)) -> do
                 runLogger $ logError $
                   "Install directory " <> T.pack fp <> " is not empty."
                 pure $ ExitFailure 3
@@ -456,7 +383,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                     "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
                     "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 3
-              VLeft err@(V (BuildFailed tmpdir _, ())) -> do
+              VLeft err@(V (BuildFailed tmpdir _)) -> do
                 case keepDirs settings of
                   Never -> runLogger (logError $ T.pack $ prettyShow err)
                   _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
@@ -477,21 +404,21 @@ install installCommand settings getAppState' runLogger = case installCommand of
     (case instBindist of
        Nothing -> runInstTool s' instPlatform $ do
          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
-         void $ liftE $ sequenceE (installCabalBin
+         liftE $ runBothE' (installCabalBin
                                     v
                                     (maybe GHCupInternal IsolateDir isolateDir)
                                     forceInstall
-                                  ) $ when instSet $ when (isNothing isolateDir) $ void $ setCabal v
+                                  ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setCabal v
          pure vi
        Just uri -> do
          runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
-           void $ liftE $ sequenceE (installCabalBindist
+           liftE $ runBothE' (installCabalBindist
                                       (DownloadInfo uri Nothing "")
                                       v
                                       (maybe GHCupInternal IsolateDir isolateDir)
                                       forceInstall
-                                    ) $ when instSet $ when (isNothing isolateDir) $ void $ setCabal v
+                                    ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setCabal v
            pure vi
       )
       >>= \case
@@ -508,11 +435,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install cabal --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
-            VLeft (V (AlreadyInstalled _ v, ())) -> do
+            VLeft (V (AlreadyInstalled _ v)) -> do
               runLogger $ logWarn $
                 "Cabal ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install cabal --force " <> prettyVer v <> "'"
               pure ExitSuccess
-            VLeft (V (FileAlreadyExistsError fp, ())) -> do
+            VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install cabal --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
@@ -528,22 +455,22 @@ install installCommand settings getAppState' runLogger = case installCommand of
      (case instBindist of
        Nothing -> runInstTool s' instPlatform $ do
          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
-         void $ liftE $ sequenceE (installHLSBin
+         liftE $ runBothE' (installHLSBin
                                     v
                                     (maybe GHCupInternal IsolateDir isolateDir)
                                     forceInstall
-                                  ) $ when instSet $ when (isNothing isolateDir) $ void $ setHLS v SetHLSOnly Nothing
+                                  ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setHLS v SetHLSOnly Nothing
          pure vi
        Just uri -> do
          runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
            -- TODO: support legacy
-           void $ liftE $ sequenceE (installHLSBindist
+           liftE $ runBothE' (installHLSBindist
                                       (DownloadInfo uri (Just $ RegexDir "haskell-language-server-*") "")
                                       v
                                       (maybe GHCupInternal IsolateDir isolateDir)
                                       forceInstall
-                                    ) $ when instSet $ when (isNothing isolateDir) $ void $ setHLS v SetHLSOnly Nothing
+                                    ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setHLS v SetHLSOnly Nothing
            pure vi
       )
       >>= \case
@@ -564,7 +491,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install hls --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
-            VLeft (V (AlreadyInstalled _ v, ())) -> do
+            VLeft (V (AlreadyInstalled _ v)) -> do
               runLogger $ logWarn $
                   "HLS ver "
                 <> prettyVer v
@@ -572,7 +499,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 <> prettyVer v
                 <> "'"
               pure ExitSuccess
-            VLeft (V (FileAlreadyExistsError fp, ())) -> do
+            VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install hls --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
@@ -588,21 +515,21 @@ install installCommand settings getAppState' runLogger = case installCommand of
      (case instBindist of
         Nothing -> runInstTool s' instPlatform $ do
           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
-          void $ liftE $ sequenceE (installStackBin
+          liftE $ runBothE' (installStackBin
                                      v
                                      (maybe GHCupInternal IsolateDir isolateDir)
                                      forceInstall
-                                   ) $ when instSet $ when (isNothing isolateDir) $ void $ setStack v
+                                   ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setStack v
           pure vi
         Just uri -> do
           runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
             (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
-            void $ liftE $ sequenceE (installStackBindist
+            liftE $ runBothE' (installStackBindist
                                        (DownloadInfo uri Nothing "")
                                        v
                                        (maybe GHCupInternal IsolateDir isolateDir)
                                        forceInstall
-                                     ) $ when instSet $ when (isNothing isolateDir) $ void $ setStack v
+                                     ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setStack v
             pure vi
       )
       >>= \case
@@ -619,11 +546,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install stack --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
-            VLeft (V (AlreadyInstalled _ v, ())) -> do
+            VLeft (V (AlreadyInstalled _ v)) -> do
               runLogger $ logWarn $
                 "Stack ver " <> prettyVer v <> " already installed; if you really want to reinstall it, you may want to run 'ghcup install stack --force " <> prettyVer v <> "'"
               pure ExitSuccess
-            VLeft (V (FileAlreadyExistsError fp, ())) -> do
+            VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install stack --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3

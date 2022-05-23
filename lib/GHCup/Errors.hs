@@ -141,6 +141,7 @@ instance Pretty AlreadyInstalled where
 
 -- | The Directory is supposed to be empty, but wasn't.
 data DirNotEmpty = DirNotEmpty {path :: FilePath}
+  deriving Show
 
 instance Pretty DirNotEmpty where
   pPrint (DirNotEmpty path) = do
@@ -343,6 +344,17 @@ instance Pretty DownloadFailed where
       _ -> text "Download failed:" <+> pPrint reason
 
 deriving instance Show DownloadFailed
+
+data InstallSetError = forall xs1 xs2 . (Show (V xs1), Pretty (V xs1), Show (V xs2), Pretty (V xs2)) => InstallSetError (V xs1) (V xs2)
+
+instance Pretty InstallSetError where
+  pPrint (InstallSetError reason1 reason2) =
+     text "Both installation and setting the tool failed. Install error was:"
+      <+> pPrint reason1
+      <+> text "\nSet error was:"
+      <+> pPrint reason2
+
+deriving instance Show InstallSetError
 
 
 -- | A build failed.
