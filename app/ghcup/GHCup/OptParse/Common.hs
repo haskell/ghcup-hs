@@ -226,7 +226,7 @@ absolutePathParser f = case isValid f && isAbsolute f of
               False -> Left "Please enter a valid absolute filepath."
 
 isolateParser :: FilePath -> Either String FilePath
-isolateParser f = case isValid f of
+isolateParser f = case isValid f && isAbsolute f of
               True -> Right $ normalise f
               False -> Left "Please enter a valid filepath for isolate dir."
 
