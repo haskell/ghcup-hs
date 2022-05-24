@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 
 {-|
 Module      : GHCup.Prelude
@@ -27,6 +28,7 @@ module GHCup.Prelude
   )
 where
 
+import           GHCup.Errors
 import           GHCup.Prelude.Internal
 import           GHCup.Types.Optics   (HasLog)
 import           GHCup.Prelude.Logger (logWarn)
@@ -52,3 +54,29 @@ catchWarn :: forall es m env . ( Pretty (V es)
                              , Monad m) => Excepts es m () -> Excepts '[] m ()
 catchWarn = catchAllE @_ @es (\v -> lift $ logWarn (T.pack . prettyShow $ v))
 
+
+runBothE' :: forall e m a b .
+             ( Monad m
+             , Show (V e)
+             , Pretty (V e)
+             , PopVariant InstallSetError e
+             , LiftVariant' e (InstallSetError ': e)
+             , e :<< (InstallSetError ': e)
+             )
+          => Excepts e m a
+          -> Excepts e m b
+          -> Excepts (InstallSetError ': e) m ()
+runBothE' a1 a2 = do
+   r1 <- lift $ runE @e a1
+   r2 <- lift $ runE @e a2
+   case (r1, r2) of
+      (VLeft e1, VLeft e2) -> throwE (InstallSetError e1 e2)
+      (VLeft e , _       ) -> throwSomeE e
+      (_       , VLeft e ) -> throwSomeE e
+      (VRight _, VRight _) -> pure ()
+
+
+-- | Throw some exception
+throwSomeE :: forall es' es a m. (Monad m, LiftVariant es' es) => V es' -> Excepts es m a
+{-# INLINABLE throwSomeE #-}
+throwSomeE = Excepts . pure . VLeft . liftVariant
