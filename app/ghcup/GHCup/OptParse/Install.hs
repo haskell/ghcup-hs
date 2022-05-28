@@ -33,7 +33,6 @@ import           Control.Monad.Trans.Resource
 import           Data.Either
 import           Data.Functor
 import           Data.Maybe
-import           Data.Versions           hiding ( str )
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )

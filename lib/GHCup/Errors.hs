@@ -112,7 +112,7 @@ data MergeFileTreeError = MergeFileTreeError IOException FilePath FilePath
 instance Pretty MergeFileTreeError where
   pPrint (MergeFileTreeError e from to) =
     text "Failed to merge file tree from" <+> text from <+> text "to" <+> text to <+> text "\nexception was:" <+> text (displayException e)
-     <+> text "\n...tried to clean up" <+> text to <+> text ". Make sure it's gone."
+     <+> text "\n...you may need to delete" <+> text to <+> text "manually. Make sure it's gone."
 
 -- | Unable to find a tag of a tool.
 data TagNotFound = TagNotFound Tag Tool
