@@ -48,6 +48,47 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-armv7-linux-deb1.tar.xz
               dlHash: 51dc486776a0047bc7b0122f468625e5d64189fac1948a6ba4e8ce85f47703ac
+    3.8.0.20220526:
+      viTags:
+        - Prerelease
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3810-32
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-x86_64-linux-alpine.tar.xz
+              dlHash: a4e6cb7990d7150c4e64cbd3ebd0a62fb6b00f96f0f9bc3fb751ff6d1f898fdb
+          Linux_Alpine:
+            unknown_versioning: *cabal-3810-32
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-x86_64-darwin.tar.xz
+              dlHash: 327808c88cdc355c82df1382d98c35876b4ca4e0a00706cda11b885938a2c0bd
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-x86_64-windows.zip
+              dlSubdir:
+              dlHash: da0b94b1080a592c449f101d3a9ea57f5eaf8b0166f681ff138e129e2f87e457
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-3810-32
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-i386-linux-alpine.tar.xz
+              dlHash: 35d51d0270f3e20d325dac5226333e63cdec470e0ad87326ce3c46f5848c77fa
+          Linux_Alpine:
+            unknown_versioning: *cabal-3810-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-aarch64-linux-deb10.tar.xz
+              dlHash: d5896c5b6ec320049afd84cc491d57e8392d16c248c8df1f9d10f666bb30250d
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-aarch64-darwin.tar.xz
+              dlHash: e18070ddb174c3c1916417c8dd424c2dcaad3411445e8b960dce24ca7532ed24
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-armv7-linux-deb1.tar.xz
+              dlHash: 143589378a4a0e6a948c9130e42832feee189dc89ab7f29088db4b11db6d61a3
   GHC:
     9.4.0.20220501:
       viTags:
