@@ -117,10 +117,9 @@ ghcupDownloads:
               dlHash: fa9aa89d4c85dadd75ad8908e4a5119dc632e17414fc3c1d5d84a40c6fa3dcea
             unknown_versioning: *ghc-941a1-64-deb10
           Linux_Ubuntu:
-            '< 18': *ghc-941a1-64-deb9
-            '( >= 18 && < 20 )': *ghc-941a1-64-deb10
-            '>= 20': *ghc-941a1-64-deb11
             '( >= 16 && < 19 )': *ghc-941a1-64-deb9
+            '( >= 19 && < 20 )': *ghc-941a1-64-deb10
+            '>= 20': *ghc-941a1-64-deb11
           Linux_Mint:
             '< 20': *ghc-941a1-64-deb9
             '>= 20': *ghc-941a1-64-deb10
@@ -183,6 +182,10 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_Debian:
+            '< 10': &ghc-941a2-64-deb9
+              dlUri: https://downloads.haskell.org/ghc/9.4.1-alpha2/ghc-9.4.1-alpha2-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-9.4.0.20220523-x86_64-unknown-linux
+              dlHash: f1bf28eebe9e0a6fb3db374e52b246868ca756fecd67dd1d6338348197b54a99
             '( >= 10 && < 11 )': &ghc-941a2-64-deb10
               dlUri: https://downloads.haskell.org/~ghc/9.4.1-alpha2/ghc-9.4.1-alpha2-x86_64-deb10-linux.tar.xz
               dlSubdir: ghc-9.4.0.20220523-x86_64-unknown-linux
@@ -193,12 +196,12 @@ ghcupDownloads:
               dlHash: a92c1ec8f3d206b30988f32118e6443bcbe5e2901d95e2c8fd67d85a4bcb7190
             unknown_versioning: *ghc-941a2-64-deb10
           Linux_Ubuntu:
-            '( >= 18 && < 20 )': *ghc-941a2-64-deb10
+            '( >= 16 && < 19 )': *ghc-941a2-64-deb9
+            '( >= 19 && < 20 )': *ghc-941a2-64-deb10
             '>= 20': *ghc-941a2-64-deb11
-            unknown_versioning: *ghc-941a2-64-deb10
           Linux_Mint:
+            '< 20': *ghc-941a2-64-deb9
             '>= 20': *ghc-941a2-64-deb10
-            unknown_versioning: *ghc-941a2-64-deb10
           Linux_Fedora:
             unknown_versioning: &ghc-941a2-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/9.4.1-alpha2/ghc-9.4.1-alpha2-x86_64-fedora33-linux.tar.xz
