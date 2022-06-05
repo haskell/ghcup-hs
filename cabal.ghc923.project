@@ -34,4 +34,4 @@ package streamly
 
 allow-newer: base, ghc-prim, template-haskell, language-c
 
-with-compiler: ghc-9.0.2
+with-compiler: ghc-9.2.3
