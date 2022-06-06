@@ -18,6 +18,7 @@ import           GHCup.Prelude
 import           GHCup.Prelude.File
 #ifdef IS_WINDOWS
 import           GHCup.Prelude.Process
+import           GHCup.Prelude.Process.Windows ( execNoMinGW )
 #endif
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
@@ -58,6 +59,7 @@ import qualified System.Posix.Process          as SPP
 data RunOptions = RunOptions
   { runAppendPATH :: Bool
   , runInstTool'  :: Bool
+  , runMinGWPath  :: Bool
   , runGHCVer     :: Maybe ToolVersion
   , runCabalVer   :: Maybe ToolVersion
   , runHLSVer     :: Maybe ToolVersion
@@ -82,6 +84,8 @@ runOpts =
           (short 'a' <> long "append" <> help "Append bin/ dir to PATH instead of prepending (this means that e.g. a system installation may take precedence)")
     <*> switch
           (short 'i' <> long "install" <> help "Install the tool, if missing")
+    <*> switch
+          (short 'm' <> long "mingw-path" <> help "On windows, add mingw64 PATHs to environment (does nothing on unix)")
     <*> optional
           (option
             (eitherReader toolVersionEither)
@@ -249,7 +253,9 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                void $ liftIO $ SPP.executeFile cmd True args (Just newEnv)
                pure ExitSuccess
 #else
-               r' <- runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
+               r' <- if runMinGWPath
+                     then runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
+                     else runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ execNoMinGW cmd args Nothing (Just newEnv)
                case r' of
                  VRight _ -> pure ExitSuccess
                  VLeft e -> do
