@@ -206,6 +206,13 @@ exec :: MonadIO m
      -> Maybe [(String, String)] -- ^ optional environment
      -> m (Either ProcessError ())
 exec exe args chdir env = do
+  -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/375
+  forM_ (Map.fromList <$> env) $ \cEnv -> do
+    let paths = ["PATH", "Path"]
+        curPaths = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
+        newPath = intercalate [searchPathSeparator] curPaths
+    setEnv "PATH" ""
+    setEnv "Path" newPath
   cp <- createProcessWithMingwPath ((proc exe args) { cwd = chdir, env = env })
   exit_code <- liftIO $ withCreateProcess cp $ \_ _ _ p -> waitForProcess p
   pure $ toProcessError exe args exit_code
