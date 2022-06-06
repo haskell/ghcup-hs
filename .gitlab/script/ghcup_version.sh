@@ -101,6 +101,7 @@ eghcup unset ghc ${GHC_VERSION}
 ls -lah "$(eghcup whereis -d ghc ${GHC_VERSION})"
 [ "`$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version`" = "${GHC_VERSION}" ]
 [ "`eghcup run --ghc ${GHC_VERSION} -- ghc --numeric-version`" = "${GHC_VERSION}" ]
+[ "`ghcup run --ghc ${GHC_VERSION} -- ghc -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)'`" = "`$(ghcup whereis ghc ${GHC_VERSION}) -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)'`" ]
 eghcup set ghc ${GHC_VERSION}
 eghcup install cabal ${CABAL_VERSION}
 [ "`$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version`" = "${CABAL_VERSION}" ]
