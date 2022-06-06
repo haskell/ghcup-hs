@@ -97,6 +97,7 @@ rm -rf "${GHCUP_DIR}"
 eghcup --numeric-version
 
 eghcup install ghc ${GHC_VERSION}
+eghcup unset ghc ${GHC_VERSION}
 ls -lah "$(eghcup whereis -d ghc ${GHC_VERSION})"
 [ "`$(eghcup whereis ghc ${GHC_VERSION}) --numeric-version`" = "${GHC_VERSION}" ]
 [ "`eghcup run --ghc ${GHC_VERSION} -- ghc --numeric-version`" = "${GHC_VERSION}" ]
@@ -105,9 +106,13 @@ eghcup install cabal ${CABAL_VERSION}
 [ "`$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version`" = "${CABAL_VERSION}" ]
 eghcup unset cabal
 "$GHCUP_BIN"/cabal --version && exit 1 || echo yes
-eghcup set cabal ${CABAL_VERSION}
-[ "`$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version`" = "${CABAL_VERSION}" ]
+
+# make sure no cabal is set when running 'ghcup run' to check that PATH propagages properly
+# https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/375
 [ "`eghcup run --cabal ${CABAL_VERSION} -- cabal --numeric-version`" = "${CABAL_VERSION}" ]
+eghcup set cabal ${CABAL_VERSION}
+
+[ "`$(eghcup whereis cabal ${CABAL_VERSION}) --numeric-version`" = "${CABAL_VERSION}" ]
 
 if [ "${OS}" != "FREEBSD" ] ; then
 	if [ "${ARCH}" = "64" ] ; then
