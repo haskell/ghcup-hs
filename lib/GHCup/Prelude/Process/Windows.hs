@@ -231,8 +231,9 @@ createProcessWithMingwPath :: MonadIO m
 createProcessWithMingwPath cp = do
   msys2Dir <- liftIO ghcupMsys2Dir
   cEnv <- Map.fromList <$> maybe (liftIO getEnvironment) pure (env cp)
-  let mingWPaths = [msys2Dir </> "usr" </> "bin"
-                   ,msys2Dir </> "mingw64" </> "bin"]
+  let mingWPaths = [msys2Dir </> "mingw64" </> "bin"
+                   ,msys2Dir </> "usr" </> "bin"
+                   ]
       paths = ["PATH", "Path"]
       curPaths = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
       newPath = intercalate [searchPathSeparator] (mingWPaths ++ curPaths)
