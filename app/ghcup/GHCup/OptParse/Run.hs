@@ -355,6 +355,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                  (_tvVersion v)
                  GHCupInternal
                  False
+                 []
                setTool GHC v tmp
              Just (Cabal, v) -> do
                unless isInstalled $ when runInstTool' $ void $ liftE $ installCabalBin

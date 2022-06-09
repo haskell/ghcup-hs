@@ -141,6 +141,7 @@ installGHCBindist :: ( MonadFail m
                   -> Version         -- ^ the version to install
                   -> InstallDir
                   -> Bool            -- ^ Force install
+                  -> [T.Text]        -- ^ additional configure args for bindist
                   -> Excepts
                        '[ AlreadyInstalled
                         , BuildFailed
@@ -159,7 +160,7 @@ installGHCBindist :: ( MonadFail m
                         ]
                        m
                        ()
-installGHCBindist dlinfo ver installDir forceInstall = do
+installGHCBindist dlinfo ver installDir forceInstall addConfArgs = do
   let tver = mkTVer ver
 
   lift $ logDebug $ "Requested to install GHC with " <> prettyVer ver
@@ -189,12 +190,12 @@ installGHCBindist dlinfo ver installDir forceInstall = do
   case installDir of
     IsolateDir isoDir -> do                        -- isolated install
       lift $ logInfo $ "isolated installing GHC to " <> T.pack isoDir
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (IsolateDirResolved isoDir) ver forceInstall
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (IsolateDirResolved isoDir) ver forceInstall addConfArgs
     GHCupInternal -> do                            -- regular install
       -- prepare paths
       ghcdir <- lift $ ghcupGHCDir tver
 
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (GHCupDir ghcdir) ver forceInstall
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (GHCupDir ghcdir) ver forceInstall addConfArgs
 
       -- make symlinks & stuff when regular install,
       liftE $ postGHCInstall tver
@@ -230,6 +231,7 @@ installPackedGHC :: ( MonadMask m
                  -> InstallDirResolved
                  -> Version           -- ^ The GHC version
                  -> Bool              -- ^ Force install
+                 -> [T.Text]          -- ^ additional configure args for bindist
                  -> Excepts
                       '[ BuildFailed
                        , UnknownArchive
@@ -239,7 +241,7 @@ installPackedGHC :: ( MonadMask m
                        , ProcessError
                        , MergeFileTreeError
                        ] m ()
-installPackedGHC dl msubdir inst ver forceInstall = do
+installPackedGHC dl msubdir inst ver forceInstall addConfArgs = do
   PlatformRequest {..} <- lift getPlatformReq
 
   unless forceInstall
@@ -256,7 +258,7 @@ installPackedGHC dl msubdir inst ver forceInstall = do
                    msubdir
 
   liftE $ runBuildAction tmpUnpack
-                         (installUnpackedGHC workdir inst ver forceInstall)
+                         (installUnpackedGHC workdir inst ver forceInstall addConfArgs)
 
 
 -- | Install an unpacked GHC distribution. This only deals with the GHC
@@ -277,8 +279,9 @@ installUnpackedGHC :: ( MonadReader env m
                    -> InstallDirResolved  -- ^ Path to install to
                    -> Version             -- ^ The GHC version
                    -> Bool                -- ^ Force install
+                   -> [T.Text]          -- ^ additional configure args for bindist
                    -> Excepts '[ProcessError, MergeFileTreeError] m ()
-installUnpackedGHC path inst ver forceInstall
+installUnpackedGHC path inst ver forceInstall addConfArgs
   | isWindows = do
       lift $ logInfo "Installing GHC (this may take a while)"
       -- Windows bindists are relocatable and don't need
@@ -301,7 +304,7 @@ installUnpackedGHC path inst ver forceInstall
       lift $ logInfo "Installing GHC (this may take a while)"
       lEM $ execLogged "sh"
                        ("./configure" : ("--prefix=" <> fromInstallDir inst)
-                        : alpineArgs
+                        : (alpineArgs <> (T.unpack <$> addConfArgs))
                        )
                        (Just $ fromGHCupPath path)
                        "ghc-configure"
@@ -342,6 +345,7 @@ installGHCBin :: ( MonadFail m
               => Version         -- ^ the version to install
               -> InstallDir
               -> Bool            -- ^ force install
+              -> [T.Text]        -- ^ additional configure args for bindist
               -> Excepts
                    '[ AlreadyInstalled
                     , BuildFailed
@@ -360,9 +364,9 @@ installGHCBin :: ( MonadFail m
                     ]
                    m
                    ()
-installGHCBin ver installDir forceInstall = do
+installGHCBin ver installDir forceInstall addConfArgs = do
   dlinfo <- liftE $ getDownloadInfo GHC ver
-  liftE $ installGHCBindist dlinfo ver installDir forceInstall
+  liftE $ installGHCBindist dlinfo ver installDir forceInstall addConfArgs
 
 
 
@@ -747,6 +751,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                                ghcdir
                                (installVer ^. tvVersion)
                                False       -- not a force install, since we already overwrite when compiling.
+                               []
 
     liftIO $ B.writeFile (fromInstallDir ghcdir </> ghcUpSrcBuiltFile) bmk
 

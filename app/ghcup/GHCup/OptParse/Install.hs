@@ -71,6 +71,7 @@ data InstallOptions = InstallOptions
   , instSet      :: Bool
   , isolateDir   :: Maybe FilePath
   , forceInstall :: Bool
+  , addConfArgs  :: [T.Text]
   }
 
 
@@ -213,6 +214,7 @@ installOpts tool =
           )
     <*> switch
           (short 'f' <> long "force" <> help "Force install (THIS IS UNSAFE, only use it in Dockerfiles or CI)")
+    <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to bindist configure, prefix with '-- ' (longopts)"))
  where
   setDefault = case tool of
     Nothing  -> False
@@ -335,6 +337,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                      (_tvVersion v)
                      (maybe GHCupInternal IsolateDir isolateDir)
                      forceInstall
+                     addConfArgs
                    )
                    $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setGHC v SetGHCOnly Nothing
          pure vi
@@ -346,6 +349,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                        (_tvVersion v)
                        (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
+                       addConfArgs
                      )
                      $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setGHC v SetGHCOnly Nothing
            pure vi
