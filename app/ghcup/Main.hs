@@ -13,6 +13,9 @@ module Main where
 #if defined(BRICK)
 import           BrickMain                    ( brickMain )
 #endif
+#if defined(ANSI)
+import           AnsiMain                     ( ansiMain )
+#endif
 
 import qualified GHCup.GHC as GHC
 import qualified GHCup.HLS as HLS
@@ -235,6 +238,9 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
 #if defined(BRICK)
                   Interactive -> pure ()
 #endif
+#if defined(ANSI)
+                  InteractiveAnsi -> pure ()
+#endif
                   -- check for new tools
                   _
                     | Just False <- optVerbose -> pure ()
@@ -292,6 +298,11 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             Interactive -> do
               s' <- appState
               liftIO $ brickMain s' >> pure ExitSuccess
+#endif
+#if defined(ANSI)
+            InteractiveAnsi -> do
+              s' <- appState
+              liftIO $ ansiMain s' >> pure ExitSuccess
 #endif
             Install installCommand     -> install installCommand settings appState runLogger
             InstallCabalLegacy iopts   -> install (Left (InstallCabal iopts)) settings appState runLogger

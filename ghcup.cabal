@@ -41,6 +41,11 @@ flag tui
   default:     False
   manual:      True
 
+flag tui-ansi
+  description: Build the ansi-terminal powered tui (ghcup tui-ansi).
+  default:     False
+  manual:      True
+
 flag internal-downloader
   description:
     Compile the internal downloader, which links against OpenSSL. This is disabled on windows.
@@ -278,6 +283,14 @@ executable ghcup
 
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER
+
+  if flag(tui-ansi)
+    cpp-options:   -DANSI
+    other-modules: AnsiMain
+    build-depends:
+      , ansi-terminal
+      , ansi-terminal-game
+      , transformers        ^>=0.5
 
   if (flag(tui) && !os(windows))
     cpp-options:   -DBRICK

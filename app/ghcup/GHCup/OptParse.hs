@@ -105,6 +105,9 @@ data Command
 #if defined(BRICK)
   | Interactive
 #endif
+#if defined(ANSI)
+  | InteractiveAnsi
+#endif
   | Prefetch PrefetchCommand
   | GC GCOptions
   | Run RunOptions
@@ -184,8 +187,19 @@ opts =
 com :: Parser Command
 com =
   subparser
-#if defined(BRICK)
+#if defined(ANSI)
       (  command
+          "tui-ansi"
+          (   (\_ -> InteractiveAnsi)
+          <$> info
+                helper
+                (  progDesc "Start the interactive GHCup UI (ansi)"
+                )
+          )
+          <>
+#endif
+#if defined(BRICK)
+        command
           "tui"
           (   (\_ -> Interactive)
           <$> info
@@ -195,7 +209,7 @@ com =
           )
       <>  command
 #else
-      (  command
+          command
 #endif
           "install"
           (   Install

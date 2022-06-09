@@ -6,6 +6,7 @@ packages:
 extra-deps:
   - Cabal-3.6.2.0@sha256:e2266e14758c1f799220fad7f0d4b0b4ec567d81b7ba3faea17ff76d4c31de95,12437
   - IfElse-0.85@sha256:6939b94acc6a55f545f63a168a349dd2fbe4b9a7cca73bf60282db5cc6aa47d2,445
+  - ansi-terminal-game-1.8.0.0@sha256:001cf786098d9f1056ac6055ff3f598054b5c231b7343e76abb686d4f485855d,6977
   - ascii-string-1.0.1.4@sha256:fa34f1d9ba57e8e89c0d4c9cef5e01ba32cb2d4373d13f92dcc0b531a6c6749b,2582
   - base16-bytestring-0.1.1.7@sha256:0021256a9628971c08da95cb8f4d0d72192f3bb8a7b30b55c080562d17c43dd3,2231
   - brick-0.64@sha256:f03fa14607c22cf48af99e24c44f79a0fb073f7ec229f15e969fed9ff73c93f6,16530
@@ -27,6 +28,7 @@ extra-deps:
   - http-io-streams-0.1.6.0@sha256:53f5bab177efb52cd65ec396fd04ed59b93e5f919fb3700cd7dacd6cfce6f06d,3582
   - libarchive-3.0.3.0
   - libyaml-streamly-0.2.1
+  - linebreak-1.1.0.1@sha256:b253873c3f98189eb22a5a9f0405677cde125c09666b63c3117f497c01c95893,1397
   - lzma-static-5.2.5.3@sha256:2758ee58c35992fcf7db78e98684c357a16a82fa2a4e7c352a6c210c08c555d8,7308
   - optics-0.4@sha256:9fb69bf0195b8d8f1f8cd0098000946868b8a3c3ffb51e5b64f79fc600c3eb4c,6568
   - optics-core-0.4@sha256:59e04aebca536bd011ae50c781937f45af4c1456af1eb9fb578f9a69eee293cd,4995
@@ -36,8 +38,10 @@ extra-deps:
   - primitive-0.7.1.0@sha256:29de6bfd0cf8ba023ceb806203dfbec0e51e3524e75ffe41056f70b4229c6f0f,2728
   - regex-posix-clib-2.7
   - streamly-0.8.2@sha256:ec521b7c1c4db068501c35804af77f40b7d34232f5e29d9b99e722229040eb80,23500
-  - unicode-data-0.3.0@sha256:0545e079705a5381d0893f8fe8daaa08fc9174baeab269b9cf651817d8eadbc6,5123
   - strict-base-0.4.0.0@sha256:2ff4e43cb95eedf2995558d7fc34d19362846413dd39e6aa6a5b3ea8228fef9f,1248
+  - timers-tick-0.5.0.1@sha256:91d4b03266715c6969b82cb24e57a6b47191a4d2f95e9a92e0ad3f7301cc7c8b,1552
+  - unicode-data-0.3.0@sha256:0545e079705a5381d0893f8fe8daaa08fc9174baeab269b9cf651817d8eadbc6,5123
+  - unidecode-0.1.0.4@sha256:99581ee1ea334a4596a09ae3642e007808457c66893b587e965b31f15cbf8c4d,1144
   - xor-0.0.1.0@sha256:f8362b4a68562b9afbcd727ff64c1a303970df3a032e0033d2f4c094c3501df3,2243
   - yaml-streamly-0.12.1
 
@@ -59,6 +63,9 @@ flags:
 
   streamly:
     use-unliftio: true
+
+  ghcup:
+    tui-ansi: true
 
 ghc-options:
   "$locals": -O2
