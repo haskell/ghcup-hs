@@ -232,7 +232,7 @@ ghcCompileOpts =
               "Build cross-compiler for this platform"
             )
           )
-    <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to configure, prefix with '-- ' (longopts)"))
+    <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to compile configure, prefix with '-- ' (longopts)"))
     <*> fmap (fromMaybe False) (invertableSwitch "set" Nothing False (help "Set as active version after install"))
     <*> optional
           (option
