@@ -26,6 +26,7 @@ import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 import           GHCup.Version
+import GHC.Debug.Stub
 
 import           Cabal.Plan ( findPlanJson, SearchPlanJson(..) )
 import           Control.Concurrent
@@ -120,7 +121,7 @@ plan_json = $( do
 
 
 main :: IO ()
-main = do
+main = withGhcDebug $ do
   -- https://gitlab.haskell.org/ghc/ghc/issues/8118
   setLocaleEncoding utf8
 

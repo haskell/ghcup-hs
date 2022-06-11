@@ -32,4 +32,7 @@ package aeson
 package streamly
   flags: +use-unliftio
 
+package *
+  ghc-options: -finfo-table-map -fdistinct-constructor-tables
+
 allow-newer: base, ghc-prim, template-haskell, language-c
