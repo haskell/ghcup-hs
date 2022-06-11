@@ -242,7 +242,7 @@ if ($Silent -and !($InstallDir)) {
 	Print-Msg -color Magenta -msg (@'
 Welcome to Haskell!
 
-This script will download and install the following programs:
+This script can download and install the following programs:
   * ghcup - The Haskell toolchain installer
   * ghc   - The Glasgow Haskell Compiler
   * msys2 - A linux-style toolchain environment required for many operations

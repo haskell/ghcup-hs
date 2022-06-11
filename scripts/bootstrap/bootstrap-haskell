@@ -688,7 +688,7 @@ find_shell
 echo
 echo "Welcome to Haskell!"
 echo
-echo "This script will download and install the following binaries:"
+echo "This script can download and install the following binaries:"
 echo "  * ghcup - The Haskell toolchain installer"
 echo "  * ghc   - The Glasgow Haskell Compiler"
 echo "  * cabal - The Cabal build tool for managing Haskell software"
