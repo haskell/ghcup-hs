@@ -200,6 +200,14 @@ export PATH="$HOME/.cabal/bin:$HOME/.ghcup/bin:$PATH"
 
 See [ghcup.vim](https://github.com/hasufell/ghcup.vim).
 
+## VSCode integration
+The developers of the Haskell Language Server offer an [extension](https://github.com/haskell/vscode-haskell) tightly integrated with the [Haskell Language Server](https://github.com/haskell/haskell-language-server). To get started:
+
+1. Install GHCup. During installation, opt in to install the Haskell Language Server (HLS).
+2. Install the extension (from VSCode: Ctrl + P and then `ext install haskell.haskell`).
+3. Make sure your project uses the GHC version installed from GHCup (otherwise HLS is likely to fail on launch):
+    - instructions for [stack](https://docs.haskellstack.org/en/stable/yaml_configuration/#system-ghc)
+
 ## Get help
 
 * [Libera IRC chat on #haskell-ghcup or #haskell](https://kiwiirc.com/nextclient/irc.libera.chat/?nick=Guest%7C?#haskell,#haskell-ghcup)
