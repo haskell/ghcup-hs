@@ -65,9 +65,9 @@ ghcupDownloads:
               dlHash: 327808c88cdc355c82df1382d98c35876b4ca4e0a00706cda11b885938a2c0bd
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-x86_64-windows.zip
+              dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-p1-x86_64-windows.zip
               dlSubdir:
-              dlHash: da0b94b1080a592c449f101d3a9ea57f5eaf8b0166f681ff138e129e2f87e457
+              dlHash: 7a0c8a9ea58651fb4b56e7b7483d00685289f6e5f16f1c87bc6a9acc3cf8636e
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &cabal-3810-32
