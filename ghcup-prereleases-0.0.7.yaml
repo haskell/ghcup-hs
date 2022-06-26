@@ -263,7 +263,7 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.4.1-alpha3/ghc-9.4.0.20220623-src.tar.xz
         dlSubdir: ghc-9.4.0.20220623
         dlHash: ccd5653097f779a8c7fbf09cb5e1068055a2de94ee7649a6ca45a1214a9a4d97
-      viPostRemove: &ghc-post-remove "After removing GHC you might also want to clean up your cabal store at: ~/.cabal/store/ghc-<ghcver>"
+      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
