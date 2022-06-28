@@ -53,6 +53,8 @@ import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           URI.ByteString
 
 import qualified Data.Text                     as T
+import qualified Data.Text.Lazy.Builder        as B
+import qualified Data.Text.Lazy                as L
 import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
 import System.Environment (getExecutablePath)
@@ -510,13 +512,18 @@ set' bs input@(_, ListResult {..}) = do
     >>= \case
           VRight _ -> pure $ Right ()
           VLeft  e -> case e of
-            (V (NotInstalled tool tver)) -> do
-              promptAnswer <- liftIO $ getUserPromptResponse userPrompt
+            (V (NotInstalled tool _)) -> do
+              promptAnswer <- getUserPromptResponse userPrompt
               case promptAnswer of
                 PromptYes -> install' bs input
                 PromptNo -> pure $ Left (prettyShow e)
               where
-                userPrompt = "The tool/version you're trying to set is not installed, would you like to install it first? "
+                userPrompt = L.toStrict $
+                  B.toLazyText $
+                  B.fromString " This Version of " <>
+                  B.fromString (show tool) <>
+                  B.fromString " you are trying to set is not installed.\n" <>
+                  B.fromString " Would you like to install it first? [Y/N]: "
             _ -> pure $ Left (prettyShow e)
 
 
