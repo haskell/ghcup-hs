@@ -16,7 +16,7 @@ import GHCup.Types.Prompts
 putPrompt :: (HasLog env, MonadReader env m, MonadIO m)
           => PromptQuestion
           -> m ()
-putPrompt prompt = logInfo prompt
+putPrompt = logInfo
 
 getUserPromptResponse :: ( HasLog env
                          , MonadReader env m
