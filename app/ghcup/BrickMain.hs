@@ -515,7 +515,14 @@ set' bs input@(_, ListResult {..}) = do
             (V (NotInstalled tool _)) -> do
               promptAnswer <- getUserPromptResponse userPrompt
               case promptAnswer of
-                PromptYes -> install' bs input
+                PromptYes -> do
+                  res <- install' bs input
+                  case res of
+                    (Left err) -> pure $ Left (prettyShow err)
+                    (Right _) -> do
+                      logInfo "Setting now..."
+                      set' bs input
+
                 PromptNo -> pure $ Left (prettyShow e)
               where
                 userPrompt = L.toStrict $
