@@ -74,12 +74,15 @@ cabal-install/HLS/stack are installed in `~/.ghcup/bin/<tool>-<ver>` and have un
 
 ## Known users
 
-* Github actions:
-	- [actions/virtual-environments](https://github.com/actions/virtual-environments)
-	- [haskell/actions/setup](https://github.com/haskell/actions/tree/main/setup)
+* CI:
+	- [Github actions/virtual-environments](https://github.com/actions/virtual-environments)
+	- [Github haskell/actions/setup](https://github.com/haskell/actions/tree/main/setup)
+	- [haskell-ci](https://github.com/haskell-CI/haskell-ci)
 * mirrors:
 	- [sjtug](https://mirror.sjtu.edu.cn/docs/ghcup)
 * tools:
+	- [vscode-haskell](https://github.com/haskell/vscode-haskell)
+	- [nvim-lsp-installer](https://github.com/williamboman/nvim-lsp-installer)
 	- [vabal](https://github.com/Franciman/vabal)
 
 ## Known problems
