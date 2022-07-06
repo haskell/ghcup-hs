@@ -61,6 +61,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Control.Monad.IO.Unlift        ( MonadUnliftIO( withRunInIO ) )
+import           Data.Char                      ( isHexDigit )
 import           Data.Bifunctor                 ( first )
 import           Data.ByteString                ( ByteString )
 import           Data.Either
@@ -1275,3 +1276,35 @@ warnAboutHlsCompatibility = do
         T.pack (prettyShow supportedGHC)
 
     _ -> return ()
+
+
+
+    -----------
+    --[ Git ]--
+    -----------
+
+
+
+isCommitHash :: String -> Bool
+isCommitHash str' = let hex = all isHexDigit str'
+                        len = length str'
+                    in hex && len == 40
+
+
+gitOut :: (MonadReader env m, HasLog env, MonadIO m) => [String] -> FilePath -> Excepts '[ProcessError] m T.Text
+gitOut args dir = do
+  CapturedProcess {..} <- lift $ executeOut "git" args (Just dir)
+  case _exitCode of
+    ExitSuccess   -> pure $ T.pack $ stripNewlineEnd $ T.unpack $ decUTF8Safe' _stdOut
+    ExitFailure c -> do
+      let pe = NonZeroExit c "git" args
+      lift $ logDebug $ T.pack (prettyShow pe)
+      throwE pe
+
+processBranches :: T.Text -> [String]
+processBranches str' = let lines'   = lines (T.unpack str')
+                           words'   = fmap words lines'
+                           refs     = catMaybes $ fmap (`atMay` 1) words'
+                           branches = catMaybes $ fmap (stripPrefix "refs/heads/") $ filter (isPrefixOf "refs/heads/") refs
+                       in branches
+
