@@ -2274,9 +2274,9 @@ ghcupDownloads:
       - base-4.16.2.0
       viChangeLog: https://downloads.haskell.org/~ghc/9.2.3/docs/html/users_guide/index.html
       viSourceDL:
-        dlUri: https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-src.tar.xz
+        dlUri: https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-src-booted.tar.xz
         dlSubdir: ghc-9.2.3
-        dlHash: 50ecdc2bef013e518f9a62a15245d7db0e4409d737c43b1cea7306fd82e1669e
+        dlHash: 00e33a2640e64014fcef4e385f661f61c47839755054a2f87ffe4d5a58c6cdaa
       viPostRemove: *ghc-post-remove
       viArch:
         A_64:
