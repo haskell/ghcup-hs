@@ -566,8 +566,11 @@ rmGHCVer ver = do
       lift $ recycleFile f
       when (not (null survivors)) $ throwE $ UninstallFailed dir survivors
     Nothing -> do
-      lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack dir
-      lift $ recyclePathForcibly dir'
+      isDir <- liftIO $ doesDirectoryExist dir
+      isSyml <- liftIO $ handleIO (\_ -> pure False) $ pathIsSymbolicLink dir
+      when (isDir && not isSyml) $ do
+        lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack dir
+        recyclePathForcibly dir'
 
   v' <-
     handle

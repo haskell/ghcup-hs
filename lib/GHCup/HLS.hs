@@ -492,7 +492,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
         pure ghcInstallDir
 
       forM_ artifacts $ \artifact -> do
-        logInfo $ T.pack (show artifact)
+        logDebug $ T.pack (show artifact)
         liftIO $ renameFile (artifact </> "haskell-language-server" <.> exeExt)
           (tmpInstallDir </> "haskell-language-server-" <> takeFileName artifact <.> exeExt)
         liftIO $ renameFile (artifact </> "haskell-language-server-wrapper" <.> exeExt)
@@ -646,8 +646,11 @@ rmHLSVer ver = do
       lift $ recycleFile f
       when (not (null survivors)) $ throwE $ UninstallFailed hlsDir survivors
     Nothing -> do
-      lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack hlsDir
-      recyclePathForcibly hlsDir'
+      isDir <- liftIO $ doesDirectoryExist hlsDir
+      isSyml <- liftIO $ handleIO (\_ -> pure False) $ pathIsSymbolicLink hlsDir
+      when (isDir && not isSyml) $ do
+        lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack hlsDir
+        recyclePathForcibly hlsDir'
 
   when (Just ver == isHlsSet) $ do
     -- set latest hls
