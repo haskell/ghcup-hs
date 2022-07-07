@@ -164,8 +164,10 @@ library
     cpp-options:   -DIS_WINDOWS
     other-modules:
       GHCup.Prelude.File.Windows
-      GHCup.Prelude.Process.Windows
       GHCup.Prelude.Windows
+    -- GHCup.OptParse.Run uses this
+    exposed-modules:
+      GHCup.Prelude.Process.Windows
 
     build-depends:
       , bzlib

@@ -327,7 +327,7 @@ compileHLS :: ( MonadMask m
            => Either Version GitBranch
            -> [Version]
            -> Maybe Int
-           -> Maybe Version
+           -> Either Bool Version
            -> InstallDir
            -> Maybe (Either FilePath URI)
            -> Maybe URI
@@ -349,7 +349,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
   Dirs { .. } <- lift getDirs
 
 
-  (workdir, tver) <- case targetHLS of
+  (workdir, tver, git_describe) <- case targetHLS of
     -- unpack from version tarball
     Left tver -> do
       lift $ logDebug $ "Requested to compile: " <> prettyVer tver
@@ -369,13 +369,13 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
                        (liftE . intoSubdir tmpUnpack)
                        (view dlSubdir dlInfo)
 
-      pure (workdir, tver)
+      pure (workdir, tver, Nothing)
 
     -- clone from git
     Right GitBranch{..} -> do
       tmpUnpack <- lift mkGhcupTmpDir
       let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
-      tver <- reThrowAll @_ @'[ProcessError] DownloadFailed $ do
+      reThrowAll @_ @'[ProcessError] DownloadFailed $ do
         let rep = fromMaybe "https://github.com/haskell/haskell-language-server.git" repo
         lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
         lEM $ git [ "init" ]
@@ -384,33 +384,61 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
                   , "origin"
                   , fromString rep ]
 
-        let fetch_args =
-                  [ "fetch"
-                  , "--depth"
-                  , "1"
-                  , "--quiet"
-                  , "origin"
-                  , fromString ref ]
+        -- figure out if we can do a shallow clone
+        remoteBranches <- catchE @ProcessError @'[ProcessError] @'[] (\_ -> pure [])
+            $ fmap processBranches $ gitOut ["ls-remote", "--heads", "origin"] (fromGHCupPath tmpUnpack)
+        let shallow_clone
+              | gitDescribeRequested                 = False
+              | isCommitHash ref                     = True
+              | fromString ref `elem` remoteBranches = True
+              | otherwise                            = False
+
+        lift $ logDebug $ "Shallow clone: " <> T.pack (show shallow_clone)
+
+        -- fetch
+        let fetch_args
+              | shallow_clone = ["fetch", "--depth", "1", "--quiet", "origin", fromString ref]
+              | otherwise     = ["fetch", "--tags",       "--quiet", "origin"                ]
         lEM $ git fetch_args
 
-        lEM $ git [ "checkout", "FETCH_HEAD" ]
-        (Just gpd) <- parseGenericPackageDescriptionMaybe <$> liftIO (B.readFile (fromGHCupPath tmpUnpack </> "haskell-language-server.cabal"))
-        pure . (\c -> Version Nothing c [] Nothing)
-          . NE.fromList . fmap (NE.fromList . (:[]) . digits . fromIntegral)
-          . versionNumbers
-          . pkgVersion
-          . package
-          . packageDescription
-          $ gpd
+        -- checkout
+        lEM $ git [ "checkout", fromString ref ]
 
-      liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
-      lift $ logInfo $ "Git version " <> T.pack ref <> " corresponds to HLS version " <> prettyVer tver
+        -- gather some info
+        git_describe <- if shallow_clone
+                        then pure Nothing
+                        else fmap Just $ gitOut ["describe", "--tags"] (fromGHCupPath tmpUnpack)
+        chash <- gitOut ["rev-parse", "HEAD" ] (fromGHCupPath tmpUnpack)
+        (Just gpd) <- parseGenericPackageDescriptionMaybe
+          <$> liftIO (B.readFile (fromGHCupPath tmpUnpack </> "haskell-language-server.cabal"))
+        let tver = (\c -> Version Nothing c [] Nothing)
+                 . NE.fromList . fmap (NE.fromList . (:[]) . digits . fromIntegral)
+                 . versionNumbers
+                 . pkgVersion
+                 . package
+                 . packageDescription
+                 $ gpd
 
-      pure (tmpUnpack, tver)
+        liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
+        lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
+                                    "HLS version (from cabal file): " <> prettyVer tver <>
+                                    (if not shallow_clone then "\n  " <> "'git describe' output: " <> fromJust git_describe else mempty) <>
+                                    (if isCommitHash ref then mempty else "\n  " <> "commit hash: " <> chash)
+
+        pure (tmpUnpack, tver, git_describe)
 
   -- the version that's installed may differ from the
   -- compiled version, so the user can overwrite it
-  let installVer = fromMaybe tver ov
+  installVer <- case ov of
+                  Left True -> case git_describe of
+                                 -- git describe
+                                 Just h -> either (fail . displayException) pure . version $ h
+                                 -- git describe, but not building from git, lol
+                                 Nothing -> pure tver
+                  -- default: use detected version
+                  Left False -> pure tver
+                  -- overwrite version with users value
+                  Right v -> pure v
 
   liftE $ runBuildAction
     workdir
@@ -464,7 +492,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
         pure ghcInstallDir
 
       forM_ artifacts $ \artifact -> do
-        logInfo $ T.pack (show artifact)
+        logDebug $ T.pack (show artifact)
         liftIO $ renameFile (artifact </> "haskell-language-server" <.> exeExt)
           (tmpInstallDir </> "haskell-language-server-" <> takeFileName artifact <.> exeExt)
         liftIO $ renameFile (artifact </> "haskell-language-server-wrapper" <.> exeExt)
@@ -479,6 +507,10 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
     )
 
   pure installVer
+ where
+  gitDescribeRequested = case ov of
+                           Left b -> b
+                           _      -> False
 
 
     -----------------
@@ -614,8 +646,11 @@ rmHLSVer ver = do
       lift $ recycleFile f
       when (not (null survivors)) $ throwE $ UninstallFailed hlsDir survivors
     Nothing -> do
-      lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack hlsDir
-      recyclePathForcibly hlsDir'
+      isDir <- liftIO $ doesDirectoryExist hlsDir
+      isSyml <- liftIO $ handleIO (\_ -> pure False) $ pathIsSymbolicLink hlsDir
+      when (isDir && not isSyml) $ do
+        lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack hlsDir
+        recyclePathForcibly hlsDir'
 
   when (Just ver == isHlsSet) $ do
     -- set latest hls

@@ -566,8 +566,11 @@ rmGHCVer ver = do
       lift $ recycleFile f
       when (not (null survivors)) $ throwE $ UninstallFailed dir survivors
     Nothing -> do
-      lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack dir
-      lift $ recyclePathForcibly dir'
+      isDir <- liftIO $ doesDirectoryExist dir
+      isSyml <- liftIO $ handleIO (\_ -> pure False) $ pathIsSymbolicLink dir
+      when (isDir && not isSyml) $ do
+        lift $ logInfo $ "Removing legacy directory recursively: " <> T.pack dir
+        recyclePathForcibly dir'
 
   v' <-
     handle
@@ -681,28 +684,53 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                     , "origin"
                     , fromString rep ]
 
-          let fetch_args =
-                    [ "fetch"
-                    , "--depth"
-                    , "1"
-                    , "--quiet"
-                    , "origin"
-                    , fromString ref ]
+          -- figure out if we can do a shallow clone
+          remoteBranches <- catchE @ProcessError @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, DownloadFailed, GPGError] @'[PatchFailed, NotFoundInPATH, DigestError, DownloadFailed, GPGError] (\(_ :: ProcessError) -> pure [])
+              $ fmap processBranches $ gitOut ["ls-remote", "--heads", "origin"] (fromGHCupPath tmpUnpack)
+          let shallow_clone
+                | isCommitHash ref                     = True
+                | fromString ref `elem` remoteBranches = True
+                | otherwise                            = False
+          lift $ logDebug $ "Shallow clone: " <> T.pack (show shallow_clone)
+
+          -- fetch
+          let fetch_args
+                | shallow_clone = ["fetch", "--depth", "1", "--quiet", "origin", fromString ref]
+                | otherwise     = ["fetch", "--tags",       "--quiet", "origin"                ]
           lEM $ git fetch_args
 
-          lEM $ git [ "checkout", "FETCH_HEAD" ]
+          -- initial checkout
+          lEM $ git [ "checkout", fromString ref ]
+
+          -- gather some info
+          git_describe <- if shallow_clone
+                          then pure Nothing
+                          else fmap Just $ liftE $ gitOut ["describe", "--tags"] (fromGHCupPath tmpUnpack)
+          chash <- liftE $ gitOut ["rev-parse", "HEAD" ] (fromGHCupPath tmpUnpack)
+
+          -- clone submodules
           lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
+
+          -- apply patches
           liftE $ applyAnyPatch patches (fromGHCupPath tmpUnpack)
+
+          -- bootstrap
           lEM $ execWithGhcEnv "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
           lEM $ execWithGhcEnv "sh" ["./configure"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
           CapturedProcess {..} <- lift $ makeOut
             ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just $ fromGHCupPath tmpUnpack)
-          case _exitCode of
-            ExitSuccess -> throwEither . MP.parse ghcProjectVersion "" . decUTF8Safe' $ _stdOut
+          tver <- case _exitCode of
+            ExitSuccess -> throwEither . MP.parse ghcProjectVersion "" . T.pack . stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
             ExitFailure c -> fail ("Could not figure out GHC project version. Exit code was: " <> show c <> ". Error was: " <> T.unpack (decUTF8Safe' _stdErr))
 
-        liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
-        lift $ logInfo $ "Git version " <> T.pack ref <> " corresponds to GHC version " <> prettyVer tver
+          liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
+          lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
+                           "GHC version (from Makefile): " <> prettyVer tver <>
+                           (if not shallow_clone then "\n  " <> "'git describe' output: " <> fromJust git_describe else mempty) <>
+                           (if isCommitHash ref then mempty else "\n  " <> "commit hash: " <> chash)
+          liftIO $ threadDelay 5000000 -- give the user a sec to intervene
+
+          pure tver
 
         pure (tmpUnpack, tmpUnpack, GHCTargetVersion Nothing tver)
     -- the version that's installed may differ from the

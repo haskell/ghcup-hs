@@ -82,7 +82,7 @@ data HLSCompileOptions = HLSCompileOptions
   { targetHLS    :: Either Version GitBranch
   , jobs         :: Maybe Int
   , setCompile   :: Bool
-  , ovewrwiteVer :: Maybe Version
+  , ovewrwiteVer :: Either Bool Version
   , isolateDir   :: Maybe FilePath
   , cabalProject :: Maybe (Either FilePath URI)
   , cabalProjectLocal :: Maybe URI
@@ -145,14 +145,16 @@ Examples:
 
   compileHLSFooter = [s|Discussion:
   Compiles and installs the specified HLS version.
-  The last argument is a list of GHC versions to compile for.
+  The --ghc arguments are necessary to specify which GHC version to build for/against.
   These need to be available in PATH prior to compilation.
 
 Examples:
-  # compile 1.4.0 for ghc 8.10.5 and 8.10.7
-  ghcup compile hls -v 1.4.0 -j 12 --ghc 8.10.5 --ghc 8.10.7
-  # compile from master for ghc 8.10.7, linking everything dynamically
-  ghcup compile hls -g master -j 12 --ghc 8.10.7 -- --ghc-options='-dynamic'|]
+  # compile 1.7.0.0 for ghc 8.10.5 and 8.10.7, passing '--allow-newer' to cabal
+  ghcup compile hls -v 1.7.0.0 -j 12 --ghc 8.10.5 --ghc 8.10.7 -- --allow-newer
+  # compile from master for ghc 9.2.3 and use 'git describe' to name the binary
+  ghcup compile hls -g master --git-describe-version --ghc 9.2.3
+  # compile a specific commit for ghc 9.2.3 and set a specifc version for the binary name
+  ghcup compile hls -g a32db0b -o 1.7.0.0-p1 --ghc 9.2.3|]
 
 
 ghcCompileOpts :: Parser GHCCompileOptions
@@ -280,7 +282,7 @@ hlsCompileOpts =
           (Right <$> (GitBranch <$> option
           str
           (short 'g' <> long "git-ref" <> metavar "GIT_REFERENCE" <> help
-            "The git commit/branch/ref to build from"
+            "The git commit/branch/ref to build from (accepts anything 'git checkout' accepts)"
           ) <*>
           optional (option str (short 'r' <> long "repository" <> metavar "GIT_REPOSITORY" <> help "The git repository to build from (defaults to HLS upstream)"
             <> completer (gitFileUri ["https://github.com/haskell/haskell-language-server.git"])
@@ -295,8 +297,9 @@ hlsCompileOpts =
             )
           )
     <*> fmap (fromMaybe True) (invertableSwitch "set" Nothing True (help "Don't set as active version after install"))
-    <*> optional
-          (option
+    <*>
+         (
+          (Right <$> option
             (eitherReader
               (first (const "Not a valid version") . version . T.pack)
             )
@@ -304,6 +307,14 @@ hlsCompileOpts =
               "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
             <> (completer $ versionCompleter Nothing HLS)
             )
+          )
+          <|>
+          (Left <$> (switch
+                      (long "git-describe-version"
+                         <> help "Use the output of 'git describe' (if building from git) as the VERSION component of the installed binary."
+                      )
+                    )
+          )
           )
     <*> optional
           (option
