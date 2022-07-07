@@ -726,8 +726,8 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
           liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
           lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
                            "GHC version (from Makefile): " <> prettyVer tver <>
-                           (if not shallow_clone then ("\n  " <> "'git describe' output: " <> fromJust git_describe) else mempty) <>
-                           (if isCommitHash ref then mempty else ("\n  " <> "commit hash: " <> chash))
+                           (if not shallow_clone then "\n  " <> "'git describe' output: " <> fromJust git_describe else mempty) <>
+                           (if isCommitHash ref then mempty else "\n  " <> "commit hash: " <> chash)
           liftIO $ threadDelay 5000000 -- give the user a sec to intervene
 
           pure tver
