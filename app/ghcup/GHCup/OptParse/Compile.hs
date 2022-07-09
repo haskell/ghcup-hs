@@ -78,8 +78,9 @@ data GHCCompileOptions = GHCCompileOptions
   , isolateDir   :: Maybe FilePath
   }
 
+
 data HLSCompileOptions = HLSCompileOptions
-  { targetHLS    :: Either Version GitBranch
+  { targetHLS    :: HLSVer
   , jobs         :: Maybe Int
   , setCompile   :: Bool
   , ovewrwiteVer :: Either Bool Version
@@ -149,10 +150,12 @@ Examples:
   These need to be available in PATH prior to compilation.
 
 Examples:
-  # compile 1.7.0.0 for ghc 8.10.5 and 8.10.7, passing '--allow-newer' to cabal
+  # compile 1.7.0.0 from hackage for 8.10.7
+  ghcup compile hls --hackage-version 1.7.0.0 --ghc 8.10.7
+  # compile 1.7.0.0 from official source dist for ghc 8.10.5 and 8.10.7, passing '--allow-newer' to cabal
   ghcup compile hls -v 1.7.0.0 -j 12 --ghc 8.10.5 --ghc 8.10.7 -- --allow-newer
-  # compile from master for ghc 9.2.3 and use 'git describe' to name the binary
-  ghcup compile hls -g master --git-describe-version --ghc 9.2.3
+  # compile from master for ghc 9.2.3 using 'git describe' to name the binary and ignore the pinned index state
+  ghcup compile hls -g master --git-describe-version --ghc 9.2.3 -- --index-state=@(date '+%s')
   # compile a specific commit for ghc 9.2.3 and set a specifc version for the binary name
   ghcup compile hls -g a32db0b -o 1.7.0.0-p1 --ghc 9.2.3|]
 
@@ -270,7 +273,7 @@ ghcCompileOpts =
 hlsCompileOpts :: Parser HLSCompileOptions
 hlsCompileOpts =
   HLSCompileOptions
-    <$> ((Left <$> option
+    <$> ((SourceDist <$> option
           (eitherReader
             (first (const "Not a valid version") . version . T.pack)
           )
@@ -278,8 +281,9 @@ hlsCompileOpts =
             "The tool version to compile"
             <> (completer $ versionCompleter Nothing HLS)
           )
-          ) <|>
-          (Right <$> (GitBranch <$> option
+          )
+          <|>
+          (GitDist <$> (GitBranch <$> option
           str
           (short 'g' <> long "git-ref" <> metavar "GIT_REFERENCE" <> help
             "The git commit/branch/ref to build from (accepts anything 'git checkout' accepts)"
@@ -287,7 +291,28 @@ hlsCompileOpts =
           optional (option str (short 'r' <> long "repository" <> metavar "GIT_REPOSITORY" <> help "The git repository to build from (defaults to HLS upstream)"
             <> completer (gitFileUri ["https://github.com/haskell/haskell-language-server.git"])
           ))
-          )))
+          ))
+          <|>
+          (HackageDist <$> (option
+            (eitherReader
+              (first (const "Not a valid version") . version . T.pack)
+            )
+          (long "hackage-version" <> metavar "HACKAGE_VERSION" <> help
+            "The hackage version to compile"
+            <> (completer $ versionCompleter Nothing HLS)
+          )
+          ))
+          <|>
+          (
+           RemoteDist <$> (option
+            (eitherReader uriParser)
+            (long "remote-source-dist" <> metavar "URI" <> help
+              "URI (https/http/file) to a HLS source distribution"
+              <> completer fileUri
+            )
+          )
+          )
+          )
     <*> optional
           (option
             (eitherReader (readEither @Int))
@@ -468,7 +493,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
     (CompileHLS HLSCompileOptions { .. }) -> do
       runCompileHLS runAppState (do
         case targetHLS of
-          Left targetVer -> do
+          SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
             let vi = getVersionInfo targetVer HLS dls
             forM_ (_viPreCompile =<< vi) $ \msg -> do
@@ -476,7 +501,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
               lift $ logInfo
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
-          Right _ -> pure ()
+          _ -> pure ()
         ghcs <- liftE $ forM targetGHCs (\ghc -> fmap (_tvVersion . fst) . fromVersion (Just ghc) $ GHC)
         targetVer <- liftE $ compileHLS
                     targetHLS

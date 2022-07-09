@@ -342,7 +342,9 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
     (GHC, ver)   = cmp' GHC (Just $ ToolVersion (mkTVer tver)) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ ovewrwiteVer = Right over }))
     (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer over)) ver
-  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = Left tver }))
+  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = SourceDist tver }))
+    (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer tver)) ver
+  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HackageDist tver }))
     (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer tver)) ver
   alreadyInstalling (Upgrade _ _ _) (GHCup, _) = pure True
   alreadyInstalling _ _ = pure False

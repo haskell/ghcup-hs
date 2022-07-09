@@ -657,7 +657,9 @@ isSafeDir (GHCupBinDir _)        = False
 
 
 
-
-
+data HLSVer = SourceDist Version
+            | GitDist GitBranch
+            | HackageDist Version
+            | RemoteDist URI
 
 

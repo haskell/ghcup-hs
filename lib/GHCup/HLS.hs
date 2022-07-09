@@ -324,7 +324,7 @@ compileHLS :: ( MonadMask m
               , MonadUnliftIO m
               , MonadFail m
               )
-           => Either Version GitBranch
+           => HLSVer
            -> [Version]
            -> Maybe Int
            -> Either Bool Version
@@ -349,9 +349,9 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
   Dirs { .. } <- lift getDirs
 
 
-  (workdir, tver, git_describe) <- case targetHLS of
+  (workdir, tmpUnpack, tver, git_describe) <- case targetHLS of
     -- unpack from version tarball
-    Left tver -> do
+    SourceDist tver -> do
       lift $ logDebug $ "Requested to compile: " <> prettyVer tver
 
       -- download source tarball
@@ -369,10 +369,47 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
                        (liftE . intoSubdir tmpUnpack)
                        (view dlSubdir dlInfo)
 
-      pure (workdir, tver, Nothing)
+      pure (workdir, tmpUnpack, tver, Nothing)
+
+    HackageDist tver -> do
+      lift $ logDebug $ "Requested to compile (from hackage): " <> prettyVer tver
+
+      -- download source tarball
+      tmpUnpack <- lift mkGhcupTmpDir
+      let hls = "haskell-language-server-" <> T.unpack (prettyVer tver)
+      reThrowAll @_ @'[ProcessError] DownloadFailed $ do
+        -- unpack
+        lEM $ exec "cabal" ["unpack", hls] (Just $ fromGHCupPath tmpUnpack) Nothing
+
+      let workdir = appendGHCupPath tmpUnpack hls
+
+      pure (workdir, tmpUnpack, tver, Nothing)
+
+    RemoteDist uri -> do
+      lift $ logDebug $ "Requested to compile (from uri): " <> T.pack (show uri)
+
+      -- download source tarball
+      tmpDownload <- lift withGHCupTmpDir
+      tmpUnpack <- lift mkGhcupTmpDir
+      tar <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
+      (cf, tver) <- liftE $ cleanUpOnError tmpUnpack $ do
+        unpackToDir (fromGHCupPath tmpUnpack) tar
+        let regex = [s|haskell-language-server\.cabal$|] :: B.ByteString
+        [cabalFile] <- liftIO $ handleIO (\_ -> pure []) $ findFilesDeep
+          tmpUnpack
+          (makeRegexOpts compExtended
+                         execBlank
+                         regex
+          )
+        tver <- getCabalVersion (fromGHCupPath tmpUnpack </> cabalFile)
+        pure (cabalFile, tver)
+
+      let workdir = appendGHCupPath tmpUnpack (takeDirectory cf)
+
+      pure (workdir, tmpUnpack, tver, Nothing)
 
     -- clone from git
-    Right GitBranch{..} -> do
+    GitDist GitBranch{..} -> do
       tmpUnpack <- lift mkGhcupTmpDir
       let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
       reThrowAll @_ @'[ProcessError] DownloadFailed $ do
@@ -409,15 +446,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
                         then pure Nothing
                         else fmap Just $ gitOut ["describe", "--tags"] (fromGHCupPath tmpUnpack)
         chash <- gitOut ["rev-parse", "HEAD" ] (fromGHCupPath tmpUnpack)
-        (Just gpd) <- parseGenericPackageDescriptionMaybe
-          <$> liftIO (B.readFile (fromGHCupPath tmpUnpack </> "haskell-language-server.cabal"))
-        let tver = (\c -> Version Nothing c [] Nothing)
-                 . NE.fromList . fmap (NE.fromList . (:[]) . digits . fromIntegral)
-                 . versionNumbers
-                 . pkgVersion
-                 . package
-                 . packageDescription
-                 $ gpd
+        tver <- getCabalVersion (fromGHCupPath tmpUnpack </> "haskell-language-server.cabal")
 
         liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
         lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
@@ -425,7 +454,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
                                     (if not shallow_clone then "\n  " <> "'git describe' output: " <> fromJust git_describe else mempty) <>
                                     (if isCommitHash ref then mempty else "\n  " <> "commit hash: " <> chash)
 
-        pure (tmpUnpack, tver, git_describe)
+        pure (tmpUnpack, tmpUnpack, tver, git_describe)
 
   -- the version that's installed may differ from the
   -- compiled version, so the user can overwrite it
@@ -441,7 +470,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
                   Right v -> pure v
 
   liftE $ runBuildAction
-    workdir
+    tmpUnpack
     (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed $ fromGHCupPath workdir) $ do
       let tmpInstallDir = fromGHCupPath workdir </> "out"
       liftIO $ createDirRecursive' tmpInstallDir
@@ -457,14 +486,22 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
               pure "cabal.project"
           | otherwise -> pure (takeFileName cp)
         Just (Right uri) -> do
-          tmpUnpack <- lift withGHCupTmpDir
-          cp <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpUnpack) (Just "cabal.project") False
+          tmpUnpack' <- lift withGHCupTmpDir
+          cp <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpUnpack') (Just "cabal.project") False
           copyFileE cp (fromGHCupPath workdir </> "cabal.project") False
           pure "cabal.project"
-        Nothing -> pure "cabal.project"
+        Nothing
+          | HackageDist _ <- targetHLS -> do
+              liftIO $ B.writeFile (fromGHCupPath workdir </> "cabal.project") "packages: ./"
+              pure "cabal.project"
+          | RemoteDist _ <- targetHLS -> do
+              let cabalFile = fromGHCupPath workdir </> "cabal.project"
+              liftIO $ whenM (not <$> doesFileExist cabalFile) $ B.writeFile cabalFile "packages: ./"
+              pure "cabal.project"
+          | otherwise -> pure "cabal.project"
       forM_ cabalProjectLocal $ \uri -> do
-        tmpUnpack <- lift withGHCupTmpDir
-        cpl <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpUnpack) (Just (cp <.> "local")) False
+        tmpUnpack' <- lift withGHCupTmpDir
+        cpl <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpUnpack') (Just (cp <.> "local")) False
         copyFileE cpl (fromGHCupPath workdir </> cp <.> "local") False
       artifacts <- forM (sort ghcs) $ \ghc -> do
         let ghcInstallDir = tmpInstallDir </> T.unpack (prettyVer ghc)
@@ -658,3 +695,19 @@ rmHLSVer ver = do
     case headMay . reverse . sort $ hlsVers of
       Just latestver -> liftE $ setHLS latestver SetHLSOnly Nothing
       Nothing        -> pure ()
+
+
+getCabalVersion :: (MonadIO m, MonadFail m) => FilePath -> m Version
+getCabalVersion fp = do
+  contents <- liftIO $ B.readFile fp
+  gpd <- case parseGenericPackageDescriptionMaybe contents of
+           Nothing -> fail $ "could not parse cabal file: " <> fp
+           Just r -> pure r
+  let tver = (\c -> Version Nothing c [] Nothing)
+           . NE.fromList . fmap (NE.fromList . (:[]) . digits . fromIntegral)
+           . versionNumbers
+           . pkgVersion
+           . package
+           . packageDescription
+           $ gpd
+  pure tver
