@@ -337,6 +337,7 @@ compileHLS :: ( MonadMask m
            -> InstallDir
            -> Maybe (Either FilePath URI)
            -> Maybe URI
+           -> Bool
            -> Maybe (Either FilePath [URI])  -- ^ patches
            -> [Text]                   -- ^ additional args to cabal install
            -> Excepts '[ NoDownload
@@ -349,11 +350,14 @@ compileHLS :: ( MonadMask m
                        , BuildFailed
                        , NotInstalled
                        ] m Version
-compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patches cabalArgs = do
+compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal updateCabal patches cabalArgs = do
   PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   Dirs { .. } <- lift getDirs
 
+  when updateCabal $ reThrowAll @_ @'[ProcessError] DownloadFailed $ do
+    lift $ logInfo "Updating cabal DB"
+    lEM $ exec "cabal" ["update"] (Just $ fromGHCupPath tmpDir) Nothing
 
   (workdir, tmpUnpack, tver, git_describe) <- case targetHLS of
     -- unpack from version tarball

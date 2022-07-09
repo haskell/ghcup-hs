@@ -85,6 +85,7 @@ data HLSCompileOptions = HLSCompileOptions
   { targetHLS    :: HLS.HLSVer
   , jobs         :: Maybe Int
   , setCompile   :: Bool
+  , updateCabal  :: Bool
   , ovewrwiteVer :: Either Bool Version
   , isolateDir   :: Maybe FilePath
   , cabalProject :: Maybe (Either FilePath URI)
@@ -152,8 +153,8 @@ Examples:
   These need to be available in PATH prior to compilation.
 
 Examples:
-  # compile 1.7.0.0 from hackage for 8.10.7
-  ghcup compile hls --hackage-version 1.7.0.0 --ghc 8.10.7
+  # compile 1.7.0.0 from hackage for 8.10.7, running 'cabal update' before the build
+  ghcup compile hls --hackage-version 1.7.0.0 --ghc 8.10.7 --cabal-update
   # compile 1.7.0.0 from official source dist for ghc 8.10.5 and 8.10.7, passing '--allow-newer' to cabal
   ghcup compile hls -v 1.7.0.0 -j 12 --ghc 8.10.5 --ghc 8.10.7 -- --allow-newer
   # compile from master for ghc 9.2.3 using 'git describe' to name the binary and ignore the pinned index state
@@ -335,6 +336,7 @@ hlsCompileOpts =
             )
           )
     <*> fmap (fromMaybe True) (invertableSwitch "set" Nothing True (help "Don't set as active version after install"))
+    <*> switch (long "cabal-update" <> help "Run 'cabal update' before the build")
     <*>
          (
           (Right <$> option
@@ -524,6 +526,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     (maybe GHCupInternal IsolateDir isolateDir)
                     cabalProject
                     cabalProjectLocal
+                    updateCabal
                     patches
                     cabalArgs
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
