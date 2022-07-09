@@ -71,6 +71,12 @@ import qualified Text.Megaparsec               as MP
 import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
+data HLSVer = SourceDist Version
+            | GitDist GitBranch
+            | HackageDist Version
+            | RemoteDist URI
+
+
 
     --------------------
     --[ Installation ]--
@@ -394,8 +400,8 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal patc
       tar <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
       (cf, tver) <- liftE $ cleanUpOnError tmpUnpack $ do
         unpackToDir (fromGHCupPath tmpUnpack) tar
-        let regex = [s|haskell-language-server\.cabal$|] :: B.ByteString
-        [cabalFile] <- liftIO $ handleIO (\_ -> pure []) $ findFilesDeep
+        let regex = [s|^(.*/)*haskell-language-server\.cabal$|] :: B.ByteString
+        [cabalFile] <- liftIO $ findFilesDeep
           tmpUnpack
           (makeRegexOpts compExtended
                          execBlank

@@ -1097,7 +1097,8 @@ runBuildAction bdir action = do
 
 -- | Clean up the given directory if the action fails,
 -- depending on the Settings.
-cleanUpOnError :: ( MonadReader env m
+cleanUpOnError :: forall e m a env .
+                  ( MonadReader env m
                   , HasDirs env
                   , HasSettings env
                   , MonadIO m

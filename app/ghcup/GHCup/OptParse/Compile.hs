@@ -12,6 +12,8 @@ module GHCup.OptParse.Compile where
 
 
 import           GHCup
+import qualified GHCup.GHC as GHC
+import qualified GHCup.HLS as HLS
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
@@ -64,7 +66,7 @@ data CompileCommand = CompileGHC GHCCompileOptions
 
 
 data GHCCompileOptions = GHCCompileOptions
-  { targetGhc    :: Either Version GitBranch
+  { targetGhc    :: GHC.GHCVer Version
   , bootstrapGhc :: Either Version FilePath
   , jobs         :: Maybe Int
   , buildConfig  :: Maybe FilePath
@@ -80,7 +82,7 @@ data GHCCompileOptions = GHCCompileOptions
 
 
 data HLSCompileOptions = HLSCompileOptions
-  { targetHLS    :: HLSVer
+  { targetHLS    :: HLS.HLSVer
   , jobs         :: Maybe Int
   , setCompile   :: Bool
   , ovewrwiteVer :: Either Bool Version
@@ -163,7 +165,7 @@ Examples:
 ghcCompileOpts :: Parser GHCCompileOptions
 ghcCompileOpts =
   GHCCompileOptions
-    <$> ((Left <$> option
+    <$> ((GHC.SourceDist <$> option
           (eitherReader
             (first (const "Not a valid version") . version . T.pack)
           )
@@ -172,7 +174,7 @@ ghcCompileOpts =
             <> (completer $ versionCompleter Nothing GHC)
           )
           ) <|>
-          (Right <$> (GitBranch <$> option
+          (GHC.GitDist <$> (GitBranch <$> option
           str
           (short 'g' <> long "git-ref" <> metavar "GIT_REFERENCE" <> help
             "The git commit/branch/ref to build from"
@@ -181,7 +183,18 @@ ghcCompileOpts =
             short 'r' <> long "repository" <> metavar "GIT_REPOSITORY" <> help "The git repository to build from (defaults to GHC upstream)"
             <> completer (gitFileUri ["https://gitlab.haskell.org/ghc/ghc.git"])
             ))
-          )))
+          ))
+          <|>
+          (
+           GHC.RemoteDist <$> (option
+            (eitherReader uriParser)
+            (long "remote-source-dist" <> metavar "URI" <> help
+              "URI (https/http/file) to a GHC source distribution"
+              <> completer fileUri
+            )
+          )
+          )
+          )
     <*> option
           (eitherReader
             (\x ->
@@ -273,7 +286,7 @@ ghcCompileOpts =
 hlsCompileOpts :: Parser HLSCompileOptions
 hlsCompileOpts =
   HLSCompileOptions
-    <$> ((SourceDist <$> option
+    <$> ((HLS.SourceDist <$> option
           (eitherReader
             (first (const "Not a valid version") . version . T.pack)
           )
@@ -283,7 +296,7 @@ hlsCompileOpts =
           )
           )
           <|>
-          (GitDist <$> (GitBranch <$> option
+          (HLS.GitDist <$> (GitBranch <$> option
           str
           (short 'g' <> long "git-ref" <> metavar "GIT_REFERENCE" <> help
             "The git commit/branch/ref to build from (accepts anything 'git checkout' accepts)"
@@ -293,7 +306,7 @@ hlsCompileOpts =
           ))
           ))
           <|>
-          (HackageDist <$> (option
+          (HLS.HackageDist <$> (option
             (eitherReader
               (first (const "Not a valid version") . version . T.pack)
             )
@@ -304,7 +317,7 @@ hlsCompileOpts =
           ))
           <|>
           (
-           RemoteDist <$> (option
+           HLS.RemoteDist <$> (option
             (eitherReader uriParser)
             (long "remote-source-dist" <> metavar "URI" <> help
               "URI (https/http/file) to a HLS source distribution"
@@ -493,7 +506,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
     (CompileHLS HLSCompileOptions { .. }) -> do
       runCompileHLS runAppState (do
         case targetHLS of
-          SourceDist targetVer -> do
+          HLS.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
             let vi = getVersionInfo targetVer HLS dls
             forM_ (_viPreCompile =<< vi) $ \msg -> do
@@ -544,7 +557,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
     (CompileGHC GHCCompileOptions {..}) ->
       runCompileGHC runAppState (do
         case targetGhc of
-          Left targetVer -> do
+          GHC.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
             let vi = getVersionInfo targetVer GHC dls
             forM_ (_viPreCompile =<< vi) $ \msg -> do
@@ -552,9 +565,12 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
               lift $ logInfo
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
-          Right _ -> pure ()
+          _ -> pure ()
         targetVer <- liftE $ compileGHC
-                    (first (GHCTargetVersion crossTarget) targetGhc)
+                    ((\case
+                        GHC.SourceDist v -> GHC.SourceDist $ GHCTargetVersion crossTarget v
+                        GHC.GitDist g -> GHC.GitDist g
+                        GHC.RemoteDist r -> GHC.RemoteDist r) targetGhc)
                     ovewrwiteVer
                     bootstrapGhc
                     jobs

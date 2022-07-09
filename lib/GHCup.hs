@@ -33,8 +33,8 @@ module GHCup (
 
 
 import           GHCup.Cabal
-import           GHCup.GHC
-import           GHCup.HLS
+import           GHCup.GHC             hiding ( GHCVer(..) )
+import           GHCup.HLS             hiding ( HLSVer(..) )
 import           GHCup.Stack
 import           GHCup.List
 import           GHCup.Download

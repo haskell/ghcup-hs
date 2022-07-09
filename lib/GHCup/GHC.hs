@@ -80,6 +80,12 @@ import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 
 
+data GHCVer v = SourceDist v
+              | GitDist GitBranch
+              | RemoteDist URI
+
+
+
     ---------------------
     --[ Tool fetching ]--
     ---------------------
@@ -607,7 +613,7 @@ compileGHC :: ( MonadMask m
               , MonadUnliftIO m
               , MonadFail m
               )
-           => Either GHCTargetVersion GitBranch          -- ^ version to install
+           => GHCVer GHCTargetVersion
            -> Maybe Version            -- ^ overwrite version
            -> Either Version FilePath  -- ^ version to bootstrap with
            -> Maybe Int                -- ^ jobs
@@ -650,7 +656,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
     (workdir, tmpUnpack, tver) <- case targetGhc of
       -- unpack from version tarball
-      Left tver -> do
+      SourceDist tver -> do
         lift $ logDebug $ "Requested to compile: " <> tVerToText tver <> " with " <> either prettyVer T.pack bstrap
 
         -- download source tarball
@@ -671,8 +677,31 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
         pure (workdir, tmpUnpack, tver)
 
+      RemoteDist uri -> do
+        lift $ logDebug $ "Requested to compile (from uri): " <> T.pack (show uri)
+
+        -- download source tarball
+        tmpDownload <- lift withGHCupTmpDir
+        tmpUnpack <- lift mkGhcupTmpDir
+        tar <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
+        (bf, tver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError] tmpUnpack $ do
+          liftE $ unpackToDir (fromGHCupPath tmpUnpack) tar
+          let regex = [s|^(.*/)*boot$|] :: B.ByteString
+          [bootFile] <- liftIO $ findFilesDeep
+            tmpUnpack
+            (makeRegexOpts compExtended
+                           execBlank
+                           regex
+            )
+          tver <- liftE $ getGHCVer (appendGHCupPath tmpUnpack (takeDirectory bootFile))
+          pure (bootFile, tver)
+
+        let workdir = appendGHCupPath tmpUnpack (takeDirectory bf)
+
+        pure (workdir, tmpUnpack, mkTVer tver)
+
       -- clone from git
-      Right GitBranch{..} -> do
+      GitDist GitBranch{..} -> do
         tmpUnpack <- lift mkGhcupTmpDir
         let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
         tver <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, DownloadFailed, GPGError] DownloadFailed $ do
@@ -715,14 +744,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
           liftE $ applyAnyPatch patches (fromGHCupPath tmpUnpack)
 
           -- bootstrap
-          lEM $ execWithGhcEnv "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
-          lEM $ execWithGhcEnv "sh" ["./configure"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
-          CapturedProcess {..} <- lift $ makeOut
-            ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just $ fromGHCupPath tmpUnpack)
-          tver <- case _exitCode of
-            ExitSuccess -> throwEither . MP.parse ghcProjectVersion "" . T.pack . stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
-            ExitFailure c -> fail ("Could not figure out GHC project version. Exit code was: " <> show c <> ". Error was: " <> T.unpack (decUTF8Safe' _stdErr))
-
+          tver <- liftE $ getGHCVer tmpUnpack
           liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
           lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
                            "GHC version (from Makefile): " <> prettyVer tver <>
@@ -795,11 +817,29 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
     pure installVer
 
  where
+  getGHCVer :: ( MonadReader env m
+               , HasSettings env
+               , HasDirs env
+               , HasLog env
+               , MonadIO m
+               , MonadThrow m
+               )
+            => GHCupPath
+            -> Excepts '[ProcessError] m Version
+  getGHCVer tmpUnpack = do
+    lEM $ execWithGhcEnv "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
+    lEM $ execWithGhcEnv "sh" ["./configure"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
+    CapturedProcess {..} <- lift $ makeOut
+      ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just $ fromGHCupPath tmpUnpack)
+    case _exitCode of
+      ExitSuccess -> throwEither . MP.parse ghcProjectVersion "" . T.pack . stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
+      ExitFailure c -> throwE $ NonZeroExit c "make" ["show!", "--quiet", "VALUE=ProjectVersion" ]
+
   defaultConf =
     let cross_mk = $(LitE . StringL <$> (qAddDependentFile "data/build_mk/cross" >> runIO (readFile "data/build_mk/cross")))
         default_mk = $(LitE . StringL <$> (qAddDependentFile "data/build_mk/default" >> runIO (readFile "data/build_mk/default")))
     in case targetGhc of
-         Left (GHCTargetVersion (Just _) _) -> cross_mk
+         SourceDist (GHCTargetVersion (Just _) _) -> cross_mk
          _ -> default_mk
 
   compileHadrianBindist :: ( MonadReader env m
@@ -976,7 +1016,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
    -- for cross, we need Stage1Only
     case targetGhc of
-      Left (GHCTargetVersion (Just _) _) -> when ("Stage1Only = YES" `notElem` lines') $ throwE
+      SourceDist (GHCTargetVersion (Just _) _) -> when ("Stage1Only = YES" `notElem` lines') $ throwE
         (InvalidBuildConfig
           [s|Cross compiling needs to be a Stage1 build, add "Stage1Only = YES" to your config!|]
         )
