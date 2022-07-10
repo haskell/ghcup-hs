@@ -327,18 +327,20 @@ This will execute vscode with GHC set to 8.10.7 and all other tools to their lat
 
 # Troubleshooting
 
-## The script immediately exits on windows
+## Script immediately exits on windows
 
 There are two possible reasons:
 
 1. your company blocks the script (some have a whitelist)... ask your administrator
 2. your Antivirus or Windows Defender interfere with the installation. Disable them temporarily.
 
-## Darwin "C compiler cannot create executables"
+## C compiler cannot create executables
+
+### Darwin
 
 You need to update your XCode command line tools, e.g. [like this](https://stackoverflow.com/questions/34617452/how-to-update-xcode-from-command-line).
 
-## I get certificate authority errors (or similar)
+## Certificate authority errors (curl)
 
 If your certificates are outdated or improperly configured, curl may be unable
 to download ghcup.
@@ -350,6 +352,6 @@ There are two known workarounds:
 
 On windows, you can disable curl like so:
 
-```
+```pwsh
 Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true
 ```

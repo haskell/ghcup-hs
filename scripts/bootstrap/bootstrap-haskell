@@ -326,9 +326,11 @@ download_ghcup() {
         MSYS*|MINGW*)
             case "${BOOTSTRAP_HASKELL_DOWNLOADER}" in
                 "curl")
+	                # shellcheck disable=SC2086
                     edo curl -Lf ${GHCUP_CURL_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup.exe
                     ;;
                 "wget")
+	                # shellcheck disable=SC2086
                     edo wget -O /dev/stdout ${GHCUP_WGET_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup.exe
                     ;;
                 *)
@@ -340,9 +342,11 @@ download_ghcup() {
 		*)
             case "${BOOTSTRAP_HASKELL_DOWNLOADER}" in
                 "curl")
+	                # shellcheck disable=SC2086
                     edo curl -Lf ${GHCUP_CURL_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup
                     ;;
                 "wget")
+	                # shellcheck disable=SC2086
                     edo wget -O /dev/stdout ${GHCUP_WGET_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup
                     ;;
                 *)
@@ -377,6 +381,7 @@ download_ghcup() {
     edo . "${GHCUP_DIR}"/env
     case "${BOOTSTRAP_HASKELL_DOWNLOADER}" in
         "curl")
+            eghcup config set downloader Curl
             ;;
         "wget")
             eghcup config set downloader Wget
