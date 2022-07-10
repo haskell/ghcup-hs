@@ -57,7 +57,7 @@ hide:
 </section>
 
 <p id="help" class="ghcup-help">
-  Need help? Ask on
+  Need help? Check the <a href="guide/#troubleshooting">Troubleshooting section</a> or ask on
   <span>
     <a href="https://kiwiirc.com/nextclient/irc.libera.chat/?nick=Guest%7C?#haskell,#haskell-ghcup">
       <img src="irc.svg" alt="" />

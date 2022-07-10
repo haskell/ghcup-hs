@@ -36,7 +36,9 @@ param (
     # Instead of installing a new MSys2, use an existing installation
     [string]$ExistingMsys2Dir,
     # Specify the cabal root directory (default: '$InstallDir\cabal')
-    [string]$CabalDir
+    [string]$CabalDir,
+    # Whether to disable use of curl.exe
+    [switch]$DisableCurl
 )
 
 $Silent = !$Interactive
@@ -425,7 +427,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     $archive = 'msys2-x86_64-latest.sfx.exe'
     $archivePath = ('{0}\{1}' -f ([IO.Path]::GetTempPath()), "$archive")
     
-    if (Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue) {
+    if ((Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue) -and !($DisableCurl)) {
       Exec "curl.exe" '-o' "$archivePath" ('https://repo.msys2.org/distrib/{0}' -f "$archive")
     } else {
       Get-FileWCSynchronous -url ('https://repo.msys2.org/distrib/{0}' -f $archive) -destinationFolder ([IO.Path]::GetTempPath()) -includeStats
@@ -591,10 +593,17 @@ if ($Minimal) {
   $MinimalExport = 'export BOOTSTRAP_HASKELL_MINIMAL=1 ;'
 }
 
-if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBash) {
-  Exec "$Bash" '-lc' ('{4} {6} {7} {8} {9} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport)
+if ($DisableCurl) {
+  $BootstrapDownloader = 'export BOOTSTRAP_HASKELL_DOWNLOADER=wget ;'
+  $DownloadScript = 'wget -O /dev/stdout'
 } else {
-  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} {6} {7} {8} {9} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && curl --proto ''=https'' --tlsv1.2 -sSf {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport)
+  $DownloadScript = 'curl --proto ''=https'' --tlsv1.2 -sSf'
+}
+
+if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBash) {
+  Exec "$Bash" '-lc' ('{4} {6} {7} {8} {9} {10} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript)
+} else {
+  Exec "$Msys2Shell" '-mingw64' '-mintty' '-c' ('{4} {6} {7} {8} {9} {10} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript)
 }
 
 
