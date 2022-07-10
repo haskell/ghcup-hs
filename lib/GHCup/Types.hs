@@ -654,10 +654,7 @@ isSafeDir (IsolateDirResolved _) = False
 isSafeDir (GHCupDir _)           = True
 isSafeDir (GHCupBinDir _)        = False
 
+type PromptQuestion = Text
 
-
-
-
-
-
-
+data PromptResponse = PromptYes | PromptNo
+  deriving (Show, Eq)

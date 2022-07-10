@@ -76,7 +76,6 @@ library
     GHCup.Types.JSON
     GHCup.Types.JSON.Utils
     GHCup.Types.Optics
-    GHCup.Types.Prompts
     GHCup.Utils
     GHCup.Utils.Dirs
     GHCup.Version
