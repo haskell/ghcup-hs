@@ -525,12 +525,12 @@ set' bs input@(_, ListResult {..}) = do
 
                 PromptNo -> pure $ Left (prettyShow e)
               where
-                userPrompt = L.toStrict $
-                  B.toLazyText $
-                  B.fromString " This Version of " <>
-                  B.fromString (show tool) <>
-                  B.fromString " you are trying to set is not installed.\n" <>
-                  B.fromString " Would you like to install it first? [Y/N]: "
+                userPrompt = L.toStrict . B.toLazyText . B.fromString $
+                  "This Version of "
+                  <> show tool
+                  <> " you are trying to set is not installed.\n"
+                  <> "Would you like to install it first? [Y/N]: "
+
             _ -> pure $ Left (prettyShow e)
 
 
