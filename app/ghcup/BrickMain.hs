@@ -518,7 +518,7 @@ set' bs input@(_, ListResult {..}) = do
                 PromptYes -> do
                   res <- install' bs input
                   case res of
-                    (Left err) -> pure $ Left (prettyShow err)
+                    (Left err) -> pure $ Left err
                     (Right _) -> do
                       logInfo "Setting now..."
                       set' bs input
