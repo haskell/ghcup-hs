@@ -154,9 +154,7 @@ Examples:
 
 Examples:
   # compile 1.7.0.0 from hackage for 8.10.7, running 'cabal update' before the build
-  ghcup compile hls --hackage-version 1.7.0.0 --ghc 8.10.7 --cabal-update
-  # compile 1.7.0.0 from official source dist for ghc 8.10.5 and 8.10.7, passing '--allow-newer' to cabal
-  ghcup compile hls -v 1.7.0.0 -j 12 --ghc 8.10.5 --ghc 8.10.7 -- --allow-newer
+  ghcup compile hls --version 1.7.0.0 --ghc 8.10.7 --cabal-update
   # compile from master for ghc 9.2.3 using 'git describe' to name the binary and ignore the pinned index state
   ghcup compile hls -g master --git-describe-version --ghc 9.2.3 -- --index-state=@(date '+%s')
   # compile a specific commit for ghc 9.2.3 and set a specifc version for the binary name
@@ -287,12 +285,12 @@ ghcCompileOpts =
 hlsCompileOpts :: Parser HLSCompileOptions
 hlsCompileOpts =
   HLSCompileOptions
-    <$> ((HLS.SourceDist <$> option
+    <$> ((HLS.HackageDist <$> option
           (eitherReader
             (first (const "Not a valid version") . version . T.pack)
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
-            "The tool version to compile"
+            "The version to compile (pulled from hackage)"
             <> (completer $ versionCompleter Nothing HLS)
           )
           )
@@ -307,12 +305,12 @@ hlsCompileOpts =
           ))
           ))
           <|>
-          (HLS.HackageDist <$> (option
+          (HLS.SourceDist <$> (option
             (eitherReader
               (first (const "Not a valid version") . version . T.pack)
             )
-          (long "hackage-version" <> metavar "HACKAGE_VERSION" <> help
-            "The hackage version to compile"
+          (long "source-dist" <> metavar "VERSION" <> help
+            "The version to compile (pulled from packaged git sources)"
             <> (completer $ versionCompleter Nothing HLS)
           )
           ))

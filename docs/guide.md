@@ -202,7 +202,9 @@ and produce the binaries `ghc-8.10.2-eff` and `ghc-head` respectively.
 GHCup always needs to know which version the bindist corresponds to (this is not automatically
 detected).
 
-## Compiling GHC from source
+## Compiling from source
+
+### GHC
 
 Compiling from source is supported for both source tarballs and arbitrary git refs. See `ghcup compile ghc --help`
 for a list of all available options.
@@ -213,6 +215,45 @@ pass `--config path/to/build.mk` to `ghcup compile ghc`.
 Common `build.mk` options are explained [here](https://gitlab.haskell.org/ghc/ghc/-/wikis/building/using#build-configuration).
 
 Make sure your system meets all the [prerequisites](https://gitlab.haskell.org/ghc/ghc/-/wikis/building/preparation).
+
+### HLS
+
+There are 3 main ways to compile HLS from source.
+
+1. from hackage (should have up to date version bounds)
+    - `ghcup compile hls --version 1.7.0.0 --ghc 9.2.3`
+2. from git (allows to build latest sources and PRs)
+    - `ghcup compile hls --git-ref master --ghc 9.2.3`
+    - `ghcup compile hls --git-ref a32db0b --ghc 9.2.3`
+    - `ghcup compile hls --git-ref 1.7.0.0 --ghc 9.2.3`
+3. from source distribution that's packaged during release from the corresponding git sources
+    - `ghcup compile hls --source-dist 1.7.0.0 --ghc 9.2.3`
+
+All these use `cabal v2-install` under the hood, so all build components are cached.
+You can pass arbitrary arguments to cabal, e.g. set the index state like so:
+
+```sh
+ghcup compile hls --git-ref master --ghc 9.2.3 -- --index-state=2022-06-12T00:00:00Z --allow-newer
+```
+
+You can pass `--ghc <ver>` multiple times to install for many GHCs at once.
+
+When building from git sources, ghcup will auto-detect the HLS version that the git commit corresponds to
+from the `haskell-language-server.cabal` file. This version might not have been updated since the last release.
+If you want to avoid overwriting the existing installed HLS version, you can instruct ghcup to use `git describe`
+to set the HLS version instead:
+
+```sh
+ghcup compile hls --git-ref master --ghc 9.2.3 --git-describe-version
+```
+
+You can also set the version explicitly:
+
+```sh
+ghcup compile hls --git-ref master --ghc 9.2.3 --overwrite-version 1.7.0.0-p1
+```
+
+As always, check `ghcup compile hls --help`.
 
 ### Cross support
 
