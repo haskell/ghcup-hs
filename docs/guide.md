@@ -310,7 +310,7 @@ gpg-setting: GPGLax # GPGStrict | GPGLax | GPGNone
 
 In `GPGStrict` mode, ghcup will fail if verification fails. In `GPGLax` mode it will just print a warning.
 You can also pass the mode via `ghcup --gpg <strict|lax|none>`.
-   
+
 # Tips and tricks
 
 ## ghcup run
@@ -324,3 +324,32 @@ ghcup run --ghc 8.10.7 --cabal latest --hls latest --stack latest --install -- c
 ```
 
 This will execute vscode with GHC set to 8.10.7 and all other tools to their latest version.
+
+# Troubleshooting
+
+## The script immediately exits on windows
+
+There are two possible reasons:
+
+1. your company blocks the script (some have a whitelist)... ask your administrator
+2. your Antivirus or Windows Defender interfere with the installation. Disable them temporarily.
+
+## Darwin "C compiler cannot create executables"
+
+You need to update your XCode command line tools, e.g. [like this](https://stackoverflow.com/questions/34617452/how-to-update-xcode-from-command-line).
+
+## I get certificate authority errors (or similar)
+
+If your certificates are outdated or improperly configured, curl may be unable
+to download ghcup.
+
+There are two known workarounds:
+
+1. Tell curl to ignore certificate errors (dangerous): `curl -k https://gitlab.haskell.org/haskell/ghcup-hs/-/raw/master/scripts/bootstrap/bootstrap-haskell | GHCUP_CURL_OPTS="-k" sh`
+2. Try to use wget instead: `wget -O /dev/stdout https://gitlab.haskell.org/haskell/ghcup-hs/-/raw/master/scripts/bootstrap/bootstrap-haskell | BOOTSTRAP_HASKELL_DOWNLOADER=wget sh`
+
+On windows, you can disable curl like so:
+
+```
+Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true
+```
