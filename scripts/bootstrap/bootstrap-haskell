@@ -16,6 +16,7 @@
 #   * BOOTSTRAP_HASKELL_INSTALL_HLS - whether to install latest hls
 #   * BOOTSTRAP_HASKELL_ADJUST_BASHRC - whether to adjust PATH in bashrc (prepend)
 #   * BOOTSTRAP_HASKELL_ADJUST_CABAL_CONFIG - whether to adjust mingw paths in cabal.config on windows
+#   * BOOTSTRAP_HASKELL_DOWNLOADER - which downloader to use (default: curl)
 #   * GHCUP_BASE_URL - the base url for ghcup binary download (use this to overwrite https://downloads.haskell.org/~ghcup with a mirror)
 
 # License: LGPL-3.0
@@ -30,6 +31,7 @@ ghver="0.1.17.8"
 : "${GHCUP_BASE_URL:=https://downloads.haskell.org/~ghcup}"
 
 export GHCUP_SKIP_UPDATE_CHECK=yes
+: "${BOOTSTRAP_HASKELL_DOWNLOADER:=curl}"
 
 case "${plat}" in
         MSYS*|MINGW*)
@@ -322,11 +324,31 @@ download_ghcup() {
     esac
     case "${plat}" in
         MSYS*|MINGW*)
-			edo curl -Lf ${GHCUP_CURL_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup.exe
+            case "${BOOTSTRAP_HASKELL_DOWNLOADER}" in
+                "curl")
+                    edo curl -Lf ${GHCUP_CURL_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup.exe
+                    ;;
+                "wget")
+                    edo wget -O /dev/stdout ${GHCUP_WGET_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup.exe
+                    ;;
+                *)
+                    die "Unknown downloader: ${BOOTSTRAP_HASKELL_DOWNLOADER}"
+                    ;;
+            esac
 			edo chmod +x "${GHCUP_BIN}"/ghcup.exe
 			;;
 		*)
-			edo curl -Lf ${GHCUP_CURL_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup
+            case "${BOOTSTRAP_HASKELL_DOWNLOADER}" in
+                "curl")
+                    edo curl -Lf ${GHCUP_CURL_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup
+                    ;;
+                "wget")
+                    edo wget -O /dev/stdout ${GHCUP_WGET_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup
+                    ;;
+                *)
+                    die "Unknown downloader: ${BOOTSTRAP_HASKELL_DOWNLOADER}"
+                    ;;
+            esac
 			edo chmod +x "${GHCUP_BIN}"/ghcup
 			;;
 	esac
