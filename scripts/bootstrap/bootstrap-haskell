@@ -322,11 +322,11 @@ download_ghcup() {
     esac
     case "${plat}" in
         MSYS*|MINGW*)
-			edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup.exe
+			edo curl -Lf ${GHCUP_CURL_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup.exe
 			edo chmod +x "${GHCUP_BIN}"/ghcup.exe
 			;;
 		*)
-			edo curl -Lf "${_url}" > "${GHCUP_BIN}"/ghcup
+			edo curl -Lf ${GHCUP_CURL_OPTS} "${_url}" > "${GHCUP_BIN}"/ghcup
 			edo chmod +x "${GHCUP_BIN}"/ghcup
 			;;
 	esac
