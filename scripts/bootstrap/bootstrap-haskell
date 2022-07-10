@@ -375,6 +375,16 @@ download_ghcup() {
 
 	# shellcheck disable=SC1090
     edo . "${GHCUP_DIR}"/env
+    case "${BOOTSTRAP_HASKELL_DOWNLOADER}" in
+        "curl")
+            ;;
+        "wget")
+            eghcup config set downloader Wget
+            ;;
+        *)
+            die "Unknown downloader: ${BOOTSTRAP_HASKELL_DOWNLOADER}"
+            ;;
+    esac
     eghcup upgrade
 }
 
