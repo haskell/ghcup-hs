@@ -253,6 +253,8 @@ You can also set the version explicitly:
 ghcup compile hls --git-ref master --ghc 9.2.3 --overwrite-version 1.7.0.0-p1
 ```
 
+To instruct cabal to run `cabal update` before building, run `ghcup compile hls --version 1.7.0.0 --ghc 9.2.3 --cabal-update`
+
 As always, check `ghcup compile hls --help`.
 
 ### Cross support
