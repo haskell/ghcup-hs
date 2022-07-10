@@ -493,7 +493,6 @@ set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask
      => BrickState
      -> (Int, ListResult)
      -> m (Either String ())
-
 set' bs input@(_, ListResult {..}) = do
   settings <- liftIO $ readIORef settings'
 
