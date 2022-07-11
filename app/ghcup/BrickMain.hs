@@ -17,6 +17,7 @@ import           GHCup.Prelude ( decUTF8Safe )
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
+import           GHCup.Prompts
 
 import           Brick
 import           Brick.Widgets.Border
@@ -52,6 +53,8 @@ import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           URI.ByteString
 
 import qualified Data.Text                     as T
+import qualified Data.Text.Lazy.Builder        as B
+import qualified Data.Text.Lazy                as L
 import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
 import System.Environment (getExecutablePath)
@@ -98,7 +101,7 @@ keyHandlers KeyBindings {..} =
   [ (bQuit, const "Quit"     , halt)
   , (bInstall, const "Install"  , withIOAction install')
   , (bUninstall, const "Uninstall", withIOAction del')
-  , (bSet, const "Set"      , withIOAction ((liftIO .) . set'))
+  , (bSet, const "Set"      , withIOAction set')
   , (bChangelog, const "ChangeLog", withIOAction changelog')
   , ( bShowAllVersions
     , \BrickSettings {..} ->
@@ -486,9 +489,12 @@ install' _ (_, ListResult {..}) = do
             <> "Also check the logs in ~/.ghcup/logs"
 
 
-set' :: BrickState -> (Int, ListResult) -> IO (Either String ())
-set' _ (_, ListResult {..}) = do
-  settings <- readIORef settings'
+set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
+     => BrickState
+     -> (Int, ListResult)
+     -> m (Either String ())
+set' bs input@(_, ListResult {..}) = do
+  settings <- liftIO $ readIORef settings'
 
   let run =
         flip runReaderT settings
@@ -504,7 +510,28 @@ set' _ (_, ListResult {..}) = do
     )
     >>= \case
           VRight _ -> pure $ Right ()
-          VLeft  e -> pure $ Left (prettyShow e)
+          VLeft  e -> case e of
+            (V (NotInstalled tool _)) -> do
+              promptAnswer <- getUserPromptResponse userPrompt
+              case promptAnswer of
+                PromptYes -> do
+                  res <- install' bs input
+                  case res of
+                    (Left err) -> pure $ Left err
+                    (Right _) -> do
+                      logInfo "Setting now..."
+                      set' bs input
+
+                PromptNo -> pure $ Left (prettyShow e)
+              where
+                userPrompt = L.toStrict . B.toLazyText . B.fromString $
+                  "This Version of "
+                  <> show tool
+                  <> " you are trying to set is not installed.\n"
+                  <> "Would you like to install it first? [Y/N]: "
+
+            _ -> pure $ Left (prettyShow e)
+
 
 
 del' :: (MonadReader AppState m, MonadIO m, MonadFail m, MonadMask m, MonadUnliftIO m)

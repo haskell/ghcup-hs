@@ -69,6 +69,7 @@ library
     GHCup.Prelude.Process
     GHCup.Prelude.String.QQ
     GHCup.Prelude.Version.QQ
+    GHCup.Prompts
     GHCup.Requirements
     GHCup.Stack
     GHCup.Types
