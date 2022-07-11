@@ -32,7 +32,8 @@ import           Control.Monad.Trans.Resource
 import           Data.Bifunctor
 import           Data.Functor
 import           Data.Maybe
-import           Data.Versions                  ( Version, prettyVer, version )
+import           Data.Versions                  ( Version, prettyVer, version, pvp )
+import qualified Data.Versions as V
 import           Data.Text                      ( Text )
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
@@ -43,7 +44,7 @@ import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import           URI.ByteString          hiding ( uriParser )
 import qualified Data.Text                     as T
-import Control.Exception.Safe (MonadMask)
+import Control.Exception.Safe (MonadMask, displayException)
 import System.FilePath (isPathSeparator)
 import Text.Read (readEither)
 
@@ -287,11 +288,11 @@ hlsCompileOpts =
   HLSCompileOptions
     <$> ((HLS.HackageDist <$> option
           (eitherReader
-            (first (const "Not a valid version") . version . T.pack)
+            ((>>= first displayException . V.version . V.prettyPVP) . first (const "Not a valid PVP version") . pvp . T.pack)
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
             "The version to compile (pulled from hackage)"
-            <> (completer $ versionCompleter Nothing HLS)
+            <> (completer $ versionCompleter' Nothing HLS (either (const False) (const True) . V.pvp . V.prettyVer))
           )
           )
           <|>
