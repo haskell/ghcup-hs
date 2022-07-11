@@ -196,7 +196,7 @@ installOpts tool =
                       <> completer (toolDlCompleter (fromMaybe GHC tool))
                     )
                   )
-            <*> (Just <$> toolVersionArgument Nothing tool)
+            <*> (Just <$> toolVersionTagArgument Nothing tool)
             )
         <|> pure (Nothing, Nothing)
         )

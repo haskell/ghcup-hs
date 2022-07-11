@@ -74,44 +74,44 @@ data PrefetchGHCOptions = PrefetchGHCOptions {
     --[ Parsers ]--
     ---------------
 
-          
+
 prefetchP :: Parser PrefetchCommand
 prefetchP = subparser
   (  command
       "ghc"
-      (info 
+      (info
         (PrefetchGHC
           <$> (PrefetchGHCOptions
                 <$> ( switch (short 's' <> long "source" <> help "Download source tarball instead of bindist") <**> helper )
                 <*> optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*>  optional (toolVersionArgument Nothing (Just GHC)) )
+          <*>  optional (toolVersionTagArgument Nothing (Just GHC)) )
         ( progDesc "Download GHC assets for installation")
       )
       <>
      command
       "cabal"
-      (info 
+      (info
         (PrefetchCabal
           <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*> ( optional (toolVersionArgument Nothing (Just Cabal)) <**> helper ))
+          <*> ( optional (toolVersionTagArgument Nothing (Just Cabal)) <**> helper ))
         ( progDesc "Download cabal assets for installation")
       )
       <>
      command
       "hls"
-      (info 
+      (info
         (PrefetchHLS
           <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*> ( optional (toolVersionArgument Nothing (Just HLS)) <**> helper ))
+          <*> ( optional (toolVersionTagArgument Nothing (Just HLS)) <**> helper ))
         ( progDesc "Download HLS assets for installation")
       )
       <>
      command
       "stack"
-      (info 
+      (info
         (PrefetchStack
           <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*> ( optional (toolVersionArgument Nothing (Just Stack)) <**> helper ))
+          <*> ( optional (toolVersionTagArgument Nothing (Just Stack)) <**> helper ))
         ( progDesc "Download stack assets for installation")
       )
       <>

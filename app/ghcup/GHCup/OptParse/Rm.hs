@@ -71,7 +71,7 @@ data RmOptions = RmOptions
     --[ Parsers ]--
     ---------------
 
-          
+
 rmParser :: Parser (Either RmCommand RmOptions)
 rmParser =
   (Left <$> subparser
@@ -103,7 +103,7 @@ rmParser =
 
 
 rmOpts :: Maybe Tool -> Parser RmOptions
-rmOpts tool = RmOptions <$> versionArgument (Just ListInstalled) tool
+rmOpts tool = RmOptions <$> ghcVersionArgument (Just ListInstalled) tool
 
 
 

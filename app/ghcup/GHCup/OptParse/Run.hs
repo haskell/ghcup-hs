@@ -5,6 +5,7 @@
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE ViewPatterns      #-}
 module GHCup.OptParse.Run where
 
 
@@ -46,6 +47,7 @@ import qualified Data.Text                     as T
 #ifndef IS_WINDOWS
 import qualified System.Posix.Process          as SPP
 #endif
+import Data.Versions ( prettyVer, Version )
 
 
 
@@ -88,7 +90,7 @@ runOpts =
           (short 'm' <> long "mingw-path" <> help "On windows, add mingw64 PATHs to environment (does nothing on unix)")
     <*> optional
           (option
-            (eitherReader toolVersionEither)
+            (eitherReader ghcVersionTagEither)
             (metavar "GHC_VERSION" <> long "ghc" <> help "The ghc version"
             <> completer (tagCompleter GHC [])
             <> (completer $ versionCompleter Nothing GHC)
@@ -96,7 +98,7 @@ runOpts =
           )
     <*> optional
           (option
-            (eitherReader toolVersionEither)
+            (eitherReader toolVersionTagEither)
             (metavar "CABAL_VERSION" <> long "cabal" <> help "The cabal version"
             <> completer (tagCompleter Cabal [])
             <> (completer $ versionCompleter Nothing Cabal)
@@ -104,7 +106,7 @@ runOpts =
           )
     <*> optional
           (option
-            (eitherReader toolVersionEither)
+            (eitherReader toolVersionTagEither)
             (metavar "HLS_VERSION" <> long "hls" <> help "The HLS version"
             <> completer (tagCompleter HLS [])
             <> (completer $ versionCompleter Nothing HLS)
@@ -112,7 +114,7 @@ runOpts =
           )
     <*> optional
           (option
-            (eitherReader toolVersionEither)
+            (eitherReader toolVersionTagEither)
             (metavar "STACK_VERSION" <> long "stack" <> help "The stack version"
             <> completer (tagCompleter Stack [])
             <> (completer $ versionCompleter Nothing Stack)
@@ -217,7 +219,7 @@ runRUN appState action' = do
 
 
 
-run :: forall m. 
+run :: forall m .
        ( MonadFail m
        , MonadMask m
        , MonadCatch m
@@ -233,12 +235,16 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
    r <- if not runQuick
         then runRUN runAppState $ do
          toolchain <- liftE resolveToolchainFull
-         tmp <- liftIO $ createTmpDir toolchain
+
+         -- oh dear
+         r <- lift ask
+         tmp <- lift . lift . lift . flip runReaderT (fromAppState r) $ createTmpDir toolchain
+
          liftE $ installToolChainFull toolchain tmp
          pure tmp
         else runLeanRUN leanAppstate $ do
          toolchain <- resolveToolchain
-         tmp <- liftIO $ createTmpDir toolchain
+         tmp <- lift $ createTmpDir toolchain
          liftE $ installToolChain toolchain tmp
          pure tmp
    case r of
@@ -268,17 +274,6 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
 
   where
 
-   createTmpDir :: Toolchain -> IO FilePath
-   createTmpDir toolchain =
-     case runBinDir of
-           Just bindir -> do
-             createDirRecursive' bindir
-             canonicalizePath bindir
-           Nothing -> do
-             d <- predictableTmpDir toolchain
-             createDirRecursive' d
-             canonicalizePath d
-
    -- TODO: doesn't work for cross
    resolveToolchainFull :: ( MonadFail m
                            , MonadThrow m
@@ -296,29 +291,33 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
            pure v
          cabalVer <- forM runCabalVer $ \ver -> do
            (v, _) <- liftE $ fromVersion (Just ver) Cabal
-           pure v
+           pure (_tvVersion v)
          hlsVer <- forM runHLSVer $ \ver -> do
            (v, _) <- liftE $ fromVersion (Just ver) HLS
-           pure v
+           pure (_tvVersion v)
          stackVer <- forM runStackVer $ \ver -> do
            (v, _) <- liftE $ fromVersion (Just ver) Stack
-           pure v
+           pure (_tvVersion v)
          pure Toolchain{..}
 
    resolveToolchain = do
          ghcVer <- case runGHCVer of
-            Just (ToolVersion v) -> pure $ Just v
+            Just (GHCVersion v) -> pure $ Just v
+            Just (ToolVersion v) -> pure $ Just (mkTVer v)
             Nothing -> pure Nothing
             _ -> fail "Internal error"
          cabalVer <- case runCabalVer of
+            Just (GHCVersion v) -> pure $ Just (_tvVersion v)
             Just (ToolVersion v) -> pure $ Just v
             Nothing -> pure Nothing
             _ -> fail "Internal error"
          hlsVer <- case runHLSVer of
+            Just (GHCVersion v) -> pure $ Just (_tvVersion v)
             Just (ToolVersion v) -> pure $ Just v
             Nothing -> pure Nothing
             _ -> fail "Internal error"
          stackVer <- case runStackVer of
+            Just (GHCVersion v) -> pure $ Just (_tvVersion v)
             Just (ToolVersion v) -> pure $ Just v
             Nothing -> pure Nothing
             _ -> fail "Internal error"
@@ -353,35 +352,43 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                               , MergeFileTreeError
                               ] (ResourceT (ReaderT AppState m)) ()
    installToolChainFull Toolchain{..} tmp = do
-         forM_ [(GHC,) <$> ghcVer, (Cabal,) <$> cabalVer, (HLS,) <$> hlsVer, (Stack,) <$> stackVer] $ \mt -> do
-           isInstalled <- maybe (pure False) (\(tool, v) -> lift $ checkIfToolInstalled' tool v) mt
-           case mt of
-             Just (GHC, v) -> do
-               unless isInstalled $ when (runInstTool' && isNothing (_tvTarget v)) $ void $ liftE $ installGHCBin
-                 (_tvVersion v)
-                 GHCupInternal
-                 False
-                 []
-               setTool GHC v tmp
-             Just (Cabal, v) -> do
-               unless isInstalled $ when runInstTool' $ void $ liftE $ installCabalBin
-                 (_tvVersion v)
-                 GHCupInternal
-                 False
-               setTool Cabal v tmp
-             Just (Stack, v) -> do
-               unless isInstalled $ when runInstTool' $ void $ liftE $ installStackBin
-                 (_tvVersion v)
-                 GHCupInternal
-                 False
-               setTool Stack v tmp
-             Just (HLS, v) -> do
-               unless isInstalled $ when runInstTool' $ void $ liftE $ installHLSBin
-                 (_tvVersion v)
-                 GHCupInternal
-                 False
-               setTool HLS v tmp
-             _ -> pure ()
+         case ghcVer of
+           Just v -> do
+             isInstalled <- lift $ checkIfToolInstalled' GHC v
+             unless isInstalled $ when (runInstTool' && isNothing (_tvTarget v)) $ void $ liftE $ installGHCBin
+               (_tvVersion v)
+               GHCupInternal
+               False
+               []
+             setGHC' v tmp
+           _ -> pure ()
+         case cabalVer of
+           Just v -> do
+             isInstalled <- lift $ checkIfToolInstalled' Cabal (mkTVer v)
+             unless isInstalled $ when runInstTool' $ void $ liftE $ installCabalBin
+               v
+               GHCupInternal
+               False
+             setCabal' v tmp
+           _ -> pure ()
+         case stackVer of
+           Just v -> do
+             isInstalled <- lift $ checkIfToolInstalled' Stack (mkTVer v)
+             unless isInstalled $ when runInstTool' $ void $ liftE $ installStackBin
+               v
+               GHCupInternal
+               False
+             setStack' v tmp
+           _ -> pure ()
+         case hlsVer of
+           Just v -> do
+             isInstalled <- lift $ checkIfToolInstalled' HLS (mkTVer v)
+             unless isInstalled $ when runInstTool' $ void $ liftE $ installHLSBin
+               v
+               GHCupInternal
+               False
+             setHLS' v tmp
+           _ -> pure ()
 
    installToolChain :: ( MonadFail m
                        , MonadThrow m
@@ -392,46 +399,47 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                     -> FilePath
                     -> Excepts '[NotInstalled] (ReaderT LeanAppState m) ()
    installToolChain Toolchain{..} tmp = do
-         forM_ [(GHC,) <$> ghcVer, (Cabal,) <$> cabalVer, (HLS,) <$> hlsVer, (Stack,) <$> stackVer] $ \mt -> do
-           case mt of
-             Just (GHC, v)   -> setTool GHC v tmp
-             Just (Cabal, v) -> setTool Cabal v tmp
-             Just (Stack, v) -> setTool Stack v tmp
-             Just (HLS, v)   -> setTool HLS v tmp
-             _ -> pure ()
+         case ghcVer of
+           Just v -> setGHC' v tmp
+           _ -> pure ()
+         case cabalVer of
+           Just v -> setCabal' v tmp
+           _ -> pure ()
+         case stackVer of
+           Just v -> setStack' v tmp
+           _ -> pure ()
+         case hlsVer of
+           Just v -> setHLS' v tmp
+           _ -> pure ()
 
-   setTool tool v tmp =
-      case tool of
-        GHC -> do
+   setGHC' v tmp = do
           void $ liftE $ setGHC v SetGHC_XYZ (Just tmp)
           void $ liftE $ setGHC v SetGHCOnly (Just tmp)
-        Cabal -> do
-          bin  <- liftE $ whereIsTool Cabal v
+   setCabal' v tmp = do
+          bin  <- liftE $ whereIsTool Cabal (mkTVer v)
           cbin <- liftIO $ canonicalizePath bin
           lift $ createLink (relativeSymlink tmp cbin) (tmp </> ("cabal" <.> exeExt))
-        Stack -> do
-          bin  <- liftE $ whereIsTool Stack v
+   setStack' v tmp = do
+          bin  <- liftE $ whereIsTool Stack (mkTVer v)
           cbin <- liftIO $ canonicalizePath bin
           lift $ createLink (relativeSymlink tmp cbin) (tmp </> ("stack" <.> exeExt))
-        HLS -> do
+   setHLS' v tmp = do
           Dirs {..}  <- getDirs
-          let v' = _tvVersion v
-          legacy <- isLegacyHLS v'
+          legacy <- isLegacyHLS v
           if legacy
           then do
             -- TODO: factor this out
-            hlsWrapper <- liftE @_ @'[NotInstalled] $ hlsWrapperBinary v' !? (NotInstalled HLS (mkTVer v'))
+            hlsWrapper <- liftE @_ @'[NotInstalled] $ hlsWrapperBinary v !? (NotInstalled HLS (mkTVer v))
             cw <- liftIO $ canonicalizePath (binDir </> hlsWrapper)
             lift $ createLink (relativeSymlink tmp cw) (tmp </> takeFileName cw)
-            hlsBins <- hlsServerBinaries v' Nothing >>= liftIO . traverse (canonicalizePath . (binDir </>))
+            hlsBins <- hlsServerBinaries v Nothing >>= liftIO . traverse (canonicalizePath . (binDir </>))
             forM_ hlsBins $ \bin ->
               lift $ createLink (relativeSymlink tmp bin) (tmp </> takeFileName bin)
-            liftE $ setHLS (_tvVersion v) SetHLSOnly (Just tmp)
+            liftE $ setHLS v SetHLSOnly (Just tmp)
           else do
-            liftE $ setHLS (_tvVersion v) SetHLS_XYZ (Just tmp)
-            liftE $ setHLS (_tvVersion v) SetHLSOnly (Just tmp)
-        GHCup -> pure ()
-       
+            liftE $ setHLS v SetHLS_XYZ (Just tmp)
+            liftE $ setHLS v SetHLSOnly (Just tmp)
+
    addToPath path = do
     cEnv <- Map.fromList <$> getEnvironment
     let paths          = ["PATH", "Path"]
@@ -443,16 +451,38 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
     liftIO $ setEnv pathVar newPath
     return envWithNewPath
 
-   predictableTmpDir (Toolchain Nothing Nothing Nothing Nothing) =
-     liftIO (getTemporaryDirectory >>= \tmp -> pure (tmp </> "ghcup-none"))
+   createTmpDir :: ( MonadUnliftIO m
+                   , MonadCatch m
+                   , MonadThrow m
+                   , MonadMask m
+                   , MonadIO m
+                   )
+                => Toolchain
+                -> ReaderT LeanAppState m FilePath
+   createTmpDir toolchain =
+     case runBinDir of
+           Just bindir -> do
+             liftIO $ createDirRecursive' bindir
+             liftIO $ canonicalizePath bindir
+           Nothing -> do
+             d <- predictableTmpDir toolchain
+             liftIO $ createDirRecursive' d
+             liftIO $ canonicalizePath d
+
+   predictableTmpDir :: Monad m
+                     => Toolchain
+                     -> ReaderT LeanAppState m FilePath
+   predictableTmpDir (Toolchain Nothing Nothing Nothing Nothing) = do
+     Dirs { tmpDir } <- getDirs
+     pure (fromGHCupPath tmpDir </> "ghcup-none")
    predictableTmpDir Toolchain{..} = do
-      tmp <- getTemporaryDirectory
-      pure $ tmp
+      Dirs { tmpDir } <- getDirs
+      pure $ fromGHCupPath tmpDir
         </> ("ghcup-" <> intercalate "_"
               (  maybe [] ( (:[]) . ("ghc-"   <>) . T.unpack . tVerToText) ghcVer
-              <> maybe [] ( (:[]) . ("cabal-" <>) . T.unpack . tVerToText) cabalVer
-              <> maybe [] ( (:[]) . ("hls-"   <>) . T.unpack . tVerToText) hlsVer
-              <> maybe [] ( (:[]) . ("stack-" <>) . T.unpack . tVerToText) stackVer
+              <> maybe [] ( (:[]) . ("cabal-" <>) . T.unpack . prettyVer) cabalVer
+              <> maybe [] ( (:[]) . ("hls-"   <>) . T.unpack . prettyVer) hlsVer
+              <> maybe [] ( (:[]) . ("stack-" <>) . T.unpack . prettyVer) stackVer
               )
             )
 
@@ -466,7 +496,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
 
 data Toolchain = Toolchain
   { ghcVer     :: Maybe GHCTargetVersion
-  , cabalVer   :: Maybe GHCTargetVersion
-  , hlsVer     :: Maybe GHCTargetVersion
-  , stackVer   :: Maybe GHCTargetVersion
-  }
+  , cabalVer   :: Maybe Version
+  , hlsVer     :: Maybe Version
+  , stackVer   :: Maybe Version
+  } deriving Show

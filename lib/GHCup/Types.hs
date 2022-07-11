@@ -407,6 +407,9 @@ data AppState = AppState
 
 instance NFData AppState
 
+fromAppState :: AppState -> LeanAppState
+fromAppState AppState {..} = LeanAppState {..}
+
 data LeanAppState = LeanAppState
   { settings :: Settings
   , dirs :: Dirs

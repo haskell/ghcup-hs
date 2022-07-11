@@ -401,7 +401,7 @@ hlsCompileOpts =
           )
         )
     <*> some (
-          option (eitherReader toolVersionEither)
+          option (eitherReader ghcVersionTagEither)
             (  long "ghc" <> metavar "GHC_VERSION|TAG" <> help "For which GHC version to compile for (can be specified multiple times)"
             <> completer (tagCompleter GHC [])
             <> completer (versionCompleter Nothing GHC))

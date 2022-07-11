@@ -238,7 +238,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
                     | Just False <- optVerbose -> pure ()
                     | otherwise -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
                          Nothing -> void . flip runReaderT s' . runE @'[TagNotFound, NextVerNotFound, NoToolVersionSet] $ do
-                           newTools <- lift checkForUpdates 
+                           newTools <- lift checkForUpdates
                            forM_ newTools $ \newTool@(t, l) -> do
                              -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/283
                              alreadyInstalling' <- alreadyInstalling optCommand newTool
@@ -279,7 +279,7 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
               runAppState action' = do
                 s' <- liftIO appState
                 runReaderT action' s'
-                  
+
 
           -----------------
           -- Run command --
@@ -339,16 +339,16 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
   alreadyInstalling (Install (Left (InstallHLS InstallOptions{..})))     (HLS, ver)   = cmp' HLS instVer ver
   alreadyInstalling (Install (Left (InstallStack InstallOptions{..})))   (Stack, ver) = cmp' Stack instVer ver
   alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ ovewrwiteVer = Just over }))
-    (GHC, ver)   = cmp' GHC (Just $ ToolVersion (mkTVer over)) ver
+    (GHC, ver)   = cmp' GHC (Just $ GHCVersion (mkTVer over)) ver
   alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ targetGhc = GHC.SourceDist tver }))
-    (GHC, ver)   = cmp' GHC (Just $ ToolVersion (mkTVer tver)) ver
+    (GHC, ver)   = cmp' GHC (Just $ ToolVersion tver) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ ovewrwiteVer = Right over }))
-    (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer over)) ver
+    (HLS, ver)   = cmp' HLS (Just $ ToolVersion over) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.SourceDist tver }))
-    (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer tver)) ver
+    (HLS, ver)   = cmp' HLS (Just $ ToolVersion tver) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.HackageDist tver }))
-    (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer tver)) ver
-  alreadyInstalling (Upgrade _ _ _) (GHCup, _) = pure True
+    (HLS, ver)   = cmp' HLS (Just $ ToolVersion tver) ver
+  alreadyInstalling (Upgrade {}) (GHCup, _) = pure True
   alreadyInstalling _ _ = pure False
 
   cmp' :: ( HasLog env
