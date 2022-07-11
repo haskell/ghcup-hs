@@ -206,9 +206,8 @@ rmGhcupDirs = do
       | isWindows = removeDirIfEmptyOrIsSymlink binDir
       | otherwise = do
           isXDGStyle <- liftIO useXDG
-          if not isXDGStyle
-            then removeDirIfEmptyOrIsSymlink binDir
-            else pure ()
+          when (not isXDGStyle) $
+            removeDirIfEmptyOrIsSymlink binDir
 
     reportRemainingFiles :: (MonadMask m, MonadIO m) => FilePath -> m [FilePath]
     reportRemainingFiles dir = do
