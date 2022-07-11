@@ -440,9 +440,11 @@ tagCompleter tool add = listIOCompleter $ do
       pure $ nub $ (add ++) $ fmap tagToString allTags
     VLeft _ -> pure  (nub $ ["recommended", "latest"] ++ add)
 
-
 versionCompleter :: Maybe ListCriteria -> Tool -> Completer
-versionCompleter criteria tool = listIOCompleter $ do
+versionCompleter criteria tool = versionCompleter' criteria tool (const True)
+
+versionCompleter' :: Maybe ListCriteria -> Tool -> (Version -> Bool) -> Completer
+versionCompleter' criteria tool filter' = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
   let loggerConfig = LoggerConfig
         { lcPrintDebug   = False
@@ -471,7 +473,7 @@ versionCompleter criteria tool = listIOCompleter $ do
           runEnv = flip runReaderT appState
 
       installedVersions <- runEnv $ listVersions (Just tool) criteria
-      return $ T.unpack . prettyVer . lVer <$> installedVersions
+      return $ fmap (T.unpack . prettyVer) . filter filter' . fmap lVer $ installedVersions
 
 
 toolDlCompleter :: Tool -> Completer

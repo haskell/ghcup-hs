@@ -654,10 +654,3 @@ isSafeDir (IsolateDirResolved _) = False
 isSafeDir (GHCupDir _)           = True
 isSafeDir (GHCupBinDir _)        = False
 
-
-
-
-
-
-
-

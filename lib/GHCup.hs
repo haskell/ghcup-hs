@@ -33,8 +33,8 @@ module GHCup (
 
 
 import           GHCup.Cabal
-import           GHCup.GHC
-import           GHCup.HLS
+import           GHCup.GHC             hiding ( GHCVer(..) )
+import           GHCup.HLS             hiding ( HLSVer(..) )
 import           GHCup.Stack
 import           GHCup.List
 import           GHCup.Download
@@ -206,9 +206,8 @@ rmGhcupDirs = do
       | isWindows = removeDirIfEmptyOrIsSymlink binDir
       | otherwise = do
           isXDGStyle <- liftIO useXDG
-          if not isXDGStyle
-            then removeDirIfEmptyOrIsSymlink binDir
-            else pure ()
+          when (not isXDGStyle) $
+            removeDirIfEmptyOrIsSymlink binDir
 
     reportRemainingFiles :: (MonadMask m, MonadIO m) => FilePath -> m [FilePath]
     reportRemainingFiles dir = do

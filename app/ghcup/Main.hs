@@ -14,6 +14,8 @@ module Main where
 import           BrickMain                    ( brickMain )
 #endif
 
+import qualified GHCup.GHC as GHC
+import qualified GHCup.HLS as HLS
 import           GHCup.OptParse
 
 import           GHCup.Download
@@ -338,11 +340,13 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
   alreadyInstalling (Install (Left (InstallStack InstallOptions{..})))   (Stack, ver) = cmp' Stack instVer ver
   alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ ovewrwiteVer = Just over }))
     (GHC, ver)   = cmp' GHC (Just $ ToolVersion (mkTVer over)) ver
-  alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ targetGhc = Left tver }))
+  alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ targetGhc = GHC.SourceDist tver }))
     (GHC, ver)   = cmp' GHC (Just $ ToolVersion (mkTVer tver)) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ ovewrwiteVer = Right over }))
     (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer over)) ver
-  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = Left tver }))
+  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.SourceDist tver }))
+    (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer tver)) ver
+  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.HackageDist tver }))
     (HLS, ver)   = cmp' HLS (Just $ ToolVersion (mkTVer tver)) ver
   alreadyInstalling (Upgrade _ _ _) (GHCup, _) = pure True
   alreadyInstalling _ _ = pure False
