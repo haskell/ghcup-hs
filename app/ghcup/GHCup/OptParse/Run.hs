@@ -5,6 +5,7 @@
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE ViewPatterns      #-}
 module GHCup.OptParse.Run where
 
 
@@ -233,12 +234,16 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
    r <- if not runQuick
         then runRUN runAppState $ do
          toolchain <- liftE resolveToolchainFull
-         tmp <- liftIO $ createTmpDir toolchain
+
+         -- oh dear
+         r <- lift ask
+         tmp <- lift . lift . lift . flip runReaderT (fromAppState r) $ createTmpDir toolchain
+
          liftE $ installToolChainFull toolchain tmp
          pure tmp
         else runLeanRUN leanAppstate $ do
          toolchain <- resolveToolchain
-         tmp <- liftIO $ createTmpDir toolchain
+         tmp <- lift $ createTmpDir toolchain
          liftE $ installToolChain toolchain tmp
          pure tmp
    case r of
@@ -267,17 +272,6 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
            pure $ ExitFailure 27
 
   where
-
-   createTmpDir :: Toolchain -> IO FilePath
-   createTmpDir toolchain =
-     case runBinDir of
-           Just bindir -> do
-             createDirRecursive' bindir
-             canonicalizePath bindir
-           Nothing -> do
-             d <- predictableTmpDir toolchain
-             createDirRecursive' d
-             canonicalizePath d
 
    -- TODO: doesn't work for cross
    resolveToolchainFull :: ( MonadFail m
@@ -443,11 +437,33 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
     liftIO $ setEnv pathVar newPath
     return envWithNewPath
 
-   predictableTmpDir (Toolchain Nothing Nothing Nothing Nothing) =
-     liftIO (getTemporaryDirectory >>= \tmp -> pure (tmp </> "ghcup-none"))
+   createTmpDir :: ( MonadUnliftIO m
+                   , MonadCatch m
+                   , MonadThrow m
+                   , MonadMask m
+                   , MonadIO m
+                   )
+                => Toolchain
+                -> ReaderT LeanAppState m FilePath
+   createTmpDir toolchain =
+     case runBinDir of
+           Just bindir -> do
+             liftIO $ createDirRecursive' bindir
+             liftIO $ canonicalizePath bindir
+           Nothing -> do
+             d <- predictableTmpDir toolchain
+             liftIO $ createDirRecursive' d
+             liftIO $ canonicalizePath d
+
+   predictableTmpDir :: Monad m
+                     => Toolchain
+                     -> ReaderT LeanAppState m FilePath
+   predictableTmpDir (Toolchain Nothing Nothing Nothing Nothing) = do
+     Dirs { tmpDir } <- getDirs
+     pure (fromGHCupPath tmpDir </> "ghcup-none")
    predictableTmpDir Toolchain{..} = do
-      tmp <- getTemporaryDirectory
-      pure $ tmp
+      Dirs { tmpDir } <- getDirs
+      pure $ fromGHCupPath tmpDir
         </> ("ghcup-" <> intercalate "_"
               (  maybe [] ( (:[]) . ("ghc-"   <>) . T.unpack . tVerToText) ghcVer
               <> maybe [] ( (:[]) . ("cabal-" <>) . T.unpack . tVerToText) cabalVer
@@ -469,4 +485,4 @@ data Toolchain = Toolchain
   , cabalVer   :: Maybe GHCTargetVersion
   , hlsVer     :: Maybe GHCTargetVersion
   , stackVer   :: Maybe GHCTargetVersion
-  }
+  } deriving Show
