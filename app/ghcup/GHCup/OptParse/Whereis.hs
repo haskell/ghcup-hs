@@ -75,14 +75,14 @@ data WhereisOptions = WhereisOptions {
     --[ Parsers ]--
     ---------------
 
-          
+
 whereisP :: Parser WhereisCommand
 whereisP = subparser
-  (commandGroup "Tools locations:" <> 
+  (commandGroup "Tools locations:" <>
     command
       "ghc"
       (WhereisTool GHC <$> info
-        ( optional (toolVersionArgument Nothing (Just GHC)) <**> helper )
+        ( optional (toolVersionTagArgument Nothing (Just GHC)) <**> helper )
         ( progDesc "Get GHC location"
         <> footerDoc (Just $ text whereisGHCFooter ))
       )
@@ -90,7 +90,7 @@ whereisP = subparser
      command
       "cabal"
       (WhereisTool Cabal <$> info
-        ( optional (toolVersionArgument Nothing (Just Cabal)) <**> helper )
+        ( optional (toolVersionTagArgument Nothing (Just Cabal)) <**> helper )
         ( progDesc "Get cabal location"
         <> footerDoc (Just $ text whereisCabalFooter ))
       )
@@ -98,7 +98,7 @@ whereisP = subparser
      command
       "hls"
       (WhereisTool HLS <$> info
-        ( optional (toolVersionArgument Nothing (Just HLS)) <**> helper )
+        ( optional (toolVersionTagArgument Nothing (Just HLS)) <**> helper )
         ( progDesc "Get HLS location"
         <> footerDoc (Just $ text whereisHLSFooter ))
       )
@@ -106,7 +106,7 @@ whereisP = subparser
      command
       "stack"
       (WhereisTool Stack <$> info
-        ( optional (toolVersionArgument Nothing (Just Stack)) <**> helper )
+        ( optional (toolVersionTagArgument Nothing (Just Stack)) <**> helper )
         ( progDesc "Get stack location"
         <> footerDoc (Just $ text whereisStackFooter ))
       )
@@ -268,9 +268,23 @@ whereis :: ( Monad m
 whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
   Dirs{ .. }  <- runReaderT getDirs leanAppstate
   case (whereisCommand, whereisOptions) of
-    (WhereisTool tool (Just (ToolVersion v)), WhereisOptions{..}) ->
+    (WhereisTool tool (Just (GHCVersion v)), WhereisOptions{..}) ->
       runLeanWhereIs leanAppstate (do
         loc <- liftE $ whereIsTool tool v
+        if directory
+        then pure $ takeDirectory loc
+        else pure loc
+        )
+        >>= \case
+              VRight r -> do
+                liftIO $ putStr r
+                pure ExitSuccess
+              VLeft e -> do
+                runLogger $ logError $ T.pack $ prettyShow e
+                pure $ ExitFailure 30
+    (WhereisTool tool (Just (ToolVersion v)), WhereisOptions{..}) ->
+      runLeanWhereIs leanAppstate (do
+        loc <- liftE $ whereIsTool tool (mkTVer v)
         if directory
         then pure $ takeDirectory loc
         else pure loc

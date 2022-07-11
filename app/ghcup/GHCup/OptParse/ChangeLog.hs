@@ -58,7 +58,7 @@ data ChangeLogOptions = ChangeLogOptions
     --[ Parsers ]--
     ---------------
 
-          
+
 changelogP :: Parser ChangeLogOptions
 changelogP =
   (\x y -> ChangeLogOptions x y)
@@ -80,7 +80,7 @@ changelogP =
               <> completer toolCompleter
             )
           )
-    <*> optional (toolVersionArgument Nothing Nothing)
+    <*> optional (toolVersionTagArgument Nothing Nothing)
 
 
 
@@ -117,7 +117,8 @@ changelog ChangeLogOptions{..} runAppState runLogger = do
       ver' = maybe
         (Right Latest)
         (\case
-          ToolVersion tv -> Left (_tvVersion tv) -- FIXME: ugly sharing of ToolVersion
+          GHCVersion tv  -> Left (_tvVersion tv)
+          ToolVersion tv -> Left tv
           ToolTag     t  -> Right t
         )
         clToolVer

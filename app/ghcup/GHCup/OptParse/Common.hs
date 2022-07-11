@@ -70,20 +70,24 @@ import Control.Exception (evaluate)
     --[ Types ]--
     -------------
 
-data ToolVersion = ToolVersion GHCTargetVersion -- target is ignored for cabal
+data ToolVersion = GHCVersion GHCTargetVersion
+                 | ToolVersion Version
                  | ToolTag Tag
 
 -- a superset of ToolVersion
-data SetToolVersion = SetToolVersion GHCTargetVersion
+data SetToolVersion = SetGHCVersion GHCTargetVersion
+                    | SetToolVersion Version
                     | SetToolTag Tag
                     | SetRecommended
                     | SetNext
 
 prettyToolVer :: ToolVersion -> String
-prettyToolVer (ToolVersion v') = T.unpack $ tVerToText v'
+prettyToolVer (GHCVersion v') = T.unpack $ tVerToText v'
+prettyToolVer (ToolVersion v') = T.unpack $ prettyVer v'
 prettyToolVer (ToolTag t) = show t
 
 toSetToolVer :: Maybe ToolVersion -> SetToolVersion
+toSetToolVer (Just (GHCVersion v')) = SetGHCVersion v'
 toSetToolVer (Just (ToolVersion v')) = SetToolVersion v'
 toSetToolVer (Just (ToolTag t')) = SetToolTag t'
 toSetToolVer Nothing = SetRecommended
@@ -96,10 +100,9 @@ toSetToolVer Nothing = SetRecommended
     --------------
 
 
--- | same as toolVersionParser, except as an argument.
-toolVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
-toolVersionArgument criteria tool =
-  argument (eitherReader toolVersionEither)
+toolVersionTagArgument :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
+toolVersionTagArgument criteria tool =
+  argument (eitherReader (parser tool))
     (metavar (mv tool)
     <> completer (tagCompleter (fromMaybe GHC tool) [])
     <> foldMap (completer . versionCompleter criteria) tool)
@@ -108,20 +111,19 @@ toolVersionArgument criteria tool =
   mv (Just HLS) = "HLS_VERSION|TAG"
   mv _          = "VERSION|TAG"
 
+  parser (Just GHC) = ghcVersionTagEither
+  parser Nothing    = ghcVersionTagEither
+  parser _          = toolVersionTagEither
 
-versionParser :: Parser GHCTargetVersion
-versionParser = option
-  (eitherReader tVersionEither)
-  (short 'v' <> long "version" <> metavar "VERSION" <> help "The target version"
-  )
 
 versionParser' :: Maybe ListCriteria -> Maybe Tool -> Parser Version
 versionParser' criteria tool = argument
   (eitherReader (first show . version . T.pack))
   (metavar "VERSION"  <> foldMap (completer . versionCompleter criteria) tool)
 
-versionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
-versionArgument criteria tool = argument (eitherReader tVersionEither) (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
+ghcVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
+ghcVersionArgument criteria tool = argument (eitherReader ghcVersionEither)
+                                            (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
 
 
 -- https://github.com/pcapriotti/optparse-applicative/issues/148
@@ -230,9 +232,15 @@ isolateParser f = case isValid f && isAbsolute f of
               True -> Right $ normalise f
               False -> Left "Please enter a valid filepath for isolate dir."
 
-toolVersionEither :: String -> Either String ToolVersion
-toolVersionEither s' =
-  second ToolTag (tagEither s') <|> second ToolVersion (tVersionEither s')
+-- this accepts cross prefix
+ghcVersionTagEither :: String -> Either String ToolVersion
+ghcVersionTagEither s' =
+  second ToolTag (tagEither s') <|> second GHCVersion (ghcVersionEither s')
+
+-- this ignores cross prefix
+toolVersionTagEither :: String -> Either String ToolVersion
+toolVersionTagEither s' =
+  second ToolTag (tagEither s') <|> second ToolVersion (toolVersionEither s')
 
 tagEither :: String -> Either String Tag
 tagEither s' = case fmap toLower s' of
@@ -244,9 +252,13 @@ tagEither s' = case fmap toLower s' of
   other         -> Left $ "Unknown tag " <> other
 
 
-tVersionEither :: String -> Either String GHCTargetVersion
-tVersionEither =
+ghcVersionEither :: String -> Either String GHCTargetVersion
+ghcVersionEither =
   first (const "Not a valid version") . MP.parse ghcTargetVerP "" . T.pack
+
+toolVersionEither :: String -> Either String Version
+toolVersionEither =
+  first (const "Not a valid version") . MP.parse version' "" . T.pack
 
 
 toolParser :: String -> Either String Tool
@@ -663,7 +675,7 @@ fromVersion' SetRecommended tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   bimap mkTVer Just <$> getRecommended dls tool
     ?? TagNotFound Recommended tool
-fromVersion' (SetToolVersion v) tool = do
+fromVersion' (SetGHCVersion v) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   let vi = getVersionInfo (_tvVersion v) tool dls
   case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
@@ -675,6 +687,18 @@ fromVersion' (SetToolVersion v) tool = do
           when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
           pure (GHCTargetVersion (_tvTarget v) v', Just vi')
         Nothing -> pure (v, vi)
+fromVersion' (SetToolVersion v) tool = do
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  let vi = getVersionInfo v tool dls
+  case pvp $ prettyVer v of -- need to be strict here
+    Left _ -> pure (mkTVer v, vi)
+    Right pvpIn ->
+      lift (getLatestToolFor tool pvpIn dls) >>= \case
+        Just (pvp_, vi') -> do
+          v' <- lift $ pvpToVersion pvp_ ""
+          when (v' /= v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
+          pure (GHCTargetVersion mempty v', Just vi')
+        Nothing -> pure (mkTVer v, vi)
 fromVersion' (SetToolTag Latest) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   bimap mkTVer Just <$> getLatest dls tool ?? TagNotFound Latest tool

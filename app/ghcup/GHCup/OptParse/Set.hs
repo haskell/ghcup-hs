@@ -74,7 +74,7 @@ data SetOptions = SetOptions
     --[ Parsers ]--
     ---------------
 
-          
+
 setParser :: Parser (Either SetCommand SetOptions)
 setParser =
   (Left <$> subparser
@@ -82,7 +82,7 @@ setParser =
           "ghc"
           (   SetGHC
           <$> info
-                (setOpts (Just GHC) <**> helper)
+                (setOpts GHC <**> helper)
                 (  progDesc "Set GHC version"
                 <> footerDoc (Just $ text setGHCFooter)
                 )
@@ -91,7 +91,7 @@ setParser =
            "cabal"
            (   SetCabal
            <$> info
-                 (setOpts (Just Cabal) <**> helper)
+                 (setOpts Cabal <**> helper)
                  (  progDesc "Set Cabal version"
                  <> footerDoc (Just $ text setCabalFooter)
                  )
@@ -100,7 +100,7 @@ setParser =
            "hls"
            (   SetHLS
            <$> info
-                 (setOpts (Just HLS) <**> helper)
+                 (setOpts HLS <**> helper)
                  (  progDesc "Set haskell-language-server version"
                  <> footerDoc (Just $ text setHLSFooter)
                  )
@@ -109,14 +109,14 @@ setParser =
            "stack"
            (   SetStack
            <$> info
-                 (setOpts (Just Stack) <**> helper)
+                 (setOpts Stack <**> helper)
                  (  progDesc "Set stack version"
                  <> footerDoc (Just $ text setStackFooter)
                  )
            )
       )
     )
-    <|> (Right <$> setOpts Nothing)
+    <|> (Right <$> setOpts GHC)
  where
   setGHCFooter :: String
   setGHCFooter = [s|Discussion:
@@ -137,22 +137,25 @@ setParser =
     Sets the the current haskell-language-server version.|]
 
 
-setOpts :: Maybe Tool -> Parser SetOptions
+setOpts :: Tool -> Parser SetOptions
 setOpts tool = SetOptions <$>
     (fromMaybe SetRecommended <$>
       optional (setVersionArgument (Just ListInstalled) tool))
 
-setVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser SetToolVersion
+setVersionArgument :: Maybe ListCriteria -> Tool -> Parser SetToolVersion
 setVersionArgument criteria tool =
   argument (eitherReader setEither)
     (metavar "VERSION|TAG|next"
-    <> completer (tagCompleter (fromMaybe GHC tool) ["next"])
-    <> foldMap (completer . versionCompleter criteria) tool)
+    <> completer (tagCompleter tool ["next"])
+    <> (completer . versionCompleter criteria) tool)
  where
   setEither s' =
         parseSet s'
     <|> second SetToolTag (tagEither s')
-    <|> second SetToolVersion (tVersionEither s')
+    <|> se s'
+  se s' = case tool of
+           GHC -> second SetGHCVersion (ghcVersionEither s')
+           _   -> second SetToolVersion (toolVersionEither s')
   parseSet s' = case fmap toLower s' of
                   "next" -> Right SetNext
                   other  -> Left $ "Unknown tag/version " <> other
@@ -261,9 +264,9 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
   (Right sopts) -> do
     runLogger (logWarn "This is an old-style command for setting GHC. Use 'ghcup set ghc' instead.")
     setGHC' sopts
-  (Left (SetGHC sopts)) -> setGHC' sopts
+  (Left (SetGHC sopts))   -> setGHC'   sopts
   (Left (SetCabal sopts)) -> setCabal' sopts
-  (Left (SetHLS sopts)) -> setHLS' sopts
+  (Left (SetHLS sopts))   -> setHLS'   sopts
   (Left (SetStack sopts)) -> setStack' sopts
 
  where
@@ -271,7 +274,7 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
           -> m ExitCode
   setGHC' SetOptions{ sToolVer } =
     case sToolVer of
-      (SetToolVersion v) -> runSetGHC runLeanAppState (liftE $ setGHC v SetGHCOnly Nothing >> pure v)
+      (SetGHCVersion v) -> runSetGHC runLeanAppState (liftE $ setGHC v SetGHCOnly Nothing >> pure v)
       _ -> runSetGHC runAppState (do
           v <- liftE $ fst <$> fromVersion' sToolVer GHC
           liftE $ setGHC v SetGHCOnly Nothing
@@ -291,17 +294,17 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
             -> m ExitCode
   setCabal' SetOptions{ sToolVer } =
     case sToolVer of
-      (SetToolVersion v) -> runSetCabal runLeanAppState (liftE $ setCabal (_tvVersion v) >> pure v)
+      (SetToolVersion v) -> runSetCabal runLeanAppState (liftE $ setCabal v >> pure (mkTVer v))
       _ -> runSetCabal runAppState (do
           v <- liftE $ fst <$> fromVersion' sToolVer Cabal
           liftE $ setCabal (_tvVersion v)
           pure v
         )
       >>= \case
-            VRight GHCTargetVersion{..} -> do
+            VRight v -> do
               runLogger
                 $ logInfo $
-                    "Cabal " <> prettyVer _tvVersion <> " successfully set as default version"
+                    "Cabal " <> prettyVer (_tvVersion v) <> " successfully set as default version"
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyShow e
@@ -311,17 +314,17 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
           -> m ExitCode
   setHLS' SetOptions{ sToolVer } =
     case sToolVer of
-      (SetToolVersion v) -> runSetHLS runLeanAppState (liftE $ setHLS (_tvVersion v) SetHLSOnly Nothing >> pure v)
+      (SetToolVersion v) -> runSetHLS runLeanAppState (liftE $ setHLS v SetHLSOnly Nothing >> pure (mkTVer v))
       _ -> runSetHLS runAppState (do
           v <- liftE $ fst <$> fromVersion' sToolVer HLS
           liftE $ setHLS (_tvVersion v) SetHLSOnly Nothing
           pure v
         )
       >>= \case
-            VRight GHCTargetVersion{..} -> do
+            VRight v -> do
               runLogger
                 $ logInfo $
-                    "HLS " <> prettyVer _tvVersion <> " successfully set as default version"
+                    "HLS " <> prettyVer (_tvVersion v) <> " successfully set as default version"
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyShow e
@@ -332,17 +335,17 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
             -> m ExitCode
   setStack' SetOptions{ sToolVer } =
     case sToolVer of
-      (SetToolVersion v) -> runSetStack runLeanAppState (liftE $ setStack (_tvVersion v) >> pure v)
+      (SetToolVersion v) -> runSetStack runLeanAppState (liftE $ setStack v >> pure (mkTVer v))
       _ -> runSetStack runAppState (do
             v <- liftE $ fst <$> fromVersion' sToolVer Stack
             liftE $ setStack (_tvVersion v)
             pure v
           )
       >>= \case
-            VRight GHCTargetVersion{..} -> do
+            VRight v -> do
               runLogger
                 $ logInfo $
-                    "Stack " <> prettyVer _tvVersion <> " successfully set as default version"
+                    "Stack " <> prettyVer (_tvVersion v) <> " successfully set as default version"
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyShow e
