@@ -140,8 +140,12 @@ ecabal() {
 }
 
 _ecabal() {
-    # shellcheck disable=SC2086
-    "${GHCUP_BIN}/cabal" "$@"
+    if [ -n "${CABAL_BIN}" ] ; then
+        "${CABAL_BIN}" "$@"
+    else
+        # shellcheck disable=SC2086
+        "${GHCUP_BIN}/cabal" "$@"
+    fi
 }
 
 _done() {
@@ -817,7 +821,7 @@ else # don't install ghc and cabal
 				# we'll remove it afterwards
 				tmp_dir="$(mktemp -d)"
 				eghcup --cache install cabal -i "${tmp_dir}" "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
-				PATH="${tmp_dir}:$PATH" do_cabal_config_init $ask_cabal_config_init_answer
+				CABAL_BIN="${tmp_dir}/cabal" do_cabal_config_init $ask_cabal_config_init_answer
 				rm "${tmp_dir}/cabal"
 				unset tmp_dir
 				;;
