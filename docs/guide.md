@@ -4,7 +4,7 @@ This is a more in-depth guide specific to GHCup. `ghcup --help` is your friend.
 
 ## Basic usage
 
-For the simple interactive TUI (not available on windows), run:
+For the simple, interactive, text-based user interface (TUI) (not available on windows), run:
 
 ```sh
 ghcup tui
