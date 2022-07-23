@@ -186,6 +186,51 @@ url-source:
 
 # More on installation
 
+## Customisation of the installation scripts
+
+The scripts offered to install GHCup are available here:
+
+* [bootstrap-haskell](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell#L7)
+  for Unix-like operating systems
+* [bootstrap-haskell.ps1](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell.ps1#L17)
+  for Windows (PowerShell). This will, in turn, run the final bootstrap script
+  (by default, that for the Unix-like operating systems).
+
+The effect of the scripts can be customised by setting one or more
+`BOOTSTRAP_HASKELL_*` environment variables (as set out in the first script)
+and, in the case of Windows, by specifying parameters (as set out in the
+PowerShell script).
+
+For example, you can toggle:
+
+* non-interactive installation
+* a more verbose installation
+* whether to install only GHCup (and, on Windows, MSYS2)
+* not to trigger the upgrade of GHCup
+* whether to install the latest version of HLS
+* whether to install the latest version of Stack
+* whether to respect the XDG Base Directory Specification
+* whether to adjust (prepend) the PATH in `bashrc`
+* on Windows, whether to adjust MINGW paths in `cabal.config`
+
+You can also specify:
+
+* the GHC version to install
+* the Cabal version to install
+* which downloader to use (the default is `curl`)
+* the base URL for the download of the GHCup binary distribution
+
+On Windows, you can also use the parameters to:
+
+* toggle whether to overwrite a previous installation
+* specify the GHCup installation root directory
+* specify the Cabal root directory
+* specify the directory of an existing installation of MSYS2 (for example,
+  the one supplied by Stack)
+* specify the URL of the final bootstrap script
+* toggle whether to run the final bootstrap script via `bash` (instead of in a
+  new MSYS2 shell)
+
 ## Installing custom bindists
 
 There are a couple of good use cases to install custom bindists:
@@ -301,7 +346,9 @@ Examples:
 
 ## Continuous integration
 
-On windows, ghcup can be installed automatically on a CI runner non-interactively like so:
+On Windows, GHCup can be installed automatically on a CI runner
+non-interactively, as below. The paramaters to the PowerShell script are
+specified positionally, after `-ArgumentList`:
 
 ```ps
 Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false,$true,$true,$false,$false,$false,$false,"C:\"
@@ -313,12 +360,10 @@ On linux/darwin/freebsd, run the following on your runner:
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
 ```
 
-This will just install `ghcup` and on windows additionally `msys2`.
+This will just install `ghcup` and on Windows additionally MSYS2.
 
-For the full list of env variables and parameters to tweak the script behavior, see:
-
-* [bootstrap-haskell for linux/darwin/freebsd](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell#L7)
-* [bootstrap-haskell.ps1 for windows](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell.ps1#L17)
+See the installation scripts referred to above for the full list of environment
+variables and, in the case of Windows, parameters to tweak the script behavior.
 
 ### github workflows
 
