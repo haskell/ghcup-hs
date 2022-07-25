@@ -301,8 +301,9 @@ installUnpackedGHC path inst ver forceInstall addConfArgs
   | otherwise = do
       PlatformRequest {..} <- lift getPlatformReq
 
-      let alpineArgs
-           | ver >= [vver|8.2.2|], Linux Alpine <- _rPlatform
+      let ldOverride
+           | ver >= [vver|8.2.2|]
+           , _rPlatform `elem` [Linux Alpine, Darwin]
            = ["--disable-ld-override"]
            | otherwise
            = []
@@ -310,7 +311,7 @@ installUnpackedGHC path inst ver forceInstall addConfArgs
       lift $ logInfo "Installing GHC (this may take a while)"
       lEM $ execLogged "sh"
                        ("./configure" : ("--prefix=" <> fromInstallDir inst)
-                        : (alpineArgs <> (T.unpack <$> addConfArgs))
+                        : (ldOverride <> (T.unpack <$> addConfArgs))
                        )
                        (Just $ fromGHCupPath path)
                        "ghc-configure"
