@@ -2723,7 +2723,7 @@ ghcupDownloads:
       viPostInstall: &hls-post-install |
         This is just the server part of your LSP configuration. Consult the README on how to
         configure HLS, your project and your LSP client in your editor:
-          https://github.com/haskell/haskell-language-server/blob/master/README.md
+          https://haskell-language-server.readthedocs.io/en/stable/
       viArch:
         A_64:
           Linux_UnknownLinux:
