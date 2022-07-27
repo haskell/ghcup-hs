@@ -6,6 +6,7 @@ ghcupDownloads:
     3.7.0.0:
       viTags:
         - Prerelease
+        - old
       viArch:
         A_64:
           Linux_UnknownLinux:
@@ -94,6 +95,7 @@ ghcupDownloads:
       viTags:
       - Prerelease
       - base-4.17.0.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.4.1-alpha1/docs/html/users_guide/index.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.4.1-alpha1/ghc-9.4.0.20220501-src.tar.xz
@@ -173,6 +175,7 @@ ghcupDownloads:
       viTags:
       - Prerelease
       - base-4.17.0.0
+      - old
       viChangeLog: https://downloads.haskell.org/ghc/9.4.1-alpha2/docs/users_guide/index.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.4.1-alpha2/ghc-9.4.0.20220523-src.tar.xz
@@ -258,6 +261,7 @@ ghcupDownloads:
       viTags:
       - Prerelease
       - base-4.17.0.0
+      - old
       viChangeLog: https://downloads.haskell.org/ghc/9.4.1-alpha3/docs/users_guide/index.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.4.1-alpha3/ghc-9.4.0.20220623-src.tar.xz
