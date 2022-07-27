@@ -659,7 +659,7 @@ ask_hls() {
 		warn "Do you want to install haskell-language-server (HLS)?"
 		warn "HLS is a language-server that provides IDE-like functionality"
 		warn "and can integrate with different editors, such as Vim, Emacs, VS Code, Atom, ..."
-		warn "Also see https://github.com/haskell/haskell-language-server/blob/master/README.md"
+		warn "Also see https://haskell-language-server.readthedocs.io/en/stable/"
 		warn ""
 		warn "[Y] Yes  [N] No  [?] Help (default is \"N\")."
 		warn ""
