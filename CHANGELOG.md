@@ -1,5 +1,32 @@
 # Revision history for ghcup
 
+## 0.1.18.0 -- 2022-07-30
+
+* Fix tui set wrt [#266](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/266) by Arjun Kathuria
+    - Ask the user to install the tool via prompt when setting an non-installed version
+* improvements to safe (un-)installations
+    - bindists that don't support `make DESTDIR=/some/tmp/dir install` are now unsupported
+    - installed GHC files are now recorded to avoid use of `removePathForcibly`
+    - internally uses a newtype wrapper for user-input paths and restrict destructive operations to validated paths
+* use of `TMPDIR` is dropped... now uses an internal tmp dir `~/.ghcup/tmp`
+* improvements to error handling and warnings
+* Require --isolate to have an absolute directory, fixes #367
+* Fix mingw PATH handling wrt #371
+* Add --mingw-path switch to `ghcup run`
+* Fix `ghcup run` on windows, fixes #375
+* Allow passing bindist configure args wrt #377
+* Improve `ghcup compile hls`
+    - short hashes now work
+    - print the long hash in addition to the detected cabal version of HLS
+    - add `--git-describe-version` switch as an alternative to `--overwrite-version`
+    - Allow to build HLS from hackage (now is the default)
+	- Allow to run 'cabal update' automatically before the HLS build
+	- Fix parser and completer for 'ghcup compile hls --version'
+* Improve `ghcup compile ghc`
+    - short hashes now work
+    - print the long hash in addition to the detected cabal version of HLS
+    - Allow to build from arbitrary GHC source dists
+
 ## 0.1.17.10 -- 2022-05-12
 
 * windows hotfix (hackage-only release)
