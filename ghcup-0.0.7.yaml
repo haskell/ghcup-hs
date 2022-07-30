@@ -3130,6 +3130,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-1.7.0.0
               dlHash: 7c74931af640c6e6d7c20a2aa0ea6cc31025dbc6026a07daba3d35ca59be6f02
             unknown_versioning: *hls-170-64-centos
+          Linux_RedHat:
+            unknown_versioning: *hls-170-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *hls-170-64-fedora
           Darwin:
