@@ -302,6 +302,23 @@ To instruct cabal to run `cabal update` before building, run `ghcup compile hls 
 
 As always, check `ghcup compile hls --help`.
 
+#### Updating HLS for a new GHC version
+
+First try to build from hackage with some tricks:
+
+```sh
+ghcup compile hls --version 1.7.0.0 --ghc 9.2.4 --cabal-update -- --allow-newer --index-state=2022-06-12T00:00:00Z
+```
+
+This augments the currently installed 1.7.0.0 official bindists in ghcup with new GHC versions support.
+
+If that fails (since `--allow-newer` is quite brutal), you can install from HLS master branch (which may contain new fixes) like so:
+```
+ghcup compile hls --git-ref master --git-describe-version --ghc 8.10.7 --ghc 9.2.4 --cabal-update
+```
+
+This however will create a new HLS version in ghcup, e.g. `1.7.0.0-105-gdc682ba1`, for both 8.10.7 and 9.2.4. If you want to switch back to the official bindists, run `ghcup set hls 1.7.0.0`.
+
 ### Cross support
 
 ghcup can compile and install a cross GHC for any target. However, this
