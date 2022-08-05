@@ -238,7 +238,8 @@ There are a couple of good use cases to install custom bindists:
 1. manually built bindists (e.g. with patches)
     - example: `ghcup install ghc -u 'file:///home/mearwald/tmp/ghc-eff-patches/ghc-8.10.2-x86_64-deb10-linux.tar.xz' 8.10.2-eff`
 2. GHC head CI bindists
-    - example: `ghcup install ghc -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
+    - example specifying a branch (`master`): `ghcup install ghc -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
+    - example specifying a job id (`1129565`): `ghcup install ghc -u ' https://gitlab.haskell.org/api/v4/projects/1/jobs/1129565/artifacts/ghc-x86_64-linux-alpine3_12-validate+fully_static.tar.xz' mr7847`
 3. DWARF bindists
     - example: `ghcup install ghc -u 'https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux-dwarf.tar.xz' 8.10.2-dwarf`
 
