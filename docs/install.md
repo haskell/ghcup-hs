@@ -209,15 +209,7 @@ The developers of the Haskell Language Server offer an [extension](https://githu
 3. Make sure your project uses the GHC version installed from GHCup (otherwise HLS is likely to fail on launch):
     - instructions for [stack](https://docs.haskellstack.org/en/stable/yaml_configuration/#system-ghc)
 
-On Linux, some users have reported an issue when VSCode is not launched from a terminal ("cannot find ghc version"). A [solution](https://github.com/haskell/vscode-haskell#stackcabalghc-can-not-be-found) is to let HLS know about your GHCup on $PATH. To do this:
-
-1. In VSCode type `Ctrl + ,`, then`_haskell server`, then under _Haskell: Server Environment_, click the `Edit in settings.json` link and then insert the following:
-```
-  "haskell.serverEnvironment": {
-    "PATH": "${HOME}/.ghcup/bin:$PATH"
-  }
-```
-2. Restart your workspace for the change to apply.
+On Linux, some users have reported an issue when VSCode is not launched from a terminal ("cannot find ghc version"). A solution is to [let HLS know about your GHCup on $PATH](https://github.com/haskell/vscode-haskell#stackcabalghc-can-not-be-found).
 
 ## Get help
 
