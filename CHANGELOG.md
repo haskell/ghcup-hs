@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## 0.1.18.1 -- 2022-08-06
+
+* fix sdist and unbreak hackage, wrt [#399](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/399)
+
 ## 0.1.18.0 -- 2022-07-30
 
 * Fix tui set wrt [#266](https://gitlab.haskell.org/haskell/ghcup-hs/-/merge_requests/266) by Arjun Kathuria
