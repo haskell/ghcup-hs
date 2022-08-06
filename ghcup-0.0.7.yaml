@@ -2191,6 +2191,7 @@ ghcupDownloads:
     9.2.2:
       viTags:
       - base-4.16.1.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.2.2/docs/html/users_guide/index.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-src.tar.xz
@@ -2271,6 +2272,7 @@ ghcupDownloads:
     9.2.3:
       viTags:
       - base-4.16.2.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.2.3/docs/html/users_guide/index.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-src-booted.tar.xz
@@ -2601,7 +2603,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.4.0.0/cabal-install-3.4.0.0-armv7-linux-bootstrapped.tar.xz
               dlHash: 16c0d1eaba24bed14f3e152970179a45d9f9bb5cc839b2c210ad06eb7d4826ed
     3.4.1.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.4.1.0.md
       viArch:
         A_64:
@@ -2868,7 +2871,8 @@ ghcupDownloads:
           Linux_Alpine:
             unknown_versioning: *hls-130-64
     1.4.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#140
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -2910,7 +2914,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.4.0/haskell-language-server-linux-armv7-1.4.0.tar.gz
               dlHash: 4a921fbca06b02f3b1c0930cec5e65e9362b603e7715680ec7b150f18bd703d6
     1.5.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#150
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -2952,7 +2957,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/haskell-language-server/1.5.0/haskell-language-server-linux-armv7-1.5.0.tar.xz
               dlHash: 7115c5861d8d30206ba2600d1a294539f3a15c09a1cb88ce48ac75dc5034e38a
     1.5.1:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#151
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -3044,7 +3050,8 @@ ghcupDownloads:
               dlHash: b4b73cfdd3fce33ecf5e9e75b40d7b01f0889eceef1b39e57f958579b194e2bf
 
     1.6.1.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#1610
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -3221,7 +3228,8 @@ ghcupDownloads:
           Linux_Alpine:
             unknown_versioning: *stack-271-64
     2.7.3:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v273
       viPostInstall: *stack-post
       viArch:
