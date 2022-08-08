@@ -55,7 +55,8 @@ GHCup supports the following tools, which are also known as the **Haskell Toolch
 <table>
 <thead><tr><th>GHC Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>9.2.4</td><td><span style="color:blue">latest</span>, base-4.16.3.0</td></tr>
+<tr><td>9.4.1</td><td><span style="color:blue">latest</span>, base-4.17.0.0</td></tr>
+<tr><td>9.2.4</td><td>base-4.16.3.0</td></tr>
 <tr><td>9.2.3</td><td>base-4.16.2.0</td></tr>
 <tr><td>9.2.2</td><td>base-4.16.1.0</td></tr>
 <tr><td>9.2.1</td><td>base-4.16.0.0</td></tr>
