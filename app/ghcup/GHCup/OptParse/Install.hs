@@ -171,7 +171,7 @@ Examples:
   ghcup install ghc 8.10.2
 
   # install GHC head fedora bindist
-  ghcup install ghc -u https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27 head|]
+  ghcup install ghc -u 'https://gitlab.haskell.org/ghc/ghc/-/jobs/artifacts/master/raw/ghc-x86_64-linux-fedora33-release.tar.xz?job=x86_64-linux-fedora33-release' head|]
 
 
 installOpts :: Maybe Tool -> Parser InstallOptions
@@ -546,4 +546,3 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 logError $ T.pack $ prettyShow e
                 logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
               pure $ ExitFailure 4
-
