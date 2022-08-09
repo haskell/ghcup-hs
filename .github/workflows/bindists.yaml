@@ -1,0 +1,105 @@
+name: Bindist installation
+on:
+  workflow_dispatch:
+    inputs:
+      ghcVersion:
+        description: GHC version
+        required: true
+        type: string
+      metadataFile:
+        description: Metadata file
+        required: true
+        default: ghcup-0.0.7.yaml
+        type: string
+jobs:
+  bindist-install:
+    name: linux-${{ matrix.image }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: alpine:latest
+            installCmd: apk update && apk add
+            toolRequirements: binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
+          - image: debian:9
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+          - image: debian:10
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+          - image: debian:11
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev  libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+          - image: ubuntu:20.04
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+          - image: ubuntu:22.04
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+          - image: archlinux:latest
+            installCmd: pacman -Syu --noconfirm
+            toolRequirements: gcc gmp libffi make ncurses perl tar xz
+          - image: fedora:latest
+            installCmd: dnf install -y
+            toolRequirements: gcc g++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install requirements
+        run: |
+          ${{ matrix.installCmd }} curl bash git ${{ matrix.toolRequirements }}
+      - uses: actions/checkout@v3
+      - name: Install ghcup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+          echo ~/.ghcup/bin >> $GITHUB_PATH
+          ~/.ghcup/bin/ghcup --version
+        env:
+          BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
+          BOOTSTRAP_HASKELL_MINIMAL: 1
+      - name: Print tool requirements
+        run: ghcup tool-requirements
+      - name: Install GHC ${{ github.event.inputs.ghcVersion }}
+        run: |
+          ghcup -v --url-source=file:${{ github.event.inputs.metadataFile }} \
+            install ghc --set ${{ github.event.inputs.ghcVersion }}
+      - name: GHC sanity check
+        shell: bash
+        run: |
+          ghc --version
+          echo 'main = print $ 1 + 1' > main.hs
+          ghc main.hs
+          [[ $(./main) -eq 2 ]]
+  bindist-install-macos:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-11
+          - macos-12
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install ghcup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+          echo ~/.ghcup/bin >> $GITHUB_PATH
+          ~/.ghcup/bin/ghcup --version
+        env:
+          BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
+          BOOTSTRAP_HASKELL_MINIMAL: 1
+      - name: Print tool requirements
+        run: ghcup tool-requirements
+      - name: Install GHC ${{ github.event.inputs.ghcVersion }}
+        run: |
+          ghcup -v --url-source=file:${{ github.event.inputs.metadataFile }} \
+            install ghc --set ${{ github.event.inputs.ghcVersion }}
+      - name: GHC sanity check
+        shell: bash
+        run: |
+          ghc --version
+          echo 'main = print $ 1 + 1' > main.hs
+          ghc main.hs
+          [[ $(./main) -eq 2 ]]
