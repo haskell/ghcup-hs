@@ -2484,9 +2484,9 @@ ghcupDownloads:
             unknown_versioning: *ghc-941-64-fedora
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghc/9.4.1/ghc-9.4.1-x86_64-apple-darwin.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/curated/9.4.1/ghc-9.4.1-x86_64-apple-darwin.tar.xz
               dlSubdir: ghc-9.4.1-x86_64-apple-darwin
-              dlHash: b737e6f06857f572bbff304914f9e73c1b91b56243016109c775bdba42faa448
+              dlHash: d2c89eb1e989ee9cee890eda8981b248f5979903ae26058935fd9b95997305d6
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghc/9.4.1/ghc-9.4.1-x86_64-unknown-mingw32.tar.xz
@@ -2518,9 +2518,9 @@ ghcupDownloads:
               dlHash: 7e8ed05533b8ed0440bfb4881e3098333a9dadf24cb6857c2446879e43f7362c
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghc/9.4.1/ghc-9.4.1-aarch64-apple-darwin.tar.xz
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/curated/9.4.1/ghc-9.4.1-aarch64-apple-darwin.tar.xz
               dlSubdir: ghc-9.4.1-aarch64-apple-darwin
-              dlHash: 4bf84448690d5b75ab92cf45db12b6cf53fa8cfc427a5b002b73a1b94b251c07
+              dlHash: a3ad3eb3a1f60a544ba7e79d53f081646ffdb257b497ccbdb896870f4009b11c
   Cabal:
     2.4.1.0:
       viTags:
