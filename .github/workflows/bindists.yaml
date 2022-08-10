@@ -1,4 +1,7 @@
 name: Bindist installation
+defaults:
+  run:
+    shell: bash
 on:
   workflow_dispatch:
     inputs:
@@ -47,6 +50,7 @@ jobs:
       image: ${{ matrix.image }}
     steps:
       - name: Install requirements
+        shell: sh
         run: |
           ${{ matrix.installCmd }} curl bash git ${{ matrix.toolRequirements }}
       - uses: actions/checkout@v3
@@ -54,7 +58,6 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
           echo ~/.ghcup/bin >> $GITHUB_PATH
-          ~/.ghcup/bin/ghcup --version
         env:
           BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
           BOOTSTRAP_HASKELL_MINIMAL: 1
@@ -65,13 +68,12 @@ jobs:
           ghcup -v --url-source=file:${{ github.event.inputs.metadataFile }} \
             install ghc --set ${{ github.event.inputs.ghcVersion }}
       - name: GHC sanity check
-        shell: bash
         run: |
           ghc --version
           echo 'main = print $ 1 + 1' > main.hs
           ghc main.hs
           [[ $(./main) -eq 2 ]]
-  bindist-install-macos:
+  bindist-install-non-linux:
     name: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -79,6 +81,7 @@ jobs:
         os:
           - macos-11
           - macos-12
+          - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -86,7 +89,6 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
           echo ~/.ghcup/bin >> $GITHUB_PATH
-          ~/.ghcup/bin/ghcup --version
         env:
           BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
           BOOTSTRAP_HASKELL_MINIMAL: 1
@@ -97,7 +99,6 @@ jobs:
           ghcup -v --url-source=file:${{ github.event.inputs.metadataFile }} \
             install ghc --set ${{ github.event.inputs.ghcVersion }}
       - name: GHC sanity check
-        shell: bash
         run: |
           ghc --version
           echo 'main = print $ 1 + 1' > main.hs
