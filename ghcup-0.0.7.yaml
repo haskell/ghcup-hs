@@ -2136,6 +2136,8 @@ ghcupDownloads:
               dlSubdir: ghc-9.2.1
               dlHash: 4b67324507f5d14c23db3ed83c57f4e25d877e97d2b93cfe8e1a9fdf65e4efa1
             unknown_versioning: *ghc-921-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-921-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-921-64-fedora
           Darwin:
@@ -2228,6 +2230,8 @@ ghcupDownloads:
               dlSubdir: ghc-9.2.2
               dlHash: 5100aa7dea87aaf2ed596be83c93165d7199492f6db431d874fcfa07e8ac76ab
             unknown_versioning: *ghc-922-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-922-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-922-64-fedora
           Darwin:
@@ -2308,6 +2312,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-x86_64-centos7-linux.tar.xz
               dlSubdir: ghc-9.2.3
               dlHash: c2c9e171c205922a7c80e4b43e0432ebdb857076453f969dfda3ba9844aa5f5d
+            unknown_versioning: *ghc-923-64-centos
+          Linux_RedHat:
             unknown_versioning: *ghc-923-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-923-64-fedora
@@ -2393,6 +2399,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.2.4/ghc-9.2.4-x86_64-centos7-linux.tar.xz
               dlSubdir: ghc-9.2.4
               dlHash: 540d3a8ddcf6175efeeec54a73893526a6acf464825f7d3d7a396158fc3f6928
+            unknown_versioning: *ghc-924-64-centos
+          Linux_RedHat:
             unknown_versioning: *ghc-924-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-924-64-fedora
@@ -2483,6 +2491,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.4.1/ghc-9.4.1-x86_64-centos7-linux.tar.xz
               dlSubdir: ghc-9.4.1-x86_64-unknown-linux
               dlHash: 2ac415621849c32a400d69af059a3bb1cfa852c1427be6733540f0f7ad2a7470
+            unknown_versioning: *ghc-941-64-centos
+          Linux_RedHat:
             unknown_versioning: *ghc-941-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-941-64-fedora
