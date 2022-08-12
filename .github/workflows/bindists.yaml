@@ -1,4 +1,7 @@
 name: Bindist installation
+defaults:
+  run:
+    shell: bash
 on:
   workflow_dispatch:
     inputs:
@@ -11,6 +14,12 @@ on:
         required: true
         default: ghcup-0.0.7.yaml
         type: string
+env:
+  BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
+  BOOTSTRAP_HASKELL_MINIMAL: 1
+  BOOTSTRAP_HASKELL_ADJUST_BASHRC: 1
+  GHC_VERSION: ${{ github.event.inputs.ghcVersion }}
+  METADATA_FILE: ${{ github.event.inputs.metadataFile }}
 jobs:
   bindist-install:
     name: linux-${{ matrix.image }}
@@ -39,39 +48,21 @@ jobs:
             toolRequirements: build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
           - image: archlinux:latest
             installCmd: pacman -Syu --noconfirm
-            toolRequirements: gcc gmp libffi make ncurses perl tar xz
+            toolRequirements: which gcc gmp libffi make ncurses perl tar xz
           - image: fedora:latest
             installCmd: dnf install -y
-            toolRequirements: gcc g++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl
+            toolRequirements: which gcc g++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl
     container:
       image: ${{ matrix.image }}
     steps:
       - name: Install requirements
+        shell: sh
         run: |
           ${{ matrix.installCmd }} curl bash git ${{ matrix.toolRequirements }}
       - uses: actions/checkout@v3
-      - name: Install ghcup
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-          echo ~/.ghcup/bin >> $GITHUB_PATH
-          ~/.ghcup/bin/ghcup --version
-        env:
-          BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
-          BOOTSTRAP_HASKELL_MINIMAL: 1
-      - name: Print tool requirements
-        run: ghcup tool-requirements
-      - name: Install GHC ${{ github.event.inputs.ghcVersion }}
-        run: |
-          ghcup -v --url-source=file:${{ github.event.inputs.metadataFile }} \
-            install ghc --set ${{ github.event.inputs.ghcVersion }}
-      - name: GHC sanity check
-        shell: bash
-        run: |
-          ghc --version
-          echo 'main = print $ 1 + 1' > main.hs
-          ghc main.hs
-          [[ $(./main) -eq 2 ]]
-  bindist-install-macos:
+      - name: Install ghcup and bindist for GHC ${{ github.event.inputs.ghcVersion }}
+        run: .github/workflows/install-bindist.sh
+  bindist-install-non-linux:
     name: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -79,27 +70,9 @@ jobs:
         os:
           - macos-11
           - macos-12
+          - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Install ghcup
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-          echo ~/.ghcup/bin >> $GITHUB_PATH
-          ~/.ghcup/bin/ghcup --version
-        env:
-          BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
-          BOOTSTRAP_HASKELL_MINIMAL: 1
-      - name: Print tool requirements
-        run: ghcup tool-requirements
-      - name: Install GHC ${{ github.event.inputs.ghcVersion }}
-        run: |
-          ghcup -v --url-source=file:${{ github.event.inputs.metadataFile }} \
-            install ghc --set ${{ github.event.inputs.ghcVersion }}
-      - name: GHC sanity check
-        shell: bash
-        run: |
-          ghc --version
-          echo 'main = print $ 1 + 1' > main.hs
-          ghc main.hs
-          [[ $(./main) -eq 2 ]]
+      - name: Install ghcup and bindist for GHC ${{ github.event.inputs.ghcVersion }}
+        run: .github/workflows/install-bindist.sh
