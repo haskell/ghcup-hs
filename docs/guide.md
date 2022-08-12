@@ -238,7 +238,7 @@ There are a couple of good use cases to install custom bindists:
 1. manually built bindists (e.g. with patches)
     - example: `ghcup install ghc -u 'file:///home/mearwald/tmp/ghc-eff-patches/ghc-8.10.2-x86_64-deb10-linux.tar.xz' 8.10.2-eff`
 2. GHC head CI bindists
-    - example specifying a branch (`master`): `ghcup install ghc -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
+    - example specifying a branch (`master`): `ghcup install ghc -u 'https://gitlab.haskell.org/ghc/ghc/-/jobs/artifacts/master/raw/ghc-x86_64-linux-fedora33-release.tar.xz?job=x86_64-linux-fedora33-release' head`
     - example specifying a job id (`1129565`): `ghcup install ghc -u ' https://gitlab.haskell.org/api/v4/projects/1/jobs/1129565/artifacts/ghc-x86_64-linux-alpine3_12-validate+fully_static.tar.xz' mr7847`
 3. DWARF bindists
     - example: `ghcup install ghc -u 'https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-x86_64-deb10-linux-dwarf.tar.xz' 8.10.2-dwarf`
@@ -347,20 +347,20 @@ You need to use the `--isolate` or `-i` flag followed by the directory path.
 
 Examples:
 
-1. install an isolated GHC version at location /home/user/isolated_dir/ghc/  
+1. install an isolated GHC version at location /home/user/isolated_dir/ghc/
     - `ghcup install ghc 8.10.5 --isolate /home/user/isolated_dir/ghc`
 
-2. isolated install Cabal at a location you desire  
+2. isolated install Cabal at a location you desire
     - `ghcup install cabal --isolate /home/username/my_isolated_dir/`
 
-3. do an isolated install with a custom bindist  
-    - `ghcup install ghc --isolate /home/username/my_isolated_dir/ -u 'https://gitlab.haskell.org/api/v4/projects/1/jobs/artifacts/master/raw/ghc-x86_64-fedora27-linux.tar.xz?job=validate-x86_64-linux-fedora27' head`
+3. do an isolated install with a custom bindist
+    - `ghcup install ghc --isolate /home/username/my_isolated_dir/ -u 'https://gitlab.haskell.org/ghc/ghc/-/jobs/artifacts/master/raw/ghc-x86_64-linux-fedora33-release.tar.xz?job=x86_64-linux-fedora33-release' head`
 
-4. isolated install HLS  
+4. isolated install HLS
     - `ghcup install hls --isolate /home/username/dir/hls/`
 
-5. you can even compile ghc to an isolated location.  
-    - `ghcup compile ghc -j 4 -v 9.0.1 -b 8.10.5 -i /home/username/my/dir/ghc` 
+5. you can even compile ghc to an isolated location.
+    - `ghcup compile ghc -j 4 -v 9.0.1 -b 8.10.5 -i /home/username/my/dir/ghc`
 
 ## Continuous integration
 
