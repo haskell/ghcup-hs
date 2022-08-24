@@ -2450,7 +2450,6 @@ ghcupDownloads:
               dlHash: 8cf8408544a1a43adf1bbbb0dd6b074efadffc68bfa1a792947c52e825171224
     9.4.1:
       viTags:
-      - Latest
       - base-4.17.0.0
       viChangeLog: https://downloads.haskell.org/~ghc/9.4.1/docs/users_guide/9.4.1-notes.html
       viSourceDL:
@@ -2535,6 +2534,93 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/curated/9.4.1/ghc-9.4.1-aarch64-apple-darwin.tar.xz
               dlSubdir: ghc-9.4.1-aarch64-apple-darwin
               dlHash: a3ad3eb3a1f60a544ba7e79d53f081646ffdb257b497ccbdb896870f4009b11c
+    9.4.2:
+      viTags:
+      - Latest
+      - base-4.17.0.0
+      viChangeLog: https://downloads.haskell.org/~ghc/9.4.2/docs/users_guide/9.4.2-notes.html
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-src.tar.xz
+        dlSubdir: ghc-9.4.2
+        dlHash: 7227ef3b5e15a0d70b8f1a43aec32867e2a9b2d857cc0ed556aeed172d4db3a5
+      viPostRemove: *ghc-post-remove
+      viArch:
+        A_64:
+          Linux_Debian:
+            '< 10': &ghc-942-64-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-deb9-linux.tar.xz
+              dlSubdir: ghc-9.4.2-x86_64-unknown-linux
+              dlHash: 71096aea1950ddf64b68ea7ac618ded9531a4c6327d65d258e2c0e3e87dbc81b
+            '(>= 10 && < 11)': &ghc-942-64-deb10
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-deb10-linux.tar.xz
+              dlSubdir: ghc-9.4.2-x86_64-unknown-linux
+              dlHash: 5bf34ef70a2b824d45e525f09690c76707b7f01698962e425e8fd78b94ea9174
+            '>= 11': &ghc-942-64-deb11
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-deb11-linux.tar.xz
+              dlSubdir: ghc-9.4.2-x86_64-unknown-linux
+              dlHash: 6c600173f11c1895469b5028a564ba6ee3a98464742ff054939a015545849145
+            unknown_versioning: *ghc-942-64-deb11
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-942-64-deb10
+            '( >= 16 && < 19 )': *ghc-942-64-deb9
+          Linux_Mint:
+            '< 20': *ghc-942-64-deb9
+            '>= 20': *ghc-942-64-deb10
+          Linux_Fedora:
+            '( >= 33 && < 34 )': &ghc-942-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-fedora33-linux.tar.xz
+              dlSubdir: ghc-9.4.2-x86_64-unknown-linux
+              dlHash: 017bbf5ba0d526ec82ac97a2ea2a177f162424ea970cd5d6279b843b3d799668
+            unknown_versioning: *ghc-942-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &ghc-942-64-centos
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-centos7-linux.tar.xz
+              dlSubdir: ghc-9.4.2-x86_64-unknown-linux
+              dlHash: c88c1a4abe379478b70d2182533f35547c5e266048460b532b47f4f9df68d1da
+            unknown_versioning: *ghc-942-64-centos
+          Linux_RedHat:
+            unknown_versioning: *ghc-942-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-942-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-apple-darwin.tar.xz
+              dlSubdir: ghc-9.4.2-x86_64-apple-darwin
+              dlHash: 42bfb0412c19e3ae1727fea53208a3d15720f19c11526bb499bbd95af17e4eae
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-unknown-mingw32.tar.xz
+              dlSubdir: ghc-9.4.2-x86_64-unknown-mingw32
+              dlHash: 3acbe3fc0faa68fa4bf0cc324212956c234c21d7ffd80221cf6caf28726f8227
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-alpine3_12-linux-static-int_native.tar.xz
+              dlSubdir: ghc-9.4.2-x86_64-unknown-linux
+              dlHash: 2378dc80ea07308035fa1b695c28e3b32e8a43710bbe5d1edd00acb1af3d350d
+        A_32:
+          Linux_Debian:
+            '< 10': &ghc-942-32-deb9
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-i386-deb9-linux.tar.xz
+              dlSubdir: ghc-9.4.2-i386-unknown-linux
+              dlHash: 7d94ecbe274470978a984b4079ed8cd18b44720c867d2f9f976645bd25cc0b45
+            unknown_versioning: *ghc-942-32-deb9
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-942-32-deb9
+          Linux_Mint:
+            unknown_versioning: *ghc-942-32-deb9
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-942-32-deb9
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-aarch64-deb10-linux.tar.xz
+              dlSubdir: ghc-9.4.2-aarch64-unknown-linux
+              dlHash: ea075c54143dde37ea50cd085af61abb1fcfce8913deac298adc328bbb349464
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-aarch64-apple-darwin.tar.xz
+              dlSubdir: ghc-9.4.2-aarch64-apple-darwin
+              dlHash: 3f38808ac6b47631487b37535b6792d6594f5e2fbb5204bb9573ed528748e736
   Cabal:
     2.4.1.0:
       viTags:
