@@ -2455,6 +2455,7 @@ ghcupDownloads:
     9.4.1:
       viTags:
       - base-4.17.0.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.4.1/docs/users_guide/9.4.1-notes.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.4.1/ghc-9.4.1-src.tar.xz
