@@ -3424,7 +3424,7 @@ ghcupDownloads:
               dlHash: 7c4e3e930c677e8235b9386af8748118563fc3c1797d3350e03d73022eb6bb75
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~hls/haskell-language-server/1.8.0.0/haskell-language-server-1.8.0.0-x86_64-windows.zip
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-x86_64-windows.zip
               dlSubdir: haskell-language-server-1.8.0.0
               dlHash: a1380d992acd656b3f518d6cf9d46594f025afdb9006d6bb126c871835164836
         A_ARM64:
