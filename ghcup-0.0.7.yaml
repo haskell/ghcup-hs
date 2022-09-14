@@ -3426,7 +3426,7 @@ ghcupDownloads:
               dlHash: 23eea8d97dd8ebebe1d334e607c110f7b4443388
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/hls/1.7.0.0/haskell-language-server-1.8.0.0-x86_64-windows.zip
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server/1.8.0.0/haskell-language-server-1.8.0.0-x86_64-windows.zip
               dlHash: a4d843cc4a1b493e126a8c15c407d1824117a676
         A_ARM64:
           Darwin:
