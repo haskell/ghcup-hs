@@ -3375,6 +3375,65 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.7.0.0/haskell-language-server-1.7.0.0-aarch64-darwin.tar.xz
               dlSubdir: haskell-language-server-1.7.0.0
               dlHash: d82030533f69b862cc6149d7a9b32dfa81fc6a803cb089c59f00ef94efcce3bb
+    1.8.0.0:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#1800
+      viPostInstall: *hls-post-install
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-src.tar.gz
+        dlSubdir: haskell-language-server-1.8.0.0
+        dlHash: 7066158f973d2935c067cedef855a9d7c1f702f2
+      viArch:
+        A_64:
+          Linux_Debian:
+            '< 10': &hls-180-64-deb9
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-deb9.tar.xz
+              dlSubdir: haskell-language-server-1.8.0.0
+              dlHash: e2ae05f021223bfa11c52d9e0359a837630527e1
+            '>= 10': &hls-180-64-deb10
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-deb10.tar.xz
+              dlSubdir: haskell-language-server-1.8.0.0
+              dlHash: cb5ef73dd399f5ff3c22552493fc98fa7c635bd4
+            unknown_versioning: *hls-180-64-deb9
+          Linux_Ubuntu:
+            unknown_versioning: &hls-180-64-fedora
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-fedora33.tar.xz
+              dlSubdir: haskell-language-server-1.8.0.0
+              dlHash: c314ca451a935e42ee74a770a67960f1403a5d73
+            '( >= 16 && < 19 )': *hls-180-64-deb9
+          Linux_Mint:
+            '< 20': *hls-180-64-deb9
+            '>= 20': *hls-180-64-fedora
+          Linux_Fedora:
+            '( >= 27 && < 34 )': *hls-180-64-fedora
+            unknown_versioning: *hls-180-64-fedora
+          Linux_CentOS:
+            '( >= 7 && < 8 )': &hls-180-64-centos
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-centos7.tar.xz
+              dlSubdir: haskell-language-server-1.8.0.0
+              dlHash: 1adbac1507e75c8c9e24468ce45aa2cbb95663aa
+            unknown_versioning: *hls-180-64-centos
+          Linux_RedHat:
+            unknown_versioning: *hls-180-64-centos
+          Linux_UnknownLinux:
+            unknown_versioning: *hls-180-64-fedora
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-x86_64-darwin.tar.xz
+              dlSubdir: haskell-language-server-1.8.0.0
+              dlHash: 23eea8d97dd8ebebe1d334e607c110f7b4443388
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/hls/1.7.0.0/haskell-language-server-1.8.0.0-x86_64-windows.zip
+              dlHash: a4d843cc4a1b493e126a8c15c407d1824117a676
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-aarch64-darwin.tar.xz
+              dlSubdir: haskell-language-server-1.8.0.0
+              dlHash: 4099e9ae242925736caf7d7788d62b23e62900cb
   Stack:
     2.5.1:
       viTags:
