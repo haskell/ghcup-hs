@@ -3313,8 +3313,6 @@ ghcupDownloads:
               dlHash: ea174e82678c25a017ff564c5329a80dc18030139b9bfcad2da8fe888617446b
     1.7.0.0:
       viTags:
-        - Recommended
-        - Latest
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#1700
       viPostInstall: *hls-post-install
       viSourceDL:
