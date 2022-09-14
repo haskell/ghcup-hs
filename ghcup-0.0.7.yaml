@@ -3312,7 +3312,7 @@ ghcupDownloads:
               dlUri: https://github.com/haskell/haskell-language-server/releases/download/1.6.1.0/haskell-language-server-Linux-armv7-1.6.1.0.tar.xz
               dlHash: ea174e82678c25a017ff564c5329a80dc18030139b9bfcad2da8fe888617446b
     1.7.0.0:
-      viTags:
+      viTags: []
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md#1700
       viPostInstall: *hls-post-install
       viSourceDL:
