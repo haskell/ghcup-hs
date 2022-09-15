@@ -5,8 +5,12 @@ defaults:
 on:
   workflow_dispatch:
     inputs:
-      ghcVersion:
-        description: GHC version
+      tool:
+        description: Tool
+        required: true
+        type: string
+      version:
+        description: Version
         required: true
         type: string
       metadataFile:
@@ -18,7 +22,8 @@ env:
   BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
   BOOTSTRAP_HASKELL_MINIMAL: 1
   BOOTSTRAP_HASKELL_ADJUST_BASHRC: 1
-  GHC_VERSION: ${{ github.event.inputs.ghcVersion }}
+  TOOL: ${{ github.event.inputs.tool }}
+  VERSION: ${{ github.event.inputs.version }}
   METADATA_FILE: ${{ github.event.inputs.metadataFile }}
 jobs:
   bindist-install:
@@ -60,7 +65,7 @@ jobs:
         run: |
           ${{ matrix.installCmd }} curl bash git ${{ matrix.toolRequirements }}
       - uses: actions/checkout@v3
-      - name: Install ghcup and bindist for GHC ${{ github.event.inputs.ghcVersion }}
+      - name: Install ghcup and bindist for ${{ github.event.inputs.tool }} ${{ github.event.inputs.version }}
         run: .github/workflows/install-bindist.sh
   bindist-install-non-linux:
     name: ${{ matrix.os }}
@@ -74,5 +79,5 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Install ghcup and bindist for GHC ${{ github.event.inputs.ghcVersion }}
+      - name: Install ghcup and bindist for ${{ github.event.inputs.tool }} ${{ github.event.inputs.version }}
         run: .github/workflows/install-bindist.sh

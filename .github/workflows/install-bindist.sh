@@ -10,9 +10,19 @@ source $GHCUP_INSTALL_BASE_PREFIX/.ghcup/env || source ~/.bashrc
 ghcup --version
 which ghcup | grep foobarbaz
 
-ghcup -v --url-source=file:$METADATA_FILE install ghc --set $GHC_VERSION
+ghcup -v --url-source=file:$METADATA_FILE install $TOOL --set $VERSION
 
-ghc --version
-echo 'main = print $ 1 + 1' > main.hs
-ghc main.hs
-[[ $(./main) -eq 2 ]]
+case $TOOL in
+	hls)
+		haskell-language-server-wrapper --version
+		;;
+    ghc)
+		ghc --version
+		echo 'main = print $ 1 + 1' > main.hs
+		ghc main.hs
+		[[ $(./main) -eq 2 ]]
+		;;
+    *)
+		$TOOL --version
+		;;
+esac
