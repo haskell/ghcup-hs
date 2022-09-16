@@ -47,7 +47,7 @@ jobs:
             toolRequirements: build-essential curl libffi-dev  libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
           - image: ubuntu:18.04
             installCmd: apt-get update && apt-get install -y
-            toolRequirements: build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+            toolRequirements: build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
           - image: ubuntu:20.04
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
