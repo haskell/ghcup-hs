@@ -3396,14 +3396,20 @@ ghcupDownloads:
               dlHash: 63ee164e83ac76d440e0c0e777e9c7604dddff498fa53368132326d03da1817f
             unknown_versioning: *hls-180-64-deb9
           Linux_Ubuntu:
-            unknown_versioning: &hls-180-64-fedora
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-ubuntu20.04.tar.xz
+              dlSubdir: haskell-language-server-1.8.0.0
+              dlHash: f431add1ca5881d04caef9d2cf834248d8b4c36c7884221e39152c1aecd1ce56
+            '( >= 16 && < 19 )':
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-ubuntu18.04.tar.xz
+              dlSubdir: haskell-language-server-1.8.0.0
+              dlHash: 46e6c9309cfdf56746e659992ef1de9846b9abae9156bd96d51bc7e631074e2b
+          Linux_Mint:
+            '< 20': *hls-180-64-deb9
+            '>= 20': &hls-180-64-fedora
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-fedora33.tar.xz
               dlSubdir: haskell-language-server-1.8.0.0
               dlHash: a26c8225261bbd204014eb3df18b58b45a43594b8011910f3c5f560bc7171d33
-            '( >= 16 && < 19 )': *hls-180-64-deb9
-          Linux_Mint:
-            '< 20': *hls-180-64-deb9
-            '>= 20': *hls-180-64-fedora
           Linux_Fedora:
             '( >= 27 && < 34 )': *hls-180-64-fedora
             unknown_versioning: *hls-180-64-fedora
