@@ -68,6 +68,17 @@ prettyRequirements Requirements {..} =
       n = if not . T.null $ _notes then "\n  Note: " <> _notes else ""
   in  "System requirements " <> d <> n
 
+
+prettyRequirementsError :: Requirements -> T.Text
+prettyRequirementsError Requirements {..} =
+  let d = if not . null $ _distroPKGs
+        then "\nMake sure the following distro packages "
+          <> "are installed: "
+          <> T.intercalate " " _distroPKGs
+        else ""
+      n = if not . T.null $ _notes then "\nMake sure the following requirements are met: " <> _notes else ""
+  in d <> n
+
 rawRequirements :: Requirements -> T.Text
 rawRequirements Requirements {..} =
   if not . null $ _distroPKGs

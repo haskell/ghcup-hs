@@ -360,13 +360,18 @@ deriving instance Show InstallSetError
 
 
 -- | A build failed.
-data BuildFailed = forall es . (ToVariantMaybe BuildFailed es, PopVariant BuildFailed es, Pretty (V es), Show (V es)) => BuildFailed FilePath (V es)
+data BuildFailed = forall es . (ToVariantMaybe BuildFailed es, PopVariant BuildFailed es, Pretty (V es), Show (V es)) => BuildFailed FilePath (V es) (Just Requirements)
 
 instance Pretty BuildFailed where
-  pPrint (BuildFailed path reason) =
+  pPrint (BuildFailed path reason req) =
     case reason of
       VMaybe (_ :: BuildFailed) -> pPrint reason
       _ -> text "BuildFailed failed in dir" <+> text (path <> ":") <+> pPrint reason
+           <+> printToolReq'
+   where
+    printToolReq' = case req of
+                      Nothing -> T.pack ""
+                      Just req' -> prettyRequirementsError req'
 
 deriving instance Show BuildFailed
 
