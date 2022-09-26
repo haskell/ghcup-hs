@@ -3562,9 +3562,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3/stack-2.7.3-linux-armv7.tar.gz
               dlHash: 3e22c66ea38525ca2ee5b0d222c8aa193c50152a53ff2c80ae179a40592512fe
     2.7.5:
-      viTags:
-        - Latest
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v275
       viPostInstall: *stack-post
       viArch:
@@ -3614,3 +3612,52 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-armv7.tar.gz
               dlHash: 8be2342deea5309a32e28a0c5eb341ea9557401f08484676036471250ca12e21
+    2.9.1:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v291
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-291-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.9.1/stack-2.9.1-linux-x86_64-static.tar.gz
+              dlHash: cd8ef4a844f141159189899a128a33f4beb9ec4e66ac96fc2ada47a626a9d462
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.9.1/stack-2.9.1-osx-x86_64.tar.gz
+              dlHash: 53f13c2a12953ec1660635d3f20e5036a7169de3ad58bd52e513687e19fc71c6
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.9.1/stack-2.9.1-windows-x86_64.tar.gz
+              dlHash: 6aea769fcf0f6ae2596e52ef390a712a67285906600a374bbb759e08696780b5
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-291-64
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-291-32
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.9.1/stack-2.9.1-linux-i386.tar.gz
+              dlHash: 2032795cea9b814a68e65e5ab2d079c4beed877aa366f966a1984c6ad2bbfba2
+          Linux_Alpine:
+            unknown_versioning: *stack-291-32
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.9.1/stack-2.9.1-linux-aarch64.tar.gz
+              dlHash: bd9704ff22bceb8de8635e392ab19f49aaa56929be15e1ccbfc511b555164219
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.9.1/stack-2.9.1-osx-aarch64.tar.gz
+              dlHash: 632d51877a86235d4300c254e85353166def5b71b394e5db56c25cdf9dee6e98
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.9.1/stack-2.9.1-linux-armv7.tar.gz
+              dlHash: fa53c58d8d00a6d49ec26624aa7f817f5ece3c4df339fa6e4fccf1038b7f1fa5
