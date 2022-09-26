@@ -12,7 +12,8 @@
 #   * BOOTSTRAP_HASKELL_VERBOSE - any nonzero value for more verbose installation
 #   * BOOTSTRAP_HASKELL_GHC_VERSION - the ghc version to install
 #   * BOOTSTRAP_HASKELL_CABAL_VERSION - the cabal version to install
-#   * BOOTSTRAP_HASKELL_INSTALL_STACK - whether to install latest stack
+#   * BOOTSTRAP_HASKELL_INSTALL_NO_STACK - disable installation of stack
+#   * BOOTSTRAP_HASKELL_INSTALL_NO_STACK_HOOK - disable installation stack ghcup hook
 #   * BOOTSTRAP_HASKELL_INSTALL_HLS - whether to install latest hls
 #   * BOOTSTRAP_HASKELL_ADJUST_BASHRC - whether to adjust PATH in bashrc (prepend)
 #   * BOOTSTRAP_HASKELL_ADJUST_CABAL_CONFIG - whether to adjust mingw paths in cabal.config on windows
@@ -692,40 +693,44 @@ ask_hls() {
 }
 
 ask_stack() {
-	if [ -n "${BOOTSTRAP_HASKELL_INSTALL_STACK}" ] ; then
+    if [ -n "${BOOTSTRAP_HASKELL_INSTALL_NO_STACK}" ] ; then
+		return 0
+    elif [ -n "${BOOTSTRAP_HASKELL_INSTALL_NO_STACK_HOOK}" ] ; then
 		return 1
 	fi
 
 	if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
 		echo "-------------------------------------------------------------------------------"
 
-		warn "Do you want to install stack?"
-		warn "Stack is a haskell build tool similar to cabal that is used by some projects."
-		warn "Also see https://docs.haskellstack.org/"
+		warn "Do you want to enable better integration of stack with GHCup?"
+        warn "This means that stack won't install its own GHC versions, but uses GHCup's."
+        warn "For more information see:"
+        warn "  https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation-experimental"
+        warn "If you want to keep stacks vanilla behavior, answer 'No'."
 		warn ""
-		warn "[Y] Yes  [N] No  [?] Help (default is \"N\")."
+		warn "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
 		warn ""
 
 		while true; do
 			read -r stack_answer </dev/tty
 
 			case $stack_answer in
-				[Yy]*)
+				[Yy]* | "")
+					return 2 ;;
+				[Nn]*)
 					return 1 ;;
-				[Nn]* | "")
-					return 0 ;;
 				*)
 					echo "Possible choices are:"
 					echo
-					echo "Y - Yes, install stack"
-					echo "N - No, don't install anything more (default)"
+                    echo "Y - Yes, enable better integration (default)"
+					echo "N - No, keep stacks vanilla behavior"
 					echo
 					echo "Please make your choice and press ENTER."
 					;;
 			esac
 		done
 	else
-		return 0
+		return 2
 	fi
 
 	unset stack_answer
@@ -742,7 +747,7 @@ echo "This script can download and install the following binaries:"
 echo "  * ghcup - The Haskell toolchain installer"
 echo "  * ghc   - The Glasgow Haskell Compiler"
 echo "  * cabal - The Cabal build tool for managing Haskell software"
-echo "  * stack - (optional) A cross-platform program for developing Haskell projects"
+echo "  * stack - A cross-platform program for developing Haskell projects (similar to cabal)"
 echo "  * hls   - (optional) A language server for developers to integrate with their editor/IDE"
 echo
 if [ -z "${GHCUP_USE_XDG_DIRS}" ] ; then
@@ -839,7 +844,35 @@ esac
 
 case $ask_stack_answer in
 	1)
-		_eghcup --cache install stack || warn "Stack installation failed, continuing anyway"
+		_eghcup --cache install stack || die "Stack installation failed"
+		;;
+	2)
+		_eghcup --cache install stack || die "Stack installation failed"
+        edo mkdir -p "${STACK_ROOOT:-$HOME/.stack}"/hooks
+        hook_exe="${STACK_ROOOT:-$HOME/.stack}"/hooks/ghc-install.sh
+        hook_url="https://www.haskell.org/ghcup/sh/hooks/stack/ghc-install.sh"
+
+        if [ -e "${hook_exe}" ] ; then
+            warn "$hook_exe already exists, skipping hook installation."
+            warn "If you want to reinstall the hook, delete it manually and re-run"
+            warn "this script!"
+        else
+            case "${BOOTSTRAP_HASKELL_DOWNLOADER}" in
+                "curl")
+                    # shellcheck disable=SC2086
+                    edo curl -Lf ${GHCUP_CURL_OPTS} "${hook_url}" > "${hook_exe}"
+                    ;;
+                "wget")
+                    # shellcheck disable=SC2086
+                    edo wget -O /dev/stdout ${GHCUP_WGET_OPTS} "${hook_url}" > "${hook_exe}"
+                    ;;
+                *)
+                    die "Unknown downloader: ${BOOTSTRAP_HASKELL_DOWNLOADER}"
+                    ;;
+            esac
+            edo chmod +x "${hook_exe}"
+        fi
+
 		;;
 	*) ;;
 esac
