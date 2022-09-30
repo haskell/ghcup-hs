@@ -9,7 +9,7 @@ set -eu
 
 case $HOOK_GHC_TYPE in
     bindist)
-        ghcdir=$(ghcup run --ghc "$HOOK_GHC_VERSION" --install) || exit 3
+        ghcdir=$(ghcup whereis --directory ghc "$HOOK_GHC_VERSION" || ghcup run --ghc "$HOOK_GHC_VERSION" --install) || exit 3
         printf "%s/ghc" "${ghcdir}"
         ;;
     git)
