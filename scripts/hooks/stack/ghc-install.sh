@@ -1,13 +1,16 @@
-#!/bin/bash
+#!/bin/sh
+
+# !! KEEP THIS SCRIPT POSIX COMPLIANT !!
 
 # see https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation-experimental
 # for documentation about hooks
 
-set -euo pipefail
+set -eu
 
 case $HOOK_GHC_TYPE in
     bindist)
-        echo "$(ghcup run --ghc "$HOOK_GHC_VERSION" --install)/ghc"
+        ghcdir=$(ghcup run --ghc "$HOOK_GHC_VERSION" --install) || exit 3
+        printf "%s/ghc" "${ghcdir}"
         ;;
     git)
         # TODO: should be somewhat possible
