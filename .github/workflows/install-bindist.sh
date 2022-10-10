@@ -12,15 +12,29 @@ which ghcup | grep foobarbaz
 
 ghcup -v --url-source=file:$METADATA_FILE install $TOOL --set $VERSION
 
+cat <<EOF > main.hs
+{- cabal:
+build-depends: base
+-}
+
+main = print $ 1 + 1
+EOF
+
 case $TOOL in
 	hls)
 		haskell-language-server-wrapper --version
+		haskell-language-server-wrapper typecheck main.hs
 		;;
     ghc)
 		ghc --version
-		echo 'main = print $ 1 + 1' > main.hs
-		ghc main.hs
-		[[ $(./main) -eq 2 ]]
+		ghc --info
+		ghc -prof main.hs
+		[[ $(./main +RTS -s) -eq 2 ]]
+		;;
+    cabal)
+		cabal --version
+		cabal update
+		[[ $(cabal --verbose=0 run --enable-profiling ./main.hs -- +RTS -s) -eq 2 ]]
 		;;
     *)
 		$TOOL --version
