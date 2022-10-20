@@ -174,7 +174,7 @@ library
     build-depends:
       , bzlib
       , process  ^>=1.6.11.0
-      , Win32    ^>=2.10
+      , Win32    >=2.10
 
   else
     other-modules:

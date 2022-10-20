@@ -5,7 +5,6 @@ optional-packages: ./vendored/*/*.cabal
 optimization: 2
 
 package ghcup
-    tests: True
     flags: +tui
 
 source-repository-package
