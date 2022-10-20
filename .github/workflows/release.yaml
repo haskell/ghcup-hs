@@ -6,104 +6,80 @@ on:
       - 'v*'
 
 jobs:
-  draft_release:
-    name: Draft Release
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-
-    steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Changes in this Release
-            - First Change
-            - Second Change
-          draft: true
-          prerelease: false
-
-  release-mac:
-    name: Create Release
-    needs: draft_release
+  release-linux:
+    name: Create Release x86_64
     runs-on: ${{ matrix.os }}
     env:
+      CABAL_VER: 3.6.2.0
+      CACHE_VER: 1
       MACOSX_DEPLOYMENT_TARGET: 10.13
     strategy:
       matrix:
-        os:
-          - macOS-10.15
+        include:
+          - os: ubuntu-latest
+            ARTIFACT: "i386-linux-ghcup"
+            GHC_VER: 8.10.7
+            ARCH: 32
+          - os: ubuntu-latest
+            ARTIFACT: "x86_64-linux-ghcup"
+            GHC_VER: 8.10.7
+            ARCH: 64
+          - os: [self-hosted, macOS, aarch64]
+            ARTIFACT: "aarch64-apple-darwin-ghcup"
+            GHC_VER: 9.2.5
+            ARCH: 64
+          - os: macOS-10.15
+            ARTIFACT: "x86_64-apple-darwin-ghcup"
+            GHC_VER: 9.2.5
+            ARCH: 64
+          - os: windows-latest
+            ARTIFACT: "x86_64-mingw64-ghcup"
+            GHC_VER: 8.10.7
+            ARCH: 64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v1
 
-      - uses: haskell/actions/setup@v1.2
+      - if: matrix.ARCH == '32' && runner.os == 'Linux'
+        name: Run release (32 bit linux)
+        uses: docker://i386/alpine:3.12
         with:
-          ghc-version: 8.10.7
-          cabal-version: 3.6.2.0
-
-      - name: create ~/.local/bin
-        run: mkdir -p "$HOME/.local/bin"
-        shell: bash
-
-      - name: Add ~/.local/bin to PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-        shell: bash
-
-      - name: Update cabal cache
-        run: cabal update
-        shell: bash
-
-      - name: Install cabal dependencies
-        run: cabal build --only-dependencies --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" -ftui
-        shell: bash
-
-      - name: Build
-        run: cabal build --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" -ftui
-        shell: bash
-
-      - name: Install
-        run: cp "$(cabal list-bin exe:ghcup)" ~/.local/bin/ghcup
-        shell: bash
-
-      - name: Strip
-        run: strip ~/.local/bin/ghcup
-        shell: bash
-
-      - name: Run tests
-        run: cabal test --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" all
-        shell: bash
-
-      - name: Install git
-        run: brew install git
-
-      - name: set HOME
-        run: echo "HOME=$HOME" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Set ASSET_PATH
-        run: echo "ASSET_PATH=$HOME/.local/bin/ghcup" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
+          args: sh .github/scripts/release.sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+
+      - if: matrix.ARCH == '64' && runner.os == 'Linux'
+        name: Run release (64 bit linux)
+        uses: docker://alpine:3.12
         with:
-          upload_url: ${{ needs.draft_release.outputs.upload_url }}
-          asset_path: ${{ env.ASSET_PATH }}
-          asset_name: ghcup-${{ matrix.os }}
-          asset_content_type: application/octet-stream
+          args: sh .github/scripts/release.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+
+      - if: runner.os != 'Linux'
+        name: Run release (windows/mac)
+        run: bash .github/scripts/release.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
 
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: plan.json
-          path: ./dist-newstyle/cache/plan.json
+          name: artifacts
+          path: |
+            ./out/*
+            ./dist-newstyle/cache/plan.json
 
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: |
+            ./out/*
+            ./dist-newstyle/cache/plan.json
