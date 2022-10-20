@@ -1,0 +1,33 @@
+name: MkDocs
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  mkdocs:
+    name: mkdocs
+    runs-on: ubuntu-latest
+    env:
+      JSON_VERSION: "0.0.7"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Install mkdocs deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y python3-pip
+          sudo pip3 install mkdocs
+
+      - name: Run mkdocs
+        run: |
+          mkdocs build

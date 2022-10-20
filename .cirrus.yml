@@ -1,0 +1,20 @@
+freebsd_instance:
+  image_family: freebsd-13-1
+
+task:
+  env:
+    GHC_VER: 9.2.4
+    CABAL_VER: 3.6.2.0
+    ARTIFACT: "x86_64-portbld-freebsd-ghcup"
+    ARCH: 64
+    RUNNER_OS: FreeBSD
+    DISTRO: na
+    GITHUB_WORKSPACE: ${CIRRUS_WORKING_DIR}
+    JSON_VERSION: "0.0.7"
+    CIRRUS_CLONE_SUBMODULES: true
+  install_script: pkg install -y ghc hs-cabal-install git bash misc/compat10x misc/compat11x misc/compat12x gmake
+  script:
+    - bash .github/scripts/build.sh
+    - bash .github/scripts/test.sh
+  binaries_artifacts:
+    path: "out/x86_64-portbld-freebsd-ghcup-*"

@@ -1,0 +1,26 @@
+name: Hlint
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  hlint:
+    name: hlint
+    runs-on: ubuntu-latest
+    env:
+      JSON_VERSION: "0.0.7"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Run hlint
+        run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s -- -r lib/ test/

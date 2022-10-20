@@ -136,17 +136,18 @@ _eghcup() {
     fi
 }
 
-ecabal() {
-	edo _ecabal "$@"
-}
-
 _ecabal() {
+    # shellcheck disable=SC2317
     if [ -n "${CABAL_BIN}" ] ; then
         "${CABAL_BIN}" "$@"
     else
         # shellcheck disable=SC2086
         "${GHCUP_BIN}/cabal" "$@"
     fi
+}
+
+ecabal() {
+	edo _ecabal "$@"
 }
 
 _done() {

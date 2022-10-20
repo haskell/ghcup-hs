@@ -1,0 +1,46 @@
+name: Bootstrap tests
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  bootstrap:
+    name: bootstrap
+    runs-on: ${{ matrix.os }}
+    env:
+      BOOTSTRAP_HASKELL_CABAL_VERSION: 3.6.2.0
+      BOOTSTRAP_HASKELL_GHC_VERSION: 8.10.7
+      BOOTSTRAP_HASKELL_NONINTERACTIVE: yes
+      JSON_VERSION: "0.0.7"
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            DISTRO: Ubuntu
+          - os: macOS-10.15
+            DISTRO: na
+          - os: windows-latest
+            DISTRO: na
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - if: runner.os != 'Windows'
+        name: Run bootstrap
+        run: sh ./.github/scripts/bootstrap.sh
+        env:
+          DISTRO: ${{ matrix.DISTRO }}
+
+      - if: runner.os == 'Windows'
+        name: Run bootstrap
+        run: ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ${GITHUB_WORKSPACE}/bootstrap-haskell -InBash
+        shell: pwsh
