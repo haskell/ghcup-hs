@@ -1,0 +1,14 @@
+freebsd_instance:
+  image_family: freebsd-13-1
+
+task:
+  env:
+    GHC_VER: 9.2.4
+    CABAL_VER: 3.6.2.0
+    ARTIFACT: "x86_64-portbld-freebsd-ghcup"
+    ARCH: 64
+  install_script: pkg install -y ghc hs-cabal-install git bash
+  script:
+    - bash .github/scripts/release.sh
+  binaries_artifacts:
+    path: "out/x86_64-portbld-freebsd-ghcup-*"
