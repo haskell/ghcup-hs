@@ -55,15 +55,17 @@ GHCup supports the following tools, which are also known as the **Haskell Toolch
 <table>
 <thead><tr><th>GHC Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>9.4.2</td><td><span style="color:blue">latest</span>, base-4.17.0.0</td></tr>
+<tr><td>9.4.3</td><td><span style="color:blue">latest</span>, base-4.17.0.0</td></tr>
+<tr><td>9.4.2</td><td>base-4.17.0.0</td></tr>
 <tr><td>9.4.1</td><td>base-4.17.0.0</td></tr>
+<tr><td>9.2.5</td><td><span style="color:green">recommended</span>, base-4.16.4.0</td></tr>
 <tr><td>9.2.4</td><td>base-4.16.3.0</td></tr>
 <tr><td>9.2.3</td><td>base-4.16.2.0</td></tr>
 <tr><td>9.2.2</td><td>base-4.16.1.0</td></tr>
 <tr><td>9.2.1</td><td>base-4.16.0.0</td></tr>
 <tr><td>9.0.2</td><td>base-4.15.1.0</td></tr>
 <tr><td>9.0.1</td><td>base-4.15.0.0</td></tr>
-<tr><td>8.10.7</td><td><span style="color:green">recommended</span>, base-4.14.3.0</td></tr>
+<tr><td>8.10.7</td><td>base-4.14.3.0</td></tr>
 <tr><td>8.10.6</td><td>base-4.14.3.0</td></tr>
 <tr><td>8.10.5</td><td>base-4.14.2.0</td></tr>
 <tr><td>8.10.4</td><td>base-4.14.1.0</td></tr>
@@ -128,7 +130,8 @@ GHCup supports the following tools, which are also known as the **Haskell Toolch
 <table>
 <thead><tr><th>Stack Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>2.7.5</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>2.9.1</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>2.7.5</td><td></td></tr>
 <tr><td>2.7.3</td><td></td></tr>
 <tr><td>2.7.1</td><td></td></tr>
 <tr><td>2.5.1</td><td></td></tr>
