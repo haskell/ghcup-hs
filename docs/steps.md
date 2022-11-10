@@ -177,7 +177,7 @@ A more thorough introduction to GHCi can be found in the
 ### Using external packages in ghci
 
 By default, GHCi can only load and use packages that are
-[included with the GHC installation](https://downloads.haskell.org/ghc/latest/docs/html/users_guide/9.2.2-notes.html#included-libraries).
+[included with the GHC installation](https://downloads.haskell.org/ghc/9.4.2/docs/users_guide/9.4.2-notes.html#included-libraries).
 
 However, users of the [cabal-install](https://www.haskell.org/cabal) and
 [stack](http://haskellstack.org) build tools can download and load external packages
