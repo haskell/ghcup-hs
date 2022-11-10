@@ -577,8 +577,8 @@ $Msys2Shell = ('{0}\msys2_shell.cmd' -f $MsysDir)
 # The bootstrap script is always silent, since we ask relevant questions here
 $SilentExport = 'export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 ;'
 
-if ($InstallStack) {
-  $StackInstallExport = 'export BOOTSTRAP_HASKELL_INSTALL_STACK=1 ;'
+if (!($InstallStack)) {
+  $StackInstallExport = 'export BOOTSTRAP_HASKELL_INSTALL_NO_STACK=1 ;'
 }
 
 if ($InstallHLS) {
