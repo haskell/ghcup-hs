@@ -1,10 +1,10 @@
-# Getting started
+# Installation
 
 GHCup makes it easy to install specific versions of GHC on GNU/Linux,
 macOS (aka Darwin), FreeBSD and Windows and can also bootstrap a fresh [Haskell developer environment](./install/#supported-tools) from scratch.
 It follows the UNIX philosophy of [do one thing and do it well](https://en.wikipedia.org/wiki/Unix_philosophy#Do_One_Thing_and_Do_It_Well). Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [pyenv](https://github.com/pyenv/pyenv) and [jenv](http://www.jenv.be).
 
-## Installation
+## How to install
 
 The following commands will download the `ghcup` binary into `~/.ghcup/bin` (or `C:\ghcup\bin` on windows) and then
 run it to interactively install the [Haskell Toolchain](#supported-tools). These commands should be run as **non-root/non-admin
@@ -188,7 +188,7 @@ HLS bindists are experimental.
 
 Lower availability of bindists. Stack and HLS binaries are experimental.
 
-## Manual install
+## Manual installation
 
 Download the binary for your platform at [https://downloads.haskell.org/~ghcup/](https://downloads.haskell.org/~ghcup/)
 and place it into your `PATH` anywhere.
