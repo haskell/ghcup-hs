@@ -403,7 +403,11 @@ download_ghcup() {
 find_shell() {
 	case $SHELL in
 		*/zsh) # login shell is zsh
-			GHCUP_PROFILE_FILE="$HOME/.zshrc"
+			if [ -n "$ZDOTDIR" ]; then
+				GHCUP_PROFILE_FILE="$ZDOTDIR/.zshrc"
+			else
+				GHCUP_PROFILE_FILE="$HOME/.zshrc"
+			fi
 			MY_SHELL="zsh" ;;
 		*/bash) # login shell is bash
 			GHCUP_PROFILE_FILE="$HOME/.bashrc"
