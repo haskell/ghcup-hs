@@ -131,7 +131,8 @@ updateSettings UserSettings{..} Settings{..} =
        urlSource'  = fromMaybe urlSource uUrlSource
        noNetwork'  = fromMaybe noNetwork uNoNetwork
        gpgSetting' = fromMaybe gpgSetting uGPGSetting
-   in Settings cache' metaCache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor
+       platformOverride' = uPlatformOverride <|> platformOverride
+   in Settings cache' metaCache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor platformOverride'
 
 
 

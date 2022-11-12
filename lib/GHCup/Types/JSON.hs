@@ -56,6 +56,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Global
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''KeepDirs
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downloader
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GPGSetting
+deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "r-") . T.pack . kebab . tail $ str' } ''PlatformRequest
 
 instance ToJSON Tag where
   toJSON Latest             = String "Latest"

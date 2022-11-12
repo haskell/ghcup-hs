@@ -309,11 +309,12 @@ data UserSettings = UserSettings
   , uUrlSource   :: Maybe URLSource
   , uNoNetwork   :: Maybe Bool
   , uGPGSetting  :: Maybe GPGSetting
+  , uPlatformOverride    :: Maybe PlatformRequest
   }
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
@@ -328,16 +329,17 @@ fromSettings Settings{..} Nothing =
     , uKeyBindings = Nothing
     , uUrlSource = Just urlSource
     , uGPGSetting = Just gpgSetting
+    , uPlatformOverride = platformOverride
   }
 fromSettings Settings{..} (Just KeyBindings{..}) =
   let ukb = UserKeyBindings
-            { kUp           = Just bUp        
-            , kDown         = Just bDown      
-            , kQuit         = Just bQuit      
-            , kInstall      = Just bInstall   
-            , kUninstall    = Just bUninstall 
-            , kSet          = Just bSet       
-            , kChangelog    = Just bChangelog 
+            { kUp           = Just bUp
+            , kDown         = Just bDown
+            , kQuit         = Just bQuit
+            , kInstall      = Just bInstall
+            , kUninstall    = Just bUninstall
+            , kSet          = Just bSet
+            , kChangelog    = Just bChangelog
             , kShowAll      = Just bShowAllVersions
             , kShowAllTools = Just bShowAllTools
             }
@@ -352,6 +354,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uKeyBindings = Just ukb
     , uUrlSource = Just urlSource
     , uGPGSetting = Just gpgSetting
+    , uPlatformOverride = platformOverride
   }
 
 data UserKeyBindings = UserKeyBindings
@@ -421,16 +424,17 @@ instance NFData LeanAppState
 
 
 data Settings = Settings
-  { cache      :: Bool
-  , metaCache  :: Integer
-  , noVerify   :: Bool
-  , keepDirs   :: KeepDirs
-  , downloader :: Downloader
-  , verbose    :: Bool
-  , urlSource  :: URLSource
-  , noNetwork  :: Bool
-  , gpgSetting :: GPGSetting
-  , noColor    :: Bool -- this also exists in LoggerConfig
+  { cache            :: Bool
+  , metaCache        :: Integer
+  , noVerify         :: Bool
+  , keepDirs         :: KeepDirs
+  , downloader       :: Downloader
+  , verbose          :: Bool
+  , urlSource        :: URLSource
+  , noNetwork        :: Bool
+  , gpgSetting       :: GPGSetting
+  , noColor          :: Bool -- this also exists in LoggerConfig
+  , platformOverride :: Maybe PlatformRequest
   }
   deriving (Show, GHC.Generic)
 
@@ -438,7 +442,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache False Never Curl False GHCupURL False GPGNone False
+defaultSettings = Settings False defaultMetaCache False Never Curl False GHCupURL False GPGNone False Nothing
 
 instance NFData Settings
 

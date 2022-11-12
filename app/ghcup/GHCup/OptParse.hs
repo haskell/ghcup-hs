@@ -74,6 +74,7 @@ data Options = Options
     optVerbose     :: Maybe Bool
   , optCache       :: Maybe Bool
   , optMetaCache   :: Maybe Integer
+  , optPlatform    :: Maybe PlatformRequest
   , optUrlSource   :: Maybe URI
   , optNoVerify    :: Maybe Bool
   , optKeepDirs    :: Maybe KeepDirs
@@ -116,6 +117,16 @@ opts =
     <$> invertableSwitch "verbose" (Just 'v') False (help "Enable verbosity (default: disabled)")
     <*> invertableSwitch "cache" (Just 'c') False (help "Cache downloads in ~/.ghcup/cache (default: disabled)")
     <*> optional (option auto (long "metadata-caching" <> help "How long the yaml metadata caching interval is (in seconds), 0 to disable" <> internal))
+    <*> optional
+      (option
+        (eitherReader platformParser)
+        (  short 'p'
+        <> long "platform"
+        <> metavar "PLATFORM"
+        <> help
+             "Override for platform (triple matching ghc tarball names), e.g. x86_64-fedora27-linux"
+        )
+      )
     <*> optional
           (option
             (eitherReader parseUri)

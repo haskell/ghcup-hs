@@ -87,6 +87,7 @@ toSettings options = do
          urlSource   = maybe (fromMaybe (Types.urlSource defaultSettings) uUrlSource) (OwnSource . (:[]) . Right) optUrlSource
          noNetwork   = fromMaybe (fromMaybe (Types.noNetwork defaultSettings) uNoNetwork) optNoNetwork
          gpgSetting  = fromMaybe (fromMaybe (Types.gpgSetting defaultSettings) uGPGSetting) optGpg
+         platformOverride = optPlatform <|> (uPlatformOverride <|> Types.platformOverride defaultSettings)
      in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
@@ -198,14 +199,14 @@ Report bugs at <https://gitlab.haskell.org/haskell/ghcup-hs/issues>|]
 
 
           let appState = do
-                pfreq <- (
-                  runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest
-                  ) >>= \case
-                          VRight r -> pure r
-                          VLeft e -> do
-                            runLogger
-                              (logError $ T.pack $ prettyShow e)
-                            exitWith (ExitFailure 2)
+                pfreq <- case platformOverride settings of
+                           Just pfreq' -> return pfreq'
+                           Nothing -> (runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest) >>= \case
+                                          VRight r -> pure r
+                                          VLeft e -> do
+                                            runLogger
+                                              (logError $ T.pack $ prettyShow e)
+                                            exitWith (ExitFailure 2)
 
                 ghcupInfo <-
                   ( flip runReaderT leanAppstate

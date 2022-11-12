@@ -75,3 +75,14 @@ url-source:
   # AddSource:
     # - Right: "file:///home/jule/git/ghcup-hs/ghcup-prereleases.yaml"
     # - Right: "file:///home/jule/git/ghcup-hs/ghcup-custom.yaml"
+
+# This is a way to override platform detection, e.g. when you're running
+# a Ubuntu derivate based on 18.04, you could do:
+#
+# platform-override:
+#   arch: A_64
+#   platform:
+#     contents: Ubuntu
+#     tag: Linux
+#   version: '18.04'
+platform-override: null

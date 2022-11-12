@@ -71,6 +71,20 @@ explaining all possible configurations can be found in this repo: [config.yaml](
 
 Partial configuration is fine. Command line options always override the config file settings.
 
+## Overriding distro detection
+
+If you're running e.g. an Ubuntu derivate based on 18.04 and ghcup is picking bindists that
+don't work well, you could do this in `config.yaml`:
+
+```yml
+platform-override:
+  arch: A_64
+  platform:
+    contents: Ubuntu
+    tag: Linux
+  version: '18.04'
+```
+
 ## Env variables
 
 This is the complete list of env variables that change GHCup behavior:

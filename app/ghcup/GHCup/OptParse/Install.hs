@@ -66,7 +66,6 @@ data InstallCommand = InstallGHC InstallOptions
 
 data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
-  , instPlatform :: Maybe PlatformRequest
   , instBindist  :: Maybe URI
   , instSet      :: Bool
   , isolateDir   :: Maybe FilePath
@@ -176,18 +175,8 @@ Examples:
 
 installOpts :: Maybe Tool -> Parser InstallOptions
 installOpts tool =
-  (\p (u, v) b is f -> InstallOptions v p u b is f)
-    <$> optional
-          (option
-            (eitherReader platformParser)
-            (  short 'p'
-            <> long "platform"
-            <> metavar "PLATFORM"
-            <> help
-                 "Override for platform (triple matching ghc tarball names), e.g. x86_64-fedora27-linux"
-            )
-          )
-    <*> (   (   (,)
+  (\(u, v) b is f -> InstallOptions v u b is f)
+    <$> (   (   (,)
             <$> optional
                   (option
                     (eitherReader uriParser)
@@ -268,11 +257,10 @@ type InstallEffects = '[ AlreadyInstalled
 
 
 runInstTool :: AppState
-            -> Maybe PlatformRequest
             -> Excepts InstallEffects (ResourceT (ReaderT AppState IO)) a
             -> IO (VEither InstallEffects a)
-runInstTool appstate' mInstPlatform =
-  flip runReaderT (maybe appstate' (\x -> appstate'{ pfreq = x } :: AppState) mInstPlatform)
+runInstTool appstate' =
+  flip runReaderT appstate'
   . runResourceT
   . runE
     @InstallEffects
@@ -302,11 +290,10 @@ type InstallGHCEffects = '[ AlreadyInstalled
                           ]
 
 runInstGHC :: AppState
-           -> Maybe PlatformRequest
            -> Excepts InstallGHCEffects (ResourceT (ReaderT AppState IO)) a
            -> IO (VEither InstallGHCEffects a)
-runInstGHC appstate' mInstPlatform =
-  flip runReaderT (maybe appstate' (\x -> appstate'{ pfreq = x } :: AppState) mInstPlatform)
+runInstGHC appstate' =
+  flip runReaderT appstate'
   . runResourceT
   . runE
     @InstallGHCEffects
@@ -331,7 +318,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
   installGHC InstallOptions{..} = do
     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
     (case instBindist of
-       Nothing -> runInstGHC s' instPlatform $ do
+       Nothing -> runInstGHC s' $ do
          (v, vi) <- liftE $ fromVersion instVer GHC
          liftE $ runBothE' (installGHCBin
                      (_tvVersion v)
@@ -342,7 +329,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                    $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setGHC v SetGHCOnly Nothing
          pure vi
        Just uri -> do
-         runInstGHC s'{ settings = settings {noVerify = True}} instPlatform $ do
+         runInstGHC s'{ settings = settings {noVerify = True}} $ do
            (v, vi) <- liftE $ fromVersion instVer GHC
            liftE $ runBothE' (installGHCBindist
                        (DownloadInfo uri (Just $ RegexDir "ghc-.*") "")
@@ -403,7 +390,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
   installCabal InstallOptions{..} = do
     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
     (case instBindist of
-       Nothing -> runInstTool s' instPlatform $ do
+       Nothing -> runInstTool s' $ do
          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
          liftE $ runBothE' (installCabalBin
                                     v
@@ -412,7 +399,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                                   ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setCabal v
          pure vi
        Just uri -> do
-         runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
+         runInstTool s'{ settings = settings { noVerify = True}} $ do
            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
            liftE $ runBothE' (installCabalBindist
                                       (DownloadInfo uri Nothing "")
@@ -452,7 +439,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
   installHLS InstallOptions{..} = do
      s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
      (case instBindist of
-       Nothing -> runInstTool s' instPlatform $ do
+       Nothing -> runInstTool s' $ do
          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
          liftE $ runBothE' (installHLSBin
                                     v
@@ -461,7 +448,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                                   ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setHLS v SetHLSOnly Nothing
          pure vi
        Just uri -> do
-         runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
+         runInstTool s'{ settings = settings { noVerify = True}} $ do
            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
            -- TODO: support legacy
            liftE $ runBothE' (installHLSBindist
@@ -502,7 +489,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
   installStack InstallOptions{..} = do
      s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
      (case instBindist of
-        Nothing -> runInstTool s' instPlatform $ do
+        Nothing -> runInstTool s' $ do
           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
           liftE $ runBothE' (installStackBin
                                      v
@@ -511,7 +498,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                                    ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setStack v
           pure vi
         Just uri -> do
-          runInstTool s'{ settings = settings { noVerify = True}} instPlatform $ do
+          runInstTool s'{ settings = settings { noVerify = True}} $ do
             (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
             liftE $ runBothE' (installStackBindist
                                        (DownloadInfo uri Nothing "")
