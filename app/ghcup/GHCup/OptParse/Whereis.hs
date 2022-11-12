@@ -32,6 +32,7 @@ import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
+import           System.Environment
 import           System.Exit
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
@@ -268,6 +269,13 @@ whereis :: ( Monad m
 whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
   Dirs{ .. }  <- runReaderT getDirs leanAppstate
   case (whereisCommand, whereisOptions) of
+    (WhereisTool GHCup _, WhereisOptions{..}) -> do
+      loc <- liftIO (getExecutablePath >>= canonicalizePath )
+      if directory
+      then liftIO $ putStr $ takeDirectory loc
+      else liftIO $ putStr loc
+      pure ExitSuccess
+
     (WhereisTool tool (Just (GHCVersion v)), WhereisOptions{..}) ->
       runLeanWhereIs leanAppstate (do
         loc <- liftE $ whereIsTool tool v
