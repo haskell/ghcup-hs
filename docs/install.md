@@ -26,6 +26,45 @@ There's also a [youtube video](https://www.youtube.com/watch?v=bB4fmQiUYPw) expl
 
 If you want to know what these scripts do, check out the [source code at the repository](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
 
+## System requirements
+
+### Linux Debian
+
+The following distro packages are required: `build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
+
+### Linux Ubuntu
+
+The following distro packages are required: `build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
+
+### Linux Fedora
+
+The following distro packages are required: `gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl`
+
+### Linux CentOS
+
+The following distro packages are required: `gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl`
+
+### Linux Alpine
+
+The following distro packages are required: `binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz`
+
+### Linux (generic)
+
+You need the following packages: curl g++ gcc gmp make ncurses realpath xz-utils. Consult your distro documentation on the exact names of those packages.
+
+### Darwin
+
+On OS X, in the course of running ghcup you will be given a dialog box to install the command line tools. Accept and the requirements will be installed for you. You will then need to run the command again.
+On Darwin M1 you might also need a working llvm installed (e.g. via brew) and have the toolchain exposed in PATH.
+
+### FreeBSD
+
+The following distro packages are required: `curl gcc gmp gmake ncurses perl5 libffi libiconv`
+
+### Windows
+
+On Windows, msys2 should already have been set up during the installation, so most users should just proceed. If you are installing manually, make sure to have a working mingw64 toolchain and shell.
+
 ### Which versions get installed?
 
 GHCup has two main channels for every tool: **recommended** and **latest**. By default, it installs *recommended*.
