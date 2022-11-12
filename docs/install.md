@@ -26,6 +26,14 @@ There's also a [youtube video](https://www.youtube.com/watch?v=bB4fmQiUYPw) expl
 
 If you want to know what these scripts do, check out the [source code at the repository](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
 
+### Which versions get installed?
+
+GHCup has two main channels for every tool: **recommended** and **latest**. By default, it installs *recommended*.
+
+*latest* follows the latest release of every tool, while *recommended* is at the discretion of the GHCup maintainers and based on community adoption (hackage libraries, tools like HLS, stackage support, etc.) and known bugs.
+
+Also see [tags and shortcuts](../guide/#tags-and-shortcuts) for more information.
+
 ## System requirements
 
 ### Linux Debian
@@ -64,14 +72,6 @@ The following distro packages are required: `curl gcc gmp gmake ncurses perl5 li
 ### Windows
 
 On Windows, msys2 should already have been set up during the installation, so most users should just proceed. If you are installing manually, make sure to have a working mingw64 toolchain and shell.
-
-### Which versions get installed?
-
-GHCup has two main channels for every tool: **recommended** and **latest**. By default, it installs *recommended*.
-
-*latest* follows the latest release of every tool, while *recommended* is at the discretion of the GHCup maintainers and based on community adoption (hackage libraries, tools like HLS, stackage support, etc.) and known bugs.
-
-Also see [tags and shortcuts](../guide/#tags-and-shortcuts) for more information.
 
 ## Next steps
 
