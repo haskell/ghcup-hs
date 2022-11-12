@@ -11,6 +11,7 @@ module Generate where
 
 import           GHCup
 import           GHCup.Download
+import           GHCup.Requirements
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
@@ -144,13 +145,14 @@ generateTable output = do
   handle <- case output of
               StdOut -> pure stdout
               FileOutput fp -> liftIO $ openFile fp WriteMode
-              
+
   forM_ [GHC,Cabal,HLS,Stack] $ \tool -> do
     case tool of
       GHC -> liftIO $ hPutStrLn handle $ "<details> <summary>Show all supported <a href='https://www.haskell.org/ghc/'>GHC</a> versions</summary>"
       Cabal -> liftIO $ hPutStrLn handle $ "<details> <summary>Show all supported <a href='https://cabal.readthedocs.io/en/stable/'>cabal-install</a> versions</summary>"
       HLS -> liftIO $ hPutStrLn handle $ "<details> <summary>Show all supported <a href='https://haskell-language-server.readthedocs.io/en/stable/'>HLS</a> versions</summary>"
       Stack -> liftIO $ hPutStrLn handle $ "<details> <summary>Show all supported <a href='https://docs.haskellstack.org/en/stable/README/'>Stack</a> versions</summary>"
+      _ -> fail "no"
     liftIO $ hPutStrLn handle $ "<table>"
     liftIO $ hPutStrLn handle $ "<thead><tr><th>" <> show tool <> " Version</th><th>Tags</th></tr></thead>"
     liftIO $ hPutStrLn handle $ "<tbody>"
@@ -175,3 +177,53 @@ generateTable output = do
   printTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
   printTag (UnknownTag t    ) = t
   printTag Old                = ""
+
+
+generateSystemInfo :: ( MonadFail m
+                      , MonadMask m
+                      , Monad m
+                      , MonadReader env m
+                      , HasSettings env
+                      , HasDirs env
+                      , HasLog env
+                      , MonadThrow m
+                      , MonadIO m
+                      , HasPlatformReq env
+                      , HasGHCupInfo env
+                      , MonadUnliftIO m
+                      )
+                   => Output
+                   -> m ExitCode
+generateSystemInfo output = do
+  handle <- case output of
+              StdOut -> pure stdout
+              FileOutput fp -> liftIO $ openFile fp WriteMode
+
+  forM_ [ Linux Debian
+        , Linux Ubuntu
+        , Linux Fedora
+        , Linux CentOS
+        , Linux Alpine
+        , Linux UnknownLinux
+        , Darwin
+        , FreeBSD
+        , Windows
+        ] $ \plat -> do
+            GHCupInfo { .. } <- getGHCupInfo
+            (Just req) <- pure $ getCommonRequirements (PlatformResult plat Nothing) _toolRequirements
+            liftIO $ hPutStrLn handle $ "### " <> (prettyPlat plat) <> "\n"
+            liftIO $ hPutStrLn handle $ (T.unpack $ pretty' req) <> "\n"
+  pure ExitSuccess
+ where
+  pretty' Requirements {..} =
+    let d = if not . null $ _distroPKGs
+          then "The following distro packages are required: " <> "`" <> T.intercalate " " _distroPKGs <> "`"
+          else ""
+        n = if not . T.null $ _notes then _notes else ""
+    in  if | T.null d -> n
+           | T.null n -> d
+           | otherwise -> d <> "\n" <> n
+
+  prettyPlat (Linux UnknownLinux) = "Linux (generic)"
+  prettyPlat p = show p
+

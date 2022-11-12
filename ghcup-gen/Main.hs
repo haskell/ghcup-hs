@@ -65,6 +65,7 @@ data Command = ValidateYAML ValidateYAMLOpts
              | ValidateTarballs ValidateYAMLOpts TarballFilter
              | GenerateHlsGhc ValidateYAMLOpts Format Output
              | GenerateToolTable ValidateYAMLOpts Output
+             | GenerateSystemDepsInfo ValidateYAMLOpts Output
 
 
 fileOutput :: Parser Output
@@ -152,10 +153,16 @@ com = subparser
          (progDesc "Generate a list of HLS-GHC support")
        )
   <> command
-       "generate-table"
+       "generate-tool-table"
        (info
          ((GenerateToolTable <$> validateYAMLOpts <*> outputP) <**> helper)
          (progDesc "Generate a markdown table of available tool versions")
+       )
+  <> command
+       "generate-system-deps-info"
+       (info
+         ((GenerateSystemDepsInfo <$> validateYAMLOpts <*> outputP) <**> helper)
+         (progDesc "Generate a markdown info for system dependencies")
        )
   )
 
@@ -202,6 +209,7 @@ main = do
           ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (validateTarballs tarballFilter)
           GenerateHlsGhc vopts format output -> withValidateYamlOpts vopts (generateHLSGhc format output)
           GenerateToolTable vopts output -> withValidateYamlOpts vopts (generateTable output)
+          GenerateSystemDepsInfo vopts output -> withValidateYamlOpts vopts (generateSystemInfo output)
   pure ()
 
  where

@@ -153,7 +153,7 @@ toolRequirements:
         unknown_versioning:
           distroPKGs: []
           notes: On Windows, msys2 should already have been set up during the installation,
-            so most users should just press ENTER.
+            so most users should just proceed.
             If you are installing manually, make sure to have a working mingw64 toolchain and
             shell.
 ghcupDownloads:
