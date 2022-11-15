@@ -73,6 +73,7 @@ import           Prelude                 hiding ( abs
 import           System.Environment
 import           System.FilePath
 import           System.IO.Error
+import           System.IO.Temp
 import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
@@ -133,6 +134,7 @@ rmTool :: ( MonadReader env m
           => ListResult
           -> Excepts '[NotInstalled, UninstallFailed] m ()
 rmTool ListResult {lVer, lTool, lCross} = do
+  logInfo $ "removing " <> T.pack (show lTool) <> " version " <> prettyVer lVer
   case lTool of
     GHC ->
       let ghcTargetVersion = GHCTargetVersion lCross lVer
@@ -364,11 +366,12 @@ rmGhcup = do
   if isWindows
   then do
     -- since it doesn't seem possible to delete a running exe on windows
-    -- we move it to temp dir, to be deleted at next reboot
-    tempFilepath <- mkGhcupTmpDir
+    -- we move it to system temp dir, to be deleted at next reboot
+    tmp <- liftIO $ getCanonicalTemporaryDirectory >>= \t -> createTempDirectory t "ghcup"
+    logDebug $ "mv " <> T.pack ghcupFilepath <> " " <> T.pack (tmp </> "ghcup")
     hideError UnsupportedOperation $
               liftIO $ hideError NoSuchThing $
-              moveFile ghcupFilepath (fromGHCupPath tempFilepath </> "ghcup")
+              moveFile ghcupFilepath (tmp </> "ghcup")
   else
     -- delete it.
     hideError doesNotExistErrorType $ rmFile ghcupFilepath
