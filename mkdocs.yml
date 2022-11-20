@@ -1,6 +1,6 @@
 site_name: GHCup
 site_url: https://www.haskell.org/ghcup
-site_description: GHCup is an installer for the general purpose language Haskell.
+site_description: GHCup is the main installer for the general purpose language Haskell.
 site_author: GHCup Team
 site_favicon: haskell_logo.png
 

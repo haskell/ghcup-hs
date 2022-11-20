@@ -155,6 +155,11 @@ Windows 7 and Powershell 2.0 aren't well supported at the moment, also see:
 
 ## FAQ
 
+### Is ghcup really the main installer?
+
+This is based on the Haskell survey results from 2022, which show that more
+than half of survey participants use GHCup: https://taylor.fausak.me/2022/11/18/haskell-survey-results/
+
 ### Why reimplement stack?
 
 GHCup is not a reimplementation of stack. The only common part is automatic installation of GHC,
