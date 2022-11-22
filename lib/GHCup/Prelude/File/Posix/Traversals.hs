@@ -56,7 +56,7 @@ foreign import ccall unsafe "__hscore_free_dirent"
 foreign import ccall unsafe "__hscore_d_name"
   c_name :: Ptr CDirent -> IO CString
 
-foreign import ccall unsafe "__posixdir_d_type"
+foreign import capi unsafe "dirutils.h __posixdir_d_type"
   c_type :: Ptr CDirent -> IO DirType
 
 ----------------------------------------------------------
