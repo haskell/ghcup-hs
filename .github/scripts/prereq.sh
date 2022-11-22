@@ -57,7 +57,10 @@ if [ "${RUNNER_OS}" = "Linux" ] ; then
             ncurses-static
 	elif [ "${DISTRO}" = "Ubuntu" ] ; then
 		sudo apt-get update -y
-		sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential
+		sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl
+	elif [ "${DISTRO}" = "Debian" ] ; then
+		apt-get update -y
+		apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl ghc
 	fi
 elif [ "${RUNNER_OS}" = "macOS" ] ; then
 	if ! command -v brew ; then

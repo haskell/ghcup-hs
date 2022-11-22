@@ -12,11 +12,17 @@ if ! command -v ghcup && [ "${RUNNER_OS}" != "FreeBSD" ] ; then
 fi
 
 if [ "${RUNNER_OS}" != "FreeBSD" ] ; then
-	ghcup install ghc --set --isolate="$HOME/.local"     --force "$GHC_VER"
-	ghcup install cabal     --isolate="$HOME/.local/bin" --force "$CABAL_VER"
-	ghc --version
-	cabal --version
-	GHC="ghc-${GHC_VER}"
+	if [ "${DISTRO}" != "Debian" ] ; then # ! armv7 or aarch64 linux
+		ghcup install ghc --set --isolate="$HOME/.local"     --force "$GHC_VER"
+		ghcup install cabal     --isolate="$HOME/.local/bin" --force "$CABAL_VER"
+		ghc --version
+		cabal --version
+		GHC="ghc-${GHC_VER}"
+	else
+		ghcup install cabal --isolate="$HOME/.local/bin" --force "$CABAL_VER"
+		cabal --version
+		GHC="ghc"
+	fi
 else
 	GHC="ghc"
 fi

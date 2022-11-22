@@ -42,6 +42,14 @@ jobs:
             ARTIFACT: "x86_64-mingw64-ghcup"
             GHC_VER: 8.10.7
             ARCH: 64
+          - os: ubuntu-latest
+            ARTIFACT: "armv7-linux-ghcup"
+            GHC_VER: 8.10.7
+            ARCH: ARM
+          - os: ubuntu-latest
+            ARTIFACT: "aarch64-linux-ghcup"
+            GHC_VER: 8.10.7
+            ARCH: ARM64
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -69,6 +77,36 @@ jobs:
           ARCH: ${{ matrix.ARCH }}
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: Alpine
+
+      - if: matrix.ARCH == 'ARM' && runner.os == 'Linux'
+        uses: uraimo/run-on-arch-action@v2
+        name: Run build (armv7 linux)
+        with:
+          arch: armv7
+          distro: bullseye
+          run: sh .github/scripts/build.sh
+          env: |
+            ARTIFACT: ${{ matrix.ARTIFACT }}
+            ARCH: ${{ matrix.ARCH }}
+            GHC_VER: ${{ matrix.GHC_VER }}
+            DISTRO: Debian
+            CABAL_VER: ${{ env.CABAL_VER }}
+            JSON_VERSION: ${{ env.JSON_VERSION }}
+
+      - if: matrix.ARCH == 'ARM64' && runner.os == 'Linux'
+        uses: uraimo/run-on-arch-action@v2
+        name: Run build (aarch64 linux)
+        with:
+          arch: aarch64
+          distro: bullseye
+          run: sh .github/scripts/build.sh
+          env: |
+            ARTIFACT: ${{ matrix.ARTIFACT }}
+            ARCH: ${{ matrix.ARCH }}
+            GHC_VER: ${{ matrix.GHC_VER }}
+            DISTRO: Debian
+            CABAL_VER: ${{ env.CABAL_VER }}
+            JSON_VERSION: ${{ env.JSON_VERSION }}
 
       - if: runner.os != 'Linux'
         name: Run build (windows/mac)
@@ -129,6 +167,14 @@ jobs:
             GHC_VER: 8.10.7
             ARCH: 64
             DISTRO: na
+          - os: ubuntu-latest
+            ARTIFACT: "armv7-linux-ghcup"
+            GHC_VER: 8.10.7
+            ARCH: ARM
+          - os: ubuntu-latest
+            ARTIFACT: "aarch64-linux-ghcup"
+            GHC_VER: 8.10.7
+            ARCH: ARM64
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -141,7 +187,7 @@ jobs:
           path: ./out
 
       - if: matrix.ARCH == '32' && runner.os == 'Linux' && matrix.DISTRO == 'Alpine'
-        name: Run build (32 bit linux Alpine)
+        name: Run test (32 bit linux Alpine)
         uses: docker://i386/alpine:3.12
         with:
           args: sh .github/scripts/test.sh
@@ -152,7 +198,7 @@ jobs:
           DISTRO: ${{ matrix.DISTRO }}
 
       - if: matrix.ARCH == '64' && runner.os == 'Linux' && matrix.DISTRO == 'Alpine'
-        name: Run build (64 bit linux Alpine)
+        name: Run test (64 bit linux Alpine)
         uses: docker://alpine:3.12
         with:
           args: sh .github/scripts/test.sh
@@ -163,7 +209,7 @@ jobs:
           DISTRO: ${{ matrix.DISTRO }}
 
       - if: runner.os == 'Linux' && matrix.DISTRO != 'Alpine'
-        name: Run build (64 bit linux)
+        name: Run test (64 bit linux)
         run: sh .github/scripts/test.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
@@ -171,8 +217,38 @@ jobs:
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: ${{ matrix.DISTRO }}
 
+      - if: matrix.ARCH == 'ARM' && runner.os == 'Linux'
+        uses: uraimo/run-on-arch-action@v2
+        name: Run test (armv7 linux)
+        with:
+          arch: armv7
+          distro: bullseye
+          run: sh .github/scripts/test.sh
+          env: |
+            ARTIFACT: ${{ matrix.ARTIFACT }}
+            ARCH: ${{ matrix.ARCH }}
+            GHC_VER: ${{ matrix.GHC_VER }}
+            DISTRO: Debian
+            CABAL_VER: ${{ env.CABAL_VER }}
+            JSON_VERSION: ${{ env.JSON_VERSION }}
+
+      - if: matrix.ARCH == 'ARM64' && runner.os == 'Linux'
+        uses: uraimo/run-on-arch-action@v2
+        name: Run test (aarch64 linux)
+        with:
+          arch: aarch64
+          distro: bullseye
+          run: sh .github/scripts/test.sh
+          env: |
+            ARTIFACT: ${{ matrix.ARTIFACT }}
+            ARCH: ${{ matrix.ARCH }}
+            GHC_VER: ${{ matrix.GHC_VER }}
+            DISTRO: Debian
+            CABAL_VER: ${{ env.CABAL_VER }}
+            JSON_VERSION: ${{ env.JSON_VERSION }}
+
       - if: runner.os != 'Linux'
-        name: Run build (windows/mac)
+        name: Run test (windows/mac)
         run: bash .github/scripts/test.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
