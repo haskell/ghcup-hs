@@ -50,7 +50,7 @@ For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man`
 
 ## Shell-completion
 
-Shell completions are in [scripts/shell-completions](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/scripts/shell-completions) directory of this repository.
+Shell completions are in [scripts/shell-completions](https://github.com/haskell/ghcup-hs/tree/master/scripts/shell-completions) directory of this repository.
 
 For bash: install `shell-completions/bash`
 as e.g. `/etc/bash_completion.d/ghcup` (depending on distro)
@@ -67,7 +67,7 @@ and make sure your bashrc sources the startup script
 # Configuration
 
 A configuration file can be put in `~/.ghcup/config.yaml`. The default config file
-explaining all possible configurations can be found in this repo: [config.yaml](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/data/config.yaml).
+explaining all possible configurations can be found in this repo: [config.yaml](https://github.com/haskell/ghcup-hs/blob/master/data/config.yaml).
 
 Partial configuration is fine. Command line options always override the config file settings.
 
@@ -147,7 +147,7 @@ url-source:
   OwnSource: "https://some-url/ghcup-0.0.6.yaml"
 ```
 
-See [config.yaml](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/data/config.yaml)
+See [config.yaml](https://github.com/haskell/ghcup-hs/blob/master/data/config.yaml)
 for more options.
 
 Alternatively you can do it via a cli switch:
@@ -204,9 +204,9 @@ url-source:
 
 The scripts offered to install GHCup are available here:
 
-* [bootstrap-haskell](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell#L7)
+* [bootstrap-haskell](https://github.com/haskell/ghcup-hs/blob/master/scripts/bootstrap/bootstrap-haskell#L7)
   for Unix-like operating systems
-* [bootstrap-haskell.ps1](https://gitlab.haskell.org/haskell/ghcup-hs/-/blob/master/scripts/bootstrap/bootstrap-haskell.ps1#L17)
+* [bootstrap-haskell.ps1](https://github.com/haskell/ghcup-hs/blob/master/scripts/bootstrap/bootstrap-haskell.ps1)
   for Windows (PowerShell). This will, in turn, run the final bootstrap script
   (by default, that for the Unix-like operating systems).
 
@@ -270,7 +270,7 @@ Compiling from source is supported for both source tarballs and arbitrary git re
 for a list of all available options.
 
 If you need to overwrite the existing `build.mk`, check the default files
-in [data/build_mk](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/data/build_mk), copy them somewhere, adjust them and
+in [data/build_mk](https://github.com/haskell/ghcup-hs/tree/master/data/build_mk), copy them somewhere, adjust them and
 pass `--config path/to/build.mk` to `ghcup compile ghc`.
 Common `build.mk` options are explained [here](https://gitlab.haskell.org/ghc/ghc/-/wikis/building/using#build-configuration).
 
@@ -467,8 +467,8 @@ to download ghcup.
 
 There are two known workarounds:
 
-1. Tell curl to ignore certificate errors (dangerous): `curl -k https://gitlab.haskell.org/haskell/ghcup-hs/-/raw/master/scripts/bootstrap/bootstrap-haskell | GHCUP_CURL_OPTS="-k" sh`
-2. Try to use wget instead: `wget -O /dev/stdout https://gitlab.haskell.org/haskell/ghcup-hs/-/raw/master/scripts/bootstrap/bootstrap-haskell | BOOTSTRAP_HASKELL_DOWNLOADER=wget sh`
+1. Tell curl to ignore certificate errors (dangerous): `curl -k https://raw.githubusercontent.com/haskell/ghcup-hs/master/scripts/bootstrap/bootstrap-haskell | GHCUP_CURL_OPTS="-k" sh`
+2. Try to use wget instead: `wget -O /dev/stdout https://raw.githubusercontent.com/haskell/ghcup-hs/master/scripts/bootstrap/bootstrap-haskell | BOOTSTRAP_HASKELL_DOWNLOADER=wget sh`
 
 On windows, you can disable curl like so:
 

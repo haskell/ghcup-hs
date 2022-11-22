@@ -6,8 +6,8 @@ license-file:       LICENSE
 copyright:          Julian Ospald 2020
 maintainer:         hasufell@posteo.de
 author:             Julian Ospald
-homepage:           https://gitlab.haskell.org/haskell/ghcup-hs
-bug-reports:        https://gitlab.haskell.org/haskell/ghcup-hs/issues
+homepage:           https://github.com/haskell/ghcup-hs
+bug-reports:        https://github.com/haskell/ghcup-hs/issues/
 synopsis:           ghc toolchain installer
 description:
   A rewrite of the shell script ghcup, for providing
@@ -29,7 +29,7 @@ extra-source-files:
 
 source-repository head
   type:     git
-  location: https://gitlab.haskell.org/haskell/ghcup-hs.git
+  location: https://github.com/haskell/ghcup-hs.git
 
 flag tui
   description:

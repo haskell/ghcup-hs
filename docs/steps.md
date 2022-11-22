@@ -343,7 +343,7 @@ To learn Haskell, try any of those:
 * [https://github.com/haskell/haskell-language-server](https://github.com/haskell/haskell-language-server)
 * [https://github.com/haskell/cabal](https://github.com/haskell/cabal)
 * [https://github.com/commercialhaskell/stack](https://github.com/commercialhaskell/stack)
-* [https://gitlab.haskell.org/haskell/ghcup-hs](https://gitlab.haskell.org/haskell/ghcup-hs)
+* [https://github.com/haskell/ghcup-hs](https://github.com/haskell/ghcup-hs)
 * [https://github.com/jgm/pandoc](https://github.com/jgm/pandoc)
 * [https://github.com/simonmichael/hledger](https://github.com/simonmichael/hledger)
 * [https://github.com/koalaman/shellcheck](https://github.com/koalaman/shellcheck)
