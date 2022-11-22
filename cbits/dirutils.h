@@ -1,6 +1,7 @@
 #ifndef POSIXPATHS_CBITS_DIRUTILS_H
 #define POSIXPATHS_CBITS_DIRUTILS_H
 
+#include <HsFFI.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <sys/types.h>

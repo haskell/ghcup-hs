@@ -36,8 +36,8 @@ import System.Posix.Internals (peekFilePath)
 ----------------------------------------------------------
 -- dodgy stuff
 
-type CDir = ()
-type CDirent = ()
+data {-# CTYPE "DIR" #-} CDir
+data {-# CTYPE "struct dirent" #-} CDirent
 
 -- Posix doesn't export DirStream, so to re-use that type we need to use
 -- unsafeCoerce.  It's just a newtype, so this is a legitimate usage.
@@ -56,7 +56,7 @@ foreign import ccall unsafe "__hscore_free_dirent"
 foreign import ccall unsafe "__hscore_d_name"
   c_name :: Ptr CDirent -> IO CString
 
-foreign import ccall unsafe "__posixdir_d_type"
+foreign import capi unsafe "dirutils.h __posixdir_d_type"
   c_type :: Ptr CDirent -> IO DirType
 
 ----------------------------------------------------------

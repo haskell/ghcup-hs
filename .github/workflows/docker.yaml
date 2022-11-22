@@ -1,0 +1,67 @@
+name: Docker image builds
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  docker-alpine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push (alpine 32bit)
+        uses: docker/build-push-action@v3
+        with:
+          context: ./docker/alpine32
+          push: true
+          tags: hasufell/i386-alpine-haskell:3.12
+          platforms: linux/i386
+      - name: Build and push (alpine 64bit)
+        uses: docker/build-push-action@v3
+        with:
+          context: ./docker/alpine64
+          push: true
+          tags: hasufell/alpine-haskell:3.12
+          platforms: linux/amd64
+
+  docker-arm:
+    runs-on: [self-hosted, Linux, aarch64]
+    steps:
+      - uses: docker://arm64v8/ubuntu:focal
+        name: Cleanup
+        with:
+          args: rm -rf .ghcup/
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push (arm64v8)
+        uses: docker/build-push-action@v3
+        with:
+          context: ./docker/arm64v8/
+          push: true
+          tags: hasufell/arm64v8-ubuntu-haskell:focal
+          platforms: linux/arm64
+      - name: Build and push (arm32v7)
+        uses: docker/build-push-action@v3
+        with:
+          context: ./docker/arm32v7
+          push: true
+          tags: hasufell/arm32v7-ubuntu-haskell:focal
+          platforms: linux/arm
