@@ -19,6 +19,8 @@ jobs:
       CACHE_VER: 1
       MACOSX_DEPLOYMENT_TARGET: 10.13
       JSON_VERSION: "0.0.7"
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
     strategy:
       matrix:
         include:
@@ -42,14 +44,14 @@ jobs:
             ARTIFACT: "x86_64-mingw64-ghcup"
             GHC_VER: 8.10.7
             ARCH: 64
-          - os: ubuntu-latest
-            ARTIFACT: "armv7-linux-ghcup"
-            GHC_VER: 8.10.7
-            ARCH: ARM
-          - os: ubuntu-latest
-            ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 8.10.7
-            ARCH: ARM64
+            # - os: ubuntu-latest
+            #   ARTIFACT: "armv7-linux-ghcup"
+            #   GHC_VER: 8.8.4
+            #   ARCH: ARM
+            # - os: ubuntu-latest
+            #   ARTIFACT: "aarch64-linux-ghcup"
+            #   GHC_VER: 8.8.4
+            #   ARCH: ARM64
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -66,6 +68,8 @@ jobs:
           ARCH: ${{ matrix.ARCH }}
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: Alpine
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
 
       - if: matrix.ARCH == '64' && runner.os == 'Linux'
         name: Run build (64 bit linux)
@@ -77,6 +81,8 @@ jobs:
           ARCH: ${{ matrix.ARCH }}
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: Alpine
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
 
       - if: matrix.ARCH == 'ARM' && runner.os == 'Linux'
         uses: uraimo/run-on-arch-action@v2
@@ -92,6 +98,8 @@ jobs:
             DISTRO: Debian
             CABAL_VER: ${{ env.CABAL_VER }}
             JSON_VERSION: ${{ env.JSON_VERSION }}
+            AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+            AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
 
       - if: matrix.ARCH == 'ARM64' && runner.os == 'Linux'
         uses: uraimo/run-on-arch-action@v2
@@ -107,6 +115,8 @@ jobs:
             DISTRO: Debian
             CABAL_VER: ${{ env.CABAL_VER }}
             JSON_VERSION: ${{ env.JSON_VERSION }}
+            AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+            AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
 
       - if: runner.os != 'Linux'
         name: Run build (windows/mac)
@@ -116,6 +126,9 @@ jobs:
           ARCH: ${{ matrix.ARCH }}
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: na
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
 
       - if: always()
         name: Upload artifact
@@ -124,6 +137,7 @@ jobs:
           name: artifacts
           path: |
             ./out/*
+
 
   test:
     name: Test
@@ -167,14 +181,14 @@ jobs:
             GHC_VER: 8.10.7
             ARCH: 64
             DISTRO: na
-          - os: ubuntu-latest
-            ARTIFACT: "armv7-linux-ghcup"
-            GHC_VER: 8.10.7
-            ARCH: ARM
-          - os: ubuntu-latest
-            ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 8.10.7
-            ARCH: ARM64
+            # - os: ubuntu-latest
+            #   ARTIFACT: "armv7-linux-ghcup"
+            #   GHC_VER: 8.8.4
+            #   ARCH: ARM
+            # - os: ubuntu-latest
+            #   ARTIFACT: "aarch64-linux-ghcup"
+            #   GHC_VER: 8.8.4
+            #   ARCH: ARM64
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -255,6 +269,7 @@ jobs:
           ARCH: ${{ matrix.ARCH }}
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: ${{ matrix.DISTRO }}
+          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
   hls:
     name: hls
     needs: build
@@ -266,6 +281,7 @@ jobs:
       JSON_VERSION: "0.0.7"
       ARTIFACT: "x86_64-linux-ghcup"
       DISTRO: Ubuntu
+      ARCH: 64
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

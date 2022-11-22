@@ -1,6 +1,16 @@
 #!/bin/sh
 
-mkdir -p "$HOME"/.local/bin
+if [ "${RUNNER_OS}" = "macOS" ] ; then
+	mkdir -p "$HOME"/.local/bin
+	ls -lah "$HOME"/.local/bin
+	find "$HOME"/.local
+	rm -rf "$HOME"/.local/bin
+	rm -rf "$HOME"/.local/share
+	rm -rf "$HOME"/.local/lib
+	mkdir -p "$HOME"/.local/bin
+else
+	mkdir -p "$HOME"/.local/bin
+fi
 
 export OS="$RUNNER_OS"
 export PATH="$HOME/.local/bin:$PATH"
@@ -39,7 +49,8 @@ if [ "${RUNNER_OS}" = "Linux" ] ; then
             perl \
             bash \
             diffutils \
-            git
+            git \
+			gzip
 
           apk add --no-cache \
             zlib \
@@ -57,12 +68,19 @@ if [ "${RUNNER_OS}" = "Linux" ] ; then
             ncurses-static
 	elif [ "${DISTRO}" = "Ubuntu" ] ; then
 		sudo apt-get update -y
-		sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl
+		sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
+		if [ "${ARCH}" = "64" ] ; then
+			:
+		fi
 	elif [ "${DISTRO}" = "Debian" ] ; then
 		apt-get update -y
-		apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl ghc
+		apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl ghc gzip
+		if [ "${ARCH}" = "64" ] ; then
+			:
+		fi
 	fi
 elif [ "${RUNNER_OS}" = "macOS" ] ; then
+	rm -rf "$HOME/.brew"
 	if ! command -v brew ; then
 		[ -e "$HOME/.brew" ] ||
 			git clone --depth=1 https://github.com/Homebrew/brew "$HOME/.brew"
@@ -74,6 +92,22 @@ elif [ "${RUNNER_OS}" = "macOS" ] ; then
 	fi
 	if ! command -v realpath ; then
 		brew install coreutils
+	fi
+
+    if [ "${ARCH}" = "ARM64" ] ; then
+		brew install llvm@11 autoconf automake
+		export PATH="$HOME/.brew/opt/llvm@11/bin:$PATH"
+		export CC=$HOME/.brew/opt/llvm@11/bin/clang
+		export CXX=$HOME/.brew/opt/llvm@11/bin/clang++
+		export LD=ld
+		export AR=$HOME/.brew/opt/llvm@11/bin/llvm-ar
+		export RANLIB=$HOME/.brew/opt/llvm@11/bin/llvm-ranlib
+    elif [ "${ARCH}" = "64" ] ; then
+		:
+	fi
+elif [ "${RUNNER_OS}" = "Windows" ] ; then
+    if [ "${ARCH}" = "64" ] ; then
+		:
 	fi
 fi
 
