@@ -428,3 +428,37 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.4.1-rc1/ghc-9.4.0.20220721-aarch64-apple-darwin.tar.xz
               dlSubdir: ghc-9.4.0.20220721-aarch64-apple-darwin
               dlHash: cca7bfbb7a8d4884314d8c033d4f9a96a9be5f399db276b796ad8cbb2deba6bd
+  Stack:
+    2.9.2.1:
+      viTags:
+        - Prerelease
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/rc/v2.9/ChangeLog.md#v2921-release-candidate
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-2921-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.9.2.1/stack-2.9.2.1-linux-x86_64-static.tar.gz
+              dlHash: 65b9d1c41f9e1537567722329d8f6d066ddb82d8789f5a25a04b4b4da89f2616
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.9.2.1/stack-2.9.2.1-osx-x86_64.tar.gz
+              dlHash: 13e86f181a959d2eac118f2a7f287227a7238c91b648ee30523ff300c2d5b1bb
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.9.2.1/stack-2.9.2.1-windows-x86_64.tar.gz
+              dlHash: cd7f2bde0d4dcd5e7f0d75cf082b7a0fdc0347c5bc9006f67cd8635889c473a8
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-2921-64
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.9.2.1/stack-2.9.2.1-linux-aarch64.tar.gz
+              dlHash: 6e9f646ecd04892cf7edda11ff989abd885e29d05ad9f88d19e22afeb6e14275
+              dlSubdir:
+                RegexDir: "stack-.*"
