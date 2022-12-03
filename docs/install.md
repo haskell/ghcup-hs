@@ -24,7 +24,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager
 
 There's also a [youtube video](https://www.youtube.com/watch?v=bB4fmQiUYPw) explaining installation on windows.
 
-If you want to know what these scripts do, check out the [source code at the repository](https://gitlab.haskell.org/haskell/ghcup-hs/-/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
+If you want to know what these scripts do, check out the [source code at the repository](https://github.com/haskell/ghcup-hs/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
 
 ### Which versions get installed?
 
@@ -260,7 +260,7 @@ On Linux, some users have reported an issue when VSCode is not launched from a t
 ## Get help
 
 * [Libera IRC chat on #haskell-ghcup or #haskell](https://kiwiirc.com/nextclient/irc.libera.chat/?nick=Guest%7C?#haskell,#haskell-ghcup)
-* [GHCup issue tracker](https://gitlab.haskell.org/haskell/ghcup-hs/issues)
+* [GHCup issue tracker](https://github.com/haskell/ghcup-hs/issues/new)
 * [Matrix](https://app.element.io/#/room/#haskell-tooling:matrix.org)
 * [Discord](https://discord.gg/pKYf3zDQU7)
 

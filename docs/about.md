@@ -42,8 +42,8 @@ All you wanted to know about GHCup.
 
 ## How to help
 
-* if you want to contribute code or documentation, check out the [issue tracker](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues) and the [Development guide](./dev.md)
-* if you want to propose features or write user feedback, feel free to [open a ticket](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/new?issue)
+* if you want to contribute code or documentation, check out the [issue tracker](https://github.com/haskell/ghcup-hs/issues) and the [Development guide](./dev.md)
+* if you want to propose features or write user feedback, feel free to [open a ticket](https://github.com/haskell/ghcup-hs/issues/new)
 * if you want to donate to the project, visit our [opencollective](https://opencollective.com/ghcup#category-CONTRIBUTE) page
 
 ## Design goals
