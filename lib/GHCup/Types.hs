@@ -274,6 +274,23 @@ instance NFData DownloadInfo
     --[ Others ]--
     --------------
 
+data DownloadMirror = DownloadMirror {
+     authority :: Authority
+   , pathPrefix :: Maybe Text
+} deriving (Eq, Ord, GHC.Generic, Show)
+
+instance NFData DownloadMirror
+
+newtype DownloadMirrors = DM (Map Text DownloadMirror)
+  deriving (Eq, Ord, GHC.Generic, Show)
+
+instance NFData DownloadMirrors
+
+instance NFData UserInfo
+instance NFData Host
+instance NFData Port
+instance NFData Authority
+
 
 -- | How to descend into a tar archive.
 data TarDir = RealDir FilePath
@@ -316,12 +333,13 @@ data UserSettings = UserSettings
   , uUrlSource   :: Maybe URLSource
   , uNoNetwork   :: Maybe Bool
   , uGPGSetting  :: Maybe GPGSetting
-  , uPlatformOverride    :: Maybe PlatformRequest
+  , uPlatformOverride :: Maybe PlatformRequest
+  , uMirrors     :: Maybe DownloadMirrors
   }
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
@@ -338,6 +356,7 @@ fromSettings Settings{..} Nothing =
     , uUrlSource = Just urlSource
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
+    , uMirrors = Just mirrors
   }
 fromSettings Settings{..} (Just KeyBindings{..}) =
   let ukb = UserKeyBindings
@@ -364,6 +383,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uUrlSource = Just urlSource
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
+    , uMirrors = Just mirrors
   }
 
 data UserKeyBindings = UserKeyBindings
@@ -445,6 +465,7 @@ data Settings = Settings
   , gpgSetting       :: GPGSetting
   , noColor          :: Bool -- this also exists in LoggerConfig
   , platformOverride :: Maybe PlatformRequest
+  , mirrors          :: DownloadMirrors
   }
   deriving (Show, GHC.Generic)
 
@@ -452,7 +473,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty)
 
 instance NFData Settings
 
