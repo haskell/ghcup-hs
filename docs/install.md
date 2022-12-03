@@ -56,6 +56,10 @@ The following distro packages are required: `gcc gcc-c++ gmp gmp-devel make ncur
 
 The following distro packages are required: `binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz`
 
+### Linux VoidLinux
+
+The following distro packages are required: `gcc gmp curl coreutils xz ncurses make ncurses-libtinfo-libs perl tar`
+
 ### Linux (generic)
 
 You need the following packages: curl g++ gcc gmp make ncurses realpath xz-utils. Consult your distro documentation on the exact names of those packages.
