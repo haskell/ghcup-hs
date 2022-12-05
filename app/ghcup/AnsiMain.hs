@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE MultiWayIf        #-}
 
 module AnsiMain where
 
@@ -26,7 +27,11 @@ import           System.Console.ANSI.Types
 import           Terminal.Game
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
+import           Control.Monad                  ( join, when )
+import           Control.Monad.ST
 import           Control.Monad.Reader           ( ReaderT(runReaderT) )
+import           Data.Bifunctor
+import           Data.STRef
 import           Data.IORef
 import           Data.Maybe                     ( fromMaybe )
 import qualified Data.Text                     as Tx
@@ -37,6 +42,9 @@ import           Haskus.Utils.Variant.Excepts
 import           System.Exit
 import Data.Versions (prettyVer)
 
+data Direction = Up
+               | Down
+  deriving (Show, Eq)
 
 data BrickData = BrickData
   { lr :: [ListResult]
@@ -56,11 +64,12 @@ data BrickInternalState = BrickInternalState
   deriving Show
 
 data BrickState = BrickState
-  { appData     :: BrickData
-  , appSettings :: BrickSettings
-  , appState    :: BrickInternalState
-  , appKeys     :: KeyBindings
-  , appQuit     :: Bool
+  { appData      :: BrickData
+  , appSettings  :: BrickSettings
+  , appState     :: BrickInternalState
+  , appKeys      :: KeyBindings
+  , appQuit      :: Bool
+  , appMoreInput :: Maybe String
   }
   deriving Show
 
@@ -76,9 +85,9 @@ ansiMain s = do
                          (constructList ad defaultAppSettings Nothing)
                          (keyBindings (s :: AppState))
                          False
+                         Nothing
 
 
-      sizeCheck
       errorPress $ playGame (ghcupGame g)
     Left e -> do
       flip runReaderT s $ logError $ "Error building app state: " <> Tx.pack
@@ -94,7 +103,7 @@ ansiMain s = do
 ghcupGame :: BrickState -> Game BrickState
 ghcupGame bs = Game 13
                     bs                                  -- ticks per second
-                    (\_ s e -> logicFun s e)            -- logic function
+                    (\ge s e -> logicFun ge s e)            -- logic function
                     (\r s -> centerFull r $ drawFun s r)  -- draw function
                     appQuit                             -- quit function
 
@@ -102,15 +111,22 @@ ghcupGame bs = Game 13
 drawFun :: BrickState -> GEnv -> Plane
 drawFun (BrickState {..}) GEnv{..} =
   blankPlane mw mh
-    & (1, 1) % box mw mh '.'
-    & (2, 2) % box (mw-2) (mh-2) ' '
-    & (2, 2) % renderItems (renderItem <$> lr appData)
+    & (1, 1)   % box 1        1        '┌'
+    & (2, 1)   % box 1        (mh - 2) '│'
+    & (1, 2)   % box (mw - 2) 1        '─'
+    & (2, mw)  % box 1        (mh - 2) '│'
+    & (1, mw)  % box 1        1        '┐'
+    & (mh, 2)  % box (mw - 2) 1        '─'
+    & (mh, 1)  % box 1        1        '└'
+    & (mh, mw) % box 1        1        '┘'
+    & (2, 2)   % box (mw - 2) (mh - 2) ' '
+    & (2, 2) % renderItems
  where
   mh :: Height
   mw :: Width
-  (mh, mw) = snd boundaries
-  renderItems = foldr1 (===)
-  renderItem ListResult{..} =
+  (mh, mw) = T.swap eTermDims
+  renderItems = drawListElements renderItem True appState
+  renderItem _ b ListResult{..} =
     let marks = if
           | lSet       -> (stringPlane "✔✔")
           | lInstalled -> (stringPlane "✓ ")
@@ -129,11 +145,81 @@ drawFun (BrickState {..}) GEnv{..} =
 
   space = stringPlane " "
 
-logicFun :: BrickState -> Event -> BrickState
-logicFun gs (KeyPress 'q') = gs { appQuit = True }
-logicFun gs Tick           = gs
-logicFun gs (KeyPress c)   = gs
+  -- | Draws the list elements.
+  --
+  -- Evaluates the underlying container up to, and a bit beyond, the
+  -- selected element. The exact amount depends on available height
+  -- for drawing and 'listItemHeight'. At most, it will evaluate up to
+  -- element @(i + h + 1)@ where @i@ is the selected index and @h@ is the
+  -- available height.
+  drawListElements :: (Int -> Bool -> ListResult -> Plane)
+                   -> Bool
+                   -> BrickInternalState
+                   -> Plane
+  drawListElements drawElem foc is@(BrickInternalState clr _) =
+      let es = clr
+          listSelected        = fmap fst $ listSelectedElement' is
 
+          (drawnElements, selIx) = runST $ do
+            ref <- newSTRef (Nothing :: Maybe Int)
+            elem' <- newSTRef 0
+            arr <- fmap join $ flip V.imapM es $ \i' e -> do
+              let isSelected  = Just i' == listSelected
+                  elemWidget  = drawElem i' isSelected e
+                  selItemAttr = if foc
+                    then listSelectedFocusedAttr
+                    else listSelectedAttr
+                  markSelected = if isSelected then selItemAttr else id
+              case es V.!? (i' - 1) of
+                    Just e' | lTool e' /= lTool e -> do
+                      modifySTRef elem' (+2)
+                      i <- readSTRef elem'
+                      when isSelected $ writeSTRef ref (Just i)
+                      pure $ V.fromList [hBorder, markSelected elemWidget] -- add separator
+                    _ -> do
+                      modifySTRef elem' (+1)
+                      i <- readSTRef elem'
+                      when isSelected $ writeSTRef ref (Just i)
+                      pure $ V.fromList [markSelected elemWidget]
+            i <- readSTRef ref
+            pure (arr, i)
+        in vcat $ V.toList (makeVisible drawnElements (mh - 2) selIx)
+   where
+    makeVisible :: V.Vector Plane -> Height -> Maybe Int -> V.Vector Plane
+    makeVisible listElements drawableHeight (Just ix) =
+      let listHeight = V.length listElements
+      in if | listHeight <= 0 -> listElements
+            | listHeight > drawableHeight ->
+              if | ix <= drawableHeight -> makeVisible (V.init listElements) drawableHeight (Just ix)
+                 | otherwise            -> makeVisible (V.tail listElements) drawableHeight (Just (ix - 1))
+            | otherwise -> listElements
+    makeVisible listElements _ Nothing = listElements
+
+    listSelectedFocusedAttr = invert
+
+    listSelectedAttr = invert
+
+    hBorder = box (mw - 2) 1 '─'
+
+
+logicFun :: GEnv -> BrickState -> Event -> BrickState
+logicFun _ gs (KeyPress 'q') = gs { appQuit = True }
+logicFun _ gs Tick           = gs
+logicFun _ gs@BrickState{appMoreInput = Nothing} (KeyPress '\ESC') = gs { appMoreInput = Just "\ESC" }
+logicFun _ gs@BrickState{appMoreInput = Just "\ESC"} (KeyPress '[') = gs { appMoreInput = Just "\ESC[" }
+logicFun _ gs@BrickState{appMoreInput = Just "\ESC[", appState = s'} (KeyPress 'A')
+  = gs { appMoreInput = Nothing, appState = moveCursor 1 s' Up }
+logicFun _ gs@BrickState{appMoreInput = Just "\ESC[", appState = s'} (KeyPress 'B')
+  = gs { appMoreInput = Nothing, appState = moveCursor 1 s' Down }
+logicFun _ gs@BrickState{appMoreInput = Just _} _ = gs { appMoreInput = Nothing }
+logicFun _ gs (KeyPress c)   = gs
+
+moveCursor :: Int -> BrickInternalState -> Direction -> BrickInternalState
+moveCursor steps ais@BrickInternalState{..} direction =
+  let newIx = if direction == Down then ix + steps else ix - steps
+  in  case clr V.!? newIx of
+        Just _  -> BrickInternalState { ix = newIx, .. }
+        Nothing -> ais
 
 defaultAppSettings :: BrickSettings
 defaultAppSettings =
