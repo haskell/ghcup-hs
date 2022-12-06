@@ -20,42 +20,36 @@ import           GHCup.Types.Optics             ( getDirs )
 import           GHCup.Utils
 
 import           Data.List (sort, intersperse)
-import           Data.Versions (prettyPVP)
-import           Data.Maybe (catMaybes)
+import           Data.Versions (prettyPVP, prettyVer)
 import           Codec.Archive
 import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Except
 -- import           System.Console.ANSI
 import           System.Console.ANSI
-import           System.Console.ANSI.Codes
-import           System.Console.ANSI.Types
 import           Terminal.Game
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import           Control.Exception.Safe
-import           Control.Monad                  ( join, when, void, forM_ )
+import           Control.Monad                  ( when, forM_ )
 import           Control.Monad.ST
 import           Control.Monad.Reader           ( ReaderT(runReaderT), MonadReader, ask, lift )
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Resource
 import           Data.Functor
-import           Data.Bifunctor
 import           Data.STRef
 import           Data.IORef
-import           Data.Maybe                     ( fromMaybe )
+import           Data.Maybe                     ( fromMaybe, catMaybes )
 import qualified Data.Text                     as Tx
 import qualified Data.Tuple                    as T
 import qualified Data.Vector                   as V
 import           GHC.IO                         ( unsafePerformIO )
 import           Haskus.Utils.Variant.Excepts
 import           System.Exit
-import System.Environment (getExecutablePath)
-import Data.Versions (prettyVer)
+import           System.Environment (getExecutablePath)
 import qualified Data.Text                     as T
 import qualified Data.Text.Lazy.Builder        as B
 import qualified Data.Text.Lazy                as L
-import System.FilePath
-import URI.ByteString (serializeURIRef')
+import           System.FilePath
+import           URI.ByteString (serializeURIRef')
 
 
 
@@ -118,6 +112,7 @@ ansiMain s = do
                          Nothing
 
 
+      sizeCheck
       void $ startGame g
       cleanAndExit
     Left e -> do
@@ -136,7 +131,7 @@ ghcupGame bs = Game 13
                     bs                                    -- ticks per second
                     (\ge s e -> logicFun ge s e)          -- logic function
                     (\r s -> centerFull r $ drawFun s r)  -- draw function
-                    (\bs -> appQuit bs || appRestart bs)  -- quit function
+                    (\s -> appQuit s || appRestart s)  -- quit function
 
 
 drawFun :: BrickState -> GEnv -> Plane
@@ -176,9 +171,9 @@ drawFun (BrickState {..}) GEnv{..} =
          . intersperse (stringPlane "  ")
          . fmap stringPlane
          $ ["q:Quit", "i:Install", "u:Uninstall", "s:Set", "c:Changelog", "a:all versions", "↑:Up", "↓:Down"]
-  header = fmap stringPlane ["Tool", "Version", "Tags", "Notes"]
+  header = fmap stringPlane [" ", "Tool", "Version", "Tags", "Notes"]
   (renderItems, mix) = drawListElements renderItem appState
-  renderItem _ b listResult@ListResult{..} =
+  renderItem _ _ listResult@ListResult{..} =
     let marks = if
           | lSet       -> color Green Vivid $ stringPlane "IS"
           | lInstalled -> color Green Vivid $ stringPlane "I "
@@ -299,7 +294,7 @@ logicFun _ gs (KeyPress 'a') = pure $ hideShowHandler (not . showAllVersions) sh
     let newAppSettings   = appSettings { showAllVersions = f appSettings , showAllTools = p appSettings }
         newInternalState = constructList appData newAppSettings (Just appState)
     in  BrickState appData newAppSettings newInternalState appKeys appQuit appRestart appMoreInput
-logicFun _ gs (KeyPress c) = pure gs
+logicFun _ gs (KeyPress c) = pure $ (unsafePerformIO $ writeFile "key" $ show c) `seq` gs
 
 withIOAction :: (BrickState
                  -> (Int, ListResult)
