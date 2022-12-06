@@ -39,6 +39,7 @@ class Monad m => MonadTimer m where
 -- if a fails, do b (useful for cleaning up)
 class Monad m => MonadException m where
     cleanUpErr :: m a -> m b -> m a
+    onException :: m a -> m b -> m a
     throwExc :: ATGException -> m a
 
 class Monad m => MonadLogic m where

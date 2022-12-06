@@ -64,6 +64,7 @@ instance MonadTimer Test where
 
 instance MonadException Test where
     cleanUpErr a _ = S.tell [TCleanUpError] >> a
+    onException a _ = S.tell [TCleanUpError] >> a
     throwExc e = error . show $ e
 
 instance MonadLogic Test where

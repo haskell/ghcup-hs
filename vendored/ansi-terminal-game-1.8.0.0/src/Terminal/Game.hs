@@ -22,8 +22,10 @@ module Terminal.Game ( -- * Running
                        FPS,
                        Event(..),
                        GEnv(..),
-                       Game(..),
+                       Game,
+                       GameT(..),
                        playGame,
+                       playGameT,
                        ATGException(..),
 
                        -- ** Helpers
@@ -33,6 +35,7 @@ module Terminal.Game ( -- * Running
                        errorPress,
                        blankPlaneFull,
                        centerFull,
+                       cleanAndExit,
 
                        -- * Game logic
                        -- | Some convenient function dealing with
@@ -119,6 +122,11 @@ module Terminal.Game ( -- * Running
                        setupGame,
                        narrateGame,
 
+                       -- * Transformers
+                       GameIO(..),
+                       Test(..),
+                       Narrate(..)
+
                        -- | A quick and dirty way to have /hot reload/
                        -- (autorestarting your game when source files change)
                        -- is illustrated in @example/MainHotReload.hs@.
@@ -133,6 +141,7 @@ import Terminal.Game.Animation
 import Terminal.Game.Draw
 import Terminal.Game.Layer.Imperative
 import Terminal.Game.Layer.Object as O
+import Terminal.Game.Layer.Object.IO ( cleanAndExit )
 import Terminal.Game.Plane
 import Terminal.Game.Random
 import Text.LineBreak

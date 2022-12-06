@@ -5,6 +5,7 @@
 -------------------------------------------------------------------------------
 
 {-# Language ScopedTypeVariables #-}
+{-# Language RankNTypes #-}
 
 module Terminal.Game.Layer.Imperative where
 
@@ -14,23 +15,26 @@ import Terminal.Game.Layer.Object
 import qualified Control.Concurrent as CC
 import qualified Control.Exception as E
 import qualified Control.Monad as CM
+import qualified Control.Monad.Trans          as T
 import qualified Data.Bool as B
 import qualified Data.List as D
 import qualified System.IO as SI
 
 import Terminal.Game.Plane
 
+type Game s = GameT IO s
+
 -- | Game definition datatype, parametrised on your gamestate. The two most
 -- important elements are the function dealing with logic and the drawing
 -- one. Check @alone@ demo (@cabal run -f examples alone@) to see a simple
 -- game in action.
-data Game s =
+data GameT m s =
         Game { gTPS           :: TPS,
                     -- ^ Game speed in ticks per second. You do not
                     -- need high values, since the 2D canvas is coarse
                     -- (e.g. 13 TPS is enough for action games).
                gInitState     :: s,   -- ^ Initial state of the game.
-               gLogicFunction :: GEnv -> s -> Event -> s,
+               gLogicFunction :: GEnv -> s -> Event -> m s,
                          -- ^ Logic function.
                gDrawFunction  :: GEnv -> s -> Plane,
                          -- ^ Draw function. Just want to blit your game
@@ -67,20 +71,23 @@ centerFull e p = blankPlaneFull e *** p
 --
 -- Need to inspect state on exit? Check 'playGameS'.
 playGame :: Game s -> IO ()
-playGame g = () <$ runGIO (runGameGeneral g)
+playGame g = () <$ playGameT T.liftIO g
+
+playGameT :: Monad m => (forall m1 a. T.MonadIO m1 => m a -> m1 a) -> GameT m s -> IO s
+playGameT trans g = runGameGeneral trans g
 
 -- | As 'playGame', but do not discard state.
 playGameS :: Game s -> IO s
-playGameS g = runGIO (runGameGeneral g)
+playGameS g = playGameT T.liftIO g
 
 -- | Tests a game in a /pure/ environment. Aims to accurately emulate 'GEnv'
 -- changes (screen size, FPS) too.
-testGame :: Game s -> GRec -> s
-testGame g ts = fst $ runTest (runGameGeneral g) ts
+testGame :: GameT Test s -> GRec -> s
+testGame g ts = fst $ runTest (runGameGeneral id g) ts
 
 -- | As 'testGame', but returns 'Game' instead of a bare state.
 -- Useful to fast-forward (e.g.: skip menus) before invoking 'playGame'.
-setupGame :: Game s -> GRec -> Game s
+setupGame :: GameT Test s -> GRec -> GameT Test s
 setupGame g ts = let s' = testGame g ts
                  in g { gInitState = s' }
                  -- xx qua messi solo [Event]?
@@ -95,39 +102,40 @@ setupGame g ts = let s' = testGame g ts
 -- record-time; this can make emulation slightly inaccurate if — e.g. —
 -- you replay the game on a smaller terminal than the one you recorded
 -- the session on.
-narrateGame :: Game s -> GRec -> IO s
-narrateGame g e = runReplay (runGameGeneral g) e
+narrateGame :: GameT Narrate s -> GRec -> IO s
+narrateGame g e = runReplay (runGameGeneral id g) e
 
 -- | Play as in 'playGame' and write the session to @file@. Useful to
 -- produce input for 'testGame' and 'narrateGame'. Session will be
 -- recorded even if an exception happens while playing.
-recordGame :: Game s -> FilePath -> IO ()
+recordGame :: GameT Record s -> FilePath -> IO ()
 recordGame g fp =
         E.bracket
           (CC.newMVar igrec)
           (\ve -> writeRec fp ve)
-          (\ve -> () <$ runRecord (runGameGeneral g) ve)
+          (\ve -> () <$ runRecord (runGameGeneral id g) ve)
 
 data Config = Config { cMEvents :: CC.MVar [Event],
                        cTPS     :: TPS }
 
-runGameGeneral :: forall s m. MonadGameIO m =>
-                  Game s -> m s
-runGameGeneral (Game tps s lf df qf) =
+runGameGeneral :: forall s m1 m. (Monad m1, MonadGameIO m)
+               => (forall a. m1 a -> m a)
+               -> GameT m1 s
+               -> m s
+runGameGeneral trans (Game tps s lf df qf) =
             -- init
             setupDisplay    >>
             startEvents tps >>= \(InputHandle ve ts) ->
-            displaySizeErr  >>= \ds ->
+            displaySizeErr  >>= \ds -> do
 
             -- do it!
-            let c = Config ve tps in
-            cleanUpErr (game c ds)
-                            -- this under will be run regardless
-                       (stopEvents ts >>
-                        shutdownDisplay  )
+            let c = Config ve tps
+            s' <- (game c ds) `onException` (stopEvents ts >> shutdownDisplay)
+            stopEvents ts
+            return s'
     where
           game :: MonadGameIO m => Config -> Dimensions -> m s
-          game c wds = gameLoop c s lf df qf
+          game c wds = gameLoop trans c s lf df qf
                                 Nothing wds
                                 (creaFPSCalc tps)
 
@@ -164,11 +172,12 @@ errorPress m = E.catches m [E.Handler errorDisplay,
 -----------
 
 -- from http://www.loomsoft.net/resources/alltut/alltut_lesson6.htm
-gameLoop :: MonadGameIO m     =>
+gameLoop :: (Monad m1, MonadGameIO m) =>
+            (forall a. m1 a -> m a) ->
             Config            -> -- event source
             s                 -> -- state
             (GEnv ->
-             s -> Event -> s) -> -- logic function
+             s -> Event -> m1 s) -> -- logic function
             (GEnv ->
              s -> Plane)      -> -- draw function
             (s -> Bool)       -> -- quit? function
@@ -176,7 +185,7 @@ gameLoop :: MonadGameIO m     =>
             Dimensions        -> -- Term dimensions
             FPSCalc           -> -- calculate fps
             m s
-gameLoop c s lf df qf opln td fps =
+gameLoop trans c s lf df qf opln td fps =
 
         -- quit?
         checkQuit qf s >>= \qb ->
@@ -190,18 +199,18 @@ gameLoop c s lf df qf opln td fps =
         -- no events? skip everything
         if null es
           then sleepABit (cTPS c)               >>
-               gameLoop c s lf df qf opln td fps
+               gameLoop trans c s lf df qf opln td fps
         else
 
         displaySizeErr            >>= \td' ->
 
         -- logic
-        let ge = GEnv td' (calcFPS fps)
-            (i, s') = stepsLogic s (lf ge) es in
+        let ge = GEnv td' (calcFPS fps) in
+        trans (stepsLogic s (lf ge) es) >>= \(i, s') ->
 
         -- no `Tick` events? You do not need to blit, just update state
         if i == 0
-          then gameLoop c s' lf df qf opln td fps
+          then gameLoop trans c s' lf df qf opln td fps
         else
 
         -- FPS calc
@@ -218,15 +227,17 @@ gameLoop c s lf df qf opln td fps =
 
         blitPlane opln' npln >>
 
-        gameLoop c s' lf df qf (Just npln) td' fps'
+        gameLoop trans c s' lf df qf (Just npln) td' fps'
 
 -- Int = number of `Tick` events
-stepsLogic :: s -> (s -> Event -> s) -> [Event] -> (Integer, s)
-stepsLogic s lf es = let ies = D.genericLength . filter isTick $ es
-                     in (ies, foldl lf s es)
-    where
-          isTick Tick = True
-          isTick _    = False
+stepsLogic :: Monad m => s -> (s -> Event -> m s) -> [Event] -> m (Integer, s)
+stepsLogic s lf es = do
+  let ies = D.genericLength . filter isTick $ es
+  res <- CM.foldM lf s es
+  return (ies, res)
+ where
+  isTick Tick = True
+  isTick _    = False
 
 -------------------------------------------------------------------------------
 -- Frame per Seconds

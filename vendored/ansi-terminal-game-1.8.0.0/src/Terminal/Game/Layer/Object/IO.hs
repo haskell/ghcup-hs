@@ -115,6 +115,7 @@ instance {-# OVERLAPS #-}
         (Monad m, T.MonadIO m, MC.MonadMask m, MC.MonadThrow m) =>
           MonadException m where
     cleanUpErr m c = MC.finally m c
+    onException m c = MC.onException m c
     throwExc t = MC.throwM t
 
 -----------
