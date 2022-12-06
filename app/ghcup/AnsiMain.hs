@@ -267,13 +267,12 @@ drawFun (BrickState {..}) GEnv{..} =
 
 logicFun :: GEnv -> BrickState -> Event -> IO BrickState
 logicFun _ gs (KeyPress 'q') = pure gs { appQuit = True }
-logicFun _ gs Tick           = pure gs
 logicFun _ gs@BrickState{appMoreInput = Nothing} (KeyPress '\ESC') = pure gs { appMoreInput = Just "\ESC" }
 logicFun _ gs@BrickState{appMoreInput = Just "\ESC"} (KeyPress '[') = pure gs { appMoreInput = Just "\ESC[" }
 logicFun _ gs@BrickState{appMoreInput = Just "\ESC[", appState = s'} (KeyPress 'A')
-  = pure gs { appMoreInput = Nothing, appState = moveCursor 1 s' Up }
+ = pure gs { appMoreInput = Nothing, appState = moveCursor 1 s' Up }
 logicFun _ gs@BrickState{appMoreInput = Just "\ESC[", appState = s'} (KeyPress 'B')
-  = pure gs { appMoreInput = Nothing, appState = moveCursor 1 s' Down }
+ = pure gs { appMoreInput = Nothing, appState = moveCursor 1 s' Down }
 logicFun _ gs@BrickState{appMoreInput = Just _} _ = pure gs { appMoreInput = Nothing }
 logicFun _ gs (KeyPress 'i') = do
   bs <- withIOAction install' gs
@@ -294,7 +293,13 @@ logicFun _ gs (KeyPress 'a') = pure $ hideShowHandler (not . showAllVersions) sh
     let newAppSettings   = appSettings { showAllVersions = f appSettings , showAllTools = p appSettings }
         newInternalState = constructList appData newAppSettings (Just appState)
     in  BrickState appData newAppSettings newInternalState appKeys appQuit appRestart appMoreInput
-logicFun _ gs (KeyPress c) = pure $ (unsafePerformIO $ writeFile "key" $ show c) `seq` gs
+
+-- windows powershell
+logicFun _ gs@BrickState{ appState = s' } (KeyPress 'P') = pure gs { appMoreInput = Nothing, appState = moveCursor 1 s' Down }
+logicFun _ gs@BrickState{ appState = s' } (KeyPress 'H') = pure gs { appMoreInput = Nothing, appState = moveCursor 1 s' Up }
+
+logicFun _ gs Tick           = pure gs
+logicFun _ gs (KeyPress _)   = pure gs
 
 withIOAction :: (BrickState
                  -> (Int, ListResult)
