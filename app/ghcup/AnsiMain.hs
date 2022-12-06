@@ -141,20 +141,34 @@ ghcupGame bs = Game 13
 
 drawFun :: BrickState -> GEnv -> Plane
 drawFun (BrickState {..}) GEnv{..} =
-  blankPlane mw mh
-    & (1, 1)   % box 1        1        '┌'
-    & (2, 1)   % box 1        (mh - 3) '│'
-    & (1, 2)   % box (mw - 2) 1        '─'
-    & (2, mw)  % box 1        (mh - 3) '│'
-    & (1, mw)  % box 1        1        '┐'
-    & (mh-1, 2)  % box (mw - 2) 1        '─'
-    & (mh-1, 1)  % box 1        1        '└'
-    & (mh-1, mw) % box 1        1        '┘'
-    & (2, 2)   % box (mw - 2) (mh - 3) ' '
-    & (2, 2)   % (header === box (mw - 2) 1 '─' === renderItems)
+  let focus pl = maybe pl
+                   (\ix -> V.update pl (V.singleton (ix + 1, fmap invert $ pl V.! (ix + 1))))
+                   mix
+      rows = V.fromList [header, [box (mw - 2) 1 '=']] V.++ renderItems
+      cols = V.foldr (\xs ys -> zipWith (:) xs ys) (repeat []) $ V.filter ((==5) . length) rows
+      padded  = focus $ V.map (\xs -> zipWith padTo xs lengths) rows
+      lengths :: [Int]
+      lengths = fmap (maximum . fmap (fst . planeSize)) cols
+  in blankPlane mw mh
+    & (1, 1)   % box 1        1        'X' -- '┌'
+    & (2, 1)   % box 1        (mh - 3) '|' -- '│'
+    & (1, 2)   % box (mw - 2) 1        '=' -- '─'
+    & (2, mw)  % box 1        (mh - 3) '|' -- '│'
+    & (1, mw)  % box 1        1        'X' -- '┐'
+    & (mh-1, 2)  % box (mw - 2) 1      '=' -- '─'
+    & (mh-1, 1)  % box 1        1      'X' -- '└'
+    & (mh-1, mw) % box 1        1      'X' -- '┘'
+    & (2, 2)   % box (mw - 2) (mh - 3) ' ' -- ' '
+    & (2, 2)   % vcat (hcat <$> V.toList padded)
     & (mh, 1)  % footer
     & (1, mw `div` 2 - 2) % stringPlane "GHCup"
  where
+
+  padTo :: Plane -> Int -> Plane
+  padTo plane x =
+    let lstr = fst $ planeSize plane
+        add' = x - lstr + 1
+    in  if add' < 0 then plane else plane ||| stringPlane (replicate add' ' ')
   mh :: Height
   mw :: Width
   (mh, mw) = T.swap eTermDims
@@ -162,16 +176,13 @@ drawFun (BrickState {..}) GEnv{..} =
          . intersperse (stringPlane "  ")
          . fmap stringPlane
          $ ["q:Quit", "i:Install", "u:Uninstall", "s:Set", "c:Changelog", "a:all versions", "↑:Up", "↓:Down"]
-  header = hcat
-         . intersperse space
-         . fmap stringPlane
-         $ ["Tool", "Version", "Tags", "Notes"]
-  renderItems = drawListElements renderItem True appState
+  header = fmap stringPlane ["Tool", "Version", "Tags", "Notes"]
+  (renderItems, mix) = drawListElements renderItem appState
   renderItem _ b listResult@ListResult{..} =
     let marks = if
-          | lSet       -> color Green Vivid (stringPlane "✔✔")
-          | lInstalled -> color Green Dull (stringPlane "✓ ")
-          | otherwise  -> color Red Vivid (stringPlane "✗ ")
+          | lSet       -> color Green Vivid $ stringPlane "IS"
+          | lInstalled -> color Green Vivid $ stringPlane "I "
+          | otherwise  -> color Red Vivid $ stringPlane "X "
         ver = case lCross of
           Nothing -> stringPlane . Tx.unpack . prettyVer $ lVer
           Just c  -> stringPlane . Tx.unpack $ (c <> "-" <> prettyVer lVer)
@@ -183,7 +194,7 @@ drawFun (BrickState {..}) GEnv{..} =
                       then blankPlane 1 1
                       else foldr1 (\x y -> x ||| stringPlane "," ||| y) n
 
-    in hcat [marks, space, space, tool, space, ver, space, tag, space, notes]
+    in [marks ||| space, tool, ver, tag, notes]
 
   printTag Recommended    = Just $ color Green Dull $ stringPlane "recommended"
   printTag Latest         = Just $ color Yellow Dull $ stringPlane "latest"
@@ -213,40 +224,40 @@ drawFun (BrickState {..}) GEnv{..} =
   -- for drawing and 'listItemHeight'. At most, it will evaluate up to
   -- element @(i + h + 1)@ where @i@ is the selected index and @h@ is the
   -- available height.
-  drawListElements :: (Int -> Bool -> ListResult -> Plane)
-                   -> Bool
+  drawListElements :: (Int -> Bool -> ListResult -> [Plane])
                    -> BrickInternalState
-                   -> Plane
-  drawListElements drawElem foc is@(BrickInternalState clr _) =
+                   -> (V.Vector [Plane], Maybe Int)
+  drawListElements drawElem is@(BrickInternalState clr _) =
       let es = clr
           listSelected        = fmap fst $ listSelectedElement' is
 
           (drawnElements, selIx) = runST $ do
             ref <- newSTRef (Nothing :: Maybe Int)
+            vec <- newSTRef (mempty :: V.Vector [Plane])
             elem' <- newSTRef 0
-            arr <- fmap join $ flip V.imapM es $ \i' e -> do
+            void $ flip V.imapM es $ \i' e -> do
               let isSelected  = Just i' == listSelected
                   elemWidget  = drawElem i' isSelected e
-                  selItemAttr = if foc
-                    then listSelectedFocusedAttr
-                    else listSelectedAttr
-                  markSelected = if isSelected then selItemAttr else id
               case es V.!? (i' - 1) of
                     Just e' | lTool e' /= lTool e -> do
                       modifySTRef elem' (+2)
                       i <- readSTRef elem'
                       when isSelected $ writeSTRef ref (Just i)
-                      pure $ V.fromList [hBorder, markSelected elemWidget] -- add separator
+                      modifySTRef vec (`V.snoc` [hBorder])
+                      modifySTRef vec (`V.snoc` elemWidget)
+                      pure ()
                     _ -> do
                       modifySTRef elem' (+1)
                       i <- readSTRef elem'
                       when isSelected $ writeSTRef ref (Just i)
-                      pure $ V.fromList [markSelected elemWidget]
+                      modifySTRef vec (`V.snoc` elemWidget)
+                      pure ()
             i <- readSTRef ref
+            arr <- readSTRef vec
             pure (arr, i)
-        in vcat $ V.toList (makeVisible drawnElements (mh - 5) selIx)
+        in (makeVisible drawnElements (mh - 5) selIx, selIx)
    where
-    makeVisible :: V.Vector Plane -> Height -> Maybe Int -> V.Vector Plane
+    makeVisible :: V.Vector [Plane] -> Height -> Maybe Int -> V.Vector [Plane]
     makeVisible listElements drawableHeight (Just ix) =
       let listHeight = V.length listElements
       in if | listHeight <= 0 -> listElements
@@ -256,11 +267,7 @@ drawFun (BrickState {..}) GEnv{..} =
             | otherwise -> listElements
     makeVisible listElements _ Nothing = listElements
 
-    listSelectedFocusedAttr = invert
-
-    listSelectedAttr = invert
-
-    hBorder = box (mw - 2) 1 '─'
+    hBorder = box (mw - 2) 1 '='
 
 
 logicFun :: GEnv -> BrickState -> Event -> IO BrickState

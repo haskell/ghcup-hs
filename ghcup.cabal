@@ -70,6 +70,7 @@ library
     GHCup.List
     GHCup.Platform
     GHCup.Prelude
+    GHCup.Prelude.Ansi
     GHCup.Prelude.File
     GHCup.Prelude.File.Search
     GHCup.Prelude.Internal
