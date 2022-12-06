@@ -1,0 +1,275 @@
+1.8.0.0
+-------
+
+- Fixed testing facilities `recordGame`, `testGame`, `narrateGame` and
+  similar functions. `testGame` in particular is able to precisely
+  emulate recorded environment (so if your game has a bug only at a
+  specific size, `testGame` will now catch it).
+  Check `cabal run -f alone-playback examples ` to see a replay in action
+  and `test/Terminal/Game/Layer/ImperativeSpec.hs` for pure test ideas.
+- Added information on how to have an hot-reload mode, albeit only for
+  non-interactive game replays. Check `example/MainHotReload.hs` if
+  interested.
+- Added a new exception, `DisplayTooSmall`, which expands gracefully to
+  a “please resize your terminal” message to the player if uncaught.
+  Nothing changes if you do not already use `asserTermDims`.
+- `assertTermDims` is now curries (`Width -> Height -> IO ()` instead
+  of `Dimensions -> IO ()`) to better fit the rest of the API.
+- Modified behaviour of functions `vcat`, `hcat`, `stringPlane`,
+  `stringPlaneTrans`. They will not error on empty list, rather return
+  a transparent, 1×1 plane.
+- Changed licence and changes files to COPYING and NEWS.
+
+1.7.0.0
+-------
+
+- After some feedback from library users, I decided to eliminate
+  `simpleGame` from the API.
+  To reiterate hte migration guide, if your type was:
+
+    Game 80 24 13 initState logicFun drawFun quitFun
+    -- or
+    -- simpleGame (80, 24) 13 initState logicFun drawFun quitFun
+
+  You just need to modify it like this:
+
+    Game 13 initState
+                (const logicFun)
+                (\e s -> centerFull e $ drawFun s)
+                quitFun
+        -- notice how we lost `80 24`. You can still have a screen size
+        -- check with `assertTermDims`, as described below.
+- Added `blankPlaneFull` and `centerFull` convenience functions (to work
+  with GEnv terminal dimensions).
+- Added assertTermDims, a quick way to check your user terminal is big
+  enough at the start of the game.
+- minimal blitting optimisation (you should be able to see a 1–2
+  FPS improvement).
+- improved documentation on various functions.
+
+1.6.0.2
+-------
+
+- lun 15 nov 2021, 02:21:08
+- more doc tweaking
+
+1.6.0.1
+-------
+
+- released lun 15 nov 2021, 00:35:41
+- minor documentation / spelling fixes
+
+1.6.0.0
+-------
+
+Summary and tl;dr migration guide:
+- This version introduces a breaking changes in the main way to make
+  a `Game`. I will detail the changes below, but first a three-lines
+  migration guide:
+    the only thing you should have to do is to replace your `Game`
+    data constructor with `simpleGame` smart constructor, and substitute
+    the first to `c` `r` arguments (col/row) with a `(c, r)` tuple.
+  And of course, if you are interested in displaying FPS and adapt to
+  screen size modifications at game-time (“liquid” layout), read along!
+
+Changes:
+- This version introduces GEnv, a structure that exposes current frame
+  rate (in FPS) and current terminal size (in Width, Height).
+- `GEnv` is added as a parameter to logic and draw functions, which
+  now have these signatures:
+    gLogicFunction :: GEnv -> s -> Event -> slightly
+    gDrawFunction :: GEnv -> s -> plane
+- If you do not want to dabble with GEnv, you can still use `simpleGame`
+  smart constructor, which mimicks the old `Game`. `simpleGame` has some
+  nice defaults:
+    - if the terminal is too small it will ask the player to resize it
+      (even in the middle of the game), blocking any input;
+    - if the terminal is bigger, it will paste `Plane` in the middle
+      of the screen.
+- For this reason, `DisplayTooSmall` exception exists no more.
+- the new `Game` does not have those defaults, but allows you to get
+  creative with screen resizes, e.g. accomodating as much gameworld
+  as possible etc. Check `cabal run -f examples balls` and resize the
+  screen to see it in action.
+- Minor change: I have introduced a `Dimensions` alias for
+  `(Width, Height)`.
+
+Future work:
+- these changes lay the path for an even more general `Game` type,
+  adding effects like reading form a game configuration, writing to it
+  etc.
+  I would like to have these wrapped in a pure interface (maybe à la
+  Response/Request? Maybe callbacks?) and for sure want them to be
+  composable with current test scaffolding (testGame,
+  narrateGame, etc.). It will not be easy to design; if are reading
+  this and have any suggestion, please write to me.
+
+Released dom 14 nov 2021, 20:25:19
+
+1.5.0.0
+-------
+
+- `timers-tick` has released a new version: all timers function (creaTimer,
+  creaBoolTimer, creaTimerLoop, creaBoolTimerLoop, creaAnimation,
+  creaLoopAnimation, ticks) are slightly more robust now (will `error`
+  on nonsenical arguments, e.g. frame duration <1).
+  This should not impact any of your current projects, it just makes
+  catching bugs easier.
+- Removed `getFrames` from Animation interface.
+- Updated `Random` interface to fit the new `random`. This is a breaking
+  change but it should be easy to fix by updating your `Random` constraints
+  to `UniformRange`.
+  Be mindful that `recordGame` could play slightly differently, as the
+  update function for the StdGen in `random` has changed.
+- Removed `getRandomList` from Random interface.
+- Added `pickRandom` to Random interface.
+- Removed unuseful `creaStaticAnimation` from Animation interface.
+- Released mar 9 nov 2021, 15:56:14.
+
+1.4.0.0
+-------
+
+- Fixed an annoying bug that made a game run slower than expected on
+  low TPS. Now if you select 5 ticks per second, you can rest assured
+  that after 50 ticks, 5 seconds have elapsed.
+- Renamed `FPS` to `TPS` (ticks per second); highlight logic speed is
+  constant timewise on all machines, while FPS might be different on
+  differently efficient terminals.
+  This will allow in future releases to provide a function to easily
+  calculate actual FPS of the game.
+- Added alternative origin combinators `%^>`, `%.<`, `%.>`; they are
+  useful when you want to — e.g. — «paste a plane one row from
+  bottom-right corner».
+
+1.3.0.0
+-------
+
+- `displaySize` and `playGame`/`playGameS` now throw an exception
+  (of type `ATGException`) instead of `error`ing. These exeptions are
+  `CannotGetDisplaySize` and `DisplayTooSmall`; they are synchronous,
+  for easier catching. (requested by sm)
+- Released sab 16 ott 2021, 21:09:22
+
+1.2.1.0
+-------
+
+- Fixed textBox, textBoxHyphen bug (boxes were not transparent, contrary
+  to what stated in docs) (reported by sm).
+- Released lun 11 ott 2021, 22:29:40
+
+1.2.0.0
+-------
+
+- Added textBoxHyphen and textBoxHyphenLiquid and a handful of `Hypenator`s.
+  This will allow you to have autohyphenation in textboxes. Compare:
+    (normal textbox)                       (hyphenated textbox)
+    Rimasi un po’ a meditare nel buio      Rimasi un po’ a meditare nel buio
+    velato appena dal barlume azzurrino    velato appena dal barlume azzurrino
+    del fornello a gas, su cui             del fornello a gas, su cui sobbol-
+    sobbollliva quieta la pentola.         liva quieta la pentola.
+- Switched `Width`, `Height`, `Row`, `Col` from `Integer` to `Int`.
+  This is unfortunate, but will make playing with `base` simpler. I will
+  switch it back once `Prelude` handles both integers appropriately
+  or exports the relevant function. (request by sm)
+- Changed signature for `box`, `textBox` and `textBoxLiquid`. Now
+  width/height parameters come *before* the character/string. E.g.:
+    textBoxLiquid :: String -> Width -> Plane  -- this was before
+    textBoxLiquid :: Width -> String -> Plane  -- this is now
+  This felt more ergonomic while writing games.
+- `paperPlane` is now `planePaper` (to respect SVO order)
+
+1.1.1.0
+-------
+
+- Added (***) (centre blit) (request by sm)
+- Released gio 30 set 2021, 12:29:22
+
+1.1.0.0
+-------
+
+- Added Plane justapoxition functions (===, |||, vcat, hcat).
+- Added `word` and and `textBoxLiquid` drawing functions.
+- Added `subPlane`, `displaySize` Plane functions.
+- Removed unused `trimPlane`.
+- Sanitized non-ASCII chars on Win32 console.
+- Wed 03 Feb 2021 18:41:20 CET
+
+1.0.0.0
+-------
+
+- Milestone release.
+- Beefed up documentation.
+- Released Sun 08 Dec 2019 04:19:33 CET
+
+0.7.2.0
+-------
+
+- Fixed 0.7.1.0 unbumped dependency.
+- Released Fri 22 Nov 2019 16:51:25 CET
+
+0.7.1.0
+-------
+
+- Fixed 0.7.0.0 (deprecated) interface.
+- Released Fri 22 Nov 2019 14:51:40 CET
+
+0.7.0.0
+-------
+
+- Simplified Animation interface (breaking changes).
+- Added `creaLoopAnimation` and `creaStaticAnimation`.
+- Released Fri 22 Nov 2019 14:40:44 CET
+
+0.6.1.0
+-------
+
+- Reworked Timers/Animations interface and documentation.
+- Added `lapse` (for Timers/Animations).
+- Released Fri 22 Nov 2019 01:03:37 CET
+
+0.6.0.1
+-------
+
+- Add public repo (requested by sm).
+- Released Tue 19 Nov 2019 22:38:34 CET
+
+0.6.0.0
+-------
+
+- Add random generation functions.
+- Released Sun 10 Nov 2019 13:44:32 CET
+
+0.5.0.0
+-------
+
+- Add `setupGame` to setup games before playtesting (skip menus, etc.).
+- Fixed screen corruption on Windows.
+- Released Fri 08 Nov 2019 13:52:39 CET
+
+0.4.0.0
+-------
+
+- Exposed new functions in API.
+- Greatly improved haddock documentation.
+- Released Tue 25 Jun 2019 16:08:53 CEST
+
+0.2.1.0
+-------
+
+- Improved haddock documentation a bit.
+- Cleanup runs regardless of exception.
+- Released on Sun 18 Mar 2018 03:04:07 CET.
+
+0.2.0.0
+-------
+
+- Added dependencies constraints.
+- Removed internal module.
+- Fixed changelog.
+- Released on Fri 16 Mar 2018 00:42:41 CET.
+
+0.1.0.0
+-------
+
+- Initial release.
+- Released on Fri 16 Mar 2018 00:33:18 CET.

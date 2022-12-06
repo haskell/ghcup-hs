@@ -1,0 +1,46 @@
+==================
+ansi-terminal-game
+==================
+
+`ansi-terminal-game` is a library for creating games in a terminal setting.
+
+Goals
+-----
+
+- be cross platform (linux/win/mac). If you plan to have your executable
+  unix only, I invite you to check brick [1] or other, more expressive
+  libraries.
+- be simple: no curses/ncurses/pdcurses/etc. dependencies, all
+  functionality built on a standard input / ANSI terminal base.
+
+[1] http://hackage.haskell.org/package/brick
+
+Learn
+-----
+
+- run the basic example with `cabal new-run -f examples alone`;
+- check the source in `examples/Alone.hs`;
+- open the 'Terminal.Game' haddock documentation (start reading from
+  `Data.Game`).
+
+A full game can be found at:
+
+    http://www.ariis.it/static/articles/venzone/page.html
+
+Other games made with a-t-g
+---------------------------
+
+- caverunner:
+    https://github.com/simonmichael/games/blob/main/caverunner/caverunner.hs
+- pigafetta: http://www.ariis.it/link/repos/pigafetta/
+- avoidance: https://sabadev.xyz/avoidance_game
+
+If you want yours to be added to this list, write to me.
+
+Contact
+-------
+
+For any feedback or report, contact me at:
+
+    http://ariis.it/static/articles/mail/page.html
+

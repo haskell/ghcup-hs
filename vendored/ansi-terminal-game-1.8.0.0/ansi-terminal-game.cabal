@@ -1,0 +1,188 @@
+name:                ansi-terminal-game
+version:             1.8.0.0
+synopsis:            sdl-like functions for terminal applications, based on
+                     ansi-terminal
+description:         Library which aims to replicate standard 2d game
+                     functions (blit, ticks, timers, etc.) in a terminal
+                     setting; features double buffering to optimise
+                     performance.
+                     Aims to be cross compatible (based on "ansi-terminal",
+                     no unix-only dependencies), practical.
+                     See @examples@ folder for some minimal programs.  A
+                     full game: <http://www.ariis.it/static/articles/venzone/page.html venzone>.
+homepage:            http://www.ariis.it/static/articles/ansi-terminal-game/page.html
+license:             GPL-3
+license-file:        COPYING
+author:              Francesco Ariis
+maintainer:          fa-ml@ariis.it
+copyright:           © 2017-2021 Francesco Ariis
+category:            Game
+build-type:          Simple
+extra-source-files:  README,
+                     NEWS,
+                     test/records/alone-record-test.gr
+                     test/records/balls-dims.gr
+                     test/records/balls-slow.gr
+cabal-version:       >=1.10
+
+flag examples
+  description:       builds examples
+  default:           False
+
+source-repository head
+    type:     darcs
+    location: http://www.ariis.it/link/repos/ansi-terminal-game/
+
+library
+  exposed-modules:     Terminal.Game
+  other-modules:       Terminal.Game.Animation,
+                       Terminal.Game.Character,
+                       Terminal.Game.Draw,
+                       Terminal.Game.Layer.Imperative,
+                       Terminal.Game.Layer.Object,
+                       Terminal.Game.Layer.Object.GameIO,
+                       Terminal.Game.Layer.Object.Interface,
+                       Terminal.Game.Layer.Object.IO,
+                       Terminal.Game.Layer.Object.Narrate,
+                       Terminal.Game.Layer.Object.Primitive,
+                       Terminal.Game.Layer.Object.Record,
+                       Terminal.Game.Layer.Object.Test,
+                       Terminal.Game.Utils,
+                       Terminal.Game.Plane,
+                       Terminal.Game.Random,
+                       Terminal.Game.Timer
+  build-depends:       base == 4.*,
+                       ansi-terminal == 0.11.*,
+                       array == 0.5.*,
+                       bytestring >= 0.10 && < 0.12,
+                       cereal == 0.5.*,
+                       clock >= 0.7 && < 0.9,
+                       containers == 0.6.*,
+                       exceptions == 0.10.*,
+                       linebreak == 1.1.*,
+                       mintty == 0.1.*,
+                       mtl == 2.2.*,
+                       QuickCheck >= 2.13 && < 2.15,
+                       random >= 1.2 && < 1.3,
+                       split == 0.2.*,
+                       terminal-size == 0.3.*,
+                       unidecode >= 0.1.0 && < 0.2,
+                       timers-tick > 0.5 && < 0.6
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+  if os(windows)
+    hs-source-dirs: platform-dep/windows
+  if !os(windows)
+    hs-source-dirs: platform-dep/non-win
+
+test-suite test
+  default-language:    Haskell2010
+  hs-Source-Dirs:      test, src, example
+  main-is:             Test.hs
+  other-modules:       Alone,
+                       Balls,
+                       Terminal.Game,
+                       Terminal.Game.Animation,
+                       Terminal.Game.Character,
+                       Terminal.Game.Draw,
+                       Terminal.Game.DrawSpec,
+                       Terminal.Game.Layer.Imperative,
+                       Terminal.Game.Layer.ImperativeSpec,
+                       Terminal.Game.Layer.Object,
+                       Terminal.Game.Layer.Object.GameIO,
+                       Terminal.Game.Layer.Object.Interface,
+                       Terminal.Game.Layer.Object.IO,
+                       Terminal.Game.Layer.Object.Narrate,
+                       Terminal.Game.Layer.Object.Primitive,
+                       Terminal.Game.Layer.Object.Record,
+                       Terminal.Game.Layer.Object.Test,
+                       Terminal.Game.Utils,
+                       Terminal.Game.Plane,
+                       Terminal.Game.PlaneSpec
+                       Terminal.Game.Random,
+                       Terminal.Game.RandomSpec
+  build-depends:       base == 4.*,
+                       ansi-terminal == 0.11.*,
+                       array == 0.5.*,
+                       bytestring >= 0.10 && < 0.12,
+                       cereal == 0.5.*,
+                       clock >= 0.7 && < 0.9,
+                       containers == 0.6.*,
+                       exceptions == 0.10.*,
+                       linebreak == 1.1.*,
+                       mintty == 0.1.*,
+                       mtl == 2.2.*,
+                       QuickCheck >= 2.13 && < 2.15,
+                       random >= 1.2 && < 1.3,
+                       split == 0.2.*,
+                       terminal-size == 0.3.*,
+                       unidecode >= 0.1.0 && < 0.2,
+                       timers-tick > 0.5 && < 0.6
+                       -- the above plus hspec
+                       , hspec
+  type:                exitcode-stdio-1.0
+  ghc-options:         -Wall
+
+  if os(windows)
+    hs-source-dirs: platform-dep/windows
+  if !os(windows)
+    hs-source-dirs: platform-dep/non-win
+
+executable alone
+    if flag(examples)
+      build-depends:  base == 4.*,
+                      ansi-terminal-game
+    else
+      buildable:      False
+
+    hs-source-dirs:   example
+    main-is:          MainAlone.hs
+    other-modules:    Alone
+    default-language: Haskell2010
+    ghc-options:      -threaded
+                      -Wall
+
+executable alone-playback
+    if flag(examples)
+      build-depends:  base == 4.*,
+                      ansi-terminal-game,
+                      temporary == 1.3.*
+    else
+      buildable:      False
+
+    hs-source-dirs:   example
+    main-is:          MainPlayback.hs
+    other-modules:    Alone
+    default-language: Haskell2010
+    ghc-options:      -threaded
+                      -Wall
+
+executable balls
+    if flag(examples)
+      build-depends:  base == 4.*,
+                      ansi-terminal-game
+    else
+      buildable:      False
+
+    hs-source-dirs:   example
+    main-is:          MainBalls.hs
+    other-modules:    Balls
+    default-language: Haskell2010
+    ghc-options:      -threaded
+                      -Wall
+
+executable hot-reload
+    if flag(examples)
+      build-depends:  base == 4.*,
+                      ansi-terminal-game
+    else
+      buildable:      False
+
+    hs-source-dirs:   example
+    main-is:          MainHotReload.hs
+    other-modules:    Alone
+    default-language: Haskell2010
+    ghc-options:      -threaded
+                      -Wall
