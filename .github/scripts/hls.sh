@@ -3,35 +3,13 @@
 set -eux
 
 . .github/scripts/prereq.sh
+. .github/scripts/common.sh
 
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
 
 ### build
 
-ecabal() {
-	cabal "$@"
-}
 
-raw_eghcup() {
-	"$GHCUP_BIN/ghcup${ext}" -v -c "$@"
-}
-
-eghcup() {
-	if [ "${OS}" = "Windows" ] ; then
-		"$GHCUP_BIN/ghcup${ext}" -v -c -s file:/$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
-	else
-		"$GHCUP_BIN/ghcup${ext}" -v -c -s file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
-	fi
-}
-
-sha_sum() {
-	if [ "${OS}" = "FreeBSD" ] ; then
-		sha256 "$@"
-	else
-		sha256sum "$@"
-	fi
-
-}
 
 if [ "${OS}" = "Windows" ] ; then
 	GHCUP_DIR="${GHCUP_INSTALL_BASE_PREFIX}"/ghcup
@@ -42,11 +20,6 @@ fi
 rm -rf "${GHCUP_DIR}"
 mkdir -p "${GHCUP_BIN}"
 
-if [ "${OS}" = "Windows" ] ; then
-	ext=".exe"
-else
-	ext=''
-fi
 ls -lah out
 find out
 cp "out/${ARTIFACT}"-* "$GHCUP_BIN/ghcup${ext}"
@@ -58,18 +31,41 @@ eghcup --version
 sha_sum "$GHCUP_BIN/ghcup${ext}"
 sha_sum "$(raw_eghcup --offline whereis ghcup)"
 
-git describe --always
+git_describe
 
 eghcup install ghc "${GHC_VERSION}"
 eghcup install cabal
 
 ecabal update
 
+if ! command -v cabal-cache ; then
+	download_cabal_cache "$HOME/.local/bin/cabal-cache"
+fi
+
+if ! cabal-cache version ; then
+	build_cabal_cache "$HOME/.local/bin"
+fi
+
+
 eghcup debug-info
 
-eghcup compile hls -j $(nproc) -g ${HLS_TARGET_VERSION} --ghc ${GHC_VERSION}
+(
+	cd /tmp
+	git clone --depth 1 --branch "${HLS_TARGET_VERSION}" \
+		https://github.com/haskell/haskell-language-server.git \
+		"haskell-language-server-${HLS_TARGET_VERSION}"
+	cd "haskell-language-server-${HLS_TARGET_VERSION}/"
+	ecabal configure -w "ghc-${GHC_VERSION}" --disable-profiling --disable-tests --jobs="$(nproc)"
+	ecabal build --dependencies-only -w "ghc-${GHC_VERSION}" --disable-profiling --disable-tests --jobs="$(nproc)" --dry-run
+	sync_from
+	ecabal build --dependencies-only -w "ghc-${GHC_VERSION}" --disable-profiling --disable-tests --jobs="$(nproc)" || sync_to
+	sync_to
+)
 
-[ `$(eghcup whereis hls ${HLS_TARGET_VERSION}) --numeric-version` = "${HLS_TARGET_VERSION}" ] || [ `$(eghcup whereis hls ${HLS_TARGET_VERSION}) --numeric-version | sed 's/.0$//'` = "${HLS_TARGET_VERSION}" ]
+eghcup -v compile hls -j "$(nproc)" -g "${HLS_TARGET_VERSION}" --ghc "${GHC_VERSION}"
+
+[ "$($(eghcup whereis hls "${HLS_TARGET_VERSION}") --numeric-version)" = "${HLS_TARGET_VERSION}" ] ||
+	[ "$($(eghcup whereis hls "${HLS_TARGET_VERSION}") --numeric-version | sed 's/.0$//')" = "${HLS_TARGET_VERSION}" ]
 
 # nuke
 eghcup nuke

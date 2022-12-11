@@ -4,6 +4,7 @@ mkdir -p "$HOME"/.local/bin
 
 export OS="$RUNNER_OS"
 export PATH="$HOME/.local/bin:$PATH"
+: "${APT_GET:=apt-get}"
 
 if [ "${RUNNER_OS}" = "Windows" ] ; then
 	# on windows use pwd to get unix style path
@@ -12,6 +13,7 @@ if [ "${RUNNER_OS}" = "Windows" ] ; then
     export GHCUP_INSTALL_BASE_PREFIX="/c"
     export GHCUP_BIN="$GHCUP_INSTALL_BASE_PREFIX/ghcup/bin"
     export PATH="$GHCUP_BIN:$PATH"
+	export CABAL_DIR="C:\\Users\\runneradmin\\AppData\\Roaming\\cabal"
 else
 	export CI_PROJECT_DIR="${GITHUB_WORKSPACE}"
     export GHCUP_INSTALL_BASE_PREFIX="$CI_PROJECT_DIR"
@@ -23,41 +25,19 @@ fi
 
 if [ "${RUNNER_OS}" = "Linux" ] ; then
 	if [ "${DISTRO}" = "Alpine" ] ; then
-          apk add --no-cache \
-            curl \
-            gcc \
-            g++ \
-            binutils \
-            binutils-gold \
-            bsd-compat-headers \
-            gmp-dev \
-            ncurses-dev \
-            libffi-dev \
-            make \
-            xz \
-            tar \
-            perl \
-            bash \
-            diffutils \
-            git
-
-          apk add --no-cache \
-            zlib \
-            zlib-dev \
-            zlib-static \
-            bzip2 \
-            bzip2-dev \
-            bzip2-static \
-            gmp \
-            gmp-dev \
-            openssl-dev \
-            openssl-libs-static \
-            xz \
-            xz-dev \
-            ncurses-static
+		:
 	elif [ "${DISTRO}" = "Ubuntu" ] ; then
-		sudo apt-get update -y
-		sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential
+		export DEBIAN_FRONTEND=noninteractive
+		export TZ=Asia/Singapore
+		if [ "${ARCH}" = "ARM64" ] || [ "${ARCH}" = "ARM" ] ; then
+			:
+		else
+			${APT_GET} install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
+		fi
+	elif [ "${DISTRO}" = "Debian" ] ; then
+		export DEBIAN_FRONTEND=noninteractive
+		export TZ=Asia/Singapore
+		${APT_GET} install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl ghc gzip
 	fi
 elif [ "${RUNNER_OS}" = "macOS" ] ; then
 	if ! command -v brew ; then
@@ -71,6 +51,16 @@ elif [ "${RUNNER_OS}" = "macOS" ] ; then
 	fi
 	if ! command -v realpath ; then
 		brew install coreutils
+	fi
+
+    if [ "${ARCH}" = "ARM64" ] ; then
+		brew install llvm@11 autoconf automake
+		export PATH="$HOME/.brew/opt/llvm@11/bin:$PATH"
+		export CC="$HOME/.brew/opt/llvm@11/bin/clang"
+		export CXX="$HOME/.brew/opt/llvm@11/bin/clang++"
+		export LD=ld
+		export AR="$HOME/.brew/opt/llvm@11/bin/llvm-ar"
+		export RANLIB="$HOME/.brew/opt/llvm@11/bin/llvm-ranlib"
 	fi
 fi
 

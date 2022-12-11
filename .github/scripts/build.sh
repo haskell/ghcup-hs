@@ -3,60 +3,78 @@
 set -eux
 
 . .github/scripts/prereq.sh
+. .github/scripts/common.sh
 
-if ! command -v ghcup && [ "${RUNNER_OS}" != "FreeBSD" ] ; then
-	find "$GHCUP_INSTALL_BASE_PREFIX"
-	mkdir -p "$GHCUP_BIN"
-	mkdir -p "$GHCUP_BIN"/../cache
-	curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
+
+# ensure ghcup
+if ! command -v ghcup ; then
+	install_ghcup
 fi
 
+# ensure cabal-cache
+if ! cabal-cache version ; then
+	download_cabal_cache "$HOME/.local/bin/cabal-cache"
+fi
+
+# ensure ghc
 if [ "${RUNNER_OS}" != "FreeBSD" ] ; then
-	ghcup install ghc --set --isolate="$HOME/.local"     --force "$GHC_VER"
-	ghcup install cabal     --isolate="$HOME/.local/bin" --force "$CABAL_VER"
+	if [ "${DISTRO}" != "Debian" ] ; then # ! armv7 or aarch64 linux
+		if ! "ghc-${GHC_VER}" --numeric-version ; then
+			ghcup -v install ghc --set --force "$GHC_VER"
+		fi
+		if [ "$(cabal --numeric-version || true)" != "${CABAL_VER}" ] ; then
+			ghcup -v install cabal --force "$CABAL_VER"
+		fi
+		ghc --version
+		cabal --version
+		GHC="ghc-${GHC_VER}"
+	else
+		if [ "$(cabal --numeric-version || true)" != "${CABAL_VER}" ] ; then
+			ghcup -v install cabal --force "$CABAL_VER"
+		fi
+		cabal --version
+		GHC="ghc"
+	fi
+else
 	ghc --version
 	cabal --version
-	GHC="ghc-${GHC_VER}"
-else
 	GHC="ghc"
 fi
 
-git describe --all
+git_describe
 
-ecabal() {
-	cabal "$@"
-}
 
 # build
 ecabal update
 
+if ! cabal-cache version ; then
+	build_cabal_cache "$HOME/.local/bin"
+fi
 
 if [ "${RUNNER_OS}" = "Linux" ] ; then
 	if [ "${ARCH}" = "32" ] ; then
-		ecabal build -w "${GHC}" --ghc-options='-split-sections -optl-static' -ftui
+		build_with_cache -w "${GHC}" --ghc-options='-split-sections -optl-static' -ftui --enable-tests
 	elif [ "${ARCH}" = "64" ] ; then
-		ecabal build -w "${GHC}" --ghc-options='-split-sections -optl-static' -ftui
+		build_with_cache -w "${GHC}" --ghc-options='-split-sections -optl-static' -ftui --enable-tests
 	else
-		ecabal build -w "${GHC}" -ftui
+		build_with_cache -w "${GHC}" -ftui --enable-tests
 	fi
 elif [ "${RUNNER_OS}" = "FreeBSD" ] ; then
-	ecabal build -w "${GHC}" --ghc-options='-split-sections' --constraint="zlib +bundled-c-zlib" --constraint="zip +disable-zstd" -ftui
+	build_with_cache -w "${GHC}" --ghc-options='-split-sections' --constraint="zlib +bundled-c-zlib" --constraint="zip +disable-zstd" -ftui --enable-tests
 elif [ "${RUNNER_OS}" = "Windows" ] ; then
-	ecabal build -w "${GHC}" --constraint="zlib +bundled-c-zlib" --constraint="lzma +static"
+	build_with_cache -w "${GHC}" --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" --enable-tests
 else
-	ecabal build -w "${GHC}" --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" -ftui
+	build_with_cache -w "${GHC}" --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" -ftui --enable-tests
 fi
 
-mkdir out
-binary=$(ecabal new-exec -w "${GHC}" --verbose=0 --offline sh -- -c 'command -v ghcup')
+
+# set up artifacts
+mkdir -p out
+binary=$(cabal list-bin ghcup)
+binary_test=$(cabal list-bin ghcup-test)
 ver=$("${binary}" --numeric-version)
-if [ "${RUNNER_OS}" = "macOS" ] ; then
-	strip "${binary}"
-else
-	if [ "${RUNNER_OS}" != "Windows" ] ; then
-		strip -s "${binary}"
-	fi
-fi
+strip_binary "${binary}"
 cp "${binary}" "out/${ARTIFACT}-${ver}"
+cp "${binary_test}" "out/test-${ARTIFACT}-${ver}"
 cp ./dist-newstyle/cache/plan.json "out/${ARTIFACT}.plan.json"
 

@@ -3,31 +3,8 @@
 set -eux
 
 . .github/scripts/prereq.sh
+. .github/scripts/common.sh
 
-ecabal() {
-	cabal "$@"
-}
-
-raw_eghcup() {
-	"$GHCUP_BIN/ghcup${ext}" -v -c "$@"
-}
-
-eghcup() {
-	if [ "${OS}" = "Windows" ] ; then
-		"$GHCUP_BIN/ghcup${ext}" -v -c -s file:/$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
-	else
-		"$GHCUP_BIN/ghcup${ext}" -v -c -s file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
-	fi
-}
-
-sha_sum() {
-	if [ "${OS}" = "FreeBSD" ] ; then
-		sha256 "$@"
-	else
-		sha256sum "$@"
-	fi
-
-}
 
 if [ "${OS}" = "Windows" ] ; then
 	GHCUP_DIR="${GHCUP_INSTALL_BASE_PREFIX}"/ghcup
@@ -35,27 +12,25 @@ else
 	GHCUP_DIR="${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
 fi
 
-git describe --always
-
+git_describe
 
 rm -rf "${GHCUP_DIR}"
 mkdir -p "${GHCUP_BIN}"
 
-if [ "${OS}" = "Windows" ] ; then
-	ext=".exe"
-else
-	ext=''
-fi
-ls -lah out
-find out
 cp "out/${ARTIFACT}"-* "$GHCUP_BIN/ghcup${ext}"
+cp "out/test-${ARTIFACT}"-* "ghcup-test${ext}"
 chmod +x "$GHCUP_BIN/ghcup${ext}"
-echo "$PATH"
+chmod +x "ghcup-test${ext}"
 
 "$GHCUP_BIN/ghcup${ext}" --version
 eghcup --version
 sha_sum "$GHCUP_BIN/ghcup${ext}"
 sha_sum "$(raw_eghcup --offline whereis ghcup)"
+
+### Haskell test suite
+
+./ghcup-test${ext}
+rm ghcup-test${ext}
 
 ### manual cli based testing
 
@@ -116,6 +91,10 @@ fi
 
 
 if [ "${OS}" = "macOS" ] && [ "${ARCH}" = "ARM64" ] ; then
+	# missing bindists
+	echo
+elif [ "${OS}" = "FreeBSD" ] ; then
+	# not enough space
 	echo
 else
 	# test installing new ghc doesn't mess with currently set GHC
