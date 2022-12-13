@@ -448,7 +448,8 @@ ghcupDownloads:
               dlHash: d057b5c833596dbe4ae5d0dc2994f6cc5d0f4c2a21ea1d7900821d165fd4e846
             '( >= 16 && < 19 )': *ghc-842-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-842-64-fedora
+            '< 20': *ghc-842-64-deb9
+            '>= 20': *ghc-842-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-842-64-fedora
           Linux_UnknownLinux:
@@ -508,7 +509,8 @@ ghcupDownloads:
               dlHash: 269e7a4d3f336491b88409a020998122b30a3a729af78d33be86d3b3f8000c3e
             '( >= 16 && < 19 )': *ghc-843-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-843-64-fedora
+            '< 20': *ghc-843-64-deb9
+            '>= 20': *ghc-843-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-843-64-fedora
           Linux_UnknownLinux:
@@ -562,7 +564,8 @@ ghcupDownloads:
               dlHash: 8ab2befddc14d1434d0aad0c5d3c7e0c2b78ff84caa3429fa62527bfc6b86095
             '( >= 16 && < 19 )': *ghc-844-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-844-64-fedora
+            '< 20': *ghc-844-64-deb9
+            '>= 20': *ghc-844-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-844-64-fedora
           Linux_CentOS:
@@ -641,7 +644,8 @@ ghcupDownloads:
               dlHash: da903fbcf11ee6c977a8b7dac3f04dbc098d674def587880b6624b8f32588beb
             '( >= 16 && < 19 )': *ghc-861-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-861-64-fedora
+            '< 20': *ghc-861-64-deb9
+            '>= 20': *ghc-861-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-861-64-fedora
           Linux_UnknownLinux:
@@ -697,7 +701,8 @@ ghcupDownloads:
               dlHash: 702aa5dfa1639c37953ceb7571a5057d9fb0562aecb197b277953a037d78047d
             '( >= 16 && < 19 )': *ghc-862-64-deb8
           Linux_Mint:
-            unknown_versioning: *ghc-862-64-fedora
+            '< 20': *ghc-862-64-deb8
+            '>= 20': *ghc-862-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-862-64-fedora
           Linux_UnknownLinux:
@@ -752,7 +757,8 @@ ghcupDownloads:
               dlHash: 52ae92f4e8bb2ac0b7847287ea3da37081f5f7bf8bbb7c78ac35fde537d1a89f
             '( >= 16 && < 19 )': *ghc-863-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-863-64-fedora
+            '< 20': *ghc-863-64-deb9
+            '>= 20': *ghc-863-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-863-64-fedora
           Linux_CentOS:
@@ -821,7 +827,8 @@ ghcupDownloads:
               dlHash: e0b1ada7a679d6c35f9d7a1192ed35fde054f3650bb0bd2570d103729ad3b846
             '( >= 16 && < 19 )': *ghc-864-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-864-64-fedora
+            '< 20': *ghc-864-64-deb9
+            '>= 20': *ghc-864-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-864-64-fedora
           Linux_UnknownLinux:
@@ -875,7 +882,8 @@ ghcupDownloads:
               dlHash: cf78b53eaf336083e7a05f4a3000afbae4abe5bbc77ef80cc40e09d04ac5b4a1
             '( >= 16 && < 19 )': *ghc-865-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-865-64-fedora
+            '< 20': *ghc-865-64-deb9
+            '>= 20': *ghc-865-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-865-64-fedora
           Linux_CentOS:
@@ -960,7 +968,8 @@ ghcupDownloads:
               dlHash: 851a78df620bc056c34b252c97040d5755e294993fa8afa5429708b5229204d6
             '( >= 16 && < 19 )': *ghc-881-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-881-64-fedora
+            '< 20': *ghc-881-64-deb9
+            '>= 20': *ghc-881-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-881-64-fedora
           Linux_CentOS:
@@ -1024,7 +1033,8 @@ ghcupDownloads:
               dlHash: dbe2db717b33460f790e155e487d2a31c9b21a9d245f0c9490ad65844c3ea21f
             '( >= 16 && < 19 )': *ghc-882-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-882-64-fedora
+            '< 20': *ghc-882-64-deb9
+            '>= 20': *ghc-882-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-882-64-fedora
           Linux_CentOS:
@@ -1088,7 +1098,8 @@ ghcupDownloads:
               dlHash: 45ee1de3bfc98cbcc4886b65fc7651ade2d3820aa85eac2dbe9bc7bf91e7c818
             '( >= 16 && < 19 )': *ghc-883-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-883-64-fedora
+            '< 20': *ghc-883-64-deb9
+            '>= 20': *ghc-883-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-883-64-fedora
           Linux_CentOS:
@@ -1162,7 +1173,8 @@ ghcupDownloads:
               dlHash: f32e37f8aa03e74bad533ae02f62dc27a4521e78199576af490888ba34b515db
             '( >= 16 && < 19 )': *ghc-884-64-deb9
           Linux_Mint:
-            unknown_versioning: *ghc-884-64-fedora
+            '< 20': *ghc-884-64-deb9
+            '>= 20': *ghc-884-64-fedora
           Linux_Fedora:
             unknown_versioning: *ghc-884-64-fedora
           Linux_CentOS:
@@ -3569,22 +3581,22 @@ ghcupDownloads:
               dlHash: 63ee164e83ac76d440e0c0e777e9c7604dddff498fa53368132326d03da1817f
             unknown_versioning: *hls-180-64-deb9
           Linux_Ubuntu:
-            unknown_versioning:
+            unknown_versioning: &hls-180-64-ubuntu20
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-ubuntu20.04.tar.xz
               dlSubdir: haskell-language-server-1.8.0.0
               dlHash: f431add1ca5881d04caef9d2cf834248d8b4c36c7884221e39152c1aecd1ce56
-            '( >= 16 && < 19 )':
+            '( >= 16 && < 19 )': &hls-180-64-ubuntu18
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-1.8.0.0
               dlHash: 46e6c9309cfdf56746e659992ef1de9846b9abae9156bd96d51bc7e631074e2b
           Linux_Mint:
-            '< 20': *hls-180-64-deb9
-            '>= 20': &hls-180-64-fedora
+            '< 20': *hls-180-64-ubuntu18
+            '>= 20': *hls-180-64-ubuntu20
+          Linux_Fedora:
+            '( >= 27 && < 34 )': &hls-180-64-fedora
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-fedora33.tar.xz
               dlSubdir: haskell-language-server-1.8.0.0
               dlHash: a26c8225261bbd204014eb3df18b58b45a43594b8011910f3c5f560bc7171d33
-          Linux_Fedora:
-            '( >= 27 && < 34 )': *hls-180-64-fedora
             unknown_versioning: *hls-180-64-fedora
           Linux_CentOS:
             '( >= 7 && < 8 )': &hls-180-64-centos
