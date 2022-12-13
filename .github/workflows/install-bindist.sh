@@ -10,6 +10,11 @@ source $GHCUP_INSTALL_BASE_PREFIX/.ghcup/env || source ~/.bashrc
 ghcup --version
 which ghcup | grep foobarbaz
 
+# oh no
+if [ "${TOOL}" = "hls" ] ; then
+	ghcup -v --url-source=file:$METADATA_FILE install ghc --set 9.2.4
+fi
+
 ghcup -v --url-source=file:$METADATA_FILE install $TOOL --set $VERSION
 
 cat <<EOF > main.hs
