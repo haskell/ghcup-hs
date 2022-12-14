@@ -57,7 +57,7 @@ jobs:
           - image: archlinux:latest
             installCmd: pacman -Syu --noconfirm
             toolRequirements: which gcc gmp libffi make ncurses perl tar xz
-          - image: fedora:latest
+          - image: fedora:36
             installCmd: dnf install -y
             toolRequirements: which gcc g++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl
           - image: linuxmintd/mint19.3-amd64
