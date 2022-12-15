@@ -16,7 +16,7 @@ sync_from() {
 	fi
 
 	cabal-cache sync-from-archive \
-		--host-name-override=s3.us-west-004.backblazeb2.com \
+		--host-name-override=${S3_HOST} \
 		--host-port-override=443 \
 		--host-ssl-override=True \
 		--region us-west-2 \
@@ -30,7 +30,7 @@ sync_to() {
 	fi
 
 	cabal-cache sync-to-archive \
-		--host-name-override=s3.us-west-004.backblazeb2.com \
+		--host-name-override=${S3_HOST} \
 		--host-port-override=443 \
 		--host-ssl-override=True \
 		--region us-west-2 \
@@ -95,6 +95,7 @@ download_cabal_cache() {
 			esac
 			;;
 		"FreeBSD")
+			url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/1.0.5.1/x86_64-freebsd-cabal-cache-1.0.5.1
 			;;
 		"Windows")
 			exe=".exe"
@@ -123,29 +124,6 @@ download_cabal_cache() {
 		cp "cabal-cache${exe}" "${dest}${exe}"
 	fi
     )
-}
-
-build_cabal_cache() {
-	(
-	set -e
-	GHC_CABAL_CACHE=ghc-8.10.7
-	dest="$1"
-
-	if [ "${GHC_CABAL_CACHE}" != "ghc" ] && [ "${GHC_CABAL_CACHE}" != "ghc-${GHC_VER}" ] ; then
-		if ! ${GHC_CABAL_CACHE} --numeric-version ; then
-			ghcup -v install ghc --force ${GHC_CABAL_CACHE#ghc-}
-		fi
-	fi
-
-	cd /tmp
-	ecabal install -w "${GHC_CABAL_CACHE}" --overwrite-policy=always --install-method=copy --installdir="$dest" cabal-cache
-	mkdir -p "${CI_PROJECT_DIR}/out"
-	cp "$dest/cabal-cache" "${CI_PROJECT_DIR}/out/cabal-cache-${RUNNER_OS}-${DISTRO}-${ARCH}"
-
-	if [ "${GHC_CABAL_CACHE}" != "ghc" ] && [ "${GHC_CABAL_CACHE}" != "ghc-${GHC_VER}" ] ; then
-		ghcup -v rm ghc ${GHC_CABAL_CACHE#ghc-}
-	fi
-	)
 }
 
 build_with_cache() {

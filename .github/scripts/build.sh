@@ -47,10 +47,6 @@ git_describe
 # build
 ecabal update
 
-if ! cabal-cache version ; then
-	build_cabal_cache "$HOME/.local/bin"
-fi
-
 if [ "${RUNNER_OS}" = "Linux" ] ; then
 	if [ "${ARCH}" = "32" ] ; then
 		build_with_cache -w "${GHC}" --ghc-options='-split-sections -optl-static' -ftui --enable-tests
