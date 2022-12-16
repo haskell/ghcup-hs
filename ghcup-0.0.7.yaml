@@ -2583,17 +2583,17 @@ ghcupDownloads:
           Linux_Mint:
             '< 20': *ghc-941-64-deb9
             '>= 20': *ghc-941-64-deb10
-          Linux_Fedora:
-            '( >= 33 && < 34 )': &ghc-941-64-fedora
-              dlUri: https://downloads.haskell.org/~ghc/9.4.1/ghc-9.4.1-x86_64-fedora33-linux.tar.xz
-              dlSubdir: ghc-9.4.1-x86_64-unknown-linux
-              dlHash: efe05368d6367ce9109c7607a0945d85273cc95a730dd17f23d8ae79ee3524ea
-            unknown_versioning: *ghc-941-64-fedora
           Linux_CentOS:
             '( >= 7 && < 8 )': &ghc-941-64-centos
               dlUri: https://downloads.haskell.org/~ghc/9.4.1/ghc-9.4.1-x86_64-centos7-linux.tar.xz
               dlSubdir: ghc-9.4.1-x86_64-unknown-linux
               dlHash: 2ac415621849c32a400d69af059a3bb1cfa852c1427be6733540f0f7ad2a7470
+            unknown_versioning: *ghc-941-64-centos
+          Linux_Fedora:
+            '>= 33': &ghc-941-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/9.4.1/ghc-9.4.1-x86_64-fedora33-linux.tar.xz
+              dlSubdir: ghc-9.4.1-x86_64-unknown-linux
+              dlHash: efe05368d6367ce9109c7607a0945d85273cc95a730dd17f23d8ae79ee3524ea
             unknown_versioning: *ghc-941-64-centos
           Linux_RedHat:
             unknown_versioning: *ghc-941-64-centos
@@ -2669,17 +2669,17 @@ ghcupDownloads:
           Linux_Mint:
             '< 20': *ghc-942-64-deb9
             '>= 20': *ghc-942-64-deb10
-          Linux_Fedora:
-            '( >= 33 && < 34 )': &ghc-942-64-fedora
-              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-fedora33-linux.tar.xz
-              dlSubdir: ghc-9.4.2-x86_64-unknown-linux
-              dlHash: 017bbf5ba0d526ec82ac97a2ea2a177f162424ea970cd5d6279b843b3d799668
-            unknown_versioning: *ghc-942-64-fedora
           Linux_CentOS:
             '( >= 7 && < 8 )': &ghc-942-64-centos
               dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-centos7-linux.tar.xz
               dlSubdir: ghc-9.4.2-x86_64-unknown-linux
               dlHash: c88c1a4abe379478b70d2182533f35547c5e266048460b532b47f4f9df68d1da
+            unknown_versioning: *ghc-942-64-centos
+          Linux_Fedora:
+            '>= 33': &ghc-942-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-x86_64-fedora33-linux.tar.xz
+              dlSubdir: ghc-9.4.2-x86_64-unknown-linux
+              dlHash: 017bbf5ba0d526ec82ac97a2ea2a177f162424ea970cd5d6279b843b3d799668
             unknown_versioning: *ghc-942-64-centos
           Linux_RedHat:
             unknown_versioning: *ghc-942-64-centos
@@ -2756,17 +2756,17 @@ ghcupDownloads:
           Linux_Mint:
             '< 20': *ghc-943-64-deb9
             '>= 20': *ghc-943-64-deb10
-          Linux_Fedora:
-            '( >= 33 && < 34 )': &ghc-943-64-fedora
-              dlUri: https://downloads.haskell.org/~ghc/9.4.3/ghc-9.4.3-x86_64-fedora33-linux.tar.xz
-              dlSubdir: ghc-9.4.3-x86_64-unknown-linux
-              dlHash: 50037bc8672f0429e2de1255b21f04529807182cf74887a60e4d416d3b6ce8f2
-            unknown_versioning: *ghc-943-64-fedora
           Linux_CentOS:
             '( >= 7 && < 8 )': &ghc-943-64-centos
               dlUri: https://downloads.haskell.org/~ghc/9.4.3/ghc-9.4.3-x86_64-centos7-linux.tar.xz
               dlSubdir: ghc-9.4.3-x86_64-unknown-linux
               dlHash: 4cdc8f666e48aceeadf40affcff1a74002d879d58eb743a45e67cd163968eae0
+            unknown_versioning: *ghc-943-64-centos
+          Linux_Fedora:
+            '>= 33': &ghc-943-64-fedora
+              dlUri: https://downloads.haskell.org/~ghc/9.4.3/ghc-9.4.3-x86_64-fedora33-linux.tar.xz
+              dlSubdir: ghc-9.4.3-x86_64-unknown-linux
+              dlHash: 50037bc8672f0429e2de1255b21f04529807182cf74887a60e4d416d3b6ce8f2
             unknown_versioning: *ghc-943-64-centos
           Linux_RedHat:
             unknown_versioning: *ghc-943-64-centos
