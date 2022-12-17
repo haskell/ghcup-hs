@@ -3,6 +3,10 @@ defaults:
   run:
     shell: bash
 on:
+  pull_request:
+    types: [opened]
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       tool:
@@ -73,9 +77,73 @@ jobs:
         shell: sh
         run: |
           ${{ matrix.installCmd }} curl bash git ${{ matrix.toolRequirements }}
-      - uses: actions/checkout@v3
-      - name: Install ghcup and bindist for ${{ github.event.inputs.tool }} ${{ github.event.inputs.version }}
-        run: .github/workflows/install-bindist.sh
+
+      - uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
+        id: check
+        with:
+          trigger: '@bindistTest ** ** **'
+          reaction: rocket
+          allow_arguments: true
+        env:
+          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
+
+      - uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
+        id: checkRef
+        with:
+          trigger: '@bindistTestRef ** ** ** **'
+          reaction: rocket
+          allow_arguments: true
+        env:
+          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
+
+      - if: ${{ steps.checkRef.outputs.triggered == 'true' }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ fromJson(steps.check.outputs.arguments)[3] }}
+
+      - if: ${{ steps.checkRef.outputs.triggered != 'true' }}
+        uses: actions/checkout@v3
+
+      - if: ${{ github.event_name != 'workflow_dispatch' || steps.check.outputs.triggered == 'true' }}
+        continue-on-error: true
+        name: Install ghcup and bindist
+        run: |
+          [ -z "${TOOL}" ] && export TOOL=${{ fromJson(steps.check.outputs.arguments)[0] }}
+          [ -z "${VERSION}" ] && export VERSION=${{ fromJson(steps.check.outputs.arguments)[1] }}
+          [ -z "${METADATA_FILE}" ] && export METADATA_FILE=${{ fromJson(steps.check.outputs.arguments)[2] }}
+          .github/workflows/install-bindist.sh
+          echo SUCCESS=true >> $GITHUB_ENV
+
+      - if: ${{ github.event_name != 'workflow_dispatch' && steps.check.outputs.triggered != 'true' && steps.checkRef.outputs.triggered == 'true' }}
+        continue-on-error: true
+        name: Install ghcup and bindist
+        run: |
+          [ -z "${TOOL}" ] && export TOOL=${{ fromJson(steps.checkRef.outputs.arguments)[0] }}
+          [ -z "${VERSION}" ] && export VERSION=${{ fromJson(steps.checkRef.outputs.arguments)[1] }}
+          [ -z "${METADATA_FILE}" ] && export METADATA_FILE=${{ fromJson(steps.checkRef.outputs.arguments)[2] }}
+          .github/workflows/install-bindist.sh
+          echo SUCCESS=true >> $GITHUB_ENV
+
+      - if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: Install ghcup and bindist
+        run: |
+          .github/workflows/install-bindist.sh
+          echo SUCCESS=true >> $GITHUB_ENV
+
+      - run: |
+          if [ "${{ env.SUCCESS }}" = "true" ] ; then
+            echo "true" > message-linux.txt
+          else
+            echo "false" > message-linux.txt
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            ./message-linux.txt
+
   bindist-install-non-linux:
     name: ${{ matrix.os }}
     strategy:
@@ -87,6 +155,105 @@ jobs:
           - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Install ghcup and bindist for ${{ github.event.inputs.tool }} ${{ github.event.inputs.version }}
-        run: .github/workflows/install-bindist.sh
+      - uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
+        id: check
+        with:
+          trigger: '@bindistTest ** ** **'
+          reaction: rocket
+          allow_arguments: true
+        env:
+          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
+
+      - uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
+        id: checkRef
+        with:
+          trigger: '@bindistTestRef ** ** ** **'
+          reaction: rocket
+          allow_arguments: true
+        env:
+          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
+
+      - if: ${{ steps.checkRef.outputs.triggered == 'true' }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ fromJson(steps.check.outputs.arguments)[3] }}
+
+      - if: ${{ steps.checkRef.outputs.triggered != 'true' }}
+        uses: actions/checkout@v3
+
+      - if: ${{ github.event_name != 'workflow_dispatch' || steps.check.outputs.triggered == 'true' }}
+        continue-on-error: true
+        name: Install ghcup and bindist
+        run: |
+          [ -z "${TOOL}" ] && export TOOL=${{ fromJson(steps.check.outputs.arguments)[0] }}
+          [ -z "${VERSION}" ] && export VERSION=${{ fromJson(steps.check.outputs.arguments)[1] }}
+          [ -z "${METADATA_FILE}" ] && export METADATA_FILE=${{ fromJson(steps.check.outputs.arguments)[2] }}
+          .github/workflows/install-bindist.sh
+          echo SUCCESS=true >> $GITHUB_ENV
+
+      - if: ${{ github.event_name != 'workflow_dispatch' && steps.check.outputs.triggered != 'true' && steps.checkRef.outputs.triggered == 'true' }}
+        continue-on-error: true
+        name: Install ghcup and bindist
+        run: |
+          [ -z "${TOOL}" ] && export TOOL=${{ fromJson(steps.checkRef.outputs.arguments)[0] }}
+          [ -z "${VERSION}" ] && export VERSION=${{ fromJson(steps.checkRef.outputs.arguments)[1] }}
+          [ -z "${METADATA_FILE}" ] && export METADATA_FILE=${{ fromJson(steps.checkRef.outputs.arguments)[2] }}
+          .github/workflows/install-bindist.sh
+          echo SUCCESS=true >> $GITHUB_ENV
+
+      - if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: Install ghcup and bindist
+        run: |
+          .github/workflows/install-bindist.sh
+          echo SUCCESS=true >> $GITHUB_ENV
+
+      - run: |
+          if [ "${{ env.SUCCESS }}" = "true" ] ; then
+            echo "true" > message.txt
+          else
+            echo "false" > message.txt
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            ./message.txt
+
+  comment:
+    name: comment
+    needs: ["bindist-install", "bindist-install-non-linux"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts
+
+      - run: |
+          if [ "$(cat message.txt)" == "true" ] && [ "$(cat message-linux.txt)" == "true" ] ; then
+            echo "SUCCESS=true" >> $GITHUB_ENV
+          else
+            echo "SUCCESS=false" >> $GITHUB_ENV
+          fi
+
+      - id: message
+        run: |
+          if [ "${{ env.SUCCESS }}" = "true" ] ; then
+            echo 'MESSAGE=Bindist check success :+1:' >> $GITHUB_OUTPUT
+          else
+            echo 'MESSAGE=Bindist check failure :-1:' >> $GITHUB_OUTPUT
+          fi
+
+      - if: ${{ github.event_name == 'pull_request' }}
+        name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            ${{ steps.message.outputs.MESSAGE }}
+
+      - name: Check on failures
+        if: env.SUCCESS != 'true'
+        run: exit 1
+

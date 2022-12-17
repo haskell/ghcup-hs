@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 set -eo pipefail
 
 export GHCUP_INSTALL_BASE_PREFIX=$RUNNER_TEMP/foobarbaz
