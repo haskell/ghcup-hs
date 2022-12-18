@@ -97,6 +97,10 @@ This is the complete list of env variables that change GHCup behavior:
 * `GHCUP_SKIP_UPDATE_CHECK`: Skip the (possibly annoying) update check when you run a command
 * `CC`/`LD` etc.: full environment is passed to the build system when compiling GHC via GHCup
 
+On windows, there's additionally:
+
+* `GHCUP_MSYS2`: Has to point to the root of an existing MSYS2 installation (when installed by GHCup, that's e.g. `C:\ghcup\msys64`). GHCup bootstrap takes care of this usually.
+
 ### XDG support
 
 To enable XDG style directories, set the environment variable `GHCUP_USE_XDG_DIRS` to anything.
