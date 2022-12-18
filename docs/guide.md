@@ -198,6 +198,51 @@ url-source:
   - "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
 ```
 
+## Stack integration
+
+Stack manages GHC versions internally by default. In order to make it use ghcup installed
+GHC versions there are two strategies.
+
+### Strategy 1: System GHC (works on all stack versions)
+
+You can instruct stack to use "system" GHC versions (whatever is in PATH). To do so,
+run the following commands:
+
+```sh
+stack config set install-ghc false --global
+stack config set system-ghc  true  --global
+```
+
+### Strategy 2: Stack hooks (new, recommended)
+
+Since stack 2.9.1 you can customize the installation logic of GHC completely, see: https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation
+
+We can use this to simply invoke ghcup whenever stack is trying to install/discover a GHC versions. This
+is done via placing a shell script at `~/.stack/hooks/ghc-install.sh` and making it executable.
+
+The ghcup bootstrap script asks you during installation whether you want to install this shell script. You can also
+install/update it manually like so:
+
+```sh
+mkdir -p ~/.stack/hooks/
+curl https://raw.githubusercontent.com/haskell/ghcup-hs/master/scripts/hooks/stack/ghc-install.sh \
+  > ~/.stack/hooks/ghc-install.sh
+chmod +x ~/.stack/hooks/ghc-install.sh
+# hooks are only run when 'system-ghc: false'
+stack config set system-ghc false --global
+```
+
+By default, when the hook fails for whatever reason, stack will fall back to its own installation logic. To disable
+this, run `stack config set install-ghc false --global`.
+
+### Windows
+
+On windows, you may find the following config options useful too:
+`skip-msys`, `extra-path`, `extra-include-dirs`, `extra-lib-dirs`.
+
+Also check out: https://docs.haskellstack.org/en/stable/yaml_configuration
+
+
 # More on installation
 
 ## Customisation of the installation scripts
