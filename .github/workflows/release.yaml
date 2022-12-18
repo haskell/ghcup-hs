@@ -13,8 +13,8 @@ on:
     - cron: '0 2 * * *'
 
 jobs:
-  build-alpine:
-    name: Build static linux binary
+  build-linux:
+    name: Build linux binary
     runs-on: ${{ matrix.os }}
     env:
       CABAL_VER: 3.6.2.0
@@ -203,9 +203,9 @@ jobs:
             ./out/*
 
 
-  test-alpine:
+  test-linux:
     name: Test linux
-    needs: "build-alpine"
+    needs: "build-linux"
     runs-on: ${{ matrix.os }}
     env:
       CABAL_VER: 3.6.2.0
@@ -379,7 +379,7 @@ jobs:
           HOMEBREW_CHANGE_ARCH_TO_ARM: 1
   hls:
     name: hls
-    needs: build-alpine
+    needs: build-linux
     runs-on: ubuntu-latest
     env:
       GHC_VERSION: "8.10.7"
@@ -410,7 +410,7 @@ jobs:
 
   release:
     name: release
-    needs: ["test-alpine", "test-arm", "test-macwin", "hls"]
+    needs: ["test-linux", "test-arm", "test-macwin", "hls"]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:

@@ -41,7 +41,8 @@ jobs:
       - uses: docker://arm64v8/ubuntu:focal
         name: Cleanup
         with:
-          args: rm -rf .ghcup/
+          args: rm -rf .ghcup/ cabal/ dist-newstyle/ out/
+
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up Docker Buildx

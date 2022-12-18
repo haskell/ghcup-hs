@@ -23,7 +23,7 @@ RUN apt-get update && \
         openssh-client \
         xz-utils \
         zlib1g-dev \
-		libnuma-dev libgmp10 libssl-dev liblzma-dev libbz2-dev wget lsb-release software-properties-common apt-transport-https gcc autoconf automake build-essential gzip \
+		libnuma-dev libgmp10 libssl-dev liblzma-dev libbz2-dev wget lsb-release software-properties-common apt-transport-https gcc autoconf automake build-essential gzip patchelf tree \
 		llvm-9 clang-9 && \
     rm -rf /var/lib/apt/lists/*
 
