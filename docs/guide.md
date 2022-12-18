@@ -215,7 +215,7 @@ stack config set system-ghc  true  --global
 
 ### Strategy 2: Stack hooks (new, recommended)
 
-Since stack 2.9.1 you can customize the installation logic of GHC completely, see: https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation
+Since stack 2.9.1 you can customize the installation logic of GHC completely, see [https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation](https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation).
 
 We can use this to simply invoke ghcup whenever stack is trying to install/discover a GHC versions. This
 is done via placing a shell script at `~/.stack/hooks/ghc-install.sh` and making it executable.
@@ -240,8 +240,7 @@ this, run `stack config set install-ghc false --global`.
 On windows, you may find the following config options useful too:
 `skip-msys`, `extra-path`, `extra-include-dirs`, `extra-lib-dirs`.
 
-Also check out: https://docs.haskellstack.org/en/stable/yaml_configuration
-
+Also check out: [https://docs.haskellstack.org/en/stable/yaml_configuration](https://docs.haskellstack.org/en/stable/yaml_configuration)
 
 # More on installation
 
