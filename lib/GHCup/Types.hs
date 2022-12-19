@@ -35,7 +35,7 @@ import           Data.Text                      ( Text )
 import           Data.Versions
 import           GHC.IO.Exception               ( ExitCode )
 import           Optics                         ( makeLenses )
-import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text, (<+>))
+import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text)
 import           URI.ByteString
 #if defined(BRICK)
 import           Graphics.Vty                   ( Key(..) )
@@ -632,15 +632,7 @@ data ProcessError = NonZeroExit Int FilePath [String]
                   | NoSuchPid FilePath [String]
                   deriving Show
 
-instance Pretty ProcessError where
-  pPrint (NonZeroExit e exe args) =
-    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "failed with exit code" <+> text (show e <> ".")
-  pPrint (PTerminated exe args) =
-    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "terminated."
-  pPrint (PStopped exe args) =
-    text "Process" <+> pPrint exe <+> text "with arguments" <+> pPrint args <+> text "stopped."
-  pPrint (NoSuchPid exe args) =
-    text "Could not find PID for process running " <+> pPrint exe <+> text " with arguments " <+> text (show args) <+> text "."
+
 data CapturedProcess = CapturedProcess
   { _exitCode :: ExitCode
   , _stdOut   :: BL.ByteString

@@ -23,7 +23,6 @@ import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
@@ -118,5 +117,5 @@ toolRequirements ToolReqOpts{..} runAppState runLogger = runToolRequirements run
     >>= \case
           VRight _ -> pure ExitSuccess
           VLeft  e -> do
-            runLogger $ logError $ T.pack $ prettyShow e
+            runLogger $ logError $ T.pack $ prettyHFError e
             pure $ ExitFailure 12

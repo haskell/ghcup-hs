@@ -34,7 +34,6 @@ import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
@@ -179,7 +178,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
               postRmLog vi
               pure ExitSuccess
             VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyShow e
+              runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 7
 
   rmCabal' tv =
@@ -194,7 +193,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
               postRmLog vi
               pure ExitSuccess
             VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyShow e
+              runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 15
 
   rmHLS' tv =
@@ -209,7 +208,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
               postRmLog vi
               pure ExitSuccess
             VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyShow e
+              runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 15
 
   rmStack' tv =
@@ -224,7 +223,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
               postRmLog vi
               pure ExitSuccess
             VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyShow e
+              runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 15
 
   postRmLog vi =

@@ -459,7 +459,7 @@ setGHC ver sghc mBinDir = do
       when (targetFile == "ghc") $
         liftIO (isShadowed fullF) >>= \case
           Nothing -> pure ()
-          Just pa -> lift $ logWarn $ T.pack $ prettyShow (ToolShadowed GHC pa fullF (_tvVersion ver))
+          Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed GHC pa fullF (_tvVersion ver))
 
   when (isNothing mBinDir) $ do
     -- create symlink for share dir

@@ -50,7 +50,6 @@ import           System.FilePath
 import           System.IO.Error
 
 import qualified Data.Text                     as T
-import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
 
@@ -235,7 +234,7 @@ setCabal ver = do
 
   liftIO (isShadowed cabalbin) >>= \case
     Nothing -> pure ()
-    Just pa -> lift $ logWarn $ T.pack $ prettyShow (ToolShadowed Cabal pa cabalbin ver)
+    Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed Cabal pa cabalbin ver)
 
   pure ()
 

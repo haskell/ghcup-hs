@@ -35,7 +35,6 @@ import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import Data.Bifunctor (second)
@@ -286,7 +285,7 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
                     "GHC " <> prettyVer _tvVersion <> " successfully set as default version" <> maybe "" (" for cross target " <>) _tvTarget
               pure ExitSuccess
             VLeft e -> do
-              runLogger $ logError $ T.pack $ prettyShow e
+              runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 5
 
 
@@ -307,7 +306,7 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
                     "Cabal " <> prettyVer (_tvVersion v) <> " successfully set as default version"
               pure ExitSuccess
             VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyShow e
+              runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 14
 
   setHLS' :: SetOptions
@@ -327,7 +326,7 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
                     "HLS " <> prettyVer (_tvVersion v) <> " successfully set as default version"
               pure ExitSuccess
             VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyShow e
+              runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 14
 
 
@@ -348,5 +347,5 @@ set setCommand runAppState runLeanAppState runLogger = case setCommand of
                     "Stack " <> prettyVer (_tvVersion v) <> " successfully set as default version"
               pure ExitSuccess
             VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyShow e
+              runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 14

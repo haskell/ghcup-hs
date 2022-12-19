@@ -31,7 +31,6 @@ import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
@@ -189,7 +188,7 @@ unset unsetCommand runLeanAppState runLogger = case unsetCommand of
                 runLogger $ logInfo "GHC successfully unset"
                 pure ExitSuccess
               VLeft  e -> do
-                runLogger $ logError $ T.pack $ prettyShow e
+                runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 14
   (UnsetCabal (UnsetOptions _)) -> do
     void $ runLeanAppState (VRight <$> unsetCabal)

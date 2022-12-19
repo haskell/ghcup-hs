@@ -1301,7 +1301,7 @@ gitOut args dir = do
     ExitSuccess   -> pure $ T.pack $ stripNewlineEnd $ T.unpack $ decUTF8Safe' _stdOut
     ExitFailure c -> do
       let pe = NonZeroExit c "git" args
-      lift $ logDebug $ T.pack (prettyShow pe)
+      lift $ logDebug $ T.pack (prettyHFError pe)
       throwE pe
 
 processBranches :: T.Text -> [String]

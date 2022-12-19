@@ -78,7 +78,6 @@ import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
 import qualified Streamly.Prelude              as S
-import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
 
@@ -328,7 +327,7 @@ upgradeGHCup mtarget force' fatal = do
     Just pa
       | fatal -> throwE (ToolShadowed GHCup pa destFile latestVer)
       | otherwise ->
-        lift $ logWarn $ T.pack $ prettyShow (ToolShadowed GHCup pa destFile latestVer)
+        lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed GHCup pa destFile latestVer)
 
   pure latestVer
 

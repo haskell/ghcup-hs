@@ -206,7 +206,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                                           VRight r -> pure r
                                           VLeft e -> do
                                             runLogger
-                                              (logError $ T.pack $ prettyShow e)
+                                              (logError $ T.pack $ prettyHFError e)
                                             exitWith (ExitFailure 2)
 
                 ghcupInfo <-
@@ -218,7 +218,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                           VRight r -> pure r
                           VLeft  e -> do
                             runLogger
-                              (logError $ T.pack $ prettyShow e)
+                              (logError $ T.pack $ prettyHFError e)
                             exitWith (ExitFailure 2)
                 let s' = AppState settings dirs keybindings ghcupInfo pfreq loggerConfig
 
@@ -266,7 +266,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                   VRight _ -> pure ()
                   VLeft e -> do
                     runLogger
-                      (logError $ T.pack $ prettyShow e)
+                      (logError $ T.pack $ prettyHFError e)
                     exitWith (ExitFailure 30)
                 pure s'
 
@@ -311,6 +311,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             Prefetch pfCom             -> prefetch pfCom runAppState runLogger
             GC gcOpts                  -> gc gcOpts runAppState runLogger
             Run runCommand             -> run runCommand appState leanAppstate runLogger
+            PrintAppErrors             -> putStrLn allHFError >> pure ExitSuccess
 
           case res of
             ExitSuccess        -> pure ()

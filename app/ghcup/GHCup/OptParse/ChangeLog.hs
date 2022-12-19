@@ -12,6 +12,7 @@ module GHCup.OptParse.ChangeLog where
 
 
 import           GHCup.Types
+import           GHCup.Errors
 import           GHCup.OptParse.Common
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
@@ -148,6 +149,6 @@ changelog ChangeLogOptions{..} runAppState runLogger = do
                  Nothing
               >>= \case
                     Right _ -> pure ExitSuccess
-                    Left  e -> logError (T.pack $ prettyShow e)
+                    Left  e -> logError (T.pack $ prettyHFError e)
                       >> pure (ExitFailure 13)
         else liftIO $ putStrLn uri' >> pure ExitSuccess

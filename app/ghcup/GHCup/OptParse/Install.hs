@@ -38,7 +38,6 @@ import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           URI.ByteString          hiding ( uriParser )
 
 import qualified Data.Text                     as T
@@ -351,10 +350,10 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 pure ExitSuccess
 
               VLeft e@(V (AlreadyInstalled _ _)) -> do
-                runLogger $ logWarn $ T.pack $ prettyShow e
+                runLogger $ logWarn $ T.pack $ prettyHFError e
                 pure ExitSuccess
               VLeft e@(V (AlreadyInstalled _ _)) -> do
-                runLogger $ logWarn $ T.pack $ prettyShow e
+                runLogger $ logWarn $ T.pack $ prettyHFError e
                 pure ExitSuccess
 
               VLeft (V (DirNotEmpty fp)) -> do
@@ -368,22 +367,22 @@ install installCommand settings getAppState' runLogger = case installCommand of
 
               VLeft err@(V (BuildFailed tmpdir _)) -> do
                 case keepDirs settings of
-                  Never -> runLogger (logError $ T.pack $ prettyShow err)
-                  _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
+                  Never -> runLogger (logError $ T.pack $ prettyHFError err)
+                  _ -> runLogger (logError $ T.pack (prettyHFError err) <> "\n" <>
                     "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
                     "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 3
               VLeft err@(V (BuildFailed tmpdir _)) -> do
                 case keepDirs settings of
-                  Never -> runLogger (logError $ T.pack $ prettyShow err)
-                  _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
+                  Never -> runLogger (logError $ T.pack $ prettyHFError err)
+                  _ -> runLogger (logError $ T.pack (prettyHFError err) <> "\n" <>
                     "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
                     "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 3
 
               VLeft e -> do
                 runLogger $ do
-                  logError $ T.pack $ prettyShow e
+                  logError $ T.pack $ prettyHFError e
                   logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
                 pure $ ExitFailure 3
 
@@ -418,14 +417,14 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 runLogger $ logInfo msg
               pure ExitSuccess
             VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyShow e
+              runLogger $ logWarn $ T.pack $ prettyHFError e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install cabal --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
             VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyShow e
+              runLogger $ logWarn $ T.pack $ prettyHFError e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
@@ -433,7 +432,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
               pure $ ExitFailure 3
             VLeft e -> do
               runLogger $ do
-                logError $ T.pack $ prettyShow e
+                logError $ T.pack $ prettyHFError e
                 logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
               pure $ ExitFailure 4
 
@@ -468,14 +467,14 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 runLogger $ logInfo msg
               pure ExitSuccess
             VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyShow e
+              runLogger $ logWarn $ T.pack $ prettyHFError e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install hls --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
             VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyShow e
+              runLogger $ logWarn $ T.pack $ prettyHFError e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
@@ -483,7 +482,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
               pure $ ExitFailure 3
             VLeft e -> do
               runLogger $ do
-                logError $ T.pack $ prettyShow e
+                logError $ T.pack $ prettyHFError e
                 logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
               pure $ ExitFailure 4
 
@@ -517,14 +516,14 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 runLogger $ logInfo msg
               pure ExitSuccess
             VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyShow e
+              runLogger $ logWarn $ T.pack $ prettyHFError e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install stack --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
             VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyShow e
+              runLogger $ logWarn $ T.pack $ prettyHFError e
               pure ExitSuccess
             VLeft (V (FileAlreadyExistsError fp)) -> do
               runLogger $ logWarn $
@@ -532,6 +531,6 @@ install installCommand settings getAppState' runLogger = case installCommand of
               pure $ ExitFailure 3
             VLeft e -> do
               runLogger $ do
-                logError $ T.pack $ prettyShow e
+                logError $ T.pack $ prettyHFError e
                 logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
               pure $ ExitFailure 4

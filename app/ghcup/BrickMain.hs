@@ -487,7 +487,7 @@ install' _ (_, ListResult {..}) = do
             pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
           VLeft (V NoUpdate) -> pure $ Right ()
-          VLeft e -> pure $ Left $ prettyShow e <> "\n"
+          VLeft e -> pure $ Left $ prettyHFError e <> "\n"
             <> "Also check the logs in ~/.ghcup/logs"
 
 
@@ -524,7 +524,7 @@ set' bs input@(_, ListResult {..}) = do
                       logInfo "Setting now..."
                       set' bs input
 
-                PromptNo -> pure $ Left (prettyShow e)
+                PromptNo -> pure $ Left (prettyHFError e)
               where
                 userPrompt = L.toStrict . B.toLazyText . B.fromString $
                   "This Version of "
@@ -532,7 +532,7 @@ set' bs input@(_, ListResult {..}) = do
                   <> " you are trying to set is not installed.\n"
                   <> "Would you like to install it first? [Y/N]: "
 
-            _ -> pure $ Left (prettyShow e)
+            _ -> pure $ Left (prettyHFError e)
 
 
 
@@ -560,7 +560,7 @@ del' _ (_, ListResult {..}) = do
             forM_ (_viPostRemove =<< vi) $ \msg ->
               logInfo msg
             pure $ Right ()
-          VLeft  e -> pure $ Left (prettyShow e)
+          VLeft  e -> pure $ Left (prettyHFError e)
 
 
 changelog' :: (MonadReader AppState m, MonadIO m)
@@ -580,7 +580,7 @@ changelog' _ (_, ListResult {..}) = do
             Windows -> "start"
       exec cmd [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing >>= \case
         Right _ -> pure $ Right ()
-        Left  e -> pure $ Left $ prettyShow e
+        Left  e -> pure $ Left $ prettyHFError e
 
 
 settings' :: IORef AppState
@@ -638,7 +638,7 @@ getGHCupInfo = do
 
   case r of
     VRight a -> pure $ Right a
-    VLeft  e -> pure $ Left (prettyShow e)
+    VLeft  e -> pure $ Left (prettyHFError e)
 
 
 getAppData :: Maybe GHCupInfo
