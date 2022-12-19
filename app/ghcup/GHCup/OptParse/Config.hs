@@ -188,8 +188,14 @@ config configCommand settings keybindings runLogger = case configCommand of
       AddSource xs -> do
         doConfig (defaultUserSettings { uUrlSource = Just $ AddSource (xs <> [Right uri]) })
         pure ExitSuccess
-      _ -> do
+      GHCupURL -> do
         doConfig (defaultUserSettings { uUrlSource = Just $ AddSource [Right uri] })
+        pure ExitSuccess
+      OwnSource xs -> do
+        doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource (xs <> [Right uri]) })
+        pure ExitSuccess
+      OwnSpec spec -> do
+        doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource ([Left spec, Right uri]) })
         pure ExitSuccess
 
  where
