@@ -146,6 +146,12 @@ jobs:
           path: |
             ./out/*
 
+      - if: always()
+        uses: docker://arm64v8/ubuntu:focal
+        name: Cleanup (aarch64 linux)
+        with:
+          args: rm -rf .ghcup/ cabal/ dist-newstyle/ out/ cabal-cache
+
   build-macwin:
     name: Build binary (Mac/Win)
     runs-on: ${{ matrix.os }}
@@ -197,3 +203,4 @@ jobs:
           name: artifacts
           path: |
             ./out/*
+

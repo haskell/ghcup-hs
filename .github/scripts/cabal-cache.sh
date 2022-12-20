@@ -11,6 +11,10 @@ if ! command -v ghcup ; then
 	install_ghcup
 fi
 
+if [ "${RUNNER_OS}" = "macOS" ] ; then
+	rm -rf "${CABAL_DIR}"/store/*
+fi
+
 
 # ensure ghc
 ghcup install ghc --set 8.10.7
@@ -21,10 +25,15 @@ cabal --version
 
 cabal update
 
-git clone --single-branch --branch main https://github.com/hasufell/cabal-cache.git
+git clone --single-branch --branch main https://github.com/haskell-works/cabal-cache.git
 cd cabal-cache
 
-cabal build
+if [ "${DISTRO}" = "Alpine" ] ; then
+	cabal build --ghc-options='-split-sections -optl-static'
+else
+	cabal build
+fi
+
 binary=$(cabal list-bin cabal-cache)
 cd ..
 
