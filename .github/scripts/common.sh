@@ -10,6 +10,16 @@ ecabal() {
 	cabal "$@"
 }
 
+sync_from_retry() {
+	if [ "${RUNNER_OS}" != "Windows" ] ; then
+		cabal_store_path="$(dirname "$(cabal help user-config | tail -n 1 | xargs)")/store"
+	else
+		cabal_store_path="${CABAL_DIR}/store"
+	fi
+
+    sync_from || { sleep 9 ; rm -rf "${cabal_store_path:?}"/* ; sync_from || { sleep 20 ; rm -rf "${cabal_store_path:?}"/* ; sync_from ; } }
+}
+
 sync_from() {
 	if [ "${RUNNER_OS}" != "Windows" ] ; then
 		cabal_store_path="$(dirname "$(cabal help user-config | tail -n 1 | xargs)")/store"
@@ -22,6 +32,10 @@ sync_from() {
 		--region us-west-2 \
 		$([ "${RUNNER_OS}" != "Windows" ] && echo --store-path="$cabal_store_path") \
 		--archive-uri "s3://ghcup-hs/${RUNNER_OS}-${ARCH}-${DISTRO}"
+}
+
+sync_to_retry() {
+    sync_to || { sleep 9 ; sync_to || { sleep 20 ; sync_to ; } }
 }
 
 sync_to() {
@@ -129,11 +143,11 @@ download_cabal_cache() {
 build_with_cache() {
 	ecabal configure "$@"
 	ecabal build --dependencies-only "$@" --dry-run
-	sync_from
-	ecabal build --dependencies-only "$@" || sync_to
-	sync_to
+	sync_from_retry
+	ecabal build --dependencies-only "$@" || sync_to_retry
+	sync_to_retry
 	ecabal build "$@"
-	sync_to
+	sync_to_retry
 }
 
 install_ghcup() {
