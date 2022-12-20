@@ -57,9 +57,9 @@ eghcup debug-info
 	cd "haskell-language-server-${HLS_TARGET_VERSION}/"
 	ecabal configure -w "ghc-${GHC_VERSION}" --disable-profiling --disable-tests --jobs="$(nproc)"
 	ecabal build --dependencies-only -w "ghc-${GHC_VERSION}" --disable-profiling --disable-tests --jobs="$(nproc)" --dry-run
-	sync_from
+	sync_from_retry
 	ecabal build --dependencies-only -w "ghc-${GHC_VERSION}" --disable-profiling --disable-tests --jobs="$(nproc)" || sync_to
-	sync_to
+	sync_to_retry
 )
 
 eghcup -v compile hls -j "$(nproc)" -g "${HLS_TARGET_VERSION}" --ghc "${GHC_VERSION}"

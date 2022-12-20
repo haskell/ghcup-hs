@@ -1,0 +1,37 @@
+name: Cache eviction
+
+on:
+  workflow_dispatch:
+    inputs:
+      key:
+        description: Which cache to evict
+        required: true
+        default: '/'
+        type: choice
+        options:
+        - FreeBSD-64-na
+        - Linux-32-Alpine
+        - Linux-64-Alpine
+        - Linux-64-Ubuntu
+        - Linux-ARM-Ubuntu
+        - Linux-ARM64-Ubuntu
+        - Windows-64-na
+        - macOS-64-na
+        - macOS-ARM64-na
+        - /
+jobs:
+  evict:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Remove from S3
+      uses: vitorsgomes/s3-rm-action@master
+      with:
+        args: --recursive
+      env:
+        AWS_S3_ENDPOINT: ${{ secrets.S3_HOST }}
+        AWS_S3_BUCKET: ghcup-hs
+        AWS_REGION: us-west-2
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        PATH_TO_DELETE: ${{ github.event.inputs.key }}
