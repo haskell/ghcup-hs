@@ -253,7 +253,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                                         logWarn ("New "
                                           <> T.pack (prettyShow t)
                                           <> " version available. "
-                                          <> "To upgrade, run 'ghcup install "
+                                          <> "If you want to install this latest version, run 'ghcup install "
                                           <> T.pack (prettyShow t)
                                           <> " "
                                           <> prettyVer l
