@@ -1,0 +1,199 @@
+name: Cabal cache
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-linux:
+    name: Build linux binary
+    runs-on: ${{ matrix.os }}
+    env:
+      CABAL_VER: 3.6.2.0
+      JSON_VERSION: "0.0.7"
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      S3_HOST: ${{ secrets.S3_HOST }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: ubuntu-latest
+            ARTIFACT: "i386-linux-cabal-cache"
+            GHC_VER: 8.10.7
+            ARCH: 32
+          - os: ubuntu-latest
+            ARTIFACT: "x86_64-linux-cabal-cache"
+            GHC_VER: 8.10.7
+            ARCH: 64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - if: matrix.ARCH == '32'
+        name: Run build (32 bit linux)
+        uses: docker://hasufell/i386-alpine-haskell:3.12
+        with:
+          args: sh .github/scripts/cabal-cache.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+          DISTRO: Alpine
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          S3_HOST: ${{ env.S3_HOST }}
+
+      - if: matrix.ARCH == '64'
+        name: Run build (64 bit linux)
+        uses: docker://hasufell/alpine-haskell:3.12
+        with:
+          args: sh .github/scripts/cabal-cache.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+          DISTRO: Alpine
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          S3_HOST: ${{ env.S3_HOST }}
+
+      - if: always()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            ./out/*
+
+
+  build-arm:
+    name: Build ARM binary
+    runs-on: ${{ matrix.os }}
+    env:
+      CABAL_VER: 3.6.2.0
+      JSON_VERSION: "0.0.7"
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      S3_HOST: ${{ secrets.S3_HOST }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: [self-hosted, Linux, aarch64]
+            ARTIFACT: "armv7-linux-cabal-cache"
+            GHC_VER: 8.10.7
+            ARCH: ARM
+          - os: [self-hosted, Linux, aarch64]
+            ARTIFACT: "aarch64-linux-cabal-cache"
+            GHC_VER: 8.10.7
+            ARCH: ARM64
+    steps:
+      - uses: docker://arm64v8/ubuntu:focal
+        name: Cleanup (aarch64 linux)
+        with:
+          args: rm -rf .ghcup/ cabal/ dist-newstyle/ out/ cabal-cache
+
+      - name: git config
+        run: |
+          git config --global --get-all safe.directory | grep '^\*$' || git config --global --add safe.directory "*"
+        shell: bash
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - if: matrix.ARCH == 'ARM'
+        uses: docker://hasufell/arm32v7-ubuntu-haskell:focal
+        name: Run build (armv7 linux)
+        with:
+          args: sh .github/scripts/cabal-cache.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+          DISTRO: Ubuntu
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          S3_HOST: ${{ env.S3_HOST }}
+
+      - if: matrix.ARCH == 'ARM64'
+        uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
+        name: Run build (aarch64 linux)
+        with:
+          args: sh .github/scripts/cabal-cache.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+          DISTRO: Ubuntu
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          S3_HOST: ${{ env.S3_HOST }}
+
+      - if: always()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            ./out/*
+
+  build-macwin:
+    name: Build binary (Mac/Win)
+    runs-on: ${{ matrix.os }}
+    env:
+      CABAL_VER: 3.6.2.0
+      MACOSX_DEPLOYMENT_TARGET: 10.13
+      JSON_VERSION: "0.0.7"
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      S3_HOST: ${{ secrets.S3_HOST }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: [self-hosted, macOS, aarch64]
+            ARTIFACT: "aarch64-apple-darwin-cabal-cache"
+            GHC_VER: 9.2.5
+            ARCH: ARM64
+          - os: macOS-10.15
+            ARTIFACT: "x86_64-apple-darwin-cabal-cache"
+            GHC_VER: 9.2.5
+            ARCH: 64
+          - os: windows-latest
+            ARTIFACT: "x86_64-mingw64-cabal-cache"
+            GHC_VER: 8.10.7
+            ARCH: 64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Run build (windows/mac)
+        run: bash .github/scripts/cabal-cache.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+          DISTRO: na
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          S3_HOST: ${{ env.S3_HOST }}
+          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
+
+      - if: always()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            ./out/*
