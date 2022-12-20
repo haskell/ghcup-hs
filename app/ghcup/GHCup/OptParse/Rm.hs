@@ -175,8 +175,8 @@ rm rmCommand runAppState runLogger = case rmCommand of
       )
       >>= \case
             VRight vi -> do
-              forM_ (_viPostRemove =<< vi) $ \msg ->
-                runLogger $ logInfo msg
+              runLogger $ logGHCPostRm ghcVer
+              postRmLog vi
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyShow e
@@ -191,8 +191,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
       )
       >>= \case
             VRight vi -> do
-              forM_ (_viPostRemove =<< vi) $ \msg ->
-                runLogger $ logInfo msg
+              postRmLog vi
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyShow e
@@ -207,8 +206,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
       )
       >>= \case
             VRight vi -> do
-              forM_ (_viPostRemove =<< vi) $ \msg ->
-                runLogger $ logInfo msg
+              postRmLog vi
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyShow e
@@ -223,10 +221,12 @@ rm rmCommand runAppState runLogger = case rmCommand of
       )
       >>= \case
             VRight vi -> do
-              forM_ (_viPostRemove =<< vi) $ \msg ->
-                runLogger $ logInfo msg
+              postRmLog vi
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyShow e
               pure $ ExitFailure 15
 
+  postRmLog vi =
+    forM_ (_viPostRemove =<< vi) $ \msg ->
+      runLogger $ logInfo msg
