@@ -167,13 +167,15 @@ install_ghcup() {
 strip_binary() {
 	(
 	set -e
-	binary=$1
-	if [ "${RUNNER_OS}" = "macOS" ] ; then
-		strip "${binary}"
-	else
-		if [ "${RUNNER_OS}" != "Windows" ] ; then
+	local binary=$1
+	case "$(uname -s)" in
+		"Darwin"|"darwin")
+			;;
+		MSYS_*|MINGW*)
+			;;
+		*)
 			strip -s "${binary}"
-		fi
-	fi
+		   ;;
+   esac
 	)
 }
