@@ -262,6 +262,7 @@ data DownloadInfo = DownloadInfo
   { _dlUri    :: URI
   , _dlSubdir :: Maybe TarDir
   , _dlHash   :: Text
+  , _dlCSize  :: Maybe Integer
   }
   deriving (Eq, Ord, GHC.Generic, Show)
 

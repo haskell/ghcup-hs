@@ -210,7 +210,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
 
                 ghcupInfo <-
                   ( flip runReaderT leanAppstate
-                    . runE @'[DigestError, GPGError, JSONError , DownloadFailed, FileDoesNotExistError]
+                    . runE @'[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed, FileDoesNotExistError]
                     $ liftE getDownloadsF
                     )
                     >>= \case

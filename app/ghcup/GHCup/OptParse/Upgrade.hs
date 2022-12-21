@@ -88,6 +88,7 @@ upgradeOptsP =
 
 
 type UpgradeEffects = '[ DigestError
+                       , ContentLengthError
                        , GPGError
                        , NoDownload
                        , NoUpdate

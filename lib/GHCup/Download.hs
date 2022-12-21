@@ -114,7 +114,7 @@ getDownloadsF :: ( FromJSONKey Tool
                  , MonadMask m
                  )
               => Excepts
-                   '[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError]
+                   '[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError]
                    m
                    GHCupInfo
 getDownloadsF = do
@@ -162,7 +162,7 @@ getBase :: ( MonadReader env m
            , MonadMask m
            )
         => URI
-        -> Excepts '[GPGError, DigestError, JSONError, FileDoesNotExistError] m GHCupInfo
+        -> Excepts '[GPGError, DigestError, ContentLengthError, JSONError, FileDoesNotExistError] m GHCupInfo
 getBase uri = do
   Settings { noNetwork, downloader } <- lift getSettings
 
@@ -184,7 +184,7 @@ getBase uri = do
   liftE
     . onE_ (onError actualYaml)
     . lEM' @_ @_ @'[JSONError] (\(displayException -> e) -> JSONDecodeError $ unlines [e, "Consider removing " <> actualYaml <> " manually."])
-    . liftIO 
+    . liftIO
     . Y.decodeFileEither
     $ actualYaml
  where
@@ -229,6 +229,7 @@ getBase uri = do
           -> Excepts
                '[ DownloadFailed
                 , DigestError
+                , ContentLengthError
                 , GPGError
                 ]
                m1
@@ -242,7 +243,7 @@ getBase uri = do
     Settings { metaCache } <- lift getSettings
 
        -- for local files, let's short-circuit and ignore access time
-    if | scheme == "file" -> liftE $ download uri' Nothing Nothing (fromGHCupPath cacheDir) Nothing True
+    if | scheme == "file" -> liftE $ download uri' Nothing Nothing Nothing (fromGHCupPath cacheDir) Nothing True
        | e -> do
           accessTime <- fmap utcTimeToPOSIXSeconds $ liftIO $ getAccessTime json_file
           let sinceLastAccess = utcTimeToPOSIXSeconds currentTime - accessTime
@@ -258,7 +259,7 @@ getBase uri = do
    where
     dlWithMod modTime json_file = do
       let (dir, fn) = splitFileName json_file
-      f <- liftE $ download uri' (Just $ over pathL' (<> ".sig") uri') Nothing dir (Just fn) True
+      f <- liftE $ download uri' (Just $ over pathL' (<> ".sig") uri') Nothing Nothing dir (Just fn) True
       liftIO $ setModificationTime f modTime
       liftIO $ setAccessTime f modTime
       pure f
@@ -324,16 +325,18 @@ download :: ( MonadReader env m
          => URI
          -> Maybe URI         -- ^ URI for gpg sig
          -> Maybe T.Text      -- ^ expected hash
+         -> Maybe Integer     -- ^ expected content length
          -> FilePath          -- ^ destination dir (ignored for file:// scheme)
          -> Maybe FilePath    -- ^ optional filename
          -> Bool              -- ^ whether to read an write etags
-         -> Excepts '[DigestError , DownloadFailed, GPGError] m FilePath
-download uri gpgUri eDigest dest mfn etags
-  | scheme == "https" = dl
-  | scheme == "http"  = dl
+         -> Excepts '[DigestError, ContentLengthError, DownloadFailed, GPGError] m FilePath
+download uri gpgUri eDigest eCSize dest mfn etags
+  | scheme == "https" = liftE dl
+  | scheme == "http"  = liftE dl
   | scheme == "file"  = do
       let destFile' = T.unpack . decUTF8Safe $ view pathL' uri
       lift $ logDebug $ "using local file: " <> T.pack destFile'
+      forM_ eCSize  (liftE . flip checkCSize  destFile')
       forM_ eDigest (liftE . flip checkDigest destFile')
       pure destFile'
   | otherwise = throwE $ DownloadFailed (variantFromValue UnsupportedScheme)
@@ -351,7 +354,7 @@ download uri gpgUri eDigest dest mfn etags
     -- download
     flip onException
          (lift $ hideError doesNotExistErrorType $ recycleFile (tmpFile baseDestFile))
-     $ catchAllE @_ @'[GPGError, ProcessError, DownloadFailed, UnsupportedScheme, DigestError] @'[DigestError, DownloadFailed, GPGError]
+     $ catchAllE @_ @'[GPGError, ProcessError, DownloadFailed, UnsupportedScheme, DigestError, ContentLengthError] @'[DigestError, ContentLengthError, DownloadFailed, GPGError]
           (\e' -> do
             lift $ hideError doesNotExistErrorType $ recycleFile (tmpFile baseDestFile)
             case e' of
@@ -401,19 +404,37 @@ download uri gpgUri eDigest dest mfn etags
                         CapturedProcess { _stdErr } -> lift $ logDebug $ decUTF8Safe' _stdErr
                 _ -> pure ()
 
+              forM_ eCSize  (liftE . flip checkCSize  baseDestFile)
               forM_ eDigest (liftE . flip checkDigest baseDestFile)
     pure baseDestFile
 
-  curlDL :: (MonadCatch m, MonadMask m, MonadIO m) => [String] -> FilePath -> URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
+  curlDL :: ( MonadCatch m
+            , MonadMask m
+            , MonadIO m
+            )
+         => [String]
+         -> FilePath
+         -> URI
+         -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
   curlDL o' destFile (decUTF8Safe . serializeURIRef' -> uri') = do
     let destFileTemp = tmpFile destFile
     flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do
       liftE $ lEM @_ @'[ProcessError] $ exec "curl"
-        (o' ++ ["-fL", "-o", destFileTemp, T.unpack uri']) Nothing Nothing
+        (o' ++ ["-fL", "-o", destFileTemp, T.unpack uri']
+            ++ maybe [] (\s -> ["--max-filesize", show s]) eCSize
+        ) Nothing Nothing
       liftIO $ renameFile destFileTemp destFile
 
-  curlEtagsDL :: (MonadReader env m, HasLog env, MonadCatch m, MonadMask m, MonadIO m)
-              => [String] -> FilePath -> URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
+  curlEtagsDL :: ( MonadReader env m
+                 , HasLog env
+                 , MonadCatch m
+                 , MonadMask m
+                 , MonadIO m
+                 )
+              => [String]
+              -> FilePath
+              -> URI
+              -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
   curlEtagsDL o' destFile (decUTF8Safe . serializeURIRef' -> uri') = do
     let destFileTemp = tmpFile destFile
     dh <- liftIO $ emptySystemTempFile "curl-header"
@@ -423,6 +444,7 @@ download uri gpgUri eDigest dest mfn etags
         liftE $ lEM @_ @'[ProcessError] $ exec "curl"
             (o' ++ (if etags then ["--dump-header", dh] else [])
                 ++ maybe [] (\t -> ["-H", "If-None-Match: " <> T.unpack t]) metag
+                ++ maybe [] (\s -> ["--max-file-size", show s]) eCSize
                 ++ ["-fL", "-o", destFileTemp, T.unpack uri']) Nothing Nothing
         headers <- liftIO $ T.readFile dh
 
@@ -440,7 +462,14 @@ download uri gpgUri eDigest dest mfn etags
 
         lift $ writeEtags destFile (parseEtags headers)
 
-  wgetDL :: (MonadCatch m, MonadMask m, MonadIO m) => [String] -> FilePath -> URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
+  wgetDL :: ( MonadCatch m
+            , MonadMask m
+            , MonadIO m
+            )
+         => [String]
+         -> FilePath
+         -> URI
+         -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
   wgetDL o' destFile (decUTF8Safe . serializeURIRef' -> uri') = do
     let destFileTemp = tmpFile destFile
     flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do
@@ -449,7 +478,12 @@ download uri gpgUri eDigest dest mfn etags
       liftIO $ renameFile destFileTemp destFile
 
 
-  wgetEtagsDL :: (MonadReader env m, HasLog env, MonadCatch m, MonadMask m, MonadIO m)
+  wgetEtagsDL :: ( MonadReader env m
+                 , HasLog env
+                 , MonadCatch m
+                 , MonadMask m
+                 , MonadIO m
+                 )
               => [String] -> FilePath -> URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
   wgetEtagsDL o' destFile (decUTF8Safe . serializeURIRef' -> uri') = do
     let destFileTemp = tmpFile destFile
@@ -471,7 +505,10 @@ download uri gpgUri eDigest dest mfn etags
           | otherwise -> throwE (NonZeroExit i' "wget" opts)
 
 #if defined(INTERNAL_DOWNLOADER)
-  internalDL :: (MonadCatch m, MonadMask m, MonadIO m)
+  internalDL :: ( MonadCatch m
+                , MonadMask m
+                , MonadIO m
+                )
              => FilePath -> URI -> Excepts '[DownloadFailed, UnsupportedScheme] m ()
   internalDL destFile uri' = do
     let destFileTemp = tmpFile destFile
@@ -481,11 +518,16 @@ download uri gpgUri eDigest dest mfn etags
                  @'[DownloadFailed]
             (\e@(HTTPNotModified _) ->
               throwE @_ @'[DownloadFailed] (DownloadFailed (toVariantAt @0 e :: V '[HTTPNotModified])))
-        $ downloadToFile https host fullPath port destFileTemp mempty
+        $ downloadToFile https host fullPath port destFileTemp mempty eCSize
       liftIO $ renameFile destFileTemp destFile
 
 
-  internalEtagsDL :: (MonadReader env m, HasLog env, MonadCatch m, MonadMask m, MonadIO m)
+  internalEtagsDL :: ( MonadReader env m
+                     , HasLog env
+                     , MonadCatch m
+                     , MonadMask m
+                     , MonadIO m
+                     )
                   => FilePath -> URI -> Excepts '[DownloadFailed, UnsupportedScheme] m ()
   internalEtagsDL destFile uri' = do
     let destFileTemp = tmpFile destFile
@@ -497,7 +539,7 @@ download uri gpgUri eDigest dest mfn etags
       liftE
         $ catchE @HTTPNotModified @'[DownloadFailed] @'[] (\(HTTPNotModified etag) -> lift $ writeEtags destFile (pure $ Just etag))
         $ do
-          r <- downloadToFile https host fullPath port destFileTemp addHeaders
+          r <- downloadToFile https host fullPath port destFileTemp addHeaders eCSize
           liftIO $ renameFile destFileTemp destFile
           lift $ writeEtags destFile (pure $ decUTF8Safe <$> getHeader r "etag")
 #endif
@@ -505,7 +547,7 @@ download uri gpgUri eDigest dest mfn etags
 
   -- Manage to find a file we can write the body into.
   getDestFile :: Monad m => URI -> Maybe FilePath -> Excepts '[NoUrlBase] m FilePath
-  getDestFile uri' mfn' = 
+  getDestFile uri' mfn' =
     let path = view pathL' uri'
     in case mfn' of
         Just fn -> pure (dest </> fn)
@@ -574,14 +616,14 @@ downloadCached :: ( MonadReader env m
                   )
                => DownloadInfo
                -> Maybe FilePath  -- ^ optional filename
-               -> Excepts '[DigestError , DownloadFailed, GPGError] m FilePath
+               -> Excepts '[DigestError, ContentLengthError, DownloadFailed, GPGError] m FilePath
 downloadCached dli mfn = do
   Settings{ cache } <- lift getSettings
   case cache of
     True -> downloadCached' dli mfn Nothing
     False -> do
       tmp <- lift withGHCupTmpDir
-      liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (fromGHCupPath tmp) mfn False
+      liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) (fromGHCupPath tmp) mfn False
 
 
 downloadCached' :: ( MonadReader env m
@@ -596,7 +638,7 @@ downloadCached' :: ( MonadReader env m
                 => DownloadInfo
                 -> Maybe FilePath  -- ^ optional filename
                 -> Maybe FilePath  -- ^ optional destination dir (default: cacheDir)
-                -> Excepts '[DigestError , DownloadFailed, GPGError] m FilePath
+                -> Excepts '[DigestError, ContentLengthError, DownloadFailed, GPGError] m FilePath
 downloadCached' dli mfn mDestDir = do
   Dirs { cacheDir } <- lift getDirs
   let destDir = fromMaybe (fromGHCupPath cacheDir) mDestDir
@@ -605,9 +647,10 @@ downloadCached' dli mfn mDestDir = do
   fileExists <- liftIO $ doesFileExist cachfile
   if
     | fileExists -> do
+      forM_ (view dlCSize dli) $ \s -> liftE $ checkCSize s cachfile
       liftE $ checkDigest (view dlHash dli) cachfile
       pure cachfile
-    | otherwise -> liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) destDir mfn False
+    | otherwise -> liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) destDir mfn False
 
 
 
@@ -637,6 +680,25 @@ checkDigest eDigest file = do
     c <- liftIO $ L.readFile file
     cDigest <- throwEither . E.decodeUtf8' . B16.encode . SHA256.hashlazy $ c
     when ((cDigest /= eDigest) && verify) $ throwE (DigestError file cDigest eDigest)
+
+checkCSize :: ( MonadReader env m
+              , HasDirs env
+              , HasSettings env
+              , MonadIO m
+              , MonadThrow m
+              , HasLog env
+              )
+           => Integer
+           -> FilePath
+           -> Excepts '[ContentLengthError] m ()
+checkCSize eCSize file = do
+  Settings{ noVerify } <- lift getSettings
+  let verify = not noVerify
+  when verify $ do
+    let p' = takeFileName file
+    lift $ logInfo $ "verifying content length of: " <> T.pack p'
+    cSize <- liftIO $ getFileSize file
+    when ((eCSize /= cSize) && verify) $ throwE (ContentLengthError (Just file) (Just cSize) eCSize)
 
 
 -- | Get additional curl args from env. This is an undocumented option.

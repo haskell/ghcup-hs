@@ -420,6 +420,7 @@ hlsCompileOpts =
 type GHCEffects = '[ AlreadyInstalled
                   , BuildFailed
                   , DigestError
+                  , ContentLengthError
                   , GPGError
                   , DownloadFailed
                   , GHCupSetError
@@ -443,6 +444,7 @@ type GHCEffects = '[ AlreadyInstalled
 type HLSEffects = '[ AlreadyInstalled
                   , BuildFailed
                   , DigestError
+                  , ContentLengthError
                   , GPGError
                   , DownloadFailed
                   , GHCupSetError

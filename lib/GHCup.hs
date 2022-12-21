@@ -106,6 +106,7 @@ fetchToolBindist :: ( MonadFail m
                  -> Maybe FilePath
                  -> Excepts
                       '[ DigestError
+                       , ContentLengthError
                        , GPGError
                        , DownloadFailed
                        , NoDownload
@@ -288,6 +289,7 @@ upgradeGHCup :: ( MonadMask m
              -> Excepts
                   '[ CopyError
                    , DigestError
+                   , ContentLengthError
                    , GPGError
                    , GPGError
                    , DownloadFailed
@@ -308,7 +310,7 @@ upgradeGHCup mtarget force' fatal = do
   dli   <- liftE $ getDownloadInfo GHCup latestVer
   tmp   <- fromGHCupPath <$> lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt
-  p <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) tmp (Just fn) False
+  p <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) tmp (Just fn) False
   let destDir = takeDirectory destFile
       destFile = fromMaybe (binDir </> fn) mtarget
   lift $ logDebug $ "mkdir -p " <> T.pack destDir

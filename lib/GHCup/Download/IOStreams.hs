@@ -17,14 +17,12 @@ import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
-import           Data.ByteString.Builder
 import           Data.CaseInsensitive           ( CI, original, mk )
 import           Data.IORef
 import           Data.Maybe
 import           Data.Text.Read
 import           Haskus.Utils.Variant.Excepts
 import           Network.Http.Client     hiding ( URL )
-import           Optics
 import           Prelude                 hiding ( abs
                                                 , readFile
                                                 , writeFile
@@ -33,7 +31,6 @@ import           System.ProgressBar
 import           URI.ByteString
 
 import qualified Data.ByteString               as BS
-import qualified Data.ByteString.Lazy          as L
 import qualified Data.Map.Strict               as M
 import qualified System.IO.Streams             as Streams
 
@@ -46,27 +43,6 @@ import qualified System.IO.Streams             as Streams
     ----------------------------
 
 
--- | Load the result of this download into memory at once.
-downloadBS' :: MonadIO m
-            => Bool             -- ^ https?
-            -> ByteString       -- ^ host (e.g. "www.example.com")
-            -> ByteString       -- ^ path (e.g. "/my/file") including query
-            -> Maybe Int        -- ^ optional port (e.g. 3000)
-            -> Excepts
-                 '[ HTTPStatusError
-                  , URIParseError
-                  , UnsupportedScheme
-                  , NoLocationHeader
-                  , TooManyRedirs
-                  ]
-                 m
-                 L.ByteString
-downloadBS' https host path port = do
-  bref <- liftIO $ newIORef (mempty :: Builder)
-  let stepper bs = modifyIORef bref (<> byteString bs)
-  void $ downloadInternal False https host path port stepper (pure ()) mempty
-  liftIO (readIORef bref <&> toLazyByteString)
-
 
 downloadToFile :: (MonadMask m, MonadIO m)
                => Bool             -- ^ https?
@@ -75,8 +51,9 @@ downloadToFile :: (MonadMask m, MonadIO m)
                -> Maybe Int        -- ^ optional port (e.g. 3000)
                -> FilePath         -- ^ destination file to create and write to
                -> M.Map (CI ByteString) ByteString -- ^ additional headers
+               -> Maybe Integer    -- ^ expected content length
                -> Excepts '[DownloadFailed, HTTPNotModified] m Response
-downloadToFile https host fullPath port destFile addHeaders = do
+downloadToFile https host fullPath port destFile addHeaders eCSize = do
   let stepper = BS.appendFile destFile
       setup = BS.writeFile destFile mempty
   catchAllE (\case
@@ -84,7 +61,7 @@ downloadToFile https host fullPath port destFile addHeaders = do
                 | i == 304
                 , Just e <- M.lookup (mk "etag") headers -> throwE $ HTTPNotModified (decUTF8Safe e)
               v -> throwE $ DownloadFailed v
-            ) $ downloadInternal True https host fullPath port stepper setup addHeaders
+            ) $ downloadInternal True https host fullPath port stepper setup addHeaders eCSize
 
 
 downloadInternal :: MonadIO m
@@ -96,19 +73,21 @@ downloadInternal :: MonadIO m
                  -> (ByteString -> IO a)   -- ^ the consuming step function
                  -> IO a                   -- ^ setup action
                  -> M.Map (CI ByteString) ByteString -- ^ additional headers
+                 -> Maybe Integer
                  -> Excepts
                       '[ HTTPStatusError
                        , URIParseError
                        , UnsupportedScheme
                        , NoLocationHeader
                        , TooManyRedirs
+                       , ContentLengthError
                        ]
                       m
                       Response
 downloadInternal = go (5 :: Int)
 
  where
-  go redirs progressBar https host path port consumer setup addHeaders = do
+  go redirs progressBar https host path port consumer setup addHeaders eCSize = do
     r <- liftIO $ withConnection' https host port action
     veitherToExcepts r >>= \case
       Right r' ->
@@ -138,25 +117,39 @@ downloadInternal = go (5 :: Int)
     followRedirectURL bs = case parseURI strictURIParserOptions bs of
       Right uri' -> do
         (https', host', fullPath', port') <- liftE $ uriToQuadruple uri'
-        go (redirs - 1) progressBar https' host' fullPath' port' consumer setup addHeaders
+        go (redirs - 1) progressBar https' host' fullPath' port' consumer setup addHeaders eCSize
       Left e -> throwE e
 
     downloadStream r i' = do
       void setup
       let size = case getHeader r "Content-Length" of
             Just x' -> case decimal $ decUTF8Safe x' of
-              Left  _       -> 0
-              Right (r', _) -> r'
-            Nothing -> 0
+              Left  _       -> Nothing
+              Right (r', _) -> Just r'
+            Nothing -> Nothing
 
-      (mpb :: Maybe (ProgressBar ())) <- if progressBar
-        then Just <$> newProgressBar defStyle 10 (Progress 0 size ())
-        else pure Nothing
+      forM_ size $ \s -> forM_ eCSize $ \es -> when (es /= s) $ throwIO (ContentLengthError Nothing (Just s) es)
+      let size' = eCSize <|> size
+
+      (mpb :: Maybe (ProgressBar ())) <- case (progressBar, size') of
+        (True, Just size'') -> Just <$> newProgressBar defStyle 10 (Progress 0 (fromInteger size'') ())
+        _ -> pure Nothing
+
+      ior <- liftIO $ newIORef 0
 
       outStream <- liftIO $ Streams.makeOutputStream
         (\case
           Just bs -> do
-            forM_ mpb $ \pb -> incProgress pb (BS.length bs)
+            let len = BS.length bs
+            forM_ mpb $ \pb -> incProgress pb len
+
+            -- check we don't exceed size
+            forM_ size' $ \s -> do
+              cs <- readIORef ior
+              when ((cs + toInteger len) > s) $ throwIO (ContentLengthError Nothing (Just (cs + toInteger len)) s)
+
+            modifyIORef ior (+ toInteger len)
+
             void $ consumer bs
           Nothing -> pure ()
         )
