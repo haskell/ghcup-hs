@@ -48,6 +48,10 @@ The following distro packages are required: `build-essential curl libffi-dev lib
 
 The following distro packages are required: `gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl`
 
+### Linux Mageia
+
+The following distro packages are required: `curl gcc gcc-c++ gmp libffi-devel libffi7 libgmp-devel libgmp10 make libncurses-devel libncurses5 xz perl`
+
 ### Linux CentOS
 
 The following distro packages are required: `gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl`
