@@ -78,7 +78,8 @@ jobs:
         run: |
           ${{ matrix.installCmd }} curl bash git ${{ matrix.toolRequirements }}
 
-      - uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
+      - if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
         id: check
         with:
           trigger: '@bindistTest ** ** **'
@@ -87,7 +88,8 @@ jobs:
         env:
           GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
 
-      - uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
+      - if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
         id: checkRef
         with:
           trigger: '@bindistTestRef ** ** ** **'
@@ -104,13 +106,13 @@ jobs:
       - if: ${{ steps.checkRef.outputs.triggered != 'true' }}
         uses: actions/checkout@v3
 
-      - if: ${{ github.event_name != 'workflow_dispatch' || steps.check.outputs.triggered == 'true' }}
+      - if: ${{ github.event_name != 'workflow_dispatch' && steps.check.outputs.triggered == 'true' }}
         continue-on-error: true
         name: Install ghcup and bindist
         run: |
-          [ -z "${TOOL}" ] && export TOOL=${{ fromJson(steps.check.outputs.arguments)[0] }}
-          [ -z "${VERSION}" ] && export VERSION=${{ fromJson(steps.check.outputs.arguments)[1] }}
-          [ -z "${METADATA_FILE}" ] && export METADATA_FILE=${{ fromJson(steps.check.outputs.arguments)[2] }}
+          export TOOL=${{ fromJson(steps.check.outputs.arguments)[0] }}
+          export VERSION=${{ fromJson(steps.check.outputs.arguments)[1] }}
+          export METADATA_FILE=${{ fromJson(steps.check.outputs.arguments)[2] }}
           .github/workflows/install-bindist.sh
           echo SUCCESS=true >> $GITHUB_ENV
 
@@ -118,9 +120,9 @@ jobs:
         continue-on-error: true
         name: Install ghcup and bindist
         run: |
-          [ -z "${TOOL}" ] && export TOOL=${{ fromJson(steps.checkRef.outputs.arguments)[0] }}
-          [ -z "${VERSION}" ] && export VERSION=${{ fromJson(steps.checkRef.outputs.arguments)[1] }}
-          [ -z "${METADATA_FILE}" ] && export METADATA_FILE=${{ fromJson(steps.checkRef.outputs.arguments)[2] }}
+          export TOOL=${{ fromJson(steps.checkRef.outputs.arguments)[0] }}
+          export VERSION=${{ fromJson(steps.checkRef.outputs.arguments)[1] }}
+          export METADATA_FILE=${{ fromJson(steps.checkRef.outputs.arguments)[2] }}
           .github/workflows/install-bindist.sh
           echo SUCCESS=true >> $GITHUB_ENV
 
@@ -155,7 +157,8 @@ jobs:
           - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
+      - if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
         id: check
         with:
           trigger: '@bindistTest ** ** **'
@@ -164,7 +167,8 @@ jobs:
         env:
           GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
 
-      - uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
+      - if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
         id: checkRef
         with:
           trigger: '@bindistTestRef ** ** ** **'
@@ -181,13 +185,13 @@ jobs:
       - if: ${{ steps.checkRef.outputs.triggered != 'true' }}
         uses: actions/checkout@v3
 
-      - if: ${{ github.event_name != 'workflow_dispatch' || steps.check.outputs.triggered == 'true' }}
+      - if: ${{ github.event_name != 'workflow_dispatch' && steps.check.outputs.triggered == 'true' }}
         continue-on-error: true
         name: Install ghcup and bindist
         run: |
-          [ -z "${TOOL}" ] && export TOOL=${{ fromJson(steps.check.outputs.arguments)[0] }}
-          [ -z "${VERSION}" ] && export VERSION=${{ fromJson(steps.check.outputs.arguments)[1] }}
-          [ -z "${METADATA_FILE}" ] && export METADATA_FILE=${{ fromJson(steps.check.outputs.arguments)[2] }}
+          export TOOL=${{ fromJson(steps.check.outputs.arguments)[0] }}
+          export VERSION=${{ fromJson(steps.check.outputs.arguments)[1] }}
+          export METADATA_FILE=${{ fromJson(steps.check.outputs.arguments)[2] }}
           .github/workflows/install-bindist.sh
           echo SUCCESS=true >> $GITHUB_ENV
 
@@ -195,9 +199,9 @@ jobs:
         continue-on-error: true
         name: Install ghcup and bindist
         run: |
-          [ -z "${TOOL}" ] && export TOOL=${{ fromJson(steps.checkRef.outputs.arguments)[0] }}
-          [ -z "${VERSION}" ] && export VERSION=${{ fromJson(steps.checkRef.outputs.arguments)[1] }}
-          [ -z "${METADATA_FILE}" ] && export METADATA_FILE=${{ fromJson(steps.checkRef.outputs.arguments)[2] }}
+          export TOOL=${{ fromJson(steps.checkRef.outputs.arguments)[0] }}
+          export VERSION=${{ fromJson(steps.checkRef.outputs.arguments)[1] }}
+          export METADATA_FILE=${{ fromJson(steps.checkRef.outputs.arguments)[2] }}
           .github/workflows/install-bindist.sh
           echo SUCCESS=true >> $GITHUB_ENV
 
