@@ -13,6 +13,7 @@ import           GHCup.Errors
 import           GHCup.Types.Optics ( getDirs )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
+import           GHCup.OptParse.Common (logGHCPostRm)
 import           GHCup.Prelude ( decUTF8Safe )
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
@@ -554,6 +555,7 @@ del' _ (_, ListResult {..}) = do
     )
     >>= \case
           VRight vi -> do
+            logGHCPostRm (mkTVer lVer)
             forM_ (_viPostRemove =<< vi) $ \msg ->
               logInfo msg
             pure $ Right ()

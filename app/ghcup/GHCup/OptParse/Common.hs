@@ -25,6 +25,7 @@ import           Control.DeepSeq
 import           Control.Concurrent
 import           Control.Concurrent.Async
 import           Control.Exception.Safe
+import           Control.Monad.Identity (Identity(..))
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
@@ -64,6 +65,7 @@ import qualified Text.Megaparsec               as MP
 import qualified System.FilePath.Posix         as FP
 import GHCup.Version
 import Control.Exception (evaluate)
+import qualified Cabal.Config            as CC
 
 
     -------------
@@ -789,3 +791,12 @@ checkForUpdates = do
   pure $ catMaybes (ghcup:otherTools)
  where
   forMM a f = fmap join $ forM a f
+
+
+logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => GHCTargetVersion -> m ()
+logGHCPostRm ghcVer = do
+  cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store")
+    (runIdentity . CC.cfgStoreDir <$> CC.readConfig)
+  let storeGhcDir = cabalStore </> ("ghc-" <> T.unpack (prettyVer $ _tvVersion ghcVer))
+  logInfo $ T.pack $ "After removing GHC you might also want to clean up your cabal store at: " <> storeGhcDir
+
