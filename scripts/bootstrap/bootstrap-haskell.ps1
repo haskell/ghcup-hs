@@ -38,8 +38,12 @@ param (
     # Specify the cabal root directory (default: '$InstallDir\cabal')
     [string]$CabalDir,
     # Whether to disable use of curl.exe
-    [switch]$DisableCurl
+    [switch]$DisableCurl,
+    # The Msys2 version to download (e.g. 20221216)
+    [string]$Msys2Version
 )
+
+$DefaultMsys2Version = "20221216"
 
 $Silent = !$Interactive
 
@@ -423,12 +427,15 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 	Start-Sleep -s 5
 
     # Download the archive
-    Print-Msg -msg 'Downloading Msys2 archive...'
-    $archive = 'msys2-x86_64-latest.sfx.exe'
+	if (!($Msys2Version)) {
+		$Msys2Version = $DefaultMsys2Version
+	}
+    Print-Msg -msg ('Downloading Msys2 archive {0}...' -f $Msys2Version)
+    $archive = ('msys2-base-x86_64-{0}.sfx.exe' -f $Msys2Version)
     $archivePath = ('{0}\{1}' -f ([IO.Path]::GetTempPath()), "$archive")
-    
+
     if ((Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue) -and !($DisableCurl)) {
-      Exec "curl.exe" '-o' "$archivePath" ('https://repo.msys2.org/distrib/{0}' -f "$archive")
+      Exec "curl.exe" '-o' "$archivePath" ('https://repo.msys2.org/distrib/x86_64/{0}' -f "$archive")
     } else {
       Get-FileWCSynchronous -url ('https://repo.msys2.org/distrib/{0}' -f $archive) -destinationFolder ([IO.Path]::GetTempPath()) -includeStats
     }
