@@ -676,7 +676,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                          (view dlSubdir dlInfo)
         liftE $ applyAnyPatch patches (fromGHCupPath workdir)
 
-        pure (workdir, tmpUnpack, tver)
+        pure (workdir, tmpUnpack, Just tver)
 
       RemoteDist uri -> do
         lift $ logDebug $ "Requested to compile (from uri): " <> T.pack (show uri)
@@ -694,12 +694,13 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                            execBlank
                            regex
             )
-          tver <- liftE $ getGHCVer (appendGHCupPath tmpUnpack (takeDirectory bootFile))
+          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
+            (appendGHCupPath tmpUnpack (takeDirectory bootFile))
           pure (bootFile, tver)
 
         let workdir = appendGHCupPath tmpUnpack (takeDirectory bf)
 
-        pure (workdir, tmpUnpack, mkTVer tver)
+        pure (workdir, tmpUnpack, mkTVer <$> tver)
 
       -- clone from git
       GitDist GitBranch{..} -> do
@@ -745,20 +746,23 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
           liftE $ applyAnyPatch patches (fromGHCupPath tmpUnpack)
 
           -- bootstrap
-          tver <- liftE $ getGHCVer tmpUnpack
+          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
+            tmpUnpack
           liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
           lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
-                           "GHC version (from Makefile): " <> prettyVer tver <>
+                           "GHC version (from Makefile): " <> T.pack (show (prettyVer <$> tver)) <>
                            (if not shallow_clone then "\n  " <> "'git describe' output: " <> fromJust git_describe else mempty) <>
                            (if isCommitHash ref then mempty else "\n  " <> "commit hash: " <> chash)
           liftIO $ threadDelay 5000000 -- give the user a sec to intervene
 
           pure tver
 
-        pure (tmpUnpack, tmpUnpack, GHCTargetVersion Nothing tver)
+        pure (tmpUnpack, tmpUnpack, mkTVer <$> tver)
     -- the version that's installed may differ from the
     -- compiled version, so the user can overwrite it
-    let installVer = maybe tver (\ov' -> tver { _tvVersion = ov' }) ov
+    installVer <- if | Just ov'   <- ov   -> pure (mkTVer ov')
+                     | Just tver' <- tver -> pure tver'
+                     | otherwise          -> fail "Newer GHCs don't support discovering the version in git. Complain to GHC devs: https://gitlab.haskell.org/ghc/ghc/-/issues/22322"
 
     alreadyInstalled <- lift $ ghcInstalled installVer
     alreadySet <- fmap (== Just installVer) $ lift $ ghcSet (_tvTarget installVer)
@@ -781,8 +785,10 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
       tmpUnpack
       (do
         b <- if hadrian
-             then compileHadrianBindist tver (fromGHCupPath workdir) ghcdir
-             else compileMakeBindist tver (fromGHCupPath workdir) ghcdir
+             -- prefer 'tver', because the real version carries out compatibility checks
+             -- we don't want the user to do funny things with it
+             then compileHadrianBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
+             else compileMakeBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
         bmk <- liftIO $ handleIO (\_ -> pure "") $ B.readFile (build_mk $ fromGHCupPath workdir)
         pure (b, bmk)
       )
@@ -826,14 +832,14 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                , MonadThrow m
                )
             => GHCupPath
-            -> Excepts '[ProcessError] m Version
+            -> Excepts '[ProcessError, ParseError] m Version
   getGHCVer tmpUnpack = do
     lEM $ execWithGhcEnv "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
     lEM $ execWithGhcEnv "sh" ["./configure"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
     CapturedProcess {..} <- lift $ makeOut
       ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just $ fromGHCupPath tmpUnpack)
     case _exitCode of
-      ExitSuccess -> throwEither . MP.parse ghcProjectVersion "" . T.pack . stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
+      ExitSuccess -> either (throwE . ParseError . show) pure . MP.parse ghcProjectVersion "" . T.pack . stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
       ExitFailure c -> throwE $ NonZeroExit c "make" ["show!", "--quiet", "VALUE=ProjectVersion" ]
 
   defaultConf =
