@@ -25,7 +25,7 @@ cabal --version
 
 cabal update
 
-git clone --single-branch --branch main https://github.com/haskell-works/cabal-cache.git
+git clone --single-branch --branch fix-sync-to-archive https://github.com/hasufell/cabal-cache.git
 cd cabal-cache
 
 if [ "${DISTRO}" = "Alpine" ] ; then
