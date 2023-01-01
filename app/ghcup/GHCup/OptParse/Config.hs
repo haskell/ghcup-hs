@@ -59,7 +59,7 @@ data ConfigCommand
     --[ Parsers ]--
     ---------------
 
-          
+
 configP :: Parser ConfigCommand
 configP = subparser
       (  command "init" initP
@@ -124,6 +124,7 @@ updateSettings :: UserSettings -> Settings -> Settings
 updateSettings UserSettings{..} Settings{..} =
    let cache'      = fromMaybe cache uCache
        metaCache'  = fromMaybe metaCache uMetaCache
+       metaMode'   = fromMaybe metaMode uMetaMode
        noVerify'   = fromMaybe noVerify uNoVerify
        keepDirs'   = fromMaybe keepDirs uKeepDirs
        downloader' = fromMaybe downloader uDownloader
@@ -132,7 +133,7 @@ updateSettings UserSettings{..} Settings{..} =
        noNetwork'  = fromMaybe noNetwork uNoNetwork
        gpgSetting' = fromMaybe gpgSetting uGPGSetting
        platformOverride' = uPlatformOverride <|> platformOverride
-   in Settings cache' metaCache' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor platformOverride'
+   in Settings cache' metaCache' metaMode' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor platformOverride'
 
 
 
