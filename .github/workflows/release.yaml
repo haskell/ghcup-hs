@@ -311,9 +311,9 @@ jobs:
 
       - if: matrix.ARCH == 'ARM'
         uses: docker://hasufell/arm32v7-ubuntu-haskell:focal
-        name: Run build (armv7 linux)
+        name: Run test (armv7 linux)
         with:
-          run: sh .github/scripts/test.sh
+          args: sh .github/scripts/test.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -322,9 +322,9 @@ jobs:
 
       - if: matrix.ARCH == 'ARM64'
         uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
-        name: Run build (aarch64 linux)
+        name: Run test (aarch64 linux)
         with:
-          run: sh .github/scripts/test.sh
+          args: sh .github/scripts/test.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
