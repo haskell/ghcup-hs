@@ -61,6 +61,9 @@ jobs:
           - image: archlinux:latest
             installCmd: pacman -Syu --noconfirm
             toolRequirements: which gcc gmp libffi make ncurses perl tar xz
+          - image: fedora:27
+            installCmd: dnf install -y
+            toolRequirements: which findutils gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl
           - image: fedora:36
             installCmd: dnf install -y
             toolRequirements: which gcc g++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl
@@ -101,7 +104,7 @@ jobs:
       - if: ${{ steps.checkRef.outputs.triggered == 'true' }}
         uses: actions/checkout@v3
         with:
-          ref: ${{ fromJson(steps.check.outputs.arguments)[3] }}
+          ref: ${{ fromJson(steps.checkRef.outputs.arguments)[3] }}
 
       - if: ${{ steps.checkRef.outputs.triggered != 'true' }}
         uses: actions/checkout@v3
@@ -180,7 +183,7 @@ jobs:
       - if: ${{ steps.checkRef.outputs.triggered == 'true' }}
         uses: actions/checkout@v3
         with:
-          ref: ${{ fromJson(steps.check.outputs.arguments)[3] }}
+          ref: ${{ fromJson(steps.checkRef.outputs.arguments)[3] }}
 
       - if: ${{ steps.checkRef.outputs.triggered != 'true' }}
         uses: actions/checkout@v3
