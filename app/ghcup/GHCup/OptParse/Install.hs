@@ -452,7 +452,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
            -- TODO: support legacy
            liftE $ runBothE' (installHLSBindist
-                                      (DownloadInfo uri (Just $ RegexDir "haskell-language-server-*") "")
+                                      (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "")
                                       v
                                       (maybe GHCupInternal IsolateDir isolateDir)
                                       forceInstall
