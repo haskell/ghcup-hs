@@ -48,6 +48,7 @@ import           Streamly.Internal.Data.Unfold.Type
 import qualified Streamly.Internal.Data.Unfold as U
 import           Streamly.Internal.Control.Concurrent ( withRunInIO )
 import           Streamly.Internal.Data.IOFinalizer   ( newIOFinalizer, runIOFinalizer )
+import GHC.IO.Exception (IOException(ioe_type), IOErrorType (..))
 
 
 -- | On unix, we can use symlinks, so we just get the
@@ -116,8 +117,18 @@ copyFile from to fail' = do
         let dflags = [ FD.oNofollow
                      , if fail' then FD.oExcl else FD.oTrunc
                      ]
+        let openFdHandle' = openFdHandle to SPI.WriteOnly dflags $ Just sourceFileMode
         bracket
-          (openFdHandle to SPI.WriteOnly dflags $ Just sourceFileMode)
+          (handleIO (\e -> if
+                              -- if we copy from regular file to symlink, we need
+                              -- to delete the symlink
+                              | ioe_type e == InvalidArgument
+                              , not fail' -> do
+                                 removeLink to
+                                 openFdHandle'
+                              | otherwise -> throwIO e
+                    )
+            openFdHandle')
           (hClose . snd)
           $ \(_, tH) -> do
               hSetBinaryMode fH True
