@@ -465,15 +465,22 @@ withGHCupTmpDir :: ( MonadReader env m
                    , MonadMask m
                    , MonadIO m)
                 => m GHCupPath
-withGHCupTmpDir = snd <$> withRunInIO (\run ->
-  run
-    $ allocate
-        (run mkGhcupTmpDir)
-        (\fp ->
-            handleIO (\e -> run
-                $ logDebug ("Resource cleanup failed for " <> T.pack (fromGHCupPath fp) <> ", error was: " <> T.pack (displayException e)))
-            . removePathForcibly
-            $ fp))
+withGHCupTmpDir = do
+  Settings{keepDirs} <- getSettings
+  snd <$> withRunInIO (\run ->
+    run
+      $ allocate
+          (run mkGhcupTmpDir)
+          (\fp -> if -- we don't know whether there was a failure, so can only
+                     -- decide for 'Always'
+                     | keepDirs == Always -> pure ()
+                     | otherwise -> handleIO (\e -> run
+                        $ logDebug ("Resource cleanup failed for "
+                                   <> T.pack (fromGHCupPath fp)
+                                   <> ", error was: "
+                                   <> T.pack (displayException e)))
+                        . removePathForcibly
+                        $ fp))
 
 
 
