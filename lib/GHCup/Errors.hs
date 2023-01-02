@@ -157,7 +157,18 @@ allHFError = unlines allErrors
 
 
 prettyHFError :: (Pretty e, HFErrorProject e) => e -> String
-prettyHFError e = ("[GHCup-" <> show (eNum e) <> "] ") <> prettyShow e
+prettyHFError e =
+  let errorCode = "GHCup-" <> padIntAndShow (eNum e)
+  in ("[" <> linkEscapeCode errorCode  (hfErrorLink errorCode) <> "] ") <> prettyShow e
+ where
+  linkEscapeCode linkText link = "\ESC]8;;" <> link <> "\ESC\\" <> linkText <> "\ESC]8;;\ESC\\"
+  hfErrorLink errorCode = "https://errors.haskell.org/messages/" <> errorCode
+  padIntAndShow i
+    | i < 10    = "0000" <> show i
+    | i < 100   = "000"  <> show i
+    | i < 1000  = "00"   <> show i
+    | i < 10000 = "0"    <> show i
+    | otherwise =           show i
 
 class HFErrorProject a where
   eNum :: a -> Int
