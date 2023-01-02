@@ -272,6 +272,14 @@ jobs:
           DISTRO: ${{ matrix.DISTRO }}
           APT_GET: "sudo apt-get"
 
+      - if: failure()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: testfiles
+          path: |
+            ./test/golden/unix/GHCupInfo*json
+
   test-arm:
     name: Test ARM
     needs: "build-arm"
@@ -331,6 +339,14 @@ jobs:
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: Ubuntu
 
+      - if: failure()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: testfiles
+          path: |
+            ./test/golden/unix/GHCupInfo*json
+
   test-macwin:
     name: Test Mac/Win
     needs: "build-macwin"
@@ -377,6 +393,22 @@ jobs:
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: ${{ matrix.DISTRO }}
           HOMEBREW_CHANGE_ARCH_TO_ARM: 1
+
+      - if: failure() && runner.os == 'Windows'
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: testfiles
+          path: |
+            ./test/golden/windows/GHCupInfo*json
+
+      - if: failure() && runner.os != 'Windows'
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: testfiles
+          path: |
+            ./test/golden/unix/GHCupInfo*json
   hls:
     name: hls
     needs: build-linux
