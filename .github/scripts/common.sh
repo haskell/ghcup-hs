@@ -87,39 +87,29 @@ download_cabal_cache() {
 	cd /tmp
 	case "${RUNNER_OS}" in
 		"Linux")
-			case "${DISTRO}" in
-				"Alpine")
-					case "${ARCH}" in
-						"32") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/1.0.5.1/i386-linux-alpine-cabal-cache-1.0.5.1
-							;;
-						"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/1.0.5.1/x86_64-linux-alpine-cabal-cache-1.0.5.1
-							;;
-					esac
+			case "${ARCH}" in
+				"32") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/i386-linux-cabal-cache
 					;;
-				*)
-					case "${ARCH}" in
-						"64") url=https://github.com/haskell-works/cabal-cache/releases/download/v1.0.5.1/cabal-cache-x86_64-linux.gz
-							;;
-						"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/1.0.5.1/aarch64-linux-cabal-cache-1.0.5.1
-							;;
-						"ARM") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/1.0.5.1/armv7-linux-cabal-cache-1.0.5.1
-							;;
-					esac
+				"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/x86_64-linux-cabal-cache
+					;;
+				"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/aarch64-linux-cabal-cache
+					;;
+				"ARM") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/armv7-linux-cabal-cache
 					;;
 			esac
 			;;
 		"FreeBSD")
-			url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/1.0.5.1/x86_64-freebsd-cabal-cache-1.0.5.1
+			url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/x86_64-portbld-freebsd-cabal-cache
 			;;
 		"Windows")
 			exe=".exe"
-			url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/1.0.5.1/x86_64-mingw64-cabal-cache-1.0.5.1.exe
+			url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/x86_64-mingw64-cabal-cache
 			;;
 		"macOS")
 			case "${ARCH}" in
-				"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/1.0.5.1/aarch64-apple-darwin-cabal-cache-1.0.5.1
+				"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/aarch64-apple-darwin-cabal-cache
 					;;
-				"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/1.0.5.1/x86_64-apple-darwin-cabal-cache-1.0.5.1
+				"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/x86_64-apple-darwin-cabal-cache
 					;;
 			esac
 			;;
@@ -134,8 +124,9 @@ download_cabal_cache() {
 				curl -o cabal-cache${exe} -L "${url}"
 				;;
 		esac
-		chmod +x cabal-cache${exe}
-		cp "cabal-cache${exe}" "${dest}${exe}"
+		sha_sum cabal-cache${exe}
+		mv "cabal-cache${exe}" "${dest}${exe}"
+		chmod +x "${dest}${exe}"
 	fi
     )
 }

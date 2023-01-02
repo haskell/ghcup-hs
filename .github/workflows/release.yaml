@@ -102,7 +102,7 @@ jobs:
       - uses: docker://arm64v8/ubuntu:focal
         name: Cleanup (aarch64 linux)
         with:
-          args: rm -rf .ghcup/ cabal/ dist-newstyle/ out/
+          args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
 
       - name: git config
         run: |
@@ -297,7 +297,7 @@ jobs:
       - uses: docker://arm64v8/ubuntu:focal
         name: Cleanup (aarch64 linux)
         with:
-          args: rm -rf .ghcup/ cabal/ dist-newstyle/ out/
+          args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -313,7 +313,7 @@ jobs:
         uses: docker://hasufell/arm32v7-ubuntu-haskell:focal
         name: Run build (armv7 linux)
         with:
-          run: sh .github/scripts/test.sh
+          args: sh .github/scripts/test.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -324,7 +324,7 @@ jobs:
         uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
         name: Run build (aarch64 linux)
         with:
-          run: sh .github/scripts/test.sh
+          args: sh .github/scripts/test.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
