@@ -3733,7 +3733,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.9.0.0/haskell-language-server-1.9.0.0-x86_64-linux-deb10.tar.xz
               dlSubdir: haskell-language-server-1.9.0.0
               dlHash: 9c625199d2ee8685c5b382ad4904ef18ae517e6bd7611258846125691b68199c
-            unknown_versioning: *hls-180-64-deb9
+            unknown_versioning: *hls-190-64-deb10
           Linux_Ubuntu:
             unknown_versioning: &hls-190-64-ubuntu20
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.9.0.0/haskell-language-server-1.9.0.0-x86_64-linux-ubuntu20.04.tar.xz
