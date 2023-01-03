@@ -151,7 +151,7 @@ install_ghcup() {
 		chmod +x ghcup
 		mv ghcup "$HOME/.local/bin/ghcup"
 	else
-		curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
+		curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 BOOTSTRAP_HASKELL_INSTALL_NO_STACK=yes sh
 	fi
 }
 
