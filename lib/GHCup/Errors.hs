@@ -219,6 +219,29 @@ instance Pretty DigestError where
       <+> text (T.unpack expectedDigest) <+> text "but got" <+> pPrint currentDigest <+> text
       "\nConsider removing the file in case it's cached and try again."
 
+-- | File content length verification failed.
+data ContentLengthError = ContentLengthError (Maybe FilePath) (Maybe Integer) Integer
+  deriving Show
+
+instance Pretty ContentLengthError where
+  pPrint (ContentLengthError Nothing Nothing expectedSize) =
+    text "Content length exceeded expected size:"
+      <+> text (show expectedSize)
+      <+> text "\nConsider removing the file in case it's cached and try again."
+  pPrint (ContentLengthError Nothing (Just currentSize) expectedSize) =
+    text "Content length error. Expected"
+      <+> text (show expectedSize) <+> text "but got" <+> pPrint currentSize <+> text
+      "\nConsider removing the file in case it's cached and try again."
+  pPrint (ContentLengthError (Just fp) (Just currentSize) expectedSize) =
+    text "Content length error for" <+> text (fp <> ": expected")
+      <+> text (show expectedSize) <+> text "but got" <+> pPrint currentSize <+> text
+      "\nConsider removing the file in case it's cached and try again."
+  pPrint (ContentLengthError (Just fp) Nothing expectedSize) =
+    text "Content length error for" <+> text (fp <> ": expected")
+      <+> text (show expectedSize) <+> text "\nConsider removing the file in case it's cached and try again."
+
+instance Exception ContentLengthError
+
 -- | File digest verification failed.
 data GPGError = forall xs . (ToVariantMaybe DownloadFailed xs, PopVariant DownloadFailed xs, Show (V xs), Pretty (V xs)) => GPGError (V xs)
 

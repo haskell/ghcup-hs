@@ -82,6 +82,7 @@ installStackBin :: ( MonadMask m
                      '[ AlreadyInstalled
                       , CopyError
                       , DigestError
+                      , ContentLengthError
                       , GPGError
                       , DownloadFailed
                       , NoDownload
@@ -120,6 +121,7 @@ installStackBindist :: ( MonadMask m
                          '[ AlreadyInstalled
                           , CopyError
                           , DigestError
+                          , ContentLengthError
                           , GPGError
                           , DownloadFailed
                           , NoDownload

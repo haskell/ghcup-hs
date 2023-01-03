@@ -434,6 +434,7 @@ install' _ (_, ListResult {..}) = do
               , BuildFailed
               , TagNotFound
               , DigestError
+              , ContentLengthError
               , GPGError
               , DownloadFailed
               , DirNotEmpty
@@ -632,7 +633,7 @@ getGHCupInfo = do
 
   r <-
     flip runReaderT settings
-    . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError]
+    . runE @'[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError]
     $ liftE getDownloadsF
 
   case r of

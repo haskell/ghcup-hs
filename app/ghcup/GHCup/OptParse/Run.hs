@@ -177,6 +177,7 @@ type RunEffects = '[ AlreadyInstalled
                    , BuildFailed
                    , TagNotFound
                    , DigestError
+                   , ContentLengthError
                    , GPGError
                    , DownloadFailed
                    , TarDirDoesNotExist
@@ -343,6 +344,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                               , DownloadFailed
                               , DirNotEmpty
                               , DigestError
+                              , ContentLengthError
                               , BuildFailed
                               , ArchiveResult
                               , AlreadyInstalled

@@ -1035,13 +1035,13 @@ applyAnyPatch :: ( MonadReader env m
                  , MonadIO m)
               => Maybe (Either FilePath [URI])
               -> FilePath
-              -> Excepts '[PatchFailed, DownloadFailed, DigestError, GPGError] m ()
+              -> Excepts '[PatchFailed, DownloadFailed, DigestError, ContentLengthError, GPGError] m ()
 applyAnyPatch Nothing _                   = pure ()
 applyAnyPatch (Just (Left pdir)) workdir  = liftE $ applyPatches pdir workdir
 applyAnyPatch (Just (Right uris)) workdir = do
   tmpUnpack <- fromGHCupPath <$> lift withGHCupTmpDir
   forM_ uris $ \uri -> do
-    patch <- liftE $ download uri Nothing Nothing tmpUnpack Nothing False
+    patch <- liftE $ download uri Nothing Nothing Nothing tmpUnpack Nothing False
     liftE $ applyPatch patch workdir
 
 
@@ -1172,7 +1172,7 @@ ensureGlobalTools :: ( MonadMask m
                      , MonadUnliftIO m
                      , MonadFail m
                      )
-                  => Excepts '[GPGError, DigestError , DownloadFailed, NoDownload] m ()
+                  => Excepts '[GPGError, DigestError, ContentLengthError, DownloadFailed, NoDownload] m ()
 ensureGlobalTools
   | isWindows = do
       (GHCupInfo _ _ gTools) <- lift getGHCupInfo
@@ -1184,8 +1184,8 @@ ensureGlobalTools
           lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
           lift $ logDebug ("rm -f " <> T.pack (fromGHCupPath (cacheDir dirs) </> "gs.exe"))
           lift $ hideError doesNotExistErrorType $ recycleFile (fromGHCupPath (cacheDir dirs) </> "gs.exe")
-          liftE @'[GPGError, DigestError , DownloadFailed] $ dl
-        ) `catchE` liftE @'[GPGError, DigestError , DownloadFailed] dl
+          liftE @'[GPGError, DigestError, ContentLengthError, DownloadFailed] $ dl
+        ) `catchE` liftE @'[GPGError, DigestError, ContentLengthError, DownloadFailed] dl
   | otherwise = pure ()
 
 

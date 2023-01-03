@@ -109,6 +109,7 @@ fetchGHCSrc :: ( MonadFail m
             -> Maybe FilePath
             -> Excepts
                  '[ DigestError
+                  , ContentLengthError
                   , GPGError
                   , DownloadFailed
                   , NoDownload
@@ -152,6 +153,7 @@ installGHCBindist :: ( MonadFail m
                        '[ AlreadyInstalled
                         , BuildFailed
                         , DigestError
+                        , ContentLengthError
                         , GPGError
                         , DownloadFailed
                         , NoDownload
@@ -357,6 +359,7 @@ installGHCBin :: ( MonadFail m
                    '[ AlreadyInstalled
                     , BuildFailed
                     , DigestError
+                    , ContentLengthError
                     , GPGError
                     , DownloadFailed
                     , NoDownload
@@ -628,6 +631,7 @@ compileGHC :: ( MonadMask m
                 '[ AlreadyInstalled
                  , BuildFailed
                  , DigestError
+                 , ContentLengthError
                  , GPGError
                  , DownloadFailed
                  , GHCupSetError
@@ -684,7 +688,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
         -- download source tarball
         tmpDownload <- lift withGHCupTmpDir
         tmpUnpack <- lift mkGhcupTmpDir
-        tar <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
+        tar <- liftE $ download uri Nothing Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
         (bf, tver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError] tmpUnpack $ do
           liftE $ unpackToDir (fromGHCupPath tmpUnpack) tar
           let regex = [s|^(.*/)*boot$|] :: B.ByteString
@@ -706,7 +710,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
       GitDist GitBranch{..} -> do
         tmpUnpack <- lift mkGhcupTmpDir
         let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
-        tver <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, DownloadFailed, GPGError] DownloadFailed $ do
+        tver <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
           lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
           lEM $ git [ "init" ]
@@ -716,7 +720,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                     , fromString rep ]
 
           -- figure out if we can do a shallow clone
-          remoteBranches <- catchE @ProcessError @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, DownloadFailed, GPGError] @'[PatchFailed, NotFoundInPATH, DigestError, DownloadFailed, GPGError] (\(_ :: ProcessError) -> pure [])
+          remoteBranches <- catchE @ProcessError @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError] @'[PatchFailed, NotFoundInPATH, DigestError, DownloadFailed, GPGError] (\(_ :: ProcessError) -> pure [])
               $ fmap processBranches $ gitOut ["ls-remote", "--heads", "origin"] (fromGHCupPath tmpUnpack)
           let shallow_clone
                 | isCommitHash ref                     = True

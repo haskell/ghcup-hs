@@ -81,6 +81,7 @@ installCabalBindist :: ( MonadMask m
                          '[ AlreadyInstalled
                           , CopyError
                           , DigestError
+                          , ContentLengthError
                           , GPGError
                           , DownloadFailed
                           , NoDownload
@@ -184,6 +185,7 @@ installCabalBin :: ( MonadMask m
                      '[ AlreadyInstalled
                       , CopyError
                       , DigestError
+                      , ContentLengthError
                       , GPGError
                       , DownloadFailed
                       , NoDownload

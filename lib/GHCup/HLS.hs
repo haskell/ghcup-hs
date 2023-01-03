@@ -105,6 +105,7 @@ installHLSBindist :: ( MonadMask m
                        '[ AlreadyInstalled
                         , CopyError
                         , DigestError
+                        , ContentLengthError
                         , GPGError
                         , DownloadFailed
                         , NoDownload
@@ -297,6 +298,7 @@ installHLSBin :: ( MonadMask m
                    '[ AlreadyInstalled
                     , CopyError
                     , DigestError
+                    , ContentLengthError
                     , GPGError
                     , DownloadFailed
                     , NoDownload
@@ -344,6 +346,7 @@ compileHLS :: ( MonadMask m
                        , GPGError
                        , DownloadFailed
                        , DigestError
+                       , ContentLengthError
                        , UnknownArchive
                        , TarDirDoesNotExist
                        , ArchiveResult
@@ -401,7 +404,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
       -- download source tarball
       tmpDownload <- lift withGHCupTmpDir
       tmpUnpack <- lift mkGhcupTmpDir
-      tar <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
+      tar <- liftE $ download uri Nothing Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
       (cf, tver) <- liftE $ cleanUpOnError tmpUnpack $ do
         unpackToDir (fromGHCupPath tmpUnpack) tar
         let regex = [s|^(.*/)*haskell-language-server\.cabal$|] :: B.ByteString
@@ -481,7 +484,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
 
   liftE $ runBuildAction
     tmpUnpack
-    (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed $ fromGHCupPath workdir) $ do
+    (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, ContentLengthError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError] @'[BuildFailed] (BuildFailed $ fromGHCupPath workdir) $ do
       let tmpInstallDir = fromGHCupPath workdir </> "out"
       liftIO $ createDirRecursive' tmpInstallDir
 
@@ -497,7 +500,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
           | otherwise -> pure (takeFileName cp)
         Just (Right uri) -> do
           tmpUnpack' <- lift withGHCupTmpDir
-          cp <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpUnpack') (Just "cabal.project") False
+          cp <- liftE $ download uri Nothing Nothing Nothing (fromGHCupPath tmpUnpack') (Just "cabal.project") False
           copyFileE cp (fromGHCupPath workdir </> "cabal.project") False
           pure "cabal.project"
         Nothing
@@ -511,7 +514,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
           | otherwise -> pure "cabal.project"
       forM_ cabalProjectLocal $ \uri -> do
         tmpUnpack' <- lift withGHCupTmpDir
-        cpl <- liftE $ download uri Nothing Nothing (fromGHCupPath tmpUnpack') (Just (cp <.> "local")) False
+        cpl <- liftE $ download uri Nothing Nothing Nothing (fromGHCupPath tmpUnpack') (Just (cp <.> "local")) False
         copyFileE cpl (fromGHCupPath workdir </> cp <.> "local") False
       artifacts <- forM (sort ghcs) $ \ghc -> do
         let ghcInstallDir = tmpInstallDir </> T.unpack (prettyVer ghc)

@@ -153,6 +153,7 @@ type PrefetchEffects = '[ TagNotFound
                         , NoToolVersionSet
                         , NoDownload
                         , DigestError
+                        , ContentLengthError
                         , GPGError
                         , DownloadFailed
                         , JSONError
