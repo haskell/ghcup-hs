@@ -40,6 +40,12 @@ key-bindings:
 # of the file. These usually are in '~/.ghcup/cache/ghcup-<ver>.yaml'.
 meta-cache: 300 # in seconds
 
+# When trying to download ghcup metadata, this option decides what to do
+# when the download fails:
+#   1. Lax: use existing ~/.ghcup/cache/ghcup-<ver>.yaml as fallback (default)
+#   2. Strict: fail hard
+meta-mode: Lax # Strict | Lax
+
 # Where to get GHC/cabal/hls download info/versions from. For more detailed explanation
 # check the 'URLSource' type in the code.
 url-source:

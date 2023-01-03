@@ -162,17 +162,21 @@ getBase :: ( MonadReader env m
            , MonadMask m
            )
         => URI
-        -> Excepts '[GPGError, DigestError, JSONError, FileDoesNotExistError] m GHCupInfo
+        -> Excepts '[DownloadFailed, GPGError, DigestError, JSONError, FileDoesNotExistError] m GHCupInfo
 getBase uri = do
-  Settings { noNetwork, downloader } <- lift getSettings
+  Settings { noNetwork, downloader, metaMode } <- lift getSettings
 
   -- try to download yaml... usually this writes it into cache dir,
   -- but in some cases not (e.g. when using file://), so we honour
   -- the return filepath, if any
   mYaml <- if noNetwork && view (uriSchemeL' % schemeBSL') uri /= "file" -- for file://, let it fall through
            then pure Nothing
-           else handleIO (\e -> lift (warnCache (displayException e) downloader) >> pure Nothing)
-               . catchE @_ @_ @'[] (\e@(DownloadFailed _) -> lift (warnCache (prettyShow e) downloader) >> pure Nothing)
+           else handleIO (\e -> case metaMode of
+                                  Strict -> throwIO e
+                                  Lax -> lift (warnCache (displayException e) downloader) >> pure Nothing)
+               . catchE @_ @_ @'[DownloadFailed] (\e@(DownloadFailed _) -> case metaMode of
+                   Strict -> throwE e
+                   Lax -> lift (warnCache (prettyShow e) downloader) >> pure Nothing)
                . fmap Just
                . smartDl
                $ uri

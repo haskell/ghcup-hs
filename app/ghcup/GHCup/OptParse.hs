@@ -67,13 +67,13 @@ import           URI.ByteString
 import qualified Data.ByteString.UTF8          as UTF8
 
 
-
 data Options = Options
   {
   -- global options
     optVerbose     :: Maybe Bool
   , optCache       :: Maybe Bool
   , optMetaCache   :: Maybe Integer
+  , optMetaMode    :: Maybe MetaMode
   , optPlatform    :: Maybe PlatformRequest
   , optUrlSource   :: Maybe URI
   , optNoVerify    :: Maybe Bool
@@ -116,7 +116,8 @@ opts =
   Options
     <$> invertableSwitch "verbose" (Just 'v') False (help "Enable verbosity (default: disabled)")
     <*> invertableSwitch "cache" (Just 'c') False (help "Cache downloads in ~/.ghcup/cache (default: disabled)")
-    <*> optional (option auto (long "metadata-caching" <> help "How long the yaml metadata caching interval is (in seconds), 0 to disable" <> internal))
+    <*> optional (option auto (long "metadata-caching" <> metavar "SEC" <> help "How long the yaml metadata caching interval is (in seconds), 0 to disable"))
+    <*> optional (option auto (long "metadata-fetching-mode" <> metavar "<Strict|Lax>" <> help "Whether to fail on metadata download failure (Strict) or fall back to cached version (Lax (default))"))
     <*> optional
       (option
         (eitherReader platformParser)

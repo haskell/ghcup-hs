@@ -79,6 +79,7 @@ toSettings options = do
    mergeConf Options{..} UserSettings{..} noColor =
      let cache       = fromMaybe (fromMaybe (Types.cache defaultSettings) uCache) optCache
          metaCache   = fromMaybe (fromMaybe (Types.metaCache defaultSettings) uMetaCache) optMetaCache
+         metaMode    = fromMaybe (fromMaybe (Types.metaMode defaultSettings) uMetaMode) optMetaMode
          noVerify    = fromMaybe (fromMaybe (Types.noVerify defaultSettings) uNoVerify) optNoVerify
          verbose     = fromMaybe (fromMaybe (Types.verbose defaultSettings) uVerbose) optVerbose
          keepDirs    = fromMaybe (fromMaybe (Types.keepDirs defaultSettings) uKeepDirs) optKeepDirs

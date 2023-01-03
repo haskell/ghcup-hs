@@ -297,10 +297,16 @@ instance NFData URLSource
 instance NFData (URIRef Absolute) where
   rnf (URI !_ !_ !_ !_ !_) = ()
 
+data MetaMode = Strict
+              | Lax
+  deriving (Show, Read, Eq, GHC.Generic)
+
+instance NFData MetaMode
 
 data UserSettings = UserSettings
   { uCache       :: Maybe Bool
   , uMetaCache   :: Maybe Integer
+  , uMetaMode    :: Maybe MetaMode
   , uNoVerify    :: Maybe Bool
   , uVerbose     :: Maybe Bool
   , uKeepDirs    :: Maybe KeepDirs
@@ -314,13 +320,14 @@ data UserSettings = UserSettings
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
   UserSettings {
       uCache = Just cache
     , uMetaCache = Just metaCache
+    , uMetaMode = Just metaMode
     , uNoVerify = Just noVerify
     , uVerbose = Just verbose
     , uKeepDirs = Just keepDirs
@@ -346,6 +353,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
   in UserSettings {
       uCache = Just cache
     , uMetaCache = Just metaCache
+    , uMetaMode = Just metaMode
     , uNoVerify = Just noVerify
     , uVerbose = Just verbose
     , uKeepDirs = Just keepDirs
@@ -426,6 +434,7 @@ instance NFData LeanAppState
 data Settings = Settings
   { cache            :: Bool
   , metaCache        :: Integer
+  , metaMode         :: MetaMode
   , noVerify         :: Bool
   , keepDirs         :: KeepDirs
   , downloader       :: Downloader
@@ -442,7 +451,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache False Never Curl False GHCupURL False GPGNone False Nothing
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing
 
 instance NFData Settings
 
