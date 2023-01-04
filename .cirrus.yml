@@ -17,6 +17,8 @@ task:
     S3_HOST: ENCRYPTED[ce961780a33159f7d1d8046956b5ac6ebc3bfc8149428e5f538576cda51d9f3d0c35b79cdd1e325793639ff6e31f889d]
   install_script: pkg install -y ghc hs-cabal-install git bash misc/compat10x misc/compat11x misc/compat12x gmake
   script:
+    - tzsetup Etc/GMT
+    - adjkerntz -a
     - bash .github/scripts/build.sh
     - bash .github/scripts/test.sh
   binaries_artifacts:
