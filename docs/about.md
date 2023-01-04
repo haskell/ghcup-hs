@@ -71,7 +71,7 @@ follows certain policies. These are as follows:
 3. We may fix build system or other distribution bugs in upstream bindists
     - these are always communicated upstream
 4. We may even patch source code of supported tools in very rare cases if that is required to ensure that the end-user experience does not break
-    - we'll first try to upstream any such required patch and demand a new release to avoid downstream patching
+    - we'll first try to upstream any such required patch and request a new release to avoid downstream patching
     - patches will be communicated to the maintainers either way and we'll strive to get their review
     - they will also be communicated to the end-user
     - they will be uploaded along with the bindist
