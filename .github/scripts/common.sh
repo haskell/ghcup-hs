@@ -88,28 +88,28 @@ download_cabal_cache() {
 	case "${RUNNER_OS}" in
 		"Linux")
 			case "${ARCH}" in
-				"32") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/i386-linux-cabal-cache
+				"32") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/i386-linux-cabal-cache
 					;;
-				"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/x86_64-linux-cabal-cache
+				"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/x86_64-linux-cabal-cache
 					;;
-				"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/aarch64-linux-cabal-cache
+				"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/aarch64-linux-cabal-cache
 					;;
-				"ARM") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/armv7-linux-cabal-cache
+				"ARM") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/armv7-linux-cabal-cache
 					;;
 			esac
 			;;
 		"FreeBSD")
-			url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/x86_64-portbld-freebsd-cabal-cache
+			url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/x86_64-portbld-freebsd-cabal-cache
 			;;
 		"Windows")
 			exe=".exe"
-			url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/x86_64-mingw64-cabal-cache
+			url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/x86_64-mingw64-cabal-cache
 			;;
 		"macOS")
 			case "${ARCH}" in
-				"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/aarch64-apple-darwin-cabal-cache
+				"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/aarch64-apple-darwin-cabal-cache
 					;;
-				"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental4/x86_64-apple-darwin-cabal-cache
+				"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/x86_64-apple-darwin-cabal-cache
 					;;
 			esac
 			;;
