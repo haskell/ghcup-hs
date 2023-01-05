@@ -28,7 +28,6 @@ import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
@@ -152,5 +151,5 @@ upgrade uOpts force' fatal Dirs{..} runAppState runLogger = do
         runLogger $ logWarn "No GHCup update available"
         pure ExitSuccess
       VLeft e -> do
-        runLogger $ logError $ T.pack $ prettyShow e
+        runLogger $ logError $ T.pack $ prettyHFError e
         pure $ ExitFailure 11

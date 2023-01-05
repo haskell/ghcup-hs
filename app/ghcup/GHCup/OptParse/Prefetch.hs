@@ -30,7 +30,6 @@ import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
@@ -216,5 +215,5 @@ prefetch prefetchCommand runAppState runLogger =
                 VRight _ -> do
                       pure ExitSuccess
                 VLeft e -> do
-                  runLogger $ logError $ T.pack $ prettyShow e
+                  runLogger $ logError $ T.pack $ prettyHFError e
                   pure $ ExitFailure 15

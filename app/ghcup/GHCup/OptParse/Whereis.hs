@@ -34,7 +34,6 @@ import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Environment
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
@@ -288,7 +287,7 @@ whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
                 liftIO $ putStr r
                 pure ExitSuccess
               VLeft e -> do
-                runLogger $ logError $ T.pack $ prettyShow e
+                runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 30
     (WhereisTool tool (Just (ToolVersion v)), WhereisOptions{..}) ->
       runLeanWhereIs leanAppstate (do
@@ -302,7 +301,7 @@ whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
                 liftIO $ putStr r
                 pure ExitSuccess
               VLeft e -> do
-                runLogger $ logError $ T.pack $ prettyShow e
+                runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 30
 
     (WhereisTool tool whereVer, WhereisOptions{..}) -> do
@@ -318,7 +317,7 @@ whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
                 liftIO $ putStr r
                 pure ExitSuccess
               VLeft e -> do
-                runLogger $ logError $ T.pack $ prettyShow e
+                runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 30
 
     (WhereisBaseDir, _) -> do

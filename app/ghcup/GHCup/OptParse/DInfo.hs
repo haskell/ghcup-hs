@@ -115,5 +115,5 @@ dinfo runAppState runLogger = do
             liftIO $ putStrLn $ prettyDebugInfo di
             pure ExitSuccess
           VLeft e -> do
-            runLogger $ logError $ T.pack $ prettyShow e
+            runLogger $ logError $ T.pack $ prettyHFError e
             pure $ ExitFailure 8

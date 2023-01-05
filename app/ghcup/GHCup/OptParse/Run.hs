@@ -40,7 +40,6 @@ import           Prelude                 hiding ( appendFile )
 import           System.FilePath
 import           System.Environment
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
@@ -266,11 +265,11 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                case r' of
                  VRight _ -> pure ExitSuccess
                  VLeft e -> do
-                   runLogger $ logError $ T.pack $ prettyShow e
+                   runLogger $ logError $ T.pack $ prettyHFError e
                    pure $ ExitFailure 28
 #endif
          VLeft e -> do
-           runLogger $ logError $ T.pack $ prettyShow e
+           runLogger $ logError $ T.pack $ prettyHFError e
            pure $ ExitFailure 27
 
   where

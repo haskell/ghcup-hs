@@ -41,24 +41,26 @@ import GHCup.Prelude.Posix
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Haskus.Utils.Variant.Excepts
-import           Text.PrettyPrint.HughesPJClass ( prettyShow, Pretty )
+import           Text.PrettyPrint.HughesPJClass ( Pretty )
 import qualified Data.Text                     as T
 
 
 
 -- for some obscure reason... this won't type-check if we move it to a different module
 catchWarn :: forall es m env . ( Pretty (V es)
+                             , HFErrorProject (V es)
                              , MonadReader env m
                              , HasLog env
                              , MonadIO m
                              , Monad m) => Excepts es m () -> Excepts '[] m ()
-catchWarn = catchAllE @_ @es (\v -> lift $ logWarn (T.pack . prettyShow $ v))
+catchWarn = catchAllE @_ @es (\v -> lift $ logWarn (T.pack . prettyHFError $ v))
 
 
 runBothE' :: forall e m a b .
              ( Monad m
              , Show (V e)
              , Pretty (V e)
+             , HFErrorProject (V e)
              , PopVariant InstallSetError e
              , LiftVariant' e (InstallSetError ': e)
              , e :<< (InstallSetError ': e)

@@ -75,7 +75,6 @@ import           System.Exit
 import           System.FilePath
 import           System.IO.Error
 import           System.IO.Temp
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           URI.ByteString
 
 import qualified Crypto.Hash.SHA256            as SHA256
@@ -176,7 +175,7 @@ getBase uri = do
                                   Lax -> lift (warnCache (displayException e) downloader) >> pure Nothing)
                . catchE @_ @_ @'[DownloadFailed] (\e@(DownloadFailed _) -> case metaMode of
                    Strict -> throwE e
-                   Lax -> lift (warnCache (prettyShow e) downloader) >> pure Nothing)
+                   Lax -> lift (warnCache (prettyHFError e) downloader) >> pure Nothing)
                . fmap Just
                . smartDl
                $ uri
@@ -392,7 +391,7 @@ download uri gpgUri eDigest eCSize dest mfn etags
                   liftE $ flip onException
                        (lift $ hideError doesNotExistErrorType $ recycleFile (tmpFile gpgDestFile))
                    $ catchAllE @_ @'[GPGError, ProcessError, UnsupportedScheme, DownloadFailed] @'[GPGError]
-                        (\e -> if gpgSetting == GPGStrict then throwE (GPGError e) else lift $ logWarn $ T.pack (prettyShow (GPGError e))
+                        (\e -> if gpgSetting == GPGStrict then throwE (GPGError e) else lift $ logWarn $ T.pack (prettyHFError (GPGError e))
                         ) $ do
                       o' <- liftIO getGpgOpts
                       lift $ logDebug $ "downloading: " <> (decUTF8Safe . serializeURIRef') gpgUri' <> " as file " <> T.pack gpgDestFile
@@ -486,7 +485,10 @@ download uri gpgUri eDigest eCSize dest mfn etags
                  , MonadMask m
                  , MonadIO m
                  )
-              => [String] -> FilePath -> URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
+              => [String]
+              -> FilePath
+              -> URI
+              -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m ()
   wgetEtagsDL o' destFile (decUTF8Safe . serializeURIRef' -> uri') = do
     let destFileTemp = tmpFile destFile
     flip finally (try @_ @SomeException $ rmFile destFileTemp) $ do

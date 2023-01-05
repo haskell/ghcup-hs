@@ -40,7 +40,6 @@ import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import           URI.ByteString          hiding ( uriParser )
 import qualified Data.Text                     as T
@@ -546,14 +545,14 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 pure ExitSuccess
               VLeft err@(V (BuildFailed tmpdir _)) -> do
                 case keepDirs settings of
-                  Never -> runLogger $ logError $ T.pack $ prettyShow err
-                  _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
+                  Never -> runLogger $ logError $ T.pack $ prettyHFError err
+                  _ -> runLogger (logError $ T.pack (prettyHFError err) <> "\n" <>
                         "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory "
                         <> T.pack tmpdir <> " for more clues." <> "\n" <>
                         "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 9
               VLeft e -> do
-                runLogger $ logError $ T.pack $ prettyShow e
+                runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 9
     (CompileGHC GHCCompileOptions { hadrian = True, crossTarget = Just _ }) -> do
       runLogger $ logError "Hadrian cross compile support is not yet implemented!"
@@ -608,12 +607,12 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 pure $ ExitFailure 3
               VLeft err@(V (BuildFailed tmpdir _)) -> do
                 case keepDirs settings of
-                  Never -> runLogger $ logError $ T.pack $ prettyShow err
-                  _ -> runLogger (logError $ T.pack (prettyShow err) <> "\n" <>
+                  Never -> runLogger $ logError $ T.pack $ prettyHFError err
+                  _ -> runLogger (logError $ T.pack (prettyHFError err) <> "\n" <>
                         "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory "
                         <> T.pack tmpdir <> " for more clues." <> "\n" <>
                         "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
                 pure $ ExitFailure 9
               VLeft e -> do
-                runLogger $ logError $ T.pack $ prettyShow e
+                runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 9
