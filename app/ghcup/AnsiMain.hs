@@ -422,6 +422,7 @@ install' _ (_, ListResult {..}) = do
               , BuildFailed
               , TagNotFound
               , DigestError
+              , ContentLengthError
               , GPGError
               , DownloadFailed
               , DirNotEmpty
@@ -605,6 +606,7 @@ getGHCupInfo = do
     flip runReaderT settings
     . runE
       @'[ DigestError
+        , ContentLengthError
         , GPGError
         , JSONError
         , DownloadFailed
