@@ -285,7 +285,8 @@
                             "base-8.7.6",
                             "Latest",
                             "Prerelease"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "7.5.5": {
                         "viArch": {
@@ -387,7 +388,8 @@
                             "base-4.7.6",
                             "\u0001+n𫛚\r",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "7.7.6": {
                         "viArch": {
@@ -509,7 +511,8 @@
                             "old",
                             "base-3.1.4",
                             "Prerelease"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "8.8.6": {
                         "viArch": {
@@ -824,7 +827,8 @@
                             "base-5.2.3",
                             "Prerelease",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 },
                 "HLS": {
@@ -1084,7 +1088,8 @@
                             "Latest",
                             "Latest",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "2.1.4": {
                         "viArch": {
@@ -1240,7 +1245,8 @@
                         "viTags": [
                             "Prerelease",
                             "base-4.7.4"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "3.3.7": {
                         "viArch": {
@@ -1670,7 +1676,8 @@
                             },
                             "dlUri": "https:mkzzunx"
                         },
-                        "viTags": []
+                        "viTags": [],
+                        "viTestDL": null
                     },
                     "3.5.3": {
                         "viArch": {
@@ -1972,7 +1979,8 @@
                             "old",
                             "Recommended",
                             "old"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "5.2.3": {
                         "viArch": {
@@ -2309,7 +2317,8 @@
                             "Latest",
                             "Recommended",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "8.5.2": {
                         "viArch": {
@@ -2431,7 +2440,8 @@
                             "Latest",
                             "Latest",
                             "base-8.7.3"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 }
             },
@@ -2880,7 +2890,8 @@
                             },
                             "dlUri": "https:zxekodom"
                         },
-                        "viTags": []
+                        "viTags": [],
+                        "viTestDL": null
                     },
                     "3.2.1": {
                         "viArch": {
@@ -3100,7 +3111,8 @@
                             "base-7.7.6",
                             "𩺈𥲬􅚷\u0015A~",
                             "old"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "4.5.3": {
                         "viArch": {
@@ -3330,7 +3342,8 @@
                             "base-1.5.2",
                             "Latest",
                             "old"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "7.3.9": {
                         "viArch": {
@@ -3688,7 +3701,8 @@
                             "base-1.6.1",
                             "Prerelease",
                             "old"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 },
                 "GHCup": {
@@ -3747,7 +3761,8 @@
                             "Latest",
                             "\u0005s톕$󵰇\"g",
                             "Prerelease"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "3.5.3": {
                         "viArch": {
@@ -3880,7 +3895,8 @@
                             "Latest",
                             "xZ\u000b",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "3.8.5": {
                         "viArch": {
@@ -3993,7 +4009,8 @@
                         "viSourceDL": null,
                         "viTags": [
                             "old"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "4.1.6": {
                         "viArch": {
@@ -4179,7 +4196,8 @@
                         "viTags": [
                             "Latest",
                             "old"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "7.5.4": {
                         "viArch": {
@@ -4456,7 +4474,8 @@
                         "viSourceDL": null,
                         "viTags": [
                             "鲤"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 },
                 "HLS": {
@@ -4827,7 +4846,8 @@
                             "",
                             "Ctj",
                             "􃰍|W󶶟d`"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "3.5.1": {
                         "viArch": {
@@ -4937,7 +4957,8 @@
                             "old",
                             "Latest",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "4.2.2": {
                         "viArch": {
@@ -5030,7 +5051,8 @@
                             "Recommended",
                             "Recommended",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "4.4.1": {
                         "viArch": {
@@ -5122,7 +5144,8 @@
                             "Latest",
                             "Latest",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "5.7.2": {
                         "viArch": {
@@ -5473,7 +5496,8 @@
                             "Prerelease",
                             "Prerelease",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "7.1.4": {
                         "viArch": {
@@ -5559,7 +5583,8 @@
                             "Latest",
                             "\u0013ADq\u001bX<",
                             "base-8.2.4"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "8.2.3": {
                         "viArch": {
@@ -5667,7 +5692,8 @@
                             "𠖛",
                             "恦AD假n#",
                             "Prerelease"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "8.3.5": {
                         "viArch": {
@@ -6070,7 +6096,8 @@
                             "Prerelease",
                             "%󵠣R灡𑈃pS",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 }
             },
@@ -7355,7 +7382,8 @@
                             "old",
                             "Latest",
                             "base-8.5.8"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "2.1.4": {
                         "viArch": {
@@ -8043,7 +8071,8 @@
                             "",
                             "\u0018\u0017GF󾐘\u0018",
                             "base-8.7.8"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "4.6.8": {
                         "viArch": {
@@ -8329,7 +8358,8 @@
                             "base-8.1.6",
                             "old",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "5.1.8": {
                         "viArch": {
@@ -8529,7 +8559,8 @@
                             "Prerelease",
                             "~X6*𦥹",
                             "base-2.1.6"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "5.4.7": {
                         "viArch": {},
@@ -8549,7 +8580,8 @@
                             "󱪀9pR𥎷H",
                             "base-7.5.6",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 },
                 "Stack": {
@@ -8891,7 +8923,8 @@
                             },
                             "dlUri": "http:gji"
                         },
-                        "viTags": []
+                        "viTags": [],
+                        "viTestDL": null
                     },
                     "7.2.3": {
                         "viArch": {
@@ -9036,7 +9069,8 @@
                             "old",
                             "Recommended",
                             "base-2.5.2"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 }
             },
@@ -10413,7 +10447,8 @@
                             "Recommended",
                             "S鴖xz󾤞",
                             "Prerelease"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "4.4.4": {
                         "viArch": {
@@ -10725,7 +10760,8 @@
                             "Prerelease",
                             "old",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "5.5.4": {
                         "viArch": {
@@ -11105,7 +11141,8 @@
                             "Latest",
                             "base-1.8.1",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "5.6.4": {
                         "viArch": {
@@ -11348,7 +11385,8 @@
                             "Prerelease",
                             ">/~l\u0019\u0001F\u0003",
                             "base-4.4.6"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "6.7.3": {
                         "viArch": {},
@@ -11367,7 +11405,8 @@
                         "viTags": [
                             "old",
                             "old"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "8.5.5": {
                         "viArch": {},
@@ -11388,7 +11427,8 @@
                             "Latest",
                             "base-3.6.3",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "8.6.5": {
                         "viArch": {
@@ -11770,7 +11810,8 @@
                             "v斾)k",
                             "Prerelease",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 },
                 "GHC": {},
@@ -13541,7 +13582,8 @@
                         },
                         "viTags": [
                             "Prerelease"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "2.6.7": {
                         "viArch": {
@@ -13585,7 +13627,8 @@
                         "viSourceDL": null,
                         "viTags": [
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "3.3.5": {
                         "viArch": {
@@ -13608,7 +13651,8 @@
                             "&Z3𭹡X",
                             "Prerelease",
                             "Prerelease"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "3.4.4": {
                         "viArch": {
@@ -14065,7 +14109,8 @@
                             "f8\u0017xNft(",
                             "Recommended",
                             "Prerelease"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "6.5.7": {
                         "viArch": {
@@ -14242,7 +14287,8 @@
                             "dlSubdir": "􂮄qG+0󰊒t",
                             "dlUri": "http:vvn"
                         },
-                        "viTags": []
+                        "viTags": [],
+                        "viTestDL": null
                     },
                     "6.6.3": {
                         "viArch": {
@@ -14310,7 +14356,8 @@
                             "",
                             "\u0014𣉈C\u0018󼀇V",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "8.5.4": {
                         "viArch": {
@@ -14463,7 +14510,8 @@
                             "Latest",
                             "\u0005I{5\u0013",
                             "base-3.8.8"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 },
                 "GHCup": {
@@ -14635,7 +14683,8 @@
                             "Latest",
                             "old",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "4.3.4": {
                         "viArch": {
@@ -14831,7 +14880,8 @@
                             "\u0017M􆼘󴞻",
                             "old",
                             "Recommended"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "8.6.2": {
                         "viArch": {
@@ -15167,7 +15217,8 @@
                             "Prerelease",
                             "Prerelease",
                             "base-5.1.6"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 },
                 "Stack": {
@@ -15524,7 +15575,8 @@
                         },
                         "viTags": [
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 }
             },

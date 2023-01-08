@@ -254,7 +254,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                liftIO $ putStr tmp
                pure ExitSuccess
              (cmd:args) -> do
-               newEnv <- liftIO $ addToPath tmp
+               newEnv <- liftIO $ addToPath tmp runAppendPATH
 #ifndef IS_WINDOWS
                void $ liftIO $ SPP.executeFile cmd True args (Just newEnv)
                pure ExitSuccess
@@ -440,17 +440,6 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
           else do
             liftE $ setHLS v SetHLS_XYZ (Just tmp)
             liftE $ setHLS v SetHLSOnly (Just tmp)
-
-   addToPath path = do
-    cEnv <- Map.fromList <$> getEnvironment
-    let paths          = ["PATH", "Path"]
-        curPaths       = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
-        newPath        = intercalate [searchPathSeparator] (if runAppendPATH then (curPaths ++ [path]) else (path : curPaths))
-        envWithoutPath = foldr (\x y -> Map.delete x y) cEnv paths
-        pathVar        = if isWindows then "Path" else "PATH"
-        envWithNewPath = Map.toList $ Map.insert pathVar newPath envWithoutPath
-    liftIO $ setEnv pathVar newPath
-    return envWithNewPath
 
    createTmpDir :: ( MonadUnliftIO m
                    , MonadCatch m

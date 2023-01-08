@@ -86,6 +86,144 @@ data GHCVer v = SourceDist v
 
 
 
+    --------------------
+    --[ Tool testing ]--
+    --------------------
+
+
+
+testGHCVer :: ( MonadFail m
+              , MonadMask m
+              , MonadCatch m
+              , MonadReader env m
+              , HasDirs env
+              , HasSettings env
+              , HasPlatformReq env
+              , HasGHCupInfo env
+              , HasLog env
+              , MonadResource m
+              , MonadIO m
+              , MonadUnliftIO m
+              )
+           => Version
+           -> [T.Text]
+           -> Excepts
+                '[ DigestError
+                 , ContentLengthError
+                 , GPGError
+                 , DownloadFailed
+                 , NoDownload
+                 , ArchiveResult
+                 , TarDirDoesNotExist
+                 , UnknownArchive
+                 , TestFailed
+                 ]
+                m
+                ()
+testGHCVer ver addMakeArgs = do
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+
+  dlInfo <-
+    preview (ix GHC % ix ver % viTestDL % _Just) dls
+      ?? NoDownload
+
+  liftE $ testGHCBindist dlInfo ver addMakeArgs
+
+
+
+testGHCBindist :: ( MonadFail m
+                  , MonadMask m
+                  , MonadCatch m
+                  , MonadReader env m
+                  , HasDirs env
+                  , HasSettings env
+                  , HasPlatformReq env
+                  , HasGHCupInfo env
+                  , HasLog env
+                  , MonadResource m
+                  , MonadIO m
+                  , MonadUnliftIO m
+                  )
+               => DownloadInfo
+               -> Version
+               -> [T.Text]
+               -> Excepts
+                    '[ DigestError
+                     , ContentLengthError
+                     , GPGError
+                     , DownloadFailed
+                     , NoDownload
+                     , ArchiveResult
+                     , TarDirDoesNotExist
+                     , UnknownArchive
+                     , TestFailed
+                     ]
+                    m
+                    ()
+testGHCBindist dlinfo ver addMakeArgs = do
+  -- download (or use cached version)
+  dl <- liftE $ downloadCached dlinfo Nothing
+
+  liftE $ testPackedGHC dl (view dlSubdir dlinfo) ver addMakeArgs
+
+
+testPackedGHC :: ( MonadMask m
+                 , MonadCatch m
+                 , MonadReader env m
+                 , HasDirs env
+                 , HasPlatformReq env
+                 , HasSettings env
+                 , MonadThrow m
+                 , HasLog env
+                 , MonadIO m
+                 , MonadUnliftIO m
+                 , MonadFail m
+                 , MonadResource m
+                 )
+              => FilePath          -- ^ Path to the packed GHC bindist
+              -> Maybe TarDir      -- ^ Subdir of the archive
+              -> Version           -- ^ The GHC version
+              -> [T.Text]          -- ^ additional make args
+              -> Excepts
+                   '[ ArchiveResult, UnknownArchive, TarDirDoesNotExist, TestFailed ] m ()
+testPackedGHC dl msubdir ver addMakeArgs = do
+  -- unpack
+  tmpUnpack <- lift mkGhcupTmpDir
+  liftE $ cleanUpOnError tmpUnpack (unpackToDir (fromGHCupPath tmpUnpack) dl)
+
+  -- the subdir of the archive where we do the work
+  workdir <- maybe (pure tmpUnpack)
+                   (liftE . intoSubdir tmpUnpack)
+                   msubdir
+
+  reThrowAll @_ @'[ArchiveResult, UnknownArchive, TarDirDoesNotExist, ProcessError]
+    (TestFailed (fromGHCupPath workdir)) $ liftE $ runBuildAction tmpUnpack
+                         (testUnpackedGHC workdir ver addMakeArgs)
+
+testUnpackedGHC :: ( MonadReader env m
+                   , HasDirs env
+                   , HasSettings env
+                   , MonadThrow m
+                   , HasLog env
+                   , MonadIO m
+                   )
+                => GHCupPath         -- ^ Path to the unpacked GHC bindist (where the make file resides)
+                -> Version           -- ^ The GHC version
+                -> [T.Text]          -- ^ additional configure args for bindist
+                -> Excepts '[ProcessError] m ()
+testUnpackedGHC path ver addMakeArgs = do
+  lift $ logInfo $ "Testing GHC version " <> prettyVer ver <> "!"
+  ghcDir <- lift $ ghcupGHCDir (mkTVer ver)
+  let ghcBinDir = fromGHCupPath ghcDir </> "bin"
+  env <- liftIO $ addToPath ghcBinDir False
+
+  lEM $ make' (fmap T.unpack addMakeArgs)
+              (Just $ fromGHCupPath path)
+              "ghc-test"
+              (Just $ ("STAGE1_GHC", "ghc-" <> T.unpack (prettyVer ver)) : env)
+  pure ()
+
+
     ---------------------
     --[ Tool fetching ]--
     ---------------------

@@ -295,6 +295,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
 #endif
             Install installCommand     -> install installCommand settings appState runLogger
             InstallCabalLegacy iopts   -> install (Left (InstallCabal iopts)) settings appState runLogger
+            Test testCommand           -> test testCommand settings appState runLogger
             Set setCommand             -> set setCommand runAppState runLeanAppState runLogger
             UnSet unsetCommand         -> unset unsetCommand runLeanAppState runLogger
             List lo                    -> list lo no_color runAppState

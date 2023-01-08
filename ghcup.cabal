@@ -1,4 +1,4 @@
-cabal-version:      3.0
+cabal-version:      2.4
 name:               ghcup
 version:            0.1.18.1
 license:            LGPL-3.0-only
@@ -219,6 +219,7 @@ executable ghcup
     GHCup.OptParse.Rm
     GHCup.OptParse.Run
     GHCup.OptParse.Set
+    GHCup.OptParse.Test
     GHCup.OptParse.ToolRequirements
     GHCup.OptParse.UnSet
     GHCup.OptParse.Upgrade

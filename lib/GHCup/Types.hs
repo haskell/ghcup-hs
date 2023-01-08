@@ -138,6 +138,7 @@ data VersionInfo = VersionInfo
   { _viTags        :: [Tag]              -- ^ version specific tag
   , _viChangeLog   :: Maybe URI
   , _viSourceDL    :: Maybe DownloadInfo -- ^ source tarball
+  , _viTestDL      :: Maybe DownloadInfo -- ^ test tarball
   , _viArch        :: ArchitectureSpec   -- ^ descend for binary downloads per arch
   -- informative messages
   , _viPostInstall :: Maybe Text
