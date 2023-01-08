@@ -92,3 +92,30 @@ url-source:
 #     tag: Linux
 #   version: '18.04'
 platform-override: null
+
+# Support for mirrors. Currently there are 3 hosts you can mirror:
+#   - github.com (for stack and some older HLS versions)
+#   - raw.githubusercontent.com (for the yaml metadata)
+#   - downloads.haskell.org (for everything else)
+#
+# E.g. when we have 'https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.0.7.yaml'
+# and the following mirror config
+#
+#  "raw.githubusercontent.com":
+#    authority:
+#      host: "mirror.sjtu.edu.cn"
+#    pathPrefix: "ghcup/yaml"
+#
+# Then the resulting url will be 'https://mirror.sjtu.edu.cn/ghcup/yaml/haskell/ghcup-metadata/master/ghcup-0.0.7.yaml'
+mirrors:
+  "github.com":
+    authority:
+      host: "mirror.sjtu.edu.cn"
+  "raw.githubusercontent.com":
+    authority:
+      host: "mirror.sjtu.edu.cn"
+    pathPrefix: "ghcup/yaml"
+  "downloads.haskell.org":
+    authority:
+      host: "mirror.sjtu.edu.cn"
+
