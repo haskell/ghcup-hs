@@ -11,7 +11,7 @@ jobs:
     name: Test metadata
     runs-on: ${{ matrix.os }}
     env:
-      YAML_VER: 0.0.6
+      YAML_VER: 0.0.7
     strategy:
       matrix:
         ghc:
@@ -51,6 +51,9 @@ jobs:
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
         shell: bash
 
+      - name: install yamllint
+        run: pip install yamllint
+
       - name: Update cabal cache
         run: cabal update
         shell: bash
@@ -60,9 +63,11 @@ jobs:
           cabal install --installdir="$HOME/.local/bin" --overwrite-policy=always --install-method=copy ghcup-gen
         shell: bash
 
-      - name: Check
+      - name: Check yaml
         run: |
           ghcup-gen -- check -f ghcup-${{ env.YAML_VER }}.yaml
+          yamllint ghcup-${{ env.YAML_VER }}.yaml
+          python3 -c "import yaml ; stream = open('ghcup-${{ env.YAML_VER }}.yaml', 'r') ; yaml.safe_load(stream)"
         shell: bash
 
       - name: Check tarballs
