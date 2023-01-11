@@ -3165,11 +3165,11 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_UnknownLinux:
-            unknown_versioning: &cabal-3620-32
+            unknown_versioning: &cabal-3620-64
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-x86_64-linux-alpine-static.tar.xz
               dlHash: 7810d31f35ca7649355647abc6406ad2a3696648ce848e49409e86bd70f6a2c6
           Linux_Alpine:
-            unknown_versioning: *cabal-3620-32
+            unknown_versioning: *cabal-3620-64
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.6.2.0/cabal-install-3.6.2.0-x86_64-darwin.tar.xz
