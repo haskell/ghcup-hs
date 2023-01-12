@@ -8,6 +8,7 @@
 module GHCup.OptParse (
     module GHCup.OptParse.Common
   , module GHCup.OptParse.Install
+  , module GHCup.OptParse.Test
   , module GHCup.OptParse.Set
   , module GHCup.OptParse.UnSet
   , module GHCup.OptParse.Rm
@@ -31,6 +32,7 @@ module GHCup.OptParse (
 
 import           GHCup.OptParse.Common
 import           GHCup.OptParse.Install
+import           GHCup.OptParse.Test
 import           GHCup.OptParse.Set
 import           GHCup.OptParse.UnSet
 import           GHCup.OptParse.Rm
@@ -87,6 +89,7 @@ data Options = Options
 
 data Command
   = Install (Either InstallCommand InstallOptions)
+  | Test TestCommand
   | InstallCabalLegacy InstallOptions
   | Set (Either SetCommand SetOptions)
   | UnSet UnsetCommand
@@ -205,6 +208,14 @@ com =
                 <> footerDoc (Just $ text installToolFooter)
                 )
           )
+      <> command
+           "test"
+           (info
+             (Test <$> testParser <**> helper)
+             (  progDesc "Run tests for a tool (if any) [EXPERIMENTAL!]"
+             <> footerDoc (Just $ text testFooter)
+             )
+           )
       <> command
            "set"
            (info

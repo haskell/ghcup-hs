@@ -184,23 +184,29 @@
                             "A_PowerPC64": {},
                             "A_Sparc": {}
                         },
-                        "viChangeLog": "http:waou",
+                        "viChangeLog": null,
                         "viPostInstall": "voj",
                         "viPostRemove": null,
                         "viPreCompile": "yman",
                         "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "q",
+                            "dlSubdir": "]\u0000",
+                            "dlUri": "https:g"
+                        },
+                        "viTags": [
+                            "base-3.2.2",
+                            "Prerelease",
+                            "𪔊\u0007\u0015"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -2,
                             "dlHash": "myalmr",
                             "dlSubdir": {
                                 "RegexDir": "/0"
                             },
                             "dlUri": "https:gnl"
-                        },
-                        "viTags": [
-                            "<hd",
-                            "base-4.4.4",
-                            "Latest"
-                        ]
+                        }
                     },
                     "7.5.5": {
                         "viArch": {
@@ -263,17 +269,17 @@
                         "viPostInstall": "drbiff",
                         "viPostRemove": "lkccim",
                         "viPreCompile": "thzbtjc",
-                        "viSourceDL": {
+                        "viSourceDL": null,
+                        "viTags": [
+                            "old",
+                            "old"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -6,
                             "dlHash": "ari",
                             "dlSubdir": null,
                             "dlUri": "https:sunasz"
-                        },
-                        "viTags": [
-                            "Latest",
-                            "base-2.6.4",
-                            "\u0001+n𫛚\r5"
-                        ]
+                        }
                     },
                     "7.7.6": {
                         "viArch": {
@@ -374,22 +380,25 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:lasp",
+                        "viChangeLog": null,
                         "viPostInstall": "uogkghr",
                         "viPostRemove": null,
                         "viPreCompile": "nmkj",
                         "viSourceDL": {
+                            "dlCSize": 3,
+                            "dlHash": "srkres",
+                            "dlSubdir": {
+                                "RegexDir": ""
+                            },
+                            "dlUri": "https:kb"
+                        },
+                        "viTags": [],
+                        "viTestDL": {
                             "dlCSize": -3,
                             "dlHash": "f",
                             "dlSubdir": "y",
                             "dlUri": "http:rps"
-                        },
-                        "viTags": [
-                            "Prerelease",
-                            "old",
-                            "base-1.1.2",
-                            "Prerelease"
-                        ]
+                        }
                     },
                     "8.8.6": {
                         "viArch": {
@@ -697,22 +706,33 @@
                             },
                             "A_Sparc64": {}
                         },
-                        "viChangeLog": "https:wuszgk",
+                        "viChangeLog": "http:mtyieid",
                         "viPostInstall": "",
                         "viPostRemove": "jkc",
                         "viPreCompile": "y",
                         "viSourceDL": {
                             "dlCSize": null,
+                            "dlHash": "zujazx",
+                            "dlSubdir": {
+                                "RegexDir": ""
+                            },
+                            "dlUri": "http:jo"
+                        },
+                        "viTags": [
+                            "old",
+                            "Latest",
+                            "Latest",
+                            "\u0011$",
+                            "Latest",
+                            "^𝧃􇺕\t:",
+                            "old"
+                        ],
+                        "viTestDL": {
+                            "dlCSize": null,
                             "dlHash": "jfzy",
                             "dlSubdir": "\u000b+eD",
                             "dlUri": "https:styw"
-                        },
-                        "viTags": [
-                            "\u0012z\u0011",
-                            "base-3.2.5",
-                            "Prerelease",
-                            "Latest"
-                        ]
+                        }
                     }
                 },
                 "HLS": {
@@ -957,20 +977,26 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:rreum",
+                        "viChangeLog": null,
                         "viPostInstall": "",
                         "viPostRemove": null,
                         "viPreCompile": "hnakh",
-                        "viSourceDL": null,
+                        "viSourceDL": {
+                            "dlCSize": -2,
+                            "dlHash": "wu",
+                            "dlSubdir": {
+                                "RegexDir": "\u000cU\t"
+                            },
+                            "dlUri": "http:n"
+                        },
                         "viTags": [
-                            "base-5.5.4",
-                            "old",
-                            "Latest",
                             "Latest",
                             "Recommended",
-                            "Recommended",
-                            "old"
-                        ]
+                            "Prerelease",
+                            "base-2.3.5",
+                            "\u0005EL"
+                        ],
+                        "viTestDL": null
                     },
                     "2.1.4": {
                         "viArch": {
@@ -1107,22 +1133,25 @@
                                 }
                             }
                         },
-                        "viChangeLog": null,
+                        "viChangeLog": "https:kfzstso",
                         "viPostInstall": "dwizoud",
                         "viPostRemove": "foi",
                         "viPreCompile": "ma",
-                        "viSourceDL": {
+                        "viSourceDL": null,
+                        "viTags": [
+                            "Latest",
+                            "base-2.1.2",
+                            "base-5.2.1",
+                            "old"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -5,
                             "dlHash": "uqbwye",
                             "dlSubdir": {
                                 "RegexDir": "a_\u0013"
                             },
                             "dlUri": "https:qh"
-                        },
-                        "viTags": [
-                            "Prerelease",
-                            "base-2.1.2"
-                        ]
+                        }
                     },
                     "3.3.7": {
                         "viArch": {
@@ -1542,23 +1571,35 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:cczda",
+                        "viChangeLog": "https:cmswdx",
                         "viPostInstall": "anwu",
                         "viPostRemove": null,
                         "viPreCompile": "uavcc",
                         "viSourceDL": {
+                            "dlCSize": 6,
+                            "dlHash": "xcjfb",
+                            "dlSubdir": {
+                                "RegexDir": "p󳱿W"
+                            },
+                            "dlUri": "https:l"
+                        },
+                        "viTags": [
+                            "base-1.1.6",
+                            "Latest",
+                            "old",
+                            "base-4.6.2",
+                            "􀜶l􀻈𠹟󿴠F",
+                            "old",
+                            "Recommended"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 0,
                             "dlHash": "tdscq",
                             "dlSubdir": {
                                 "RegexDir": "xp#𭂎"
                             },
                             "dlUri": "https:"
-                        },
-                        "viTags": [
-                            "Latest",
-                            "old",
-                            "old"
-                        ]
+                        }
                     },
                     "3.5.3": {
                         "viArch": {
@@ -1842,25 +1883,28 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:bkwldh",
+                        "viChangeLog": null,
                         "viPostInstall": "mddaz",
                         "viPostRemove": "blt",
                         "viPreCompile": "khe",
                         "viSourceDL": {
+                            "dlCSize": -1,
+                            "dlHash": "kfdrkw",
+                            "dlSubdir": "",
+                            "dlUri": "https:glw"
+                        },
+                        "viTags": [
+                            "old",
+                            "Latest",
+                            "Recommended",
+                            "Prerelease"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 5,
                             "dlHash": "twfhh",
                             "dlSubdir": null,
                             "dlUri": "http:r"
-                        },
-                        "viTags": [
-                            "Prerelease",
-                            "old",
-                            "old",
-                            "Recommended",
-                            "old",
-                            "Recommended",
-                            "Latest"
-                        ]
+                        }
                     },
                     "5.2.3": {
                         "viArch": {
@@ -2184,18 +2228,14 @@
                         "viPostInstall": "egwp",
                         "viPostRemove": "vn",
                         "viPreCompile": "crseg",
-                        "viSourceDL": {
+                        "viSourceDL": null,
+                        "viTags": [],
+                        "viTestDL": {
                             "dlCSize": 3,
                             "dlHash": "hyd",
                             "dlSubdir": "he",
                             "dlUri": "https:zfivy"
-                        },
-                        "viTags": [
-                            "old",
-                            "Recommended",
-                            "",
-                            "Latest"
-                        ]
+                        }
                     },
                     "8.5.2": {
                         "viArch": {
@@ -2295,21 +2335,30 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:ieqx",
+                        "viChangeLog": null,
                         "viPostInstall": "hqpyg",
                         "viPostRemove": "vb",
                         "viPreCompile": "lutfnkx",
                         "viSourceDL": {
+                            "dlCSize": 5,
+                            "dlHash": "phvubl",
+                            "dlSubdir": {
+                                "RegexDir": "󻳵Kpr􉔙"
+                            },
+                            "dlUri": "http:"
+                        },
+                        "viTags": [
+                            "t\u001e\u001aB8",
+                            "old",
+                            "",
+                            "old"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -4,
                             "dlHash": "",
                             "dlSubdir": null,
                             "dlUri": "http:rjzf"
-                        },
-                        "viTags": [
-                            "",
-                            "old",
-                            "Prerelease"
-                        ]
+                        }
                     }
                 }
             },
@@ -2731,23 +2780,25 @@
                 "GHC": {
                     "1.1.1": {
                         "viArch": {},
-                        "viChangeLog": "https:msr",
+                        "viChangeLog": "https:zme",
                         "viPostInstall": null,
                         "viPostRemove": "jpehk",
                         "viPreCompile": "ucz",
                         "viSourceDL": {
+                            "dlCSize": -3,
+                            "dlHash": "v",
+                            "dlSubdir": "K+\u0005u",
+                            "dlUri": "http:ezqv"
+                        },
+                        "viTags": [],
+                        "viTestDL": {
                             "dlCSize": -4,
                             "dlHash": "q",
                             "dlSubdir": {
                                 "RegexDir": "7txt,"
                             },
                             "dlUri": "https:wb"
-                        },
-                        "viTags": [
-                            "Recommended",
-                            "E",
-                            "\u0010QC.\u0014 "
-                        ]
+                        }
                     },
                     "3.2.1": {
                         "viArch": {
@@ -3050,22 +3101,24 @@
                         "viPostRemove": null,
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": 5,
+                            "dlHash": "jxf",
+                            "dlSubdir": {
+                                "RegexDir": "#"
+                            },
+                            "dlUri": "https:igxetp"
+                        },
+                        "viTags": [
+                            "Prerelease"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 4,
                             "dlHash": "znm",
                             "dlSubdir": {
                                 "RegexDir": "VAW"
                             },
                             "dlUri": "http:bd"
-                        },
-                        "viTags": [
-                            "Latest",
-                            "Prerelease",
-                            "base-1.6.2",
-                            "Prerelease",
-                            "base-1.3.4",
-                            "𩺈𥲬􅚷\u0015",
-                            "old"
-                        ]
+                        }
                     },
                     "4.5.3": {
                         "viArch": {
@@ -3272,20 +3325,30 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:vyih",
+                        "viChangeLog": "https:uztfywr",
                         "viPostInstall": "vou",
                         "viPostRemove": "",
                         "viPreCompile": "hdykow",
                         "viSourceDL": {
+                            "dlCSize": 2,
+                            "dlHash": "cemb",
+                            "dlSubdir": null,
+                            "dlUri": "http:"
+                        },
+                        "viTags": [
+                            "Prerelease",
+                            "base-5.6.1",
+                            "base-3.3.3",
+                            "base-3.2.1",
+                            "Latest",
+                            ":ᄻ["
+                        ],
+                        "viTestDL": {
                             "dlCSize": -2,
                             "dlHash": "vbcy",
                             "dlSubdir": "󼔨",
                             "dlUri": "https:xd"
-                        },
-                        "viTags": [
-                            "Recommended",
-                            "Latest"
-                        ]
+                        }
                     },
                     "7.3.9": {
                         "viArch": {
@@ -3616,22 +3679,28 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:",
+                        "viChangeLog": "http:jrf",
                         "viPostInstall": null,
                         "viPostRemove": "vhzr",
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "qaqto",
+                            "dlSubdir": null,
+                            "dlUri": "https:v"
+                        },
+                        "viTags": [
+                            "Prerelease",
+                            "Recommended",
+                            "Recommended",
+                            "B"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -2,
                             "dlHash": "ixlhyu",
                             "dlSubdir": null,
                             "dlUri": "https:sd"
-                        },
-                        "viTags": [
-                            "old",
-                            "base-6.1.3",
-                            "Prerelease",
-                            "old"
-                        ]
+                        }
                     }
                 },
                 "GHCup": {
@@ -3686,17 +3755,23 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:o",
+                        "viChangeLog": "http:tl",
                         "viPostInstall": "z",
                         "viPostRemove": null,
                         "viPreCompile": null,
-                        "viSourceDL": null,
+                        "viSourceDL": {
+                            "dlCSize": 4,
+                            "dlHash": "joz",
+                            "dlSubdir": "iX-Zb",
+                            "dlUri": "http:evy"
+                        },
                         "viTags": [
-                            "base-4.4.5",
-                            "Latest",
-                            "\u0005s",
-                            "Prerelease"
-                        ]
+                            "Prerelease",
+                            "base-2.4.6",
+                            "base-4.1.3",
+                            "base-4.4.6"
+                        ],
+                        "viTestDL": null
                     },
                     "3.5.3": {
                         "viArch": {
@@ -3812,17 +3887,28 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:qbs",
+                        "viChangeLog": "https:neza",
                         "viPostInstall": "",
                         "viPostRemove": "o",
                         "viPreCompile": "vfij",
-                        "viSourceDL": null,
+                        "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "ppmihc",
+                            "dlSubdir": {
+                                "RegexDir": "𤅙𣾤U"
+                            },
+                            "dlUri": "https:"
+                        },
                         "viTags": [
-                            "base-3.2.4",
                             "Latest",
+                            "Latest",
+                            "base-3.1.4",
                             "Recommended",
+                            "Prerelease",
+                            "old",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     },
                     "3.8.5": {
                         "viArch": {
@@ -3928,20 +4014,26 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:b",
+                        "viChangeLog": null,
                         "viPostInstall": "e",
                         "viPostRemove": "wvv",
                         "viPreCompile": null,
-                        "viSourceDL": null,
+                        "viSourceDL": {
+                            "dlCSize": 1,
+                            "dlHash": "rnru",
+                            "dlSubdir": {
+                                "RegexDir": ""
+                            },
+                            "dlUri": "https:mdl"
+                        },
                         "viTags": [
-                            "old",
-                            "base-4.5.1",
-                            "Latest",
-                            "Prerelease",
                             "Recommended",
                             "Prerelease",
-                            "Prerelease"
-                        ]
+                            "Recommended",
+                            "Latest",
+                            "old"
+                        ],
+                        "viTestDL": null
                     },
                     "4.1.6": {
                         "viArch": {
@@ -4113,15 +4205,16 @@
                                 }
                             }
                         },
-                        "viChangeLog": null,
+                        "viChangeLog": "http:fhmwmt",
                         "viPostInstall": "qrvyqt",
                         "viPostRemove": null,
                         "viPreCompile": null,
                         "viSourceDL": null,
                         "viTags": [
-                            "Latest",
-                            "old"
-                        ]
+                            "X\u001d^Y󶹬",
+                            "base-2.3.5"
+                        ],
+                        "viTestDL": null
                     },
                     "7.5.4": {
                         "viArch": {
@@ -4391,18 +4484,25 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:qeelkw",
+                        "viChangeLog": "http:oor",
                         "viPostInstall": "rialloi",
                         "viPostRemove": "hsul",
                         "viPreCompile": null,
-                        "viSourceDL": null,
+                        "viSourceDL": {
+                            "dlCSize": -2,
+                            "dlHash": "bdzde",
+                            "dlSubdir": "",
+                            "dlUri": "http:lak"
+                        },
                         "viTags": [
-                            "鲤",
-                            "",
-                            "Prerelease",
-                            "𔕚\u001b)",
+                            "old",
+                            "Latest",
+                            "base-5.6.4",
+                            "\u0019\u0007",
+                            "Recommended",
                             "Latest"
-                        ]
+                        ],
+                        "viTestDL": null
                     }
                 },
                 "HLS": {
@@ -4607,23 +4707,32 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:kg",
+                        "viChangeLog": "https:x",
                         "viPostInstall": "nrzy",
                         "viPostRemove": null,
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": 2,
+                            "dlHash": "tjg",
+                            "dlSubdir": null,
+                            "dlUri": "http:k"
+                        },
+                        "viTags": [
+                            "base-5.3.4",
+                            "Recommended",
+                            "Recommended",
+                            "base-4.3.5",
+                            "Latest",
+                            "󲨆Rs;h~"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -3,
                             "dlHash": "inxhfo",
                             "dlSubdir": {
                                 "RegexDir": "v7,􉌈"
                             },
                             "dlUri": "https:gkxzfk"
-                        },
-                        "viTags": [
-                            "Recommended",
-                            "Prerelease",
-                            "Recommended"
-                        ]
+                        }
                     },
                     "3.5.1": {
                         "viArch": {
@@ -4722,20 +4831,20 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:cjxxlk",
+                        "viChangeLog": "http:",
                         "viPostInstall": "avh",
                         "viPostRemove": "eegqax",
                         "viPreCompile": "cyr",
-                        "viSourceDL": null,
+                        "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "bzbx",
+                            "dlSubdir": "k",
+                            "dlUri": "https:djyo"
+                        },
                         "viTags": [
-                            "Latest",
-                            "base-3.2.1",
-                            "base-2.4.5",
-                            "l淋",
-                            "old",
-                            "Latest",
-                            "Recommended"
-                        ]
+                            "Prerelease"
+                        ],
+                        "viTestDL": null
                     },
                     "4.2.2": {
                         "viArch": {
@@ -4813,24 +4922,26 @@
                                 }
                             }
                         },
-                        "viChangeLog": null,
+                        "viChangeLog": "http:gdrn",
                         "viPostInstall": null,
                         "viPostRemove": null,
                         "viPreCompile": null,
-                        "viSourceDL": {
+                        "viSourceDL": null,
+                        "viTags": [
+                            "base-1.5.5",
+                            "Latest",
+                            "Latest",
+                            "old",
+                            "Latest",
+                            "base-3.6.4",
+                            "old"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 1,
                             "dlHash": "qqhkc",
                             "dlSubdir": null,
                             "dlUri": "http:hh"
-                        },
-                        "viTags": [
-                            "Prerelease",
-                            "base-1.4.4",
-                            "r𦇚󶑾:􁠾",
-                            "Recommended",
-                            "Recommended",
-                            "Latest"
-                        ]
+                        }
                     },
                     "4.4.1": {
                         "viArch": {
@@ -4902,24 +5013,35 @@
                             },
                             "A_PowerPC64": {}
                         },
-                        "viChangeLog": "http:lh",
+                        "viChangeLog": "https:lygy",
                         "viPostInstall": "kur",
                         "viPostRemove": "dxqp",
                         "viPreCompile": "fzrbyso",
                         "viSourceDL": {
+                            "dlCSize": 5,
+                            "dlHash": "glo",
+                            "dlSubdir": {
+                                "RegexDir": ""
+                            },
+                            "dlUri": "https:stmn"
+                        },
+                        "viTags": [
+                            "Latest",
+                            "base-3.6.5",
+                            "base-3.4.1",
+                            "𬰗𗛞Q#",
+                            "",
+                            "Prerelease",
+                            "base-5.1.4"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 6,
                             "dlHash": "g",
                             "dlSubdir": {
                                 "RegexDir": "C󷗲ᾘ2"
                             },
                             "dlUri": "https:jerm"
-                        },
-                        "viTags": [
-                            "Recommended",
-                            "Latest",
-                            "Latest",
-                            "Recommended"
-                        ]
+                        }
                     },
                     "5.7.2": {
                         "viArch": {
@@ -5235,24 +5357,32 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:uwr",
+                        "viChangeLog": "https:qis",
                         "viPostInstall": "m",
                         "viPostRemove": "nwnzw",
                         "viPreCompile": "s",
                         "viSourceDL": {
+                            "dlCSize": -4,
+                            "dlHash": "e",
+                            "dlSubdir": null,
+                            "dlUri": "http:rjevxi"
+                        },
+                        "viTags": [
+                            "base-1.6.1",
+                            "S󶱩󳷐I🢐",
+                            "old",
+                            "󼗛𤔄\u001a~F",
+                            "Latest",
+                            "base-4.5.4"
+                        ],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "awxfkt",
                             "dlSubdir": {
                                 "RegexDir": "t󹊽\u0001􈇆V"
                             },
                             "dlUri": "http:cue"
-                        },
-                        "viTags": [
-                            "base-3.4.6",
-                            "Prerelease",
-                            "Prerelease",
-                            "Recommended"
-                        ]
+                        }
                     },
                     "7.1.4": {
                         "viArch": {
@@ -5556,17 +5686,28 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:ohqsmtm",
+                        "viChangeLog": "https:fvzccun",
                         "viPostInstall": "bquxgnx",
                         "viPostRemove": null,
                         "viPreCompile": "rtz",
                         "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "qpf",
+                            "dlSubdir": "󺦸",
+                            "dlUri": "http:viiv"
+                        },
+                        "viTags": [
+                            "base-3.1.6",
+                            "Prerelease",
+                            "Recommended",
+                            ")\u0005\u0015"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 5,
                             "dlHash": "rietlc",
                             "dlSubdir": "󽳓\t8",
                             "dlUri": "https:nxrw"
-                        },
-                        "viTags": []
+                        }
                     },
                     "8.2.3": {
                         "viArch": {
@@ -5656,25 +5797,26 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:bxw",
+                        "viChangeLog": "http:",
                         "viPostInstall": "bxdutem",
                         "viPostRemove": null,
                         "viPreCompile": "dl",
                         "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "axn",
+                            "dlSubdir": "2 󽐇󷪖\u0012",
+                            "dlUri": "https:zz"
+                        },
+                        "viTags": [
+                            "Recommended",
+                            "old"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -1,
                             "dlHash": "a",
                             "dlSubdir": "",
                             "dlUri": "https:w"
-                        },
-                        "viTags": [
-                            "base-6.2.6",
-                            "Latest",
-                            "Latest",
-                            "base-6.3.6",
-                            "䗟jj\u0017mi",
-                            "恦AD假n#",
-                            "Prerelease"
-                        ]
+                        }
                     },
                     "8.3.5": {
                         "viArch": {
@@ -6038,22 +6180,25 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:lkbs",
+                        "viChangeLog": null,
                         "viPostInstall": "oc",
                         "viPostRemove": "b",
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": -1,
+                            "dlHash": "",
+                            "dlSubdir": {
+                                "RegexDir": "\u000b*p"
+                            },
+                            "dlUri": "http:hix"
+                        },
+                        "viTags": [],
+                        "viTestDL": {
                             "dlCSize": -5,
                             "dlHash": "setqd",
                             "dlSubdir": "S%",
                             "dlUri": "http:"
-                        },
-                        "viTags": [
-                            "Prerelease",
-                            "Prerelease",
-                            "",
-                            "Latest"
-                        ]
+                        }
                     }
                 }
             },
@@ -7320,19 +7465,31 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:mjfe",
+                        "viChangeLog": "http:wb",
                         "viPostInstall": null,
                         "viPostRemove": null,
                         "viPreCompile": "rkmaobn",
                         "viSourceDL": {
+                            "dlCSize": 0,
+                            "dlHash": "irjx",
+                            "dlSubdir": "\u0013M",
+                            "dlUri": "https:xkz"
+                        },
+                        "viTags": [
+                            "󹔍j𪪣w⠻",
+                            "old",
+                            "Recommended",
+                            "Recommended",
+                            "old",
+                            "old",
+                            "Latest"
+                        ],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "e",
                             "dlSubdir": null,
                             "dlUri": "http:x"
-                        },
-                        "viTags": [
-                            "Recommended"
-                        ]
+                        }
                     },
                     "2.1.4": {
                         "viArch": {
@@ -8007,40 +8164,54 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:e",
+                        "viChangeLog": "http:pxynqyd",
                         "viPostInstall": null,
                         "viPostRemove": "hdst",
                         "viPreCompile": "lssslq",
-                        "viSourceDL": null,
+                        "viSourceDL": {
+                            "dlCSize": -2,
+                            "dlHash": "fxf",
+                            "dlSubdir": "|rg\u001b",
+                            "dlUri": "http:ndqpk"
+                        },
                         "viTags": [
-                            "",
-                            "\u0018\u0017GF󾐘",
-                            "base-4.6.1"
-                        ]
+                            "\"􁫳5\u0006F",
+                            "Recommended",
+                            "Prerelease",
+                            "old",
+                            "base-3.3.1",
+                            "Recommended"
+                        ],
+                        "viTestDL": null
                     },
                     "4.6.8": {
                         "viArch": {},
-                        "viChangeLog": "http:",
+                        "viChangeLog": "http:ubv",
                         "viPostInstall": null,
                         "viPostRemove": "lporra",
                         "viPreCompile": "orlne",
                         "viSourceDL": {
+                            "dlCSize": 0,
+                            "dlHash": "iqa",
+                            "dlSubdir": {
+                                "RegexDir": "n"
+                            },
+                            "dlUri": "https:gqhlp"
+                        },
+                        "viTags": [
+                            "base-4.3.4",
+                            "Recommended",
+                            "old",
+                            "base-4.1.4"
+                        ],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "o",
                             "dlSubdir": {
                                 "RegexDir": ""
                             },
                             "dlUri": "http:drxrs"
-                        },
-                        "viTags": [
-                            "base-3.2.1",
-                            "qg~}",
-                            "Prerelease",
-                            "base-3.2.2",
-                            "old",
-                            "Latest",
-                            "old"
-                        ]
+                        }
                     },
                     "5.1.8": {
                         "viArch": {
@@ -8215,44 +8386,61 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:fpyxhiq",
+                        "viChangeLog": "https:bizstxz",
                         "viPostInstall": "izvcv",
                         "viPostRemove": "byey",
                         "viPreCompile": "l",
                         "viSourceDL": {
+                            "dlCSize": 6,
+                            "dlHash": "pfbtc",
+                            "dlSubdir": null,
+                            "dlUri": "https:fqi"
+                        },
+                        "viTags": [
+                            "\u0001",
+                            "Prerelease",
+                            "Prerelease",
+                            "base-3.6.3",
+                            "Latest"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -6,
                             "dlHash": "rqn",
                             "dlSubdir": {
                                 "RegexDir": "\u001a󹎱1𗐡"
                             },
                             "dlUri": "http:famlxb"
-                        },
-                        "viTags": [
-                            "󲆏\u0004D",
-                            "Recommended",
-                            "\u000e4朗",
-                            ";vXV"
-                        ]
+                        }
                     },
                     "5.4.7": {
                         "viArch": {},
-                        "viChangeLog": "http:bn",
+                        "viChangeLog": "https:zfnj",
                         "viPostInstall": "oyil",
                         "viPostRemove": "sirzxo",
                         "viPreCompile": "hecme",
                         "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "ubkudu",
+                            "dlSubdir": {
+                                "RegexDir": "\u0007\u0003m𗲉"
+                            },
+                            "dlUri": "http:pvmi"
+                        },
+                        "viTags": [
+                            "old",
+                            "old",
+                            "Latest",
+                            "old",
+                            ")",
+                            "Recommended",
+                            "old"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -2,
                             "dlHash": "qzdbsz",
                             "dlSubdir": null,
                             "dlUri": "https:zfyw"
-                        },
-                        "viTags": [
-                            "󱪀",
-                            "base-5.6.5",
-                            "Recommended",
-                            "𗥕XP%𥬳",
-                            "old"
-                        ]
+                        }
                     }
                 },
                 "Stack": {
@@ -8592,20 +8780,25 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:k",
+                        "viChangeLog": "https:yvh",
                         "viPostInstall": null,
                         "viPostRemove": "pdwctmw",
                         "viPreCompile": "apqewk",
                         "viSourceDL": {
+                            "dlCSize": -1,
+                            "dlHash": "",
+                            "dlSubdir": {
+                                "RegexDir": "\u0003"
+                            },
+                            "dlUri": "https:fmx"
+                        },
+                        "viTags": [],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "yvlfv",
                             "dlSubdir": null,
                             "dlUri": "http:h"
-                        },
-                        "viTags": [
-                            "Prerelease",
-                            "Recommended"
-                        ]
+                        }
                     },
                     "7.2.3": {
                         "viArch": {
@@ -8737,25 +8930,27 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:yzlisfo",
+                        "viChangeLog": "http:lysweiy",
                         "viPostInstall": "qecgd",
                         "viPostRemove": "z",
                         "viPreCompile": "jwqv",
                         "viSourceDL": {
+                            "dlCSize": 1,
+                            "dlHash": "vsg",
+                            "dlSubdir": null,
+                            "dlUri": "http:oth"
+                        },
+                        "viTags": [
+                            "base-4.1.5",
+                            "フ􍋦",
+                            "base-1.4.5"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -5,
                             "dlHash": "xhpl",
                             "dlSubdir": null,
                             "dlUri": "https:laqnyf"
-                        },
-                        "viTags": [
-                            "base-1.5.3",
-                            "old",
-                            "base-6.2.6",
-                            "old",
-                            "Recommended",
-                            "base-4.3.3",
-                            "Recommended"
-                        ]
+                        }
                     }
                 }
             },
@@ -9951,27 +10146,28 @@
                 "Cabal": {
                     "2.6.1": {
                         "viArch": {},
-                        "viChangeLog": null,
+                        "viChangeLog": "https:zu",
                         "viPostInstall": null,
                         "viPostRemove": "inq",
                         "viPreCompile": "deajwn",
-                        "viSourceDL": {
+                        "viSourceDL": null,
+                        "viTags": [
+                            "base-6.4.5",
+                            "base-5.1.1",
+                            "base-4.4.6",
+                            "Latest",
+                            "Latest",
+                            "Prerelease",
+                            "Latest"
+                        ],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "sfrnt",
                             "dlSubdir": {
                                 "RegexDir": "]\u0011)\u0008"
                             },
                             "dlUri": "https:jgmu"
-                        },
-                        "viTags": [
-                            "old",
-                            "base-4.5.3",
-                            "Recommended",
-                            "old",
-                            "Recommended",
-                            "S鴖xz󾤞",
-                            "Prerelease"
-                        ]
+                        }
                     },
                     "4.4.4": {
                         "viArch": {
@@ -10277,17 +10473,21 @@
                                 }
                             }
                         },
-                        "viChangeLog": null,
+                        "viChangeLog": "http:bpuko",
                         "viPostInstall": "rvzkoi",
                         "viPostRemove": "r",
                         "viPreCompile": "",
                         "viSourceDL": null,
                         "viTags": [
-                            "base-6.3.4",
                             "Prerelease",
+                            "Recommended",
                             "old",
-                            "Latest"
-                        ]
+                            "N\u001b",
+                            "base-5.5.2",
+                            "",
+                            "Recommended"
+                        ],
+                        "viTestDL": null
                     },
                     "5.5.4": {
                         "viArch": {
@@ -10420,22 +10620,23 @@
                                 }
                             }
                         },
-                        "viChangeLog": null,
+                        "viChangeLog": "http:xclv",
                         "viPostInstall": "jrkzdq",
                         "viPostRemove": "palkmt",
                         "viPreCompile": "",
-                        "viSourceDL": {
+                        "viSourceDL": null,
+                        "viTags": [
+                            "S6eឫ}y",
+                            "",
+                            "Latest",
+                            "Latest"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 1,
                             "dlHash": "vpjggh",
                             "dlSubdir": null,
                             "dlUri": "http:ootfe"
-                        },
-                        "viTags": [
-                            "i2",
-                            "Latest",
-                            "base-1.6.4",
-                            "Recommended"
-                        ]
+                        }
                     },
                     "5.6.4": {
                         "viArch": {
@@ -10508,20 +10709,19 @@
                                 }
                             }
                         },
-                        "viChangeLog": null,
+                        "viChangeLog": "https:oik",
                         "viPostInstall": null,
                         "viPostRemove": "hcftjbb",
                         "viPreCompile": "qyx",
                         "viSourceDL": null,
                         "viTags": [
-                            "\u000c󴶑\u0001E\u0012\u0015",
-                            "base-4.6.3",
-                            "old",
-                            "base-1.2.5",
-                            "Prerelease",
-                            ">/~",
-                            "base-6.6.1"
-                        ]
+                            "Recommended",
+                            "base-3.6.1",
+                            "base-4.3.3",
+                            "Recommended",
+                            "Latest"
+                        ],
+                        "viTestDL": null
                     },
                     "6.7.3": {
                         "viArch": {
@@ -10970,19 +11170,23 @@
                                 }
                             }
                         },
-                        "viChangeLog": null,
+                        "viChangeLog": "http:frc",
                         "viPostInstall": "",
                         "viPostRemove": null,
                         "viPreCompile": "hr",
-                        "viSourceDL": {
+                        "viSourceDL": null,
+                        "viTags": [
+                            "Prerelease",
+                            "Latest",
+                            "base-5.3.2",
+                            "[3憥􋉞"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 1,
                             "dlHash": "tz",
                             "dlSubdir": " ",
                             "dlUri": "https:opp"
-                        },
-                        "viTags": [
-                            "old"
-                        ]
+                        }
                     },
                     "8.5.5": {
                         "viArch": {
@@ -11088,25 +11292,30 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:aymm",
+                        "viChangeLog": null,
                         "viPostInstall": null,
                         "viPostRemove": "nh",
                         "viPreCompile": "",
                         "viSourceDL": {
+                            "dlCSize": 1,
+                            "dlHash": "ynk",
+                            "dlSubdir": {
+                                "RegexDir": ""
+                            },
+                            "dlUri": "http:pfxj"
+                        },
+                        "viTags": [
+                            "Latest",
+                            "Recommended",
+                            "Recommended",
+                            "Prerelease"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 4,
                             "dlHash": "hv",
                             "dlSubdir": null,
                             "dlUri": "https:pu"
-                        },
-                        "viTags": [
-                            "Latest",
-                            "Latest",
-                            "base-4.3.1",
-                            "Recommended",
-                            "Prerelease",
-                            "Prerelease",
-                            "old"
-                        ]
+                        }
                     },
                     "8.6.5": {
                         "viArch": {
@@ -11476,27 +11685,30 @@
                                 "Linux_Mint": {}
                             }
                         },
-                        "viChangeLog": "http:h",
+                        "viChangeLog": "http:vburaf",
                         "viPostInstall": "cey",
                         "viPostRemove": "",
                         "viPreCompile": "fvwix",
                         "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "qguu",
+                            "dlSubdir": null,
+                            "dlUri": "http:kce"
+                        },
+                        "viTags": [
+                            "𥭏}\u000e",
+                            "\u0007/",
+                            "base-6.5.3",
+                            "Latest"
+                        ],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "ocrsy",
                             "dlSubdir": {
                                 "RegexDir": ""
                             },
                             "dlUri": "http:rdws"
-                        },
-                        "viTags": [
-                            "Latest",
-                            "4k",
-                            "䈇k#􏁯▒",
-                            "\n𱆘",
-                            "v斾)k",
-                            "Prerelease",
-                            "Latest"
-                        ]
+                        }
                     }
                 },
                 "GHC": {},
@@ -13227,19 +13439,25 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:bn",
+                        "viChangeLog": "https:qygjmb",
                         "viPostInstall": "jdjwl",
                         "viPostRemove": "fbzect",
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": 6,
+                            "dlHash": "slk",
+                            "dlSubdir": "\u001bh",
+                            "dlUri": "http:m"
+                        },
+                        "viTags": [
+                            "g󴞮*q\u0004\u0018"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -4,
                             "dlHash": "cybimg",
                             "dlSubdir": "𮀸􆻝ௗ\u0014\r",
                             "dlUri": "https:ox"
-                        },
-                        "viTags": [
-                            "Prerelease"
-                        ]
+                        }
                     },
                     "2.6.7": {
                         "viArch": {
@@ -13432,19 +13650,20 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:gjl",
+                        "viChangeLog": "https:yhmzpvv",
                         "viPostInstall": null,
                         "viPostRemove": null,
                         "viPreCompile": "dx",
-                        "viSourceDL": null,
-                        "viTags": [
-                            "Latest",
-                            "Recommended",
-                            "C",
-                            "old",
-                            "\u0005􊻳,C󿒋4",
-                            "old"
-                        ]
+                        "viSourceDL": {
+                            "dlCSize": -1,
+                            "dlHash": "f",
+                            "dlSubdir": {
+                                "RegexDir": "$"
+                            },
+                            "dlUri": "http:akwq"
+                        },
+                        "viTags": [],
+                        "viTestDL": null
                     },
                     "3.3.5": {
                         "viArch": {
@@ -13759,27 +13978,32 @@
                                 "Linux_Gentoo": {}
                             }
                         },
-                        "viChangeLog": "https:uhv",
+                        "viChangeLog": "http:ojjwov",
                         "viPostInstall": "ly",
                         "viPostRemove": null,
                         "viPreCompile": "unrj",
                         "viSourceDL": {
+                            "dlCSize": -5,
+                            "dlHash": "zcpjp",
+                            "dlSubdir": {
+                                "RegexDir": "\""
+                            },
+                            "dlUri": "https:zlhcbf"
+                        },
+                        "viTags": [
+                            "Prerelease",
+                            "base-4.6.2",
+                            "3g7",
+                            "Recommended"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 6,
                             "dlHash": "o",
                             "dlSubdir": {
                                 "RegexDir": "𪴩"
                             },
                             "dlUri": "https:piwe"
-                        },
-                        "viTags": [
-                            "old",
-                            "&Z3𭹡X",
-                            "Prerelease",
-                            "Prerelease",
-                            "Latest",
-                            "base-4.1.4",
-                            "base-3.3.2"
-                        ]
+                        }
                     },
                     "3.4.4": {
                         "viArch": {
@@ -14227,17 +14451,29 @@
                                 "Darwin": {}
                             }
                         },
-                        "viChangeLog": "http:gqvwog",
+                        "viChangeLog": "http:jkm",
                         "viPostInstall": "ytr",
                         "viPostRemove": null,
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": -3,
+                            "dlHash": "dnwhw",
+                            "dlSubdir": "|u\"L\\",
+                            "dlUri": "https:"
+                        },
+                        "viTags": [
+                            "Recommended",
+                            "base-3.4.3",
+                            "base-4.3.5",
+                            "Latest",
+                            "base-5.4.2"
+                        ],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "kj",
                             "dlSubdir": "Ju",
                             "dlUri": "http:xlk"
-                        },
-                        "viTags": []
+                        }
                     },
                     "6.5.7": {
                         "viArch": {
@@ -14402,17 +14638,27 @@
                             },
                             "A_Sparc64": {}
                         },
-                        "viChangeLog": "http:n",
+                        "viChangeLog": "https:",
                         "viPostInstall": "qvm",
                         "viPostRemove": "sgvktce",
                         "viPreCompile": "",
                         "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "iu",
+                            "dlSubdir": null,
+                            "dlUri": "https:a"
+                        },
+                        "viTags": [
+                            "Latest",
+                            "",
+                            "base-3.5.6"
+                        ],
+                        "viTestDL": {
                             "dlCSize": -1,
                             "dlHash": "j",
                             "dlSubdir": "󽭎H2",
                             "dlUri": "http:fujxl"
-                        },
-                        "viTags": []
+                        }
                     },
                     "6.6.3": {
                         "viArch": {
@@ -14476,23 +14722,34 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:juby",
+                        "viChangeLog": "https:mh",
                         "viPostInstall": "segjm",
                         "viPostRemove": "az",
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "mma",
+                            "dlSubdir": {
+                                "RegexDir": "􋽣"
+                            },
+                            "dlUri": "http:koxgqu"
+                        },
+                        "viTags": [
+                            "base-6.3.3",
+                            "base-2.4.2",
+                            "Latest",
+                            "base-3.1.6",
+                            "",
+                            "Latest"
+                        ],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "",
                             "dlSubdir": {
                                 "RegexDir": "\u001a?\u001f\u001c*"
                             },
                             "dlUri": "http:nr"
-                        },
-                        "viTags": [
-                            "dG",
-                            "\u0014𣉈C\u0018󼀇V",
-                            "Recommended"
-                        ]
+                        }
                     },
                     "8.5.4": {
                         "viArch": {
@@ -14620,24 +14877,25 @@
                             },
                             "A_ARM64": {}
                         },
-                        "viChangeLog": "http:kcbpi",
+                        "viChangeLog": "https:v",
                         "viPostInstall": "kvdl",
                         "viPostRemove": "qy",
                         "viPreCompile": "hpjrxo",
                         "viSourceDL": {
+                            "dlCSize": -1,
+                            "dlHash": "nfny",
+                            "dlSubdir": "I\u0005\u0019Cm",
+                            "dlUri": "https:qsjmk"
+                        },
+                        "viTags": [],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "trdm",
                             "dlSubdir": {
                                 "RegexDir": "\r3\u0013m"
                             },
                             "dlUri": "https:vhn"
-                        },
-                        "viTags": [
-                            "Latest",
-                            "base-5.7.4",
-                            "base-4.5.4",
-                            "old"
-                        ]
+                        }
                     }
                 },
                 "GHCup": {
@@ -14785,23 +15043,30 @@
                                 }
                             }
                         },
-                        "viChangeLog": "http:hgc",
+                        "viChangeLog": "http:gtzji",
                         "viPostInstall": "h",
                         "viPostRemove": "hpv",
                         "viPreCompile": "",
                         "viSourceDL": {
+                            "dlCSize": -6,
+                            "dlHash": "qw",
+                            "dlSubdir": "",
+                            "dlUri": "http:s"
+                        },
+                        "viTags": [
+                            "Latest",
+                            "base-5.1.1",
+                            "𫠼",
+                            "Recommended",
+                            "OHk(\u0007󹌞",
+                            "old"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 1,
                             "dlHash": "ww",
                             "dlSubdir": "YMP",
                             "dlUri": "http:ijnq"
-                        },
-                        "viTags": [
-                            "Recommended",
-                            "old",
-                            "Latest",
-                            "old",
-                            "Latest"
-                        ]
+                        }
                     },
                     "4.3.4": {
                         "viArch": {
@@ -14973,25 +15238,31 @@
                             },
                             "A_PowerPC": {}
                         },
-                        "viChangeLog": "https:mxeak",
+                        "viChangeLog": null,
                         "viPostInstall": null,
                         "viPostRemove": "h",
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": 2,
+                            "dlHash": "ylz",
+                            "dlSubdir": "3🭚\u0012􏩪",
+                            "dlUri": "http:iqxn"
+                        },
+                        "viTags": [
+                            "Latest",
+                            "Latest",
+                            "Latest",
+                            "𮧬",
+                            "old",
+                            "old",
+                            ""
+                        ],
+                        "viTestDL": {
                             "dlCSize": 3,
                             "dlHash": "fgvsa",
                             "dlSubdir": "\u001d옠\u0004敫t",
                             "dlUri": "https:"
-                        },
-                        "viTags": [
-                            "Recommended",
-                            "Recommended",
-                            "I\u0015",
-                            "old",
-                            "\u0017M𰄛𦨧Z𝑙",
-                            "old",
-                            "Recommended"
-                        ]
+                        }
                     },
                     "8.6.2": {
                         "viArch": {
@@ -15331,24 +15602,31 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:xo",
+                        "viChangeLog": "https:hmew",
                         "viPostInstall": "u",
                         "viPostRemove": "",
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": 2,
+                            "dlHash": "w",
+                            "dlSubdir": {
+                                "RegexDir": "\u0004)V"
+                            },
+                            "dlUri": "https:oat"
+                        },
+                        "viTags": [
+                            "base-6.6.4",
+                            "Recommended",
+                            "Recommended",
+                            "old",
+                            "Prerelease"
+                        ],
+                        "viTestDL": {
                             "dlCSize": null,
                             "dlHash": "hdfw",
                             "dlSubdir": "$",
                             "dlUri": "https:"
-                        },
-                        "viTags": [
-                            "Prerelease",
-                            "Latest",
-                            "\u000bl󳮶\u0006",
-                            "Prerelease",
-                            "Prerelease",
-                            "base-3.1.2"
-                        ]
+                        }
                     }
                 },
                 "Stack": {
@@ -15615,24 +15893,31 @@
                                 }
                             }
                         },
-                        "viChangeLog": "https:todorak",
+                        "viChangeLog": "https:zh",
                         "viPostInstall": "js",
                         "viPostRemove": "mjwcdv",
                         "viPreCompile": null,
                         "viSourceDL": {
+                            "dlCSize": null,
+                            "dlHash": "bhh",
+                            "dlSubdir": "",
+                            "dlUri": "https:rwxmrn"
+                        },
+                        "viTags": [
+                            "base-7.2.1",
+                            "Prerelease",
+                            "X",
+                            "Latest",
+                            "z 7\u0008N\u000e",
+                            "old",
+                            "󱕠\u0006g"
+                        ],
+                        "viTestDL": {
                             "dlCSize": 5,
                             "dlHash": "ektas",
                             "dlSubdir": null,
                             "dlUri": "http:voqyh"
-                        },
-                        "viTags": [
-                            "Latest",
-                            "Recommended",
-                            "base-4.3.3",
-                            "old",
-                            "Recommended",
-                            "z\u0007K"
-                        ]
+                        }
                     }
                 }
             },

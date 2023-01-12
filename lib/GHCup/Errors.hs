@@ -83,9 +83,10 @@ allHFError = unlines allErrors
     , let proxy = Proxy :: Proxy ToolShadowed in format proxy
     , let proxy = Proxy :: Proxy ContentLengthError in format proxy
     , ""
-    , "# high level errors (5000+)"
+    , "# high level errors (4000+)"
     , let proxy = Proxy :: Proxy DownloadFailed in format proxy
     , let proxy = Proxy :: Proxy InstallSetError in format proxy
+    , let proxy = Proxy :: Proxy TestFailed in format proxy
     , let proxy = Proxy :: Proxy BuildFailed in format proxy
     , let proxy = Proxy :: Proxy GHCupSetError in format proxy
     , ""
@@ -161,7 +162,6 @@ prettyHFError e =
   let errorCode = "GHCup-" <> padIntAndShow (eNum e)
   in ("[" <> linkEscapeCode errorCode  (hfErrorLink errorCode) <> "] ") <> prettyShow e
  where
-  linkEscapeCode linkText link = "\ESC]8;;" <> link <> "\ESC\\" <> linkText <> "\ESC]8;;\ESC\\"
   hfErrorLink errorCode = "https://errors.haskell.org/messages/" <> errorCode
   padIntAndShow i
     | i < 10    = "0000" <> show i
@@ -177,6 +177,9 @@ class HFErrorProject a where
   eBase :: Proxy a -> Int
 
   eDesc :: Proxy a -> String
+
+linkEscapeCode :: String -> String -> String
+linkEscapeCode linkText link = "\ESC]8;;" <> link <> "\ESC\\" <> linkText <> "\ESC]8;;\ESC\\"
 
 
     ------------------------
@@ -674,6 +677,22 @@ instance HFErrorProject InstallSetError where
   eNum (InstallSetError xs1 xs2) = 7000 + eNum xs1 + eNum xs2
   eDesc _ = "Installation or setting the tool failed."
 
+
+-- | A test failed.
+data TestFailed = forall es . (ToVariantMaybe TestFailed es, PopVariant TestFailed es, Pretty (V es), Show (V es), HFErrorProject (V es)) => TestFailed FilePath (V es)
+
+instance Pretty TestFailed where
+  pPrint (TestFailed path reason) =
+    case reason of
+      VMaybe (_ :: TestFailed) -> pPrint reason
+      _ -> text ("The test failed. GHC test suite is fragile and non-portable. Please also check out the " <> linkEscapeCode "issue tracker" " https://gitlab.haskell.org/ghc/ghc/-/issues/?sort=updated_desc&state=opened&label_name%5B%5D=testsuite&label_name%5B%5D=packaging&first_page_size=20" <> ".\nBuild dir was:") <+> text path <+> text "\nReason was:" <+> pPrint reason
+
+deriving instance Show TestFailed
+
+instance HFErrorProject TestFailed where
+  eBase _ = 4000
+  eNum (TestFailed _ xs2) = 4000 + eNum xs2
+  eDesc _ = "The test failed."
 
 -- | A build failed.
 data BuildFailed = forall es . (ToVariantMaybe BuildFailed es, PopVariant BuildFailed es, Pretty (V es), Show (V es), HFErrorProject (V es)) => BuildFailed FilePath (V es)

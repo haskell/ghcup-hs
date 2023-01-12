@@ -93,6 +93,7 @@ import qualified Data.List.NonEmpty            as NE
 import qualified Streamly.Prelude              as S
 import Control.DeepSeq (force)
 import GHC.IO (evaluate)
+import System.Environment (getEnvironment, setEnv)
 
 
 -- $setup
@@ -967,11 +968,28 @@ make :: ( MonadThrow m
      => [String]
      -> Maybe FilePath
      -> m (Either ProcessError ())
-make args workdir = do
+make args workdir = make' args workdir "ghc-make" Nothing
+
+
+-- | Calls gmake if it exists in PATH, otherwise make.
+make' :: ( MonadThrow m
+         , MonadIO m
+         , MonadReader env m
+         , HasDirs env
+         , HasLog env
+         , HasSettings env
+         )
+      => [String]
+      -> Maybe FilePath
+      -> FilePath         -- ^ log filename (opened in append mode)
+      -> Maybe [(String, String)] -- ^ optional environment
+      -> m (Either ProcessError ())
+make' args workdir logfile menv = do
   spaths    <- liftIO getSearchPath
   has_gmake <- isJust <$> liftIO (searchPath spaths "gmake")
   let mymake = if has_gmake then "gmake" else "make"
-  execLogged mymake args workdir "ghc-make" Nothing
+  execLogged mymake args workdir logfile menv
+
 
 makeOut :: (MonadReader env m, HasDirs env, MonadIO m)
         => [String]
@@ -1280,6 +1298,22 @@ warnAboutHlsCompatibility = do
 
     _ -> return ()
 
+
+
+addToPath :: FilePath
+          -> Bool         -- ^ if False will prepend
+          -> IO [(String, String)]
+addToPath path append = do
+ cEnv <- Map.fromList <$> getEnvironment
+ let paths          = ["PATH", "Path"]
+     curPaths       = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
+     {- HLINT ignore "Redundant bracket" -}
+     newPath        = intercalate [searchPathSeparator] (if append then (curPaths ++ [path]) else (path : curPaths))
+     envWithoutPath = foldr (\x y -> Map.delete x y) cEnv paths
+     pathVar        = if isWindows then "Path" else "PATH"
+     envWithNewPath = Map.toList $ Map.insert pathVar newPath envWithoutPath
+ liftIO $ setEnv pathVar newPath
+ return envWithNewPath
 
 
     -----------
