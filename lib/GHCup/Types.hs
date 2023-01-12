@@ -414,7 +414,6 @@ data KeyBindings = KeyBindings
   deriving (Show, GHC.Generic)
 
 instance NFData KeyBindings
-instance NFData Key
 
 defaultKeyBindings :: KeyBindings
 defaultKeyBindings = KeyBindings

@@ -1,2 +1,2 @@
 -- windows picks weird version
-constraints: any.hsc2hs ==0.68.7
+constraints: any.hsc2hs ==0.68.8

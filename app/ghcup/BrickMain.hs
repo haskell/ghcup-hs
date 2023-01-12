@@ -95,11 +95,11 @@ data BrickState = BrickState
 keyHandlers :: KeyBindings
             -> [ ( Vty.Key
                  , BrickSettings -> String
-                 , BrickState -> EventM n (Next BrickState)
+                 , BrickState -> EventM String BrickState ()
                  )
                ]
 keyHandlers KeyBindings {..} =
-  [ (bQuit, const "Quit"     , halt)
+  [ (bQuit, const "Quit"     , \_ -> halt)
   , (bInstall, const "Install"  , withIOAction install')
   , (bUninstall, const "Uninstall", withIOAction del')
   , (bSet, const "Set"      , withIOAction set')
@@ -114,14 +114,14 @@ keyHandlers KeyBindings {..} =
        if showAllTools then "Don't show all tools" else "Show all tools"
     , hideShowHandler showAllVersions (not . showAllTools)
     )
-  , (bUp, const "Up", \BrickState {..} -> continue BrickState{ appState = moveCursor 1 appState Up, .. })
-  , (bDown, const "Down", \BrickState {..} -> continue BrickState{ appState = moveCursor 1 appState Down, .. })
+  , (bUp, const "Up", \BrickState {..} -> put BrickState{ appState = moveCursor 1 appState Up, .. })
+  , (bDown, const "Down", \BrickState {..} -> put BrickState{ appState = moveCursor 1 appState Down, .. })
   ]
  where
   hideShowHandler f p BrickState{..} =
     let newAppSettings   = appSettings { showAllVersions = f appSettings , showAllTools = p appSettings }
         newInternalState = constructList appData newAppSettings (Just appState)
-    in  continue (BrickState appData newAppSettings newInternalState appKeys)
+    in  put (BrickState appData newAppSettings newInternalState appKeys)
 
 
 showKey :: Vty.Key -> String
@@ -142,7 +142,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
 
  where
   footer =
-    withAttr "help"
+    withAttr (attrName "help")
       . txtWrap
       . T.pack
       . foldr1 (\x y -> x <> "  " <> y)
@@ -157,9 +157,9 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
   renderList' = withDefAttr listAttr . drawListElements renderItem True
   renderItem _ b listResult@ListResult{..} =
     let marks = if
-          | lSet       -> (withAttr "set" $ str "✔✔")
-          | lInstalled -> (withAttr "installed" $ str "✓ ")
-          | otherwise  -> (withAttr "not-installed" $ str "✗ ")
+          | lSet       -> (withAttr (attrName "set") $ str "✔✔")
+          | lInstalled -> (withAttr (attrName "installed") $ str "✓ ")
+          | otherwise  -> (withAttr (attrName "not-installed") $ str "✗ ")
         ver = case lCross of
           Nothing -> T.unpack . prettyVer $ lVer
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
@@ -167,13 +167,13 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
           | lNoBindist && not lInstalled
             && not b -- TODO: overloading dim and active ignores active
                        --       so we hack around it here
-          = updateAttrMap (const dimAttrs) . withAttr "no-bindist"
+          = updateAttrMap (const dimAttrs) . withAttr (attrName "no-bindist")
           | otherwise  = id
         hooray
           | elem Latest lTag && not lInstalled =
-              withAttr "hooray"
+              withAttr (attrName "hooray")
           | otherwise = id
-        active = if b then putCursor "GHCup" (Location (0,0)) . forceAttr "active" else id
+        active = if b then putCursor "GHCup" (Location (0,0)) . forceAttr (attrName "active") else id
     in  hooray $ active $ dim
           (   marks
           <+> padLeft (Pad 2)
@@ -195,9 +195,9 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
           <+> vLimit 1 (fill ' ')
           )
 
-  printTag Recommended    = Just $ withAttr "recommended" $ str "recommended"
-  printTag Latest         = Just $ withAttr "latest" $ str "latest"
-  printTag Prerelease     = Just $ withAttr "prerelease" $ str "prerelease"
+  printTag Recommended    = Just $ withAttr (attrName "recommended") $ str "recommended"
+  printTag Latest         = Just $ withAttr (attrName "latest") $ str "latest"
+  printTag Prerelease     = Just $ withAttr (attrName "prerelease") $ str "prerelease"
   printTag (Base pvp'')   = Just $ str ("base-" ++ T.unpack (prettyPVP pvp''))
   printTag Old            = Nothing
   printTag (UnknownTag t) = Just $ str t
@@ -209,10 +209,10 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
   printTool Stack = str "Stack"
 
   printNotes ListResult {..} =
-    (if hlsPowered then [withAttr "hls-powered" $ str "hls-powered"] else mempty
+    (if hlsPowered then [withAttr (attrName "hls-powered") $ str "hls-powered"] else mempty
       )
-      ++ (if fromSrc then [withAttr "compiled" $ str "compiled"] else mempty)
-      ++ (if lStray then [withAttr "stray" $ str "stray"] else mempty)
+      ++ (if fromSrc then [withAttr (attrName "compiled") $ str "compiled"] else mempty)
+      ++ (if lStray then [withAttr (attrName "stray") $ str "stray"] else mempty)
 
   -- | Draws the list elements.
   --
@@ -242,8 +242,8 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
               selItemAttr = if foc
                 then withDefAttr listSelectedFocusedAttr
                 else withDefAttr listSelectedAttr
-              makeVisible = if isSelected then visible . selItemAttr else id
-          in  addSeparator $ makeVisible elemWidget
+              makeVisible' = if isSelected then visible . selItemAttr else id
+          in  addSeparator $ makeVisible' elemWidget
 
       in render
         $ viewport "GHCup" Vertical
@@ -258,8 +258,8 @@ minHSize s' = hLimit s' . vLimit 1 . (<+> fill ' ')
 app :: AttrMap -> AttrMap -> App BrickState e String
 app attrs dimAttrs =
   App { appDraw         = \st -> [ui dimAttrs st]
-  , appHandleEvent  = eventHandler
-  , appStartEvent   = return
+  , appHandleEvent  = \be -> get >>= \s -> eventHandler s be
+  , appStartEvent   = return ()
   , appAttrMap      = const attrs
   , appChooseCursor = showFirstCursor
   }
@@ -267,18 +267,18 @@ app attrs dimAttrs =
 defaultAttributes :: Bool -> AttrMap
 defaultAttributes no_color = attrMap
   Vty.defAttr
-  [ ("active"       , Vty.defAttr `withBackColor` Vty.blue)
-  , ("not-installed", Vty.defAttr `withForeColor` Vty.red)
-  , ("set"          , Vty.defAttr `withForeColor` Vty.green)
-  , ("installed"    , Vty.defAttr `withForeColor` Vty.green)
-  , ("recommended"  , Vty.defAttr `withForeColor` Vty.green)
-  , ("hls-powered"  , Vty.defAttr `withForeColor` Vty.green)
-  , ("latest"       , Vty.defAttr `withForeColor` Vty.yellow)
-  , ("prerelease"   , Vty.defAttr `withForeColor` Vty.red)
-  , ("compiled"     , Vty.defAttr `withForeColor` Vty.blue)
-  , ("stray"        , Vty.defAttr `withForeColor` Vty.blue)
-  , ("help"         , Vty.defAttr `withStyle`     Vty.italic)
-  , ("hooray"       , Vty.defAttr `withForeColor` Vty.brightWhite)
+  [ (attrName "active"       , Vty.defAttr `withBackColor` Vty.blue)
+  , (attrName "not-installed", Vty.defAttr `withForeColor` Vty.red)
+  , (attrName "set"          , Vty.defAttr `withForeColor` Vty.green)
+  , (attrName "installed"    , Vty.defAttr `withForeColor` Vty.green)
+  , (attrName "recommended"  , Vty.defAttr `withForeColor` Vty.green)
+  , (attrName "hls-powered"  , Vty.defAttr `withForeColor` Vty.green)
+  , (attrName "latest"       , Vty.defAttr `withForeColor` Vty.yellow)
+  , (attrName "prerelease"   , Vty.defAttr `withForeColor` Vty.red)
+  , (attrName "compiled"     , Vty.defAttr `withForeColor` Vty.blue)
+  , (attrName "stray"        , Vty.defAttr `withForeColor` Vty.blue)
+  , (attrName "help"         , Vty.defAttr `withStyle`     Vty.italic)
+  , (attrName "hooray"       , Vty.defAttr `withForeColor` Vty.brightWhite)
   ]
   where
     withForeColor | no_color  = const
@@ -292,31 +292,31 @@ defaultAttributes no_color = attrMap
 dimAttributes :: Bool -> AttrMap
 dimAttributes no_color = attrMap
   (Vty.defAttr `Vty.withStyle` Vty.dim)
-  [ ("active"    , Vty.defAttr `withBackColor` Vty.blue) -- has no effect ??
-  , ("no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
+  [ (attrName "active"    , Vty.defAttr `withBackColor` Vty.blue) -- has no effect ??
+  , (attrName "no-bindist", Vty.defAttr `Vty.withStyle` Vty.dim)
   ]
   where
     withBackColor | no_color  = \attr _ -> attr `Vty.withStyle` Vty.reverseVideo
                   | otherwise = Vty.withBackColor
 
-eventHandler :: BrickState -> BrickEvent n e -> EventM n (Next BrickState)
+eventHandler :: BrickState -> BrickEvent String e -> EventM String BrickState ()
 eventHandler st@BrickState{..} ev = do
   AppState { keyBindings = kb } <- liftIO $ readIORef settings'
   case ev of
     (MouseDown _ Vty.BScrollUp _ _) ->
-      continue (BrickState { appState = moveCursor 1 appState Up, .. })
+      put (BrickState { appState = moveCursor 1 appState Up, .. })
     (MouseDown _ Vty.BScrollDown _ _) ->
-      continue (BrickState { appState = moveCursor 1 appState Down, .. })
-    (VtyEvent (Vty.EvResize _ _)) -> continue st
+      put (BrickState { appState = moveCursor 1 appState Down, .. })
+    (VtyEvent (Vty.EvResize _ _)) -> put st
     (VtyEvent (Vty.EvKey Vty.KUp _)) ->
-      continue BrickState{ appState = moveCursor 1 appState Up, .. }
+      put BrickState{ appState = moveCursor 1 appState Up, .. }
     (VtyEvent (Vty.EvKey Vty.KDown _)) ->
-      continue BrickState{ appState = moveCursor 1 appState Down, .. }
+      put BrickState{ appState = moveCursor 1 appState Down, .. }
     (VtyEvent (Vty.EvKey key _)) ->
       case find (\(key', _, _) -> key' == key) (keyHandlers kb) of
-        Nothing -> continue st
+        Nothing -> put st
         Just (_, _, handler) -> handler st
-    _ -> continue st
+    _ -> put st
 
 
 moveCursor :: Int -> BrickInternalState -> Direction -> BrickInternalState
@@ -329,13 +329,14 @@ moveCursor steps ais@BrickInternalState{..} direction =
 
 -- | Suspend the current UI and run an IO action in terminal. If the
 -- IO action returns a Left value, then it's thrown as userError.
-withIOAction :: (BrickState
+withIOAction :: Ord n
+             => (BrickState
                  -> (Int, ListResult)
                  -> ReaderT AppState IO (Either String a))
              -> BrickState
-             -> EventM n (Next BrickState)
+             -> EventM n BrickState ()
 withIOAction action as = case listSelectedElement' (appState as) of
-  Nothing      -> continue as
+  Nothing      -> put as
   Just (ix, e) -> do
     suspendAndResume $ do
       settings <- readIORef settings'
