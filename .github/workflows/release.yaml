@@ -92,11 +92,11 @@ jobs:
         include:
           - os: [self-hosted, Linux, aarch64]
             ARTIFACT: "armv7-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.2.2
             ARCH: ARM
           - os: [self-hosted, Linux, aarch64]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.2.5
             ARCH: ARM64
     steps:
       - uses: docker://arm64v8/ubuntu:focal
@@ -292,12 +292,12 @@ jobs:
         include:
           - os: [self-hosted, Linux, aarch64]
             ARTIFACT: "armv7-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.2.2
             ARCH: ARM
             DISTRO: Ubuntu
           - os: [self-hosted, Linux, aarch64]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.2.5
             ARCH: ARM64
             DISTRO: Ubuntu
 
