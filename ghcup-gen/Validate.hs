@@ -15,8 +15,8 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
-import           GHCup.Utils.Logger
-import           GHCup.Utils.Version.QQ
+import           GHCup.Prelude.Logger
+import           GHCup.Prelude.Version.QQ
 
 import           Codec.Archive
 import           Control.Applicative
@@ -245,12 +245,13 @@ validateTarballs (TarballFilter etool versionRegex) = do
                , DownloadFailed
                , UnknownArchive
                , ArchiveResult
+               , ContentLengthError
                ]
       $ do
         case etool of
           Right (Just GHCup) -> do
             tmpUnpack <- lift mkGhcupTmpDir
-            _ <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) tmpUnpack Nothing False
+            _ <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) Nothing (fromGHCupPath tmpUnpack) Nothing False
             pure Nothing
           Right _ -> do
             p <- liftE $ downloadCached dli Nothing
@@ -260,7 +261,7 @@ validateTarballs (TarballFilter etool versionRegex) = do
               $ p
           Left ShimGen -> do
             tmpUnpack <- lift mkGhcupTmpDir
-            _ <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) tmpUnpack Nothing False
+            _ <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) Nothing (fromGHCupPath tmpUnpack) Nothing False
             pure Nothing
     case r of
       VRight (Just basePath) -> do

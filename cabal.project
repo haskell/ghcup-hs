@@ -2,15 +2,14 @@ packages: ./ghcup-gen/ghcup-gen.cabal
 
 package ghcup
     tests: False
-    flags: -tui +no-exe
+    flags: +tui +no-exe
 
 source-repository-package
   type: git
-  location: https://gitlab.haskell.org/haskell/ghcup-hs.git
-  tag: v0.1.17.8
+  location: https://github.com/haskell/ghcup-hs.git
+  tag: v0.1.19.0
 
 constraints: http-io-streams -brotli,
-             any.Cabal ==3.6.2.0,
              any.aeson >= 2.0.1.0
 
 package libarchive
@@ -25,5 +24,5 @@ package cabal-plan
 package aeson
   flags: +ordered-keymap
 
-allow-newer: base, ghc-prim, template-haskell, language-c
-
+package streamly
+  flags: +use-unliftio

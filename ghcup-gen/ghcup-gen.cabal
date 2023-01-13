@@ -47,14 +47,14 @@ executable ghcup-gen
   build-depends:
     , aeson-pretty          ^>=0.8.9
     , base                  >=4.13     && <5
-    , bytestring            ^>=0.10
+    , bytestring            ^>=0.11
     , containers            ^>=0.6
     , deepseq               ^>=1.4
     , filepath              ^>=1.4.2.1
-    , ghcup                 ^>=0.1.17.3
+    , ghcup                 ^>=0.1.19.0
     , haskus-utils-variant  ^>=3.2
     , libarchive            ^>=3.0.3.0
-    , megaparsec            ^>=9.0
+    , megaparsec            >=8.0.0      && <9.3
     , mtl                   ^>=2.2
     , optics                ^>=0.4
     , optparse-applicative  >=0.15.1.0 && <0.17
@@ -63,7 +63,7 @@ executable ghcup-gen
     , regex-posix           ^>=0.96
     , resourcet             ^>=1.2.2
     , safe-exceptions       ^>=0.1
-    , text                  ^>=1.2.4.0
+    , text                  ^>=2.0
     , transformers          ^>=0.5
     , versions              >=4.0.1    && <5.1
     , yaml-streamly         ^>=0.12.0

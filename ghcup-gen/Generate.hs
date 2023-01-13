@@ -40,7 +40,7 @@ import           System.Exit
 import           System.FilePath
 import           System.IO
 import           Text.Regex.Posix
-import           GHCup.Utils.String.QQ
+import           GHCup.Prelude.String.QQ
 
 import qualified Data.ByteString.Lazy          as BSL
 import qualified Data.Map.Strict               as M
@@ -84,6 +84,7 @@ generateHLSGhc format output = do
                       , DownloadFailed
                       , UnknownArchive
                       , ArchiveResult
+                      , ContentLengthError
                       ] $ do
                fp <- liftE $ downloadCached dli Nothing
                let subd = _dlSubdir dli
