@@ -58,7 +58,7 @@ if [ "${RUNNER_OS}" = "Linux" ] ; then
 elif [ "${RUNNER_OS}" = "FreeBSD" ] ; then
 	build_with_cache -w "${GHC}" --ghc-options='-split-sections -pgmc clang++14' --constraint="zlib +bundled-c-zlib" --constraint="zip +disable-zstd" -ftui --enable-tests
 elif [ "${RUNNER_OS}" = "Windows" ] ; then
-	build_with_cache -w "${GHC}" --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" --enable-tests
+	build_with_cache -w "${GHC}" --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" --constraint="text -simdutf" --enable-tests
 else
 	build_with_cache -w "${GHC}" --constraint="zlib +bundled-c-zlib" --constraint="lzma +static" -ftui --enable-tests
 fi
