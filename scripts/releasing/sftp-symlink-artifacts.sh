@@ -29,8 +29,7 @@ symlink ${ver}/aarch64-linux-ghcup-${ver} aarch64-linux-ghcup
 symlink ${ver}/armv7-linux-ghcup-${ver} armv7-linux-ghcup
 symlink ${ver}/i386-linux-ghcup-${ver} i386-linux-ghcup
 symlink ${ver}/x86_64-apple-darwin-ghcup-${ver} x86_64-apple-darwin-ghcup
-symlink ${ver}/x86_64-freebsd12-ghcup-${ver} x86_64-freebsd12-ghcup
-symlink ${ver}/x86_64-freebsd13-ghcup-${ver} x86_64-freebsd13-ghcup
+symlink ${ver}/x86_64-portbld-freebsd-ghcup-${ver} x86_64-portbld-freebsd-ghcup
 symlink ${ver}/x86_64-linux-ghcup-${ver} x86_64-linux-ghcup
 symlink ${ver}/x86_64-mingw64-ghcup-${ver}.exe x86_64-mingw64-ghcup.exe
 EOF

@@ -1,49 +1,34 @@
+#!/bin/bash
 
 set -eu
+set -o pipefail
 
-tag=v$1
-ver=$1
+shopt -s extglob
 
-dest=$2
-gpg_user=$3
+RELEASE=$1
+SIGNER=$2
 
-mkdir -p "${dest}"
+echo "RELEASE: $RELEASE"
+echo "SIGNER: $SIGNER"
 
-cd "${dest}"
+for com in gh gpg curl sha256sum ; do
+	command -V ${com} >/dev/null 2>&1
+done
 
-base_url="https://gitlab.haskell.org/api/v4/projects/618/jobs/artifacts/${tag}/raw"
+[ ! -e "gh-release-artifacts/${RELEASE}" ]
 
-curl -f -o "x86_64-apple-darwin-ghcup-${ver}" \
-	"${base_url}/out/x86_64-apple-darwin-ghcup-${ver}?job=release:darwin"
+mkdir -p "gh-release-artifacts/${RELEASE}"
+cd "gh-release-artifacts/${RELEASE}"
 
-curl -f -o "aarch64-apple-darwin-ghcup-${ver}" \
-	"${base_url}/out/aarch64-apple-darwin-ghcup-${ver}?job=release:darwin:aarch64"
+# github
+gh release download $RELEASE
 
-curl -f -o "x86_64-freebsd12-ghcup-${ver}" \
-	"${base_url}/out/x86_64-portbld-freebsd-ghcup-${ver}?job=release:freebsd12"
+rm test-*
 
-curl -f -o "x86_64-freebsd13-ghcup-${ver}" \
-	"${base_url}/out/x86_64-portbld-freebsd-ghcup-${ver}?job=release:freebsd13"
+# cirrus
+curl -L -o x86_64-portbld-freebsd-ghcup-${RELEASE} \
+	"https://api.cirrus-ci.com/v1/artifact/github/haskell/ghcup-hs/build/binaries/out/x86_64-portbld-freebsd-ghcup-${RELEASE}?branch=${RELEASE}"
 
-curl -f -o "i386-linux-ghcup-${ver}" \
-	"${base_url}/out/i386-linux-ghcup-${ver}?job=release:linux:32bit"
-
-curl -f -o "x86_64-linux-ghcup-${ver}" \
-	"${base_url}/out/x86_64-linux-ghcup-${ver}?job=release:linux:64bit"
-
-curl -f -o "aarch64-linux-ghcup-${ver}" \
-	"${base_url}/out/aarch64-linux-ghcup-${ver}?job=release:linux:aarch64"
-
-curl -f -o "armv7-linux-ghcup-${ver}" \
-	"${base_url}/out/armv7-linux-ghcup-${ver}?job=release:linux:armv7"
-
-curl -f -o "x86_64-mingw64-ghcup-${ver}.exe" \
-	"${base_url}/out/x86_64-mingw64-ghcup-${ver}.exe?job=release:windows"
-
-rm -f *.sig
-sha256sum *-ghcup-* > SHA256SUMS
-gpg --detach-sign -u ${gpg_user} SHA256SUMS
-for f in *-ghcup-* ; do gpg --detach-sign -u ${gpg_user} $f ; done
-
-
+sha256sum *ghcup* > SHA256SUMS
+gpg --detach-sign -u "${SIGNER}" SHA256SUMS
 

@@ -25,22 +25,28 @@ put SHA256SUMS
 put SHA256SUMS.sig
 put aarch64-apple-darwin-ghcup-${ver}
 put aarch64-apple-darwin-ghcup-${ver}.sig
+put aarch64-apple-darwin-ghcup.plan.json
 put aarch64-linux-ghcup-${ver}
 put aarch64-linux-ghcup-${ver}.sig
+put aarch64-linux-ghcup.plan.json
 put armv7-linux-ghcup-${ver}
 put armv7-linux-ghcup-${ver}.sig
+put armv7-linux-ghcup.plan.json
 put i386-linux-ghcup-${ver}
 put i386-linux-ghcup-${ver}.sig
+put i386-linux-ghcup.plan.json
 put x86_64-apple-darwin-ghcup-${ver}
 put x86_64-apple-darwin-ghcup-${ver}.sig
-put x86_64-freebsd12-ghcup-${ver}
-put x86_64-freebsd12-ghcup-${ver}.sig
-put x86_64-freebsd13-ghcup-${ver}
-put x86_64-freebsd13-ghcup-${ver}.sig
+put x86_64-apple-darwin-ghcup.plan.json
+put x86_64-portbld-freebsd-ghcup-${ver}
+put x86_64-portbld-freebsd-ghcup-${ver}.sig
+put x86_64-portbld-freebsd-ghcup.plan.json
 put x86_64-linux-ghcup-${ver}
 put x86_64-linux-ghcup-${ver}.sig
+put x86_64-linux-ghcup.plan.json
 put x86_64-mingw64-ghcup-${ver}.exe
 put x86_64-mingw64-ghcup-${ver}.exe.sig
+put x86_64-mingw64-ghcup.plan.json
 EOF
 
 curl -X PURGE https://downloads.haskell.org/~ghcup/${ver}/

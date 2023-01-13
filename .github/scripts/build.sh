@@ -70,7 +70,7 @@ binary=$(cabal list-bin ghcup)
 binary_test=$(cabal list-bin ghcup-test)
 ver=$("${binary}" --numeric-version)
 strip_binary "${binary}"
-cp "${binary}" "out/${ARTIFACT}-${ver}"
-cp "${binary_test}" "out/test-${ARTIFACT}-${ver}"
+cp "${binary}" "out/${ARTIFACT}-${ver}${ext}"
+cp "${binary_test}" "out/test-${ARTIFACT}-${ver}${ext}"
 cp ./dist-newstyle/cache/plan.json "out/${ARTIFACT}.plan.json"
 
