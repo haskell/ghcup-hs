@@ -6,6 +6,7 @@
 * integrate with [errors.haskell.org](https://errors.haskell.org/index.html), wrt [#434](https://github.com/haskell/ghcup-hs/issues/434)
 * allow to overwrite distro detection via config wrt [#421](https://github.com/haskell/ghcup-hs/issues/421)
     - this is particularly useful for e.g. Ubuntu derivates, where ghcup doesn't pick the optimal bindist, also see the [GHCup documentation on overriding distro detection](https://www.haskell.org/ghcup/guide/#overriding-distro-detection)
+* Add proper support for mirrors wrt [#357](https://github.com/haskell/ghcup-hs/issues/357)
 * fix a (harmless) bug in `ghcup nuke` on windows
 * improvements to `ghcup add-release-channel` wrt [#708](https://github.com/haskell/ghcup-hs/issues/708)
 * fix building newer GHC from source wrt [#433](https://github.com/haskell/ghcup-hs/issues/433)
