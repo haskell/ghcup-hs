@@ -3090,7 +3090,7 @@ ghcupDownloads:
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/0.1.19.0/x86_64-mingw64-ghcup-0.1.19.0.exe
-              dlHash: c80008f5d7b19770fbfbe7759136c0f6313de0cfd6d2c9b5e60438ce29d23f29
+              dlHash: c4e4a764b0844e351eb6939ff236452f33c34808aaca69f973ea82e18d3aa1ac
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
