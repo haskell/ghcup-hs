@@ -1,5 +1,23 @@
 # Revision history for ghcup
 
+## 0.1.19.0 -- 2023-1-13
+
+* restore proper support for FreeBSD and Linux armv7
+* integrate with [errors.haskell.org](https://errors.haskell.org/index.html), wrt [#434](https://github.com/haskell/ghcup-hs/issues/434)
+* allow to overwrite distro detection via config wrt [#421](https://github.com/haskell/ghcup-hs/issues/421)
+    - this is particularly useful for e.g. Ubuntu derivates, where ghcup doesn't pick the optimal bindist, also see the [GHCup documentation on overriding distro detection](https://www.haskell.org/ghcup/guide/#overriding-distro-detection)
+* fix a (harmless) bug in `ghcup nuke` on windows
+* improvements to `ghcup add-release-channel` wrt [#708](https://github.com/haskell/ghcup-hs/issues/708)
+* fix building newer GHC from source wrt [#433](https://github.com/haskell/ghcup-hs/issues/433)
+* Fix `ghcup install hls -u` on windows
+* Fix failure with `--isolate=dir --force`
+* Add `--metadata-fetching-mode` arg, fixes [#440](https://github.com/haskell/ghcup-hs/issues/440)
+* Add content-length property to downloads
+* [Fix a grave bug on armv7](https://github.com/haskell/ghcup-hs/commit/78ee956df2618862f421178a565c82548ff7e578) during installation wrt [#415](https://github.com/haskell/ghcup-hs/issues/415)
+* improve many warning/error messages (contributions by @taylorfausak)
+* some minor optimization in `ghcup whereis ghcup`
+* improve `--keep=always` to not clean up directories in certain circumstances
+
 ## 0.1.18.1 -- 2022-08-06
 
 * fix sdist and unbreak hackage, wrt [#399](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/399)
