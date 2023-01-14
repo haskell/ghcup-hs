@@ -20,7 +20,6 @@ jobs:
       BOOTSTRAP_HASKELL_NONINTERACTIVE: yes
       ARCH: 64
       JSON_VERSION: "0.0.7"
-      APT_GET: "sudo apt-get"
     strategy:
       matrix:
         include:
@@ -36,7 +35,15 @@ jobs:
         with:
           submodules: 'true'
 
-      - if: runner.os != 'Windows'
+      - if: runner.os == 'Linux'
+        name: Run bootstrap
+        run: |
+          sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
+          sh ./.github/scripts/bootstrap.sh
+        env:
+          DISTRO: ${{ matrix.DISTRO }}
+
+      - if: runner.os == 'macOS'
         name: Run bootstrap
         run: sh ./.github/scripts/bootstrap.sh
         env:

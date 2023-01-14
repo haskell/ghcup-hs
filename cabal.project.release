@@ -1,0 +1,50 @@
+packages: ./ghcup.cabal
+
+optional-packages: ./vendored/*/*.cabal
+
+optimization: 2
+
+if os(linux)
+  package ghcup
+    flags: +tui
+  if arch(x86_64) || arch(i386)
+    package *
+      ghc-options: -split-sections -optl-static
+elif os(darwin)
+  constraints: zlib +bundled-c-zlib,
+               lzma +static
+  package ghcup
+    flags: +tui
+elif os(mingw32)
+  constraints: zlib +bundled-c-zlib,
+               lzma +static,
+               text -simdutf
+  package ghcup
+    flags: -tui
+elif os(freebsd)
+  constraints: zlib +bundled-c-zlib,
+               zip +disable-zstd
+  package *
+    ghc-options: -split-sections -pgmc clang++14
+  package ghcup
+    flags: +tui
+
+constraints: http-io-streams -brotli,
+             any.aeson >= 2.0.1.0,
+             any.hsc2hs ==0.68.8
+
+package libarchive
+  flags: -system-libarchive
+
+package aeson-pretty
+  flags: +lib-only
+
+package cabal-plan
+  flags: -exe
+
+package aeson
+  flags: +ordered-keymap
+
+package streamly
+  flags: +use-unliftio
+

@@ -17,7 +17,7 @@ jobs:
     name: Build linux binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.6.2.0
+      CABAL_VER: 3.8.1.0
       JSON_VERSION: "0.0.7"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -81,7 +81,7 @@ jobs:
     name: Build ARM binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.6.2.0
+      CABAL_VER: 3.8.1.0
       JSON_VERSION: "0.0.7"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -90,11 +90,11 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - os: [self-hosted, Linux, aarch64]
+          - os: [self-hosted, Linux, ARM64, aarch32-linux]
             ARTIFACT: "armv7-linux-ghcup"
             GHC_VER: 9.2.2
             ARCH: ARM
-          - os: [self-hosted, Linux, aarch64]
+          - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "aarch64-linux-ghcup"
             GHC_VER: 9.2.5
             ARCH: ARM64
@@ -154,7 +154,7 @@ jobs:
     name: Build binary (Mac/Win)
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.6.2.0
+      CABAL_VER: 3.8.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
       JSON_VERSION: "0.0.7"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -164,7 +164,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: [self-hosted, macOS, aarch64]
+          - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
             GHC_VER: 9.2.5
             ARCH: ARM64
@@ -182,8 +182,48 @@ jobs:
         with:
           submodules: 'true'
 
-      - name: Run build (windows/mac)
-        run: bash .github/scripts/build.sh
+      - if: matrix.ARCH == 'ARM64' && runner.os == 'macOS'
+        name: Run build
+        run: |
+          bash .github/scripts/brew.sh git coreutils llvm@11 autoconf automake
+          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$HOME/.brew/opt/llvm@11/bin:$PATH"
+          export CC="$HOME/.brew/opt/llvm@11/bin/clang"
+          export CXX="$HOME/.brew/opt/llvm@11/bin/clang++"
+          export LD=ld
+          export AR="$HOME/.brew/opt/llvm@11/bin/llvm-ar"
+          export RANLIB="$HOME/.brew/opt/llvm@11/bin/llvm-ranlib"
+          bash .github/scripts/build.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+          DISTRO: na
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          S3_HOST: ${{ env.S3_HOST }}
+          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
+
+      - if: matrix.ARCH == '64' && runner.os == 'macOS'
+        name: Run build (windows/mac)
+        run: |
+          bash .github/scripts/brew.sh coreutils
+          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$PATH"
+          bash .github/scripts/build.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+          DISTRO: na
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          S3_HOST: ${{ env.S3_HOST }}
+          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
+
+      - if: runner.os == 'Windows'
+        name: Run build (windows/mac)
+        run: |
+          bash .github/scripts/brew.sh git coreutils autoconf automake
+          bash .github/scripts/build.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -202,13 +242,12 @@ jobs:
           path: |
             ./out/*
 
-
   test-linux:
     name: Test linux
     needs: "build-linux"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.6.2.0
+      CABAL_VER: 3.8.1.0
       JSON_VERSION: "0.0.7"
     strategy:
       matrix:
@@ -264,13 +303,14 @@ jobs:
 
       - if: matrix.DISTRO != 'Alpine'
         name: Run test (64 bit linux)
-        run: sh .github/scripts/test.sh
+        run: |
+          sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
+          sh .github/scripts/test.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: ${{ matrix.DISTRO }}
-          APT_GET: "sudo apt-get"
 
       - if: failure()
         name: Upload artifact
@@ -285,17 +325,17 @@ jobs:
     needs: "build-arm"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.6.2.0
+      CABAL_VER: 3.8.1.0
       JSON_VERSION: "0.0.7"
     strategy:
       matrix:
         include:
-          - os: [self-hosted, Linux, aarch64]
+          - os: [self-hosted, Linux, ARM64, aarch32-linux]
             ARTIFACT: "armv7-linux-ghcup"
             GHC_VER: 9.2.2
             ARCH: ARM
             DISTRO: Ubuntu
-          - os: [self-hosted, Linux, aarch64]
+          - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "aarch64-linux-ghcup"
             GHC_VER: 9.2.5
             ARCH: ARM64
@@ -352,13 +392,13 @@ jobs:
     needs: "build-macwin"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.6.2.0
+      CABAL_VER: 3.8.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
       JSON_VERSION: "0.0.7"
     strategy:
       matrix:
         include:
-          - os: [self-hosted, macOS, aarch64]
+          - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
             GHC_VER: 9.2.5
             ARCH: ARM64
@@ -385,7 +425,21 @@ jobs:
           name: artifacts
           path: ./out
 
-      - name: Run test (windows/mac)
+      - if: runner.os == 'macOS'
+        name: Run test
+        run: |
+          bash .github/scripts/brew.sh coreutils
+          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$PATH"
+          bash .github/scripts/test.sh
+        env:
+          ARTIFACT: ${{ matrix.ARTIFACT }}
+          ARCH: ${{ matrix.ARCH }}
+          GHC_VER: ${{ matrix.GHC_VER }}
+          DISTRO: ${{ matrix.DISTRO }}
+          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
+
+      - if: runner.os != 'macOS'
+        name: Run test
         run: bash .github/scripts/test.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
@@ -416,7 +470,7 @@ jobs:
     env:
       GHC_VERSION: "8.10.7"
       HLS_TARGET_VERSION: "1.8.0.0"
-      CABAL_VERSION: "3.6.2.0"
+      CABAL_VERSION: "3.8.1.0"
       JSON_VERSION: "0.0.7"
       ARTIFACT: "x86_64-linux-ghcup"
       DISTRO: Ubuntu
@@ -436,9 +490,9 @@ jobs:
           path: ./out
 
       - name: Run hls build
-        run: sh .github/scripts/hls.sh
-        env:
-          APT_GET: "sudo apt-get"
+        run: |
+          sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
+          sh .github/scripts/hls.sh
 
   release:
     name: release

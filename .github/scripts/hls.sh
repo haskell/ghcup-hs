@@ -2,7 +2,6 @@
 
 set -eux
 
-. .github/scripts/prereq.sh
 . .github/scripts/common.sh
 
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
@@ -34,7 +33,7 @@ sha_sum "$(raw_eghcup --offline whereis ghcup)"
 git_describe
 
 eghcup install ghc "${GHC_VERSION}"
-eghcup install cabal
+eghcup install cabal "${CABAL_VERSION}"
 
 ecabal update
 
@@ -57,9 +56,9 @@ eghcup debug-info
 	cd "haskell-language-server-${HLS_TARGET_VERSION}/"
 	ecabal configure -w "ghc-${GHC_VERSION}" --disable-profiling --disable-tests --jobs="$(nproc)"
 	ecabal build --dependencies-only -w "ghc-${GHC_VERSION}" --disable-profiling --disable-tests --jobs="$(nproc)" --dry-run
-	sync_from_retry
+	sync_from
 	ecabal build --dependencies-only -w "ghc-${GHC_VERSION}" --disable-profiling --disable-tests --jobs="$(nproc)" || sync_to
-	sync_to_retry
+	sync_to
 )
 
 eghcup -v compile hls -j "$(nproc)" -g "${HLS_TARGET_VERSION}" --ghc "${GHC_VERSION}"

@@ -2,7 +2,7 @@
 
 set -eux
 
-. .github/scripts/prereq.sh
+. .github/scripts/env.sh
 
 mkdir -p "$CI_PROJECT_DIR"/.local/bin
 

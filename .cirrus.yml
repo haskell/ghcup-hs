@@ -5,7 +5,7 @@ build_task:
   name: build
   env:
     GHC_VER: 9.2.4
-    CABAL_VER: 3.6.2.0
+    CABAL_VER: 3.8.1.0
     ARTIFACT: "x86_64-portbld-freebsd-ghcup"
     ARCH: 64
     RUNNER_OS: FreeBSD

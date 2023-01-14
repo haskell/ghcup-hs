@@ -2,8 +2,6 @@ packages: ./ghcup.cabal
 
 optional-packages: ./vendored/*/*.cabal
 
-optimization: 2
-
 package ghcup
     flags: +tui
 

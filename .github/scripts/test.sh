@@ -2,7 +2,6 @@
 
 set -eux
 
-. .github/scripts/prereq.sh
 . .github/scripts/common.sh
 
 
