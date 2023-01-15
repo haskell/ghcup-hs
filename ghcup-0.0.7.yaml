@@ -3242,7 +3242,7 @@ ghcupDownloads:
           Linux_UnknownLinux:
             unknown_versioning: &cabal-3810-32
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.8.1.0/i386-linux-cabal-3.8.1.0.tar.xz
-              dlHash: 9da0b5ef57581538fd8420bc5f8792656b7c9a51f52130f1d81fdb87ecebc8dd
+              dlHash: e870d3d619b4a338ba0279682fcda2c8379112daab716e1eebe3e9abb306846a
           Linux_Alpine:
             unknown_versioning: *cabal-3810-32
         A_ARM64:
@@ -3258,7 +3258,7 @@ ghcupDownloads:
           Linux_UnknownLinux:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.8.1.0/armv7-linux-cabal-3.8.1.0.tar.xz
-              dlHash: 6061a12e22f8ee561952e225852fb42e8570d73994fe916bde754cbe1df79463
+              dlHash: 836d89aa1c98a3a848b8b691f9b99123f260dcd4cc1163cb77435a31559475fe
   GHCup:
     0.1.19.0:
       viTags:
