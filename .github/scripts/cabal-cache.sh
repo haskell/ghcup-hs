@@ -17,27 +17,30 @@ fi
 
 
 # ensure ghc
-ghcup install ghc --set 8.10.7
-ghcup install cabal --set recommended
+ghcup install ghc --set "${GHC_VER}"
+ghcup install cabal --set "${CABAL_VER}"
 
 ghc --version
 cabal --version
 
 cabal update
 
-git clone --single-branch --branch main https://github.com/hasufell/cabal-cache.git
-cd cabal-cache
+cd /tmp
+cabal unpack cabal-install-3.8.1.0
+cd cabal-install-3.8.1.0
 
 if [ "${DISTRO}" = "Alpine" ] ; then
-	cabal build --ghc-options='-split-sections -optl-static'
+	cabal build --constraint='lukko -ofd-locking' --ghc-options='-split-sections -optl-static' cabal-install:exe:cabal
+elif  [ "${DISTRO}" = "Ubuntu" ] ; then
+	cabal build --constraint='lukko -ofd-locking' cabal-install:exe:cabal
 else
-	cabal build
+	cabal build cabal-install:exe:cabal
 fi
 
-binary=$(cabal list-bin cabal-cache)
+binary=$(cabal list-bin cabal-install:exe:cabal)
 cd ..
 
-mkdir -p out
+mkdir -p "${CI_PROJECT_DIR}/out"
 strip_binary "${binary}"
-cp "${binary}" "out/${ARTIFACT}"
+cp "${binary}" "${CI_PROJECT_DIR}/out/${ARTIFACT}"
 

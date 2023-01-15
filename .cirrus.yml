@@ -5,7 +5,7 @@ task:
   env:
     GHC_VER: 9.2.4
     CABAL_VER: 3.6.2.0
-    ARTIFACT: "x86_64-portbld-freebsd-ghcup"
+    ARTIFACT: "x86_64-portbld-freebsd-cabal"
     ARCH: 64
     RUNNER_OS: FreeBSD
     DISTRO: na
