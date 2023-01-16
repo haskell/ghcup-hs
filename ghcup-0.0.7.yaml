@@ -167,7 +167,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-src.tar.xz
         dlSubdir: ghc-7.10.3
         dlHash: cf90cedce1c28fd0e2b9e72fe8a938756668d18ea1fcc884a19f698658ac4fef
-      viPostRemove: &ghc-post-remove "After removing GHC you might also want to clean up your cabal store at: ~/.cabal/store/ghc-<ghcver>"
       viPostInstall: "GHC-7.10.3 may give linking errors on most modern distros. You may have to pass '--ghc-option=-optc-no-pie --ghc-option=-optl-no-pie' to cabal build/install. Also see https://gitlab.haskell.org/ghc/ghc/-/issues/18763"
       viArch:
         A_64:
@@ -237,7 +236,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-src.tar.xz
         dlSubdir: ghc-8.0.2
         dlHash: 11625453e1d0686b3fa6739988f70ecac836cadc30b9f0c8b49ef9091d6118b1
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -301,7 +299,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-src.tar.xz
         dlSubdir: ghc-8.2.2
         dlHash: bb8ec3634aa132d09faa270bbd604b82dfa61f04855655af6f9d14a9eedc05fc
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -374,7 +371,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-src.tar.xz
         dlSubdir: ghc-8.4.1
         dlHash: 39ae2f25192408f355693e5a3c8b6ff613ddb7c4da998fdf26210143a61839d2
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -429,7 +425,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-src.tar.xz
         dlSubdir: ghc-8.4.2
         dlHash: 01cc32f24a06bf3b2428351b6d7fec791e82d042426d29ad9e5a245b35f0047b
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -490,7 +485,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-src.tar.xz
         dlSubdir: ghc-8.4.3
         dlHash: ae47afda985830de8811243255aa3744dfb9207cb980af74393298b2b62160d6
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -545,7 +539,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-src.tar.xz
         dlSubdir: ghc-8.4.4
         dlHash: 11117735a58e507c481c09f3f39ae5a314e9fbf49fc3109528f99ea7959004b2
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -625,7 +618,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.6.1/ghc-8.6.1-src.tar.xz
         dlSubdir: ghc-8.6.1
         dlHash: 2c25c26d1e5c47c7cbb2a1d8e6456524033e7a71409184dd3125e3fc5a3c7036
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -686,7 +678,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-src.tar.xz
         dlSubdir: ghc-8.6.2
         dlHash: caaa819d21280ecde90a4773143dee188711e9ff175a27cfbaee56eb851d76d5
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -738,7 +729,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-src.tar.xz
         dlSubdir: ghc-8.6.3
         dlHash: 9f9e37b7971935d88ba80426c36af14b1e0b3ec1d9c860f44a4391771bc07f23
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -808,7 +798,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-src.tar.xz
         dlSubdir: ghc-8.6.4
         dlHash: 5b5d07e4463203a433c3ed3df461ba6cce11b6d2b9b264db31f3429075d0303a
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -863,7 +852,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-src.tar.xz
         dlSubdir: ghc-8.6.5
         dlHash: 4d4aa1e96f4001b934ac6193ab09af5d6172f41f5a5d39d8e43393b9aafee361
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -949,7 +937,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-src.tar.xz
         dlSubdir: ghc-8.8.1
         dlHash: 908a83d9b814da74585de9d39687189e6260ec3848131f9d9236cab8a123721a
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -1014,7 +1001,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-src.tar.xz
         dlSubdir: ghc-8.8.2
         dlHash: 01cea54d90686b97bcc9960b108beaffccd4336dee930dcf9beaf52b1f370a0b
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -1079,7 +1065,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-src.tar.xz
         dlSubdir: ghc-8.8.3
         dlHash: e0dcc0aaf3e234c5978f29e6df62947e97720ab404ec0158343df211c5480f89
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -1154,7 +1139,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-src.tar.xz
         dlSubdir: ghc-8.8.4
         dlHash: f0505e38b2235ff9f1090b51f44d6c8efd371068e5a6bb42a2a6d8b67b5ffc2d
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -1234,7 +1218,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-src.tar.xz
         dlSubdir: ghc-8.10.1
         dlHash: 4e3b07f83a266b3198310f19f71e371ebce97c769b14f0d688f4cbf2a2a1edf5
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -1330,7 +1313,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.10.2/ghc-8.10.2-src.tar.xz
         dlSubdir: ghc-8.10.2
         dlHash: 9c573a4621a78723950617c223559bdc325ea6a3409264aedf68f05510b0880b
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -1426,7 +1408,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-src.tar.xz
         dlSubdir: ghc-8.10.3
         dlHash: ccdc8319549028a708d7163e2967382677b1a5a379ff94d948195b5cf46eb931
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -1522,7 +1503,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-src.tar.xz
         dlSubdir: ghc-8.10.4
         dlHash: 52af871b4e08550257d720c2944ac85727d0b948407cef1bebfe7508c224910e
-      viPostRemove: *ghc-post-remove
       viPreCompile: &ghc-pre-compile "If you have autoconf >= 2.70 you'll need this patch https://gitlab.haskell.org/ghc/ghc/-/snippets/2040 (see the --patchdir option)"
       viArch:
         A_64:
@@ -1619,7 +1599,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.10.5/ghc-8.10.5-src.tar.xz
         dlSubdir: ghc-8.10.5
         dlHash: f10941f16e4fbd98580ab5241b9271bb0851304560c4d5ca127e3b0e20e3076f
-      viPostRemove: *ghc-post-remove
       viPreCompile: *ghc-pre-compile
       viPostInstall: &ghc-8105-post-install |
         GHC 8.10.5 and 8.10.6 have several issues on Darwin, e.g.
@@ -1726,7 +1705,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.10.6/ghc-8.10.6-src.tar.xz
         dlSubdir: ghc-8.10.6
         dlHash: 43afba72a533408b42c1492bd047b5e37e5f7204e41a5cedd3182cc841610ce9
-      viPostRemove: *ghc-post-remove
       viPreCompile: *ghc-pre-compile
       viPostInstall: *ghc-8105-post-install
       viArch:
@@ -1828,7 +1806,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-src.tar.xz
         dlSubdir: ghc-8.10.7
         dlHash: e3eef6229ce9908dfe1ea41436befb0455fefb1932559e860ad4c606b0d03c9d
-      viPostRemove: *ghc-post-remove
       viPreCompile: *ghc-pre-compile
       viArch:
         A_64:
@@ -1930,7 +1907,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-src.tar.xz
         dlSubdir: ghc-9.0.1
         dlHash: a5230314e4065f9fcc371dfe519748fd85c825b279abf72a24e09b83578a35f9
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2025,7 +2001,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-src.tar.xz
         dlSubdir: ghc-9.0.2
         dlHash: 140e42b96346322d1a39eb17602bcdc76e292028ad4a69286b230bab188a9197
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2120,7 +2095,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-src.tar.xz
         dlSubdir: ghc-9.2.1
         dlHash: f444012f97a136d9940f77cdff03fda48f9475e2ed0fec966c4d35c4df55f746
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2214,7 +2188,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-src.tar.xz
         dlSubdir: ghc-9.2.2
         dlHash: 902463a4cc6ee479af9358b9f8b2ee3237b03e934a1ea65b6d1fcf3e0d749ea6
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2303,7 +2276,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-src-booted.tar.xz
         dlSubdir: ghc-9.2.3
         dlHash: 00e33a2640e64014fcef4e385f661f61c47839755054a2f87ffe4d5a58c6cdaa
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2390,7 +2362,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.2.4/ghc-9.2.4-src.tar.xz
         dlSubdir: ghc-9.2.4
         dlHash: 15213888064a0ec4e7723d075f31b87a678ce0851773d58b44ef7aa3de996458
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2478,7 +2449,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.2.5/ghc-9.2.5-src.tar.xz
         dlSubdir: ghc-9.2.5
         dlHash: 0606797d1b38e2d88ee2243f38ec6b9a1aa93e9b578e95f0de9a9c0a4144021c
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2566,7 +2536,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.4.1/ghc-9.4.1-src.tar.xz
         dlSubdir: ghc-9.4.1
         dlHash: cbfed4640bdf025e33ba55433daf8cdf698f4e0499ae7a800dde44a82e7396e3
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2652,7 +2621,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.4.2/ghc-9.4.2-src.tar.xz
         dlSubdir: ghc-9.4.2
         dlHash: 7227ef3b5e15a0d70b8f1a43aec32867e2a9b2d857cc0ed556aeed172d4db3a5
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2738,7 +2706,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.4.3/ghc-9.4.3-src.tar.xz
         dlSubdir: ghc-9.4.3
         dlHash: eaf63949536ede50ee39179f2299d5094eb9152d87cc6fb2175006bc98e8905a
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -2825,7 +2792,6 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.4.4/ghc-9.4.4-src.tar.xz
         dlSubdir: ghc-9.4.4
         dlHash: e8cef25a6ded1531cda7a90488d0cfb6d780657d16636daa59430be030cd67e2
-      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
