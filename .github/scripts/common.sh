@@ -7,7 +7,7 @@ ecabal() {
 }
 
 nonfatal() {
-	"$@" || "$@ failed"
+	"$@" || "$* failed"
 }
 
 sync_from() {
