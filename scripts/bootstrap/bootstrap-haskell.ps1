@@ -432,12 +432,13 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 	}
     Print-Msg -msg ('Downloading Msys2 archive {0}...' -f $Msys2Version)
     $archive = ('msys2-base-x86_64-{0}.sfx.exe' -f $Msys2Version)
+    $msysUrl = ('https://repo.msys2.org/distrib/x86_64/{0}' -f "$archive")
     $archivePath = ('{0}\{1}' -f ([IO.Path]::GetTempPath()), "$archive")
 
     if ((Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue) -and !($DisableCurl)) {
-      Exec "curl.exe" '-o' "$archivePath" ('https://repo.msys2.org/distrib/x86_64/{0}' -f "$archive")
+      Exec "curl.exe" '-o' "$archivePath" "$msysUrl"
     } else {
-      Get-FileWCSynchronous -url ('https://repo.msys2.org/distrib/{0}' -f $archive) -destinationFolder ([IO.Path]::GetTempPath()) -includeStats
+      Get-FileWCSynchronous -url "$msysUrl" -destinationFolder ([IO.Path]::GetTempPath()) -includeStats
     }
 
     Print-Msg -msg 'Extracting Msys2 archive...'
