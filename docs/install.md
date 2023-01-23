@@ -24,7 +24,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager
 
 There's also a [youtube video](https://www.youtube.com/watch?v=bB4fmQiUYPw) explaining installation on windows.
 
-If you want to know what these scripts do, check out the [source code at the repository](https://github.com/haskell/ghcup-hs/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-install) and GPG verify the binaries.
+If you want to know what these scripts do, check out the [source code at the repository](https://github.com/haskell/ghcup-hs/tree/master/scripts/bootstrap). Advanced users may want to perform a [manual installation](#manual-installation) and GPG verify the binaries.
 
 ### Which versions get installed?
 
