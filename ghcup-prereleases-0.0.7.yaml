@@ -549,12 +549,6 @@ ghcupDownloads:
               dlSubdir: ghc-9.6.0.20230128-i386-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230128/ghc-9.6.0.20230128-i386-deb9-linux.tar.xz
             unknown_versioning: *ghc-961alpha2-64-deb9
-          Linux_Mint:
-            unknown_versioning: *ghc-961alpha2-64-deb9
-          Linux_Ubuntu:
-            unknown_versioning: *ghc-961alpha2-64-deb9
-          Linux_UnknownLinux:
-            unknown_versioning: *ghc-961alpha2-64-deb9
         A_64:
           Darwin:
             unknown_versioning:
@@ -601,7 +595,7 @@ ghcupDownloads:
             ( >= 16 && < 19 ): *ghc-961alpha2-64-deb9
             unknown_versioning: *ghc-961alpha2-64-deb10
           Linux_UnknownLinux:
-            unknown_versioning: *ghc-961alpha2-64-fedora33
+            unknown_versioning: *ghc-961alpha2-64-centos7
           Windows:
             unknown_versioning:
               dlHash: 68f1311660d47384fa5270c362aa87f2b9823d60963e975b071a00e010a35f9e
@@ -623,9 +617,13 @@ ghcupDownloads:
         dlHash: 531f58dc0e352987a637095c18252e5d6fef260969eb9cb3d8447888b0922da2
         dlSubdir: ghc-9.6.0.20230128
         dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230128/ghc-9.6.0.20230128-src.tar.xz
+      viTestDL:
+        dlUri: https://downloads.haskell.org/ghc/9.6.0.20230128/ghc-9.6.0.20230128-testsuite.tar.xz
+        dlSubdir: ghc-9.6.0.20230128/testsuite
+        dlHash: ea1b8f07026183c72ced88433789e487dc5f3499f37f5798e19c8940a4844b24
       viTags:
       - Latest
-      - TODO_base_version
+      - base-4.18.0.0
   Stack:
     2.9.2.1:
       viTags:
