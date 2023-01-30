@@ -212,7 +212,7 @@ validateTarballs (TarballFilter etool versionRegex) = do
    -- download/verify all tarballs
   let dlis = either (const []) (\tool -> nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool)
                                  %> each %& indices (matchTest versionRegex . T.unpack . prettyVer)
-                                                  % (viTestDL % _Just `summing` viSourceDL % _Just)
+                                                  % (viTestDL % _Just `summing` viSourceDL % _Just `summing` viArch % each % each % each)
                                )
                                etool
   let gdlis = nubOrd $ gt ^.. each
