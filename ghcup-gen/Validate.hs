@@ -210,7 +210,11 @@ validateTarballs (TarballFilter etool versionRegex) = do
   ref <- liftIO $ newIORef 0
 
    -- download/verify all tarballs
-  let dlis = either (const []) (\tool -> nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool) %> each %& indices (matchTest versionRegex . T.unpack . prettyVer) % (viSourceDL % _Just `summing` viArch % each % each % each)) etool
+  let dlis = either (const []) (\tool -> nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool)
+                                 %> each %& indices (matchTest versionRegex . T.unpack . prettyVer)
+                                                  % (viTestDL % _Just `summing` viSourceDL % _Just)
+                               )
+                               etool
   let gdlis = nubOrd $ gt ^.. each
   let allDls = either (const gdlis) (const dlis) etool
   when (null allDls) $ logError "no tarballs selected by filter" *> runReaderT addError ref
@@ -255,23 +259,22 @@ validateTarballs (TarballFilter etool versionRegex) = do
             pure Nothing
           Right _ -> do
             p <- liftE $ downloadCached dli Nothing
-            fmap (Just . head . splitDirectories . head)
-              . liftE
-              . getArchiveFiles
-              $ p
+            fmap Just $ liftE
+                  . getArchiveFiles
+                  $ p
           Left ShimGen -> do
             tmpUnpack <- lift mkGhcupTmpDir
             _ <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) Nothing (fromGHCupPath tmpUnpack) Nothing False
             pure Nothing
     case r of
-      VRight (Just basePath) -> do
+      VRight (Just entries) -> do
         case _dlSubdir dli of
           Just (RealDir prel) -> do
             logInfo
               $ " verifying subdir: " <> T.pack prel
-            when (basePath /= prel) $ do
+            when (normalise prel `notElem` fmap (normalise . takeDirectory) entries) $ do
               logError $
-                "Subdir doesn't match: expected " <> T.pack prel <> ", got " <> T.pack basePath
+                "Subdir doesn't match: expected " <> T.pack prel
               runReaderT addError ref
           Just (RegexDir regexString) -> do
             logInfo $
@@ -280,9 +283,9 @@ validateTarballs (TarballFilter etool versionRegex) = do
                   compIgnoreCase
                   execBlank
                   regexString
-            unless (match regex basePath) $ do
+            unless (or $ fmap (match regex. normalise) entries) $ do
               logError $
-                "Subdir doesn't match: expected regex " <> T.pack regexString <> ", got " <> T.pack basePath
+                "Subdir doesn't match: expected regex " <> T.pack regexString
               runReaderT addError ref
           Nothing -> pure ()
       VRight Nothing -> pure ()
