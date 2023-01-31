@@ -1,5 +1,8 @@
 ---
-globalTools: {}
+globalTools:
+  ShimGen:
+    dlUri: https://downloads.haskell.org/~ghcup/shimgen/shim-2.exe
+    dlHash: 7c55e201f71860c5babea886007c8fa44b861abf50d1c07e5677eb0bda387a70
 toolRequirements: {}
 ghcupDownloads:
   Cabal:
@@ -586,16 +589,25 @@ ghcupDownloads:
               dlSubdir: ghc-9.6.0.20230128-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230128/ghc-9.6.0.20230128-x86_64-fedora33-linux.tar.xz
             unknown_versioning: *ghc-961alpha2-64-centos7
-          Linux_Mint:
-            < 20: *ghc-961alpha2-64-deb9
-            '>= 20': *ghc-961alpha2-64-deb10
           Linux_RedHat:
             unknown_versioning: *ghc-961alpha2-64-centos7
           Linux_Ubuntu:
-            ( >= 16 && < 19 ): *ghc-961alpha2-64-deb9
-            unknown_versioning: *ghc-961alpha2-64-deb10
+            '< 19': &ghc-961alpha2-64-ubuntu18
+              dlHash: 27e89a1210ac1ec434f947c635b1431cc19c8f15e0a1e0afa51d9356f87d3cb2
+              dlSubdir: ghc-9.6.0.20230128-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230128/ghc-9.6.0.20230128-x86_64-ubuntu18_04-linux.tar.xz
+            unknown_versioning: &ghc-961alpha2-64-ubuntu20
+              dlHash: 5115409cbec7c040345c7c4d335d48ee2789b05dc4669d95ccc609078f5d812a
+              dlSubdir: ghc-9.6.0.20230128-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230128/ghc-9.6.0.20230128-x86_64-ubuntu20_04-linux.tar.xz
+          Linux_Mint:
+            < 20: *ghc-961alpha2-64-ubuntu18
+            '>= 20': *ghc-961alpha2-64-ubuntu20
           Linux_UnknownLinux:
-            unknown_versioning: *ghc-961alpha2-64-centos7
+            unknown_versioning:
+              dlHash: 4c9dba7e69708fa172e7b8bac38e671f58829d73a29e489bbd7f99ce6a136989
+              dlSubdir: ghc-9.6.0.20230128-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230128/ghc-9.6.0.20230128-x86_64-rocky8-linux.tar.xz
           Windows:
             unknown_versioning:
               dlHash: 68f1311660d47384fa5270c362aa87f2b9823d60963e975b071a00e010a35f9e
@@ -622,7 +634,7 @@ ghcupDownloads:
         dlSubdir: ghc-9.6.0.20230128/testsuite
         dlHash: ea1b8f07026183c72ced88433789e487dc5f3499f37f5798e19c8940a4844b24
       viTags:
-      - Latest
+      - Prerelease
       - base-4.18.0.0
   Stack:
     2.9.2.1:
