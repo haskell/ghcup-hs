@@ -120,19 +120,21 @@ edo() {
 }
 
 eghcup() {
-	edo _eghcup "$@"
+	_eghcup "$@"
 }
 
 _eghcup() {
 	if [ -n "${BOOTSTRAP_HASKELL_YAML}" ] ; then
-		args="-s ${BOOTSTRAP_HASKELL_YAML}"
+		args="-s ${BOOTSTRAP_HASKELL_YAML} --metadata-fetching-mode=Strict"
+    else
+		args="--metadata-fetching-mode=Strict"
 	fi
     if [ -z "${BOOTSTRAP_HASKELL_VERBOSE}" ] ; then
         # shellcheck disable=SC2086
-        "${GHCUP_BIN}/ghcup" ${args} "$@"
+        "${GHCUP_BIN}/ghcup" ${args} "$@" || die "\"ghcup ${args} $*\" failed!"
     else
         # shellcheck disable=SC2086
-        "${GHCUP_BIN}/ghcup" ${args} --verbose "$@"
+        "${GHCUP_BIN}/ghcup" ${args} --verbose "$@" || die "\"ghcup ${args} --verbose $*\" failed!"
     fi
 }
 
@@ -147,7 +149,7 @@ _ecabal() {
 }
 
 ecabal() {
-	edo _ecabal "$@"
+	_ecabal "$@" || die "\"cabal $*\" failed!"
 }
 
 _done() {
