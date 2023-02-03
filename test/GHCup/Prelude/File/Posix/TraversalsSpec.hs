@@ -24,11 +24,11 @@ spec = do
   -- https://github.com/haskell/ghcup-hs/issues/415
   describe "GHCup.Prelude.File.Posix.Traversals" $ do
     it "readDirEnt" $ do
-      dirstream <- liftIO $ openDirStream "test/data"
-      (dt1, fp1) <- readDirEnt dirstream
-      (dt2, fp2) <- readDirEnt dirstream
-      (dt3, fp3) <- readDirEnt dirstream
-      (dt4, fp4) <- readDirEnt dirstream
+      dirstream <- liftIO $ openDirStreamPortable "test/data"
+      (dt1, fp1) <- readDirEntPortable dirstream
+      (dt2, fp2) <- readDirEntPortable dirstream
+      (dt3, fp3) <- readDirEntPortable dirstream
+      (dt4, fp4) <- readDirEntPortable dirstream
       let xs = sortOn snd [ (dt1, fp1), (dt2, fp2)
                           , (dt3, fp3), (dt4, fp4)
                           ]

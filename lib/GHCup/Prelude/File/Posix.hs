@@ -279,11 +279,11 @@ removeEmptyDirectory = PD.removeDirectory
 
 -- | Create an 'Unfold' of directory contents.
 unfoldDirContents :: (MonadMask m, MonadIO m, S.MonadAsync m) => Unfold m FilePath (FD.DirType, FilePath)
-unfoldDirContents = U.bracket (liftIO . openDirStream) (liftIO . closeDirStream) (Unfold step return)
+unfoldDirContents = U.bracket (liftIO . openDirStreamPortable) (liftIO . closeDirStreamPortable) (Unfold step return)
  where
   {-# INLINE [0] step #-}
   step dirstream = do
-    (typ, e) <- liftIO $ readDirEnt dirstream
+    (typ, e) <- liftIO $ readDirEntPortable dirstream
     return $ if
       | null e    -> D.Stop
       | "." == e  -> D.Skip dirstream
@@ -308,8 +308,8 @@ getDirectoryContentsRecursiveUnfold = Unfold step (\s -> return (s, Nothing, [""
   step (_, Nothing, []) = return D.Stop
 
   step (topdir, Just (cdir, dirstream, finalizer), dirs) = flip onException (runIOFinalizer finalizer) $ do
-    (dt, f) <- liftIO $ readDirEnt dirstream
-    if | FD.dtUnknown == dt -> do
+    (dt, f) <- liftIO $ readDirEntPortable dirstream
+    if | f == "" -> do
            runIOFinalizer finalizer
            return $ D.Skip (topdir, Nothing, dirs)
        | f == "." || f == ".."
@@ -323,8 +323,8 @@ getDirectoryContentsRecursiveUnfold = Unfold step (\s -> return (s, Nothing, [""
 
   acquire dir =
     withRunInIO $ \run -> mask_ $ run $ do
-        dirstream <- liftIO $ openDirStream dir
-        ref <- newIOFinalizer (liftIO $ closeDirStream dirstream)
+        dirstream <- liftIO $ openDirStreamPortable dir
+        ref <- newIOFinalizer (liftIO $ closeDirStreamPortable dirstream)
         return (dirstream, ref)
 
 getDirectoryContentsRecursiveBFSUnsafe :: (MonadMask m, MonadIO m, S.MonadAsync m)

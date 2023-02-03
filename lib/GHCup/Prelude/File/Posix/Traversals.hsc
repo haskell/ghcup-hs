@@ -10,8 +10,19 @@
 module GHCup.Prelude.File.Posix.Traversals (
 -- lower-level stuff
   readDirEnt
+, readDirEntPortable
+, openDirStreamPortable
+, closeDirStreamPortable
 , unpackDirStream
+, DirStreamPortable
 ) where
+
+#include <limits.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 
 #if __GLASGOW_HASKELL__ < 710
@@ -28,6 +39,7 @@ import Foreign.Storable
 import System.Posix
 import Foreign (alloca)
 import System.Posix.Internals (peekFilePath)
+import System.FilePath
 
 
 
@@ -89,4 +101,32 @@ readDirEnt (unpackDirStream -> dirp) =
                  if eo == 0
                     then return (dtUnknown, mempty)
                     else throwErrno "readDirEnt"
+
+
+newtype DirStreamPortable = DirStreamPortable (FilePath, DirStream)
+
+openDirStreamPortable :: FilePath -> IO DirStreamPortable
+openDirStreamPortable fp = do
+  dirs <- openDirStream fp
+  pure $ DirStreamPortable (fp, dirs)
+
+closeDirStreamPortable :: DirStreamPortable -> IO ()
+closeDirStreamPortable (DirStreamPortable (_, dirs)) = closeDirStream dirs
+
+readDirEntPortable :: DirStreamPortable -> IO (DirType, FilePath)
+readDirEntPortable (DirStreamPortable (basedir, dirs)) = do
+  (dt, fp) <- readDirEnt dirs
+  case (dt, fp) of
+    (DirType #{const DT_UNKNOWN}, _)
+      | fp /= "" -> do
+          stat <- getSymbolicLinkStatus (basedir </> fp)
+          pure $ (, fp) $ if | isBlockDevice stat     -> DirType #{const DT_BLK}
+                             | isCharacterDevice stat -> DirType #{const DT_CHR}
+                             | isDirectory stat       -> DirType #{const DT_DIR}
+                             | isNamedPipe stat       -> DirType #{const DT_FIFO}
+                             | isSymbolicLink stat    -> DirType #{const DT_LNK}
+                             | isRegularFile stat     -> DirType #{const DT_REG}
+                             | isSocket stat          -> DirType #{const DT_SOCK}
+                             | otherwise              -> DirType #{const DT_UNKNOWN}
+    _ -> pure (dt, fp)
 
