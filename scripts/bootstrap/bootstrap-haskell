@@ -284,14 +284,6 @@ download_ghcup() {
 			esac
 			;;
         "FreeBSD"|"freebsd")
-            if freebsd-version | grep -E '^12.*' ; then
-                freebsd_ver=12
-            elif freebsd-version | grep -E '^13.*' ; then
-                freebsd_ver=13
-            else
-                die "Unsupported FreeBSD version! Please report a bug at https://github.com/haskell/ghcup-hs/issues"
-            fi
-
 			case "${arch}" in
 				x86_64|amd64)
 					;;
@@ -301,7 +293,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${arch}"
 					;;
 			esac
-			_url=${GHCUP_BASE_URL}/${ghver}/x86_64-freebsd${freebsd_ver}-ghcup-${ghver}
+			_url=${GHCUP_BASE_URL}/${ghver}/x86_64-freebsd-ghcup-${ghver}
             ;;
         "Darwin"|"darwin")
 			case "${arch}" in
