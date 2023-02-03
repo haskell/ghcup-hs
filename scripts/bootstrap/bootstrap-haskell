@@ -293,7 +293,7 @@ download_ghcup() {
 				*) die "Unknown architecture: ${arch}"
 					;;
 			esac
-			_url=${GHCUP_BASE_URL}/${ghver}/x86_64-freebsd-ghcup-${ghver}
+			_url=${GHCUP_BASE_URL}/${ghver}/x86_64-portbld-freebsd-ghcup-${ghver}
             ;;
         "Darwin"|"darwin")
 			case "${arch}" in
