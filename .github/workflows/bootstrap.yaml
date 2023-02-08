@@ -25,10 +25,6 @@ jobs:
         include:
           - os: ubuntu-latest
             DISTRO: Ubuntu
-          - os: macOS-10.15
-            DISTRO: na
-          - os: windows-latest
-            DISTRO: na
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -38,18 +34,10 @@ jobs:
       - if: runner.os == 'Linux'
         name: Run bootstrap
         run: |
-          sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
-          sh ./.github/scripts/bootstrap.sh
+          ls -lah /usr/local/.ghcup
+          ls -lah /usr/local/.ghcup/cache
+          cat /usr/local/.ghcup/config.yaml
+          ghcup --version
+          ghcup -v install cabal 3.8.1.0
         env:
           DISTRO: ${{ matrix.DISTRO }}
-
-      - if: runner.os == 'macOS'
-        name: Run bootstrap
-        run: sh ./.github/scripts/bootstrap.sh
-        env:
-          DISTRO: ${{ matrix.DISTRO }}
-
-      - if: runner.os == 'Windows'
-        name: Run bootstrap
-        run: ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ${GITHUB_WORKSPACE}/bootstrap-haskell -InBash
-        shell: pwsh
