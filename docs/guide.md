@@ -163,6 +163,7 @@ ghcup --url-source=https://some-url/ghcup-0.0.6.yaml list
 #### Known mirrors
 
 1. [https://mirror.sjtu.edu.cn/docs/ghcup](https://mirror.sjtu.edu.cn/docs/ghcup)
+2. [https://mirrors.ustc.edu.cn/help/ghcup.html](https://mirrors.ustc.edu.cn/help/ghcup.html)
 
 ### (Pre-)Release channels
 
