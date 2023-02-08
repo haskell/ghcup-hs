@@ -119,6 +119,10 @@ edo() {
     "$@" || die "\"$*\" failed!"
 }
 
+eghcup_raw() {
+	"${GHCUP_BIN}/ghcup" "$@" || die "\"ghcup $*\" failed!"
+}
+
 eghcup() {
 	_eghcup "$@"
 }
@@ -381,10 +385,10 @@ download_ghcup() {
     edo . "${GHCUP_DIR}"/env
     case "${BOOTSTRAP_HASKELL_DOWNLOADER}" in
         "curl")
-            eghcup config set downloader Curl
+            eghcup_raw config set downloader Curl
             ;;
         "wget")
-            eghcup config set downloader Wget
+            eghcup_raw config set downloader Wget
             ;;
         *)
             die "Unknown downloader: ${BOOTSTRAP_HASKELL_DOWNLOADER}"
