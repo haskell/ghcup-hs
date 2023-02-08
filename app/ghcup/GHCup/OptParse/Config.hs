@@ -59,7 +59,7 @@ data ConfigCommand
     --[ Parsers ]--
     ---------------
 
-          
+
 configP :: Parser ConfigCommand
 configP = subparser
       (  command "init" initP
@@ -120,21 +120,38 @@ formatConfig :: UserSettings -> String
 formatConfig = UTF8.toString . Y.encode
 
 
-updateSettings :: UserSettings -> Settings -> Settings
-updateSettings UserSettings{..} Settings{..} =
-   let cache'      = fromMaybe cache uCache
-       metaCache'  = fromMaybe metaCache uMetaCache
-       metaMode'   = fromMaybe metaMode uMetaMode
-       noVerify'   = fromMaybe noVerify uNoVerify
-       keepDirs'   = fromMaybe keepDirs uKeepDirs
-       downloader' = fromMaybe downloader uDownloader
-       verbose'    = fromMaybe verbose uVerbose
-       urlSource'  = fromMaybe urlSource uUrlSource
-       noNetwork'  = fromMaybe noNetwork uNoNetwork
-       gpgSetting' = fromMaybe gpgSetting uGPGSetting
-       platformOverride' = uPlatformOverride <|> platformOverride
-       mirrors' = fromMaybe mirrors uMirrors
-   in Settings cache' metaCache' metaMode' noVerify' keepDirs' downloader' verbose' urlSource' noNetwork' gpgSetting' noColor platformOverride' mirrors'
+updateSettings :: UserSettings -> UserSettings -> UserSettings
+updateSettings usl usr =
+   let cache'      = uCache usl      <|> uCache usr
+       metaCache'  = uMetaCache usl  <|> uMetaCache usr
+       metaMode'   = uMetaMode usl   <|> uMetaMode usr
+       noVerify'   = uNoVerify usl   <|> uNoVerify usr
+       verbose'    = uVerbose usl    <|> uVerbose usr
+       keepDirs'   = uKeepDirs usl   <|> uKeepDirs usr
+       downloader' = uDownloader usl <|> uDownloader usr
+       urlSource'  = uUrlSource usl  <|> uUrlSource usr
+       noNetwork'  = uNoNetwork usl  <|> uNoNetwork usr
+       gpgSetting' = uGPGSetting usl <|> uGPGSetting usr
+       platformOverride' = uPlatformOverride usl <|> uPlatformOverride usr
+       mirrors' = uMirrors usl <|> uMirrors usr
+   in UserSettings cache' metaCache' metaMode' noVerify' verbose' keepDirs' downloader' (updateKeyBindings (uKeyBindings usl) (uKeyBindings usr)) urlSource' noNetwork' gpgSetting' platformOverride' mirrors'
+ where
+  updateKeyBindings :: Maybe UserKeyBindings -> Maybe UserKeyBindings -> Maybe UserKeyBindings
+  updateKeyBindings Nothing Nothing = Nothing
+  updateKeyBindings (Just kbl) Nothing = Just kbl
+  updateKeyBindings Nothing (Just kbr) = Just kbr
+  updateKeyBindings (Just kbl) (Just kbr) =
+       Just $ UserKeyBindings {
+           kUp = kUp kbl <|> kUp kbr
+         , kDown = kDown kbl <|> kDown kbr
+         , kQuit = kQuit kbl <|> kQuit kbr
+         , kInstall = kInstall kbl <|> kInstall kbr
+         , kUninstall = kUninstall kbl <|> kUninstall kbr
+         , kSet = kSet kbl <|> kSet kbr
+         , kChangelog = kChangelog kbl <|> kChangelog kbr
+         , kShowAll = kShowAll kbl <|> kShowAll kbr
+         , kShowAllTools = kShowAllTools kbl <|> kShowAllTools kbr
+         }
 
 
 
@@ -151,10 +168,11 @@ config :: forall m. ( Monad m
           )
      => ConfigCommand
      -> Settings
+     -> UserSettings
      -> KeyBindings
      -> (ReaderT LeanAppState m () -> m ())
      -> m ExitCode
-config configCommand settings keybindings runLogger = case configCommand of
+config configCommand settings userConf keybindings runLogger = case configCommand of
   InitConfig -> do
     path <- getConfigFilePath
     liftIO $ writeFile path $ formatConfig $ fromSettings settings (Just keybindings)
@@ -203,9 +221,9 @@ config configCommand settings keybindings runLogger = case configCommand of
  where
   doConfig :: MonadIO m => UserSettings -> m ()
   doConfig usersettings = do
-    let settings' = updateSettings usersettings settings
+    let settings' = updateSettings usersettings userConf
     path <- liftIO getConfigFilePath
-    liftIO $ writeFile path $ formatConfig $ fromSettings settings' (Just keybindings)
+    liftIO $ writeFile path $ formatConfig $ settings'
     runLogger $ logDebug $ T.pack $ show settings'
     pure ()
 
