@@ -63,7 +63,7 @@ import qualified GHCup.Types                   as Types
 
 
 
-toSettings :: Options -> IO (Settings, KeyBindings)
+toSettings :: Options -> IO (Settings, KeyBindings, UserSettings)
 toSettings options = do
   noColor <- isJust <$> lookupEnv "NO_COLOR"
   userConf <- runE @'[ JSONError ] ghcupConfigFile >>= \case
@@ -73,7 +73,7 @@ toSettings options = do
       pure defaultUserSettings
     _ -> do
       die "Unexpected error!"
-  pure $ mergeConf options userConf noColor
+  pure $ (\(s', k) -> (s', k, userConf)) $ mergeConf options userConf noColor
  where
    mergeConf :: Options -> UserSettings -> Bool -> (Settings, KeyBindings)
    mergeConf Options{..} UserSettings{..} noColor =
@@ -176,7 +176,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           -- create ~/.ghcup dir
           ensureDirectories dirs
 
-          (settings, keybindings) <- toSettings opt
+          (settings, keybindings, userConf) <- toSettings opt
 
           -- logger interpreter
           logfile <- runReaderT initGHCupFileLogging dirs
@@ -303,7 +303,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             Rm rmCommand               -> rm rmCommand runAppState runLogger
             DInfo                      -> dinfo runAppState runLogger
             Compile compileCommand     -> compile compileCommand settings dirs runAppState runLogger
-            Config configCommand       -> config configCommand settings keybindings runLogger
+            Config configCommand       -> config configCommand settings userConf keybindings runLogger
             Whereis whereisOptions
                     whereisCommand     -> whereis whereisCommand whereisOptions runAppState leanAppstate runLogger
             Upgrade uOpts force' fatal -> upgrade uOpts force' fatal dirs runAppState runLogger
