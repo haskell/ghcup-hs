@@ -18,7 +18,7 @@ fi
 
 ghcup -v --url-source=file:$METADATA_FILE install $TOOL --set $VERSION
 
-mkdir /tmp/install-bindist-ci
+mkdir -p /tmp/install-bindist-ci
 cd /tmp/install-bindist-ci
 
 cat <<EOF > main.hs

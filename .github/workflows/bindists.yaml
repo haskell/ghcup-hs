@@ -84,186 +84,62 @@ jobs:
         run: |
           ${{ matrix.installCmd }} curl bash git ${{ matrix.toolRequirements }}
 
-      - if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
-        id: check
-        with:
-          trigger: '@bindistTest ** ** **'
-          reaction: rocket
-          allow_arguments: true
-        env:
-          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
+      - uses: actions/checkout@v3
 
-      - if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
-        id: checkRef
-        with:
-          trigger: '@bindistTestRef ** ** ** **'
-          reaction: rocket
-          allow_arguments: true
-        env:
-          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
+      - name: Install ghcup and bindist
+        run: .github/workflows/install-bindist.sh
 
-      - if: ${{ steps.checkRef.outputs.triggered == 'true' }}
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ fromJson(steps.checkRef.outputs.arguments)[3] }}
-
-      - if: ${{ steps.checkRef.outputs.triggered != 'true' }}
-        uses: actions/checkout@v3
-
-      - if: ${{ github.event_name != 'workflow_dispatch' && steps.check.outputs.triggered == 'true' }}
-        continue-on-error: true
-        name: Install ghcup and bindist
-        run: |
-          export TOOL=${{ fromJson(steps.check.outputs.arguments)[0] }}
-          export VERSION=${{ fromJson(steps.check.outputs.arguments)[1] }}
-          export METADATA_FILE=${{ fromJson(steps.check.outputs.arguments)[2] }}
-          .github/workflows/install-bindist.sh
-          echo SUCCESS=true >> $GITHUB_ENV
-
-      - if: ${{ github.event_name != 'workflow_dispatch' && steps.check.outputs.triggered != 'true' && steps.checkRef.outputs.triggered == 'true' }}
-        continue-on-error: true
-        name: Install ghcup and bindist
-        run: |
-          export TOOL=${{ fromJson(steps.checkRef.outputs.arguments)[0] }}
-          export VERSION=${{ fromJson(steps.checkRef.outputs.arguments)[1] }}
-          export METADATA_FILE=${{ fromJson(steps.checkRef.outputs.arguments)[2] }}
-          .github/workflows/install-bindist.sh
-          echo SUCCESS=true >> $GITHUB_ENV
-
-      - if: ${{ github.event_name == 'workflow_dispatch' }}
-        name: Install ghcup and bindist
-        run: |
-          .github/workflows/install-bindist.sh
-          echo SUCCESS=true >> $GITHUB_ENV
-
-      - run: |
-          if [ "${{ env.SUCCESS }}" = "true" ] ; then
-            echo "true" > message-linux.txt
-          else
-            echo "false" > message-linux.txt
-          fi
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: artifacts
-          path: |
-            ./message-linux.txt
-
-  bindist-install-non-linux:
-    name: ${{ matrix.os }}
+  bindist-install-mac-win:
+    name: Build non-linux
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-11
-          - macos-12
-          - windows-latest
+        include:
+          - os: [self-hosted, macOS, ARM64]
+          - os: macos-11
+          - os: macos-12
+          - os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
-        id: check
-        with:
-          trigger: '@bindistTest ** ** **'
-          reaction: rocket
-          allow_arguments: true
-        env:
-          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
 
-      - if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: shpingalet007/pull-request-comment-trigger@696de492b50cee0ba671934893c91c5805a403b9
-        id: checkRef
-        with:
-          trigger: '@bindistTestRef ** ** ** **'
-          reaction: rocket
-          allow_arguments: true
-        env:
-          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
-
-      - if: ${{ steps.checkRef.outputs.triggered == 'true' }}
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ fromJson(steps.checkRef.outputs.arguments)[3] }}
-
-      - if: ${{ steps.checkRef.outputs.triggered != 'true' }}
-        uses: actions/checkout@v3
-
-      - if: ${{ github.event_name != 'workflow_dispatch' && steps.check.outputs.triggered == 'true' }}
-        continue-on-error: true
-        name: Install ghcup and bindist
-        run: |
-          export TOOL=${{ fromJson(steps.check.outputs.arguments)[0] }}
-          export VERSION=${{ fromJson(steps.check.outputs.arguments)[1] }}
-          export METADATA_FILE=${{ fromJson(steps.check.outputs.arguments)[2] }}
-          .github/workflows/install-bindist.sh
-          echo SUCCESS=true >> $GITHUB_ENV
-
-      - if: ${{ github.event_name != 'workflow_dispatch' && steps.check.outputs.triggered != 'true' && steps.checkRef.outputs.triggered == 'true' }}
-        continue-on-error: true
-        name: Install ghcup and bindist
-        run: |
-          export TOOL=${{ fromJson(steps.checkRef.outputs.arguments)[0] }}
-          export VERSION=${{ fromJson(steps.checkRef.outputs.arguments)[1] }}
-          export METADATA_FILE=${{ fromJson(steps.checkRef.outputs.arguments)[2] }}
-          .github/workflows/install-bindist.sh
-          echo SUCCESS=true >> $GITHUB_ENV
+      - uses: actions/checkout@v3
 
       - if: ${{ github.event_name == 'workflow_dispatch' }}
         name: Install ghcup and bindist
-        run: |
-          .github/workflows/install-bindist.sh
-          echo SUCCESS=true >> $GITHUB_ENV
+        run: .github/workflows/install-bindist.sh
 
-      - run: |
-          if [ "${{ env.SUCCESS }}" = "true" ] ; then
-            echo "true" > message.txt
-          else
-            echo "false" > message.txt
-          fi
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: artifacts
-          path: |
-            ./message.txt
-
-  comment:
-    name: comment
-    needs: ["bindist-install", "bindist-install-non-linux"]
-    runs-on: ubuntu-latest
+  bindist-install-arm:
+    name: Build ARM binary
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: [self-hosted, Linux, ARM64, aarch32-linux]
+            ARCH: ARM
+          - os: [self-hosted, Linux, ARM64]
+            ARCH: ARM64
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
+      - uses: docker://arm64v8/ubuntu:focal
+        name: Cleanup (aarch64 linux)
         with:
-          name: artifacts
+          args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
 
-      - run: |
-          if [ "$(cat message.txt)" == "true" ] && [ "$(cat message-linux.txt)" == "true" ] ; then
-            echo "SUCCESS=true" >> $GITHUB_ENV
-          else
-            echo "SUCCESS=false" >> $GITHUB_ENV
-          fi
-
-      - id: message
+      - name: git config
         run: |
-          if [ "${{ env.SUCCESS }}" = "true" ] ; then
-            echo 'MESSAGE=Bindist check success :+1:' >> $GITHUB_OUTPUT
-          else
-            echo 'MESSAGE=Bindist check failure :-1:' >> $GITHUB_OUTPUT
-          fi
+          git config --global --get-all safe.directory | grep '^\*$' || git config --global --add safe.directory "*"
+        shell: bash
 
-      - if: ${{ github.event_name == 'pull_request' }}
-        name: Comment PR
-        uses: thollander/actions-comment-pull-request@v2
+      - uses: actions/checkout@v3
+
+      - if: matrix.ARCH == 'ARM'
+        uses: docker://hasufell/arm32v7-ubuntu-haskell:focal
+        name: Run build (armv7 linux)
         with:
-          message: |
-            ${{ steps.message.outputs.MESSAGE }}
+          args: sh -c '.github/workflows/install-bindist.sh'
 
-      - name: Check on failures
-        if: env.SUCCESS != 'true'
-        run: exit 1
-
+      - if: matrix.ARCH == 'ARM64'
+        uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
+        name: Run build (aarch64 linux)
+        with:
+          args: sh -c '.github/workflows/install-bindist.sh'
