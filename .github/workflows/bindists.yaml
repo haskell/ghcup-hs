@@ -67,6 +67,9 @@ jobs:
           - image: fedora:36
             installCmd: dnf install -y
             toolRequirements: which gcc g++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl
+          - image: rocky:8
+            installCmd: dnf install -y
+            toolRequirements: which findutils gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl
           - image: linuxmintd/mint19.3-amd64
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
