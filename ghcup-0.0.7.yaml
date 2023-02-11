@@ -2706,6 +2706,11 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.2.6/ghc-9.2.6-x86_64-alpine3.12-linux-gmp.tar.xz
               dlSubdir: ghc-9.2.6-x86_64-unknown-linux
               dlHash: 4bbd45c59365608fffc9a103bff5be9fdc79a06014f4b19154cb7ea66d34830f
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.2.6/ghc-9.2.6-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-9.2.6-x86_64-portbld-freebsd
+              dlHash: 57fbb931a36bcbc0d6227a6cf5fcf716a8259bde6b8f432364ac05a528f8413f
         A_32:
           Linux_Debian:
             '< 10': &ghc-926-32-deb9
