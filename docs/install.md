@@ -42,7 +42,7 @@ The following distro packages are required: `build-essential curl libffi-dev lib
 
 ### Linux Ubuntu
 
-The following distro packages are required: `build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
+The following distro packages are required: `build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
 
 ### Linux Fedora
 
