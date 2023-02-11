@@ -117,7 +117,15 @@ readDirEntPortable :: DirStreamPortable -> IO (DirType, FilePath)
 readDirEntPortable (DirStreamPortable (basedir, dirs)) = do
   (dt, fp) <- readDirEnt dirs
   case (dt, fp) of
-    (DirType #{const DT_UNKNOWN}, _)
+    (DirType #{const DT_BLK}, _)     -> pure (dt, fp)
+    (DirType #{const DT_CHR}, _)     -> pure (dt, fp)
+    (DirType #{const DT_DIR}, _)     -> pure (dt, fp)
+    (DirType #{const DT_FIFO}, _)    -> pure (dt, fp)
+    (DirType #{const DT_LNK}, _)     -> pure (dt, fp)
+    (DirType #{const DT_REG}, _)     -> pure (dt, fp)
+    (DirType #{const DT_SOCK}, _)    -> pure (dt, fp)
+    (DirType #{const DT_UNKNOWN}, _) -> pure (dt, fp)
+    (_, _)
       | fp /= "" -> do
           stat <- getSymbolicLinkStatus (basedir </> fp)
           pure $ (, fp) $ if | isBlockDevice stat     -> DirType #{const DT_BLK}
@@ -128,5 +136,4 @@ readDirEntPortable (DirStreamPortable (basedir, dirs)) = do
                              | isRegularFile stat     -> DirType #{const DT_REG}
                              | isSocket stat          -> DirType #{const DT_SOCK}
                              | otherwise              -> DirType #{const DT_UNKNOWN}
-    _ -> pure (dt, fp)
 
