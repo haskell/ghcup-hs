@@ -2668,17 +2668,19 @@ ghcupDownloads:
               dlHash: 85b3eaf0522781244aa7618ee285713a82cab00e21d29ea99159cf69352e2bcb
             unknown_versioning: *ghc-926-64-deb10
           Linux_Ubuntu:
+            '< 20': *ghc-926-64-deb9
+            '>= 20': &ghc-926-64-ubuntu20
+              dlUri: https://downloads.haskell.org/ghc/9.2.6/ghc-9.2.6-x86_64-ubuntu20.04-linux.tar.xz
+              dlSubdir: ghc-9.2.6
+              dlHash: 103789e3c710e7814d3cfe734901d40e27cda1f080dec543b55c792d2e8f3866
+          Linux_Mint:
+            '< 20': *ghc-926-64-deb9
+            '>= 20': *ghc-926-64-ubuntu20
+          Linux_Fedora:
             unknown_versioning: &ghc-926-64-fedora
               dlUri: https://downloads.haskell.org/~ghc/9.2.6/ghc-9.2.6-x86_64-fedora27-linux.tar.xz
               dlSubdir: ghc-9.2.6
               dlHash: f3adc19fe933188481b8dc3d62842a47832cb63ceb7e5a70424f28c9ff9915d5
-            '( >= 16 && < 19 )': *ghc-926-64-deb9
-          Linux_Mint:
-            '< 20': *ghc-926-64-deb9
-            '>= 20': *ghc-926-64-fedora
-          Linux_Fedora:
-            '( >= 27 && < 28 )': *ghc-926-64-fedora
-            unknown_versioning: *ghc-926-64-fedora
           Linux_CentOS:
             '( >= 7 && < 8 )': &ghc-926-64-centos
               dlUri: https://downloads.haskell.org/~ghc/9.2.6/ghc-9.2.6-x86_64-centos7-linux.tar.xz
