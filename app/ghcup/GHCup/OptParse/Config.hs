@@ -51,7 +51,7 @@ data ConfigCommand
   = ShowConfig
   | SetConfig String (Maybe String)
   | InitConfig
-  | AddReleaseChannel URI
+  | AddReleaseChannel Bool URI
 
 
 
@@ -74,7 +74,7 @@ configP = subparser
   showP = info (pure ShowConfig) (progDesc "Show current config (default)")
   setP  = info argsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
   argsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
-  addP  = info (AddReleaseChannel <$> argument (eitherReader uriParser) (metavar "URI" <> completer fileUri))
+  addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing") <*> argument (eitherReader uriParser) (metavar "URI" <> completer fileUri))
     (progDesc "Add a release channel from a URI")
 
 
@@ -203,22 +203,40 @@ config configCommand settings userConf keybindings runLogger = case configComman
         pure $ ExitFailure 65
       VLeft _ -> pure $ ExitFailure 65
 
-  AddReleaseChannel uri -> do
-    case urlSource settings of
-      AddSource xs -> do
-        doConfig (defaultUserSettings { uUrlSource = Just $ AddSource (xs <> [Right uri]) })
+  AddReleaseChannel force uri -> do
+    r <- runE @'[DuplicateReleaseChannel] $ do
+      case urlSource settings of
+        AddSource xs -> do
+          when (not force && Right uri `elem` xs) $ throwE (DuplicateReleaseChannel uri)
+          lift $ doConfig (defaultUserSettings { uUrlSource = Just $ AddSource (appendUnique xs (Right uri)) })
+          pure ()
+        GHCupURL -> do
+          lift $ doConfig (defaultUserSettings { uUrlSource = Just $ AddSource [Right uri] })
+          pure ()
+        OwnSource xs -> do
+          when (not force && Right uri `elem` xs) $ throwE (DuplicateReleaseChannel uri)
+          lift $ doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource (appendUnique xs (Right uri)) })
+          pure ()
+        OwnSpec spec -> do
+          lift $ doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource [Left spec, Right uri] })
+          pure ()
+    case r of
+      VRight _ -> do
         pure ExitSuccess
-      GHCupURL -> do
-        doConfig (defaultUserSettings { uUrlSource = Just $ AddSource [Right uri] })
-        pure ExitSuccess
-      OwnSource xs -> do
-        doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource (xs <> [Right uri]) })
-        pure ExitSuccess
-      OwnSpec spec -> do
-        doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource ([Left spec, Right uri]) })
-        pure ExitSuccess
+      VLeft e -> do
+        runLogger $ logError $ T.pack $ prettyHFError e
+        pure $ ExitFailure 15
 
  where
+  -- appends the element to the end of the list, but also removes it from the existing list
+  appendUnique :: Eq a => [a] -> a -> [a]
+  appendUnique xs' e = go xs'
+   where
+    go [] = [e]
+    go (x:xs)
+      | x == e    =     go xs -- skip
+      | otherwise = x : go xs
+
   doConfig :: MonadIO m => UserSettings -> m ()
   doConfig usersettings = do
     let settings' = updateSettings usersettings userConf

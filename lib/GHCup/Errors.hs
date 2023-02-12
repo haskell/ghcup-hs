@@ -35,6 +35,8 @@ import           URI.ByteString
 
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as E
+import qualified Data.Text.Encoding.Error      as E
 import           Data.Data (Proxy(..))
 
 
@@ -82,6 +84,7 @@ allHFError = unlines allErrors
     , let proxy = Proxy :: Proxy HadrianNotFound in format proxy
     , let proxy = Proxy :: Proxy ToolShadowed in format proxy
     , let proxy = Proxy :: Proxy ContentLengthError in format proxy
+    , let proxy = Proxy :: Proxy DuplicateReleaseChannel in format proxy
     , ""
     , "# high level errors (4000+)"
     , let proxy = Proxy :: Proxy DownloadFailed in format proxy
@@ -639,6 +642,19 @@ instance Exception ContentLengthError
 instance HFErrorProject ContentLengthError where
   eBase _ = 340
   eDesc _ = "File content length verification failed"
+
+data DuplicateReleaseChannel = DuplicateReleaseChannel URI
+  deriving Show
+
+instance HFErrorProject DuplicateReleaseChannel where
+  eBase _ = 350
+  eDesc _ = "Duplicate release channel detected when adding URI.\nGiving up. You can use '--force' to remove and append the duplicate URI (this may change order/semantics)."
+
+instance Pretty DuplicateReleaseChannel where
+  pPrint (DuplicateReleaseChannel uri) =
+    text $ "Duplicate release channel detected when adding: \n  "
+      <> (T.unpack . E.decodeUtf8With E.lenientDecode . serializeURIRef') uri
+      <> "\nGiving up. You can use '--force' to remove and append the duplicate URI (this may change order/semantics)."
 
     -------------------------
     --[ High-level errors ]--
