@@ -32,6 +32,21 @@ RUN update_opt.sh 9 1
 ARG GHCUP_VERSION=0.1.17.8
 ARG GPG_KEY=7784930957807690A66EBDBE3786C5262ECB4A3F
 
+# install libtinfo.so.6 for ghcup
+RUN cd /tmp && \
+	curl -sSfL -O https://ftp.gnu.org/pub/gnu/ncurses/ncurses-6.1.tar.gz && \
+	tar xf ncurses-6.1.tar.gz && \
+	cd ncurses-6.1/ && \
+	./configure --prefix=/root/.local \
+		--with-shared \
+		--with-versioned-syms \
+		--without-ada \
+		--with-termlib && \
+	make -j && \
+	make install && \
+	cd && \
+	rm -rf /tmp/ncurses-6.1
+
 # install ghcup
 RUN gpg --batch --keyserver keys.openpgp.org --recv-keys $GPG_KEY && \
     curl -sSfL -O https://downloads.haskell.org/~ghcup/$GHCUP_VERSION/armv7-linux-ghcup-$GHCUP_VERSION && \
@@ -39,7 +54,12 @@ RUN gpg --batch --keyserver keys.openpgp.org --recv-keys $GPG_KEY && \
     curl -sSfL -O https://downloads.haskell.org/~ghcup/$GHCUP_VERSION/SHA256SUMS.sig && \
     gpg --verify SHA256SUMS.sig SHA256SUMS && \
     sha256sum -c --ignore-missing SHA256SUMS && \
-    mv armv7-linux-ghcup-$GHCUP_VERSION /usr/bin/ghcup && \
+    mv armv7-linux-ghcup-$GHCUP_VERSION /usr/bin/ghcup.bin && \
+    chmod +x /usr/bin/ghcup.bin && \
+	echo '#!/bin/sh'                               >  /usr/bin/ghcup && \
+	echo ''                                        >> /usr/bin/ghcup && \
+	echo 'export LD_LIBRARY_PATH=/root/.local/lib' >> /usr/bin/ghcup && \
+	echo 'exec /usr/bin/ghcup.bin "$@"'            >> /usr/bin/ghcup && \
     chmod +x /usr/bin/ghcup && \
     rm -rf SHA256SUMS SHA256SUMS.sig
 
