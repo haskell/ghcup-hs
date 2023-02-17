@@ -84,9 +84,6 @@ hide:
    </span>
 </p>
 
-<script type="text/javascript" src="javascripts/ghcup.js"></script>
-
-
 ----
 
 
