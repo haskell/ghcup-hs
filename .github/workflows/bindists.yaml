@@ -3,10 +3,6 @@ defaults:
   run:
     shell: bash
 on:
-  pull_request:
-    types: [opened]
-  issue_comment:
-    types: [created]
   workflow_dispatch:
     inputs:
       tool:
@@ -45,10 +41,10 @@ jobs:
             toolRequirements: build-essential curl libffi-dev libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
           - image: debian:10
             installCmd: apt-get update && apt-get install -y
-            toolRequirements: build-essential curl libffi-dev libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+            toolRequirements: build-essential curl libffi-dev libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 libnuma-dev
           - image: debian:11
             installCmd: apt-get update && apt-get install -y
-            toolRequirements: build-essential curl libffi-dev  libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+            toolRequirements: build-essential curl libffi-dev  libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 libnuma-dev
           - image: ubuntu:18.04
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
@@ -70,10 +66,16 @@ jobs:
           - image: rockylinux:8
             installCmd: dnf install -y
             toolRequirements: which findutils gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl
+          - image: rockylinux:9
+            installCmd: dnf install -y --allowerasing
+            toolRequirements: which findutils gcc gcc-c++ gmp gmp-devel make ncurses xz perl
           - image: linuxmintd/mint19.3-amd64
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
           - image: linuxmintd/mint20.2-amd64
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+          - image: linuxmintd/mint21.1-amd64
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
     container:
