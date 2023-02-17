@@ -689,19 +689,19 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230210/ghc-9.6.0.20230210-x86_64-fedora33-linux.tar.xz
             unknown_versioning: *ghc-961alpha3-64-centos7
           Linux_Mint:
-            < 20: *ghc-961alpha3-64-ubuntu18_04
-            '>= 20': *ghc-961alpha3-64-ubuntu20_04
-          Linux_RedHat:
-            unknown_versioning: *ghc-961alpha3-64-centos7
-          Linux_Ubuntu:
-            '< 19': &ghc-961alpha3-64-ubuntu18_04
+            < 20: &ghc-961alpha3-64-ubuntu18_04
               dlHash: 2b9fc6fe9adcc16472040653d76707cdec2b3d3bc587d970998a2bd0d897e074
               dlSubdir: ghc-9.6.0.20230210-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230210/ghc-9.6.0.20230210-x86_64-ubuntu18_04-linux.tar.xz
-            unknown_versioning: &ghc-961alpha3-64-ubuntu20_04
+            '>= 20': &ghc-961alpha3-64-ubuntu20_04
               dlHash: c560cc7f64d1dd5d74660b31d1949a12b3fb451b1e7684e50c2b6013b78d7e00
               dlSubdir: ghc-9.6.0.20230210-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230210/ghc-9.6.0.20230210-x86_64-ubuntu20_04-linux.tar.xz
+          Linux_RedHat:
+            unknown_versioning: *ghc-961alpha3-64-centos7
+          Linux_Ubuntu:
+            '< 19': *ghc-961alpha3-64-ubuntu18_04
+            unknown_versioning: *ghc-961alpha3-64-ubuntu20_04
           Linux_UnknownLinux:
             unknown_versioning:
               dlHash: 4d5b4139ad285475af84cf09e61737925f2ce1bba61aafcf2af2a49791472449
@@ -733,6 +733,7 @@ ghcupDownloads:
         dlSubdir: ghc-9.6.0.20230210
         dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230210/ghc-9.6.0.20230210-testsuite.tar.xz
       viTags:
+      - Prerelease
       - base-4.18.0.0
 
   Stack:
