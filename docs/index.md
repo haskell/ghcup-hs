@@ -4,10 +4,6 @@ hide:
   - toc
 ---
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<script src="javascripts/extra.js"></script>
-
-
 <section class="index-ghcup-hero">
   <img alt="haskell logo" src="./haskell_logo.png" />
   <h1>GHCup</h1>
@@ -83,9 +79,6 @@ hide:
      </a>
    </span>
 </p>
-
-<script type="text/javascript" src="javascripts/ghcup.js"></script>
-
 
 ----
 
