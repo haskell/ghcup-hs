@@ -1,5 +1,15 @@
 # Revision history for ghcup
 
+## 0.1.19.1 -- 2023-2-19
+
+* Fix GHCup on JFS/ReiserFS and other filesystem that don't support `d_type`, fixes [#766](https://github.com/haskell/ghcup-hs/issues/766)
+* Don't fail on setModificationTime, fixes [#784](https://github.com/haskell/ghcup-hs/issues/784) and many GitHub actions issues
+* Make armv7/aarch64 linux binaries more portable (built on Debian buster)
+* Improve usability on 'ghcup config add-release-channel', fixes [#751](https://github.com/haskell/ghcup-hs/issues/751)
+* Make version shortcuts work with 'ghcup set', fixes [#757](https://github.com/haskell/ghcup-hs/issues/757)
+* Don't implicitly smuggle in config options in `ghcup config set` wrt [#775](https://github.com/haskell/ghcup-hs/issues/775)
+* Fix build on unix with -ftui
+
 ## 0.1.19.0 -- 2023-1-13
 
 * restore proper support for FreeBSD and Linux armv7
