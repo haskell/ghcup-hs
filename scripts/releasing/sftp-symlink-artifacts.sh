@@ -21,8 +21,7 @@ rm i386-linux-ghcup
 rm x86_64-apple-darwin-ghcup
 rm x86_64-linux-ghcup
 rm x86_64-mingw64-ghcup.exe
-rm x86_64-freebsd12-ghcup
-rm x86_64-freebsd13-ghcup
+rm x86_64-portbld-freebsd-ghcup
 
 symlink ${ver}/aarch64-apple-darwin-ghcup-${ver} aarch64-apple-darwin-ghcup
 symlink ${ver}/aarch64-linux-ghcup-${ver} aarch64-linux-ghcup
