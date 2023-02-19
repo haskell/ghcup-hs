@@ -129,6 +129,27 @@ build_with_cache() {
 }
 
 install_ghcup() {
+	case "${RUNNER_OS}" in
+		"Linux")
+			case "${ARCH}" in
+				"ARM"*)
+					if command -v ghcup ; then
+						mkdir -p "$GHCUP_BIN"
+						cp "$(command -v ghcup)" "$GHCUP_BIN/ghcup${ext}"
+					else
+						install_ghcup_curl_sh
+					fi
+					;;
+				*) install_ghcup_curl_sh
+					;;
+			esac
+			;;
+			*) install_ghcup_curl_sh
+			;;
+	esac
+}
+
+install_ghcup_curl_sh() {
 	curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 BOOTSTRAP_HASKELL_INSTALL_NO_STACK=yes sh
 }
 

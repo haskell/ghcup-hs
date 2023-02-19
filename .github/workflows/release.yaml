@@ -99,7 +99,7 @@ jobs:
             GHC_VER: 9.2.5
             ARCH: ARM64
     steps:
-      - uses: docker://arm64v8/ubuntu:focal
+      - uses: docker://arm64v8/debian:10
         name: Cleanup (aarch64 linux)
         with:
           args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
@@ -115,7 +115,7 @@ jobs:
           submodules: 'true'
 
       - if: matrix.ARCH == 'ARM'
-        uses: docker://hasufell/arm32v7-ubuntu-haskell:focal
+        uses: docker://hasufell/arm32v7-debian-haskell:10
         name: Run build (armv7 linux)
         with:
           args: sh .github/scripts/build.sh
@@ -129,7 +129,7 @@ jobs:
           S3_HOST: ${{ env.S3_HOST }}
 
       - if: matrix.ARCH == 'ARM64'
-        uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
+        uses: docker://hasufell/arm64v8-debian-haskell:10
         name: Run build (aarch64 linux)
         with:
           args: sh .github/scripts/build.sh
@@ -342,7 +342,7 @@ jobs:
             DISTRO: Ubuntu
 
     steps:
-      - uses: docker://arm64v8/ubuntu:focal
+      - uses: docker://arm64v8/debian:10
         name: Cleanup (aarch64 linux)
         with:
           args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
@@ -358,7 +358,7 @@ jobs:
           path: ./out
 
       - if: matrix.ARCH == 'ARM'
-        uses: docker://hasufell/arm32v7-ubuntu-haskell:focal
+        uses: docker://hasufell/arm32v7-debian-haskell:10
         name: Run test (armv7 linux)
         with:
           args: sh .github/scripts/test.sh
@@ -369,7 +369,7 @@ jobs:
           DISTRO: Ubuntu
 
       - if: matrix.ARCH == 'ARM64'
-        uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
+        uses: docker://hasufell/arm64v8-debian-haskell:10
         name: Run test (aarch64 linux)
         with:
           args: sh .github/scripts/test.sh
