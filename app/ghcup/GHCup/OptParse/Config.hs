@@ -159,6 +159,9 @@ updateSettings usl usr =
     --[ Entrypoint ]--
     ------------------
 
+data Duplicate = Duplicate     -- ^ there is a duplicate somewhere in the middle
+               | NoDuplicate   -- ^ there is no duplicate
+               | DuplicateLast -- ^ there's a duplicate, but it's the last element
 
 
 config :: forall m. ( Monad m
@@ -207,16 +210,20 @@ config configCommand settings userConf keybindings runLogger = case configComman
     r <- runE @'[DuplicateReleaseChannel] $ do
       case urlSource settings of
         AddSource xs -> do
-          when (not force && Right uri `elem` xs) $ throwE (DuplicateReleaseChannel uri)
-          lift $ doConfig (defaultUserSettings { uUrlSource = Just $ AddSource (appendUnique xs (Right uri)) })
-          pure ()
+          case checkDuplicate xs (Right uri) of
+            Duplicate
+              | not force -> throwE (DuplicateReleaseChannel uri)
+            DuplicateLast -> pure ()
+            _ -> lift $ doConfig (defaultUserSettings { uUrlSource = Just $ AddSource (appendUnique xs (Right uri)) })
         GHCupURL -> do
           lift $ doConfig (defaultUserSettings { uUrlSource = Just $ AddSource [Right uri] })
           pure ()
         OwnSource xs -> do
-          when (not force && Right uri `elem` xs) $ throwE (DuplicateReleaseChannel uri)
-          lift $ doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource (appendUnique xs (Right uri)) })
-          pure ()
+          case checkDuplicate xs (Right uri) of
+            Duplicate
+              | not force -> throwE (DuplicateReleaseChannel uri)
+            DuplicateLast -> pure ()
+            _ -> lift $ doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource (appendUnique xs (Right uri)) })
         OwnSpec spec -> do
           lift $ doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource [Left spec, Right uri] })
           pure ()
@@ -228,6 +235,12 @@ config configCommand settings userConf keybindings runLogger = case configComman
         pure $ ExitFailure 15
 
  where
+  checkDuplicate :: Eq a => [a] -> a -> Duplicate
+  checkDuplicate xs a
+    | last xs == a = DuplicateLast
+    | a `elem` xs  = Duplicate
+    | otherwise    = NoDuplicate
+
   -- appends the element to the end of the list, but also removes it from the existing list
   appendUnique :: Eq a => [a] -> a -> [a]
   appendUnique xs' e = go xs'
