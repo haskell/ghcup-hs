@@ -263,8 +263,12 @@ getBase uri = do
     dlWithMod modTime json_file = do
       let (dir, fn) = splitFileName json_file
       f <- liftE $ download uri' (Just $ over pathL' (<> ".sig") uri') Nothing Nothing dir (Just fn) True
-      liftIO $ setModificationTime f modTime
-      liftIO $ setAccessTime f modTime
+
+      -- make these failures non-fatal, also see:
+      -- https://github.com/actions/runner-images/issues/7061
+      handleIO (\e -> logWarn $ "setModificationTime failed with: " <> T.pack (displayException e)) $ liftIO $ setModificationTime f modTime
+      handleIO (\e -> logWarn $ "setAccessTime failed with: " <> T.pack (displayException e)) $ liftIO $ setAccessTime f modTime
+
       pure f
 
 
