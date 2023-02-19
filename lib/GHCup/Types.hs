@@ -66,7 +66,7 @@ data GHCupInfo = GHCupInfo
   , _ghcupDownloads   :: GHCupDownloads
   , _globalTools      :: Map GlobalTool DownloadInfo
   }
-  deriving (Show, GHC.Generic)
+  deriving (Show, GHC.Generic, Eq)
 
 instance NFData GHCupInfo
 
@@ -87,7 +87,7 @@ data Requirements = Requirements
   { _distroPKGs :: [Text]
   , _notes      :: Text
   }
-  deriving (Show, GHC.Generic)
+  deriving (Show, GHC.Generic, Eq)
 
 instance NFData Requirements
 

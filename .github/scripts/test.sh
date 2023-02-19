@@ -190,7 +190,7 @@ sha=$(sha_sum "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml")
 # invalidate access time timer, which is 5minutes, so we re-download
 touch -a -m -t '199901010101' "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml"
 # redownload same file with some newlines added
-raw_eghcup -s https://www.haskell.org/ghcup/exp/ghcup-${JSON_VERSION}.yaml list
+raw_eghcup -s https://raw.githubusercontent.com/haskell/ghcup-metadata/exp/ghcup-0.0.7.yaml list
 # snapshot new yaml and etags file
 etag2=$(cat "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml.etags")
 sha2=$(sha_sum "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml")
@@ -200,7 +200,7 @@ sha2=$(sha_sum "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml")
 # invalidate access time timer, which is 5minutes, but don't expect a re-download
 touch -a -m -t '199901010101' "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml"
 # this time, we expect the same hash and etag
-raw_eghcup -s https://www.haskell.org/ghcup/exp/ghcup-${JSON_VERSION}.yaml list
+raw_eghcup -s https://raw.githubusercontent.com/haskell/ghcup-metadata/exp/ghcup-0.0.7.yaml list
 etag3=$(cat "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml.etags")
 sha3=$(sha_sum "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml")
 [ "${etag2}" = "${etag3}" ]
