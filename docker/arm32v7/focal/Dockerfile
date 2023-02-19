@@ -54,10 +54,7 @@ ENV NO_COLOR=1
 RUN ghcup config set gpg-setting GPGStrict && \
 	ghcup --verbose install ghc   --isolate=/usr     --force ${GHC} && \
 	ghcup --verbose install cabal --isolate=/usr/bin --force ${CABAL_INSTALL} && \
-	find "/usr/lib/ghc-${GHC}/" \( -name "*_p.a" -o -name "*.p_hi" \) -type f -delete && \
-	rm -r "/usr/share/doc/ghc-${GHC}" && \
-	rm -rf /tmp/ghcup* && \
-	ghcup gc -p -s -c -t
+	ghcup gc -s -c -t
 
 ENV PATH /root/.cabal/bin:/root/.ghcup/bin:/root/.local/bin:$PATH
 
