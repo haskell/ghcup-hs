@@ -72,20 +72,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push (focal)
+      - name: Build and push (debian buster)
+        uses: docker/build-push-action@v3
+        with:
+          context: ./docker/arm32v7/buster
+          push: true
+          tags: hasufell/arm32v7-debian-haskell:10
+          platforms: linux/arm
+
+      - name: Build and push (ubuntu focal)
         uses: docker/build-push-action@v3
         with:
           context: ./docker/arm32v7/focal
           push: true
-          tags: hasufell/arm32v7-ubuntu-haskell:focal
-          platforms: linux/arm
-
-      - name: Build and push (bionic)
-        uses: docker/build-push-action@v3
-        with:
-          context: ./docker/arm32v7/bionic
-          push: true
-          tags: hasufell/arm32v7-ubuntu-haskell:bionic
+          tags: hasufell/arm32v7-debian-haskell:10
           platforms: linux/arm
 
   docker-aarch:
@@ -108,18 +108,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push (focal)
+      - name: Build and push (debian buster)
+        uses: docker/build-push-action@v3
+        with:
+          context: ./docker/arm64v8/buster
+          push: true
+          tags: hasufell/arm64v8-debian-haskell:10
+          platforms: linux/arm64
+
+      - name: Build and push (ubuntu focal)
         uses: docker/build-push-action@v3
         with:
           context: ./docker/arm64v8/focal
           push: true
-          tags: hasufell/arm64v8-ubuntu-haskell:focal
-          platforms: linux/arm64
-
-      - name: Build and push (bionic)
-        uses: docker/build-push-action@v3
-        with:
-          context: ./docker/arm64v8/bionic
-          push: true
-          tags: hasufell/arm64v8-ubuntu-haskell:bionic
+          tags: hasufell/arm64v8-debian-haskell:10
           platforms: linux/arm64
