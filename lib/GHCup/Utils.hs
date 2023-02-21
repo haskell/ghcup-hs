@@ -892,6 +892,9 @@ getTagged tag =
 getLatest :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
 getLatest av tool = headOf (ix tool % getTagged Latest) av
 
+getLatestPrerelease :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
+getLatestPrerelease av tool = headOf (ix tool % getTagged LatestPrerelease) av
+
 getRecommended :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
 getRecommended av tool = headOf (ix tool % getTagged Recommended) av
 
