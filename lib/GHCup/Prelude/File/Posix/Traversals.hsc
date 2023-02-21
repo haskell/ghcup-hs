@@ -124,7 +124,6 @@ readDirEntPortable (DirStreamPortable (basedir, dirs)) = do
     (DirType #{const DT_LNK}, _)     -> pure (dt, fp)
     (DirType #{const DT_REG}, _)     -> pure (dt, fp)
     (DirType #{const DT_SOCK}, _)    -> pure (dt, fp)
-    (DirType #{const DT_UNKNOWN}, _) -> pure (dt, fp)
     (_, _)
       | fp /= "" -> do
           stat <- getSymbolicLinkStatus (basedir </> fp)
@@ -136,4 +135,5 @@ readDirEntPortable (DirStreamPortable (basedir, dirs)) = do
                              | isRegularFile stat     -> DirType #{const DT_REG}
                              | isSocket stat          -> DirType #{const DT_SOCK}
                              | otherwise              -> DirType #{const DT_UNKNOWN}
+      | otherwise -> pure (dt, fp)
 
