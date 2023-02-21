@@ -246,8 +246,9 @@ toolVersionTagEither s' =
 
 tagEither :: String -> Either String Tag
 tagEither s' = case fmap toLower s' of
-  "recommended" -> Right Recommended
-  "latest"      -> Right Latest
+  "recommended"              -> Right Recommended
+  "latest"                   -> Right Latest
+  "latest-prerelease"        -> Right LatestPrerelease
   ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
                                   Right x -> Right (Base x)
                                   Left  _ -> Left $ "Invalid PVP version for base " <> ver'
@@ -452,7 +453,7 @@ tagCompleter tool add = listIOCompleter $ do
       let allTags = filter (/= Old)
             $ _viTags =<< M.elems (availableToolVersions (_ghcupDownloads ghcupInfo) tool)
       pure $ nub $ (add ++) $ fmap tagToString allTags
-    VLeft _ -> pure  (nub $ ["recommended", "latest"] ++ add)
+    VLeft _ -> pure  (nub $ ["recommended", "latest", "latest-prerelease"] ++ add)
 
 versionCompleter :: Maybe ListCriteria -> Tool -> Completer
 versionCompleter criteria tool = versionCompleter' criteria tool (const True)
@@ -706,6 +707,9 @@ fromVersion' (SetToolVersion v) tool = do
 fromVersion' (SetToolTag Latest) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   bimap mkTVer Just <$> getLatest dls tool ?? TagNotFound Latest tool
+fromVersion' (SetToolTag LatestPrerelease) tool = do
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  bimap mkTVer Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
 fromVersion' (SetToolTag Recommended) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   bimap mkTVer Just <$> getRecommended dls tool ?? TagNotFound Recommended tool

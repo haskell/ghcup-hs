@@ -107,6 +107,7 @@ printListResult no_color raw lr = do
     printTag Prerelease         = color Red "prerelease"
     printTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
     printTag (UnknownTag t    ) = t
+    printTag LatestPrerelease   = color Red "latest-prerelease"
     printTag Old                = ""
 
   let

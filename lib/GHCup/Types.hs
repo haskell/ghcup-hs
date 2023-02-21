@@ -154,6 +154,7 @@ instance NFData VersionInfo
 data Tag = Latest
          | Recommended
          | Prerelease
+         | LatestPrerelease
          | Base PVP
          | Old                -- ^ old versions are hidden by default in TUI
          | UnknownTag String  -- ^ used for upwardscompat
@@ -167,6 +168,7 @@ tagToString Latest             = "latest"
 tagToString Prerelease         = "prerelease"
 tagToString (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
 tagToString (UnknownTag t    ) = t
+tagToString LatestPrerelease   = "latest-prerelease"
 tagToString Old                = ""
 
 instance Pretty Tag where
@@ -175,6 +177,7 @@ instance Pretty Tag where
   pPrint Prerelease         = text "prerelease"
   pPrint (Base       pvp'') = text ("base-" ++ T.unpack (prettyPVP pvp''))
   pPrint (UnknownTag t    ) = text t
+  pPrint LatestPrerelease   = text "latest-prerelease"
   pPrint Old                = mempty
 
 data Architecture = A_64

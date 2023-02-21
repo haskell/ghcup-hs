@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module BrickMain where
 
@@ -154,8 +155,11 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
       <+> minHSize 15 (str "Version")
       <+> padLeft (Pad 1) (minHSize 25 $ str "Tags")
       <+> padLeft (Pad 5) (str "Notes")
-  renderList' = withDefAttr listAttr . drawListElements renderItem True
-  renderItem _ b listResult@ListResult{..} =
+  renderList' bis@BrickInternalState{..} =
+    let getMinLength = length . intercalate "," . fmap tagToString
+        minLength = V.maximum $ V.map (getMinLength . lTag) clr
+    in withDefAttr listAttr . drawListElements (renderItem minLength) True $ bis
+  renderItem minTagSize _ b listResult@ListResult{lTag = lTag', ..} =
     let marks = if
           | lSet       -> (withAttr (attrName "set") $ str "✔✔")
           | lInstalled -> (withAttr (attrName "installed") $ str "✓ ")
@@ -170,7 +174,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
           = updateAttrMap (const dimAttrs) . withAttr (attrName "no-bindist")
           | otherwise  = id
         hooray
-          | elem Latest lTag && not lInstalled =
+          | elem Latest lTag' && not lInstalled =
               withAttr (attrName "hooray")
           | otherwise = id
         active = if b then putCursor "GHCup" (Location (0,0)) . forceAttr (attrName "active") else id
@@ -181,8 +185,8 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
                  (printTool lTool)
                )
           <+> minHSize 15 (str ver)
-          <+> (let l = catMaybes . fmap printTag $ sort lTag
-               in  padLeft (Pad 1) $ minHSize 25 $ if null l
+          <+> (let l = catMaybes . fmap printTag $ sort lTag'
+               in  padLeft (Pad 1) $ minHSize minTagSize $ if null l
                      then emptyWidget
                      else foldr1 (\x y -> x <+> str "," <+> y) l
               )
@@ -200,6 +204,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
   printTag Prerelease     = Just $ withAttr (attrName "prerelease") $ str "prerelease"
   printTag (Base pvp'')   = Just $ str ("base-" ++ T.unpack (prettyPVP pvp''))
   printTag Old            = Nothing
+  printTag LatestPrerelease = Just $ withAttr (attrName "latest-prerelease") $ str "latest-prerelease"
   printTag (UnknownTag t) = Just $ str t
 
   printTool Cabal = str "cabal"
@@ -274,6 +279,7 @@ defaultAttributes no_color = attrMap
   , (attrName "recommended"  , Vty.defAttr `withForeColor` Vty.green)
   , (attrName "hls-powered"  , Vty.defAttr `withForeColor` Vty.green)
   , (attrName "latest"       , Vty.defAttr `withForeColor` Vty.yellow)
+  , (attrName "latest-prerelease" , Vty.defAttr `withForeColor` Vty.red)
   , (attrName "prerelease"   , Vty.defAttr `withForeColor` Vty.red)
   , (attrName "compiled"     , Vty.defAttr `withForeColor` Vty.blue)
   , (attrName "stray"        , Vty.defAttr `withForeColor` Vty.blue)
