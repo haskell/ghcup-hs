@@ -335,7 +335,7 @@ ghcSet mtarget = do
 getInstalledGHCs :: (MonadReader env m, HasDirs env, MonadIO m) => m [Either FilePath GHCTargetVersion]
 getInstalledGHCs = do
   ghcdir <- ghcupGHCBaseDir
-  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectory (fromGHCupPath ghcdir)
+  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectoryDirs (fromGHCupPath ghcdir)
   forM fs $ \f -> case parseGHCupGHCDir f of
     Right r -> pure $ Right r
     Left  _ -> pure $ Left f
@@ -438,7 +438,7 @@ getInstalledHLSs = do
         Nothing        -> pure $ Left f
 
   hlsdir <- ghcupHLSBaseDir
-  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectory (fromGHCupPath hlsdir)
+  fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectoryDirs (fromGHCupPath hlsdir)
   new <- forM fs $ \f -> case parseGHCupHLSDir f of
     Right r -> pure $ Right r
     Left  _ -> pure $ Left f
@@ -626,7 +626,7 @@ hlsInternalServerScripts ver mghcVer = do
   dir <- ghcupHLSDir ver
   let bdir = fromGHCupPath dir </> "bin"
   fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer)
-    <$> liftIO (listDirectory bdir)
+    <$> liftIO (listDirectoryFiles bdir)
 
 -- | Get all binaries for a hls version from the ~/.ghcup/hls/<ver>/lib/haskell-language-server-<ver>/bin directory, if any.
 -- Returns the full path.
@@ -639,7 +639,7 @@ hlsInternalServerBinaries ver mghcVer = do
   let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString)
   (Just bdir) <- fmap headMay $ liftIO $ expandFilePath [Left (dir </> "lib"), Right regex, Left "bin"]
   fmap (bdir </>) . filter (\f -> maybe True (\gv -> ("-" <> T.unpack (prettyVer gv)) `isSuffixOf` f) mghcVer)
-    <$> liftIO (listDirectory bdir)
+    <$> liftIO (listDirectoryFiles bdir)
 
 -- | Get all libraries for a hls version from the ~/.ghcup/hls/<ver>/lib/haskell-language-server-<ver>/lib/<ghc-ver>/
 -- directory, if any.
@@ -652,7 +652,7 @@ hlsInternalServerLibs ver ghcVer = do
   dir <- fromGHCupPath <$> ghcupHLSDir ver
   let regex = makeRegexOpts compExtended execBlank ([s|^haskell-language-server-.*$|] :: ByteString)
   (Just bdir) <- fmap headMay $ liftIO $ expandFilePath [Left (dir </> "lib"), Right regex, Left ("lib" </> T.unpack (prettyVer ghcVer))]
-  fmap (bdir </>) <$> liftIO (listDirectory bdir)
+  fmap (bdir </>) <$> liftIO (listDirectoryFiles bdir)
 
 
 -- | Get the wrapper binary for an hls version, if any.
@@ -936,7 +936,7 @@ ghcToolFiles ver = do
   whenM (fmap not $ ghcInstalled ver)
         (throwE (NotInstalled GHC ver))
 
-  files <- liftIO (listDirectory bindir >>= filterM (doesFileExist . (bindir </>)))
+  files <- liftIO (listDirectoryFiles bindir >>= filterM (doesFileExist . (bindir </>)))
   pure (getUniqueTools . groupToolFiles . fmap (dropSuffix exeExt) $ files)
 
  where
