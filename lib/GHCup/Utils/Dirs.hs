@@ -42,6 +42,9 @@ module GHCup.Utils.Dirs
   , removeDirectoryRecursive
   , removePathForcibly
 
+  , listDirectoryFiles
+  , listDirectoryDirs
+
   -- System.Directory re-exports
   , createDirectory
   , createDirectoryIfMissing
@@ -130,7 +133,7 @@ import           Data.Maybe
 import           Data.Versions
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
-import           Optics
+import           Optics hiding ( uncons )
 import           Safe
 import           System.Directory hiding ( removeDirectory
                                          , removeDirectoryRecursive
@@ -527,6 +530,29 @@ cleanupTrash = do
     forM_ contents (\fp -> handleIO (\e ->
         logDebug ("Resource cleanup failed for " <> T.pack fp <> ", error was: " <> T.pack (displayException e))
       ) $ liftIO $ removePathForcibly (recycleDir `appendGHCupPath` fp))
+
+
+-- | List *actual files* in a directory, ignoring empty files and a couple
+-- of blacklisted files, such as '.DS_Store' on mac.
+listDirectoryFiles :: FilePath -> IO [FilePath]
+listDirectoryFiles fp = do
+  listDirectory fp >>= filterM (doesFileExist . (fp </>)) <&> filter (\fp' -> not (isHidden fp') && not (isBlacklisted fp'))
+
+-- | List *actual directories* in a directory, ignoring empty directories and a couple
+-- of blacklisted files, such as '.DS_Store' on mac.
+listDirectoryDirs :: FilePath -> IO [FilePath]
+listDirectoryDirs fp = do
+  listDirectory fp >>= filterM (doesDirectoryExist . (fp </>)) <&> filter (\fp' -> not (isHidden fp') && not (isBlacklisted fp'))
+
+isHidden :: FilePath -> Bool
+isHidden fp'
+  | isWindows = False
+  | Just ('.', _) <- uncons fp' = True
+  | otherwise = False
+
+isBlacklisted :: FilePath -> Bool
+{- HLINT ignore "Use ==" -}
+isBlacklisted fp' = fp' `elem` [".DS_Store"]
 
 
 
