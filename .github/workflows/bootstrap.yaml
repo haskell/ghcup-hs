@@ -51,5 +51,8 @@ jobs:
 
       - if: runner.os == 'Windows'
         name: Run bootstrap
-        run: ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ${GITHUB_WORKSPACE}/bootstrap-haskell -InBash
+        run: |
+          $curDir = Get-Location
+          Write-Host "Current Working Directory: $curDir"
+          ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ("{0}/scripts/bootstrap/bootstrap-haskell" -f $curDir) -InBash
         shell: pwsh
