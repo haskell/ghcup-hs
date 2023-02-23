@@ -96,7 +96,7 @@ jobs:
             ARCH: ARM
           - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.2.5
+            GHC_VER: 9.2.6
             ARCH: ARM64
     steps:
       - uses: docker://arm64v8/debian:10
@@ -166,11 +166,11 @@ jobs:
         include:
           - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.2.5
+            GHC_VER: 9.2.6
             ARCH: ARM64
           - os: macOS-10.15
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.2.5
+            GHC_VER: 9.2.6
             ARCH: 64
           - os: windows-latest
             ARTIFACT: "x86_64-mingw64-ghcup"
@@ -337,7 +337,7 @@ jobs:
             DISTRO: Ubuntu
           - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.2.5
+            GHC_VER: 9.2.6
             ARCH: ARM64
             DISTRO: Ubuntu
 
@@ -400,12 +400,12 @@ jobs:
         include:
           - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.2.5
+            GHC_VER: 9.2.6
             ARCH: ARM64
             DISTRO: na
           - os: macOS-10.15
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.2.5
+            GHC_VER: 9.2.6
             ARCH: 64
             DISTRO: na
           - os: windows-latest
