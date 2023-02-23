@@ -551,6 +551,7 @@ isHidden fp'
   | otherwise = False
 
 isBlacklisted :: FilePath -> Bool
+{- HLINT ignore "Use ==" -}
 isBlacklisted fp' = fp' `elem` [".DS_Store"]
 
 
