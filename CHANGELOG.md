@@ -1,6 +1,6 @@
 # Revision history for ghcup
 
-## 0.1.19.2 -- ????-??-??
+## 0.1.19.2 -- 2023-2-24
 
 * Follow-up fix for JFS/ReiserFS and other filesystem that don't support `d_type`, fixes [#787](https://github.com/haskell/ghcup-hs/issues/787)
     - the previous release had a bug that invalidated that broke it
