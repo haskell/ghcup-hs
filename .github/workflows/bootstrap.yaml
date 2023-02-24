@@ -56,3 +56,51 @@ jobs:
           Write-Host "Current Working Directory: $curDir"
           ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ("{0}/scripts/bootstrap/bootstrap-haskell" -f $curDir) -InBash
         shell: pwsh
+
+  jfs:
+    name: jfs
+    runs-on: [self-hosted, Linux, ARM64, JFS]
+    defaults:
+      run:
+        working-directory: /mnt/jfs
+    env:
+      BOOTSTRAP_HASKELL_CABAL_VERSION: 3.6.2.0
+      BOOTSTRAP_HASKELL_GHC_VERSION: 8.10.7
+      BOOTSTRAP_HASKELL_NONINTERACTIVE: yes
+      GHCUP_INSTALL_BASE_PREFIX: "/mnt/jfs"
+    steps:
+      - uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
+        name: Cleanup
+        with:
+          args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
+        name: Run build (arm64v8 linux)
+        with:
+          args: sh ./.github/scripts/bootstrap.sh
+        env:
+          BOOTSTRAP_HASKELL_CABAL_VERSION: ${{ env.BOOTSTRAP_HASKELL_CABAL_VERSION }}
+          BOOTSTRAP_HASKELL_GHC_VERSION: ${{ env.BOOTSTRAP_HASKELL_GHC_VERSION }}
+          BOOTSTRAP_HASKELL_NONINTERACTIVE: ${{ env.BOOTSTRAP_HASKELL_NONINTERACTIVE }}
+          GHCUP_INSTALL_BASE_PREFIX: ${{ env.GHCUP_INSTALL_BASE_PREFIX }}
+
+  some:
+    name: some
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Test ghcup bug
+        run: |
+          ls -lah /usr/local/.ghcup/cache
+          ghcup --version
+          ghcup --verbose list
+
+
+
