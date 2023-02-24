@@ -13,7 +13,13 @@ source "$GHCUP_INSTALL_BASE_PREFIX"/.ghcup/env || source "$HOME/.bashrc"
 ghcup --version
 which ghcup | grep foobarbaz
 
-ghcup -v --url-source=file:$METADATA_FILE install $TOOL --set $VERSION
+case $TOOL in
+	ghcup)
+		ghcup -v --url-source=file:$METADATA_FILE upgrade --force
+		;;
+	*) ghcup -v --url-source=file:$METADATA_FILE install $TOOL --set $VERSION
+		;;
+esac
 
 mkdir -p /tmp/install-bindist-ci
 cd /tmp/install-bindist-ci
@@ -27,6 +33,9 @@ main = print $ 1 + 1
 EOF
 
 case $TOOL in
+	ghcup)
+		ghcup --verbose list
+		;;
 	hls)
 		ghcup install cabal latest
 		ghcup install ghc --set recommended
