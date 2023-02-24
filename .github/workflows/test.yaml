@@ -19,7 +19,7 @@ jobs:
         cabal:
           - '3.6.2.0'
         os:
-          - ubuntu-latest
+          - ubuntu-20.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
