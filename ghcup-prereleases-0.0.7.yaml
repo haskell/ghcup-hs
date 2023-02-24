@@ -95,7 +95,7 @@ ghcupDownloads:
               dlHash: 143589378a4a0e6a948c9130e42832feee189dc89ab7f29088db4b11db6d61a3
     3.9.0.0:
       viTags:
-        - Prerelease
+        - LatestPrerelease
       viArch:
         A_64:
           Linux_UnknownLinux:
@@ -733,13 +733,13 @@ ghcupDownloads:
         dlSubdir: ghc-9.6.0.20230210
         dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230210/ghc-9.6.0.20230210-testsuite.tar.xz
       viTags:
-      - Prerelease
+      - LatestPrerelease
       - base-4.18.0.0
 
   Stack:
     2.9.2.1:
       viTags:
-        - Prerelease
+        - LatestPrerelease
       viChangeLog: https://github.com/commercialhaskell/stack/blob/rc/v2.9/ChangeLog.md#v2921-release-candidate
       viArch:
         A_64:
