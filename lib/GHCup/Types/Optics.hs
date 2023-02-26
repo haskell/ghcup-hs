@@ -37,6 +37,7 @@ makeLenses ''PlatformResult
 makeLenses ''DownloadInfo
 makeLenses ''Tag
 makeLenses ''VersionInfo
+makeLenses ''VersionDownload
 
 makeLenses ''GHCTargetVersion
 

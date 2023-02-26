@@ -57,6 +57,7 @@ import           System.Process                  ( readProcess )
 import           System.FilePath
 import           Text.HTML.TagSoup       hiding ( Tag )
 import           URI.ByteString
+import           Optics ( view )
 
 import qualified Data.ByteString.UTF8          as UTF8
 import qualified Data.Map.Strict               as M
@@ -451,7 +452,7 @@ tagCompleter tool add = listIOCompleter $ do
   case mGhcUpInfo of
     VRight ghcupInfo -> do
       let allTags = filter (/= Old)
-            $ _viTags =<< M.elems (availableToolVersions (_ghcupDownloads ghcupInfo) tool)
+            $ (view viTags) =<< M.elems (availableToolVersions (_ghcupDownloads ghcupInfo) tool)
       pure $ nub $ (add ++) $ fmap tagToString allTags
     VLeft _ -> pure  (nub $ ["recommended", "latest", "latest-prerelease"] ++ add)
 

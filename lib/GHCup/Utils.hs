@@ -781,6 +781,9 @@ getLatestToolFor tool pvpIn dls = do
   let ps = catMaybes $ fmap (\(v, vi) -> (,vi) <$> versionToPVP v) ls
   pure . fmap (first fst) . headMay . filter (\((v, _), _) -> matchPVPrefix pvpIn v) $ ps
 
+-- type ToolVersionSpec = Map Version ToolRevisionSpec
+-- type ToolRevisionSpec = Map Int VersionInfo
+
 
 
 

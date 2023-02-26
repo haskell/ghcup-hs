@@ -308,7 +308,7 @@ listVersions lt' criteria = do
         isOld  = maybe True (> currentVer) latestVer && maybe True (> currentVer) recommendedVer
     in if | Map.member currentVer av -> Nothing
           | otherwise -> Just $ ListResult { lVer    = currentVer
-                                           , lTag    = maybe (if isOld then [Old] else []) _viTags listVer
+                                           , lTag    = maybe (if isOld then [Old] else []) (view viTags) listVer
                                            , lCross  = Nothing
                                            , lTool   = GHCup
                                            , fromSrc = False
@@ -337,7 +337,8 @@ listVersions lt' criteria = do
                -> [Either FilePath Version]
                -> (Version, VersionInfo)
                -> m ListResult
-  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, _viTags -> tags) = do
+  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, vi) = do
+    let tags = view viTags vi
     case t of
       GHC -> do
         lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo GHC v

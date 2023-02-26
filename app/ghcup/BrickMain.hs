@@ -11,7 +11,6 @@ module BrickMain where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
-import           GHCup.Types.Optics ( getDirs )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
 import           GHCup.OptParse.Common (logGHCPostRm)
@@ -20,6 +19,7 @@ import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
 import           GHCup.Prompts
+import           GHCup.Types.Optics hiding ( getGHCupInfo )
 
 import           Brick
 import           Brick.Widgets.Border
@@ -53,6 +53,7 @@ import           System.Exit
 import           System.IO.Unsafe
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           URI.ByteString
+import           Optics ( view )
 
 import qualified Data.Text                     as T
 import qualified Data.Text.Lazy.Builder        as B
@@ -477,7 +478,7 @@ install' _ (_, ListResult {..}) = do
     )
     >>= \case
           VRight (vi, Dirs{..}, Just ce) -> do
-            forM_ (_viPostInstall =<< vi) $ \msg -> logInfo msg
+            forM_ (view viPostInstall =<< vi) $ \msg -> logInfo msg
             case lTool of
               GHCup -> do
                 up <- liftIO $ fmap (either (const Nothing) Just)
@@ -489,7 +490,7 @@ install' _ (_, ListResult {..}) = do
               _ -> pure ()
             pure $ Right ()
           VRight (vi, _, _) -> do
-            forM_ (_viPostInstall =<< vi) $ \msg -> logInfo msg
+            forM_ (view viPostInstall =<< vi) $ \msg -> logInfo msg
             logInfo "Please restart 'ghcup' for the changes to take effect"
             pure $ Right ()
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
@@ -564,7 +565,7 @@ del' _ (_, ListResult {..}) = do
     >>= \case
           VRight vi -> do
             logGHCPostRm (mkTVer lVer)
-            forM_ (_viPostRemove =<< vi) $ \msg ->
+            forM_ (view viPostRemove =<< vi) $ \msg ->
               logInfo msg
             pure $ Right ()
           VLeft  e -> pure $ Left (prettyHFError e)

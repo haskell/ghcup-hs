@@ -147,6 +147,10 @@ instance Arbitrary Architecture where
   arbitrary = genericArbitrary
   shrink    = genericShrink
 
+instance Arbitrary VersionDownload where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
 instance Arbitrary VersionInfo where
   arbitrary = genericArbitrary
   shrink    = genericShrink

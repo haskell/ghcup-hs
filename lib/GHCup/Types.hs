@@ -44,6 +44,8 @@ import           Graphics.Vty                   ( Key(..) )
 import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Text                     as T
 import qualified GHC.Generics                  as GHC
+import qualified Data.Map.Strict               as M
+
 
 
 #if !defined(BRICK)
@@ -137,6 +139,19 @@ instance NFData GlobalTool
 data VersionInfo = VersionInfo
   { _viTags        :: [Tag]              -- ^ version specific tag
   , _viChangeLog   :: Maybe URI
+  , _viDownload    :: Map Int VersionDownload
+  -- informative messages
+  , _viPostInstall :: Maybe Text
+  , _viPostRemove  :: Maybe Text
+  , _viPreCompile  :: Maybe Text
+  }
+  deriving (Eq, GHC.Generic, Show)
+
+instance NFData VersionInfo
+
+data VersionInfoLegacy = VersionInfoLegacy
+  { _viTags        :: [Tag]              -- ^ version specific tag
+  , _viChangeLog   :: Maybe URI
   , _viSourceDL    :: Maybe DownloadInfo -- ^ source tarball
   , _viTestDL      :: Maybe DownloadInfo -- ^ test tarball
   , _viArch        :: ArchitectureSpec   -- ^ descend for binary downloads per arch
@@ -147,7 +162,23 @@ data VersionInfo = VersionInfo
   }
   deriving (Eq, GHC.Generic, Show)
 
-instance NFData VersionInfo
+data VersionDownload = VersionDownload
+  { _viSourceDL    :: Maybe DownloadInfo -- ^ source tarball
+  , _viTestDL      :: Maybe DownloadInfo -- ^ test tarball
+  , _viArch        :: ArchitectureSpec   -- ^ descend for binary downloads per arch
+
+  }
+  deriving (Eq, GHC.Generic, Show)
+
+instance NFData VersionDownload
+
+fromVersionInfoLegacy :: VersionInfoLegacy -> VersionInfo
+fromVersionInfoLegacy VersionInfoLegacy{..} =
+  VersionInfo {_viDownload = M.singleton 0 $ VersionDownload { _viSourceDL = _viSourceDL
+                                                             , _viTestDL = _viTestDL
+                                                             , _viArch = _viArch
+                                                             }
+              , ..}
 
 
 -- | A tag. These are currently attached to a version of a tool.

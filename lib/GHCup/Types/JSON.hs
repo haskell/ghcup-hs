@@ -320,11 +320,18 @@ instance FromJSONKey (Maybe VersionRange)  where
       Right x -> pure $ Just x
       Left  e -> fail $ "Failure in (Maybe VersionRange) (FromJSONKey)" <> MP.errorBundlePretty e
 
-
-
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfoLegacy
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionDownload
+
+instance FromJSON VersionInfo where
+  parseJSON v = parseLegacy v <|> parseNew v
+   where
+    parseLegacy = fmap fromVersionInfoLegacy . parseJSON @VersionInfoLegacy
+    parseNew = genericParseJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel }
+
+deriveToJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
 deriveToJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key

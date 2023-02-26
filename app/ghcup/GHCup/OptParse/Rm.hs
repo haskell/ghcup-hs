@@ -3,7 +3,6 @@
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RankNTypes #-}
@@ -34,6 +33,7 @@ import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
+import           Optics
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
@@ -227,5 +227,5 @@ rm rmCommand runAppState runLogger = case rmCommand of
               pure $ ExitFailure 15
 
   postRmLog vi =
-    forM_ (_viPostRemove =<< vi) $ \msg ->
+    forM_ (view viPostRemove =<< vi) $ \msg ->
       runLogger $ logInfo msg
