@@ -19,7 +19,7 @@ jobs:
         cabal:
           - '3.6.2.0'
         os:
-          - ubuntu-20.04
+          - ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -56,6 +56,13 @@ jobs:
 
       - name: Update cabal cache
         run: cabal update
+        shell: bash
+
+      - name: Install some deps
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          export TZ=Asia/Singapore
+          sudo apt install -y libarchive-dev
         shell: bash
 
       - name: Install ghcup-gen
