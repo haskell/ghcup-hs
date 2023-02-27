@@ -3142,6 +3142,11 @@ ghcupDownloads:
             unknown_versioning: *ghc-944-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-944-64-fedora
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.4.4/ghc-9.4.4-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-9.4.4-x86_64-portbld-freebsd
+              dlHash: 42eba2c1eb0b7a420a79ee3f3bb1f649926ea78ca8fee176491c087aa48ea7ef
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghc/9.4.4/ghc-9.4.4-x86_64-apple-darwin.tar.xz
