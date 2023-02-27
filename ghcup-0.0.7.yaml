@@ -4406,6 +4406,10 @@ ghcupDownloads:
               dlHash: 816be0ce817f74c18074b1a496b4ac9ea0b22b7745d9a7bf77c19161e251e8ad
               dlSubdir:
                 RegexDir: "stack-.*"
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.9.3/stack-2.9.3-freebsd-x86_64.tar.xz
+              dlHash: b1184820aa42f15188c2dc14d4566195f9ecc71f191dde7643caff84e027a80b
           Linux_Alpine:
             unknown_versioning: *stack-293-64
         A_32:
