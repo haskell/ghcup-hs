@@ -738,6 +738,106 @@ ghcupDownloads:
       - LatestPrerelease
       - base-4.18.0.0
 
+    9.6.0.20230302:
+      viArch:
+        A_32:
+          Linux_Debian:
+            <10: &ghc-961rc1-32-debian10
+              dlHash: a4a0df9b980da59aaf4d121bddad20e750b17d45f90e8c5cdaa3fd94479087ea
+              dlSubdir: ghc-9.6.0.20230302-i386-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-i386-deb9-linux.tar.xz
+            unknown_versioning: *ghc-961rc1-32-debian10
+          Linux_Mint:
+            unknown_versioning: *ghc-961rc1-32-debian10
+          Linux_Ubuntu:
+            unknown_versioning: *ghc-961rc1-32-debian10
+          Linux_UnknownLinux:
+            unknown_versioning: *ghc-961rc1-32-debian10
+        A_64:
+          Darwin:
+            unknown_versioning:
+              dlHash: 8a291d92b470d412ba531b485b8a7692780334ae7690a3257f666d04ca374733
+              dlSubdir: ghc-9.6.0.20230302-x86_64-apple-darwin
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-apple-darwin.tar.xz
+          Linux_Alpine:
+            unknown_versioning:
+              dlHash: abb24cbd934333d660221ec872c3f11acbd295607c3b6183266fce9fe3158fb0
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-alpine3_12-linux-static-int_native.tar.xz
+          Linux_CentOS:
+            ( >= 7 && < 8 ): &ghc-961rc1-64-centos7
+              dlHash: 76b0921881427e49fc0fe9460ca67b6df4236e33b1a64cca88b06f2f0510ffd1
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-centos7-linux.tar.xz
+            unknown_versioning: *ghc-961rc1-64-centos7
+          Linux_Debian:
+            (>= 10 && < 11):
+              dlHash: fd7834d8d2615be2620cf657ff3d37fd6d699aaa96175e3e984e50c84414ffa1
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-deb10-linux.tar.xz
+            < 10:
+              dlHash: 4aa4ba419265b790277acf8c6169e694d8b419077ed281e65d3461a2a2eafd00
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-deb9-linux.tar.xz
+            '>= 11': &ghc-961rc1-64-debian11
+              dlHash: 5137596a6956b779f2e1a9e05cde9dd00b9d68944d2f818f6a95d489dc62d248
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-deb11-linux.tar.xz
+            unknown_versioning: *ghc-961rc1-64-debian11
+          Linux_Fedora:
+            '>= 33':
+              dlHash: dd4b1eff940fb2e3b2203b1a6e3e32182fcff9f32c5dfaa9675d72665fac82b4
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-fedora33-linux.tar.xz
+            unknown_versioning: *ghc-961rc1-64-centos7
+          Linux_Mint:
+            < 20: &ghc-961rc1-64-ubuntu1804
+              dlHash: 5ea801852c74ecc41dda80f574eaa00f059adac502e6e8c611abc5f6606c7237
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-ubuntu18_04-linux.tar.xz
+            '>= 20': &ghc-961rc1-64-ubuntu2004
+              dlHash: 7004f93625c649eed1b44ede3530ccbab3baaaca5cd2f597cfd31051a2615510
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-ubuntu20_04-linux.tar.xz
+          Linux_RedHat:
+            unknown_versioning: *ghc-961rc1-64-centos7
+          Linux_Ubuntu:
+            ( >= 16 && < 19 ): *ghc-961rc1-64-ubuntu1804
+            unknown_versioning: *ghc-961rc1-64-ubuntu2004
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: 326397dfa23eee2698dd2491dd57ea5fc3de398cb979d7ed88058eb92d54c730
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-rocky8-linux.tar.xz
+          Windows:
+            unknown_versioning:
+              dlHash: 8b669a2ce7f36732aeedcaa9189f8aa9e57c61a0ecc59b3a96d7d4652e23e810
+              dlSubdir: ghc-9.6.0.20230302-x86_64-unknown-mingw32
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-x86_64-unknown-mingw32.tar.xz
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlHash: ad1c63895bff6fd6e4c206271c481e388f417f086d22172c57b0514e104c2bbc
+              dlSubdir: ghc-9.6.0.20230302-aarch64-apple-darwin
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-aarch64-apple-darwin.tar.xz
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: 45ad27a9d03cb364b9d55da1e96e3b5da8f1f6ad3b472f94df6ec9c9c8621099
+              dlSubdir: ghc-9.6.0.20230302-aarch64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-aarch64-deb10-linux.tar.xz
+      viChangeLog: https://downloads.haskell.org/~ghc/9.6.0.20230302/docs/users_guide/9.6.1-notes.html
+      viSourceDL:
+        dlHash: 5658ff1357a82ffecf52c602b1aade4c63d1184bcbcd8b633dcc6c61a4a636f3
+        dlSubdir: ghc-9.6.0.20230302
+        dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-src.tar.xz
+      viTags:
+      - base-4.18.0.0
+      - LatestPrerelease
+      viTestDL:
+        dlHash: 50950baf5bee33eb59c0d55913f283fd55d0c739a5bfed4badc42aa094e15f03
+        dlSubdir: ghc-9.6.0.20230302
+        dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-src.tar.xz
+
   Stack:
     2.9.2.1:
       viTags:
