@@ -735,7 +735,7 @@ ghcupDownloads:
         dlSubdir: ghc-9.6.0.20230210
         dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230210/ghc-9.6.0.20230210-testsuite.tar.xz
       viTags:
-      - LatestPrerelease
+      - Prerelease
       - base-4.18.0.0
 
     9.6.0.20230302:
@@ -836,7 +836,7 @@ ghcupDownloads:
       viTestDL:
         dlHash: 50950baf5bee33eb59c0d55913f283fd55d0c739a5bfed4badc42aa094e15f03
         dlSubdir: ghc-9.6.0.20230302
-        dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230302/ghc-9.6.0.20230302-src.tar.xz
+        dlUri: https://downloads.haskell.org/ghc/9.6.0.20230302/ghc-9.6.0.20230302-testsuite.tar.xz
 
   Stack:
     2.9.2.1:
