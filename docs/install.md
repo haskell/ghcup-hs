@@ -16,6 +16,8 @@ For Linux, macOS, FreeBSD or Windows Subsystem 2 for Linux, run this in a termin
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 ```
 
+Notice that only FreeBSD 13.x is supported. If the installation fails, complaining about `libncursesw.8.so`, you will need to install FreeBSD 12 compat package first, for example, `pkg install compat12x-amd64-12.2.1202000.20210406`.
+
 For Windows, run this in a PowerShell session:
 
 ```psh
