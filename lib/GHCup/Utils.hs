@@ -160,7 +160,7 @@ rmMinorGHCSymlinks :: ( MonadReader env m
 rmMinorGHCSymlinks tv@GHCTargetVersion{..} = do
   Dirs {..}  <- lift getDirs
 
-  files                         <- liftE $ ghcToolFiles tv
+  files <- liftE $ ghcToolFiles tv
   forM_ files $ \f -> do
     let f_xyz = f <> "-" <> T.unpack (prettyVer _tvVersion) <> exeExt
     let fullF = binDir </> f_xyz
@@ -181,7 +181,7 @@ rmPlainGHC :: ( MonadReader env m
            -> Excepts '[NotInstalled] m ()
 rmPlainGHC target = do
   Dirs {..}  <- lift getDirs
-  mtv                           <- lift $ ghcSet target
+  mtv <- lift $ ghcSet target
   forM_ mtv $ \tv -> do
     files <- liftE $ ghcToolFiles tv
     forM_ files $ \f -> do
@@ -228,7 +228,7 @@ rmMinorHLSSymlinks :: ( MonadReader env m
                       , MonadFail m
                       , MonadMask m
                       )
-                   => Version
+                   => VersionRev
                    -> Excepts '[NotInstalled] m ()
 rmMinorHLSSymlinks ver = do
   Dirs {..}  <- lift getDirs
@@ -281,7 +281,7 @@ rmPlainHLS = do
     -----------------------------------
 
 
--- | Whether the given GHC versin is installed.
+-- | Whether the given GHC version is installed.
 ghcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => GHCTargetVersion -> m Bool
 ghcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
@@ -299,7 +299,7 @@ ghcSrcInstalled ver = do
 ghcSet :: (MonadReader env m, HasDirs env, MonadThrow m, MonadIO m)
        => Maybe Text   -- ^ the target of the GHC version, if any
                        --  (e.g. armv7-unknown-linux-gnueabihf)
-       -> m (Maybe GHCTargetVersion)
+       -> m (Maybe GHCTargetVersionRev)
 ghcSet mtarget = do
   Dirs {..}  <- getDirs
   let ghc = maybe "ghc" (\t -> T.unpack t <> "-ghc") mtarget
@@ -311,7 +311,7 @@ ghcSet mtarget = do
     link <- liftIO $ getLinkTarget ghcBin
     Just <$> ghcLinkVersion link
  where
-  ghcLinkVersion :: MonadThrow m => FilePath -> m GHCTargetVersion
+  ghcLinkVersion :: MonadThrow m => FilePath -> m GHCTargetVersionRev
   ghcLinkVersion (T.pack . dropSuffix exeExt -> t) = throwEither $ MP.parse parser "ghcLinkVersion" t
    where
     parser =
@@ -321,7 +321,7 @@ ghcSet mtarget = do
            r    <- parseUntil1 pathSep
            rest <- MP.getInput
            MP.setInput r
-           x <- ghcTargetVerP
+           x <- ghcTargetVerRevP
            MP.setInput rest
            pure x
          )
@@ -347,13 +347,13 @@ getInstalledCabals :: ( MonadReader env m
                       , MonadIO m
                       , MonadCatch m
                       )
-                   => m [Either FilePath Version]
+                   => m [Either FilePath VersionRev]
 getInstalledCabals = do
   Dirs {..} <- getDirs
   bins   <- liftIO $ handleIO (\_ -> pure []) $ findFiles
     binDir
     (makeRegexOpts compExtended execBlank ([s|^cabal-.*$|] :: ByteString))
-  vs <- forM bins $ \f -> case version . T.pack <$> (stripSuffix exeExt =<< stripPrefix "cabal-" f) of
+  vs <- forM bins $ \f -> case versionRev . T.pack <$> (stripSuffix exeExt =<< stripPrefix "cabal-" f) of
     Just (Right r) -> pure $ Right r
     Just (Left  _) -> pure $ Left f
     Nothing        -> pure $ Left f
@@ -361,14 +361,14 @@ getInstalledCabals = do
 
 
 -- | Whether the given cabal version is installed.
-cabalInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
+cabalInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => VersionRev -> m Bool
 cabalInstalled ver = do
   vers <- fmap rights getInstalledCabals
   pure $ elem ver vers
 
 
 -- Return the currently set cabal version, if any.
-cabalSet :: (HasLog env, MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
+cabalSet :: (HasLog env, MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe VersionRev)
 cabalSet = do
   Dirs {..}  <- getDirs
   let cabalbin = binDir </> "cabal" <> exeExt
@@ -395,7 +395,7 @@ cabalSet = do
   -- We try to be extra permissive with link destination parsing,
   -- because of:
   --   https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/119
-  linkVersion :: MonadThrow m => FilePath -> m Version
+  linkVersion :: MonadThrow m => FilePath -> m VersionRev
   linkVersion = throwEither . MP.parse parser "linkVersion" . T.pack . dropSuffix exeExt
 
   parser
@@ -403,7 +403,7 @@ cabalSet = do
     <|> MP.try (stripRelativePath *> cabalParse)
     <|> cabalParse
   -- parses the version of "cabal-3.2.0.0" -> "3.2.0.0"
-  cabalParse = MP.chunk "cabal-" *> version'
+  cabalParse = MP.chunk "cabal-" *> versionRevP
   -- parses any path component ending with path separator,
   -- e.g. "foo/"
   stripPathComponet = parseUntil1 pathSep *> MP.some pathSep
@@ -420,7 +420,7 @@ cabalSet = do
 -- @~\/.ghcup\/bin/haskell-language-server-wrapper-<\hlsver\>@,
 -- as well as @~\/.ghcup\/hls\/<\hlsver\>@
 getInstalledHLSs :: (MonadReader env m, HasDirs env, MonadIO m, MonadCatch m)
-                 => m [Either FilePath Version]
+                 => m [Either FilePath VersionRev]
 getInstalledHLSs = do
   Dirs {..}  <- getDirs
   bins                          <- liftIO $ handleIO (\_ -> pure []) $ findFiles
@@ -431,7 +431,7 @@ getInstalledHLSs = do
     )
   legacy <- forM bins $ \f ->
     case
-          version . T.pack <$> (stripSuffix exeExt =<< stripPrefix "haskell-language-server-wrapper-" f)
+          versionRev . T.pack <$> (stripSuffix exeExt =<< stripPrefix "haskell-language-server-wrapper-" f)
       of
         Just (Right r) -> pure $ Right r
         Just (Left  _) -> pure $ Left f
@@ -448,7 +448,7 @@ getInstalledHLSs = do
 -- | Get all installed stacks, by matching on
 -- @~\/.ghcup\/bin/stack-<\stackver\>@.
 getInstalledStacks :: (MonadReader env m, HasDirs env, MonadIO m, MonadCatch m)
-                   => m [Either FilePath Version]
+                   => m [Either FilePath VersionRev]
 getInstalledStacks = do
   Dirs {..}  <- getDirs
   bins                          <- liftIO $ handleIO (\_ -> pure []) $ findFiles
@@ -458,7 +458,7 @@ getInstalledStacks = do
                    ([s|^stack-.*$|] :: ByteString)
     )
   forM bins $ \f ->
-    case version . T.pack <$> (stripSuffix exeExt =<< stripPrefix "stack-" f) of
+    case versionRev . T.pack <$> (stripSuffix exeExt =<< stripPrefix "stack-" f) of
         Just (Right r) -> pure $ Right r
         Just (Left  _) -> pure $ Left f
         Nothing        -> pure $ Left f
@@ -509,13 +509,13 @@ stackSet = do
     stripRelativePath = MP.many (MP.try stripPathComponet)
 
 -- | Whether the given Stack version is installed.
-stackInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
+stackInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => VersionRev -> m Bool
 stackInstalled ver = do
   vers <- fmap rights getInstalledStacks
   pure $ elem ver vers
 
 -- | Whether the given HLS version is installed.
-hlsInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => Version -> m Bool
+hlsInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadCatch m) => VersionRev -> m Bool
 hlsInstalled ver = do
   vers <- fmap rights getInstalledHLSs
   pure $ elem ver vers
@@ -527,7 +527,7 @@ isLegacyHLS ver = do
 
 
 -- Return the currently set hls version, if any.
-hlsSet :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
+hlsSet :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe VersionRev)
 hlsSet = do
   Dirs {..}  <- getDirs
   let hlsBin = binDir </> "haskell-language-server-wrapper" <> exeExt
@@ -540,7 +540,7 @@ hlsSet = do
         link <- liftIO $ getLinkTarget hlsBin
         Just <$> linkVersion link
  where
-  linkVersion :: MonadThrow m => FilePath -> m Version
+  linkVersion :: MonadThrow m => FilePath -> m VersionRev
   linkVersion = throwEither . MP.parse parser "" . T.pack . dropSuffix exeExt
    where
     parser
@@ -548,7 +548,7 @@ hlsSet = do
       <|> MP.try (stripRelativePath *> cabalParse)
       <|> cabalParse
     -- parses the version of "haskell-language-server-wrapper-1.1.0" -> "1.1.0"
-    cabalParse = MP.chunk "haskell-language-server-wrapper-" *> version'
+    cabalParse = MP.chunk "haskell-language-server-wrapper-" *> versionRevP
     -- parses any path component ending with path separator,
     -- e.g. "foo/"
     stripPathComponet = parseUntil1 pathSep *> MP.some pathSep
@@ -567,7 +567,7 @@ hlsGHCVersions :: ( MonadReader env m
                   , MonadThrow m
                   , MonadCatch m
                   )
-               => m [Version]
+               => m [VersionRev]
 hlsGHCVersions = do
   h <- hlsSet
   fromMaybe [] <$> forM h hlsGHCVersions'
@@ -579,12 +579,12 @@ hlsGHCVersions' :: ( MonadReader env m
                    , MonadThrow m
                    , MonadCatch m
                    )
-                => Version
-                -> m [Version]
+                => VersionRev
+                -> m [VersionRev]
 hlsGHCVersions' v' = do
   bins <- hlsServerBinaries v' Nothing
   let vers = fmap
-        (version
+        (versionRev
           . T.pack
           . fromJust
           . stripPrefix "haskell-language-server-"
@@ -597,10 +597,10 @@ hlsGHCVersions' v' = do
 
 -- | Get all server binaries for an hls version from the ~/.ghcup/bin directory, if any.
 hlsServerBinaries :: (MonadReader env m, HasDirs env, MonadIO m)
-                  => Version
+                  => VersionRev
                   -> Maybe Version   -- ^ optional GHC version
                   -> m [FilePath]
-hlsServerBinaries ver mghcVer = do
+hlsServerBinaries (VersionRev ver rv) mghcVer = do
   Dirs {..}  <- getDirs
   liftIO $ handleIO (\_ -> pure []) $ findFiles
     binDir
@@ -611,6 +611,7 @@ hlsServerBinaries ver mghcVer = do
         <> maybe [s|.*|] escapeVerRex mghcVer
         <> [s|~|]
         <> escapeVerRex ver
+        <> E.encodeUtf8 (T.pack ("-r" <> show rv))
         <> E.encodeUtf8 (T.pack exeExt)
         <> [s|$|] :: ByteString
       )
@@ -657,16 +658,20 @@ hlsInternalServerLibs ver ghcVer = do
 
 -- | Get the wrapper binary for an hls version, if any.
 hlsWrapperBinary :: (MonadReader env m, HasDirs env, MonadThrow m, MonadIO m)
-                 => Version
+                 => VersionRev
                  -> m (Maybe FilePath)
-hlsWrapperBinary ver = do
+hlsWrapperBinary (VersionRev ver rv) = do
   Dirs {..}  <- getDirs
   wrapper <- liftIO $ handleIO (\_ -> pure []) $ findFiles
     binDir
     (makeRegexOpts
       compExtended
       execBlank
-      ([s|^haskell-language-server-wrapper-|] <> escapeVerRex ver <> E.encodeUtf8 (T.pack exeExt) <> [s|$|] :: ByteString
+      ([s|^haskell-language-server-wrapper-|]
+      <> escapeVerRex ver
+      <> E.encodeUtf8 (T.pack ("-r" <> show rv))
+      <> E.encodeUtf8 (T.pack exeExt)
+      <> [s|$|] :: ByteString
       )
     )
   case wrapper of
@@ -677,7 +682,7 @@ hlsWrapperBinary ver = do
 
 
 -- | Get all binaries for an hls version, if any.
-hlsAllBinaries :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m) => Version -> m [FilePath]
+hlsAllBinaries :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m) => VersionRev -> m [FilePath]
 hlsAllBinaries ver = do
   hls     <- hlsServerBinaries ver Nothing
   wrapper <- hlsWrapperBinary ver
@@ -930,7 +935,7 @@ ghcInternalBinDir ver = do
 --
 --   - @["hsc2hs","haddock","hpc","runhaskell","ghc","ghc-pkg","ghci","runghc","hp2ps"]@
 ghcToolFiles :: (MonadReader env m, HasDirs env, MonadThrow m, MonadFail m, MonadIO m)
-             => GHCTargetVersion
+             => GHCTargetVersionRev
              -> Excepts '[NotInstalled] m [FilePath]
 ghcToolFiles ver = do
   bindir <- ghcInternalBinDir ver
@@ -1288,7 +1293,7 @@ warnAboutHlsCompatibility :: ( MonadReader env m
                           => m ()
 warnAboutHlsCompatibility = do
   supportedGHC <- hlsGHCVersions
-  currentGHC   <- fmap _tvVersion <$> ghcSet Nothing
+  currentGHC   <- fmap _tvVersionRev <$> ghcSet Nothing
   currentHLS   <- hlsSet
 
   case (currentGHC, currentHLS) of

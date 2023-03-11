@@ -368,8 +368,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
 
       -- download source tarball
       dlInfo <-
-        -- TODO
-        preview (ix HLS % ix tver % viDownload % ix 0 % viSourceDL % _Just) dls
+        preview (ix HLS % ix tver % viDownload % _last % viSourceDL % _Just) dls
           ?? NoDownload
       dl <- liftE $ downloadCached dlInfo Nothing
 

@@ -417,9 +417,9 @@ parseGHCupGHCDir :: MonadThrow m => FilePath -> m GHCTargetVersion
 parseGHCupGHCDir (T.pack -> fp) =
   throwEither $ MP.parse ghcTargetVerP "" fp
 
-parseGHCupHLSDir :: MonadThrow m => FilePath -> m Version
+parseGHCupHLSDir :: MonadThrow m => FilePath -> m VersionRev
 parseGHCupHLSDir (T.pack -> fp) =
-  throwEither $ MP.parse version' "" fp
+  throwEither $ versionRev fp
 
 -- TODO: inlined from GHCup.Prelude
 throwEither :: (Exception a, MonadThrow m) => Either a b -> m b

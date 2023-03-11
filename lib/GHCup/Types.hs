@@ -181,6 +181,30 @@ fromVersionInfoLegacy VersionInfoLegacy{..} =
               , ..}
 
 
+-- | A version with a revision, denoting bindist 'versions' that are purely distribution specific.
+--
+-- The revision starts at 0.
+data VersionRev = VersionRev { vVersion :: Version, vRev :: Int }
+  deriving (Ord, Eq, GHC.Generic, Show)
+
+showVersionRev :: VersionRev -> Text
+showVersionRev (VersionRev v 0) = prettyVer v
+showVersionRev (VersionRev v r) = prettyVer v <> "-r" <> T.pack (show r)
+
+-- | Similar to @VersionRev@, except that revision is optional. The absence of a revision has
+-- a particular meaning:
+--
+-- * for install/prefetch: we want the latest available revision
+-- * for compile: it depends
+-- * for rm/set/unset/whereis/changelog: we want the revision that is installed (there can be only one)
+--
+-- Translating @UserVersionRev@ to @VersionRev@ requires context of the GHCup metadata,
+-- installed versions and the to be executed command.
+data UserVersionRev = UserVersionRev { uvVersion :: Version, uvRev :: Maybe Int }
+  deriving (Ord, Eq, GHC.Generic, Show)
+
+
+
 -- | A tag. These are currently attached to a version of a tool.
 data Tag = Latest
          | Recommended
@@ -617,12 +641,6 @@ data GHCTargetVersion = GHCTargetVersion
   }
   deriving (Ord, Eq, Show)
 
-data GitBranch = GitBranch
-  { ref  :: String
-  , repo :: Maybe String
-  }
-  deriving (Ord, Eq, Show)
-
 mkTVer :: Version -> GHCTargetVersion
 mkTVer = GHCTargetVersion Nothing
 
@@ -630,10 +648,30 @@ tVerToText :: GHCTargetVersion -> Text
 tVerToText (GHCTargetVersion (Just t) v') = t <> "-" <> prettyVer v'
 tVerToText (GHCTargetVersion Nothing  v') = prettyVer v'
 
+-- | A GHC identified by the target platform triple
+-- and the version.
+data GHCTargetVersionRev = GHCTargetVersionRev
+  { _tvTargetRev  :: Maybe Text
+  , _tvVersionRev :: VersionRev
+  }
+  deriving (Ord, Eq, Show)
+
+mkTVerRev :: VersionRev -> GHCTargetVersionRev
+mkTVerRev = GHCTargetVersionRev Nothing
+
+tVerRevToText :: GHCTargetVersionRev -> Text
+tVerRevToText (GHCTargetVersionRev (Just t) v') = t <> "-" <> showVersionRev v'
+tVerRevToText (GHCTargetVersionRev Nothing  v') = showVersionRev v'
+
 -- | Assembles a path of the form: <target-triple>-<version>
 instance Pretty GHCTargetVersion where
   pPrint = text . T.unpack . tVerToText
 
+data GitBranch = GitBranch
+  { ref  :: String
+  , repo :: Maybe String
+  }
+  deriving (Ord, Eq, Show)
 
 -- | A comparator and a version.
 data VersionCmp = VR_gt Versioning

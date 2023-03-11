@@ -28,6 +28,8 @@ import           System.FilePath
 import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
 import qualified Text.Megaparsec               as MP
+import Data.Char (digitToInt)
+import Data.Data (Proxy(..))
 
 
 choice' :: (MonadFail f, MP.MonadParsec e s f) => [f a] -> f a
@@ -86,7 +88,33 @@ ghcTargetVerP =
     <$> (MP.try (Just <$> parseUntil1 (MP.chunk "-" *> verP') <* MP.chunk "-")
         <|> ((\ _ x -> x) Nothing <$> mempty)
         )
-    <*> (version' <* MP.eof)
+    <*> version'
+ where
+  verP' :: MP.Parsec Void Text Text
+  verP' = do
+    v <- version'
+    let startsWithDigists =
+          and
+            . take 3
+            . concatMap
+              (map
+                (\case
+                  (Digits _) -> True
+                  (Str    _) -> False
+                ) . NE.toList)
+            . NE.toList
+            $ _vChunks v
+    if startsWithDigists && isNothing (_vEpoch v)
+      then pure $ prettyVer v
+      else fail "Oh"
+
+ghcTargetVerRevP :: MP.Parsec Void Text GHCTargetVersionRev
+ghcTargetVerRevP =
+  (\x y -> GHCTargetVersionRev x y)
+    <$> (MP.try (Just <$> parseUntil1 (MP.chunk "-" *> verP') <* MP.chunk "-")
+        <|> ((\ _ x -> x) Nothing <$> mempty)
+        )
+    <*> versionRevP
  where
   verP' :: MP.Parsec Void Text Text
   verP' = do
@@ -122,3 +150,44 @@ verP suffix = do
 
 pathSep :: MP.Parsec Void Text Char
 pathSep = MP.oneOf pathSeparators
+
+versionRevP :: MP.Parsec Void Text VersionRev
+versionRevP = MP.label "versionRev" $
+  MP.try (parseUntil (MP.try (MP.chunk "-r")) >>= versionWithRev) <|> ((`VersionRev` 0) <$> version')
+ where
+  versionWithRev ver = do
+    rest <- MP.getInput
+    MP.setInput ver
+    v <- version'
+    MP.setInput rest
+    _ <- MP.chunk "-r"
+    rev <- parseInt
+    pure $ VersionRev v rev
+
+  digit = MP.oneOf ['0'..'9'] MP.<?> "digit"
+  parseInt :: MP.Parsec Void Text Int
+  parseInt = MP.label "parseInt" $ do
+    i <- MP.tokensToChunk (Proxy :: Proxy Text) <$> some digit
+    pure $ numberValue 10 $ T.unpack i
+
+  numberValue :: Int -> String -> Int
+  numberValue base = foldl (\ x -> ((fromIntegral base * x) +) . fromIntegral . digitToInt) 0
+
+userVersionRevP :: MP.Parsec Void Text UserVersionRev
+userVersionRevP = MP.label "userVersionRev" $
+  ((\(VersionRev v r) -> UserVersionRev v (Just r)) <$> MP.try versionRevP) <|> ((`UserVersionRev` Nothing) <$> version')
+
+
+-- | Read a @VersionRev@ from a String.
+--
+-- - 3.3.2    -> VersionRev { vVersion = 3.3.3, vRev = 0 }
+-- - 2.3.4-r3 -> VersionRev { vVersion = 2.3.4, vRev = 3 }
+versionRev :: Text -> Either (MP.ParseErrorBundle Text Void) VersionRev
+versionRev = MP.parse versionRevP ""
+
+-- | Read a @UserVersionRev@ from a String.
+--
+-- - 3.3.2    -> UserVersionRev { vVersion = 3.3.3, vRev = Nothing }
+-- - 2.3.4-r3 -> UserVersionRev { vVersion = 2.3.4, vRev = Just 3 }
+userVersionRev :: Text -> Either (MP.ParseErrorBundle Text Void) UserVersionRev
+userVersionRev = MP.parse userVersionRevP ""

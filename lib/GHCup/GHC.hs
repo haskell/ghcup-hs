@@ -78,6 +78,7 @@ import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
+import qualified Data.Map.Strict               as M
 
 
 data GHCVer v = SourceDist v
@@ -105,7 +106,7 @@ testGHCVer :: ( MonadFail m
               , MonadIO m
               , MonadUnliftIO m
               )
-           => Version
+           => VersionRev
            -> [T.Text]
            -> Excepts
                 '[ DigestError
@@ -120,12 +121,11 @@ testGHCVer :: ( MonadFail m
                  ]
                 m
                 ()
-testGHCVer ver addMakeArgs = do
+testGHCVer (VersionRev ver vr) addMakeArgs = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
   dlInfo <-
-    -- TODO
-    preview (ix GHC % ix ver % viDownload % ix 0 % viTestDL % _Just) dls
+    preview (ix GHC % ix ver % viDownload % to M.toAscList % maybe _last ix vr % to snd % viTestDL % _Just) dls
       ?? NoDownload
 
   liftE $ testGHCBindist dlInfo ver addMakeArgs
@@ -244,7 +244,7 @@ fetchGHCSrc :: ( MonadFail m
                , MonadIO m
                , MonadUnliftIO m
                )
-            => Version
+            => VersionRev
             -> Maybe FilePath
             -> Excepts
                  '[ DigestError
@@ -255,11 +255,10 @@ fetchGHCSrc :: ( MonadFail m
                   ]
                  m
                  FilePath
-fetchGHCSrc v mfp = do
+fetchGHCSrc (VersionRev v vr) mfp = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   dlInfo <-
-    -- TODO
-    preview (ix GHC % ix v % viDownload % ix 0 % viSourceDL % _Just) dls
+    preview (ix GHC % ix v % viDownload % to M.toAscList % maybe _last ix vr % to snd % viSourceDL % _Just) dls
       ?? NoDownload
   liftE $ downloadCached' dlInfo Nothing mfp
 
@@ -806,8 +805,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
         -- download source tarball
         dlInfo <-
-          -- TODO
-          preview (ix GHC % ix (tver ^. tvVersion) % viDownload % ix 0 % viSourceDL % _Just) dls
+          preview (ix GHC % ix (tver ^. tvVersion) % viDownload % _last % viSourceDL % _Just) dls
             ?? NoDownload
         dl <- liftE $ downloadCached dlInfo Nothing
 

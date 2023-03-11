@@ -177,7 +177,7 @@ installCabalBin :: ( MonadMask m
                    , MonadUnliftIO m
                    , MonadFail m
                    )
-                => Version
+                => VersionRev
                 -> InstallDir
                 -> Bool           -- force install
                 -> Excepts
@@ -198,7 +198,7 @@ installCabalBin :: ( MonadMask m
                      ()
 installCabalBin ver installDir forceInstall = do
   dlinfo <- liftE $ getDownloadInfo Cabal ver
-  installCabalBindist dlinfo ver installDir forceInstall
+  installCabalBindist dlinfo (vVersion ver) installDir forceInstall
 
 
     -----------------

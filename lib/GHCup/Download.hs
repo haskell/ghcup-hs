@@ -277,20 +277,19 @@ getDownloadInfo :: ( MonadReader env m
                    , HasGHCupInfo env
                    )
                 => Tool
-                -> Version
+                -> VersionRev
                 -- ^ tool version
                 -> Excepts
                      '[NoDownload]
                      m
                      DownloadInfo
-getDownloadInfo t v = do
+getDownloadInfo t (VersionRev v vr) = do
   (PlatformRequest a p mv) <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
   let distro_preview f g =
         let platformVersionSpec =
-              -- TODO
-              preview (ix t % ix v % viDownload % ix 0 % viArch % ix a % ix (f p)) dls
+              preview (ix t % ix v % viDownload % ix vr % viArch % ix a % ix (f p)) dls
             mv' = g mv
         in  fmap snd
               .   find

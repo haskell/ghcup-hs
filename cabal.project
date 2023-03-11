@@ -9,7 +9,7 @@ constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0
 
 package libarchive
-  flags: -system-libarchive
+  flags: +system-libarchive
 
 package aeson-pretty
   flags: +lib-only
