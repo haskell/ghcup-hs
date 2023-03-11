@@ -16,8 +16,6 @@ For Linux, macOS, FreeBSD or Windows Subsystem 2 for Linux, run this in a termin
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 ```
 
-Notice that only FreeBSD 13.x is supported. If the installation fails, complaining about `libncursesw.8.so`, you will need to install FreeBSD 12 compat package first, for example, `pkg install compat12x-amd64-12.2.1202000.20210406`.
-
 For Windows, run this in a PowerShell session:
 
 ```psh
@@ -78,6 +76,8 @@ On Darwin M1 you might also need a working llvm installed (e.g. via brew) and ha
 ### FreeBSD
 
 The following distro packages are required: `curl gcc gmp gmake ncurses perl5 libffi libiconv`
+
+Notice that only FreeBSD 13.x is supported. If the installation fails, complaining about `libncursesw.8.so`, you will need to install FreeBSD 12 compat package first, for example, `pkg install misc/compat12x`.
 
 ### Windows
 
@@ -233,8 +233,9 @@ There are various issues with GHC itself.
 
 ### FreeBSD
 
-Lacks some upstream bindists and may need compat libs, since most bindists are built on FreeBSD-12.
+Lacks some upstream bindists and may need compat libs (such as `misc/compat12x`).
 HLS bindists are experimental.
+Only latest FreeBSD is generally supported.
 
 ### Linux ARMv7/AARCH64
 
