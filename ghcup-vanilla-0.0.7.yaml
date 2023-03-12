@@ -2407,7 +2407,6 @@ ghcupDownloads:
               dlHash: 8cf8408544a1a43adf1bbbb0dd6b074efadffc68bfa1a792947c52e825171224
     9.2.5:
       viTags:
-      - Recommended
       - base-4.16.4.0
       viChangeLog: https://downloads.haskell.org/~ghc/9.2.5/docs/html/users_guide/index.html
       viSourceDL:
@@ -2947,6 +2946,7 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-src.tar.xz
       viTags:
       - Latest
+      - Recommended
       - base-4.18.0.0
       viTestDL:
         dlHash: 8bfa74d102da570cb87fbbc3465c7f778a4e6dc76606fef80207de7e8b64114f
@@ -3188,8 +3188,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/cabal/cabal-install-3.6.0.0/cabal-install-3.6.0.0-armv7-linux-deb10.tar.xz
               dlHash: 12fb9f3d449159fba57108d07b798bd66eb53451782474176580c96cb8663513
     3.6.2.0:
-      viTags:
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.6.2.0.md
       viArch:
         A_64:
@@ -3268,6 +3267,7 @@ ghcupDownloads:
     3.10.1.0:
       viTags:
         - Latest
+        - Recommended
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.1.0.md
       viArch:
         A_64:
@@ -3716,8 +3716,7 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-1.8.0.0
               dlHash: 89baeb96588e05785d1e75687ea220c03ceb8a513e5b28ee042f2ed5acb448b8
     1.9.0.0:
-      viTags:
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -3787,6 +3786,7 @@ ghcupDownloads:
     1.9.1.0:
       viTags:
         - Latest
+        - Recommended
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
