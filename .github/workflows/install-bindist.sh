@@ -26,6 +26,7 @@ case $TOOL in
 esac
 
 mkdir -p /tmp/install-bindist-ci
+cp "$METADATA_FILE" /tmp/install-bindist-ci/
 cd /tmp/install-bindist-ci
 
 cat <<EOF > main.hs
