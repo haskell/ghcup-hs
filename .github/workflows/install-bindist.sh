@@ -13,11 +13,15 @@ source "$GHCUP_INSTALL_BASE_PREFIX"/.ghcup/env || source "$HOME/.bashrc"
 ghcup --version
 which ghcup | grep foobarbaz
 
+ghcup_fun() {
+	ghcup -v --url-source=file:$METADATA_FILE "$@"
+}
+
 case $TOOL in
 	ghcup)
-		ghcup -v --url-source=file:$METADATA_FILE upgrade --force
+		ghcup_fun upgrade --force
 		;;
-	*) ghcup -v --url-source=file:$METADATA_FILE install $TOOL --set $VERSION
+	*) ghcup_fun install $TOOL --set $VERSION
 		;;
 esac
 
@@ -34,11 +38,11 @@ EOF
 
 case $TOOL in
 	ghcup)
-		ghcup --verbose list
+		ghcup_fun list
 		;;
 	hls)
-		ghcup install cabal latest
-		ghcup install ghc --set recommended
+		ghcup_fun install cabal latest
+		ghcup_fun install ghc --set recommended
 		cabal update
 
 		test_package="bytestring-0.11.1.0"
@@ -70,12 +74,12 @@ case $TOOL in
 				bin=${hls##*/}
 				bin_noexe=${bin/.exe/}
 				if ! [[ "${bin_noexe}" =~ "haskell-language-server-wrapper" ]] && ! [[ "${bin_noexe}" =~ "~" ]] && ! [[ "${bin_noexe}" =~ ".shim" ]] ; then
-					if ghcup install ghc --set "${bin_noexe/haskell-language-server-/}" ; then
+					if ghcup_fun install ghc --set "${bin_noexe/haskell-language-server-/}" ; then
 						"${hls}" typecheck "${test_module}" || fail "failed to typecheck with HLS for GHC ${bin_noexe/haskell-language-server-/}"
 					else
 						fail "GHCup failed to install GHC ${bin_noexe/haskell-language-server-/}"
 					fi
-					ghcup rm ghc "${bin_noexe/haskell-language-server-/}"
+					ghcup_fun rm ghc "${bin_noexe/haskell-language-server-/}"
 				fi
 			done
 			"$bindir/haskell-language-server-wrapper${ext}" typecheck "${test_module}" || fail "failed to typecheck with HLS wrapper"
@@ -99,6 +103,7 @@ case $TOOL in
 		[[ $(./main +RTS -s) -eq 2 ]]
 		;;
     cabal)
+		ghcup_fun install ghc --set "$(ghcup_fun list -t ghc -r -c available | tail -1 | awk '{ print $2 }')"
 		cabal --version
 		cabal update
 		[[ $(cabal --verbose=0 run --enable-profiling ./main.hs -- +RTS -s) -eq 2 ]]
