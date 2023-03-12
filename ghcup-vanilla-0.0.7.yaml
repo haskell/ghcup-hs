@@ -3284,7 +3284,6 @@ ghcupDownloads:
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.10.1.0/cabal-install-3.10.1.0-x86_64-windows.zip
-              dlSubdir:
               dlHash: 31ca1cd173d4da675bc9790746d6b492cbe204e0332b282141d7ecc8ae43997b
         A_32:
           Linux_UnknownLinux:
