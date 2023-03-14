@@ -77,8 +77,14 @@ runBothE' a1 a2 = do
       (_       , VLeft e ) -> throwSomeE e
       (VRight _, VRight _) -> pure ()
 
+-- "throwSomeE" function has been upstreamed in haskus-utils-variant-3.3
+-- So, only conditionally include this shim if
+-- haskus-utils-variant version is < 3.3
 
+#if MIN_VERSION_haskus_utils_variant(3,3,0)
+#else
 -- | Throw some exception
 throwSomeE :: forall es' es a m. (Monad m, LiftVariant es' es) => V es' -> Excepts es m a
 {-# INLINABLE throwSomeE #-}
 throwSomeE = Excepts . pure . VLeft . liftVariant
+#endif
