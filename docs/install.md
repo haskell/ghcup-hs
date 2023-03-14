@@ -104,9 +104,13 @@ GHCup supports the following tools, which are also known as the **Haskell Toolch
 <table>
 <thead><tr><th>GHC Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>9.4.3</td><td><span style="color:blue">latest</span>, base-4.17.0.0</td></tr>
+<tr><td>9.6.1</td><td><span style="color:blue">latest</span>, base-4.18.0.0</td></tr>
+<tr><td>9.4.4</td><td>base-4.17.0.0</td></tr>
+<tr><td>9.4.3</td><td>base-4.17.0.0</td></tr>
 <tr><td>9.4.2</td><td>base-4.17.0.0</td></tr>
 <tr><td>9.4.1</td><td>base-4.17.0.0</td></tr>
+<tr><td>9.2.7</td><td>base-4.16.4.0</td></tr>
+<tr><td>9.2.6</td><td>base-4.16.4.0</td></tr>
 <tr><td>9.2.5</td><td><span style="color:green">recommended</span>, base-4.16.4.0</td></tr>
 <tr><td>9.2.4</td><td>base-4.16.3.0</td></tr>
 <tr><td>9.2.3</td><td>base-4.16.2.0</td></tr>
@@ -145,7 +149,8 @@ GHCup supports the following tools, which are also known as the **Haskell Toolch
 <table>
 <thead><tr><th>Cabal Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>3.8.1.0</td><td><span style="color:blue">latest</span></td></tr>
+<tr><td>3.10.1.0</td><td><span style="color:blue">latest</span></td></tr>
+<tr><td>3.8.1.0</td><td></td></tr>
 <tr><td>3.6.2.0</td><td><span style="color:green">recommended</span></td></tr>
 <tr><td>3.6.0.0</td><td></td></tr>
 <tr><td>3.4.1.0</td><td></td></tr>
@@ -161,7 +166,9 @@ GHCup supports the following tools, which are also known as the **Haskell Toolch
 <table>
 <thead><tr><th>HLS Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>1.8.0.0</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>1.9.1.0</td><td><span style="color:blue">latest</span></td></tr>
+<tr><td>1.9.0.0</td><td><span style="color:green">recommended</span></td></tr>
+<tr><td>1.8.0.0</td><td></td></tr>
 <tr><td>1.7.0.0</td><td></td></tr>
 <tr><td>1.6.1.0</td><td></td></tr>
 <tr><td>1.6.0.0</td><td></td></tr>
@@ -179,7 +186,8 @@ GHCup supports the following tools, which are also known as the **Haskell Toolch
 <table>
 <thead><tr><th>Stack Version</th><th>Tags</th></tr></thead>
 <tbody>
-<tr><td>2.9.1</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>2.9.3</td><td><span style="color:blue">latest</span>, <span style="color:green">recommended</span></td></tr>
+<tr><td>2.9.1</td><td></td></tr>
 <tr><td>2.7.5</td><td></td></tr>
 <tr><td>2.7.3</td><td></td></tr>
 <tr><td>2.7.1</td><td></td></tr>
