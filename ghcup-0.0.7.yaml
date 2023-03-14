@@ -3683,12 +3683,12 @@ ghcupDownloads:
           Linux_UnknownLinux:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.1.0/cabal-install-3.10.1.0-aarch64-linux-deb10.tar.xz
-              dlHash: b497e363dcc585e3f4c7c38f574a77d964c2183ded17c51b7d6d34f2863c4e4b
+              dlHash: e2eb5f4aa574266374be4ee06e67c10447794e1fca7ca7e6dc0e17f77a635553
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.1.0/cabal-install-3.10.1.0-armv7-linux-deb10.tar.xz
-              dlHash: 18a45df098810c7789944b1a7a5858dd73cdb5f963464f119b6f6b0c38c5a79f
+              dlHash: 13d5019182b17ca5436b4249243cf2cb88203da1f34c2a7dd0e564bd34c7e80a
   GHCup:
     0.1.19.2:
       viTags:
