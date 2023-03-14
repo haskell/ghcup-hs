@@ -53,7 +53,7 @@ jobs:
           platforms: linux/amd64
 
   docker-arm32:
-    runs-on: [self-hosted, Linux, ARM64, aarch32-linux]
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
       - uses: docker://arm64v8/ubuntu:focal
         name: Cleanup (aarch64 linux)
@@ -85,7 +85,7 @@ jobs:
         with:
           context: ./docker/arm32v7/focal
           push: true
-          tags: hasufell/arm32v7-debian-haskell:10
+          tags: hasufell/arm32v7-ubuntu-haskell:focal
           platforms: linux/arm
 
   docker-aarch:
@@ -121,5 +121,5 @@ jobs:
         with:
           context: ./docker/arm64v8/focal
           push: true
-          tags: hasufell/arm64v8-debian-haskell:10
+          tags: hasufell/arm64v8-ubuntu-haskell:focal
           platforms: linux/arm64
