@@ -279,7 +279,7 @@ ghcupCacheDir
             Nothing -> do
               home <- liftIO getHomeDirectory
               pure (home </> ".cache")
-          pure (GHCupPath (bdir </> "ghcup"))
+          pure (GHCupPath (bdir </> "ghcup" </> "cache"))
         else ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "cache"))
 
 
@@ -308,19 +308,7 @@ ghcupLogsDir
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
 -- then uses 'XDG_CACHE_HOME/ghcup/db as per xdg spec.
 ghcupDbDir :: IO GHCupPath
-ghcupDbDir
-  | isWindows = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "db"))
-  | otherwise = do
-      xdg <- useXDG
-      if xdg
-        then do
-          bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
-            Just r  -> pure r
-            Nothing -> do
-              home <- liftIO getHomeDirectory
-              pure (home </> ".cache")
-          pure (GHCupPath (bdir </> "ghcup" </> "db"))
-        else ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "db"))
+ghcupDbDir = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "db"))
 
 
 -- | '~/.ghcup/trash'.
