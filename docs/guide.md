@@ -461,7 +461,7 @@ this is cryptographically secure.
 First, obtain the gpg keys:
 
 ```sh
-gpg --batch --keyserver keys.openpgp.org     --recv-keys 7784930957807690A66EBDBE3786C5262ECB4A3F
+gpg --batch --keyserver keys.openpgp.org     --recv-keys 7D1E8AFD1D4A16D71FADA2F2CCC85C0E40C06A8C
 gpg --batch --keyserver keyserver.ubuntu.com --recv-keys FE5AB6C91FEA597C3B31180B73EDE9E8CFBAEF01
 ```
 
