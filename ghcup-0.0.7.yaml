@@ -4231,8 +4231,7 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-1.9.0.0
               dlHash: 4524c9e700a0a91670976f089dc2d7ed0d970420e93faf9ca1ad1246ec348011
     1.9.1.0:
-      viTags:
-        - Latest
+      viTags: []
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -4329,7 +4328,7 @@ ghcupDownloads:
       viPostInstall: *hls-post-install
       viSourceDL:
         dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.10.0.0/haskell-language-server-1.10.0.0-src.tar.gz
-        dlSubdir: haskell-language-server-1.10.0.0
+        dlSubdir: haskell-language-server-1.10.0.0-wip
         dlHash: dc73a89b43ed7f5f1823220a6873a6f5033d6140dde847526599b9fb41b2ed08
       viArch:
         A_64:
@@ -4401,6 +4400,11 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.10.0.0/haskell-language-server-1.10.0.0-x86_64-mingw64.zip
               dlHash: 25e84ee35d7376b1e3b2ddb68808eaba77462d7d0fa2a849bf65dcde1265274e
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.10.0.0/haskell-language-server-1.10.0.0-x86_64-freebsd.tar.xz
+              dlSubdir: haskell-language-server-1.10.0.0
+              dlHash: 843455de47a2e212b6cd2f06bf9530eeaae0e62c4ef8ba2b4115773b34fc34a1
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
