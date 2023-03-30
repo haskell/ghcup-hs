@@ -60,6 +60,7 @@ case $TOOL in
 			cd "$tmp_dir"
 			cabal unpack "${test_package}"
 			cd "${test_package}"
+			cp "/tmp/install-bindist-ci/${METADATA_FILE}" .
 		}
 
 		# For all HLS GHC versions and the wrapper, run 'typecheck'
