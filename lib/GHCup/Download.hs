@@ -289,7 +289,8 @@ getDownloadInfo t v = do
 
   let distro_preview f g =
         let platformVersionSpec =
-              preview (ix t % ix v % viArch % ix a % ix (f p)) dls
+              -- TODO
+              preview (ix t % ix v % viDownload % ix 0 % viArch % ix a % ix (f p)) dls
             mv' = g mv
         in  fmap snd
               .   find

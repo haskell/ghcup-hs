@@ -16,11 +16,11 @@ import qualified GHCup.GHC as GHC
 import qualified GHCup.HLS as HLS
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Types.Optics
 import           GHCup.Utils
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 import           GHCup.OptParse.Common
+import           GHCup.Types.Optics
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -36,6 +36,7 @@ import           Data.Versions                  ( Version, prettyVer, version, p
 import qualified Data.Versions as V
 import           Data.Text                      ( Text )
 import           Haskus.Utils.Variant.Excepts
+import           Optics
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
@@ -511,7 +512,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
           HLS.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
             let vi = getVersionInfo targetVer HLS dls
-            forM_ (_viPreCompile =<< vi) $ \msg -> do
+            forM_ (view viPreCompile =<< vi) $ \msg -> do
               lift $ logInfo msg
               lift $ logInfo
                 "...waiting for 5 seconds, you can still abort..."
@@ -539,7 +540,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
               VRight (vi, tv) -> do
                 runLogger $ logInfo
                   "HLS successfully compiled and installed"
-                forM_ (_viPostInstall =<< vi) $ \msg ->
+                forM_ (view viPostInstall =<< vi) $ \msg ->
                   runLogger $ logInfo msg
                 liftIO $ putStr (T.unpack $ prettyVer tv)
                 pure ExitSuccess
@@ -563,7 +564,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
           GHC.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
             let vi = getVersionInfo targetVer GHC dls
-            forM_ (_viPreCompile =<< vi) $ \msg -> do
+            forM_ (view viPreCompile =<< vi) $ \msg -> do
               lift $ logInfo msg
               lift $ logInfo
                 "...waiting for 5 seconds, you can still abort..."
@@ -593,7 +594,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
               VRight (vi, tv) -> do
                 runLogger $ logInfo
                   "GHC successfully compiled and installed"
-                forM_ (_viPostInstall =<< vi) $ \msg ->
+                forM_ (view viPostInstall =<< vi) $ \msg ->
                   runLogger $ logInfo msg
                 liftIO $ putStr (T.unpack $ tVerToText tv)
                 pure ExitSuccess

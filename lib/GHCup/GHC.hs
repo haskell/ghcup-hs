@@ -124,7 +124,8 @@ testGHCVer ver addMakeArgs = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
   dlInfo <-
-    preview (ix GHC % ix ver % viTestDL % _Just) dls
+    -- TODO
+    preview (ix GHC % ix ver % viDownload % ix 0 % viTestDL % _Just) dls
       ?? NoDownload
 
   liftE $ testGHCBindist dlInfo ver addMakeArgs
@@ -257,7 +258,8 @@ fetchGHCSrc :: ( MonadFail m
 fetchGHCSrc v mfp = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   dlInfo <-
-    preview (ix GHC % ix v % viSourceDL % _Just) dls
+    -- TODO
+    preview (ix GHC % ix v % viDownload % ix 0 % viSourceDL % _Just) dls
       ?? NoDownload
   liftE $ downloadCached' dlInfo Nothing mfp
 
@@ -804,7 +806,8 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
         -- download source tarball
         dlInfo <-
-          preview (ix GHC % ix (tver ^. tvVersion) % viSourceDL % _Just) dls
+          -- TODO
+          preview (ix GHC % ix (tver ^. tvVersion) % viDownload % ix 0 % viSourceDL % _Just) dls
             ?? NoDownload
         dl <- liftE $ downloadCached dlInfo Nothing
 

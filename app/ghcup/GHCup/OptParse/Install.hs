@@ -23,6 +23,7 @@ import           GHCup.Utils.Dirs
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
+import           GHCup.Types.Optics
 
 import           Codec.Archive
 #if !MIN_VERSION_base(4,13,0)
@@ -36,6 +37,7 @@ import           Data.Maybe
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
+import           Optics
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 import           URI.ByteString          hiding ( uriParser )
@@ -345,7 +347,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
         >>= \case
               VRight vi -> do
                 runLogger $ logInfo "GHC installation successful"
-                forM_ (_viPostInstall =<< vi) $ \msg ->
+                forM_ (view viPostInstall =<< vi) $ \msg ->
                   runLogger $ logInfo msg
                 pure ExitSuccess
 
@@ -413,7 +415,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
       >>= \case
             VRight vi -> do
               runLogger $ logInfo "Cabal installation successful"
-              forM_ (_viPostInstall =<< vi) $ \msg ->
+              forM_ (view viPostInstall =<< vi) $ \msg ->
                 runLogger $ logInfo msg
               pure ExitSuccess
             VLeft e@(V (AlreadyInstalled _ _)) -> do
@@ -463,7 +465,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
       >>= \case
             VRight vi -> do
               runLogger $ logInfo "HLS installation successful"
-              forM_ (_viPostInstall =<< vi) $ \msg ->
+              forM_ (view viPostInstall =<< vi) $ \msg ->
                 runLogger $ logInfo msg
               pure ExitSuccess
             VLeft e@(V (AlreadyInstalled _ _)) -> do
@@ -512,7 +514,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
       >>= \case
             VRight vi -> do
               runLogger $ logInfo "Stack installation successful"
-              forM_ (_viPostInstall =<< vi) $ \msg ->
+              forM_ (view viPostInstall =<< vi) $ \msg ->
                 runLogger $ logInfo msg
               pure ExitSuccess
             VLeft e@(V (AlreadyInstalled _ _)) -> do

@@ -28,6 +28,7 @@ import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
+import           Optics ( view )
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
@@ -144,7 +145,7 @@ upgrade uOpts force' fatal Dirs{..} runAppState runLogger = do
         let vi = fromJust $ snd <$> getLatest dls GHCup
         runLogger $ logInfo $
           "Successfully upgraded GHCup to version " <> pretty_v
-        forM_ (_viPostInstall vi) $ \msg ->
+        forM_ (view viPostInstall vi) $ \msg ->
           runLogger $ logInfo msg
         pure ExitSuccess
       VLeft (V NoUpdate) -> do
