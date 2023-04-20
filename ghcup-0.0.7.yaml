@@ -3201,7 +3201,7 @@ ghcupDownloads:
       viTestDL:
         dlUri: https://downloads.haskell.org/ghc/9.4.5/ghc-9.4.5-testsuite.tar.xz
         dlSubdir: ghc-9.4.5/testsuite
-        dlHash: 6256cf9caf6d6dc7b611dcfbb247df2d528e85aa39d22a698e870e5a590e8601
+        dlHash: 97d6dd8c889a1114e5038dec4b66e875cce157a2855a9a60bfdbcde804cf4573
       viArch:
         A_64:
           Linux_Debian:
