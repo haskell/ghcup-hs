@@ -244,7 +244,8 @@ com =
       <> command
            "list"
            (info (List <$> listOpts <**> helper)
-                 (progDesc "Show available GHCs and other tools")
+                 (progDesc "Show available GHCs and other tools"
+                 <> footerDoc (Just $ text listToolFooter))
            )
       <> command
            "upgrade"

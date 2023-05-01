@@ -25,7 +25,7 @@ jobs:
         include:
           - os: ubuntu-latest
             DISTRO: Ubuntu
-          - os: macOS-10.15
+          - os: macOS-11
             DISTRO: na
           - os: windows-latest
             DISTRO: na

@@ -82,7 +82,7 @@ whereisP = subparser
     command
       "ghc"
       (WhereisTool GHC <$> info
-        ( optional (toolVersionTagArgument Nothing (Just GHC)) <**> helper )
+        ( optional (toolVersionTagArgument [] (Just GHC)) <**> helper )
         ( progDesc "Get GHC location"
         <> footerDoc (Just $ text whereisGHCFooter ))
       )
@@ -90,7 +90,7 @@ whereisP = subparser
      command
       "cabal"
       (WhereisTool Cabal <$> info
-        ( optional (toolVersionTagArgument Nothing (Just Cabal)) <**> helper )
+        ( optional (toolVersionTagArgument [] (Just Cabal)) <**> helper )
         ( progDesc "Get cabal location"
         <> footerDoc (Just $ text whereisCabalFooter ))
       )
@@ -98,7 +98,7 @@ whereisP = subparser
      command
       "hls"
       (WhereisTool HLS <$> info
-        ( optional (toolVersionTagArgument Nothing (Just HLS)) <**> helper )
+        ( optional (toolVersionTagArgument [] (Just HLS)) <**> helper )
         ( progDesc "Get HLS location"
         <> footerDoc (Just $ text whereisHLSFooter ))
       )
@@ -106,7 +106,7 @@ whereisP = subparser
      command
       "stack"
       (WhereisTool Stack <$> info
-        ( optional (toolVersionTagArgument Nothing (Just Stack)) <**> helper )
+        ( optional (toolVersionTagArgument [] (Just Stack)) <**> helper )
         ( progDesc "Get stack location"
         <> footerDoc (Just $ text whereisStackFooter ))
       )
@@ -222,6 +222,7 @@ type WhereisEffects = '[ NotInstalled
                 , NoToolVersionSet
                 , NextVerNotFound
                 , TagNotFound
+                , DayNotFound
                 ]
 
 

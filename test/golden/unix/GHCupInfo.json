@@ -274,6 +274,7 @@
                         "viPostInstall": "voj",
                         "viPostRemove": null,
                         "viPreCompile": "yma",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "wv",
@@ -377,6 +378,7 @@
                         "viPostInstall": "drbiff",
                         "viPostRemove": "lk",
                         "viPreCompile": "thzbtj",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "jpouxbme",
@@ -500,6 +502,7 @@
                         "viPostInstall": "uogkghr",
                         "viPostRemove": null,
                         "viPreCompile": "nmkj",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "d",
@@ -816,6 +819,7 @@
                         "viPostInstall": "pvhnmsmi",
                         "viPostRemove": "jkc",
                         "viPreCompile": "y",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "edqa",
@@ -1081,6 +1085,7 @@
                         "viPostInstall": "",
                         "viPostRemove": null,
                         "viPreCompile": "hnakh",
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "base-7.3.6",
@@ -1236,6 +1241,7 @@
                         "viPostInstall": "dwizoud",
                         "viPostRemove": "foi",
                         "viPreCompile": "ma",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "lpc",
@@ -1668,6 +1674,7 @@
                         "viPostInstall": "anwu",
                         "viPostRemove": null,
                         "viPreCompile": "uavccmoo",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "wp",
@@ -1965,6 +1972,7 @@
                         "viPostInstall": "mddazr",
                         "viPostRemove": "bltge",
                         "viPreCompile": "khe",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "ovmjwp",
@@ -2302,6 +2310,7 @@
                         "viPostInstall": "egwp",
                         "viPostRemove": "vn",
                         "viPreCompile": "crsegnwv",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "gizfs",
@@ -2426,6 +2435,7 @@
                         "viPostInstall": "hqpy",
                         "viPostRemove": "vbupaa",
                         "viPreCompile": "lu",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "l",
@@ -2882,6 +2892,7 @@
                         "viPostInstall": null,
                         "viPostRemove": "jpehk",
                         "viPreCompile": "ucz",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "nryawf",
@@ -3097,6 +3108,7 @@
                         "viPostInstall": "nvs",
                         "viPostRemove": null,
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "n",
@@ -3329,6 +3341,7 @@
                         "viPostInstall": "vouuw",
                         "viPostRemove": "widnqidl",
                         "viPreCompile": "hdykow",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "in",
@@ -3688,6 +3701,7 @@
                         "viPostInstall": null,
                         "viPostRemove": "vhzr",
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "ooajpjt",
@@ -3755,6 +3769,7 @@
                         "viPostInstall": "z",
                         "viPostRemove": null,
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "base-2.6.5",
@@ -3886,6 +3901,7 @@
                         "viPostInstall": "",
                         "viPostRemove": "o",
                         "viPreCompile": "vfij",
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "base-5.4.2",
@@ -4006,6 +4022,7 @@
                         "viPostInstall": "ezahxgy",
                         "viPostRemove": "",
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "old"
@@ -4192,6 +4209,7 @@
                         "viPostInstall": "qrvyqt",
                         "viPostRemove": null,
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "Latest",
@@ -4471,6 +4489,7 @@
                         "viPostInstall": "rialloi",
                         "viPostRemove": "hsul",
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "鲤"
@@ -4832,6 +4851,7 @@
                         "viPostInstall": "nr",
                         "viPostRemove": null,
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "pd",
@@ -4948,6 +4968,7 @@
                         "viPostInstall": "avh",
                         "viPostRemove": "eegqaxeq",
                         "viPreCompile": "cyrqrsay",
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "Latest",
@@ -5036,6 +5057,7 @@
                         "viPostInstall": null,
                         "viPostRemove": null,
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "p",
@@ -5131,6 +5153,7 @@
                         "viPostInstall": "k",
                         "viPostRemove": "dxqp",
                         "viPreCompile": "fzrbyso",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "sx",
@@ -5483,6 +5506,7 @@
                         "viPostInstall": "m",
                         "viPostRemove": "nwnzw",
                         "viPreCompile": "s",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "dinptoca",
@@ -5566,6 +5590,7 @@
                         "viPostInstall": "bquxgn",
                         "viPostRemove": null,
                         "viPreCompile": "rtzhvw",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "xs",
@@ -5678,6 +5703,7 @@
                         "viPostInstall": "bxdutem",
                         "viPostRemove": null,
                         "viPreCompile": "dl",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "uvy",
@@ -6083,6 +6109,7 @@
                         "viPostInstall": "ocvjmosz",
                         "viPostRemove": "b",
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "jo",
@@ -7368,6 +7395,7 @@
                         "viPostInstall": null,
                         "viPostRemove": null,
                         "viPreCompile": "rkmaobn",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "gbhvafgn",
@@ -8066,6 +8094,7 @@
                         "viPostInstall": null,
                         "viPostRemove": "hdst",
                         "viPreCompile": "lssslq",
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "",
@@ -8345,6 +8374,7 @@
                         "viPostInstall": null,
                         "viPostRemove": "lp",
                         "viPreCompile": "orlne",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "wehnncsi",
@@ -8542,6 +8572,7 @@
                         "viPostInstall": "izvcv",
                         "viPostRemove": "byey",
                         "viPreCompile": "lbl",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "jqlydnm",
@@ -8568,6 +8599,7 @@
                         "viPostInstall": "oyil",
                         "viPostRemove": "sirzxo",
                         "viPreCompile": "hecmex",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "n",
@@ -8915,6 +8947,7 @@
                         "viPostInstall": null,
                         "viPostRemove": "pdwctmw",
                         "viPreCompile": "apqewk",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "xgebbvvt",
@@ -9056,6 +9089,7 @@
                         "viPostInstall": "qecgd",
                         "viPostRemove": "zzuiq",
                         "viPreCompile": "jwqv",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "uhqdcf",
@@ -10431,6 +10465,7 @@
                         "viPostInstall": null,
                         "viPostRemove": "inqxrwxs",
                         "viPreCompile": "deajwn",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "xhkk",
@@ -10754,6 +10789,7 @@
                         "viPostInstall": "rvzk",
                         "viPostRemove": "r",
                         "viPreCompile": "",
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "base-5.1.7",
@@ -11130,6 +11166,7 @@
                         "viPostInstall": "jrkzdq",
                         "viPostRemove": "p",
                         "viPreCompile": "",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "fi",
@@ -11376,6 +11413,7 @@
                         "viPostInstall": null,
                         "viPostRemove": "hcftjbb",
                         "viPreCompile": "qy",
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "\u000c󴶑\u0001E\u0012\u0015",
@@ -11394,6 +11432,7 @@
                         "viPostInstall": "",
                         "viPostRemove": null,
                         "viPreCompile": "hr",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "pd",
@@ -11414,6 +11453,7 @@
                         "viPostInstall": null,
                         "viPostRemove": "nhlcatpc",
                         "viPreCompile": "wjakrdnl",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "rx",
@@ -11796,6 +11836,7 @@
                         "viPostInstall": "cey",
                         "viPostRemove": "bbuscyjp",
                         "viPreCompile": "fvw",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "zeqioqpo",
@@ -13572,6 +13613,7 @@
                         "viPostInstall": "jdjwlz",
                         "viPostRemove": "fbzect",
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "woix",
@@ -13624,6 +13666,7 @@
                         "viPostInstall": null,
                         "viPostRemove": null,
                         "viPreCompile": "dxw",
+                        "viReleaseDay": null,
                         "viSourceDL": null,
                         "viTags": [
                             "Latest"
@@ -13638,6 +13681,7 @@
                         "viPostInstall": "ly",
                         "viPostRemove": null,
                         "viPreCompile": "unrj",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "h",
@@ -14092,6 +14136,7 @@
                         "viPostInstall": "ytr",
                         "viPostRemove": null,
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "",
@@ -14281,6 +14326,7 @@
                         "viPostInstall": "qvm",
                         "viPostRemove": "sgvk",
                         "viPreCompile": "nvecnkvu",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "dzydyxg",
@@ -14346,6 +14392,7 @@
                         "viPostInstall": "segjmze",
                         "viPostRemove": "",
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "nu",
@@ -14495,6 +14542,7 @@
                         "viPostInstall": "kvdlwtq",
                         "viPostRemove": "qyvxvztp",
                         "viPreCompile": "hpjrxowq",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "uvyqgeiy",
@@ -14667,6 +14715,7 @@
                         "viPostInstall": "hqxhqabh",
                         "viPostRemove": "h",
                         "viPreCompile": "",
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "mpfno",
@@ -14864,6 +14913,7 @@
                         "viPostInstall": null,
                         "viPostRemove": "h",
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "pazpsu",
@@ -15204,6 +15254,7 @@
                         "viPostInstall": "uvftr",
                         "viPostRemove": "",
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "orhgsp",
@@ -15565,6 +15616,7 @@
                         "viPostInstall": "js",
                         "viPostRemove": "mjwcdv",
                         "viPreCompile": null,
+                        "viReleaseDay": null,
                         "viSourceDL": {
                             "dlCSize": null,
                             "dlHash": "poxbrll",

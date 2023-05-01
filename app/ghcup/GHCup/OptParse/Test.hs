@@ -112,7 +112,7 @@ testOpts tool =
                       <> completer (toolDlCompleter (fromMaybe GHC tool))
                     )
                   )
-            <*> (Just <$> toolVersionTagArgument Nothing tool)
+            <*> (Just <$> toolVersionTagArgument [] tool)
             )
         <|> pure (Nothing, Nothing)
         )
@@ -140,6 +140,7 @@ type TestGHCEffects = [ DigestError
                       , TestFailed
                       , NextVerNotFound
                       , TagNotFound
+                      , DayNotFound
                       , NoToolVersionSet
                       ]
 

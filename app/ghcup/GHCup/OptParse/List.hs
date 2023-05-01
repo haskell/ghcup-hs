@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -14,6 +15,7 @@ import           GHCup
 import           GHCup.Prelude
 import           GHCup.Types
 import           GHCup.OptParse.Common
+import           GHCup.Prelude.String.QQ
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -24,6 +26,7 @@ import           Data.Char
 import           Data.List                      ( intercalate, sort )
 import           Data.Functor
 import           Data.Maybe
+import           Data.Time.Calendar             ( Day )
 import           Data.Versions           hiding ( str )
 import           Data.Void
 import           Options.Applicative     hiding ( style )
@@ -50,6 +53,10 @@ import qualified Text.Megaparsec.Char          as MPC
 data ListOptions = ListOptions
   { loTool     :: Maybe Tool
   , lCriteria  :: Maybe ListCriteria
+  , lFrom      :: Maybe Day
+  , lTo        :: Maybe Day
+  , lHideOld   :: Bool
+  , lShowNightly :: Bool
   , lRawFormat :: Bool
   }
 
@@ -60,7 +67,6 @@ data ListOptions = ListOptions
     --[ Parsers ]--
     ---------------
 
-          
 listOpts :: Parser ListOptions
 listOpts =
   ListOptions
@@ -69,7 +75,7 @@ listOpts =
             (eitherReader toolParser)
             (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|stack>" <> help
               "Tool to list versions for. Default is all"
-              <> completer (toolCompleter)
+              <> completer toolCompleter
             )
           )
     <*> optional
@@ -78,15 +84,53 @@ listOpts =
             (  short 'c'
             <> long "show-criteria"
             <> metavar "<installed|set|available>"
-            <> help "Show only installed/set/available tool versions"
-              <> completer (listCompleter ["installed", "set", "available"])
+            <> help "Apply filtering criteria, prefix with + or -"
+              <> completer (listCompleter
+                [ "+installed", "+set", "+available", "-installed", "-set", "-available"])
             )
+          )
+    <*> optional
+          (option
+            (eitherReader dayParser)
+            (short 's' <> long "since" <> metavar "YYYY-MM-DD" <> help
+              "List only tools with release date starting at YYYY-MM-DD or later"
+              <> completer toolCompleter
+            )
+          )
+    <*> optional
+          (option
+            (eitherReader dayParser)
+            (short 'u' <> long "until" <> metavar "YYYY-MM-DD" <> help
+              "List only tools with release date earlier than YYYY-MM-DD"
+              <> completer toolCompleter
+            )
+          )
+    <*> switch
+          (short 'o' <> long "hide-old" <> help "Hide 'old' GHC versions (installed ones are always shown)"
+          )
+    <*> switch
+          (short 'n' <> long "show-nightly" <> help "Show nightlies (installed ones are always shown)"
           )
     <*> switch
           (short 'r' <> long "raw-format" <> help "More machine-parsable format"
           )
 
 
+    --------------
+    --[ Footer ]--
+    --------------
+
+
+listToolFooter :: String
+listToolFooter = [s|Discussion:
+  Lists tool versions with optional criteria.
+  Nightlies are by default hidden.
+
+Examples:
+  # query nightlies in a specific range
+  ghcup list --show-nightly --since 2022-12-07 --until 2022-12-31
+  # show all installed GHC versions
+  ghcup list -t ghc -c installed|]
 
 
     -----------------
@@ -105,9 +149,11 @@ printListResult no_color raw lr = do
     printTag Recommended        = color Green "recommended"
     printTag Latest             = color Yellow "latest"
     printTag Prerelease         = color Red "prerelease"
+    printTag Nightly            = color Red "nightly"
     printTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
     printTag (UnknownTag t    ) = t
     printTag LatestPrerelease   = color Red "latest-prerelease"
+    printTag LatestNightly      = color Red "latest-nightly"
     printTag Old                = ""
 
   let
@@ -136,6 +182,9 @@ printListResult no_color raw lr = do
                         )
                      ++ (if fromSrc then [color Blue "compiled"] else mempty)
                      ++ (if lStray then [color Yellow "stray"] else mempty)
+                     ++ (case lReleaseDay of
+                           Nothing -> mempty
+                           Just d  -> [color Blue (show d)])
                      ++ (if lNoBindist
                           then [color Red "no-bindist"]
                           else mempty
@@ -260,7 +309,7 @@ list :: ( Monad m
       -> m ExitCode
 list ListOptions{..} no_color runAppState =
   runAppState (do
-      l <- listVersions loTool lCriteria
+      l <- listVersions loTool (maybeToList lCriteria) lHideOld lShowNightly (lFrom, lTo)
       liftIO $ printListResult no_color lRawFormat l
       pure ExitSuccess
     )

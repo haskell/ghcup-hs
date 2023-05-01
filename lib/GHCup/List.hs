@@ -36,6 +36,7 @@ import           Data.Either
 import           Data.List
 import           Data.Maybe
 import           Data.Text                      ( Text )
+import           Data.Time.Calendar             ( Day )
 import           Data.Versions                hiding ( patch )
 import           Haskus.Utils.Variant.Excepts
 import           Optics
@@ -61,9 +62,9 @@ import qualified Data.Text                     as T
 
 
 -- | Filter data type for 'listVersions'.
-data ListCriteria = ListInstalled
-                  | ListSet
-                  | ListAvailable
+data ListCriteria = ListInstalled  Bool
+                  | ListSet        Bool
+                  | ListAvailable  Bool
                   deriving Show
 
 -- | A list result describes a single tool version
@@ -79,6 +80,7 @@ data ListResult = ListResult
   , lStray     :: Bool -- ^ not in download info
   , lNoBindist :: Bool -- ^ whether the version is available for this platform/arch
   , hlsPowered :: Bool
+  , lReleaseDay :: Maybe Day
   }
   deriving (Eq, Ord, Show)
 
@@ -93,19 +95,22 @@ availableToolVersions av tool = view
 -- | List all versions from the download info, as well as stray
 -- versions.
 listVersions :: ( MonadCatch m
-                , HasLog env
-                , MonadThrow m
-                , HasLog env
-                , MonadIO m
-                , MonadReader env m
-                , HasDirs env
-                , HasPlatformReq env
-                , HasGHCupInfo env
-                )
-             => Maybe Tool
-             -> Maybe ListCriteria
-             -> m [ListResult]
-listVersions lt' criteria = do
+                             , HasLog env
+                             , MonadThrow m
+                             , HasLog env
+                             , MonadIO m
+                             , MonadReader env m
+                             , HasDirs env
+                             , HasPlatformReq env
+                             , HasGHCupInfo env
+                             )
+                          => Maybe Tool
+                          -> [ListCriteria]
+                          -> Bool
+                          -> Bool
+                          -> (Maybe Day, Maybe Day)
+                          -> m [ListResult]
+listVersions lt' criteria hideOld showNightly days = do
   -- some annoying work to avoid too much repeated IO
   cSet <- cabalSet
   cabals <- getInstalledCabals
@@ -172,8 +177,9 @@ listVersions lt' criteria = do
               , lCross     = Nothing
               , lTag       = []
               , lInstalled = True
-             , lStray     = isNothing (Map.lookup _tvVersion avTools)
+              , lStray     = isNothing (Map.lookup _tvVersion avTools)
               , lNoBindist = False
+              , lReleaseDay = Nothing
               , ..
               }
       Right tver@GHCTargetVersion{ .. } -> do
@@ -188,6 +194,7 @@ listVersions lt' criteria = do
           , lInstalled = True
           , lStray     = True -- NOTE: cross currently cannot be installed via bindist
           , lNoBindist = False
+          , lReleaseDay = Nothing
           , ..
           }
       Left e -> do
@@ -223,6 +230,7 @@ listVersions lt' criteria = do
               , lNoBindist = False
               , fromSrc    = False -- actually, we don't know :>
               , hlsPowered = False
+              , lReleaseDay = Nothing
               , ..
               }
       Left e -> do
@@ -257,6 +265,7 @@ listVersions lt' criteria = do
               , lNoBindist = False
               , fromSrc    = False -- actually, we don't know :>
               , hlsPowered = False
+              , lReleaseDay = Nothing
               , ..
               }
       Left e -> do
@@ -292,6 +301,7 @@ listVersions lt' criteria = do
               , lNoBindist = False
               , fromSrc    = False -- actually, we don't know :>
               , hlsPowered = False
+              , lReleaseDay = Nothing
               , ..
               }
       Left e -> do
@@ -317,6 +327,7 @@ listVersions lt' criteria = do
                                            , lInstalled = True
                                            , lNoBindist = False
                                            , hlsPowered = False
+                                           , lReleaseDay = Nothing
                                            }
 
   -- NOTE: this are not cross ones, because no bindists
@@ -337,7 +348,7 @@ listVersions lt' criteria = do
                -> [Either FilePath Version]
                -> (Version, VersionInfo)
                -> m ListResult
-  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, _viTags -> tags) = do
+  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, VersionInfo{..}) = do
     case t of
       GHC -> do
         lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo GHC v
@@ -346,31 +357,33 @@ listVersions lt' criteria = do
         lInstalled <- ghcInstalled tver
         fromSrc    <- ghcSrcInstalled tver
         hlsPowered <- fmap (elem v) hlsGHCVersions
-        pure ListResult { lVer = v, lCross = Nothing , lTag = tags, lTool = t, lStray = False, .. }
+        pure ListResult { lVer = v, lCross = Nothing , lTag = _viTags, lTool = t, lStray = False, lReleaseDay = _viReleaseDay, .. }
       Cabal -> do
         lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo Cabal v
         let lSet = cSet == Just v
         let lInstalled = elem v $ rights cabals
         pure ListResult { lVer    = v
                         , lCross  = Nothing
-                        , lTag    = tags
+                        , lTag    = _viTags
                         , lTool   = t
                         , fromSrc = False
                         , lStray  = False
                         , hlsPowered = False
+                        , lReleaseDay = _viReleaseDay
                         , ..
                         }
       GHCup -> do
         let lSet       = prettyPVP ghcUpVer == prettyVer v
         let lInstalled = lSet
         pure ListResult { lVer    = v
-                        , lTag    = tags
+                        , lTag    = _viTags
                         , lCross  = Nothing
                         , lTool   = t
                         , fromSrc = False
                         , lStray  = False
                         , lNoBindist = False
                         , hlsPowered = False
+                        , lReleaseDay = _viReleaseDay
                         , ..
                         }
       HLS -> do
@@ -379,11 +392,12 @@ listVersions lt' criteria = do
         let lInstalled = elem v $ rights hlses
         pure ListResult { lVer    = v
                         , lCross  = Nothing
-                        , lTag    = tags
+                        , lTag    = _viTags
                         , lTool   = t
                         , fromSrc = False
                         , lStray  = False
                         , hlsPowered = False
+                        , lReleaseDay = _viReleaseDay
                         , ..
                         }
       Stack -> do
@@ -392,19 +406,43 @@ listVersions lt' criteria = do
         let lInstalled = elem v $ rights stacks
         pure ListResult { lVer    = v
                         , lCross  = Nothing
-                        , lTag    = tags
+                        , lTag    = _viTags
                         , lTool   = t
                         , fromSrc = False
                         , lStray  = False
                         , hlsPowered = False
+                        , lReleaseDay = _viReleaseDay
                         , ..
                         }
 
 
   filter' :: [ListResult] -> [ListResult]
-  filter' lr = case criteria of
-    Nothing            -> lr
-    Just ListInstalled -> filter (\ListResult {..} -> lInstalled) lr
-    Just ListSet       -> filter (\ListResult {..} -> lSet) lr
-    Just ListAvailable -> filter (\ListResult {..} -> not lNoBindist) lr
+  filter' = filterNightly . filterOld . filter (\lr -> foldr (\a b -> fromCriteria a lr && b) True criteria) . filterDays
+
+  filterDays :: [ListResult] -> [ListResult]
+  filterDays lrs = case days of
+                     (Nothing, Nothing)    -> lrs
+                     (Just from, Just to') -> filter (\ListResult{..} -> maybe False (\d -> d >= from && d <= to') lReleaseDay) lrs
+                     (Nothing, Just to')   -> filter (\ListResult{..} -> maybe False (<= to')                      lReleaseDay) lrs
+                     (Just from, Nothing)  -> filter (\ListResult{..} -> maybe False (>= from)                     lReleaseDay) lrs
+
+  fromCriteria :: ListCriteria -> ListResult -> Bool
+  fromCriteria lc ListResult{..} = case lc of
+    ListInstalled  b -> f b lInstalled
+    ListSet        b -> f b lSet
+    ListAvailable  b -> f b $ not lNoBindist
+   where
+    f b
+      | b         = id
+      | otherwise = not
+
+  filterOld :: [ListResult] -> [ListResult]
+  filterOld lr
+    | hideOld   = filter (\ListResult {..} -> lInstalled || Old `notElem` lTag) lr
+    | otherwise = lr
+
+  filterNightly :: [ListResult] -> [ListResult]
+  filterNightly lr
+    | showNightly = lr
+    | otherwise   = filter (\ListResult {..} -> lInstalled || (Nightly `notElem` lTag && LatestNightly `notElem` lTag)) lr
 

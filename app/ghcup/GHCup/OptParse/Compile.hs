@@ -170,7 +170,7 @@ ghcCompileOpts =
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
             "The tool version to compile"
-            <> (completer $ versionCompleter Nothing GHC)
+            <> (completer $ versionCompleter [] GHC)
           )
           ) <|>
           (GHC.GitDist <$> (GitBranch <$> option
@@ -205,7 +205,7 @@ ghcCompileOpts =
           <> metavar "BOOTSTRAP_GHC"
           <> help
                "The GHC version (or full path) to bootstrap with (must be installed)"
-          <> (completer $ versionCompleter Nothing GHC)
+          <> (completer $ versionCompleter [] GHC)
           )
     <*> optional
           (option
@@ -258,7 +258,7 @@ ghcCompileOpts =
             )
             (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION" <> help
               "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
-            <> (completer $ versionCompleter Nothing GHC)
+            <> (completer $ versionCompleter [] GHC)
             )
           )
     <*> optional
@@ -291,7 +291,7 @@ hlsCompileOpts =
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
             "The version to compile (pulled from hackage)"
-            <> (completer $ versionCompleter' Nothing HLS (either (const False) (const True) . V.pvp . V.prettyVer))
+            <> (completer $ versionCompleter' [] HLS (either (const False) (const True) . V.pvp . V.prettyVer))
           )
           )
           <|>
@@ -311,7 +311,7 @@ hlsCompileOpts =
             )
           (long "source-dist" <> metavar "VERSION" <> help
             "The version to compile (pulled from packaged git sources)"
-            <> (completer $ versionCompleter Nothing HLS)
+            <> (completer $ versionCompleter [] HLS)
           )
           ))
           <|>
@@ -343,7 +343,7 @@ hlsCompileOpts =
             )
             (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION" <> help
               "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
-            <> (completer $ versionCompleter Nothing HLS)
+            <> (completer $ versionCompleter [] HLS)
             )
           )
           <|>
@@ -403,7 +403,7 @@ hlsCompileOpts =
           option (eitherReader ghcVersionTagEither)
             (  long "ghc" <> metavar "GHC_VERSION|TAG" <> help "For which GHC version to compile for (can be specified multiple times)"
             <> completer (tagCompleter GHC [])
-            <> completer (versionCompleter Nothing GHC))
+            <> completer (versionCompleter [] GHC))
         )
     <*> many (argument str (metavar "CABAL_ARGS" <> help "Additional arguments to cabal install, prefix with '-- ' (longopts)"))
 
@@ -453,6 +453,7 @@ type HLSEffects = '[ AlreadyInstalled
                   , UnknownArchive
                   , TarDirDoesNotExist
                   , TagNotFound
+                  , DayNotFound
                   , NextVerNotFound
                   , NoToolVersionSet
                   , NotInstalled

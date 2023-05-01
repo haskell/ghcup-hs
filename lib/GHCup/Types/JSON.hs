@@ -64,9 +64,11 @@ instance ToJSON Tag where
   toJSON Latest             = String "Latest"
   toJSON Recommended        = String "Recommended"
   toJSON Prerelease         = String "Prerelease"
+  toJSON Nightly            = String "Nightly"
   toJSON Old                = String "old"
   toJSON (Base       pvp'') = String ("base-" <> prettyPVP pvp'')
   toJSON LatestPrerelease   = String "LatestPrerelease"
+  toJSON LatestNightly      = String "LatestNightly"
   toJSON (UnknownTag x    ) = String (T.pack x)
 
 instance FromJSON Tag where
@@ -74,7 +76,9 @@ instance FromJSON Tag where
     "Latest"                             -> pure Latest
     "Recommended"                        -> pure Recommended
     "Prerelease"                         -> pure Prerelease
+    "Nightly"                            -> pure Nightly
     "LatestPrerelease"                   -> pure LatestPrerelease
+    "LatestNightly"                      -> pure LatestNightly
     "old"                                -> pure Old
     ('b' : 'a' : 's' : 'e' : '-' : ver') -> case pvp (T.pack ver') of
       Right x -> pure $ Base x

@@ -184,7 +184,7 @@ installOpts tool =
                       <> completer (toolDlCompleter (fromMaybe GHC tool))
                     )
                   )
-            <*> (Just <$> toolVersionTagArgument Nothing tool)
+            <*> (Just <$> toolVersionTagArgument [] tool)
             )
         <|> pure (Nothing, Nothing)
         )
@@ -241,6 +241,7 @@ type InstallEffects = '[ AlreadyInstalled
                        , NotInstalled
                        , BuildFailed
                        , TagNotFound
+                       , DayNotFound
                        , DigestError
                        , ContentLengthError
                        , GPGError
@@ -284,6 +285,7 @@ type InstallGHCEffects = '[ AlreadyInstalled
                           , NotInstalled
                           , ProcessError
                           , TagNotFound
+                          , DayNotFound
                           , TarDirDoesNotExist
                           , UninstallFailed
                           , UnknownArchive

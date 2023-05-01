@@ -73,8 +73,8 @@ data BrickData = BrickData
   deriving Show
 
 data BrickSettings = BrickSettings
-  { showAllVersions :: Bool
-  , showAllTools    :: Bool
+  { showAllVersions    :: Bool
+  , showAllTools       :: Bool
   }
   deriving Show
 
@@ -202,9 +202,11 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
   printTag Recommended    = Just $ withAttr (attrName "recommended") $ str "recommended"
   printTag Latest         = Just $ withAttr (attrName "latest") $ str "latest"
   printTag Prerelease     = Just $ withAttr (attrName "prerelease") $ str "prerelease"
+  printTag Nightly        = Just $ withAttr (attrName "nightly") $ str "nightly"
   printTag (Base pvp'')   = Just $ str ("base-" ++ T.unpack (prettyPVP pvp''))
   printTag Old            = Nothing
   printTag LatestPrerelease = Just $ withAttr (attrName "latest-prerelease") $ str "latest-prerelease"
+  printTag LatestNightly    = Just $ withAttr (attrName "latest-nightly") $ str "latest-nightly"
   printTag (UnknownTag t) = Just $ str t
 
   printTool Cabal = str "cabal"
@@ -218,6 +220,9 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
       )
       ++ (if fromSrc then [withAttr (attrName "compiled") $ str "compiled"] else mempty)
       ++ (if lStray then [withAttr (attrName "stray") $ str "stray"] else mempty)
+      ++ (case lReleaseDay of
+            Nothing -> mempty
+            Just d  -> [withAttr (attrName "day") $ str (show d)])
 
   -- | Draws the list elements.
   --
@@ -272,19 +277,22 @@ app attrs dimAttrs =
 defaultAttributes :: Bool -> AttrMap
 defaultAttributes no_color = attrMap
   Vty.defAttr
-  [ (attrName "active"       , Vty.defAttr `withBackColor` Vty.blue)
-  , (attrName "not-installed", Vty.defAttr `withForeColor` Vty.red)
-  , (attrName "set"          , Vty.defAttr `withForeColor` Vty.green)
-  , (attrName "installed"    , Vty.defAttr `withForeColor` Vty.green)
-  , (attrName "recommended"  , Vty.defAttr `withForeColor` Vty.green)
-  , (attrName "hls-powered"  , Vty.defAttr `withForeColor` Vty.green)
-  , (attrName "latest"       , Vty.defAttr `withForeColor` Vty.yellow)
+  [ (attrName "active"            , Vty.defAttr `withBackColor` Vty.blue)
+  , (attrName "not-installed"     , Vty.defAttr `withForeColor` Vty.red)
+  , (attrName "set"               , Vty.defAttr `withForeColor` Vty.green)
+  , (attrName "installed"         , Vty.defAttr `withForeColor` Vty.green)
+  , (attrName "recommended"       , Vty.defAttr `withForeColor` Vty.green)
+  , (attrName "hls-powered"       , Vty.defAttr `withForeColor` Vty.green)
+  , (attrName "latest"            , Vty.defAttr `withForeColor` Vty.yellow)
   , (attrName "latest-prerelease" , Vty.defAttr `withForeColor` Vty.red)
-  , (attrName "prerelease"   , Vty.defAttr `withForeColor` Vty.red)
-  , (attrName "compiled"     , Vty.defAttr `withForeColor` Vty.blue)
-  , (attrName "stray"        , Vty.defAttr `withForeColor` Vty.blue)
-  , (attrName "help"         , Vty.defAttr `withStyle`     Vty.italic)
-  , (attrName "hooray"       , Vty.defAttr `withForeColor` Vty.brightWhite)
+  , (attrName "latest-nightly"    , Vty.defAttr `withForeColor` Vty.red)
+  , (attrName "prerelease"        , Vty.defAttr `withForeColor` Vty.red)
+  , (attrName "nightly"           , Vty.defAttr `withForeColor` Vty.red)
+  , (attrName "compiled"          , Vty.defAttr `withForeColor` Vty.blue)
+  , (attrName "stray"             , Vty.defAttr `withForeColor` Vty.blue)
+  , (attrName "day"               , Vty.defAttr `withForeColor` Vty.blue)
+  , (attrName "help"              , Vty.defAttr `withStyle`     Vty.italic)
+  , (attrName "hooray"            , Vty.defAttr `withForeColor` Vty.brightWhite)
   ]
   where
     withForeColor | no_color  = const
@@ -411,13 +419,17 @@ filterVisible :: Bool -> Bool -> ListResult -> Bool
 filterVisible v t e | lInstalled e = True
                     | v
                     , not t
+                    , Nightly `notElem` lTag e
                     , lTool e `notElem` hiddenTools = True
                     | not v
                     , t
-                    , Old `notElem` lTag e = True
+                    , Old `notElem` lTag e
+                    , Nightly `notElem` lTag e = True
                     | v
+                    , Nightly `notElem` lTag e
                     , t = True
-                    | otherwise = (Old `notElem` lTag e) &&
+                    | otherwise = (Old `notElem` lTag e)       &&
+                                  (Nightly `notElem` lTag e)   &&
                                   (lTool e `notElem` hiddenTools)
 
 
@@ -576,7 +588,7 @@ changelog' :: (MonadReader AppState m, MonadIO m)
            -> m (Either String ())
 changelog' _ (_, ListResult {..}) = do
   AppState { pfreq, ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
-  case getChangeLog dls lTool (Left lVer) of
+  case getChangeLog dls lTool (ToolVersion lVer) of
     Nothing -> pure $ Left $
       "Could not find ChangeLog for " <> prettyShow lTool <> ", version " <> T.unpack (prettyVer lVer)
     Just uri -> do
@@ -656,5 +668,5 @@ getAppData mgi = runExceptT $ do
   settings <- liftIO $ readIORef settings'
 
   flip runReaderT settings $ do
-    lV <- listVersions Nothing Nothing
+    lV <- listVersions Nothing [] False True (Nothing, Nothing)
     pure $ BrickData (reverse lV)

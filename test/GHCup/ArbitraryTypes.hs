@@ -11,6 +11,7 @@ import           GHCup.Types
 import           Data.ByteString                ( ByteString )
 import           Data.Versions
 import           Data.List.NonEmpty
+import           Data.Time.Calendar             ( Day(..) )
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.ADT  ( ToADTArbitrary )
 import           Test.QuickCheck.Arbitrary.Generic
@@ -75,6 +76,9 @@ instance Arbitrary Host where
 instance Arbitrary Port where
   arbitrary = genericArbitrary
   shrink    = genericShrink
+
+instance Arbitrary Day where
+  arbitrary = ModifiedJulianDay . fromIntegral <$> (chooseAny :: Gen Int)
 
 instance Arbitrary (URIRef Absolute) where
   arbitrary =
