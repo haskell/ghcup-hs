@@ -563,7 +563,7 @@ del' _ (_, ListResult {..}) = do
     )
     >>= \case
           VRight vi -> do
-            logGHCPostRm (mkTVer lVer)
+            when (lTool == GHC) $ logGHCPostRm (mkTVer lVer)
             forM_ (_viPostRemove =<< vi) $ \msg ->
               logInfo msg
             pure $ Right ()
