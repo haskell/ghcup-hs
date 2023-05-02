@@ -595,6 +595,7 @@ ghcupDownloads:
               dlSubdir: ghc-8.4.4
               dlHash: 83a96650f5a92b1e4d7651d256d6438624342d40e780e68125033435a54cd674
           Linux_RedHat:
+            '>= 8': *ghc-844-64-fedora
             unknown_versioning: *ghc-844-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -797,6 +798,7 @@ ghcupDownloads:
               dlSubdir: ghc-8.6.3
               dlHash: 355bd85c69933c31bbe99b4269ce719acfd0aad0b45e359ac39b9bb13996acc6
           Linux_RedHat:
+            '>= 8': *ghc-863-64-fedora
             unknown_versioning: *ghc-863-64-centos
           Linux_AmazonLinux:
             unknown_versioning: *ghc-863-64-centos
@@ -928,6 +930,7 @@ ghcupDownloads:
               dlSubdir: ghc-8.6.5
               dlHash: 80ab566f4411299f9e5922d60749ca80f989d697db19e03ed875619d699f0edf
           Linux_RedHat:
+            '>= 8': *ghc-865-64-fedora
             unknown_versioning: *ghc-865-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -1017,6 +1020,7 @@ ghcupDownloads:
               dlSubdir: ghc-8.8.1
               dlHash: 6cdd34e4dbaeb801e805811f91cf43a2d5f64b22f884718ffbd3542a2f4dd14f
           Linux_RedHat:
+            '>= 8': *ghc-881-64-fedora
             unknown_versioning: *ghc-881-64-centos
           Linux_AmazonLinux:
             unknown_versioning: *ghc-881-64-centos
@@ -1085,6 +1089,7 @@ ghcupDownloads:
               dlSubdir: ghc-8.8.2
               dlHash: f065a017d7a38f235f186ffe32d8261a4fd39c7e945d5cde85c0984c2569db99
           Linux_RedHat:
+            '>= 8': *ghc-882-64-fedora
             unknown_versioning: *ghc-882-64-centos
           Linux_AmazonLinux:
             unknown_versioning: *ghc-882-64-centos
@@ -1153,6 +1158,7 @@ ghcupDownloads:
               dlSubdir: ghc-8.8.3
               dlHash: 4b2b5313f7c12b81e54efcb26705fa9e4ad5b98f2b58bfc76fb0c9ba1d55eb1f
           Linux_RedHat:
+            '>= 8': *ghc-883-64-fedora
             unknown_versioning: *ghc-883-64-centos
           Linux_AmazonLinux:
             unknown_versioning: *ghc-883-64-centos
@@ -1231,6 +1237,7 @@ ghcupDownloads:
               dlSubdir: ghc-8.8.4
               dlHash: a12aa4b1fd3c64240a8a6d15196d33e1c0e0d55b51ff78c387242126d0ef7910
           Linux_RedHat:
+            '>= 8': *ghc-884-64-fedora
             unknown_versioning: *ghc-884-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -1317,6 +1324,7 @@ ghcupDownloads:
               dlHash: 0618b94854edc6be5302489df905e627820b71be6b66c950f5e3088fe92df0a1
             unknown_versioning: *ghc-8101-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-8101-64-fedora
             unknown_versioning: *ghc-8101-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -1416,6 +1424,7 @@ ghcupDownloads:
               dlHash: fd2dccd6f496915a5f962dab24e7eeb8bee49bcc38e74b17eac76159083538fa
             unknown_versioning: *ghc-8102-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-8102-64-fedora
             unknown_versioning: *ghc-8102-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -1515,6 +1524,7 @@ ghcupDownloads:
               dlHash: f562ca61979ff1d21e34e69e59028cb742a8eff8d84e46bbd3a750f2ac7d8ed1
             unknown_versioning: *ghc-8103-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-8103-64-fedora
             unknown_versioning: *ghc-8103-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -1615,6 +1625,7 @@ ghcupDownloads:
               dlHash: fb8a91f0cf06594172aff46c2f6f7486179e1c3760855c79fbdd3012598cc2cd
             unknown_versioning: *ghc-8104-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-8104-64-fedora
             unknown_versioning: *ghc-8104-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -1720,6 +1731,7 @@ ghcupDownloads:
               dlHash: 4cdb259ec74d1408dab45dab20dcedc21690f39921c2ea4546486fb3e81f4fbd
             unknown_versioning: *ghc-8105-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-8105-64-fedora
             unknown_versioning: *ghc-8105-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -1826,6 +1838,7 @@ ghcupDownloads:
               dlHash: 71bb69b7185cbb44a941f5214b241a55e158f69b103f10214a05de7845f77e45
             unknown_versioning: *ghc-8106-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-8106-64-fedora
             unknown_versioning: *ghc-8106-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -1930,6 +1943,7 @@ ghcupDownloads:
               dlHash: 262a50bfb5b7c8770e0d99f54d42e5876968da7bf93e2e4d6cfe397891a36d05
             unknown_versioning: *ghc-8107-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-8107-64-fedora
             unknown_versioning: *ghc-8107-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -2034,6 +2048,7 @@ ghcupDownloads:
               dlHash: a23750950b6995a66ba59afe82bbc505bd3479d6ab59cf66f45bc6c056e4d87b
             unknown_versioning: *ghc-901-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-901-64-fedora
             unknown_versioning: *ghc-901-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -2132,6 +2147,7 @@ ghcupDownloads:
               dlHash: 42c78fa5ca8eb2bc7fabb8b9d7634d5b0ddd81c7fe16d8e212aeb9dac91a4f4e
             unknown_versioning: *ghc-902-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-902-64-fedora
             unknown_versioning: *ghc-902-64-centos
           Linux_Alpine:
             unknown_versioning:
@@ -2230,6 +2246,7 @@ ghcupDownloads:
               dlHash: 4b67324507f5d14c23db3ed83c57f4e25d877e97d2b93cfe8e1a9fdf65e4efa1
             unknown_versioning: *ghc-921-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-921-64-fedora
             unknown_versioning: *ghc-921-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-921-64-fedora
@@ -2327,6 +2344,7 @@ ghcupDownloads:
               dlHash: 5100aa7dea87aaf2ed596be83c93165d7199492f6db431d874fcfa07e8ac76ab
             unknown_versioning: *ghc-922-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-922-64-fedora
             unknown_versioning: *ghc-922-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-922-64-fedora
@@ -2419,6 +2437,7 @@ ghcupDownloads:
               dlHash: c2c9e171c205922a7c80e4b43e0432ebdb857076453f969dfda3ba9844aa5f5d
             unknown_versioning: *ghc-923-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-923-64-fedora
             unknown_versioning: *ghc-923-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-923-64-fedora
@@ -2510,6 +2529,7 @@ ghcupDownloads:
               dlHash: 540d3a8ddcf6175efeeec54a73893526a6acf464825f7d3d7a396158fc3f6928
             unknown_versioning: *ghc-924-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-924-64-fedora
             unknown_versioning: *ghc-924-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-924-64-fedora
@@ -2601,6 +2621,7 @@ ghcupDownloads:
               dlHash: 07c02710ac691a15c4b62e097b98862179fef21fb0bd3bd1e737eaed5831d2fa
             unknown_versioning: *ghc-925-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-925-64-fedora
             unknown_versioning: *ghc-925-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-925-64-fedora
@@ -2690,6 +2711,7 @@ ghcupDownloads:
               dlHash: b7334f002e56588129a04a43559901fcd875b95c194a8bee5fa5f498ea002219
             unknown_versioning: *ghc-926-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-926-64-fedora
             unknown_versioning: *ghc-926-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-926-64-fedora
@@ -2779,6 +2801,7 @@ ghcupDownloads:
               dlHash: b4db141559b9e9df18ead9647447016ea29d55e306ab6eb4a612ef2493ef8871
             unknown_versioning: *ghc-927-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-927-64-fedora
             unknown_versioning: *ghc-927-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-927-64-fedora
@@ -2874,6 +2897,7 @@ ghcupDownloads:
               dlHash: efe05368d6367ce9109c7607a0945d85273cc95a730dd17f23d8ae79ee3524ea
             unknown_versioning: *ghc-941-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-941-64-deb10
             unknown_versioning: *ghc-941-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-941-64-fedora
@@ -2964,6 +2988,7 @@ ghcupDownloads:
               dlHash: 017bbf5ba0d526ec82ac97a2ea2a177f162424ea970cd5d6279b843b3d799668
             unknown_versioning: *ghc-942-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-942-64-deb10
             unknown_versioning: *ghc-942-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-942-64-fedora
@@ -3054,6 +3079,7 @@ ghcupDownloads:
               dlHash: 50037bc8672f0429e2de1255b21f04529807182cf74887a60e4d416d3b6ce8f2
             unknown_versioning: *ghc-943-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-943-64-deb10
             unknown_versioning: *ghc-943-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-943-64-fedora
@@ -3143,6 +3169,7 @@ ghcupDownloads:
               dlHash: 8d6dee632966123ec901660cd155dfdc3aa3f13116574215d958a4705b8327e1
             unknown_versioning: *ghc-944-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-944-64-deb10
             unknown_versioning: *ghc-944-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-944-64-fedora
@@ -3241,6 +3268,7 @@ ghcupDownloads:
               dlHash: 3cf52bc88ec212d0aed3bbcc1f3e54c61cc639975f90302b44b3f4d1eee3f153
             unknown_versioning: *ghc-945-64-centos
           Linux_RedHat:
+            '>= 8': *ghc-945-64-fedora-27
             unknown_versioning: *ghc-945-64-centos
           Linux_UnknownLinux:
             unknown_versioning: *ghc-945-64-fedora-27
@@ -3345,15 +3373,16 @@ ghcupDownloads:
               dlSubdir: ghc-9.6.1-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-ubuntu20_04-linux.tar.xz
           Linux_RedHat:
+            '>= 8': &ghc-961-64-rocky8
+              dlHash: 97172efe434bfe27c112f16b3ab3708c1fb3defb5c1d1319c738c7afea95901d
+              dlSubdir: ghc-9.6.1-x86_64-unknown-linux
+              dlUri: https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-rocky8-linux.tar.xz
             unknown_versioning: *ghc-961-64-centos7
           Linux_Ubuntu:
             ( >= 16 && < 19 ): *ghc-961-64-ubuntu1804
             unknown_versioning: *ghc-961-64-ubuntu2004
           Linux_UnknownLinux:
-            unknown_versioning:
-              dlHash: 97172efe434bfe27c112f16b3ab3708c1fb3defb5c1d1319c738c7afea95901d
-              dlSubdir: ghc-9.6.1-x86_64-unknown-linux
-              dlUri: https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-rocky8-linux.tar.xz
+            unknown_versioning: *ghc-961-64-rocky8
           Windows:
             unknown_versioning:
               dlHash: 6121a889839d8b409f082169365bbfb6ed9e6a1f6ff0531d577ef7c2a9a417fb
