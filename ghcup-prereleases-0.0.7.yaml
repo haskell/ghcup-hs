@@ -905,3 +905,9 @@ ghcupDownloads:
               dlHash: ca8c0032c572e54df1dda4ca8841ed55fea6735b445066888aac852612855688
               dlSubdir:
                 RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.11.0.1/stack-2.11.0.1-osx-aarch64.tar.gz
+              dlHash: 9c8f5bf26f768c5b0f7d44bd4617c2fd19ff278455d9fc5adc3384f57fdf4674
+              dlSubdir:
+                RegexDir: "stack-.*"
