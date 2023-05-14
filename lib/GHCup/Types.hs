@@ -275,6 +275,7 @@ data DownloadInfo = DownloadInfo
   , _dlSubdir :: Maybe TarDir
   , _dlHash   :: Text
   , _dlCSize  :: Maybe Integer
+  , _dlOutput :: Maybe FilePath
   }
   deriving (Eq, Ord, GHC.Generic, Show)
 

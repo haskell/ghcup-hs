@@ -174,7 +174,7 @@ test testCommand settings getAppState' runLogger = case testCommand of
        Just uri -> do
          runTestGHC s'{ settings = settings {noVerify = True}} $ do
            (v, vi) <- liftE $ fromVersion testVer GHC
-           liftE $ testGHCBindist (DownloadInfo uri (Just $ RegexDir ".*/.*") "" Nothing) (_tvVersion v) addMakeArgs
+           liftE $ testGHCBindist (DownloadInfo uri (Just $ RegexDir ".*/.*") "" Nothing Nothing) (_tvVersion v) addMakeArgs
            pure vi
       )
         >>= \case

@@ -335,7 +335,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
          runInstGHC s'{ settings = settings {noVerify = True}} $ do
            (v, vi) <- liftE $ fromVersion instVer GHC
            liftE $ runBothE' (installGHCBindist
-                       (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing)
+                       (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing)
                        (_tvVersion v)
                        (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
@@ -405,7 +405,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
          runInstTool s'{ settings = settings { noVerify = True}} $ do
            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
            liftE $ runBothE' (installCabalBindist
-                                      (DownloadInfo uri Nothing "" Nothing)
+                                      (DownloadInfo uri Nothing "" Nothing Nothing)
                                       v
                                       (maybe GHCupInternal IsolateDir isolateDir)
                                       forceInstall
@@ -455,7 +455,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
            -- TODO: support legacy
            liftE $ runBothE' (installHLSBindist
-                                      (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing)
+                                      (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing)
                                       v
                                       (maybe GHCupInternal IsolateDir isolateDir)
                                       forceInstall
@@ -504,7 +504,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
           runInstTool s'{ settings = settings { noVerify = True}} $ do
             (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
             liftE $ runBothE' (installStackBindist
-                                       (DownloadInfo uri Nothing "" Nothing)
+                                       (DownloadInfo uri Nothing "" Nothing Nothing)
                                        v
                                        (maybe GHCupInternal IsolateDir isolateDir)
                                        forceInstall
