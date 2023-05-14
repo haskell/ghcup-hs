@@ -724,7 +724,9 @@ fromVersion' (SetToolTag Latest) tool = do
   bimap mkTVer Just <$> getLatest dls tool ?? TagNotFound Latest tool
 fromVersion' (SetToolDay day) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap mkTVer Just <$> getByReleaseDay dls tool day ?? DayNotFound day tool
+  bimap mkTVer Just <$> case getByReleaseDay dls tool day of
+                          Left ad -> throwE $ DayNotFound day tool ad
+                          Right v -> pure v
 fromVersion' (SetToolTag LatestPrerelease) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   bimap mkTVer Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool

@@ -94,7 +94,8 @@ import qualified Streamly.Prelude              as S
 import Control.DeepSeq (force)
 import GHC.IO (evaluate)
 import System.Environment (getEnvironment, setEnv)
-import Data.Time (Day)
+import Data.Time (Day(..), diffDays, addDays)
+import Debug.Trace
 
 
 -- $setup
@@ -890,8 +891,17 @@ getTagged tag =
   to (Map.toDescList . Map.filter (\VersionInfo {..} -> tag `elem` _viTags))
   % folding id
 
-getByReleaseDay :: GHCupDownloads -> Tool -> Day -> Maybe (Version, VersionInfo)
-getByReleaseDay av tool day = headOf (ix tool % getByReleaseDayFold day) av
+getByReleaseDay :: GHCupDownloads -> Tool -> Day -> Either (Maybe Day) (Version, VersionInfo)
+getByReleaseDay av tool day = let mvv = fromMaybe mempty $ headOf (ix tool) av
+                                  mdv = Map.foldrWithKey (\k vi@VersionInfo{..} m ->
+                                            maybe m (\d -> let diff = diffDays d day
+                                                           in Map.insert (abs diff) (diff, (k, vi)) m) _viReleaseDay)
+                                          Map.empty mvv
+                              in case headMay (Map.toAscList mdv) of
+                                   Nothing -> Left Nothing
+                                   Just (absDiff, (diff, (k, vi)))
+                                     | absDiff == 0 -> Right (k, vi)
+                                     | otherwise -> Left (Just (addDays diff day))
 
 getByReleaseDayFold :: Day -> Fold (Map.Map Version VersionInfo) (Version, VersionInfo)
 getByReleaseDayFold day = to (Map.toDescList . Map.filter (\VersionInfo {..} -> Just day == _viReleaseDay)) % folding id

@@ -314,12 +314,15 @@ instance HFErrorProject TagNotFound where
   eDesc _ = "Unable to find a tag of a tool"
 
 -- | Unable to find a release day of a tool
-data DayNotFound = DayNotFound Day Tool
+data DayNotFound = DayNotFound Day Tool (Maybe Day)
   deriving Show
 
 instance Pretty DayNotFound where
-  pPrint (DayNotFound day tool) =
+  pPrint (DayNotFound day tool Nothing) =
     text "Unable to find release date" <+> text (show day) <+> text "of tool" <+> pPrint tool
+  pPrint (DayNotFound day tool (Just alternateDay)) =
+    text "Unable to find release date" <+> text (show day) <+> text "of tool" <+> pPrint tool <+>
+      text "but found an alternative date" <+> text (show alternateDay)
 
 instance HFErrorProject DayNotFound where
   eBase _ = 95
