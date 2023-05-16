@@ -1,8 +1,5 @@
 :root {
   --theme-purple: #5E5184;
-  --theme-purple-dark: rgba(69, 59, 97, 0.5);
-  --ukraine-top: #0057B8;
-  --ukraine-bottom: #FFD700;
   --link-pink: #9E358F;
 }
 
@@ -111,12 +108,12 @@ body.homepage>div.container div.col-md-9 {
 
 .bg-primary {
   background-image: none;
-  background-color: var(--ukraine-top) !important;
+  background-color: var(--theme-purple) !important;
 }
 
 body .bg-primary {
   background-image: none;
-  background-color: var(--ukraine-top);
+  background-color: var(--theme-purple);
   border: 0px;
 }
 
@@ -128,8 +125,8 @@ body .btn-primary {
 
 .navbar.fixed-top {
   background-image: none;
-  background-color: var(--ukraine-top);
-  border-bottom: 40px solid var(--ukraine-bottom);
+  background-color: var(--theme-purple);
+  border-bottom: 5px solid rgba(69, 59, 97, 0.5);
   padding: 0px;
 }
 
