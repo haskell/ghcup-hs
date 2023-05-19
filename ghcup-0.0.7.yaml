@@ -4858,7 +4858,6 @@ ghcupDownloads:
               dlHash: fa53c58d8d00a6d49ec26624aa7f817f5ece3c4df339fa6e4fccf1038b7f1fa5
     2.9.3:
       viTags:
-        - Latest
         - Recommended
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v293
       viPostInstall: *stack-post
@@ -4906,3 +4905,47 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.9.3/stack-2.9.3-osx-aarch64.tar.gz
               dlHash: a56d2cd37611eccf00ab8df38c3718923cf5677f3aeacd250394e79b676dcb98
+    2.11.1:
+      viTags:
+        - Latest
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2111---2023-05-18
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-2111-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.11.1/stack-2.11.1-linux-x86_64.tar.gz
+              dlHash: 408a120e824ed6e6b24c548a2ff6f210fcb0eed246f204a280ed4c75af0517e7
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.11.1/stack-2.11.1-osx-x86_64.tar.gz
+              dlHash: cf3ce4c526fb29fabf84308a8a762f7ab703975f5c9eeb85aebcea97a02540fc
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.11.1/stack-2.11.1-windows-x86_64.tar.gz
+              dlHash: 74938b6f53aa5cfdece0d3a687675c30d2ae38798c38f81d394195b8db87cdc7
+              dlSubdir:
+                RegexDir: "stack-.*"
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.11.1/stack-2.11.1-freebsd-x86_64.tar.xz
+              dlHash: ab56bd078f78f9fce458cbefba48cfc5bc965704b74aefc34988036dfafa0937
+          Linux_Alpine:
+            unknown_versioning: *stack-2111-64
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.11.1/stack-2.11.1-linux-aarch64.tar.gz
+              dlHash: c7733d07ed78d6f4d82e0ebf6d260eb693c6c9df2208003d60caba69766f9c15
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.11.1/stack-2.11.1-osx-aarch64.tar.gz
+              dlHash: 3ea56c5885c9c6d7e2dce927e44f48f6024a4a5a039f7acad79b19654a6f95b5
+              dlSubdir:
+                RegexDir: "stack-.*"
