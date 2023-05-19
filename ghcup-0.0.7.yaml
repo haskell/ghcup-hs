@@ -4451,7 +4451,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-1.9.1.0
               dlHash: 5cbcfa0903bd776168a11c8ec437e8231699cd701d7b44496e9a2a3766fa08e9
     1.10.0.0:
-      viTags: []
+      viTags:
+        - Recommended
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -4547,7 +4548,6 @@ ghcupDownloads:
     2.0.0.0:
       viTags:
         - Latest
-        - Recommended
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
