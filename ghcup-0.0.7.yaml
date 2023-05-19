@@ -3282,6 +3282,11 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.4.5/ghc-9.4.5-x86_64-unknown-mingw32.tar.xz
               dlSubdir: ghc-9.4.5-x86_64-unknown-mingw32
               dlHash: 1b65ccb99b5e0bc6ad535b58323b023c61a675e0c3a0d53b82f819e55a7dd8d7
+          FreeBSD:
+            '( >= 13 )':
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.4.5/ghc-9.4.5-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-9.4.5-x86_64-portbld-freebsd
+              dlHash: 846bb2cb2ec76221b76864556deb8cd6440a9eab7a7c3bb3e973186b46d6243b
           Linux_Alpine:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghc/9.4.5/ghc-9.4.5-x86_64-alpine3_12-linux-static-int_native.tar.xz
