@@ -4498,9 +4498,7 @@ ghcupDownloads:
               dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.9.1/stack-2.9.1-linux-aarch64.tar.gz
               dlHash: 741cf6552adcd41ca0c38c4f03b1e8f244873d988f70ef5ed4b502c0df28ea5a
     2.9.3:
-      viTags:
-        - Latest
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v293
       viPostInstall: *stack-post
       viArch:
@@ -4530,3 +4528,37 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.9.3/stack-2.9.3-linux-aarch64.tar.gz
               dlHash: 161e1638da9efc56319f7225b3652ca3f339bcda9eadc7d6ce512f325b0f014a
+    2.11.1:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2111---2023-05-18
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-2111-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.11.1/stack-2.11.1-linux-x86_64.tar.gz
+              dlHash: 408a120e824ed6e6b24c548a2ff6f210fcb0eed246f204a280ed4c75af0517e7
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.11.1/stack-2.11.1-osx-x86_64.tar.gz
+              dlHash: cf3ce4c526fb29fabf84308a8a762f7ab703975f5c9eeb85aebcea97a02540fc
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.11.1/stack-2.11.1-windows-x86_64.tar.gz
+              dlHash: 74938b6f53aa5cfdece0d3a687675c30d2ae38798c38f81d394195b8db87cdc7
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-2111-64
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.11.1/stack-2.11.1-linux-aarch64.tar.gz
+              dlHash: c7733d07ed78d6f4d82e0ebf6d260eb693c6c9df2208003d60caba69766f9c15
+
