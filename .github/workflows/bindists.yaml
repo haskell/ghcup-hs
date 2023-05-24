@@ -36,9 +36,6 @@ jobs:
           - image: alpine:latest
             installCmd: apk update && apk add
             toolRequirements: binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
-          - image: debian:9
-            installCmd: apt-get update && apt-get install -y
-            toolRequirements: build-essential curl libffi-dev libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
           - image: debian:10
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 libnuma-dev
