@@ -95,7 +95,6 @@ import Control.DeepSeq (force)
 import GHC.IO (evaluate)
 import System.Environment (getEnvironment, setEnv)
 import Data.Time (Day(..), diffDays, addDays)
-import Debug.Trace
 
 
 -- $setup
