@@ -203,6 +203,34 @@ url-source:
   - "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
 ```
 
+### Nightlies
+
+Nightlies are just a nother release channel. Currently, only GHC supports nightlies, which are binary releases
+that are built every night from `master`.
+
+To add the nightly channel, run:
+
+```sh
+ghcup config add-release-channel https://ghc.gitlab.haskell.org/ghcup-metadata/ghcup-nightlies-0.0.7.yaml
+```
+
+To list all nightlies from 2023, run:
+
+```sh
+ghcup list --show-nightly --tool=ghc --since=2023-01-01
+```
+
+Ways to install a nightly:
+
+```sh
+# by date
+ghcup install ghc 2023-06-20
+# by version
+ghcup install ghc 9.7.20230619
+# by tag
+ghcup install ghc latest-nightly
+```
+
 ## Stack integration
 
 Stack manages GHC versions internally by default. In order to make it use ghcup installed
