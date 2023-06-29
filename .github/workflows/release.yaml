@@ -81,7 +81,7 @@ jobs:
     name: Build ARM binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.8.1.0
+      CABAL_VER: 3.6.2.0
       JSON_VERSION: "0.0.7"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -90,7 +90,7 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - os: [self-hosted, Linux, ARM64, aarch32-linux]
+          - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "armv7-linux-ghcup"
             GHC_VER: 9.2.2
             ARCH: ARM
@@ -168,7 +168,7 @@ jobs:
             ARTIFACT: "aarch64-apple-darwin-ghcup"
             GHC_VER: 9.2.6
             ARCH: ARM64
-          - os: macOS-10.15
+          - os: macOS-11
             ARTIFACT: "x86_64-apple-darwin-ghcup"
             GHC_VER: 9.2.6
             ARCH: 64
@@ -325,12 +325,12 @@ jobs:
     needs: "build-arm"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.8.1.0
+      CABAL_VER: 3.6.2.0
       JSON_VERSION: "0.0.7"
     strategy:
       matrix:
         include:
-          - os: [self-hosted, Linux, ARM64, aarch32-linux]
+          - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "armv7-linux-ghcup"
             GHC_VER: 9.2.2
             ARCH: ARM
@@ -403,7 +403,7 @@ jobs:
             GHC_VER: 9.2.6
             ARCH: ARM64
             DISTRO: na
-          - os: macOS-10.15
+          - os: macOS-11
             ARTIFACT: "x86_64-apple-darwin-ghcup"
             GHC_VER: 9.2.6
             ARCH: 64

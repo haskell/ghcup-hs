@@ -35,7 +35,6 @@ import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
 import GHCup.Types.Optics
 import GHCup.Utils
-import Data.Versions
 import URI.ByteString (serializeURIRef')
 import Data.Char (toLower)
 
@@ -81,7 +80,7 @@ changelogP =
               <> completer toolCompleter
             )
           )
-    <*> optional (toolVersionTagArgument Nothing Nothing)
+    <*> optional (toolVersionTagArgument [] Nothing)
 
 
 
@@ -115,20 +114,15 @@ changelog :: ( Monad m
 changelog ChangeLogOptions{..} runAppState runLogger = do
   GHCupInfo { _ghcupDownloads = dls } <- runAppState getGHCupInfo
   let tool = fromMaybe GHC clTool
-      ver' = maybe
-        (Right Latest)
-        (\case
-          GHCVersion tv  -> Left (_tvVersion tv)
-          ToolVersion tv -> Left tv
-          ToolTag     t  -> Right t
-        )
+      ver' = fromMaybe
+        (ToolTag Latest)
         clToolVer
       muri = getChangeLog dls tool ver'
   case muri of
     Nothing -> do
       runLogger
         (logWarn $
-          "Could not find ChangeLog for " <> T.pack (prettyShow tool) <> ", version " <> either prettyVer (T.pack . show) ver'
+          "Could not find ChangeLog for " <> T.pack (prettyShow tool) <> ", version " <> T.pack (prettyShow ver')
         )
       pure ExitSuccess
     Just uri -> do

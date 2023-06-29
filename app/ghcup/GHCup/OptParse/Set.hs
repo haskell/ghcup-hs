@@ -139,9 +139,9 @@ setParser =
 setOpts :: Tool -> Parser SetOptions
 setOpts tool = SetOptions <$>
     (fromMaybe SetRecommended <$>
-      optional (setVersionArgument (Just ListInstalled) tool))
+      optional (setVersionArgument [ListInstalled True] tool))
 
-setVersionArgument :: Maybe ListCriteria -> Tool -> Parser SetToolVersion
+setVersionArgument :: [ListCriteria] -> Tool -> Parser SetToolVersion
 setVersionArgument criteria tool =
   argument (eitherReader setEither)
     (metavar "VERSION|TAG|next"
@@ -184,6 +184,7 @@ setFooter = [s|Discussion:
 type SetGHCEffects = '[ FileDoesNotExistError
                    , NotInstalled
                    , TagNotFound
+                   , DayNotFound
                    , NextVerNotFound
                    , NoToolVersionSet]
 
@@ -198,6 +199,7 @@ runSetGHC runAppState =
 
 type SetCabalEffects = '[ NotInstalled
                         , TagNotFound
+                        , DayNotFound
                         , NextVerNotFound
                         , NoToolVersionSet]
 
@@ -212,6 +214,7 @@ runSetCabal runAppState =
 
 type SetHLSEffects = '[ NotInstalled
                       , TagNotFound
+                      , DayNotFound
                       , NextVerNotFound
                       , NoToolVersionSet]
 
@@ -226,6 +229,7 @@ runSetHLS runAppState =
 
 type SetStackEffects = '[ NotInstalled
                         , TagNotFound
+                        , DayNotFound
                         , NextVerNotFound
                         , NoToolVersionSet]
 

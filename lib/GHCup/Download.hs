@@ -633,7 +633,9 @@ downloadCached dli mfn = do
     True -> downloadCached' dli mfn Nothing
     False -> do
       tmp <- lift withGHCupTmpDir
-      liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) (fromGHCupPath tmp) mfn False
+      liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) (fromGHCupPath tmp) outputFileName False
+ where
+  outputFileName = mfn <|> _dlOutput dli
 
 
 downloadCached' :: ( MonadReader env m
@@ -652,7 +654,7 @@ downloadCached' :: ( MonadReader env m
 downloadCached' dli mfn mDestDir = do
   Dirs { cacheDir } <- lift getDirs
   let destDir = fromMaybe (fromGHCupPath cacheDir) mDestDir
-  let fn = fromMaybe ((T.unpack . decUTF8Safe) $ urlBaseName $ view (dlUri % pathL') dli) mfn
+  let fn = fromMaybe ((T.unpack . decUTF8Safe) $ urlBaseName $ view (dlUri % pathL') dli) outputFileName
   let cachfile = destDir </> fn
   fileExists <- liftIO $ doesFileExist cachfile
   if
@@ -660,7 +662,9 @@ downloadCached' dli mfn mDestDir = do
       forM_ (view dlCSize dli) $ \s -> liftE $ checkCSize s cachfile
       liftE $ checkDigest (view dlHash dli) cachfile
       pure cachfile
-    | otherwise -> liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) destDir mfn False
+    | otherwise -> liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) destDir outputFileName False
+ where
+  outputFileName = mfn <|> _dlOutput dli
 
 
 

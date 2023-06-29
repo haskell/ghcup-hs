@@ -45,6 +45,8 @@ import           Data.Functor
 import           Data.List                      ( nub, sort, sortBy, isPrefixOf, stripPrefix )
 import           Data.Maybe
 import           Data.Text                      ( Text )
+import           Data.Time.Calendar             ( Day )
+import           Data.Time.Format               ( parseTimeM, defaultTimeLocale )
 import           Data.Versions           hiding ( str )
 import           Data.Void
 import qualified Data.Vector      as V
@@ -72,26 +74,26 @@ import qualified Cabal.Config            as CC
     --[ Types ]--
     -------------
 
-data ToolVersion = GHCVersion GHCTargetVersion
-                 | ToolVersion Version
-                 | ToolTag Tag
 
 -- a superset of ToolVersion
 data SetToolVersion = SetGHCVersion GHCTargetVersion
                     | SetToolVersion Version
                     | SetToolTag Tag
+                    | SetToolDay Day
                     | SetRecommended
                     | SetNext
 
 prettyToolVer :: ToolVersion -> String
-prettyToolVer (GHCVersion v') = T.unpack $ tVerToText v'
+prettyToolVer (GHCVersion v')  = T.unpack $ tVerToText v'
 prettyToolVer (ToolVersion v') = T.unpack $ prettyVer v'
-prettyToolVer (ToolTag t) = show t
+prettyToolVer (ToolTag t)      = show t
+prettyToolVer (ToolDay day)    = show day
 
 toSetToolVer :: Maybe ToolVersion -> SetToolVersion
 toSetToolVer (Just (GHCVersion v')) = SetGHCVersion v'
 toSetToolVer (Just (ToolVersion v')) = SetToolVersion v'
 toSetToolVer (Just (ToolTag t')) = SetToolTag t'
+toSetToolVer (Just (ToolDay d')) = SetToolDay d'
 toSetToolVer Nothing = SetRecommended
 
 
@@ -102,28 +104,28 @@ toSetToolVer Nothing = SetRecommended
     --------------
 
 
-toolVersionTagArgument :: Maybe ListCriteria -> Maybe Tool -> Parser ToolVersion
+toolVersionTagArgument :: [ListCriteria] -> Maybe Tool -> Parser ToolVersion
 toolVersionTagArgument criteria tool =
   argument (eitherReader (parser tool))
     (metavar (mv tool)
     <> completer (tagCompleter (fromMaybe GHC tool) [])
     <> foldMap (completer . versionCompleter criteria) tool)
  where
-  mv (Just GHC) = "GHC_VERSION|TAG"
-  mv (Just HLS) = "HLS_VERSION|TAG"
-  mv _          = "VERSION|TAG"
+  mv (Just GHC) = "GHC_VERSION|TAG|RELEASE_DATE"
+  mv (Just HLS) = "HLS_VERSION|TAG|RELEASE_DATE"
+  mv _          = "VERSION|TAG|RELEASE_DATE"
 
   parser (Just GHC) = ghcVersionTagEither
   parser Nothing    = ghcVersionTagEither
   parser _          = toolVersionTagEither
 
 
-versionParser' :: Maybe ListCriteria -> Maybe Tool -> Parser Version
+versionParser' :: [ListCriteria] -> Maybe Tool -> Parser Version
 versionParser' criteria tool = argument
   (eitherReader (first show . version . T.pack))
   (metavar "VERSION"  <> foldMap (completer . versionCompleter criteria) tool)
 
-ghcVersionArgument :: Maybe ListCriteria -> Maybe Tool -> Parser GHCTargetVersion
+ghcVersionArgument :: [ListCriteria] -> Maybe Tool -> Parser GHCTargetVersion
 ghcVersionArgument criteria tool = argument (eitherReader ghcVersionEither)
                                             (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
 
@@ -237,22 +239,23 @@ isolateParser f = case isValid f && isAbsolute f of
 -- this accepts cross prefix
 ghcVersionTagEither :: String -> Either String ToolVersion
 ghcVersionTagEither s' =
-  second ToolTag (tagEither s') <|> second GHCVersion (ghcVersionEither s')
+  second ToolDay (dayParser s') <|> second ToolTag (tagEither s') <|> second GHCVersion (ghcVersionEither s')
 
 -- this ignores cross prefix
 toolVersionTagEither :: String -> Either String ToolVersion
 toolVersionTagEither s' =
-  second ToolTag (tagEither s') <|> second ToolVersion (toolVersionEither s')
+  second ToolDay (dayParser s') <|> second ToolTag (tagEither s') <|> second ToolVersion (toolVersionEither s')
 
 tagEither :: String -> Either String Tag
 tagEither s' = case fmap toLower s' of
   "recommended"              -> Right Recommended
   "latest"                   -> Right Latest
   "latest-prerelease"        -> Right LatestPrerelease
+  "latest-nightly"           -> Right LatestNightly
   ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
                                   Right x -> Right (Base x)
                                   Left  _ -> Left $ "Invalid PVP version for base " <> ver'
-  other         -> Left $ "Unknown tag " <> other
+  other                      -> Left $ "Unknown tag " <> other
 
 
 ghcVersionEither :: String -> Either String GHCTargetVersion
@@ -261,7 +264,7 @@ ghcVersionEither =
 
 toolVersionEither :: String -> Either String Version
 toolVersionEither =
-  first (const "Not a valid version") . MP.parse version' "" . T.pack
+  first (const "Not a valid version") . MP.parse (version' <* MP.eof) "" . T.pack
 
 
 toolParser :: String -> Either String Tool
@@ -272,12 +275,22 @@ toolParser s' | t == T.pack "ghc"   = Right GHC
               | otherwise           = Left ("Unknown tool: " <> s')
   where t = T.toLower (T.pack s')
 
+dayParser :: String -> Either String Day
+dayParser s = maybe (Left $ "Could not parse \"" <> s <> "\". Expected format is: YYYY-MM-DD") Right
+            $ parseTimeM True defaultTimeLocale "%Y-%-m-%-d" s
+
 
 criteriaParser :: String -> Either String ListCriteria
-criteriaParser s' | t == T.pack "installed" = Right ListInstalled
-                  | t == T.pack "set"       = Right ListSet
-                  | t == T.pack "available" = Right ListAvailable
-                  | otherwise               = Left ("Unknown criteria: " <> s')
+criteriaParser s' | t == T.pack "installed"   = Right $ ListInstalled True
+                  | t == T.pack "set"         = Right $ ListSet True
+                  | t == T.pack "available"   = Right $ ListAvailable True
+                  | t == T.pack "+installed"  = Right $ ListInstalled True
+                  | t == T.pack "+set"        = Right $ ListSet True
+                  | t == T.pack "+available"  = Right $ ListAvailable True
+                  | t == T.pack "-installed"  = Right $ ListInstalled False
+                  | t == T.pack "-set"        = Right $ ListSet False
+                  | t == T.pack "-available"  = Right $ ListAvailable False
+                  | otherwise                 = Left ("Unknown criteria: " <> s')
   where t = T.toLower (T.pack s')
 
 
@@ -455,10 +468,10 @@ tagCompleter tool add = listIOCompleter $ do
       pure $ nub $ (add ++) $ fmap tagToString allTags
     VLeft _ -> pure  (nub $ ["recommended", "latest", "latest-prerelease"] ++ add)
 
-versionCompleter :: Maybe ListCriteria -> Tool -> Completer
+versionCompleter :: [ListCriteria] -> Tool -> Completer
 versionCompleter criteria tool = versionCompleter' criteria tool (const True)
 
-versionCompleter' :: Maybe ListCriteria -> Tool -> (Version -> Bool) -> Completer
+versionCompleter' :: [ListCriteria] -> Tool -> (Version -> Bool) -> Completer
 versionCompleter' criteria tool filter' = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
   let loggerConfig = LoggerConfig
@@ -487,7 +500,7 @@ versionCompleter' criteria tool filter' = listIOCompleter $ do
 
           runEnv = flip runReaderT appState
 
-      installedVersions <- runEnv $ listVersions (Just tool) criteria
+      installedVersions <- runEnv $ listVersions (Just tool) criteria False False (Nothing, Nothing)
       return $ fmap (T.unpack . prettyVer) . filter filter' . fmap lVer $ installedVersions
 
 
@@ -655,6 +668,7 @@ fromVersion :: ( HasLog env
             -> Tool
             -> Excepts
                  '[ TagNotFound
+                  , DayNotFound
                   , NextVerNotFound
                   , NoToolVersionSet
                   ] m (GHCTargetVersion, Maybe VersionInfo)
@@ -673,6 +687,7 @@ fromVersion' :: ( HasLog env
              -> Tool
              -> Excepts
                   '[ TagNotFound
+                   , DayNotFound
                    , NextVerNotFound
                    , NoToolVersionSet
                    ] m (GHCTargetVersion, Maybe VersionInfo)
@@ -707,9 +722,17 @@ fromVersion' (SetToolVersion v) tool = do
 fromVersion' (SetToolTag Latest) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   bimap mkTVer Just <$> getLatest dls tool ?? TagNotFound Latest tool
+fromVersion' (SetToolDay day) tool = do
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  bimap mkTVer Just <$> case getByReleaseDay dls tool day of
+                          Left ad -> throwE $ DayNotFound day tool ad
+                          Right v -> pure v
 fromVersion' (SetToolTag LatestPrerelease) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   bimap mkTVer Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
+fromVersion' (SetToolTag LatestNightly) tool = do
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  bimap mkTVer Just <$> getLatestNightly dls tool ?? TagNotFound LatestNightly tool
 fromVersion' (SetToolTag Recommended) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   bimap mkTVer Just <$> getRecommended dls tool ?? TagNotFound Recommended tool
@@ -779,7 +802,7 @@ checkForUpdates :: ( MonadReader env m
                 => m [(Tool, Version)]
 checkForUpdates = do
   GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
-  lInstalled <- listVersions Nothing (Just ListInstalled)
+  lInstalled <- listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
   let latestInstalled tool = (fmap lVer . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
 
   ghcup <- forMM (getLatest dls GHCup) $ \(l, _) -> do

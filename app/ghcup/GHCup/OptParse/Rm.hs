@@ -80,19 +80,19 @@ rmParser =
       <> command
            "cabal"
            (   RmCabal
-           <$> info (versionParser' (Just ListInstalled) (Just Cabal) <**> helper)
+           <$> info (versionParser' [ListInstalled True] (Just Cabal) <**> helper)
                     (progDesc "Remove Cabal version")
            )
       <> command
            "hls"
            (   RmHLS
-           <$> info (versionParser' (Just ListInstalled) (Just HLS) <**> helper)
+           <$> info (versionParser' [ListInstalled True] (Just HLS) <**> helper)
                     (progDesc "Remove haskell-language-server version")
            )
       <> command
            "stack"
            (   RmStack
-           <$> info (versionParser' (Just ListInstalled) (Just Stack) <**> helper)
+           <$> info (versionParser' [ListInstalled True] (Just Stack) <**> helper)
                     (progDesc "Remove stack version")
            )
       )
@@ -102,7 +102,7 @@ rmParser =
 
 
 rmOpts :: Maybe Tool -> Parser RmOptions
-rmOpts tool = RmOptions <$> ghcVersionArgument (Just ListInstalled) tool
+rmOpts tool = RmOptions <$> ghcVersionArgument [ListInstalled True] tool
 
 
 

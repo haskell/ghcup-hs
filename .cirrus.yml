@@ -1,5 +1,5 @@
 freebsd_instance:
-  image_family: freebsd-13-1
+  image_family: freebsd-13-2
 
 build_task:
   name: build
@@ -16,7 +16,9 @@ build_task:
     AWS_ACCESS_KEY_ID: ENCRYPTED[6ed6287e2dd78ab5f84b22232c5245834ab042bd8ba443883aaf4b4d1ecc0481add1fdfad5ae6f6a8cfb418e6f19b2fc]
     AWS_SECRET_ACCESS_KEY: ENCRYPTED[16f3cda2954c7cee99444e6788eb5997382aa4ce1477e7523fef2586077541f43b5c816156961fc6b4677259679875a7]
     S3_HOST: ENCRYPTED[ce961780a33159f7d1d8046956b5ac6ebc3bfc8149428e5f538576cda51d9f3d0c35b79cdd1e325793639ff6e31f889d]
-  install_script: pkg install -y ghc hs-cabal-install git bash misc/compat10x misc/compat11x misc/compat12x gmake llvm14
+  install_script:
+    - sed -i.bak -e 's/quarterly/latest/' /etc/pkg/FreeBSD.conf
+    - pkg install -y ghc hs-cabal-install git bash misc/compat10x misc/compat11x misc/compat12x gmake llvm14
   script:
     - tzsetup Etc/GMT
     - adjkerntz -a

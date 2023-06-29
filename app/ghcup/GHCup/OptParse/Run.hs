@@ -92,7 +92,7 @@ runOpts =
             (eitherReader ghcVersionTagEither)
             (metavar "GHC_VERSION" <> long "ghc" <> help "The ghc version"
             <> completer (tagCompleter GHC [])
-            <> (completer $ versionCompleter Nothing GHC)
+            <> (completer $ versionCompleter [] GHC)
             )
           )
     <*> optional
@@ -100,7 +100,7 @@ runOpts =
             (eitherReader toolVersionTagEither)
             (metavar "CABAL_VERSION" <> long "cabal" <> help "The cabal version"
             <> completer (tagCompleter Cabal [])
-            <> (completer $ versionCompleter Nothing Cabal)
+            <> (completer $ versionCompleter [] Cabal)
             )
           )
     <*> optional
@@ -108,7 +108,7 @@ runOpts =
             (eitherReader toolVersionTagEither)
             (metavar "HLS_VERSION" <> long "hls" <> help "The HLS version"
             <> completer (tagCompleter HLS [])
-            <> (completer $ versionCompleter Nothing HLS)
+            <> (completer $ versionCompleter [] HLS)
             )
           )
     <*> optional
@@ -116,7 +116,7 @@ runOpts =
             (eitherReader toolVersionTagEither)
             (metavar "STACK_VERSION" <> long "stack" <> help "The stack version"
             <> completer (tagCompleter Stack [])
-            <> (completer $ versionCompleter Nothing Stack)
+            <> (completer $ versionCompleter [] Stack)
             )
           )
     <*> optional
@@ -132,7 +132,7 @@ runOpts =
     <*> switch
           (short 'q' <> long "quick" <> help "Avoid any expensive work (such as downloads, version/tag resolution etc.). Disables --install.")
     <*> many (argument str (metavar "COMMAND" <> help "The command to run, with arguments (use longopts --). If omitted, just prints the created bin/ dir to stdout and exits."))
-          
+
 
 
 
@@ -175,6 +175,7 @@ type RunEffects = '[ AlreadyInstalled
                    , NotInstalled
                    , BuildFailed
                    , TagNotFound
+                   , DayNotFound
                    , DigestError
                    , ContentLengthError
                    , GPGError
@@ -282,6 +283,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                            )
                         => Excepts
                              '[ TagNotFound
+                              , DayNotFound
                               , NextVerNotFound
                               , NoToolVersionSet
                               ] (ResourceT (ReaderT AppState m)) Toolchain
@@ -332,6 +334,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                         -> FilePath
                         -> Excepts
                              '[ TagNotFound
+                              , DayNotFound
                               , NextVerNotFound
                               , NoToolVersionSet
                               , UnknownArchive

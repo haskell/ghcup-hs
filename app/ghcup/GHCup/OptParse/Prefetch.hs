@@ -83,7 +83,7 @@ prefetchP = subparser
           <$> (PrefetchGHCOptions
                 <$> ( switch (short 's' <> long "source" <> help "Download source tarball instead of bindist") <**> helper )
                 <*> optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*>  optional (toolVersionTagArgument Nothing (Just GHC)) )
+          <*>  optional (toolVersionTagArgument [] (Just GHC)) )
         ( progDesc "Download GHC assets for installation")
       )
       <>
@@ -92,7 +92,7 @@ prefetchP = subparser
       (info
         (PrefetchCabal
           <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*> ( optional (toolVersionTagArgument Nothing (Just Cabal)) <**> helper ))
+          <*> ( optional (toolVersionTagArgument [] (Just Cabal)) <**> helper ))
         ( progDesc "Download cabal assets for installation")
       )
       <>
@@ -101,7 +101,7 @@ prefetchP = subparser
       (info
         (PrefetchHLS
           <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*> ( optional (toolVersionTagArgument Nothing (Just HLS)) <**> helper ))
+          <*> ( optional (toolVersionTagArgument [] (Just HLS)) <**> helper ))
         ( progDesc "Download HLS assets for installation")
       )
       <>
@@ -110,7 +110,7 @@ prefetchP = subparser
       (info
         (PrefetchStack
           <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*> ( optional (toolVersionTagArgument Nothing (Just Stack)) <**> helper ))
+          <*> ( optional (toolVersionTagArgument [] (Just Stack)) <**> helper ))
         ( progDesc "Download stack assets for installation")
       )
       <>
@@ -148,6 +148,7 @@ Examples:
 
 
 type PrefetchEffects = '[ TagNotFound
+                        , DayNotFound
                         , NextVerNotFound
                         , NoToolVersionSet
                         , NoDownload

@@ -31,6 +31,7 @@ import {-# SOURCE #-} GHCup.Utils.Dirs          ( fromGHCupPath, GHCupPath )
 import           Control.DeepSeq                ( NFData, rnf )
 import           Data.Map.Strict                ( Map )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
+import           Data.Time.Calendar             ( Day )
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           GHC.IO.Exception               ( ExitCode )
@@ -136,6 +137,7 @@ instance NFData GlobalTool
 -- source download and per-architecture downloads.
 data VersionInfo = VersionInfo
   { _viTags        :: [Tag]              -- ^ version specific tag
+  , _viReleaseDay  :: Maybe Day
   , _viChangeLog   :: Maybe URI
   , _viSourceDL    :: Maybe DownloadInfo -- ^ source tarball
   , _viTestDL      :: Maybe DownloadInfo -- ^ test tarball
@@ -155,6 +157,8 @@ data Tag = Latest
          | Recommended
          | Prerelease
          | LatestPrerelease
+         | Nightly
+         | LatestNightly
          | Base PVP
          | Old                -- ^ old versions are hidden by default in TUI
          | UnknownTag String  -- ^ used for upwardscompat
@@ -166,18 +170,22 @@ tagToString :: Tag -> String
 tagToString Recommended        = "recommended"
 tagToString Latest             = "latest"
 tagToString Prerelease         = "prerelease"
+tagToString Nightly            = "nightly"
 tagToString (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
 tagToString (UnknownTag t    ) = t
 tagToString LatestPrerelease   = "latest-prerelease"
+tagToString LatestNightly      = "latest-nightly"
 tagToString Old                = ""
 
 instance Pretty Tag where
   pPrint Recommended        = text "recommended"
   pPrint Latest             = text "latest"
   pPrint Prerelease         = text "prerelease"
+  pPrint Nightly            = text "nightly"
   pPrint (Base       pvp'') = text ("base-" ++ T.unpack (prettyPVP pvp''))
   pPrint (UnknownTag t    ) = text t
   pPrint LatestPrerelease   = text "latest-prerelease"
+  pPrint LatestNightly   = text "latest-prerelease"
   pPrint Old                = mempty
 
 data Architecture = A_64
@@ -267,6 +275,7 @@ data DownloadInfo = DownloadInfo
   , _dlSubdir :: Maybe TarDir
   , _dlHash   :: Text
   , _dlCSize  :: Maybe Integer
+  , _dlOutput :: Maybe FilePath
   }
   deriving (Eq, Ord, GHC.Generic, Show)
 
@@ -694,3 +703,18 @@ type PromptQuestion = Text
 
 data PromptResponse = PromptYes | PromptNo
   deriving (Show, Eq)
+
+data ToolVersion = GHCVersion GHCTargetVersion
+                 | ToolVersion Version
+                 | ToolTag Tag
+                 | ToolDay Day
+
+instance Pretty ToolVersion where
+  pPrint (GHCVersion v) = pPrint v
+  pPrint (ToolVersion v) = pPrint v
+  pPrint (ToolTag t) = pPrint t
+  pPrint (ToolDay d) = text (show d)
+
+
+
+

@@ -38,6 +38,7 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Data.Text.Encoding.Error      as E
 import           Data.Data (Proxy(..))
+import Data.Time (Day)
 
 
 
@@ -59,6 +60,7 @@ allHFError = unlines allErrors
     , let proxy = Proxy :: Proxy CopyError in format proxy
     , let proxy = Proxy :: Proxy MergeFileTreeError in format proxy
     , let proxy = Proxy :: Proxy TagNotFound in format proxy
+    , let proxy = Proxy :: Proxy DayNotFound in format proxy
     , let proxy = Proxy :: Proxy NextVerNotFound in format proxy
     , let proxy = Proxy :: Proxy AlreadyInstalled in format proxy
     , let proxy = Proxy :: Proxy DirNotEmpty in format proxy
@@ -310,6 +312,21 @@ instance Pretty TagNotFound where
 instance HFErrorProject TagNotFound where
   eBase _ = 90
   eDesc _ = "Unable to find a tag of a tool"
+
+-- | Unable to find a release day of a tool
+data DayNotFound = DayNotFound Day Tool (Maybe Day)
+  deriving Show
+
+instance Pretty DayNotFound where
+  pPrint (DayNotFound day tool Nothing) =
+    text "Unable to find release date" <+> text (show day) <+> text "of tool" <+> pPrint tool
+  pPrint (DayNotFound day tool (Just alternateDay)) =
+    text "Unable to find release date" <+> text (show day) <+> text "of tool" <+> pPrint tool <+>
+      text "but found an alternative date" <+> text (show alternateDay)
+
+instance HFErrorProject DayNotFound where
+  eBase _ = 95
+  eDesc _ = "Unable to find a release date of a tool"
 
 -- | Unable to find the next version of a tool (the one after the currently
 -- set one).
