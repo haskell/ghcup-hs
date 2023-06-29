@@ -3770,7 +3770,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.10.1.0/cabal-install-3.10.1.0-aarch64-darwin.tar.xz
               dlHash: fdabdc4dca42688a97f2b837165af42fcfd4c111d42ddb0d4df7bbebd5c8750e
   GHCup:
-    0.1.19.2:
+    0.1.19.3:
       viTags:
       - Recommended
       - Latest
@@ -3780,43 +3780,43 @@ ghcupDownloads:
         A_64:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-64
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.2/x86_64-linux-ghcup-0.1.19.2
-              dlHash: 25b7fc417c1a811dd7ff439b67ea647a59cf5b8d71b274f97e917d50b2150d5b
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.3/x86_64-linux-ghcup-0.1.19.3
+              dlHash: fc9bf8acfbfba519ae3c6f6533c559332f0661900eaa8903ca073f2f97471230
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.2/x86_64-apple-darwin-ghcup-0.1.19.2
-              dlHash: b0ee8f9604810b51253754dca326bc03592e2b866bf1177755de102f26e729d8
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.3/x86_64-apple-darwin-ghcup-0.1.19.3
+              dlHash: 448916a07b4acc04e2e5d8f1aa44554e457ee0a6f093b732fd9992393a56c040
           FreeBSD:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.2/x86_64-portbld-freebsd-ghcup-0.1.19.2
-              dlHash: 7f12d65d71246542d29e4786fcbc6bc63d0251e3f3825e63376f8e65ff572023
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.3/x86_64-portbld-freebsd-ghcup-0.1.19.3
+              dlHash: af4e7edc9c7e2037683ece6e6b20b50272a6abdf49e02e5355201982f9b632df
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.2/x86_64-mingw64-ghcup-0.1.19.2.exe
-              dlHash: 8cac0e2cbd1ffe8609fc457ac491dea3b98d9332966a46b8f643a6d42ffc22b1
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.3/x86_64-mingw64-ghcup-0.1.19.3.exe
+              dlHash: e3f632eb6dc203f022138a97463b24985c4fb2e8038bb671fdafc850c71f70b0
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-32
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.2/i386-linux-ghcup-0.1.19.2
-              dlHash: c8132b996150714f0013c5a66ffc6899d8bbb7740021873898969a4e384068fe
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.3/i386-linux-ghcup-0.1.19.3
+              dlHash: 9cb03a18733e7925089509452f74135caa6b4fc69527760a2621d36c6b5440c7
           Linux_Alpine:
             unknown_versioning: *ghcup-32
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.2/aarch64-linux-ghcup-0.1.19.2
-              dlHash: 68193e1ef04398b4ef23619abafdde406a22221fbb45eac81214c1fdffdf00ef
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.3/aarch64-linux-ghcup-0.1.19.3
+              dlHash: 0ef062d46916c11cae1088e15ba7aa79897b0b43cb7fdbaca627f04b53eaa61d
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.2/aarch64-apple-darwin-ghcup-0.1.19.2
-              dlHash: ea1f70a049d15f7d296f9ca1fe788ac4d9120c7962edce9aacbbaf06f70095d6
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.3/aarch64-apple-darwin-ghcup-0.1.19.3
+              dlHash: 012120fc671a4133dad89b8a08a9a9b6a67ac2eb7c6bda219a63fbfce7df3d6e
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.2/armv7-linux-ghcup-0.1.19.2
-              dlHash: 9d5e17b5d5436429401d9349c4da3257a0721e084db8b47048cd9a07d2741624
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.3/armv7-linux-ghcup-0.1.19.3
+              dlHash: 90b504d5cdc34ab826ca0f95eb241f322553d3d070c8559ca20006446e7fe8e8
   HLS:
     1.1.0:
       viTags:
