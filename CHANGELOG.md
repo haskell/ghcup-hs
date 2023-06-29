@@ -1,5 +1,10 @@
 # Revision history for ghcup
 
+## 0.1.19.3 -- 2023-6-29
+
+* Implement support for nightlies, wrt [#824](https://github.com/haskell/ghcup-hs/issues/824)
+* Fix GC with XDG dirs, fixes [#810](https://github.com/haskell/ghcup-hs/issues/810)
+
 ## 0.1.19.2 -- 2023-2-24
 
 * Follow-up fix for JFS/ReiserFS and other filesystem that don't support `d_type`, fixes [#787](https://github.com/haskell/ghcup-hs/issues/787)
