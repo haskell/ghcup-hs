@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## 0.1.19.4 -- 2023-7-02
+
+* fix missing TUI for aarch64 linux binaries
+
 ## 0.1.19.3 -- 2023-6-29
 
 * Implement support for nightlies, wrt [#824](https://github.com/haskell/ghcup-hs/issues/824)
