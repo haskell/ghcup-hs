@@ -4003,7 +4003,7 @@ ghcupDownloads:
           Linux_UnknownLinux:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.1.0/cabal-install-3.10.1.0-armv7-linux-deb10.tar.xz
-              dlHash: 13d5019182b17ca5436b4249243cf2cb88203da1f34c2a7dd0e564bd34c7e80a
+              dlHash: 79869dd72cb0a6f90f2e1e0e57af4ea6ee09b041550abc09252d1cf309b4f96e
   GHCup:
     0.1.19.3:
       viTags:
