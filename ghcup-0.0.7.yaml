@@ -3989,7 +3989,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.10.1.0/cabal-install-3.10.1.0-i386-linux-deb9.tar.xz
               dlHash: 3c4a43a3ac1ef80e66953c2a8f83bb51298c21aeb7328ce06534600a7259a866
           Linux_Alpine:
-            unknown_versioning: *cabal-31010-32
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.1.0/cabal-install-3.10.1.0-i386-linux-alpine.tar.xz
+              dlHash: 9dc0b010bcf4257d6248214359b38f389593dfce54c151d09678ad25e2ee4b22
         A_ARM64:
           Darwin:
             unknown_versioning:
