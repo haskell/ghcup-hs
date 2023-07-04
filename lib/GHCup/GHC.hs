@@ -1015,8 +1015,6 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                              m
                              (Maybe FilePath)  -- ^ output path of bindist, None for cross
   compileHadrianBindist tver workdir ghcdir = do
-    lEM $ execWithGhcEnv "python3" ["./boot"] (Just workdir) "ghc-bootstrap"
-
     liftE $ configureBindist tver workdir ghcdir
 
     lift $ logInfo "Building (this may take a while)..."

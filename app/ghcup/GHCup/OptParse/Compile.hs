@@ -555,9 +555,6 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
               VLeft e -> do
                 runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 9
-    (CompileGHC GHCCompileOptions { hadrian = True, crossTarget = Just _ }) -> do
-      runLogger $ logError "Hadrian cross compile support is not yet implemented!"
-      pure $ ExitFailure 9
     (CompileGHC GHCCompileOptions {..}) ->
       runCompileGHC runAppState (do
         case targetGhc of
