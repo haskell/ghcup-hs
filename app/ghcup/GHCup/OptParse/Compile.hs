@@ -66,7 +66,7 @@ data CompileCommand = CompileGHC GHCCompileOptions
 
 
 data GHCCompileOptions = GHCCompileOptions
-  { targetGhc    :: GHC.GHCVer Version
+  { targetGhc    :: GHC.GHCVer
   , bootstrapGhc :: Either Version FilePath
   , jobs         :: Maybe Int
   , buildConfig  :: Maybe FilePath
@@ -568,10 +568,8 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
           _ -> pure ()
         targetVer <- liftE $ compileGHC
-                    ((\case
-                        GHC.SourceDist v -> GHC.SourceDist $ GHCTargetVersion crossTarget v
-                        GHC.GitDist g -> GHC.GitDist g
-                        GHC.RemoteDist r -> GHC.RemoteDist r) targetGhc)
+                    targetGhc
+                    crossTarget
                     ovewrwiteVer
                     bootstrapGhc
                     jobs

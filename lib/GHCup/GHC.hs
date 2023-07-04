@@ -80,9 +80,9 @@ import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 
 
-data GHCVer v = SourceDist v
-              | GitDist GitBranch
-              | RemoteDist URI
+data GHCVer = SourceDist Version
+            | GitDist GitBranch
+            | RemoteDist URI
 
 
 
@@ -755,7 +755,8 @@ compileGHC :: ( MonadMask m
               , MonadUnliftIO m
               , MonadFail m
               )
-           => GHCVer GHCTargetVersion
+           => GHCVer
+           -> Maybe Text               -- ^ cross target
            -> Maybe Version            -- ^ overwrite version
            -> Either Version FilePath  -- ^ version to bootstrap with
            -> Maybe Int                -- ^ jobs
@@ -792,19 +793,19 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadrian installDir
+compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs buildFlavour hadrian installDir
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
     (workdir, tmpUnpack, tver) <- case targetGhc of
       -- unpack from version tarball
-      SourceDist tver -> do
-        lift $ logDebug $ "Requested to compile: " <> tVerToText tver <> " with " <> either prettyVer T.pack bstrap
+      SourceDist ver -> do
+        lift $ logDebug $ "Requested to compile: " <> prettyVer ver <> " with " <> either prettyVer T.pack bstrap
 
         -- download source tarball
         dlInfo <-
-          preview (ix GHC % ix (tver ^. tvVersion) % viSourceDL % _Just) dls
+          preview (ix GHC % ix ver % viSourceDL % _Just) dls
             ?? NoDownload
         dl <- liftE $ downloadCached dlInfo Nothing
 
@@ -818,7 +819,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
                          (view dlSubdir dlInfo)
         liftE $ applyAnyPatch patches (fromGHCupPath workdir)
 
-        pure (workdir, tmpUnpack, Just tver)
+        pure (workdir, tmpUnpack, Just (GHCTargetVersion crossTarget ver))
 
       RemoteDist uri -> do
         lift $ logDebug $ "Requested to compile (from uri): " <> T.pack (show uri)
@@ -842,7 +843,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
         let workdir = appendGHCupPath tmpUnpack (takeDirectory bf)
 
-        pure (workdir, tmpUnpack, mkTVer <$> tver)
+        pure (workdir, tmpUnpack, GHCTargetVersion crossTarget <$> tver)
 
       -- clone from git
       GitDist GitBranch{..} -> do
@@ -899,10 +900,10 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
 
           pure tver
 
-        pure (tmpUnpack, tmpUnpack, mkTVer <$> tver)
+        pure (tmpUnpack, tmpUnpack, GHCTargetVersion crossTarget <$> tver)
     -- the version that's installed may differ from the
     -- compiled version, so the user can overwrite it
-    installVer <- if | Just ov'   <- ov   -> pure (mkTVer ov')
+    installVer <- if | Just ov'   <- ov   -> pure (GHCTargetVersion crossTarget ov')
                      | Just tver' <- tver -> pure tver'
                      | otherwise          -> fail "Newer GHCs don't support discovering the version in git. Complain to GHC devs: https://gitlab.haskell.org/ghc/ghc/-/issues/22322"
 
@@ -987,9 +988,9 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
   defaultConf =
     let cross_mk = $(LitE . StringL <$> (qAddDependentFile "data/build_mk/cross" >> runIO (readFile "data/build_mk/cross")))
         default_mk = $(LitE . StringL <$> (qAddDependentFile "data/build_mk/default" >> runIO (readFile "data/build_mk/default")))
-    in case targetGhc of
-         SourceDist (GHCTargetVersion (Just _) _) -> cross_mk
-         _ -> default_mk
+    in case crossTarget of
+         Just _ -> cross_mk
+         _      -> default_mk
 
   compileHadrianBindist :: ( MonadReader env m
                            , HasDirs env
@@ -1162,8 +1163,8 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
     let lines' = fmap T.strip . T.lines $ decUTF8Safe c
 
    -- for cross, we need Stage1Only
-    case targetGhc of
-      SourceDist (GHCTargetVersion (Just _) _) -> when ("Stage1Only = YES" `notElem` lines') $ throwE
+    case crossTarget of
+      Just _ -> when ("Stage1Only = YES" `notElem` lines') $ throwE
         (InvalidBuildConfig
           [s|Cross compiling needs to be a Stage1 build, add "Stage1Only = YES" to your config!|]
         )
