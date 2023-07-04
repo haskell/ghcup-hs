@@ -336,12 +336,12 @@ installGHCBindist dlinfo ver installDir forceInstall addConfArgs = do
   case installDir of
     IsolateDir isoDir -> do                        -- isolated install
       lift $ logInfo $ "isolated installing GHC to " <> T.pack isoDir
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (IsolateDirResolved isoDir) ver forceInstall addConfArgs
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (IsolateDirResolved isoDir) tver forceInstall addConfArgs
     GHCupInternal -> do                            -- regular install
       -- prepare paths
       ghcdir <- lift $ ghcupGHCDir tver
 
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (GHCupDir ghcdir) ver forceInstall addConfArgs
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (GHCupDir ghcdir) tver forceInstall addConfArgs
 
       -- make symlinks & stuff when regular install,
       liftE $ postGHCInstall tver
@@ -375,7 +375,7 @@ installPackedGHC :: ( MonadMask m
                  => FilePath          -- ^ Path to the packed GHC bindist
                  -> Maybe TarDir      -- ^ Subdir of the archive
                  -> InstallDirResolved
-                 -> Version           -- ^ The GHC version
+                 -> GHCTargetVersion  -- ^ The GHC version
                  -> Bool              -- ^ Force install
                  -> [T.Text]          -- ^ additional configure args for bindist
                  -> Excepts
@@ -423,17 +423,17 @@ installUnpackedGHC :: ( MonadReader env m
                       )
                    => GHCupPath           -- ^ Path to the unpacked GHC bindist (where the configure script resides)
                    -> InstallDirResolved  -- ^ Path to install to
-                   -> Version             -- ^ The GHC version
+                   -> GHCTargetVersion    -- ^ The GHC version
                    -> Bool                -- ^ Force install
                    -> [T.Text]          -- ^ additional configure args for bindist
                    -> Excepts '[ProcessError, MergeFileTreeError] m ()
-installUnpackedGHC path inst ver forceInstall addConfArgs
+installUnpackedGHC path inst tver forceInstall addConfArgs
   | isWindows = do
       lift $ logInfo "Installing GHC (this may take a while)"
       -- Windows bindists are relocatable and don't need
       -- to run configure.
       -- We also must make sure to preserve mtime to not confuse ghc-pkg.
-      liftE $ mergeFileTree path inst GHC (mkTVer ver) $ \source dest -> do
+      liftE $ mergeFileTree path inst GHC tver $ \source dest -> do
         mtime <- liftIO $ ifM (pathIsSymbolicLink source) (pure Nothing) (Just <$> getModificationTime source)
         when forceInstall $ hideError doesNotExistErrorType $ hideError InappropriateType $ recycleFile dest
         liftIO $ moveFilePortable source dest
@@ -442,7 +442,7 @@ installUnpackedGHC path inst ver forceInstall addConfArgs
       PlatformRequest {..} <- lift getPlatformReq
 
       let ldOverride
-           | ver >= [vver|8.2.2|]
+           | _tvVersion tver >= [vver|8.2.2|]
            , _rPlatform `elem` [Linux Alpine, Darwin]
            = ["--disable-ld-override"]
            | otherwise
@@ -462,7 +462,7 @@ installUnpackedGHC path inst ver forceInstall addConfArgs
       liftE $ mergeFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
         inst
         GHC
-        (mkTVer ver)
+        tver
         (\f t -> liftIO $ do
             mtime <- ifM (pathIsSymbolicLink f) (pure Nothing) (Just <$> getModificationTime f)
             install f t (not forceInstall)
@@ -948,7 +948,7 @@ compileGHC targetGhc ov bstrap jobs mbuildConfig patches aargs buildFlavour hadr
       liftE $ installPackedGHC bindist
                                (Just $ RegexDir "ghc-.*")
                                ghcdir
-                               (installVer ^. tvVersion)
+                               installVer
                                False       -- not a force install, since we already overwrite when compiling.
                                []
 
