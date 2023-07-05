@@ -43,6 +43,7 @@ import           Control.Monad.Trans.Resource
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.List
+import           Data.Ord
 import           Data.Maybe
 import           Data.String                    ( fromString )
 import           Data.Text                      ( Text )
@@ -704,7 +705,7 @@ rmHLSVer ver = do
   when (Just ver == isHlsSet) $ do
     -- set latest hls
     hlsVers <- lift $ fmap rights getInstalledHLSs
-    case headMay . reverse . sort $ hlsVers of
+    case headMay . sortBy (comparing Down) $ hlsVers of
       Just latestver -> liftE $ setHLS latestver SetHLSOnly Nothing
       Nothing        -> pure ()
 

@@ -52,7 +52,7 @@ versionCmp ver1 (VR_lteq ver2) = ver1 <= ver2
 versionCmp ver1 (VR_eq ver2)   = ver1 == ver2
 
 versionRange :: V.Versioning -> VersionRange -> Bool
-versionRange ver' (SimpleRange cmps) = and $ fmap (versionCmp ver') cmps
+versionRange ver' (SimpleRange cmps) = all (versionCmp ver') cmps
 versionRange ver' (OrRange cmps range) = 
   versionRange ver' (SimpleRange cmps) || versionRange ver' range
 

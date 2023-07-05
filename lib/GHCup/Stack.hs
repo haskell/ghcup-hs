@@ -38,6 +38,7 @@ import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.Either
 import           Data.List
+import           Data.Ord
 import           Data.Maybe
 import           Data.Versions                hiding ( patch )
 import           Haskus.Utils.Variant.Excepts
@@ -279,6 +280,6 @@ rmStackVer ver = do
 
   when (Just ver == sSet) $ do
     sVers <- lift $ fmap rights getInstalledStacks
-    case headMay . reverse . sort $ sVers of
+    case headMay . sortBy (comparing Down) $ sVers of
       Just latestver -> setStack latestver
       Nothing        -> lift $ rmLink (binDir </> "stack" <> exeExt)
