@@ -38,6 +38,7 @@ import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Data.Either
 import           Data.List
+import           Data.Ord
 import           Data.Maybe
 import           Data.Versions                hiding ( patch )
 import           Haskus.Utils.Variant.Excepts
@@ -280,6 +281,6 @@ rmCabalVer ver = do
 
   when (Just ver == cSet) $ do
     cVers <- lift $ fmap rights getInstalledCabals
-    case headMay . reverse . sort $ cVers of
+    case headMay . sortBy (comparing Down) $ cVers of
       Just latestver -> setCabal latestver
       Nothing        -> lift $ rmLink (binDir </> "cabal" <> exeExt)
