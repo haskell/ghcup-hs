@@ -328,7 +328,7 @@ see the [Cabal user guide](https://cabal.readthedocs.io/en/stable/getting-starte
 <a href="https://hackage.haskell.org/" class="btn btn-primary" role="button">Discover Haskell packages</a>
 <a href="https://hackage.haskell.org/package/base" class="btn btn-primary" role="button">The standard library</a>
 <a href="https://haskell-language-server.readthedocs.io/en/stable/installation.html" class="btn btn-primary" role="button">Editor setup with HLS</a>
-<a href="https://play-haskell.tomsmeding.com/play" class="btn btn-primary" role="button">Online playground</a>
+<a href="https://play.haskell.org/" class="btn btn-primary" role="button">Online playground</a>
 </div>
 
 ## How to learn Haskell proper
