@@ -249,7 +249,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                                case t of
                                  GHCup -> runLogger $
                                             logWarn ("New GHCup version available: "
-                                              <> prettyVer l
+                                              <> tVerToText l
                                               <> ". To upgrade, run 'ghcup upgrade'")
                                  _ -> runLogger $
                                         logWarn ("New "
@@ -258,7 +258,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                                           <> "If you want to install this latest version, run 'ghcup install "
                                           <> T.pack (prettyShow t)
                                           <> " "
-                                          <> prettyVer l
+                                          <> tVerToText l
                                           <> "'")
                          Just _ -> pure ()
 
@@ -332,7 +332,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                        , MonadCatch m
                        )
                     => Command
-                    -> (Tool, Version)
+                    -> (Tool, GHCTargetVersion)
                     -> Excepts
                          '[ TagNotFound
                           , DayNotFound
@@ -368,7 +368,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           )
        => Tool
        -> Maybe ToolVersion
-       -> Version
+       -> GHCTargetVersion
        -> Excepts
             '[ TagNotFound
              , DayNotFound
@@ -377,4 +377,4 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
              ] m Bool
   cmp' tool instVer ver = do
     (v, _) <- liftE $ fromVersion instVer tool
-    pure (v == mkTVer ver)
+    pure (v == ver)

@@ -360,7 +360,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
            Just v -> do
              isInstalled <- lift $ checkIfToolInstalled' GHC v
              unless isInstalled $ when (runInstTool' && isNothing (_tvTarget v)) $ void $ liftE $ installGHCBin
-               (_tvVersion v)
+               v
                GHCupInternal
                False
                []

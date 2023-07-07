@@ -303,7 +303,7 @@ upgradeGHCup mtarget force' fatal = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
   lift $ logInfo "Upgrading GHCup..."
-  let latestVer = fst (fromJust (getLatest dls GHCup))
+  let latestVer = _tvVersion $ fst (fromJust (getLatest dls GHCup))
   (Just ghcupPVPVer) <- pure $ pvpToVersion ghcUpVer ""
   when (not force' && (latestVer <= ghcupPVPVer)) $ throwE NoUpdate
   dli   <- liftE $ getDownloadInfo GHCup latestVer
@@ -492,7 +492,7 @@ rmOldGHC :: ( MonadReader env m
          => Excepts '[NotInstalled, UninstallFailed] m ()
 rmOldGHC = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let oldGHCs = mkTVer <$> toListOf (ix GHC % getTagged Old % to fst) dls
+  let oldGHCs = toListOf (ix GHC % getTagged Old % to fst) dls
   ghcs <- lift $ fmap rights getInstalledGHCs
   forM_ ghcs $ \ghc -> when (ghc `elem` oldGHCs) $ rmGHCVer ghc
 

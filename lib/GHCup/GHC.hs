@@ -105,7 +105,7 @@ testGHCVer :: ( MonadFail m
               , MonadIO m
               , MonadUnliftIO m
               )
-           => Version
+           => GHCTargetVersion
            -> [T.Text]
            -> Excepts
                 '[ DigestError
@@ -145,7 +145,7 @@ testGHCBindist :: ( MonadFail m
                   , MonadUnliftIO m
                   )
                => DownloadInfo
-               -> Version
+               -> GHCTargetVersion
                -> [T.Text]
                -> Excepts
                     '[ DigestError
@@ -182,7 +182,7 @@ testPackedGHC :: ( MonadMask m
                  )
               => FilePath          -- ^ Path to the packed GHC bindist
               -> Maybe TarDir      -- ^ Subdir of the archive
-              -> Version           -- ^ The GHC version
+              -> GHCTargetVersion  -- ^ The GHC version
               -> [T.Text]          -- ^ additional make args
               -> Excepts
                    '[ ArchiveResult, UnknownArchive, TarDirDoesNotExist, TestFailed ] m ()
@@ -208,19 +208,21 @@ testUnpackedGHC :: ( MonadReader env m
                    , MonadIO m
                    )
                 => GHCupPath         -- ^ Path to the unpacked GHC bindist (where the make file resides)
-                -> Version           -- ^ The GHC version
+                -> GHCTargetVersion  -- ^ The GHC version
                 -> [T.Text]          -- ^ additional configure args for bindist
                 -> Excepts '[ProcessError] m ()
-testUnpackedGHC path ver addMakeArgs = do
-  lift $ logInfo $ "Testing GHC version " <> prettyVer ver <> "!"
-  ghcDir <- lift $ ghcupGHCDir (mkTVer ver)
+testUnpackedGHC path tver addMakeArgs = do
+  lift $ logInfo $ "Testing GHC version " <> tVerToText tver <> "!"
+  ghcDir <- lift $ ghcupGHCDir tver
   let ghcBinDir = fromGHCupPath ghcDir </> "bin"
   env <- liftIO $ addToPath ghcBinDir False
 
   lEM $ make' (fmap T.unpack addMakeArgs)
               (Just $ fromGHCupPath path)
               "ghc-test"
-              (Just $ ("STAGE1_GHC", "ghc-" <> T.unpack (prettyVer ver)) : env)
+              (Just $ ("STAGE1_GHC", maybe "" (T.unpack . (<> "-")) (_tvTarget tver)
+                                     <> "ghc-"
+                                     <> T.unpack (prettyVer $ _tvVersion tver)) : env)
   pure ()
 
 
@@ -243,7 +245,7 @@ fetchGHCSrc :: ( MonadFail m
                , MonadIO m
                , MonadUnliftIO m
                )
-            => Version
+            => GHCTargetVersion
             -> Maybe FilePath
             -> Excepts
                  '[ DigestError
@@ -283,7 +285,7 @@ installGHCBindist :: ( MonadFail m
                      , MonadUnliftIO m
                      )
                   => DownloadInfo    -- ^ where/how to download
-                  -> Version         -- ^ the version to install
+                  -> GHCTargetVersion -- ^ the version to install
                   -> InstallDir
                   -> Bool            -- ^ Force install
                   -> [T.Text]        -- ^ additional configure args for bindist
@@ -306,10 +308,8 @@ installGHCBindist :: ( MonadFail m
                         ]
                        m
                        ()
-installGHCBindist dlinfo ver installDir forceInstall addConfArgs = do
-  let tver = mkTVer ver
-
-  lift $ logDebug $ "Requested to install GHC with " <> prettyVer ver
+installGHCBindist dlinfo tver installDir forceInstall addConfArgs = do
+  lift $ logDebug $ "Requested to install GHC with " <> tVerToText tver
 
   regularGHCInstalled <- lift $ ghcInstalled tver
 
@@ -317,7 +317,7 @@ installGHCBindist dlinfo ver installDir forceInstall addConfArgs = do
     | not forceInstall
     , regularGHCInstalled
     , GHCupInternal <- installDir -> do
-        throwE $ AlreadyInstalled GHC ver
+        throwE $ AlreadyInstalled GHC (_tvVersion tver)
 
     | forceInstall
     , regularGHCInstalled
@@ -451,7 +451,7 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
       lift $ logInfo "Installing GHC (this may take a while)"
       lEM $ execLogged "sh"
                        ("./configure" : ("--prefix=" <> fromInstallDir inst)
-                        : (ldOverride <> (T.unpack <$> addConfArgs))
+                        : (maybe mempty (\x -> ["--target=" <> T.unpack x]) (_tvTarget tver) <> ldOverride <> (T.unpack <$> addConfArgs))
                        )
                        (Just $ fromGHCupPath path)
                        "ghc-configure"
@@ -489,7 +489,7 @@ installGHCBin :: ( MonadFail m
                  , MonadIO m
                  , MonadUnliftIO m
                  )
-              => Version         -- ^ the version to install
+              => GHCTargetVersion -- ^ the version to install
               -> InstallDir
               -> Bool            -- ^ force install
               -> [T.Text]        -- ^ additional configure args for bindist
@@ -512,9 +512,9 @@ installGHCBin :: ( MonadFail m
                     ]
                    m
                    ()
-installGHCBin ver installDir forceInstall addConfArgs = do
-  dlinfo <- liftE $ getDownloadInfo GHC ver
-  liftE $ installGHCBindist dlinfo ver installDir forceInstall addConfArgs
+installGHCBin tver installDir forceInstall addConfArgs = do
+  dlinfo <- liftE $ getDownloadInfo' GHC tver
+  liftE $ installGHCBindist dlinfo tver installDir forceInstall addConfArgs
 
 
 
@@ -764,6 +764,7 @@ compileGHC :: ( MonadMask m
            -> Maybe (Either FilePath [URI])  -- ^ patches
            -> [Text]                   -- ^ additional args to ./configure
            -> Maybe String             -- ^ build flavour
+           -> Maybe String             -- ^ bignum
            -> Bool
            -> InstallDir
            -> Excepts
@@ -793,7 +794,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs buildFlavour hadrian installDir
+compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs buildFlavour bignum hadrian installDir
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -805,7 +806,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
 
         -- download source tarball
         dlInfo <-
-          preview (ix GHC % ix ver % viSourceDL % _Just) dls
+          preview (ix GHC % ix (mkTVer ver) % viSourceDL % _Just) dls
             ?? NoDownload
         dl <- liftE $ downloadCached dlInfo Nothing
 
@@ -1023,6 +1024,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
     lEM $ execWithGhcEnv hadrian_build
                           ( maybe [] (\j  -> ["-j" <> show j]         ) jobs
                          ++ maybe [] (\bf -> ["--flavour=" <> bf]) buildFlavour
+                         ++ maybe [] (\bn -> ["--bignum=" <> bn]) bignum
                          ++ ["binary-dist"]
                           )
                           (Just workdir) "ghc-make"
@@ -1081,7 +1083,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
         (FileDoesNotExistError bc)
         (liftIO $ copyFile bc (build_mk workdir) False)
       Nothing ->
-        liftIO $ T.writeFile (build_mk workdir) (addBuildFlavourToConf defaultConf)
+        liftIO $ T.writeFile (build_mk workdir) (addBigNumToConf $ addBuildFlavourToConf defaultConf)
 
     liftE $ checkBuildConfig (build_mk workdir)
 
@@ -1177,6 +1179,10 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
 
   addBuildFlavourToConf bc = case buildFlavour of
     Just bf -> "BuildFlavour = " <> T.pack bf <> "\n" <> bc
+    Nothing -> bc
+
+  addBigNumToConf bc = case bignum of
+    Just bn -> bc <> "\nINTEGER_LIBRARY = " <> T.pack bn
     Nothing -> bc
 
   isCross :: GHCTargetVersion -> Bool

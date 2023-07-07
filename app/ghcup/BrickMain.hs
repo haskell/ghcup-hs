@@ -472,19 +472,19 @@ install' _ (_, ListResult {..}) = do
       dirs <- lift getDirs
       case lTool of
         GHC   -> do
-          let vi = getVersionInfo lVer GHC dls
-          liftE $ installGHCBin lVer GHCupInternal False [] $> (vi, dirs, ce)
+          let vi = getVersionInfo (GHCTargetVersion lCross lVer) GHC dls
+          liftE $ installGHCBin (GHCTargetVersion lCross lVer) GHCupInternal False [] $> (vi, dirs, ce)
         Cabal -> do
-          let vi = getVersionInfo lVer Cabal dls
+          let vi = getVersionInfo (GHCTargetVersion lCross lVer) Cabal dls
           liftE $ installCabalBin lVer GHCupInternal False $> (vi, dirs, ce)
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
           liftE $ upgradeGHCup Nothing False False $> (vi, dirs, ce)
         HLS   -> do
-          let vi = getVersionInfo lVer HLS dls
+          let vi = getVersionInfo (GHCTargetVersion lCross lVer) HLS dls
           liftE $ installHLSBin lVer GHCupInternal False $> (vi, dirs, ce)
         Stack -> do
-          let vi = getVersionInfo lVer Stack dls
+          let vi = getVersionInfo (GHCTargetVersion lCross lVer) Stack dls
           liftE $ installStackBin lVer GHCupInternal False $> (vi, dirs, ce)
     )
     >>= \case
@@ -565,7 +565,7 @@ del' _ (_, ListResult {..}) = do
   let run = runE @'[NotInstalled, UninstallFailed]
 
   run (do
-      let vi = getVersionInfo lVer lTool dls
+      let vi = getVersionInfo (GHCTargetVersion lCross lVer) lTool dls
       case lTool of
         GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> vi
         Cabal -> liftE $ rmCabalVer lVer $> vi

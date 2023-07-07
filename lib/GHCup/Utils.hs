@@ -62,7 +62,6 @@ import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
 import           Control.Monad.IO.Unlift        ( MonadUnliftIO( withRunInIO ) )
 import           Data.Char                      ( isHexDigit )
-import           Data.Bifunctor                 ( first )
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.Foldable
@@ -774,13 +773,16 @@ getGHCForPVP' pvpIn ghcs' mt = do
 -- Just (PVP {_pComponents = 8 :| [8,4]})
 getLatestToolFor :: MonadThrow m
                  => Tool
+                 -> Maybe Text
                  -> PVP
                  -> GHCupDownloads
-                 -> m (Maybe (PVP, VersionInfo))
-getLatestToolFor tool pvpIn dls = do
-  let ls = fromMaybe [] $ preview (ix tool % to Map.toDescList) dls
-  let ps = catMaybes $ fmap (\(v, vi) -> (,vi) <$> versionToPVP v) ls
-  pure . fmap (first fst) . headMay . filter (\((v, _), _) -> matchPVPrefix pvpIn v) $ ps
+                 -> m (Maybe (PVP, VersionInfo, Maybe Text))
+getLatestToolFor tool target pvpIn dls = do
+  let ls :: [(GHCTargetVersion, VersionInfo)]
+      ls = fromMaybe [] $ preview (ix tool % to Map.toDescList) dls
+  let ps :: [((PVP, Text), VersionInfo, Maybe Text)]
+      ps = catMaybes $ fmap (\(v, vi) -> (,vi, _tvTarget v) <$> versionToPVP (_tvVersion v)) ls
+  pure . fmap (\((pv', _), vi, mt) -> (pv', vi, mt)) . headMay . filter (\((v, _), _, t) -> matchPVPrefix pvpIn v && t == target) $ ps
 
 
 
@@ -885,12 +887,12 @@ intoSubdir bdir tardir = case tardir of
 -- | Get the tool version that has this tag. If multiple have it,
 -- picks the greatest version.
 getTagged :: Tag
-          -> Fold (Map.Map Version VersionInfo) (Version, VersionInfo)
+          -> Fold (Map.Map GHCTargetVersion VersionInfo) (GHCTargetVersion, VersionInfo)
 getTagged tag =
   to (Map.toDescList . Map.filter (\VersionInfo {..} -> tag `elem` _viTags))
   % folding id
 
-getByReleaseDay :: GHCupDownloads -> Tool -> Day -> Either (Maybe Day) (Version, VersionInfo)
+getByReleaseDay :: GHCupDownloads -> Tool -> Day -> Either (Maybe Day) (GHCTargetVersion, VersionInfo)
 getByReleaseDay av tool day = let mvv = fromMaybe mempty $ headOf (ix tool) av
                                   mdv = Map.foldrWithKey (\k vi@VersionInfo{..} m ->
                                             maybe m (\d -> let diff = diffDays d day
@@ -902,24 +904,24 @@ getByReleaseDay av tool day = let mvv = fromMaybe mempty $ headOf (ix tool) av
                                      | absDiff == 0 -> Right (k, vi)
                                      | otherwise -> Left (Just (addDays diff day))
 
-getByReleaseDayFold :: Day -> Fold (Map.Map Version VersionInfo) (Version, VersionInfo)
+getByReleaseDayFold :: Day -> Fold (Map.Map GHCTargetVersion VersionInfo) (GHCTargetVersion, VersionInfo)
 getByReleaseDayFold day = to (Map.toDescList . Map.filter (\VersionInfo {..} -> Just day == _viReleaseDay)) % folding id
 
-getLatest :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
+getLatest :: GHCupDownloads -> Tool -> Maybe (GHCTargetVersion, VersionInfo)
 getLatest av tool = headOf (ix tool % getTagged Latest) av
 
-getLatestPrerelease :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
+getLatestPrerelease :: GHCupDownloads -> Tool -> Maybe (GHCTargetVersion, VersionInfo)
 getLatestPrerelease av tool = headOf (ix tool % getTagged LatestPrerelease) av
 
-getLatestNightly :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
+getLatestNightly :: GHCupDownloads -> Tool -> Maybe (GHCTargetVersion, VersionInfo)
 getLatestNightly av tool = headOf (ix tool % getTagged LatestNightly) av
 
-getRecommended :: GHCupDownloads -> Tool -> Maybe (Version, VersionInfo)
+getRecommended :: GHCupDownloads -> Tool -> Maybe (GHCTargetVersion, VersionInfo)
 getRecommended av tool = headOf (ix tool % getTagged Recommended) av
 
 
 -- | Gets the latest GHC with a given base version.
-getLatestBaseVersion :: GHCupDownloads -> PVP -> Maybe (Version, VersionInfo)
+getLatestBaseVersion :: GHCupDownloads -> PVP -> Maybe (GHCTargetVersion, VersionInfo)
 getLatestBaseVersion av pvpVer =
   headOf (ix GHC % getTagged (Base pvpVer)) av
 
@@ -1101,9 +1103,9 @@ darwinNotarization _ _ = pure $ Right ()
 
 
 getChangeLog :: GHCupDownloads -> Tool -> ToolVersion -> Maybe URI
-getChangeLog dls tool (GHCVersion (_tvVersion -> v')) =
+getChangeLog dls tool (GHCVersion v') =
   preview (ix tool % ix v' % viChangeLog % _Just) dls
-getChangeLog dls tool (ToolVersion v') =
+getChangeLog dls tool (ToolVersion (mkTVer -> v')) =
   preview (ix tool % ix v' % viChangeLog % _Just) dls
 getChangeLog dls tool (ToolTag tag) =
   preview (ix tool % pre (getTagged tag) % to snd % viChangeLog % _Just) dls
@@ -1192,7 +1194,7 @@ rmBDir dir = withRunInIO (\run -> run $
            $ rmPathForcibly dir)
 
 
-getVersionInfo :: Version
+getVersionInfo :: GHCTargetVersion
                -> Tool
                -> GHCupDownloads
                -> Maybe VersionInfo

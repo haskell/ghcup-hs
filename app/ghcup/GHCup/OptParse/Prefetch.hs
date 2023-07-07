@@ -195,7 +195,7 @@ prefetch prefetchCommand runAppState runLogger =
           forM_ pfCacheDir (liftIO . createDirRecursive')
           (v, _) <- liftE $ fromVersion mt GHC
           if pfGHCSrc
-          then liftE $ fetchGHCSrc (_tvVersion v) pfCacheDir
+          then liftE $ fetchGHCSrc v pfCacheDir
           else liftE $ fetchToolBindist (_tvVersion v) GHC pfCacheDir
       PrefetchCabal PrefetchOptions {pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')

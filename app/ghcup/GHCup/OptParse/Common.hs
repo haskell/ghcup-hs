@@ -5,6 +5,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module GHCup.OptParse.Common where
 
@@ -693,52 +694,52 @@ fromVersion' :: ( HasLog env
                    ] m (GHCTargetVersion, Maybe VersionInfo)
 fromVersion' SetRecommended tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap mkTVer Just <$> getRecommended dls tool
+  second Just <$> getRecommended dls tool
     ?? TagNotFound Recommended tool
 fromVersion' (SetGHCVersion v) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let vi = getVersionInfo (_tvVersion v) tool dls
+  let vi = getVersionInfo v tool dls
   case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
     Left _ -> pure (v, vi)
     Right pvpIn ->
-      lift (getLatestToolFor tool pvpIn dls) >>= \case
-        Just (pvp_, vi') -> do
+      lift (getLatestToolFor tool (_tvTarget v) pvpIn dls) >>= \case
+        Just (pvp_, vi', mt) -> do
           v' <- lift $ pvpToVersion pvp_ ""
           when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
-          pure (GHCTargetVersion (_tvTarget v) v', Just vi')
+          pure (GHCTargetVersion mt v', Just vi')
         Nothing -> pure (v, vi)
-fromVersion' (SetToolVersion v) tool = do
+fromVersion' (SetToolVersion (mkTVer -> v)) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   let vi = getVersionInfo v tool dls
-  case pvp $ prettyVer v of -- need to be strict here
-    Left _ -> pure (mkTVer v, vi)
+  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
+    Left _ -> pure (v, vi)
     Right pvpIn ->
-      lift (getLatestToolFor tool pvpIn dls) >>= \case
-        Just (pvp_, vi') -> do
+      lift (getLatestToolFor tool (_tvTarget v) pvpIn dls) >>= \case
+        Just (pvp_, vi', mt) -> do
           v' <- lift $ pvpToVersion pvp_ ""
-          when (v' /= v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
-          pure (GHCTargetVersion mempty v', Just vi')
-        Nothing -> pure (mkTVer v, vi)
+          when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
+          pure (GHCTargetVersion mt v', Just vi')
+        Nothing -> pure (v, vi)
 fromVersion' (SetToolTag Latest) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap mkTVer Just <$> getLatest dls tool ?? TagNotFound Latest tool
+  bimap id Just <$> getLatest dls tool ?? TagNotFound Latest tool
 fromVersion' (SetToolDay day) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap mkTVer Just <$> case getByReleaseDay dls tool day of
+  bimap id Just <$> case getByReleaseDay dls tool day of
                           Left ad -> throwE $ DayNotFound day tool ad
                           Right v -> pure v
 fromVersion' (SetToolTag LatestPrerelease) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap mkTVer Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
+  bimap id Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
 fromVersion' (SetToolTag LatestNightly) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap mkTVer Just <$> getLatestNightly dls tool ?? TagNotFound LatestNightly tool
+  bimap id Just <$> getLatestNightly dls tool ?? TagNotFound LatestNightly tool
 fromVersion' (SetToolTag Recommended) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap mkTVer Just <$> getRecommended dls tool ?? TagNotFound Recommended tool
+  bimap id Just <$> getRecommended dls tool ?? TagNotFound Recommended tool
 fromVersion' (SetToolTag (Base pvp'')) GHC = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap mkTVer Just <$> getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') GHC
+  bimap id Just <$> getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') GHC
 fromVersion' SetNext tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   next <- case tool of
@@ -783,7 +784,7 @@ fromVersion' SetNext tool = do
         . sort
         $ stacks) ?? NoToolVersionSet tool
     GHCup -> fail "GHCup cannot be set"
-  let vi = getVersionInfo (_tvVersion next) tool dls
+  let vi = getVersionInfo next tool dls
   pure (next, vi)
 fromVersion' (SetToolTag t') tool =
   throwE $ TagNotFound t' tool
@@ -799,15 +800,15 @@ checkForUpdates :: ( MonadReader env m
                    , MonadIO m
                    , MonadFail m
                    )
-                => m [(Tool, Version)]
+                => m [(Tool, GHCTargetVersion)]
 checkForUpdates = do
   GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
   lInstalled <- listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
-  let latestInstalled tool = (fmap lVer . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
+  let latestInstalled tool = (fmap (\lr -> GHCTargetVersion (lCross lr) (lVer lr)) . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
 
-  ghcup <- forMM (getLatest dls GHCup) $ \(l, _) -> do
+  ghcup <- forMM (getLatest dls GHCup) $ \(GHCTargetVersion _ l, _) -> do
     (Right ghcup_ver) <- pure $ version $ prettyPVP ghcUpVer
-    if (l > ghcup_ver) then pure $ Just (GHCup, l) else pure Nothing
+    if (l > ghcup_ver) then pure $ Just (GHCup, mkTVer l) else pure Nothing
 
   otherTools <- forM [GHC, Cabal, HLS, Stack] $ \t ->
     forMM (getLatest dls t) $ \(l, _) -> do

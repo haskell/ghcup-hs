@@ -104,7 +104,7 @@ instance NFData Requirements
 -- | Description of all binary and source downloads. This is a tree
 -- of nested maps.
 type GHCupDownloads = Map Tool ToolVersionSpec
-type ToolVersionSpec = Map Version VersionInfo
+type ToolVersionSpec = Map GHCTargetVersion VersionInfo
 type ArchitectureSpec = Map Architecture PlatformSpec
 type PlatformSpec = Map Platform PlatformVersionSpec
 type PlatformVersionSpec = Map (Maybe VersionRange) DownloadInfo
@@ -593,7 +593,9 @@ data GHCTargetVersion = GHCTargetVersion
   { _tvTarget  :: Maybe Text
   , _tvVersion :: Version
   }
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq, Show, GHC.Generic)
+
+instance NFData GHCTargetVersion
 
 data GitBranch = GitBranch
   { ref  :: String
