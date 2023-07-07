@@ -183,6 +183,10 @@ instance Arbitrary GHCupInfo where
   arbitrary = genericArbitrary
   shrink    = genericShrink
 
+instance Arbitrary GHCTargetVersion where
+  arbitrary = GHCTargetVersion Nothing <$> arbitrary
+  shrink    = genericShrink
+
 
 -- our maps are nested... the default size easily blows up most ppls ram
 
