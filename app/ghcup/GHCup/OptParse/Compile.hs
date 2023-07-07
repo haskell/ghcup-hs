@@ -77,7 +77,6 @@ data GHCCompileOptions = GHCCompileOptions
   , ovewrwiteVer :: Maybe Version
   , buildFlavour :: Maybe String
   , hadrian      :: Bool
-  , bignum       :: Maybe String
   , isolateDir   :: Maybe FilePath
   }
 
@@ -271,13 +270,6 @@ ghcCompileOpts =
           )
     <*> switch
           (long "hadrian" <> help "Use the hadrian build system instead of make (only git versions seem to be properly supported atm)"
-          )
-    <*> optional
-          (option
-            str
-            (long "bignum" <> metavar "INTEGER_BACKEND" <> help
-              "Set the integer backend. This value differs between make ('integer-gmp' and 'integer-simple') and hadrian ('gmp' and 'native')"
-            )
           )
     <*> optional
           (option
@@ -585,7 +577,6 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     patches
                     addConfArgs
                     buildFlavour
-                    bignum
                     hadrian
                     (maybe GHCupInternal IsolateDir isolateDir)
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo

@@ -764,7 +764,6 @@ compileGHC :: ( MonadMask m
            -> Maybe (Either FilePath [URI])  -- ^ patches
            -> [Text]                   -- ^ additional args to ./configure
            -> Maybe String             -- ^ build flavour
-           -> Maybe String             -- ^ bignum
            -> Bool
            -> InstallDir
            -> Excepts
@@ -794,7 +793,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs buildFlavour bignum hadrian installDir
+compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs buildFlavour hadrian installDir
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -1024,7 +1023,6 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
     lEM $ execWithGhcEnv hadrian_build
                           ( maybe [] (\j  -> ["-j" <> show j]         ) jobs
                          ++ maybe [] (\bf -> ["--flavour=" <> bf]) buildFlavour
-                         ++ maybe [] (\bn -> ["--bignum=" <> bn]) bignum
                          ++ ["binary-dist"]
                           )
                           (Just workdir) "ghc-make"
@@ -1083,7 +1081,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
         (FileDoesNotExistError bc)
         (liftIO $ copyFile bc (build_mk workdir) False)
       Nothing ->
-        liftIO $ T.writeFile (build_mk workdir) (addBigNumToConf $ addBuildFlavourToConf defaultConf)
+        liftIO $ T.writeFile (build_mk workdir) (addBuildFlavourToConf defaultConf)
 
     liftE $ checkBuildConfig (build_mk workdir)
 
@@ -1179,10 +1177,6 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
 
   addBuildFlavourToConf bc = case buildFlavour of
     Just bf -> "BuildFlavour = " <> T.pack bf <> "\n" <> bc
-    Nothing -> bc
-
-  addBigNumToConf bc = case bignum of
-    Just bn -> bc <> "\nINTEGER_LIBRARY = " <> T.pack bn
     Nothing -> bc
 
   isCross :: GHCTargetVersion -> Bool
