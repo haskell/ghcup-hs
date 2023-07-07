@@ -156,10 +156,10 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
       <+> padLeft (Pad 1) (minHSize 25 $ str "Tags")
       <+> padLeft (Pad 5) (str "Notes")
   renderList' bis@BrickInternalState{..} =
-    let getMinLength = length . intercalate "," . fmap tagToString
-        minLength = V.maximum $ V.map (getMinLength . lTag) clr
-    in withDefAttr listAttr . drawListElements (renderItem minLength) True $ bis
-  renderItem minTagSize _ b listResult@ListResult{lTag = lTag', ..} =
+    let minTagSize = V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) clr
+        minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (GHCTargetVersion lCross lVer)) clr
+    in withDefAttr listAttr . drawListElements (renderItem minTagSize minVerSize) True $ bis
+  renderItem minTagSize minVerSize _ b listResult@ListResult{lTag = lTag', ..} =
     let marks = if
           | lSet       -> (withAttr (attrName "set") $ str "✔✔")
           | lInstalled -> (withAttr (attrName "installed") $ str "✓ ")
@@ -184,7 +184,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
                ( minHSize 6
                  (printTool lTool)
                )
-          <+> minHSize 15 (str ver)
+          <+> minHSize minVerSize (str ver)
           <+> (let l = catMaybes . fmap printTag $ sort lTag'
                in  padLeft (Pad 1) $ minHSize minTagSize $ if null l
                      then emptyWidget
