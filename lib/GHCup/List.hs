@@ -164,17 +164,17 @@ listVersions lt' criteria hideOld showNightly days = do
   strayGHCs avTools = do
     ghcs <- getInstalledGHCs
     fmap catMaybes $ forM ghcs $ \case
-      Right tver@GHCTargetVersion{ _tvTarget = Nothing, .. } -> do
+      Right tver@GHCTargetVersion{ .. } -> do
         case Map.lookup tver avTools of
           Just _  -> pure Nothing
           Nothing -> do
-            lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet Nothing
+            lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet _tvTarget
             fromSrc <- ghcSrcInstalled tver
             hlsPowered <- fmap (elem _tvVersion) hlsGHCVersions
             pure $ Just $ ListResult
               { lTool      = GHC
               , lVer       = _tvVersion
-              , lCross     = Nothing
+              , lCross     = _tvTarget
               , lTag       = []
               , lInstalled = True
               , lStray     = isNothing (Map.lookup tver avTools)
@@ -182,21 +182,6 @@ listVersions lt' criteria hideOld showNightly days = do
               , lReleaseDay = Nothing
               , ..
               }
-      Right tver@GHCTargetVersion{ .. } -> do
-        lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet _tvTarget
-        fromSrc <- ghcSrcInstalled tver
-        hlsPowered <- fmap (elem _tvVersion) hlsGHCVersions
-        pure $ Just $ ListResult
-          { lTool      = GHC
-          , lVer       = _tvVersion
-          , lCross     = _tvTarget
-          , lTag       = []
-          , lInstalled = True
-          , lStray     = isNothing (Map.lookup tver avTools)
-          , lNoBindist = False
-          , lReleaseDay = Nothing
-          , ..
-          }
       Left e -> do
         logWarn
           $ "Could not parse version of stray directory" <> T.pack e
