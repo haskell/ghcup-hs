@@ -12,6 +12,10 @@ on:
   schedule:
     - cron: '0 2 * * *'
 
+env:
+  CABAL_CACHE_DISABLE: ${{ vars.CABAL_CACHE_DISABLE }}
+  CABAL_CACHE_NONFATAL: yes
+
 jobs:
   build-linux:
     name: Build linux binary
