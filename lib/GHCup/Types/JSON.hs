@@ -95,13 +95,29 @@ instance FromJSON URI where
       Right x -> pure x
       Left  e -> fail . show $ e
 
+instance ToJSON GHCTargetVersion where
+  toJSON = toJSON . tVerToText
+
+instance FromJSON GHCTargetVersion where
+  parseJSON = withText "GHCTargetVersion" $ \t -> case MP.parse ghcTargetVerP "" t of
+    Right x -> pure x
+    Left  e -> fail $ "Failure in GHCTargetVersion (FromJSON)" <> show e
+
+instance ToJSONKey GHCTargetVersion where
+  toJSONKey = toJSONKeyText $ \x -> tVerToText x
+
+instance FromJSONKey GHCTargetVersion where
+  fromJSONKey = FromJSONKeyTextParser $ \t -> case MP.parse ghcTargetVerP "" t of
+    Right x -> pure x
+    Left  e -> fail $ "Failure in GHCTargetVersion (FromJSONKey)" <> show e
+
 instance ToJSON Versioning where
   toJSON = toJSON . prettyV
 
 instance FromJSON Versioning where
   parseJSON = withText "Versioning" $ \t -> case versioning t of
     Right x -> pure x
-    Left  e -> fail $ "Failure in Version (FromJSON)" <> show e
+    Left  e -> fail $ "Failure in GHCTargetVersion (FromJSON)" <> show e
 
 instance ToJSONKey Versioning where
   toJSONKey = toJSONKeyText $ \x -> prettyV x

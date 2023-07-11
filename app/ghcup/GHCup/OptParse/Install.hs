@@ -324,7 +324,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
        Nothing -> runInstGHC s' $ do
          (v, vi) <- liftE $ fromVersion instVer GHC
          liftE $ runBothE' (installGHCBin
-                     (_tvVersion v)
+                     v
                      (maybe GHCupInternal IsolateDir isolateDir)
                      forceInstall
                      addConfArgs
@@ -336,7 +336,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
            (v, vi) <- liftE $ fromVersion instVer GHC
            liftE $ runBothE' (installGHCBindist
                        (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing)
-                       (_tvVersion v)
+                       v
                        (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
                        addConfArgs

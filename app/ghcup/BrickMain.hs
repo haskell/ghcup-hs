@@ -156,10 +156,10 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
       <+> padLeft (Pad 1) (minHSize 25 $ str "Tags")
       <+> padLeft (Pad 5) (str "Notes")
   renderList' bis@BrickInternalState{..} =
-    let getMinLength = length . intercalate "," . fmap tagToString
-        minLength = V.maximum $ V.map (getMinLength . lTag) clr
-    in withDefAttr listAttr . drawListElements (renderItem minLength) True $ bis
-  renderItem minTagSize _ b listResult@ListResult{lTag = lTag', ..} =
+    let minTagSize = V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) clr
+        minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (GHCTargetVersion lCross lVer)) clr
+    in withDefAttr listAttr . drawListElements (renderItem minTagSize minVerSize) True $ bis
+  renderItem minTagSize minVerSize _ b listResult@ListResult{lTag = lTag', ..} =
     let marks = if
           | lSet       -> (withAttr (attrName "set") $ str "✔✔")
           | lInstalled -> (withAttr (attrName "installed") $ str "✓ ")
@@ -184,7 +184,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
                ( minHSize 6
                  (printTool lTool)
                )
-          <+> minHSize 15 (str ver)
+          <+> minHSize minVerSize (str ver)
           <+> (let l = catMaybes . fmap printTag $ sort lTag'
                in  padLeft (Pad 1) $ minHSize minTagSize $ if null l
                      then emptyWidget
@@ -472,19 +472,19 @@ install' _ (_, ListResult {..}) = do
       dirs <- lift getDirs
       case lTool of
         GHC   -> do
-          let vi = getVersionInfo lVer GHC dls
-          liftE $ installGHCBin lVer GHCupInternal False [] $> (vi, dirs, ce)
+          let vi = getVersionInfo (GHCTargetVersion lCross lVer) GHC dls
+          liftE $ installGHCBin (GHCTargetVersion lCross lVer) GHCupInternal False [] $> (vi, dirs, ce)
         Cabal -> do
-          let vi = getVersionInfo lVer Cabal dls
+          let vi = getVersionInfo (GHCTargetVersion lCross lVer) Cabal dls
           liftE $ installCabalBin lVer GHCupInternal False $> (vi, dirs, ce)
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
           liftE $ upgradeGHCup Nothing False False $> (vi, dirs, ce)
         HLS   -> do
-          let vi = getVersionInfo lVer HLS dls
+          let vi = getVersionInfo (GHCTargetVersion lCross lVer) HLS dls
           liftE $ installHLSBin lVer GHCupInternal False $> (vi, dirs, ce)
         Stack -> do
-          let vi = getVersionInfo lVer Stack dls
+          let vi = getVersionInfo (GHCTargetVersion lCross lVer) Stack dls
           liftE $ installStackBin lVer GHCupInternal False $> (vi, dirs, ce)
     )
     >>= \case
@@ -565,7 +565,7 @@ del' _ (_, ListResult {..}) = do
   let run = runE @'[NotInstalled, UninstallFailed]
 
   run (do
-      let vi = getVersionInfo lVer lTool dls
+      let vi = getVersionInfo (GHCTargetVersion lCross lVer) lTool dls
       case lTool of
         GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> vi
         Cabal -> liftE $ rmCabalVer lVer $> vi

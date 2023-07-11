@@ -271,7 +271,6 @@ getBase uri = do
 
       pure f
 
-
 getDownloadInfo :: ( MonadReader env m
                    , HasPlatformReq env
                    , HasGHCupInfo env
@@ -283,7 +282,20 @@ getDownloadInfo :: ( MonadReader env m
                      '[NoDownload]
                      m
                      DownloadInfo
-getDownloadInfo t v = do
+getDownloadInfo t v = getDownloadInfo' t (mkTVer v)
+
+getDownloadInfo' :: ( MonadReader env m
+                    , HasPlatformReq env
+                    , HasGHCupInfo env
+                    )
+                 => Tool
+                 -> GHCTargetVersion
+                 -- ^ tool version
+                 -> Excepts
+                      '[NoDownload]
+                      m
+                      DownloadInfo
+getDownloadInfo' t v = do
   (PlatformRequest a p mv) <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 

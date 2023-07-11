@@ -86,7 +86,7 @@ data ListResult = ListResult
 
 
 -- | Extract all available tool versions and their tags.
-availableToolVersions :: GHCupDownloads -> Tool -> Map.Map Version VersionInfo
+availableToolVersions :: GHCupDownloads -> Tool -> Map.Map GHCTargetVersion VersionInfo
 availableToolVersions av tool = view
   (at tool % non Map.empty)
   av
@@ -134,13 +134,13 @@ listVersions lt' criteria hideOld showNightly days = do
             slr <- strayGHCs avTools
             pure (sort (slr ++ lr))
           Cabal -> do
-            slr <- strayCabals avTools cSet cabals
+            slr <- strayCabals (Map.mapKeys _tvVersion avTools) cSet cabals
             pure (sort (slr ++ lr))
           HLS -> do
-            slr <- strayHLS avTools hlsSet' hlses
+            slr <- strayHLS (Map.mapKeys _tvVersion avTools) hlsSet' hlses
             pure (sort (slr ++ lr))
           Stack -> do
-            slr <- strayStacks avTools sSet stacks
+            slr <- strayStacks (Map.mapKeys _tvVersion avTools) sSet stacks
             pure (sort (slr ++ lr))
           GHCup -> do
             let cg = maybeToList $ currentGHCup avTools
@@ -159,44 +159,29 @@ listVersions lt' criteria hideOld showNightly days = do
                , HasLog env
                , MonadIO m
                )
-            => Map.Map Version VersionInfo
+            => Map.Map GHCTargetVersion VersionInfo
             -> m [ListResult]
   strayGHCs avTools = do
     ghcs <- getInstalledGHCs
     fmap catMaybes $ forM ghcs $ \case
-      Right tver@GHCTargetVersion{ _tvTarget = Nothing, .. } -> do
-        case Map.lookup _tvVersion avTools of
+      Right tver@GHCTargetVersion{ .. } -> do
+        case Map.lookup tver avTools of
           Just _  -> pure Nothing
           Nothing -> do
-            lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet Nothing
+            lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet _tvTarget
             fromSrc <- ghcSrcInstalled tver
             hlsPowered <- fmap (elem _tvVersion) hlsGHCVersions
             pure $ Just $ ListResult
               { lTool      = GHC
               , lVer       = _tvVersion
-              , lCross     = Nothing
+              , lCross     = _tvTarget
               , lTag       = []
               , lInstalled = True
-              , lStray     = isNothing (Map.lookup _tvVersion avTools)
+              , lStray     = isNothing (Map.lookup tver avTools)
               , lNoBindist = False
               , lReleaseDay = Nothing
               , ..
               }
-      Right tver@GHCTargetVersion{ .. } -> do
-        lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet _tvTarget
-        fromSrc <- ghcSrcInstalled tver
-        hlsPowered <- fmap (elem _tvVersion) hlsGHCVersions
-        pure $ Just $ ListResult
-          { lTool      = GHC
-          , lVer       = _tvVersion
-          , lCross     = _tvTarget
-          , lTag       = []
-          , lInstalled = True
-          , lStray     = True -- NOTE: cross currently cannot be installed via bindist
-          , lNoBindist = False
-          , lReleaseDay = Nothing
-          , ..
-          }
       Left e -> do
         logWarn
           $ "Could not parse version of stray directory" <> T.pack e
@@ -309,15 +294,15 @@ listVersions lt' criteria hideOld showNightly days = do
           $ "Could not parse version of stray directory" <> T.pack e
         pure Nothing
 
-  currentGHCup :: Map.Map Version VersionInfo -> Maybe ListResult
+  currentGHCup :: Map.Map GHCTargetVersion VersionInfo -> Maybe ListResult
   currentGHCup av =
-    let currentVer = fromJust $ pvpToVersion ghcUpVer ""
+    let currentVer = mkTVer $ fromJust $ pvpToVersion ghcUpVer ""
         listVer    = Map.lookup currentVer av
         latestVer  = fst <$> headOf (getTagged Latest) av
         recommendedVer = fst <$> headOf (getTagged Latest) av
         isOld  = maybe True (> currentVer) latestVer && maybe True (> currentVer) recommendedVer
     in if | Map.member currentVer av -> Nothing
-          | otherwise -> Just $ ListResult { lVer    = currentVer
+          | otherwise -> Just $ ListResult { lVer    = _tvVersion currentVer
                                            , lTag    = maybe (if isOld then [Old] else []) _viTags listVer
                                            , lCross  = Nothing
                                            , lTool   = GHCup
@@ -346,18 +331,18 @@ listVersions lt' criteria hideOld showNightly days = do
                -> [Either FilePath Version]
                -> Maybe Version
                -> [Either FilePath Version]
-               -> (Version, VersionInfo)
+               -> (GHCTargetVersion, VersionInfo)
                -> m ListResult
-  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (v, VersionInfo{..}) = do
+  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (tver, VersionInfo{..}) = do
+    let v = _tvVersion tver
     case t of
       GHC -> do
-        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo GHC v
-        let tver = mkTVer v
-        lSet       <- fmap (maybe False (\(GHCTargetVersion _ v') -> v' == v)) $ ghcSet Nothing
+        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo' GHC tver
+        lSet       <- fmap (== Just tver) $ ghcSet (_tvTarget tver)
         lInstalled <- ghcInstalled tver
         fromSrc    <- ghcSrcInstalled tver
-        hlsPowered <- fmap (elem v) hlsGHCVersions
-        pure ListResult { lVer = v, lCross = Nothing , lTag = _viTags, lTool = t, lStray = False, lReleaseDay = _viReleaseDay, .. }
+        hlsPowered <- fmap (elem tver) (fmap mkTVer <$> hlsGHCVersions)
+        pure ListResult { lVer = _tvVersion tver , lCross = _tvTarget tver , lTag = _viTags, lTool = t, lStray = False, lReleaseDay = _viReleaseDay, .. }
       Cabal -> do
         lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo Cabal v
         let lSet = cSet == Just v

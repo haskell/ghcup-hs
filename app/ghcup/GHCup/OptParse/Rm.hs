@@ -170,7 +170,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
         liftE $
           rmGHCVer ghcVer
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        pure (getVersionInfo (_tvVersion ghcVer) GHC dls)
+        pure (getVersionInfo ghcVer GHC dls)
       )
       >>= \case
             VRight vi -> do
@@ -186,7 +186,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
         liftE $
           rmCabalVer tv
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        pure (getVersionInfo tv Cabal dls)
+        pure (getVersionInfo (mkTVer tv) Cabal dls)
       )
       >>= \case
             VRight vi -> do
@@ -201,7 +201,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
         liftE $
           rmHLSVer tv
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        pure (getVersionInfo tv HLS dls)
+        pure (getVersionInfo (mkTVer tv) HLS dls)
       )
       >>= \case
             VRight vi -> do
@@ -216,7 +216,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
         liftE $
           rmStackVer tv
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        pure (getVersionInfo tv Stack dls)
+        pure (getVersionInfo (mkTVer tv) Stack dls)
       )
       >>= \case
             VRight vi -> do

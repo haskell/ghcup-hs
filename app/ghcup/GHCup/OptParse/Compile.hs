@@ -66,7 +66,7 @@ data CompileCommand = CompileGHC GHCCompileOptions
 
 
 data GHCCompileOptions = GHCCompileOptions
-  { targetGhc    :: GHC.GHCVer Version
+  { targetGhc    :: GHC.GHCVer
   , bootstrapGhc :: Either Version FilePath
   , jobs         :: Maybe Int
   , buildConfig  :: Maybe FilePath
@@ -511,7 +511,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
         case targetHLS of
           HLS.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-            let vi = getVersionInfo targetVer HLS dls
+            let vi = getVersionInfo (mkTVer targetVer) HLS dls
             forM_ (_viPreCompile =<< vi) $ \msg -> do
               lift $ logInfo msg
               lift $ logInfo
@@ -531,7 +531,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     patches
                     cabalArgs
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        let vi = getVersionInfo targetVer HLS dls
+        let vi = getVersionInfo (mkTVer targetVer) HLS dls
         when setCompile $ void $ liftE $
           setHLS targetVer SetHLSOnly Nothing
         pure (vi, targetVer)
@@ -555,15 +555,12 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
               VLeft e -> do
                 runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 9
-    (CompileGHC GHCCompileOptions { hadrian = True, crossTarget = Just _ }) -> do
-      runLogger $ logError "Hadrian cross compile support is not yet implemented!"
-      pure $ ExitFailure 9
     (CompileGHC GHCCompileOptions {..}) ->
       runCompileGHC runAppState (do
         case targetGhc of
           GHC.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-            let vi = getVersionInfo targetVer GHC dls
+            let vi = getVersionInfo (mkTVer targetVer) GHC dls
             forM_ (_viPreCompile =<< vi) $ \msg -> do
               lift $ logInfo msg
               lift $ logInfo
@@ -571,10 +568,8 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
           _ -> pure ()
         targetVer <- liftE $ compileGHC
-                    ((\case
-                        GHC.SourceDist v -> GHC.SourceDist $ GHCTargetVersion crossTarget v
-                        GHC.GitDist g -> GHC.GitDist g
-                        GHC.RemoteDist r -> GHC.RemoteDist r) targetGhc)
+                    targetGhc
+                    crossTarget
                     ovewrwiteVer
                     bootstrapGhc
                     jobs
@@ -585,7 +580,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     hadrian
                     (maybe GHCupInternal IsolateDir isolateDir)
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        let vi = getVersionInfo (_tvVersion targetVer) GHC dls
+        let vi = getVersionInfo targetVer GHC dls
         when setCompile $ void $ liftE $
           setGHC targetVer SetGHCOnly Nothing
         pure (vi, targetVer)

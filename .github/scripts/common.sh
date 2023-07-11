@@ -15,7 +15,7 @@ sync_from() {
 		cabal_store_path="$(dirname "$(cabal help user-config | tail -n 1 | xargs)")/store"
 	fi
 
-	cabal-cache sync-from-archive \
+	cabal-cache.sh sync-from-archive \
 		--host-name-override=${S3_HOST} \
 		--host-port-override=443 \
 		--host-ssl-override=True \
@@ -29,7 +29,7 @@ sync_to() {
 		cabal_store_path="$(dirname "$(cabal help user-config | tail -n 1 | xargs)")/store"
 	fi
 
-	cabal-cache sync-to-archive \
+	cabal-cache.sh sync-to-archive \
 		--host-name-override=${S3_HOST} \
 		--host-port-override=443 \
 		--host-ssl-override=True \
@@ -115,6 +115,10 @@ download_cabal_cache() {
 		mv "cabal-cache${exe}" "${dest}${exe}"
 		chmod +x "${dest}${exe}"
 	fi
+
+	# install shell wrapper
+	cp "${CI_PROJECT_DIR}"/.github/scripts/cabal-cache.sh "$HOME"/.local/bin/
+	chmod +x "$HOME"/.local/bin/cabal-cache.sh
     )
 }
 
