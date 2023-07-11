@@ -327,6 +327,8 @@ executable ghcup
       , brick         ^>=2.1
       , transformers  ^>=0.5
       , vty           ^>=6.0
+      , unix          ^>=2.7
+      , optics        ^>=0.4
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
@@ -352,7 +354,7 @@ test-suite ghcup-test
   default-language:   Haskell2010
   default-extensions:
     LambdaCase
-    MultiWayIf
+    MultiWayIf++-
     PackageImports
     RecordWildCards
     ScopedTypeVariables

@@ -7,6 +7,9 @@
 {-# LANGUAGE ViewPatterns      #-}
 {-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
 {-# OPTIONS_GHC -Wno-unused-matches #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module BrickMain where
 
@@ -22,14 +25,57 @@ import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
 import           GHCup.Prompts
 
-import           Brick
-import           Brick.Widgets.Border
-import           Brick.Widgets.Border.Style
-import           Brick.Widgets.Center
+import Brick
+    ( defaultMain,
+      suspendAndResume,
+      attrMap,
+      showFirstCursor,
+      hLimit,
+      vBox,
+      viewport,
+      visible,
+      fill,
+      vLimit,
+      forceAttr,
+      putCursor,
+      updateAttrMap,
+      withDefAttr,
+      padLeft,
+      (<+>),
+      emptyWidget,
+      txtWrap,
+      attrName,
+      withAttr,
+      (<=>),
+      str,
+      withBorderStyle,
+      padBottom,
+      halt,
+      BrickEvent(VtyEvent, MouseDown),
+      App(..),
+      ViewportType(Vertical),
+      Size(Greedy),
+      Location(Location),
+      Padding(Max, Pad),
+      Widget(Widget, render),
+      AttrMap,
+      Direction(..),
+      get,
+      zoom, 
+      EventM,
+      suffixLenses,
+      Named(..), modify )
+import           Brick.Widgets.Border ( hBorder, borderWithLabel )
+import           Brick.Widgets.Border.Style ( unicode )
+import           Brick.Widgets.Center ( center )
+import           Brick.Widgets.Dialog (buttonSelectedAttr)
 import           Brick.Widgets.List             ( listSelectedFocusedAttr
                                                 , listSelectedAttr
                                                 , listAttr
                                                 )
+import qualified Brick.Widgets.List as L
+import           Brick.Focus (FocusRing)
+import qualified Brick.Focus as F
 import           Codec.Archive
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -41,9 +87,10 @@ import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Resource
 import           Data.Bool
 import           Data.Functor
+import           Data.Function ( (&))
 import           Data.List
 import           Data.Maybe
-import           Data.IORef
+import           Data.IORef (IORef, readIORef, newIORef, writeIORef, modifyIORef)
 import           Data.Vector                    ( Vector
                                                 , (!?)
                                                 )
@@ -66,6 +113,153 @@ import           GHCup.Prelude.File
 import           System.FilePath
 import qualified System.Posix.Process          as SPP
 #endif
+
+import           Optics.TH (makeLenses, makeLensesFor)
+import           Optics.State (use)
+import           Optics.State.Operators ( (.=), (%=), (<%=))
+import           Optics.Optic ((%))
+import           Optics.Operators ((.~), (^.))
+import           Optics.Getter (view)
+import           Optics.Lens (Lens', lens, toLensVL, lensVL)
+
+{- Brick's widget:
+It is a FocusRing over many list's. Each list contains the information for each tool. Each list has an internal name (for Brick's runtime)
+and a label which we can use in rendering. This data-structure helps to reuse Brick.Widget.List and to navegate easily across
+
+Consider this code as private. GenericSectionList should not be used directly as the FocusRing should be align with the Vector containing 
+the elements, otherwise you'd be focusing on a non-existent widget with unknown result (In theory the code is safe unless you have an empty section list). 
+
+- To build a SectionList use the safe constructor sectionList
+- To access sections use the lens provider sectionL and the name of the section you'd like to access
+- You can modify Brick.Widget.List.GenericList within GenericSectionList via sectionL but do not
+  modify the vector length
+
+-}
+
+data GenericSectionList n t e
+    = GenericSectionList
+    { sectionListFocusRing :: FocusRing n                   -- ^ The FocusRing for all sections
+    , sectionListElements :: !(Vector (L.GenericList n t e)) -- ^ A key-value vector
+    , sectionListName :: n                                   -- ^ The section list name
+    }
+
+makeLensesFor [("sectionListFocusRing", "sectionListFocusRingL"), ("sectionListElements", "sectionListElementsL"), ("sectionListName", "sectionListNameL")] ''GenericSectionList
+
+type SectionList n e = GenericSectionList n V.Vector e
+
+instance Named (GenericSectionList n t e) n where
+    getName = sectionListName
+
+
+-- | Build a SectionList from nonempty list. If empty we could not defined sectionL lenses. 
+sectionList :: Foldable t 
+            => n                     -- The name of the section list
+            -> [(n, t e)]            -- a list of tuples (section name, collection of elements)
+            -> Int
+            -> GenericSectionList n t e
+sectionList name elements height
+  = GenericSectionList
+  { sectionListFocusRing = F.focusRing [section_name | (section_name, _) <- elements]
+  , sectionListElements  = V.fromList [L.list section_name els height | (section_name, els) <- elements]
+  , sectionListName = name
+  }
+-- | This lens constructor, takes a name and looks if a section has such a name.
+--   Used to dispatch events to sections. It is a partial function only meant to 
+--   be used with the FocusRing inside GenericSectionList
+sectionL :: Eq n => n -> Lens' (GenericSectionList n t e) (L.GenericList n t e)
+sectionL section_name = lens g s
+    where is_section_name = (== section_name) . L.listName
+          g section_list =
+            let elms   = section_list ^. sectionListElementsL
+                zeroth = elms V.! 0 -- TODO: This crashes for empty vectors. 
+            in fromMaybe zeroth (V.find is_section_name elms)
+          s gl@(GenericSectionList _ elms _) list =
+            case V.findIndex is_section_name elms of
+                 Nothing -> gl
+                 Just i  -> let new_elms = V.update elms (V.fromList [(i, list)])
+                             in gl & sectionListElementsL .~ new_elms
+
+-- | Handle events for list cursor movement.  Events handled are:
+--
+-- * Up (up arrow key). If first element of section, then jump prev section
+-- * Down (down arrow key). If last element of section, then jump next section
+-- * Page Up (PgUp)
+-- * Page Down (PgDown)
+-- * Go to next section (Tab)
+-- * Go to prev section (BackTab)
+handleGenericListEvent :: (Foldable t, L.Splittable t, Ord n)
+                       => BrickEvent n ()
+                       -> EventM n (GenericSectionList n t e) ()
+handleGenericListEvent (VtyEvent (Vty.EvKey (Vty.KChar '\t') [])) = sectionListFocusRingL %= F.focusNext
+handleGenericListEvent (VtyEvent (Vty.EvKey Vty.KBackTab []))     = sectionListFocusRingL %= F.focusPrev
+handleGenericListEvent (VtyEvent ev@(Vty.EvKey Vty.KDown [])) = do
+    ring <- use sectionListFocusRingL
+    case F.focusGetCurrent ring of 
+        Nothing -> pure ()
+        Just l  -> do      -- If it is the last element, move to the first element of the next focus; else, just handle regular list event.
+            current_list <- use (sectionL l)
+            let current_idx = L.listSelected current_list
+                list_length = current_list & length
+            if current_idx == Just (list_length - 1)
+                then do 
+                    new_focus <- sectionListFocusRingL <%= F.focusNext
+                    case F.focusGetCurrent new_focus of
+                        Nothing -> pure () -- |- Optic.Zoom.zoom doesn't typecheck but Lens.Micro.Mtl.zoom does. It is re-exported by Brick
+                        Just new_l -> zoom (toLensVL $ sectionL new_l) (modify L.listMoveToBeginning)
+                else zoom (toLensVL $ sectionL l) $ L.handleListEvent ev
+handleGenericListEvent (VtyEvent ev@(Vty.EvKey Vty.KUp [])) = do
+    ring <- use sectionListFocusRingL
+    case F.focusGetCurrent ring of
+        Nothing -> pure ()
+        Just l  -> do  -- If it is the first element, move to the last element of the prev focus; else, just handle regular list event.
+            current_list <- use (sectionL l)
+            let current_idx = L.listSelected current_list
+            if current_idx == Just 0
+                then do 
+                    new_focus <- sectionListFocusRingL <%= F.focusPrev
+                    case F.focusGetCurrent new_focus of
+                        Nothing -> pure ()  
+                        Just new_l -> zoom (toLensVL $ sectionL new_l) (modify L.listMoveToEnd)
+                else zoom (toLensVL $ sectionL l) $ L.handleListEvent ev
+handleGenericListEvent (VtyEvent ev) = do
+    ring <- use sectionListFocusRingL
+    case F.focusGetCurrent ring of
+        Nothing -> pure ()
+        Just l  -> zoom (toLensVL $ sectionL l) $ L.handleListEvent ev
+handleGenericListEvent _ = pure ()
+
+-- This re-uses Brick.Widget.List.renderList
+renderSectionList :: (Traversable t, Ord n, Show n, Eq n, L.Splittable t)
+                  => (Bool -> n -> Widget n)             -- ^ Rendering function for separator between sections. True for selected before section
+                  -> (Bool -> n -> Widget n -> Widget n) -- ^ Rendering function for the borders. True for selected section
+                  -> (Bool -> e -> Widget n)             -- ^ Rendering function of the list element, True for the selected element
+                  -> Bool                                -- ^ Whether the section list has focus
+                  -> GenericSectionList n t e            -- ^ The section list to render
+                  -> Widget n
+renderSectionList render_separator render_border render_elem section_focus (GenericSectionList focus elms _) =
+    V.foldl' (\wacc list ->
+                let has_focus = is_focused_section list
+                    list_name = L.listName list
+                 in   wacc
+                  <=> render_separator has_focus list_name
+                  <=> inner_widget has_focus list_name list
+             )
+             emptyWidget elms
+  where
+    is_focused_section l = section_focus && Just (L.listName l) == F.focusGetCurrent focus
+    inner_widget has_focus k l = render_border has_focus k (L.renderList render_elem has_focus l)
+
+
+-- | Equivalent to listSelectedElement
+sectionListSelectedElement :: (Eq n, L.Splittable t, Traversable t, Semigroup (t e)) => GenericSectionList n t e -> Maybe (Int, e)
+sectionListSelectedElement generic_section_list = do
+  current_focus <- generic_section_list ^. sectionListFocusRingL & F.focusGetCurrent 
+  let current_section = generic_section_list ^. sectionL current_focus
+  L.listSelectedElement current_section 
+
+{- GHCUp State
+
+-}
 
 
 installedSign :: String
@@ -91,55 +285,71 @@ notInstalledSign = "✗ "
 
 
 data BrickData = BrickData
-  { lr    :: [ListResult]
+  { _lr    :: [ListResult]
   }
   deriving Show
+
+makeLenses ''BrickData
 
 data BrickSettings = BrickSettings
-  { showAllVersions    :: Bool
+  { _showAllVersions    :: Bool
+  , _showAllTools       :: Bool
   }
-  deriving Show
+  --deriving Show
+
+makeLenses ''BrickSettings
 
 data BrickInternalState = BrickInternalState
-  { clr :: Vector ListResult
-  , ix  :: Int
+  { _clr   :: Vector ListResult
+  , _ix    :: Int
   }
-  deriving Show
+  --deriving Show
+
+makeLenses ''BrickInternalState
 
 data BrickState = BrickState
-  { appData     :: BrickData
-  , appSettings :: BrickSettings
-  , appState    :: BrickInternalState
-  , appKeys     :: KeyBindings
+  { _appData     :: BrickData
+  , _appSettings :: BrickSettings
+  , _appState    :: BrickInternalState
+  , _appKeys     :: KeyBindings
   }
-  deriving Show
+  --deriving Show
 
+makeLenses ''BrickState
 
 keyHandlers :: KeyBindings
             -> [ ( KeyCombination
                  , BrickSettings -> String
-                 , BrickState -> EventM String BrickState ()
+                 , EventM String BrickState ()
                  )
                ]
 keyHandlers KeyBindings {..} =
-  [ (bQuit, const "Quit"     , \_ -> halt)
+  [ (bQuit, const "Quit"     , halt)
   , (bInstall, const "Install"  , withIOAction install')
   , (bUninstall, const "Uninstall", withIOAction del')
   , (bSet, const "Set"      , withIOAction set')
   , (bChangelog, const "ChangeLog", withIOAction changelog')
   , ( bShowAllVersions
     , \BrickSettings {..} ->
-       if showAllVersions then "Don't show all versions" else "Show all versions"
-    , hideShowHandler (not . showAllVersions)
+       if _showAllVersions then "Don't show all versions" else "Show all versions"
+    , hideShowHandler' (not . _showAllVersions) _showAllTools
     )
-  , (bUp, const "Up", \BrickState {..} -> put BrickState{ appState = moveCursor 1 appState Up, .. })
-  , (bDown, const "Down", \BrickState {..} -> put BrickState{ appState = moveCursor 1 appState Down, .. })
+  , (bUp, const "Up", appState %= moveCursor 1 Up)
+  , (bDown, const "Down", appState %= moveCursor 1 Down)
   ]
  where
-  hideShowHandler f BrickState{..} =
-    let newAppSettings   = appSettings { showAllVersions = f appSettings }
-        newInternalState = constructList appData newAppSettings (Just appState)
-    in  put (BrickState appData newAppSettings newInternalState appKeys)
+  --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
+  hideShowHandler' f p = do 
+    app_settings <- use appSettings
+    let 
+      vers = f app_settings
+      tools = p app_settings
+      newAppSettings = app_settings & showAllVersions .~ vers & showAllTools .~ tools
+    ad <- use appData
+    current_app_state <- use appState
+    appSettings .= newAppSettings
+    appState    .= constructList ad app_settings (Just current_app_state)
+
 
 
 showKey :: Vty.Key -> String
@@ -153,11 +363,11 @@ showMod = tail . show
 
 
 ui :: AttrMap -> BrickState -> Widget String
-ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
+ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
   = padBottom Max
       ( withBorderStyle unicode
         $ borderWithLabel (str "GHCup")
-          (center (header <=> hBorder <=> renderList' appState))
+          (center (header <=> hBorder <=> renderList' _appState))
       )
     <=> footer
 
@@ -168,7 +378,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
       . T.pack
       . foldr1 (\x y -> x <> "  " <> y)
       . fmap (\(KeyCombination key mods, s, _) -> intercalate "+" (showKey key : (showMod <$> mods)) <> ":" <> s as)
-      $ keyHandlers appKeys
+      $ keyHandlers _appKeys
   header =
     minHSize 2 emptyWidget
       <+> padLeft (Pad 2) (minHSize 6 $ str "Tool")
@@ -176,8 +386,8 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
       <+> padLeft (Pad 1) (minHSize 25 $ str "Tags")
       <+> padLeft (Pad 5) (str "Notes")
   renderList' bis@BrickInternalState{..} =
-    let minTagSize = V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) clr
-        minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (GHCTargetVersion lCross lVer)) clr
+    let minTagSize = V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) _clr
+        minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (GHCTargetVersion lCross lVer)) _clr
     in withDefAttr listAttr . drawListElements (renderItem minTagSize minVerSize) True $ bis
   renderItem minTagSize minVerSize _ b listResult@ListResult{lTag = lTag', ..} =
     let marks = if
@@ -283,11 +493,10 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
 minHSize :: Int -> Widget n -> Widget n
 minHSize s' = hLimit s' . vLimit 1 . (<+> fill ' ')
 
-
-app :: AttrMap -> AttrMap -> App BrickState e String
+app :: AttrMap -> AttrMap -> App BrickState () String
 app attrs dimAttrs =
-  App { appDraw         = \st -> [ui dimAttrs st]
-  , appHandleEvent  = \be -> get >>= \s -> eventHandler s be
+  App { appDraw     = \st -> [ui dimAttrs st]
+  , appHandleEvent  = eventHandler
   , appStartEvent   = return ()
   , appAttrMap      = const attrs
   , appChooseCursor = showFirstCursor
@@ -312,6 +521,7 @@ defaultAttributes no_color = attrMap
   , (attrName "day"               , Vty.defAttr `withForeColor` Vty.blue)
   , (attrName "help"              , Vty.defAttr `withStyle`     Vty.italic)
   , (attrName "hooray"            , Vty.defAttr `withForeColor` Vty.brightWhite)
+  , (buttonSelectedAttr           , Vty.defAttr `withBackColor` Vty.brightWhite)
   ]
   where
     withForeColor | no_color  = const
@@ -332,56 +542,51 @@ dimAttributes no_color = attrMap
     withBackColor | no_color  = \attr _ -> attr `Vty.withStyle` Vty.reverseVideo
                   | otherwise = Vty.withBackColor
 
-eventHandler :: BrickState -> BrickEvent String e -> EventM String BrickState ()
-eventHandler st@BrickState{..} ev = do
+eventHandler :: BrickEvent String e -> EventM String BrickState ()
+eventHandler ev = do
   AppState { keyBindings = kb } <- liftIO $ readIORef settings'
   case ev of
-    (MouseDown _ Vty.BScrollUp _ _) ->
-      put (BrickState { appState = moveCursor 1 appState Up, .. })
-    (MouseDown _ Vty.BScrollDown _ _) ->
-      put (BrickState { appState = moveCursor 1 appState Down, .. })
-    (VtyEvent (Vty.EvResize _ _)) -> put st
-    (VtyEvent (Vty.EvKey Vty.KUp [])) ->
-      put BrickState{ appState = moveCursor 1 appState Up, .. }
-    (VtyEvent (Vty.EvKey Vty.KDown [])) ->
-      put BrickState{ appState = moveCursor 1 appState Down, .. }
-    (VtyEvent (Vty.EvKey key mods)) ->
-      case find (\(keyCombo, _, _) -> keyCombo == KeyCombination key mods) (keyHandlers kb) of
-        Nothing -> put st
-        Just (_, _, handler) -> handler st
-    _ -> put st
+    (MouseDown _ Vty.BScrollUp _ _) -> appState %= moveCursor 1 Up
+    (MouseDown _ Vty.BScrollDown _ _) -> appState %= moveCursor 1 Down
+    (VtyEvent (Vty.EvResize _ _)) -> pure ()
+    (VtyEvent (Vty.EvKey Vty.KUp _)) -> appState %= moveCursor 1 Up
+    (VtyEvent (Vty.EvKey Vty.KDown _)) -> appState %= moveCursor 1 Down
+    (VtyEvent (Vty.EvKey key _)) ->
+      case find (\(key', _, _) -> key' == key) (keyHandlers kb) of
+        Nothing -> pure ()
+        Just (_, _, handler) -> handler
+    _ -> pure ()
 
 
-moveCursor :: Int -> BrickInternalState -> Direction -> BrickInternalState
-moveCursor steps ais@BrickInternalState{..} direction =
-  let newIx = if direction == Down then ix + steps else ix - steps
-  in  case clr !? newIx of
-        Just _  -> BrickInternalState { ix = newIx, .. }
+moveCursor :: Int -> Direction -> BrickInternalState -> BrickInternalState
+moveCursor steps direction ais@BrickInternalState{..} =
+  let newIx = if direction == Down then _ix + steps else _ix - steps
+  in  case _clr !? newIx of
+        Just _  -> ais & ix .~ newIx
         Nothing -> ais
 
 
 -- | Suspend the current UI and run an IO action in terminal. If the
 -- IO action returns a Left value, then it's thrown as userError.
 withIOAction :: Ord n
-             => (BrickState
-                 -> (Int, ListResult)
-                 -> ReaderT AppState IO (Either String a))
-             -> BrickState
+             => ( (Int, ListResult) -> ReaderT AppState IO (Either String a))
              -> EventM n BrickState ()
-withIOAction action as = case listSelectedElement' (appState as) of
-  Nothing      -> put as
-  Just (ix, e) -> do
-    suspendAndResume $ do
-      settings <- readIORef settings'
-      flip runReaderT settings $ action as (ix, e) >>= \case
-        Left  err -> liftIO $ putStrLn ("Error: " <> err)
-        Right _   -> liftIO $ putStrLn "Success"
-      getAppData Nothing >>= \case
-        Right data' -> do
-          putStrLn "Press enter to continue"
-          _ <- getLine
-          pure (updateList data' as)
-        Left err -> throwIO $ userError err
+withIOAction action = do
+  as <- get
+  case listSelectedElement' (view appState as) of
+    Nothing      -> pure ()
+    Just (curr_ix, e) -> do
+      suspendAndResume $ do
+        settings <- readIORef settings'
+        flip runReaderT settings $ action (curr_ix, e) >>= \case
+          Left  err -> liftIO $ putStrLn ("Error: " <> err)
+          Right _   -> liftIO $ putStrLn "Success"
+        getAppData Nothing >>= \case
+          Right data' -> do
+            putStrLn "Press enter to continue"
+            _ <- getLine
+            pure (updateList data' as)
+          Left err -> throwIO $ userError err
 
 
 -- | Update app data and list internal state based on new evidence.
@@ -389,11 +594,11 @@ withIOAction action as = case listSelectedElement' (appState as) of
 -- and @BrickSettings@.
 updateList :: BrickData -> BrickState -> BrickState
 updateList appD BrickState{..} =
-  let newInternalState = constructList appD appSettings (Just appState)
-  in  BrickState { appState    = newInternalState
-                 , appData     = appD
-                 , appSettings = appSettings
-                 , appKeys     = appKeys
+  let newInternalState = constructList appD _appSettings (Just _appState)
+  in  BrickState { _appState    = newInternalState
+                 , _appData     = appD
+                 , _appSettings = _appSettings
+                 , _appKeys     = _appKeys
                  }
 
 
@@ -402,11 +607,12 @@ constructList :: BrickData
               -> Maybe BrickInternalState
               -> BrickInternalState
 constructList appD appSettings =
-  replaceLR (filterVisible (showAllVersions appSettings))
-            (lr appD)
+  replaceLR (filterVisible (_showAllVersions appSettings)
+                           (_showAllTools appSettings))
+            (_lr appD)
 
 listSelectedElement' :: BrickInternalState -> Maybe (Int, ListResult)
-listSelectedElement' BrickInternalState{..} = fmap (ix, ) $ clr !? ix
+listSelectedElement' BrickInternalState{..} = fmap (_ix, ) $ _clr !? _ix
 
 
 selectLatest :: Vector ListResult -> Int
@@ -444,11 +650,10 @@ filterVisible v e | lInstalled e = True
                                   (Nightly `notElem` lTag e)
 
 
-install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
-         => BrickState
-         -> (Int, ListResult)
+install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
+         => (Int, ListResult)
          -> m (Either String ())
-install' _ (_, ListResult {..}) = do
+install' (_, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
 
   let run =
@@ -530,10 +735,9 @@ install' _ (_, ListResult {..}) = do
 
 
 set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
-     => BrickState
-     -> (Int, ListResult)
+     => (Int, ListResult)
      -> m (Either String ())
-set' bs input@(_, ListResult {..}) = do
+set' input@(_, ListResult {..}) = do
   settings <- liftIO $ readIORef settings'
 
   let run =
@@ -588,12 +792,12 @@ set' bs input@(_, ListResult {..}) = do
               promptAnswer <- getUserPromptResponse userPrompt
               case promptAnswer of
                 PromptYes -> do
-                  res <- install' bs input
+                  res <- install' input
                   case res of
                     (Left err) -> pure $ Left err
                     (Right _) -> do
                       logInfo "Setting now..."
-                      set' bs input
+                      set' input
 
                 PromptNo -> pure $ Left (prettyHFError e)
               where
@@ -608,10 +812,9 @@ set' bs input@(_, ListResult {..}) = do
 
 
 del' :: (MonadReader AppState m, MonadIO m, MonadFail m, MonadMask m, MonadUnliftIO m)
-     => BrickState
-     -> (Int, ListResult)
+     => (Int, ListResult)
      -> m (Either String ())
-del' _ (_, ListResult {..}) = do
+del' (_, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
 
   let run = runE @'[NotInstalled, UninstallFailed]
@@ -635,10 +838,9 @@ del' _ (_, ListResult {..}) = do
 
 
 changelog' :: (MonadReader AppState m, MonadIO m)
-           => BrickState
-           -> (Int, ListResult)
+           => (Int, ListResult)
            -> m (Either String ())
-changelog' _ (_, ListResult {..}) = do
+changelog' (_, ListResult {..}) = do
   AppState { pfreq, ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
   case getChangeLog dls lTool (ToolVersion lVer) of
     Nothing -> pure $ Left $
@@ -671,7 +873,6 @@ settings' = unsafePerformIO $ do
                       loggerConfig
 
 
-
 brickMain :: AppState
           -> IO ()
 brickMain s = do
@@ -695,7 +896,7 @@ brickMain s = do
 
 
 defaultAppSettings :: BrickSettings
-defaultAppSettings = BrickSettings { showAllVersions = False }
+defaultAppSettings = BrickSettings { _showAllVersions = False, _showAllTools = False }
 
 
 getGHCupInfo :: IO (Either String GHCupInfo)
@@ -724,3 +925,4 @@ getAppData mgi = runExceptT $ do
   flip runReaderT settings $ do
     lV <- listVersions Nothing [] False True (Nothing, Nothing)
     pure $ BrickData (reverse lV)
+
