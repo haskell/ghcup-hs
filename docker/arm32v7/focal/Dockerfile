@@ -29,8 +29,8 @@ RUN apt-get update && \
 
 RUN update_opt.sh 9 1
 
-ARG GHCUP_VERSION=0.1.17.8
-ARG GPG_KEY=7784930957807690A66EBDBE3786C5262ECB4A3F
+ARG GHCUP_VERSION=0.1.19.4
+ARG GPG_KEY=7D1E8AFD1D4A16D71FADA2F2CCC85C0E40C06A8C
 
 # install ghcup
 RUN gpg --batch --keyserver keys.openpgp.org --recv-keys $GPG_KEY && \
