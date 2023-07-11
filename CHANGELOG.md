@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## 0.1.19.5 -- ????-?-??
+
+* support JS cross compilers wrt [#838](https://github.com/haskell/ghcup-hs/issues/838)
+
 ## 0.1.19.4 -- 2023-7-02
 
 * fix missing TUI for aarch64 linux binaries
