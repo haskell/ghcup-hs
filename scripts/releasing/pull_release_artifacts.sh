@@ -29,7 +29,7 @@ gh release download "$RELEASE"
 
 # cirrus
 curl -L -o "x86_64-portbld-freebsd-ghcup-${TAG}" \
-	"https://api.cirrus-ci.com/v1/artifact/github/haskell/ghcup-hs/build/binaries/out/x86_64-portbld-freebsd-ghcup-${RELEASE}?branch=${RELEASE}"
+	"https://api.cirrus-ci.com/v1/artifact/github/haskell/ghcup-hs/build/binaries/out/x86_64-portbld-freebsd-ghcup-${TAG}?branch=${RELEASE}"
 
 sha256sum ./*-ghcup-* > SHA256SUMS
 gpg --detach-sign -u "${SIGNER}" SHA256SUMS
