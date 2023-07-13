@@ -914,7 +914,8 @@ ghcupDownloads:
   GHCup:
     0.1.19.5:
       viTags:
-      - LatestPrerelease
+      - Latest
+      - Recommended
       viChangeLog: https://github.com/haskell/ghcup-hs/blob/master/CHANGELOG.md
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghcup/0.1.19.5/ghcup-0.1.19.5-src.tar.gz
