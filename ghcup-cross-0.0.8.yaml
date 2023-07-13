@@ -16,3 +16,14 @@ ghcupDownloads:
               dlHash: 4e12b602869206830eef1aa6a17a5a00fa887d6c98c3a552269c418ee7f736f8
               dlSubdir: ghc-9.6.2-javascript-unknown-ghcjs
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.2/ghc-javascript-unknown-ghcjs-9.6.2-x86_64-linux-unknown.tar.xz
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.2/ghc-javascript-unknown-ghcjs-9.6.2-x86_64-apple-darwin.tar.xz
+              dlHash: dddb0ee68857a79e67a52c4ab9b7230023a8684a5e826e9afbb9c5820abf47e1
+              dlSubdir: ghc-9.6.2-javascript-unknown-ghcjs
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.2/ghc-javascript-unknown-ghcjs-9.6.2-aarch64-apple-darwin.tar.xz
+              dlHash: 0d65bb3940a820d95b4b33ea0cd61bf39670d48c4d8f747153ded01a7ef34821
+              dlSubdir: ghc-9.6.2-javascript-unknown-ghcjs
