@@ -27,3 +27,16 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.2/ghc-javascript-unknown-ghcjs-9.6.2-aarch64-apple-darwin.tar.xz
               dlHash: 0d65bb3940a820d95b4b33ea0cd61bf39670d48c4d8f747153ded01a7ef34821
               dlSubdir: ghc-9.6.2-javascript-unknown-ghcjs
+    wasm32-wasi-9.6.2.20230523:
+      viTags:
+      - base-4.18.0.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-64-static
+              dlHash: 85433ce296f2f95a5c60f78060cb4a3a8bf8b56bf83ddd75f1b23cb2e2378888
+              dlSubdir: ghc-9.6.2.20230523-wasm32-wasi
+              dlUri: https://gitlab.haskell.org/api/v4/projects/3223/jobs/1530829/artifacts/ghc-x86_64-linux-alpine3_12-cross_wasm32-wasi-release%2Bfully_static.tar.xz
+              dlOutput: ghc-9.6.2-x86_64-linux-alpine3_12-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-64-static
