@@ -719,4 +719,6 @@ instance Pretty ToolVersion where
 
 
 
-
+data BuildSystem = Hadrian
+                 | Make
+  deriving (Show, Eq)

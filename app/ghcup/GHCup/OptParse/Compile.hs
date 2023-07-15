@@ -76,7 +76,7 @@ data GHCCompileOptions = GHCCompileOptions
   , setCompile   :: Bool
   , ovewrwiteVer :: Maybe Version
   , buildFlavour :: Maybe String
-  , hadrian      :: Bool
+  , buildSystem  :: Maybe BuildSystem
   , isolateDir   :: Maybe FilePath
   }
 
@@ -268,9 +268,15 @@ ghcCompileOpts =
               "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
             )
           )
-    <*> switch
-          (long "hadrian" <> help "Use the hadrian build system instead of make (only git versions seem to be properly supported atm)"
+    <*> (
+         (\b -> if b then Just Hadrian else Nothing) <$> switch
+          (long "hadrian" <> help "Use the hadrian build system instead of make. Tries to detect by default."
           )
+         <|>
+         (\b -> if b then Just Make else Nothing) <$> switch
+          (long "make" <> help "Use the make build system instead of hadrian. Tries to detect by default."
+          )
+        )
     <*> optional
           (option
             (eitherReader isolateParser)
@@ -577,7 +583,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     patches
                     addConfArgs
                     buildFlavour
-                    hadrian
+                    buildSystem
                     (maybe GHCupInternal IsolateDir isolateDir)
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
         let vi = getVersionInfo targetVer GHC dls

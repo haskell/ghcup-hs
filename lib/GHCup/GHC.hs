@@ -764,7 +764,7 @@ compileGHC :: ( MonadMask m
            -> Maybe (Either FilePath [URI])  -- ^ patches
            -> [Text]                   -- ^ additional args to ./configure
            -> Maybe String             -- ^ build flavour
-           -> Bool
+           -> Maybe BuildSystem
            -> InstallDir
            -> Excepts
                 '[ AlreadyInstalled
@@ -793,7 +793,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs buildFlavour hadrian installDir
+compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs buildFlavour buildSystem installDir
   = do
     PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -927,11 +927,28 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
     (mBindist, bmk) <- liftE $ runBuildAction
       tmpUnpack
       (do
-        b <- if hadrian
-             -- prefer 'tver', because the real version carries out compatibility checks
-             -- we don't want the user to do funny things with it
-             then compileHadrianBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
-             else compileMakeBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
+        -- prefer 'tver', because the real version carries out compatibility checks
+        -- we don't want the user to do funny things with it
+        let doHadrian = compileHadrianBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
+            doMake    = compileMakeBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
+        b <- case buildSystem of
+               Just Hadrian -> do
+                 lift $ logInfo "Requested to use Hadrian"
+                 liftE doHadrian
+               Just Make -> do
+                 lift $ logInfo "Requested to use Make"
+                 doMake
+               Nothing -> do
+                 supportsHadrian <- liftE $ catchE @HadrianNotFound @'[HadrianNotFound] @'[] (\_ -> return False)
+                                      $ fmap (const True)
+                                      $ findHadrianFile (fromGHCupPath workdir)
+                 if supportsHadrian
+                 then do
+                   lift $ logInfo "Detected Hadrian"
+                   liftE doHadrian
+                 else do
+                   lift $ logInfo "Detected Make"
+                   doMake
         bmk <- liftIO $ handleIO (\_ -> pure "") $ B.readFile (build_mk $ fromGHCupPath workdir)
         pure (b, bmk)
       )
