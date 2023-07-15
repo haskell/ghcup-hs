@@ -433,11 +433,7 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
       -- Windows bindists are relocatable and don't need
       -- to run configure.
       -- We also must make sure to preserve mtime to not confuse ghc-pkg.
-      liftE $ mergeFileTree path inst GHC tver $ \source dest -> do
-        mtime <- liftIO $ ifM (pathIsSymbolicLink source) (pure Nothing) (Just <$> getModificationTime source)
-        when forceInstall $ hideError doesNotExistErrorType $ hideError InappropriateType $ recycleFile dest
-        liftIO $ moveFilePortable source dest
-        forM_ mtime $ liftIO . setModificationTime dest
+      liftE $ mergeGHCFileTree path inst tver forceInstall
   | otherwise = do
       PlatformRequest {..} <- lift getPlatformReq
 
@@ -459,7 +455,36 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
       tmpInstallDest <- lift withGHCupTmpDir
       lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "install"] (Just $ fromGHCupPath path)
       liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpInstallDest)
-      liftE $ mergeFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst))
+      liftE $ mergeGHCFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst)) inst tver forceInstall
+      pure ()
+
+
+mergeGHCFileTree :: ( MonadReader env m
+                    , HasPlatformReq env
+                    , HasDirs env
+                    , HasSettings env
+                    , MonadThrow m
+                    , HasLog env
+                    , MonadIO m
+                    , MonadUnliftIO m
+                    , MonadMask m
+                    , MonadResource m
+                    , MonadFail m
+                    )
+                 => GHCupPath           -- ^ Path to the root of the tree
+                 -> InstallDirResolved  -- ^ Path to install to
+                 -> GHCTargetVersion    -- ^ The GHC version
+                 -> Bool                -- ^ Force install
+                 -> Excepts '[MergeFileTreeError] m ()
+mergeGHCFileTree root inst tver forceInstall
+  | isWindows = do
+      liftE $ mergeFileTree root inst GHC tver $ \source dest -> do
+        mtime <- liftIO $ ifM (pathIsSymbolicLink source) (pure Nothing) (Just <$> getModificationTime source)
+        when forceInstall $ hideError doesNotExistErrorType $ hideError InappropriateType $ recycleFile dest
+        liftIO $ moveFilePortable source dest
+        forM_ mtime $ liftIO . setModificationTime dest
+  | otherwise = do
+      liftE $ mergeFileTree root
         inst
         GHC
         tver
@@ -467,8 +492,6 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
             mtime <- ifM (pathIsSymbolicLink f) (pure Nothing) (Just <$> getModificationTime f)
             install f t (not forceInstall)
             forM_ mtime $ setModificationTime t)
-
-      pure ()
 
 
 -- | Installs GHC into @~\/.ghcup\/ghc/\<ver\>@ and places the
@@ -1075,6 +1098,9 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
                         , HasLog env
                         , MonadIO m
                         , MonadFail m
+                        , MonadMask m
+                        , MonadUnliftIO m
+                        , MonadResource m
                         )
                      => GHCTargetVersion
                      -> FilePath
@@ -1086,6 +1112,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
                            , PatchFailed
                            , ProcessError
                            , NotFoundInPATH
+                           , MergeFileTreeError
                            , CopyError]
                           m
                        (Maybe FilePath)  -- ^ output path of bindist, None for cross
@@ -1107,7 +1134,9 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
 
     if | isCross tver -> do
           lift $ logInfo "Installing cross toolchain..."
-          lEM $ make ["install"] (Just workdir)
+          tmpInstallDest <- lift withGHCupTmpDir
+          lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "install"] (Just workdir)
+          liftE $ mergeGHCFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir ghcdir)) ghcdir tver True
           pure Nothing
        | otherwise -> do
           lift $ logInfo "Creating bindist..."
