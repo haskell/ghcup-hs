@@ -928,7 +928,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
     -- compiled version, so the user can overwrite it
     installVer <- if | Just ov'   <- ov   -> pure (GHCTargetVersion crossTarget ov')
                      | Just tver' <- tver -> pure tver'
-                     | otherwise          -> fail "Newer GHCs don't support discovering the version in git. Complain to GHC devs: https://gitlab.haskell.org/ghc/ghc/-/issues/22322"
+                     | otherwise          -> fail "No GHC version given and couldn't detect version. Giving up..."
 
     alreadyInstalled <- lift $ ghcInstalled installVer
     alreadySet <- fmap (== Just installVer) $ lift $ ghcSet (_tvTarget installVer)
@@ -1019,11 +1019,20 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
   getGHCVer tmpUnpack = do
     lEM $ execWithGhcEnv "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
     lEM $ execWithGhcEnv "sh" ["./configure"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
-    CapturedProcess {..} <- lift $ makeOut
-      ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just $ fromGHCupPath tmpUnpack)
-    case _exitCode of
-      ExitSuccess -> either (throwE . ParseError . show) pure . MP.parse ghcProjectVersion "" . T.pack . stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
-      ExitFailure c -> throwE $ NonZeroExit c "make" ["show!", "--quiet", "VALUE=ProjectVersion" ]
+    let versionFile = fromGHCupPath tmpUnpack </> "VERSION"
+    hasVersionFile <- liftIO $ doesFileExist versionFile
+    if hasVersionFile
+    then do
+      lift $ logDebug "Detected VERSION file, trying to extract"
+      contents <- liftIO $ readFile versionFile
+      either (throwE . ParseError . show) pure . MP.parse version' "" . T.pack . stripNewlineEnd $ contents
+    else do
+      lift $ logDebug "Didn't detect VERSION file, trying to extract via legacy 'make'"
+      CapturedProcess {..} <- lift $ makeOut
+        ["show!", "--quiet", "VALUE=ProjectVersion" ] (Just $ fromGHCupPath tmpUnpack)
+      case _exitCode of
+        ExitSuccess -> either (throwE . ParseError . show) pure . MP.parse ghcProjectVersion "" . T.pack . stripNewlineEnd . T.unpack . decUTF8Safe' $ _stdOut
+        ExitFailure c -> throwE $ NonZeroExit c "make" ["show!", "--quiet", "VALUE=ProjectVersion" ]
 
   defaultConf =
     let cross_mk = $(LitE . StringL <$> (qAddDependentFile "data/build_mk/cross" >> runIO (readFile "data/build_mk/cross")))
