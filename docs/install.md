@@ -318,6 +318,24 @@ export PATH="$HOME/.cabal/bin:$HOME/.ghcup/bin:$PATH"
 
 All set. You can run `cabal init` now in an empty directory to start a project.
 
+## Esoteric distros
+
+### Void Linux
+
+Since void linux can be installed with glibc and musl, it's hard to support correctly with ghcup.
+One way to make ghcup work on **Void Linux musl** is to follow the [Overriding distro detection](../guide/#overriding-distro-detection)
+section and tell it to consider Alpine bindists only. E.g.:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_MINIMAL=1 sh
+source ~/.ghcup/env
+ghcup config set platform-override '{ "arch": "A_64", "platform": { "contents": "Alpine", "tag": "Linux" }, "version": "3.17" }'
+ghcup install cabal --set latest
+ghcup install ghc --set latest
+ghcup install stack --set latest
+ghcup install hls --set latest
+```
+
 ## Vim integration
 
 See [ghcup.vim](https://github.com/hasufell/ghcup.vim).
