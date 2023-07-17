@@ -731,7 +731,7 @@ rmGHCVer ver = do
     Just files -> do
       lift $ logInfo $ "Removing files safely from: " <> T.pack dir
       forM_ files (lift . hideError NoSuchThing . recycleFile . (\f -> dir </> dropDrive f))
-      removeEmptyDirsRecursive dir
+      hideError UnsatisfiedConstraints $ removeEmptyDirsRecursive dir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory dir
       f <- recordedInstallationFile GHC ver
       lift $ recycleFile f
