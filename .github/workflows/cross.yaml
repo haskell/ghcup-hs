@@ -1,0 +1,97 @@
+name: Test cross bindists
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '0 2 * * *'
+
+env:
+  CABAL_CACHE_DISABLE: ${{ vars.CABAL_CACHE_DISABLE }}
+  CABAL_CACHE_NONFATAL: yes
+
+jobs:
+  build:
+    name: Build linux binary
+    runs-on: ubuntu-latest
+    env:
+      CABAL_VER: 3.10.1.0
+      JSON_VERSION: "0.0.7"
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      S3_HOST: ${{ secrets.S3_HOST }}
+      ARTIFACT: "x86_64-linux-ghcup"
+      GHC_VER: 8.10.7
+      ARCH: 64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Run build
+        uses: docker://hasufell/alpine-haskell:3.12
+        with:
+          args: sh .github/scripts/build.sh
+        env:
+          ARTIFACT: ${{ env.ARTIFACT }}
+          ARCH: ${{ env.ARCH }}
+          GHC_VER: ${{ env.GHC_VER }}
+          DISTRO: Alpine
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          S3_HOST: ${{ env.S3_HOST }}
+
+      - if: always()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            ./out/*
+
+  test-cross-linux:
+    name: Test linux cross
+    needs: "build"
+    runs-on: [self-hosted, Linux, X64]
+    container:
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb10:8d0224e6b2a08157649651e69302380b2bd24e11
+      options: --user root
+      env:
+        CABAL_VER: 3.6.2.0
+        BUILD_CONF_ARGS: "--enable-unregisterised"
+        HADRIAN_FLAVOUR: ""
+        JSON_VERSION: "0.0.7"
+        GHC_VER: 8.10.6
+        GHC_TARGET_VERSION: "8.10.7"
+        ARCH: 64
+        DISTRO: Debian
+        ARTIFACT: "x86_64-linux-ghcup"
+        CROSS: "arm-linux-gnueabihf"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifacts
+          path: ./out
+
+      - name: Run test (64 bit linux)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
+          sudo apt-get install -y gcc-arm-linux-gnueabihf
+          sudo dpkg --add-architecture armhf
+          sudo apt-get update -y
+          sudo apt-get install -y libncurses-dev:armhf
+          sh .github/scripts/cross.sh
+
