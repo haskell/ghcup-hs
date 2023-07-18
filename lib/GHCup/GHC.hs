@@ -1013,8 +1013,8 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
             => GHCupPath
             -> Excepts '[ProcessError, ParseError] m Version
   getGHCVer tmpUnpack = do
-    lEM $ execWithGhcEnv "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
-    lEM $ execWithGhcEnv "sh" ["./configure"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
+    lEM $ execLogged "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap" Nothing
+    lEM $ configureWithGhcBoot Nothing [] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
     let versionFile = fromGHCupPath tmpUnpack </> "VERSION"
     hasVersionFile <- liftIO $ doesFileExist versionFile
     if hasVersionFile
@@ -1065,12 +1065,13 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
 
     lift $ logInfo "Building (this may take a while)..."
     hadrian_build <- liftE $ findHadrianFile workdir
-    lEM $ execWithGhcEnv hadrian_build
+    lEM $ execLogged hadrian_build
                           ( maybe [] (\j  -> ["-j" <> show j]         ) jobs
                          ++ maybe [] (\bf -> ["--flavour=" <> bf]) buildFlavour
                          ++ ["binary-dist"]
                           )
                           (Just workdir) "ghc-make"
+                          Nothing
     [tar] <- liftIO $ findFiles
       (workdir </> "_build" </> "bindist")
       (makeRegexOpts compExtended
@@ -1259,64 +1260,50 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
                         ()
   configureBindist tver workdir (fromInstallDir -> ghcdir) = do
     lift $ logInfo [s|configuring build|]
-
-    if | _tvVersion tver >= [vver|8.8.0|] -> do
-          lEM $ execWithGhcEnv
-            "sh"
-            ("./configure" :  maybe mempty
-                      (\x -> ["--target=" <> T.unpack x])
-                      (_tvTarget tver)
-            ++ ["--prefix=" <> ghcdir]
-            ++ (if isWindows then ["--enable-tarballs-autodownload"] else [])
-            ++ fmap T.unpack aargs
-            )
-            (Just workdir)
-            "ghc-conf"
-       | otherwise -> do
-        lEM $ execLogged
-          "sh"
-          (  [ "./configure", "--with-ghc=" <> either id id bghc
-             ]
-          ++ maybe mempty
-                   (\x -> ["--target=" <> T.unpack x])
-                   (_tvTarget tver)
-          ++ ["--prefix=" <> ghcdir]
-          ++ (if isWindows then ["--enable-tarballs-autodownload"] else [])
-          ++ fmap T.unpack aargs
-          )
-          (Just workdir)
-          "ghc-conf"
-          Nothing
+    lEM $ configureWithGhcBoot (Just tver)
+      (maybe mempty
+                (\x -> ["--target=" <> T.unpack x])
+                (_tvTarget tver)
+      ++ ["--prefix=" <> ghcdir]
+      ++ (if isWindows then ["--enable-tarballs-autodownload"] else [])
+      ++ fmap T.unpack aargs
+      )
+      (Just workdir)
+      "ghc-conf"
     pure ()
 
-  execWithGhcEnv :: ( MonadReader env m
-                    , HasSettings env
-                    , HasDirs env
-                    , HasLog env
-                    , MonadIO m
-                    , MonadThrow m)
-                 => FilePath         -- ^ thing to execute
-                 -> [String]         -- ^ args for the thing
-                 -> Maybe FilePath   -- ^ optionally chdir into this
-                 -> FilePath         -- ^ log filename (opened in append mode)
-                 -> m (Either ProcessError ())
-  execWithGhcEnv fp args dir logf = do
-    env <- ghcEnv
-    execLogged fp args dir logf (Just env)
+  configureWithGhcBoot :: ( MonadReader env m
+                          , HasSettings env
+                          , HasDirs env
+                          , HasLog env
+                          , MonadIO m
+                          , MonadThrow m)
+                       => Maybe GHCTargetVersion
+                       -> [String]         -- ^ args for configure
+                       -> Maybe FilePath   -- ^ optionally chdir into this
+                       -> FilePath         -- ^ log filename (opened in append mode)
+                       -> m (Either ProcessError ())
+  configureWithGhcBoot mtver args dir logf = do
+    let execNew = execLogged
+                    "sh"
+                    ("./configure" : ("GHC=" <> bghc) : args)
+                    dir
+                    logf
+                    Nothing
+        execOld = execLogged
+                   "sh"
+                   ("./configure" : ("--with-ghc=" <> bghc) : args)
+                   dir
+                   logf
+                   Nothing
+    if | Just tver <- mtver
+       , _tvVersion tver >= [vver|8.8.0|] -> execNew
+       | Nothing   <- mtver               -> execNew -- need some default for git checkouts where we don't know yet
+       | otherwise                        -> execOld
 
   bghc = case bstrap of
-           Right g    -> Right g
-           Left  bver -> Left ("ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt)
-
-  ghcEnv :: (MonadThrow m, MonadIO m) => m [(String, String)]
-  ghcEnv = do
-    cEnv <- liftIO getEnvironment
-    bghcPath <- case bghc of
-      Right ghc' -> pure ghc'
-      Left  bver -> do
-        spaths <- liftIO getSearchPath
-        throwMaybeM (NotFoundInPATH bver) $ liftIO (searchPath spaths bver)
-    pure (("GHC", bghcPath) : cEnv)
+           Right g    -> g
+           Left  bver -> ("ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt)
 
 
 

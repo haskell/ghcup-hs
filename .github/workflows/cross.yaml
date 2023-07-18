@@ -74,6 +74,7 @@ jobs:
         DISTRO: Debian
         ARTIFACT: "x86_64-linux-ghcup"
         CROSS: "arm-linux-gnueabihf"
+        WRAPPER: "run"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -94,4 +95,46 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y libncurses-dev:armhf
           sh .github/scripts/cross.sh
+
+  test-cross-js:
+    name: Test GHC JS cross
+    needs: "build"
+    runs-on: [self-hosted, Linux, X64]
+    container:
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb10:8d0224e6b2a08157649651e69302380b2bd24e11
+      options: --user root
+      env:
+        CABAL_VER: 3.6.2.0
+        BUILD_CONF_ARGS: ""
+        HADRIAN_FLAVOUR: "default+native_bignum"
+        JSON_VERSION: "0.0.7"
+        GHC_VER: 9.6.2
+        GHC_TARGET_VERSION: "9.6.2"
+        ARCH: 64
+        DISTRO: Debian
+        ARTIFACT: "x86_64-linux-ghcup"
+        CROSS: "javascript-unknown-ghcjs"
+        WRAPPER: "emconfigure"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifacts
+          path: ./out
+
+      - name: Run test (64 bit linux)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          . ./emsdk_env.sh
+          cd ..
+          bash .github/scripts/cross.sh
 

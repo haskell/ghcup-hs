@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-set -eux
+set -ex
 
 . .github/scripts/common.sh
 
+run() {
+    "$@"
+}
 
 if [ "${OS}" = "Windows" ] ; then
 	GHCUP_DIR="${GHCUP_INSTALL_BASE_PREFIX}"/ghcup
@@ -39,9 +42,11 @@ cabal --version
 
 eghcup debug-info
 
-eghcup -v \
+ecabal update
+
+"${WRAPPER}" "$GHCUP_BIN/ghcup${ext}" -c -s "file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml" -v \
 	compile ghc \
-	$(if [ -n "${HADRIAN_FLAVOUR}" ] ; then printf "%s" "--flavour=${HADRIAN_FLAVOUR}" else true ; fi) \
+	$(if [ -n "${HADRIAN_FLAVOUR}" ] ; then printf "%s" "--flavour=${HADRIAN_FLAVOUR}" ; else true ; fi) \
 	-j "$(nproc)" \
 	-v "${GHC_TARGET_VERSION}" \
 	-b "${GHC_VER}" \
