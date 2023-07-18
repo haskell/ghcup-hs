@@ -82,7 +82,7 @@ data SetToolVersion = SetGHCVersion GHCTargetVersion
                     | SetToolTag Tag
                     | SetToolDay Day
                     | SetRecommended
-                    | SetNext deriving Show
+                    | SetNext deriving (Eq, Show)
 
 prettyToolVer :: ToolVersion -> String
 prettyToolVer (GHCVersion v')  = T.unpack $ tVerToText v'

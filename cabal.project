@@ -23,3 +23,5 @@ package aeson
 package streamly
   flags: +use-unliftio
 
+package *
+  test-show-details: direct

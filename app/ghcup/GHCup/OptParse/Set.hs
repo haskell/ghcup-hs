@@ -54,6 +54,7 @@ data SetCommand = SetGHC SetOptions
                 | SetCabal SetOptions
                 | SetHLS SetOptions
                 | SetStack SetOptions
+                deriving (Eq, Show)
 
 
 
@@ -65,7 +66,7 @@ data SetCommand = SetGHC SetOptions
 
 data SetOptions = SetOptions
   { sToolVer :: SetToolVersion
-  } deriving Show
+  } deriving (Eq, Show)
 
 
 
@@ -266,6 +267,7 @@ set :: forall m env.
     -> m ExitCode
 set setCommand runAppState _ runLogger = case setCommand of
   (Right sopts@SetOptions{ sToolVer }) -> do
+    liftIO $ print sToolVer
     continue <- guessTarget sToolVer
     if continue
       then setGHC' sopts
@@ -285,9 +287,13 @@ set setCommand runAppState _ runLogger = case setCommand of
       , let other' = if T.null other then "" else other <> "-"
       -> errorWithSuggest (target' <> " " <> other' <> prettyVer _tvVersion)
     Just target -> errorWithHelp $ "Unrecognized `" <> target <> "`."
-    Nothing -> warnOldStyle (prettyVer _tvVersion) -- Only has version
+    Nothing
+      | Just (target', other) <- findPrefix (prettyVer _tvVersion)
+      -> errorWithSuggest (target' <> " " <> other)
+    Nothing -> warnOldStyle (prettyVer _tvVersion) -- Only has vertion
   guessTarget SetRecommended = warnOldStyle "recommended"
   guessTarget SetNext = warnOldStyle "next"
+  guessTarget (SetToolTag tag) = warnOldStyle $ T.pack $ tagToString tag
   guessTarget _ = errorWithHelp "Impossible."
 
   findPrefix target = case find (`T.isPrefixOf` target) ["ghc", "cabal", "hls", "stack"] of
