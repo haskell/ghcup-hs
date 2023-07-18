@@ -40,10 +40,13 @@ param (
     # Whether to disable use of curl.exe
     [switch]$DisableCurl,
     # The Msys2 version to download (e.g. 20221216)
-    [string]$Msys2Version
+    [string]$Msys2Version,
+    # The Msys2 sha256sum hash
+    [string]$Msys2Hash
 )
 
 $DefaultMsys2Version = "20221216"
+$DefaultMsys2Hash = "18370d32b0264915c97e3d7c618f7b32d48ad80858923883fde5145acd32ca0f"
 
 $Silent = !$Interactive
 
@@ -430,9 +433,12 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 	if (!($Msys2Version)) {
 		$Msys2Version = $DefaultMsys2Version
 	}
+	if (!($Msys2Hash)) {
+		$Msys2Hash = $DefaultMsys2Hash
+	}
     Print-Msg -msg ('Downloading Msys2 archive {0}...' -f $Msys2Version)
     $archive = ('msys2-base-x86_64-{0}.sfx.exe' -f $Msys2Version)
-    $msysUrl = ('https://repo.msys2.org/distrib/x86_64/{0}' -f "$archive")
+    $msysUrl = ('https://downloads.haskell.org/ghcup/msys2/{0}' -f "$archive")
     $archivePath = ('{0}\{1}' -f ([IO.Path]::GetTempPath()), "$archive")
 
     if ((Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue) -and !($DisableCurl)) {
@@ -440,6 +446,11 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     } else {
       Get-FileWCSynchronous -url "$msysUrl" -destinationFolder ([IO.Path]::GetTempPath()) -includeStats
     }
+	$Msys2HashChecked = Get-FileHash -Algorithm SHA256 "${archivePath}"
+	if (!($Msys2HashChecked.Hash -eq $Msys2Hash)) {
+		Print-Msg -color Red -msg ("Hashes don't match, got {0}, but expected {1}" -f $Msys2HashChecked, $Msys2Hash)
+		Exit 1
+	}
 
     Print-Msg -msg 'Extracting Msys2 archive...'
     $null = & "$archivePath" '-y' ('-o{0}' -f $GhcupDir)  # Extract
