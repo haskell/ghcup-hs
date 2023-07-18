@@ -218,7 +218,6 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
   printNotes ListResult {..} =
     (if hlsPowered then [withAttr (attrName "hls-powered") $ str "hls-powered"] else mempty
       )
-      ++ (if fromSrc then [withAttr (attrName "compiled") $ str "compiled"] else mempty)
       ++ (if lStray then [withAttr (attrName "stray") $ str "stray"] else mempty)
       ++ (case lReleaseDay of
             Nothing -> mempty

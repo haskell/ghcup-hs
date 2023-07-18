@@ -51,6 +51,14 @@ eghcup set ghc "${CROSS}-${GHC_TARGET_VERSION}"
 
 [ "$($(eghcup whereis ghc "${CROSS}-${GHC_TARGET_VERSION}") --numeric-version)" = "${GHC_TARGET_VERSION}" ]
 
+# test that doing fishy symlinks into GHCup dir doesn't cause weird stuff on 'ghcup nuke'
+mkdir no_nuke/
+mkdir no_nuke/bar
+echo 'foo' > no_nuke/file
+echo 'bar' > no_nuke/bar/file
+ln -s "$CI_PROJECT_DIR"/no_nuke/ "${GHCUP_DIR}"/cache/no_nuke
+ln -s "$CI_PROJECT_DIR"/no_nuke/ "${GHCUP_DIR}"/logs/no_nuke
+
 # nuke
 eghcup nuke
 [ ! -e "${GHCUP_DIR}" ]

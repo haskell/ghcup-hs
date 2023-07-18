@@ -288,13 +288,6 @@ ghcInstalled ver = do
   liftIO $ doesDirectoryExist (fromGHCupPath ghcdir)
 
 
--- | Whether the given GHC version is installed from source.
-ghcSrcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => GHCTargetVersion -> m Bool
-ghcSrcInstalled ver = do
-  ghcdir <- ghcupGHCDir ver
-  liftIO $ doesFileExist (fromGHCupPath ghcdir </> ghcUpSrcBuiltFile)
-
-
 -- | Whether the given GHC version is set as the current.
 ghcSet :: (MonadReader env m, HasDirs env, MonadThrow m, MonadIO m)
        => Maybe Text   -- ^ the target of the GHC version, if any
@@ -974,11 +967,6 @@ ghcToolFiles ver = do
   isNotAnyInfix :: [String] -> String -> Bool
   isNotAnyInfix xs t = foldr (\a b -> not (a `isInfixOf` t) && b) True xs
 
-
--- | This file, when residing in @~\/.ghcup\/ghc\/\<ver\>\/@ signals that
--- this GHC was built from source. It contains the build config.
-ghcUpSrcBuiltFile :: FilePath
-ghcUpSrcBuiltFile = ".ghcup_src_built"
 
 
 -- | Calls gmake if it exists in PATH, otherwise make.

@@ -947,33 +947,31 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
       IsolateDir isoDir -> pure $ IsolateDirResolved isoDir
       GHCupInternal -> GHCupDir <$> lift (ghcupGHCDir installVer)
 
-    (mBindist, bmk) <- liftE $ runBuildAction
+    mBindist <- liftE $ runBuildAction
       tmpUnpack
       (do
         -- prefer 'tver', because the real version carries out compatibility checks
         -- we don't want the user to do funny things with it
         let doHadrian = compileHadrianBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
             doMake    = compileMakeBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
-        b <- case buildSystem of
-               Just Hadrian -> do
-                 lift $ logInfo "Requested to use Hadrian"
-                 liftE doHadrian
-               Just Make -> do
-                 lift $ logInfo "Requested to use Make"
-                 doMake
-               Nothing -> do
-                 supportsHadrian <- liftE $ catchE @HadrianNotFound @'[HadrianNotFound] @'[] (\_ -> return False)
-                                      $ fmap (const True)
-                                      $ findHadrianFile (fromGHCupPath workdir)
-                 if supportsHadrian
-                 then do
-                   lift $ logInfo "Detected Hadrian"
-                   liftE doHadrian
-                 else do
-                   lift $ logInfo "Detected Make"
-                   doMake
-        bmk <- liftIO $ handleIO (\_ -> pure "") $ B.readFile (build_mk $ fromGHCupPath workdir)
-        pure (b, bmk)
+        case buildSystem of
+          Just Hadrian -> do
+            lift $ logInfo "Requested to use Hadrian"
+            liftE doHadrian
+          Just Make -> do
+            lift $ logInfo "Requested to use Make"
+            doMake
+          Nothing -> do
+            supportsHadrian <- liftE $ catchE @HadrianNotFound @'[HadrianNotFound] @'[] (\_ -> return False)
+                                 $ fmap (const True)
+                                 $ findHadrianFile (fromGHCupPath workdir)
+            if supportsHadrian
+            then do
+              lift $ logInfo "Detected Hadrian"
+              liftE doHadrian
+            else do
+              lift $ logInfo "Detected Make"
+              doMake
       )
 
     case installDir of
@@ -992,8 +990,6 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
                                installVer
                                False       -- not a force install, since we already overwrite when compiling.
                                []
-
-    liftIO $ B.writeFile (fromInstallDir ghcdir </> ghcUpSrcBuiltFile) bmk
 
     case installDir of
       -- set and make symlinks for regular (non-isolated) installs
