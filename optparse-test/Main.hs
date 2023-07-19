@@ -34,6 +34,23 @@ setTests =
               (mkVersion $ (Digits 9 :| []) :| [Digits 6 :| []])
             )
         )
+    , check "set next" (Right $ SetOptions SetNext)
+    , check "set nightly" (Right $ SetOptions
+        $ SetGHCVersion
+          (GHCTargetVersion
+            Nothing
+            (mkVersion $ (Str "nightly" :| []) :| [])
+          )
+        )
+    , check "set cabal-3.10"
+        (Right $ SetOptions
+          $ SetGHCVersion
+            (GHCTargetVersion
+              (Just "cabal")
+              (mkVersion $ (Digits 3 :| []) :| [Digits 10 :| []])
+            )
+        )
+    , check "set latest" (Right $ SetOptions $ SetToolTag Latest)
     ]
   where
     check :: String -> Either SetCommand SetOptions -> TestTree

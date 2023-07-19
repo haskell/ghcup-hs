@@ -249,6 +249,61 @@ runSetStack runAppState =
     --[ Entrypoints ]--
     -------------------
 
+-- | Given a old-style @SetToolVersion@ and give a recommendation with
+-- maximum probability.
+-- To maintain compatable, returns @m True@ to indicate we can continue
+-- do a @set@ operataion, otherwise @m False@ to cut early, these should
+-- be failed even if we continue do @set@.
+guessTargetForSetCmd :: forall m.
+    ( Monad m
+    , MonadMask m
+    , MonadUnliftIO m
+    , MonadFail m
+    )
+  => (ReaderT LeanAppState m () -> m ())
+  -> SetToolVersion
+  -> m Bool
+guessTargetForSetCmd runLogger = \case
+  (SetGHCVersion GHCTargetVersion{..}) -> 
+    case T.toLower <$> _tvTarget of
+      Just target
+        | Just (target', other) <- findPrefix target
+          -- other may be `javascript-unknown-ghcjs`
+          -- hence the suggestion will be `ghcup set ghc javascript-unknown-ghcjs-9.6`
+        , let other' = if T.null other then "" else other <> "-"
+        -> errorWithSuggest (target' <> " " <> other' <> prettyVer _tvVersion)
+      Just target -> errorWithHelp $ "Unrecognized `" <> target <> "`."
+      Nothing
+        | Just (target', other) <- findPrefix (prettyVer _tvVersion)
+        -> errorWithSuggest (target' <> " " <> other)
+      Nothing -> warnOldStyle (prettyVer _tvVersion) -- Only has version
+  SetRecommended -> warnOldStyle "recommended"
+  SetNext -> warnOldStyle "next"
+  (SetToolTag tag) -> warnOldStyle $ T.pack $ tagToString tag
+  _ -> errorWithHelp "Impossible."
+  where
+  findPrefix target = case find (`T.isPrefixOf` target) ["ghc", "cabal", "hls", "stack"] of
+    Just prefix
+      | Just other <- T.stripPrefix prefix target
+      , let other' =
+              case T.uncons other of
+                Just ('-', rest) -> rest
+                _ -> other
+      -> pure (prefix, other')
+    _ -> Nothing
+
+  errorWithSuggest txt = do
+    runLogger (logError $ T.unlines ["Did you mean `ghcup set " <> txt <> "`?", "", "  View all candidates with `ghcup set --help`"])
+    pure False
+
+  -- There several valid options, so we print a warning and then continue
+  warnOldStyle txt = do
+    runLogger (logWarn $ "This is an old-style command for setting GHC. Use `ghcup set ghc " <> txt <> "` instead.")
+    pure True
+
+  errorWithHelp txt = do
+    runLogger (logError $ T.unlines [txt, "", "  View all candidates with `ghcup set --help`"])
+    pure False
 
 set :: forall m env.
        ( Monad m
@@ -267,8 +322,7 @@ set :: forall m env.
     -> m ExitCode
 set setCommand runAppState _ runLogger = case setCommand of
   (Right sopts@SetOptions{ sToolVer }) -> do
-    liftIO $ print sToolVer
-    continue <- guessTarget sToolVer
+    continue <- guessTargetForSetCmd runLogger sToolVer
     if continue
       then setGHC' sopts
       else pure $ ExitFailure 14
@@ -278,46 +332,6 @@ set setCommand runAppState _ runLogger = case setCommand of
   (Left (SetStack sopts)) -> setStack' sopts
 
  where
-  guessTarget :: SetToolVersion -> m Bool
-  guessTarget (SetGHCVersion GHCTargetVersion{..}) = case T.toLower <$> _tvTarget of
-    Just target
-      | Just (target', other) <- findPrefix target
-        -- other may be `javascript-unknown-ghcjs`
-        -- hence the suggestion will be `ghcup set ghc javascript-unknown-ghcjs-9.6`
-      , let other' = if T.null other then "" else other <> "-"
-      -> errorWithSuggest (target' <> " " <> other' <> prettyVer _tvVersion)
-    Just target -> errorWithHelp $ "Unrecognized `" <> target <> "`."
-    Nothing
-      | Just (target', other) <- findPrefix (prettyVer _tvVersion)
-      -> errorWithSuggest (target' <> " " <> other)
-    Nothing -> warnOldStyle (prettyVer _tvVersion) -- Only has vertion
-  guessTarget SetRecommended = warnOldStyle "recommended"
-  guessTarget SetNext = warnOldStyle "next"
-  guessTarget (SetToolTag tag) = warnOldStyle $ T.pack $ tagToString tag
-  guessTarget _ = errorWithHelp "Impossible."
-
-  findPrefix target = case find (`T.isPrefixOf` target) ["ghc", "cabal", "hls", "stack"] of
-    Just prefix
-      | Just other <- T.stripPrefix prefix target
-      , let other' =
-              case T.uncons other of
-                Just ('-', rest) -> rest
-                _ -> other
-      -> pure (prefix, other')
-    _ -> Nothing
-
-  errorWithSuggest txt = do
-    runLogger (logError $ T.unlines ["Did you mean `ghcup set " <> txt <> "`?", "", "  View all candidates with `ghcup set --help`"])
-    pure False
-
-  warnOldStyle txt = do
-    runLogger (logWarn $ "This is an old-style command for setting GHC. Use `ghcup set ghc " <> txt <> "` instead.")
-    pure True
-
-  errorWithHelp txt = do
-    runLogger (logError $ T.unlines [txt, "", "  View all candidates with `ghcup set --help`"])
-    pure False
-
   setGHC' :: SetOptions
           -> m ExitCode
   setGHC' SetOptions{ sToolVer } = runSetGHC runAppState (do
