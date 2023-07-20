@@ -302,7 +302,7 @@ test-suite ghcup-test
   type:               exitcode-stdio-1.0
   main-is:            Main.hs
   build-tool-depends: hspec-discover:hspec-discover -any
-  hs-source-dirs:     test
+  hs-source-dirs:     test/ghcup-test
   other-modules:
     GHCup.ArbitraryTypes
     GHCup.Prelude.File.Posix.TraversalsSpec
