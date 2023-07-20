@@ -125,7 +125,7 @@ testGHCVer ver addMakeArgs = do
 
   dlInfo <-
     preview (ix GHC % ix ver % viTestDL % _Just) dls
-      ?? NoDownload
+      ?? NoDownload ver GHC Nothing
 
   liftE $ testGHCBindist dlInfo ver addMakeArgs
 
@@ -260,7 +260,7 @@ fetchGHCSrc v mfp = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   dlInfo <-
     preview (ix GHC % ix v % viSourceDL % _Just) dls
-      ?? NoDownload
+      ?? NoDownload v GHC Nothing
   liftE $ downloadCached' dlInfo Nothing mfp
 
 
@@ -818,7 +818,7 @@ compileGHC :: ( MonadMask m
                 GHCTargetVersion
 compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs buildFlavour buildSystem installDir
   = do
-    PlatformRequest { .. } <- lift getPlatformReq
+    pfreq@PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
     (workdir, tmpUnpack, tver) <- case targetGhc of
@@ -827,9 +827,10 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
         lift $ logDebug $ "Requested to compile: " <> prettyVer ver <> " with " <> either prettyVer T.pack bstrap
 
         -- download source tarball
+        let tver = mkTVer ver
         dlInfo <-
-          preview (ix GHC % ix (mkTVer ver) % viSourceDL % _Just) dls
-            ?? NoDownload
+          preview (ix GHC % ix tver % viSourceDL % _Just) dls
+            ?? NoDownload tver GHC (Just pfreq)
         dl <- liftE $ downloadCached dlInfo Nothing
 
         -- unpack
@@ -1303,7 +1304,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
 
   bghc = case bstrap of
            Right g    -> g
-           Left  bver -> ("ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt)
+           Left  bver -> "ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt
 
 
 

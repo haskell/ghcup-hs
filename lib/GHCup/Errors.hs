@@ -206,12 +206,26 @@ instance HFErrorProject NoCompatiblePlatform where
   eDesc _ = "No compatible platform could be found"
 
 -- | Unable to find a download for the requested version/distro.
-data NoDownload = NoDownload
+data NoDownload = NoDownload GHCTargetVersion Tool (Maybe PlatformRequest)
+                | NoDownload' GlobalTool
   deriving Show
 
 instance Pretty NoDownload where
-  pPrint NoDownload =
-    text (eDesc (Proxy :: Proxy NoDownload))
+  pPrint (NoDownload tver@(GHCTargetVersion mtarget vv) tool mpfreq)
+    | (Just target) <- mtarget
+    , target `elem` (T.pack . prettyShow <$> enumFromTo (minBound :: Tool) (maxBound :: Tool))
+    = text $ "Unable to find a download for "
+             <> show tool
+             <> " version '"
+             <> T.unpack (tVerToText tver)
+             <> maybe "'\n" (\pfreq -> "' on detected platform " <> pfReqToString pfreq <> "\n") mpfreq
+             <> "Perhaps you meant: 'ghcup <command> "
+             <> T.unpack target
+             <> " "
+             <> T.unpack (prettyVer vv)
+             <> "'"
+    | otherwise = text $ "Unable to find a download for " <> T.unpack (tVerToText tver)
+  pPrint (NoDownload' globalTool) = text $ "Unable to find a download for " <> prettyShow globalTool
 
 instance HFErrorProject NoDownload where
   eBase _ = 10

@@ -1212,7 +1212,7 @@ ensureGlobalTools
       (GHCupInfo _ _ gTools) <- lift getGHCupInfo
       dirs <- lift getDirs
       shimDownload <- liftE $ lE @_ @'[NoDownload]
-        $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
+        $ maybe (Left (NoDownload' ShimGen)) Right $ Map.lookup ShimGen gTools
       let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
       void $ (\DigestError{} -> do
           lift $ logWarn "Digest doesn't match, redownloading gs.exe..."

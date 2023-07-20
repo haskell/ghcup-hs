@@ -296,7 +296,7 @@ getDownloadInfo' :: ( MonadReader env m
                       m
                       DownloadInfo
 getDownloadInfo' t v = do
-  (PlatformRequest a p mv) <- lift getPlatformReq
+  pfreq@(PlatformRequest a p mv) <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
   let distro_preview f g =
@@ -317,7 +317,7 @@ getDownloadInfo' t v = do
       without_distro     = distro_preview (set _Linux UnknownLinux) (const Nothing)
 
   maybe
-    (throwE NoDownload)
+    (throwE $ NoDownload v t (Just pfreq))
     pure
     (case p of
       -- non-musl won't work on alpine
