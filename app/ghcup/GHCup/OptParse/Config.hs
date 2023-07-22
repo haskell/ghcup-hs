@@ -52,6 +52,7 @@ data ConfigCommand
   | SetConfig String (Maybe String)
   | InitConfig
   | AddReleaseChannel Bool URI
+  deriving (Eq, Show)
 
 
 
