@@ -75,7 +75,7 @@ changelogP =
                 e       -> Left e
               )
             )
-            (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|ghcup>" <> help
+            (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|ghcup|stack>" <> help
               "Open changelog for given tool (default: ghc)"
               <> completer toolCompleter
             )
