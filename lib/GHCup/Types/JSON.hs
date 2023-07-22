@@ -2,11 +2,13 @@
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingVia           #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 
@@ -29,6 +31,7 @@ import           Control.Applicative            ( (<|>) )
 import           Data.Aeson              hiding (Key)
 import           Data.Aeson.TH
 import           Data.Aeson.Types        hiding (Key)
+import           Data.Bifunctor
 import           Data.ByteString                ( ByteString )
 import           Data.List.NonEmpty             ( NonEmpty(..) )
 import           Data.Text.Encoding            as E
@@ -37,7 +40,9 @@ import           Data.Void
 import           URI.ByteString
 import           Text.Casing
 
+import qualified Autodocodec                   as Codec
 import qualified Data.List.NonEmpty            as NE
+import qualified Data.Scientific               as Scientific
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding.Error      as E
 import qualified Text.Megaparsec               as MP
@@ -60,40 +65,45 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downlo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GPGSetting
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "r-") . T.pack . kebab . tail $ str' } ''PlatformRequest
 
-instance ToJSON Tag where
-  toJSON Latest             = String "Latest"
-  toJSON Recommended        = String "Recommended"
-  toJSON Prerelease         = String "Prerelease"
-  toJSON Nightly            = String "Nightly"
-  toJSON Old                = String "old"
-  toJSON (Base       pvp'') = String ("base-" <> prettyPVP pvp'')
-  toJSON LatestPrerelease   = String "LatestPrerelease"
-  toJSON LatestNightly      = String "LatestNightly"
-  toJSON (UnknownTag x    ) = String (T.pack x)
+instance Codec.HasCodec Tag where
+  codec = Codec.named "Tag" $ Codec.bimapCodec
+    (\t -> case T.unpack t of
+      "Latest"                             -> pure Latest
+      "Recommended"                        -> pure Recommended
+      "Prerelease"                         -> pure Prerelease
+      "Nightly"                            -> pure Nightly
+      "LatestPrerelease"                   -> pure LatestPrerelease
+      "LatestNightly"                      -> pure LatestNightly
+      "old"                                -> pure Old
+      ('b' : 'a' : 's' : 'e' : '-' : ver') -> case pvp (T.pack ver') of
+        Right x -> pure $ Base x
+        Left  e -> Left . show $ e
+      x -> pure (UnknownTag x))
+    (\tag -> case tag of
+      Latest             -> "Latest"
+      Recommended        -> "Recommended"
+      Prerelease         -> "Prerelease"
+      Nightly            -> "Nightly"
+      Old                -> "old"
+      (Base       pvp'') -> ("base-" <> prettyPVP pvp'')
+      LatestPrerelease   -> "LatestPrerelease"
+      LatestNightly      -> "LatestNightly"
+      (UnknownTag x    ) -> (T.pack x))
+    Codec.textCodec
 
-instance FromJSON Tag where
-  parseJSON = withText "Tag" $ \t -> case T.unpack t of
-    "Latest"                             -> pure Latest
-    "Recommended"                        -> pure Recommended
-    "Prerelease"                         -> pure Prerelease
-    "Nightly"                            -> pure Nightly
-    "LatestPrerelease"                   -> pure LatestPrerelease
-    "LatestNightly"                      -> pure LatestNightly
-    "old"                                -> pure Old
-    ('b' : 'a' : 's' : 'e' : '-' : ver') -> case pvp (T.pack ver') of
-      Right x -> pure $ Base x
-      Left  e -> fail . show $ e
-    x -> pure (UnknownTag x)
+deriving via Codec.Autodocodec Tag instance FromJSON Tag
 
-instance ToJSON URI where
-  toJSON = toJSON . E.decodeUtf8With E.lenientDecode . serializeURIRef'
+deriving via Codec.Autodocodec Tag instance ToJSON Tag
 
+instance Codec.HasCodec URI where
+  codec = Codec.named "URI" $ Codec.bimapCodec
+    (first show . parseURI strictURIParserOptions . encodeUtf8)
+    (E.decodeUtf8With E.lenientDecode . serializeURIRef')
+    Codec.textCodec
 
-instance FromJSON URI where
-  parseJSON = withText "URL" $ \t ->
-    case parseURI strictURIParserOptions (encodeUtf8 t) of
-      Right x -> pure x
-      Left  e -> fail . show $ e
+deriving via Codec.Autodocodec URI instance FromJSON URI
+
+deriving via Codec.Autodocodec URI instance ToJSON URI
 
 instance ToJSON GHCTargetVersion where
   toJSON = toJSON . tVerToText
@@ -224,20 +234,17 @@ instance ToJSONKey GlobalTool where
 instance FromJSONKey GlobalTool where
   fromJSONKey = genericFromJSONKey defaultJSONKeyOptions
 
-instance ToJSON TarDir where
-  toJSON (RealDir  p) = toJSON p
-  toJSON (RegexDir r) = object ["RegexDir" .= r]
+instance Codec.HasCodec TarDir where
+  codec = Codec.named "TarDir" $ Codec.dimapCodec
+    (either (RealDir . T.unpack) RegexDir)
+    (\tarDir -> case tarDir of
+      RealDir realDir -> Left $ T.pack realDir
+      RegexDir regexDir -> Right regexDir)
+    $ Codec.disjointEitherCodec Codec.textCodec (Codec.object "RegexDir" $ Codec.requiredField' "RegexDir" Codec..= id)
 
-instance FromJSON TarDir where
-  parseJSON v = realDir v <|> regexDir v
-   where
-    realDir = withText "TarDir" $ \t -> do
-      fp <- parseJSON (String t)
-      pure (RealDir fp)
-    regexDir = withObject "TarDir" $ \o -> do
-      r <- o .: "RegexDir"
-      pure $ RegexDir r
+deriving via Codec.Autodocodec TarDir instance FromJSON TarDir
 
+deriving via Codec.Autodocodec TarDir instance ToJSON TarDir
 
 instance ToJSON VersionCmp where
   toJSON = String . versionCmpToText
@@ -342,10 +349,58 @@ instance FromJSONKey (Maybe VersionRange)  where
 
 
 
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
+instance Codec.HasCodec Requirements where
+  codec = Codec.named "Requirements" . Codec.object "Requirements" $ Requirements
+    <$> Codec.requiredField' "distroPKGs" Codec..= _distroPKGs
+    <*> Codec.requiredField' "notes" Codec..= _notes
+
+deriving via Codec.Autodocodec Requirements instance FromJSON Requirements
+
+deriving via Codec.Autodocodec Requirements instance ToJSON Requirements
+
+instance Codec.HasCodec DownloadInfo where
+  codec = Codec.named "DownloadInfo" . Codec.object "DownloadInfo" $ DownloadInfo
+    <$> Codec.requiredField' "uri" Codec..= _dlUri
+    <*> Codec.optionalField' "subdir" Codec..= _dlSubdir
+    <*> Codec.requiredField' "hash" Codec..= _dlHash
+    <*> Codec.optionalFieldWith' "cSize" integerCodec Codec..= _dlCSize
+    <*> Codec.optionalField' "output" Codec..= _dlOutput
+    where
+      integerCodec = Codec.bimapCodec
+        (first (const "invalid integer") . Scientific.floatingOrInteger @Double)
+        (flip Scientific.scientific 0)
+        Codec.scientificCodec
+
+deriving via Codec.Autodocodec DownloadInfo instance FromJSON DownloadInfo
+
+deriving via Codec.Autodocodec DownloadInfo instance ToJSON DownloadInfo
+
+instance Codec.HasCodec VersionInfo where
+  codec = Codec.named "VersionInfo" . Codec.object "VersionInfo" $ VersionInfo
+    <$> Codec.requiredField' "tags" Codec..= _viTags
+    <*> Codec.optionalField' "releaseDay" Codec..= _viReleaseDay
+    <*> Codec.optionalField' "changeLog" Codec..= _viChangeLog
+    <*> Codec.optionalField' "sourceDL" Codec..= _viSourceDL
+    <*> Codec.optionalField' "testDL" Codec..= _viTestDL
+    <*> Codec.requiredField' "arch" Codec..= _viArch
+    <*> Codec.optionalField' "postInstall" Codec..= _viPostInstall
+    <*> Codec.optionalField' "postRemove" Codec..= _viPostRemove
+    <*> Codec.optionalField' "preCompile" Codec..= _viPreCompile
+
+deriving via Codec.Autodocodec VersionInfo instance FromJSON VersionInfo
+
+deriving via Codec.Autodocodec VersionInfo instance ToJSON VersionInfo
+
+instance Codec.HasCodec GHCupInfo where
+  codec = Codec.named "GHCupInfo" . Codec.object "GHCupInfo" $ GHCupInfo
+    <$> Codec.requiredField' "toolRequirements" Codec..= _toolRequirements
+    <*> Codec.requiredField' "ghcupDownloads" Codec..= _ghcupDownloads
+    <*> Codec.requiredField' "globalTools" Codec..= _globalTools
+
+deriving via Codec.Autodocodec GHCupInfo instance FromJSON GHCupInfo
+
+deriving via Codec.Autodocodec GHCupInfo instance ToJSON GHCupInfo
+
 deriveToJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings

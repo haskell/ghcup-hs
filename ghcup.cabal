@@ -111,6 +111,8 @@ library
   build-depends:
     , aeson                 >=1.4
     , async                 >=0.8        && <2.3
+    , autodocodec           ^>=0.2.0.3
+    , autodocodec-schema    ^>=0.1.0.3
     , base                  >=4.12       && <5
     , base16-bytestring     >=0.1.1.6    && <1.1
     , binary                ^>=0.8.6.0
@@ -140,6 +142,7 @@ library
     , retry                 ^>=0.8.1.2 || ^>=0.9
     , safe                  ^>=0.3.18
     , safe-exceptions       ^>=0.1
+    , scientific            ^>=0.3.7.0
     , split                 ^>=0.2.3.4
     , streamly              ^>=0.8.2
     , strict-base           ^>=0.4
