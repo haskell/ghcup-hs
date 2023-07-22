@@ -417,6 +417,8 @@ test-suite ghcup-optparse-test
   main-is: Main.hs
   other-modules:
     SetTest
+    Utils
+    DebugInfoTest
   default-language: Haskell2010
   ghc-options: -Wall
   build-depends: base, ghcup, ghcup-optparse, tasty, tasty-hunit, optparse-applicative, versions, text

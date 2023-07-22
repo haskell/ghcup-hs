@@ -5,12 +5,11 @@ module SetTest where
 import GHCup.OptParse as GHCup
 import Test.Tasty
 import Test.Tasty.HUnit
-import Options.Applicative
 import Control.Monad.IO.Class (liftIO)
 import GHCup.Types
 import Data.Versions
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Bifunctor (second)
+import Utils
 
 setTests :: TestTree
 setTests =
@@ -190,15 +189,3 @@ setParseWith :: [String] -> IO (Either SetCommand SetOptions)
 setParseWith args = do
   Set a <- parseWith args
   pure a
-
-parseWith :: [String] -> IO Command
-parseWith args =
-  optCommand <$> handleParseResult
-    (execParserPure defaultPrefs (info GHCup.opts fullDesc) args)
-
-padLeft :: Int -> String -> String
-padLeft desiredLength s = padding ++ s
-  where padding = replicate (desiredLength - length s) ' '
-
-mapSecond :: (b -> c) -> [(a,b)] -> [(a,c)]
-mapSecond = map . second
