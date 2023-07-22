@@ -414,8 +414,9 @@ test-suite ghcup-test
 test-suite ghcup-optparse-test
   type: exitcode-stdio-1.0
   hs-source-dirs: test/optparse-test
-  build-tool-depends: ghcup:ghcup
   main-is: Main.hs
+  other-modules:
+    SetTest
   default-language: Haskell2010
   ghc-options: -Wall
   build-depends: base, ghcup, ghcup-optparse, tasty, tasty-hunit, optparse-applicative, versions, text
