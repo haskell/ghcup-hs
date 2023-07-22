@@ -2,10 +2,8 @@
 
 module SetTest where
 
-import GHCup.OptParse as GHCup
+import GHCup.OptParse
 import Test.Tasty
-import Test.Tasty.HUnit
-import Control.Monad.IO.Class (liftIO)
 import GHCup.Types
 import Data.Versions
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -15,23 +13,13 @@ setTests :: TestTree
 setTests =
   testGroup "set"
     $ map
-        buildTestTree
+        (buildTestTree setParseWith)
         [ ("old-style", oldStyleCheckList)
         , ("ghc", setGhcCheckList)
         , ("cabal", setCabalCheckList)
         , ("hls", setHlsCheckList)
         , ("stack", setStackCheckList)
         ]
-  where
-    buildTestTree :: (String, [(String, Either SetCommand SetOptions)]) -> TestTree
-    buildTestTree (title, checkList) =
-      testGroup title
-        $ zipWith (uncurry . check) [1 :: Int ..] checkList
-
-    check :: Int -> String -> Either SetCommand SetOptions -> TestTree
-    check idx args expected = testCase (padLeft 2 (show idx) ++ "." ++ args) $ do
-      res <- setParseWith (words args)
-      liftIO $ res @?= expected
 
 oldStyleCheckList :: [(String, Either SetCommand SetOptions)]
 oldStyleCheckList = mapSecond (Right . SetOptions)

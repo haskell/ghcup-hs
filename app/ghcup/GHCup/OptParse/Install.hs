@@ -54,6 +54,7 @@ data InstallCommand = InstallGHC InstallOptions
                     | InstallCabal InstallOptions
                     | InstallHLS InstallOptions
                     | InstallStack InstallOptions
+                    deriving (Eq, Show)
 
 
 
@@ -70,7 +71,7 @@ data InstallOptions = InstallOptions
   , isolateDir   :: Maybe FilePath
   , forceInstall :: Bool
   , addConfArgs  :: [T.Text]
-  }
+  } deriving (Eq, Show)
 
 
 

@@ -5,6 +5,9 @@ import Options.Applicative
 import Data.Bifunctor
 import Data.Versions
 import Data.List.NonEmpty (NonEmpty)
+import Test.Tasty
+import Test.Tasty.HUnit
+import Control.Monad.IO.Class
 
 parseWith :: [String] -> IO Command
 parseWith args =
@@ -20,3 +23,16 @@ mapSecond = map . second
 
 mkVersion :: NonEmpty VChunk -> Version
 mkVersion chunks = Version Nothing chunks [] Nothing
+
+buildTestTree
+  :: (Eq a, Show a)
+  => ([String] -> IO a) -- ^ The parse function
+  -> (String, [(String, a)]) -- ^ The check list @(test group, [(cli command, expected value)])@
+  -> TestTree
+buildTestTree parse (title, checkList) =
+  testGroup title
+    $ zipWith (uncurry . check) [1 :: Int ..] checkList
+  where
+    check idx args expected = testCase (padLeft 2 (show idx) ++ "." ++ args) $ do
+      res <- parse (words args)
+      liftIO $ res @?= expected
