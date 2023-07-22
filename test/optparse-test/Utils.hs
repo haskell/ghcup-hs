@@ -3,6 +3,8 @@ module Utils where
 import GHCup.OptParse as GHCup
 import Options.Applicative
 import Data.Bifunctor
+import Data.Versions
+import Data.List.NonEmpty (NonEmpty)
 
 parseWith :: [String] -> IO Command
 parseWith args =
@@ -15,3 +17,6 @@ padLeft desiredLength s = padding ++ s
 
 mapSecond :: (b -> c) -> [(a,b)] -> [(a,c)]
 mapSecond = map . second
+
+mkVersion :: NonEmpty VChunk -> Version
+mkVersion chunks = Version Nothing chunks [] Nothing

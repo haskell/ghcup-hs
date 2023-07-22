@@ -49,7 +49,7 @@ data ChangeLogOptions = ChangeLogOptions
   { clOpen    :: Bool
   , clTool    :: Maybe Tool
   , clToolVer :: Maybe ToolVersion
-  }
+  } deriving (Eq, Show)
 
 
 

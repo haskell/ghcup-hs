@@ -1,10 +1,12 @@
 module Main where
 import Test.Tasty
 import qualified SetTest
-import qualified DebugInfoTest
+import qualified OtherCommandTest
+import qualified ChangeLogTest
 
 main :: IO ()
 main = defaultMain $ testGroup "ghcup"
   [ SetTest.setTests
-  , DebugInfoTest.debugInfoTests
+  , OtherCommandTest.otherCommandTests
+  , ChangeLogTest.changeLogTests
   ]

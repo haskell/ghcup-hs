@@ -33,9 +33,6 @@ setTests =
       res <- setParseWith (words args)
       liftIO $ res @?= expected
 
-mkVersion :: NonEmpty VChunk -> Version
-mkVersion chunks = Version Nothing chunks [] Nothing
-
 oldStyleCheckList :: [(String, Either SetCommand SetOptions)]
 oldStyleCheckList = mapSecond (Right . SetOptions)
   [ ("set", SetRecommended)
