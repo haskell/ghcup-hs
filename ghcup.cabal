@@ -424,6 +424,7 @@ test-suite ghcup-optparse-test
     InstallTest
     UnsetTest
     RmTest
+    ListTest
   default-language: Haskell2010
   ghc-options: -Wall
   build-depends: base, ghcup, ghcup-optparse, tasty, tasty-hunit, optparse-applicative, versions, text, uri-bytestring

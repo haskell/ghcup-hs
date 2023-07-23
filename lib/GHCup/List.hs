@@ -65,7 +65,7 @@ import qualified Data.Text                     as T
 data ListCriteria = ListInstalled  Bool
                   | ListSet        Bool
                   | ListAvailable  Bool
-                  deriving Show
+                  deriving (Eq, Show)
 
 -- | A list result describes a single tool version
 -- and various of its properties.
