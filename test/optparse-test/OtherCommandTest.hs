@@ -20,6 +20,9 @@ otherCommandTests = testGroup "other command"
   , testCase "nuke" $ do
       res <- parseWith ["nuke"]
       liftIO $ assertBool "nuke parse failed" (isNuke res)
+  , testCase "test ghc" $ do
+      res <- parseWith ["test", "ghc"]
+      liftIO $ assertBool "test parse failed" (isTest res)
   ]
 
 isDInfo :: Command -> Bool
@@ -29,3 +32,7 @@ isDInfo _     = False
 isNuke :: Command -> Bool
 isNuke Nuke = True
 isNuke _    = False
+
+isTest :: Command -> Bool
+isTest (Test _) = True
+isTest _        = False
