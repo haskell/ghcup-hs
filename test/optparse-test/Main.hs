@@ -7,6 +7,7 @@ import qualified ChangeLogTest
 import qualified ConfigTest
 import qualified InstallTest
 import qualified UnsetTest
+import qualified RmTest
 
 main :: IO ()
 main = defaultMain $ testGroup "ghcup"
@@ -16,4 +17,5 @@ main = defaultMain $ testGroup "ghcup"
   , ConfigTest.configTests
   , InstallTest.installTests
   , UnsetTest.unsetTests
+  , RmTest.rmTests
   ]

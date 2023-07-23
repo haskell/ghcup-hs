@@ -50,6 +50,7 @@ data RmCommand = RmGHC RmOptions
                | RmCabal Version
                | RmHLS Version
                | RmStack Version
+               deriving (Eq, Show)
 
 
 
@@ -61,7 +62,7 @@ data RmCommand = RmGHC RmOptions
 
 data RmOptions = RmOptions
   { ghcVer :: GHCTargetVersion
-  }
+  } deriving (Eq, Show)
 
 
 
