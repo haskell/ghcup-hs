@@ -134,15 +134,24 @@ rmTool :: ( MonadReader env m
           => ListResult
           -> Excepts '[NotInstalled, UninstallFailed] m ()
 rmTool ListResult {lVer, lTool, lCross} = do
-  logInfo $ "removing " <> T.pack (show lTool) <> " version " <> prettyVer lVer
+  let printRmTool = logInfo $ "removing " <> T.pack (show lTool) <> " version " <> prettyVer lVer
   case lTool of
-    GHC ->
+    GHC -> do
       let ghcTargetVersion = GHCTargetVersion lCross lVer
-      in rmGHCVer ghcTargetVersion
-    HLS -> rmHLSVer lVer
-    Cabal -> liftE $ rmCabalVer lVer
-    Stack -> liftE $ rmStackVer lVer
-    GHCup -> lift rmGhcup
+      logInfo $ "removing " <> T.pack (show lTool) <> " version " <> tVerToText ghcTargetVersion
+      rmGHCVer ghcTargetVersion
+    HLS -> do
+      printRmTool
+      rmHLSVer lVer
+    Cabal -> do
+      printRmTool
+      liftE $ rmCabalVer lVer
+    Stack -> do
+      printRmTool
+      liftE $ rmStackVer lVer
+    GHCup -> do
+      printRmTool
+      lift rmGhcup
 
 
 rmGhcupDirs :: ( MonadReader env m

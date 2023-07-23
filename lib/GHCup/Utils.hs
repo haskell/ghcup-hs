@@ -288,13 +288,6 @@ ghcInstalled ver = do
   liftIO $ doesDirectoryExist (fromGHCupPath ghcdir)
 
 
--- | Whether the given GHC version is installed from source.
-ghcSrcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => GHCTargetVersion -> m Bool
-ghcSrcInstalled ver = do
-  ghcdir <- ghcupGHCDir ver
-  liftIO $ doesFileExist (fromGHCupPath ghcdir </> ghcUpSrcBuiltFile)
-
-
 -- | Whether the given GHC version is set as the current.
 ghcSet :: (MonadReader env m, HasDirs env, MonadThrow m, MonadIO m)
        => Maybe Text   -- ^ the target of the GHC version, if any
@@ -975,11 +968,6 @@ ghcToolFiles ver = do
   isNotAnyInfix xs t = foldr (\a b -> not (a `isInfixOf` t) && b) True xs
 
 
--- | This file, when residing in @~\/.ghcup\/ghc\/\<ver\>\/@ signals that
--- this GHC was built from source. It contains the build config.
-ghcUpSrcBuiltFile :: FilePath
-ghcUpSrcBuiltFile = ".ghcup_src_built"
-
 
 -- | Calls gmake if it exists in PATH, otherwise make.
 make :: ( MonadThrow m
@@ -1224,7 +1212,7 @@ ensureGlobalTools
       (GHCupInfo _ _ gTools) <- lift getGHCupInfo
       dirs <- lift getDirs
       shimDownload <- liftE $ lE @_ @'[NoDownload]
-        $ maybe (Left NoDownload) Right $ Map.lookup ShimGen gTools
+        $ maybe (Left (NoDownload' ShimGen)) Right $ Map.lookup ShimGen gTools
       let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
       void $ (\DigestError{} -> do
           lift $ logWarn "Digest doesn't match, redownloading gs.exe..."

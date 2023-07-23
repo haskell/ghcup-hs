@@ -132,6 +132,9 @@ data GlobalTool = ShimGen
 
 instance NFData GlobalTool
 
+instance Pretty GlobalTool where
+  pPrint ShimGen = text "shimgen"
+
 
 -- | All necessary information of a tool version, including
 -- source download and per-architecture downloads.
@@ -719,4 +722,6 @@ instance Pretty ToolVersion where
 
 
 
-
+data BuildSystem = Hadrian
+                 | Make
+  deriving (Show, Eq)

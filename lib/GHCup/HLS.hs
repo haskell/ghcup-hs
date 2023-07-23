@@ -354,7 +354,7 @@ compileHLS :: ( MonadMask m
                        , NotInstalled
                        ] m Version
 compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal updateCabal patches cabalArgs = do
-  PlatformRequest { .. } <- lift getPlatformReq
+  pfreq@PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   Dirs { .. } <- lift getDirs
 
@@ -370,7 +370,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
       -- download source tarball
       dlInfo <-
         preview (ix HLS % ix (mkTVer tver) % viSourceDL % _Just) dls
-          ?? NoDownload
+          ?? NoDownload (mkTVer tver) HLS (Just pfreq)
       dl <- liftE $ downloadCached dlInfo Nothing
 
       -- unpack

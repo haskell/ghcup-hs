@@ -180,7 +180,6 @@ printListResult no_color raw lr = do
                           then [color Green "hls-powered"]
                           else mempty
                         )
-                     ++ (if fromSrc then [color Blue "compiled"] else mempty)
                      ++ (if lStray then [color Yellow "stray"] else mempty)
                      ++ (case lReleaseDay of
                            Nothing -> mempty
