@@ -113,7 +113,14 @@ unsetParser =
   unsetGHCFooter :: String
   unsetGHCFooter = [s|Discussion:
     Unsets the the current GHC version. That means there won't
-    be a ~/.ghcup/bin/ghc anymore.|]
+    be a ~/.ghcup/bin/ghc anymore.
+
+Examples:
+  # unset ghc 
+  ghcup unset ghc
+
+  # unset ghc for the target version
+  ghcup unset ghc armv7-unknown-linux-gnueabihf|]
 
   unsetCabalFooter :: String
   unsetCabalFooter = [s|Discussion:
