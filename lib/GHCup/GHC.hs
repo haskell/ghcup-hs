@@ -83,6 +83,7 @@ import qualified Text.Megaparsec               as MP
 data GHCVer = SourceDist Version
             | GitDist GitBranch
             | RemoteDist URI
+            deriving (Eq, Show)
 
 
 

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Utils where
 
 import GHCup.OptParse as GHCup
@@ -8,6 +9,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Control.Monad.IO.Class
+import qualified Data.Text as T
 
 parseWith :: [String] -> IO Command
 parseWith args =
@@ -23,6 +25,11 @@ mapSecond = map . second
 
 mkVersion :: NonEmpty VChunk -> Version
 mkVersion chunks = Version Nothing chunks [] Nothing
+
+mkVersion' :: T.Text -> Version
+mkVersion' txt =
+  let Right ver = version txt
+  in ver
 
 buildTestTree
   :: (Eq a, Show a)
