@@ -205,7 +205,7 @@ url-source:
 
 ### Nightlies
 
-Nightlies are just a nother release channel. Currently, only GHC supports nightlies, which are binary releases
+Nightlies are just another release channel. Currently, only GHC supports nightlies, which are binary releases
 that are built every night from `master`.
 
 To add the nightly channel, run:
