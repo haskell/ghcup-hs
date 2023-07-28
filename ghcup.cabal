@@ -416,20 +416,29 @@ test-suite ghcup-optparse-test
   hs-source-dirs: test/optparse-test
   main-is: Main.hs
   other-modules:
-    SetTest
-    Utils
-    OtherCommandTest
     ChangeLogTest
-    ConfigTest
-    InstallTest
-    UnsetTest
-    RmTest
-    ListTest
-    UpgradeTest
     CompileTest
-    WhereisTest
+    ConfigTest
     GCTest
+    InstallTest
+    ListTest
+    OtherCommandTest
+    RmTest
     RunTest
+    SetTest
+    UnsetTest
+    UpgradeTest
+    Utils
+    WhereisTest
   default-language: Haskell2010
   ghc-options: -Wall
-  build-depends: base, ghcup, ghcup-optparse, tasty, tasty-hunit, optparse-applicative, versions, text, uri-bytestring
+  build-depends:
+    , base
+    , ghcup
+    , ghcup-optparse
+    , optparse-applicative
+    , tasty
+    , tasty-hunit
+    , text
+    , uri-bytestring
+    , versions
