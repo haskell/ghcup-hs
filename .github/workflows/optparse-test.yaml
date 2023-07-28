@@ -1,12 +1,8 @@
 name: Optparse Test
 
 on:
-  push:
-    branches:
-      - '**'
-  pull_request:
-    branches:
-      - '**'
+  - push
+  - pull_request
 
 jobs:
   ghcup-optparse-test:
