@@ -6,12 +6,13 @@ module CompileTest where
 import Test.Tasty
 import GHCup.OptParse
 import Utils
-import GHCup.GHC
 import Data.Versions
 import GHCup.Types
 import URI.ByteString.QQ
 import qualified GHCup.OptParse.Compile as GHC (GHCCompileOptions(..))
 import qualified GHCup.OptParse.Compile as HLS (HLSCompileOptions(..))
+import GHCup.GHC as GHC
+import GHCup.HLS as HLS
 
 
 compileTests :: TestTree
@@ -37,25 +38,40 @@ mkDefaultGHCCompileOptions target boot =
     False
     Nothing
 
+mkDefaultHLSCompileOptions :: HLSVer -> [ToolVersion] -> HLSCompileOptions
+mkDefaultHLSCompileOptions target ghcs =
+  HLSCompileOptions
+    target
+    Nothing
+    True
+    False
+    (Left False)
+    Nothing
+    Nothing
+    Nothing
+    (Just $ Right [])
+    ghcs
+    []
+
 compileGhcCheckList :: [(String, CompileCommand)]
 compileGhcCheckList = mapSecond CompileGHC
   [ ("compile ghc -v 9.4.5 -b 9.2.8", baseOptions)
   , ("compile ghc -g a32db0b -b 9.2.8", mkDefaultGHCCompileOptions
-        (GitDist $ GitBranch "a32db0b" Nothing)
+        (GHC.GitDist $ GitBranch "a32db0b" Nothing)
         (Left $ mkVersion' "9.2.8")
     )
   , ("compile ghc -g a32db0b -b 9.2.8 -r https://gitlab.haskell.org/ghc/ghc.git",
         mkDefaultGHCCompileOptions
-          (GitDist $ GitBranch "a32db0b" (Just "https://gitlab.haskell.org/ghc/ghc.git"))
+          (GHC.GitDist $ GitBranch "a32db0b" (Just "https://gitlab.haskell.org/ghc/ghc.git"))
           (Left $ mkVersion' "9.2.8")
     )
   , ("compile ghc -g a32db0b -r https://gitlab.haskell.org/ghc/ghc.git -b /usr/bin/ghc-9.2.2",
         mkDefaultGHCCompileOptions
-          (GitDist $ GitBranch "a32db0b" (Just "https://gitlab.haskell.org/ghc/ghc.git"))
+          (GHC.GitDist $ GitBranch "a32db0b" (Just "https://gitlab.haskell.org/ghc/ghc.git"))
           (Right "/usr/bin/ghc-9.2.2")
     )
   , ("compile ghc --remote-source-dist https://gitlab.haskell.org/ghc/ghc.git -b 9.2.8", mkDefaultGHCCompileOptions
-        (RemoteDist [uri|https://gitlab.haskell.org/ghc/ghc.git|])
+        (GHC.RemoteDist [uri|https://gitlab.haskell.org/ghc/ghc.git|])
         (Left $ mkVersion' "9.2.8")
     )
   , (baseCmd <> "-j20", baseOptions{GHC.jobs = Just 20})
@@ -78,15 +94,83 @@ compileGhcCheckList = mapSecond CompileGHC
   , (baseCmd <> "--isolate /tmp/out_dir", baseOptions{GHC.isolateDir = Just "/tmp/out_dir"})
   ]
   where
+    baseCmd :: String
     baseCmd = "compile ghc -v 9.4.5 -b 9.2.8 "
+
     baseOptions :: GHCCompileOptions
     baseOptions =
       mkDefaultGHCCompileOptions
-        (SourceDist $ mkVersion' "9.4.5")
+        (GHC.SourceDist $ mkVersion' "9.4.5")
         (Left $ mkVersion' "9.2.8")
 
 compileHlsCheckList :: [(String, CompileCommand)]
-compileHlsCheckList = []
+compileHlsCheckList = mapSecond CompileHLS
+  [ ("compile hls -v 2.0.0.0 --ghc 9.2.8", baseOptions)
+  , ("compile hls --version 2.0.0.0 --ghc 9.2.8", baseOptions)
+  , ("compile hls -g a32db0b --ghc 9.2.8",
+        mkDefaultHLSCompileOptions
+          (HLS.GitDist $ GitBranch {ref = "a32db0b", repo = Nothing})
+          [ghc928]
+    )
+  , ("compile hls --git-ref a32db0b --ghc 9.2.8",
+        mkDefaultHLSCompileOptions
+          (HLS.GitDist $ GitBranch {ref = "a32db0b", repo = Nothing})
+          [ghc928]
+    )
+  , ("compile hls -g a32db0b -r https://github.com/haskell/haskell-language-server.git --ghc 9.2.8",
+        mkDefaultHLSCompileOptions
+          (HLS.GitDist $ GitBranch {ref = "a32db0b", repo = Just "https://github.com/haskell/haskell-language-server.git"})
+          [ghc928]
+    )
+  , ("compile hls -g a32db0b --repository https://github.com/haskell/haskell-language-server.git --ghc 9.2.8",
+        mkDefaultHLSCompileOptions
+          (HLS.GitDist $ GitBranch {ref = "a32db0b", repo = Just "https://github.com/haskell/haskell-language-server.git"})
+          [ghc928]
+    )
+  , ("compile hls --source-dist 2.0.0.0 --ghc 9.2.8",
+        mkDefaultHLSCompileOptions
+          (HLS.SourceDist $ mkVersion' "2.0.0.0")
+          [ghc928]
+    )
+  , ("compile hls --remote-source-dist https://github.com/haskell/haskell-language-server/archive/refs/tags/2.0.0.1.tar.gz --ghc 9.2.8",
+        mkDefaultHLSCompileOptions
+          (HLS.RemoteDist [uri|https://github.com/haskell/haskell-language-server/archive/refs/tags/2.0.0.1.tar.gz|])
+          [ghc928]
+    )
+  , ("compile hls -v 2.0.0.0 --ghc latest",
+        mkDefaultHLSCompileOptions
+          (HLS.HackageDist $ mkVersion' "2.0.0.0")
+          [ToolTag Latest]
+    )
+  , (baseCmd <> "-j20", baseOptions{HLS.jobs = Just 20})
+  , (baseCmd <> "--jobs 10", baseOptions{HLS.jobs = Just 10})
+  , (baseCmd <> "--no-set", baseOptions{HLS.setCompile = False})
+  , (baseCmd <> "--cabal-update", baseOptions{HLS.updateCabal = True})
+  , (baseCmd <> "-o 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $ mkVersion' "2.0.0.0-p1"})
+  , (baseCmd <> "--overwrite-version 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $ mkVersion' "2.0.0.0-p1"})
+  , (baseCmd <> "--git-describe-version", baseOptions{HLS.ovewrwiteVer = Left True})
+  , (baseCmd <> "-i /tmp/out_dir", baseOptions{HLS.isolateDir = Just "/tmp/out_dir"})
+  , (baseCmd <> "--isolate /tmp/out_dir", baseOptions{HLS.isolateDir = Just "/tmp/out_dir"})
+  , (baseCmd <> "--cabal-project file:///tmp/cabal.project", baseOptions{HLS.cabalProject = Just $ Right [uri|file:///tmp/cabal.project|]})
+  , (baseCmd <> "--cabal-project cabal.ghc8107.project", baseOptions{HLS.cabalProject = Just $ Left "cabal.ghc8107.project"})
+  , (baseCmd <> "--cabal-project-local file:///tmp/cabal.project.local", baseOptions{HLS.cabalProjectLocal = Just [uri|file:///tmp/cabal.project.local|]})
+  , (baseCmd <> "--patch file:///example.patch", baseOptions{HLS.patches = Just $ Right [[uri|file:///example.patch|]]})
+  , (baseCmd <> "-p patch_dir", baseOptions{HLS.patches = Just (Left "patch_dir")})
+  , (baseCmd <> "--patchdir patch_dir", baseOptions{HLS.patches = Just (Left "patch_dir")})
+  , (baseCmd <> "-- --enable-tests", baseOptions{HLS.cabalArgs = ["--enable-tests"]})
+  ]
+  where
+    baseCmd :: String
+    baseCmd = "compile hls -v 2.0.0.0 --ghc 9.2.8 "
+
+    baseOptions :: HLSCompileOptions
+    baseOptions =
+      mkDefaultHLSCompileOptions
+        (HLS.HackageDist $ mkVersion' "2.0.0.0")
+        [ghc928]
+
+    ghc928 :: ToolVersion
+    ghc928 = GHCVersion $ GHCTargetVersion Nothing (mkVersion' "9.2.8")
 
 compileParseWith :: [String] -> IO CompileCommand
 compileParseWith args = do
