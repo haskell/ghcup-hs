@@ -12,6 +12,7 @@ import qualified ListTest
 import qualified UpgradeTest
 import qualified CompileTest
 import qualified WhereisTest
+import qualified GCTest
 
 main :: IO ()
 main = defaultMain $ testGroup "ghcup"
@@ -26,4 +27,5 @@ main = defaultMain $ testGroup "ghcup"
   , UpgradeTest.upgradeTests
   , CompileTest.compileTests
   , WhereisTest.whereisTests
+  , GCTest.gcTests
   ]

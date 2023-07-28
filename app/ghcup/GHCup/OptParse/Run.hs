@@ -68,7 +68,7 @@ data RunOptions = RunOptions
   , runBinDir     :: Maybe FilePath
   , runQuick      :: Bool
   , runCOMMAND    :: [String]
-  }
+  } deriving (Eq, Show)
 
 
 
