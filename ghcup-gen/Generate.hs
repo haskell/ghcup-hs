@@ -157,7 +157,7 @@ generateTable output = do
     liftIO $ hPutStrLn handle $ "<table>"
     liftIO $ hPutStrLn handle $ "<thead><tr><th>" <> show tool <> " Version</th><th>Tags</th></tr></thead>"
     liftIO $ hPutStrLn handle $ "<tbody>"
-    vers <- reverse <$> listVersions (Just tool) Nothing
+    vers <- reverse <$> listVersions (Just tool) [] False False (Nothing, Nothing)
     forM_ (filter (\ListResult{..} -> not lStray) vers) $ \ListResult{..} -> do
       liftIO $ hPutStrLn handle $
           "<tr><td>"
