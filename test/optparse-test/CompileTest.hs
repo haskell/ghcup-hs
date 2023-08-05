@@ -35,7 +35,7 @@ mkDefaultGHCCompileOptions target boot =
     False
     Nothing
     Nothing
-    False
+    Nothing
     Nothing
 
 mkDefaultHLSCompileOptions :: HLSVer -> [ToolVersion] -> HLSCompileOptions
@@ -89,7 +89,8 @@ compileGhcCheckList = mapSecond CompileGHC
   , (baseCmd <> "--overwrite-version 9.4.5-p1", baseOptions{GHC.ovewrwiteVer = Just $ mkVersion' "9.4.5-p1"})
   , (baseCmd <> "-f make", baseOptions{GHC.buildFlavour = Just "make"})
   , (baseCmd <> "--flavour make", baseOptions{GHC.buildFlavour = Just "make"})
-  , (baseCmd <> "--hadrian", baseOptions{GHC.hadrian = True})
+  , (baseCmd <> "--hadrian", baseOptions{GHC.buildSystem = Just Hadrian})
+  , (baseCmd <> "--make", baseOptions{GHC.buildSystem = Just Make})
   , (baseCmd <> "-i /tmp/out_dir", baseOptions{GHC.isolateDir = Just "/tmp/out_dir"})
   , (baseCmd <> "--isolate /tmp/out_dir", baseOptions{GHC.isolateDir = Just "/tmp/out_dir"})
   ]
