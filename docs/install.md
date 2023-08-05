@@ -38,7 +38,7 @@ Also see [tags and shortcuts](../guide/#tags-and-shortcuts) for more information
 
 ### Linux Debian
 
-The following distro packages are required: `build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
+The following distro packages are required: `build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
 
 ### Linux Ubuntu
 
