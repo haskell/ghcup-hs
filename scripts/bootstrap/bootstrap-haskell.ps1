@@ -459,7 +459,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     Print-Msg -msg 'Processing MSYS2 bash for first time use...'
     Exec "$Bash" '-lc' 'exit'
 
-    Exec "$env:windir\system32\taskkill.exe" /F /FI `"MODULES eq msys-2.0.dll`"
+    Exec "$env:windir\system32\taskkill.exe" /F /FI "MODULES eq msys-2.0.dll"
 
     Print-Msg -msg 'Upgrading full system...'
     Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'

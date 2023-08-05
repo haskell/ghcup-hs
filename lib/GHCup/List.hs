@@ -76,7 +76,6 @@ data ListResult = ListResult
   , lTag       :: [Tag]
   , lInstalled :: Bool
   , lSet       :: Bool -- ^ currently active version
-  , fromSrc    :: Bool -- ^ compiled from source
   , lStray     :: Bool -- ^ not in download info
   , lNoBindist :: Bool -- ^ whether the version is available for this platform/arch
   , hlsPowered :: Bool
@@ -169,7 +168,6 @@ listVersions lt' criteria hideOld showNightly days = do
           Just _  -> pure Nothing
           Nothing -> do
             lSet    <- fmap (maybe False (\(GHCTargetVersion _ v ) -> v == _tvVersion)) $ ghcSet _tvTarget
-            fromSrc <- ghcSrcInstalled tver
             hlsPowered <- fmap (elem _tvVersion) hlsGHCVersions
             pure $ Just $ ListResult
               { lTool      = GHC
@@ -213,7 +211,6 @@ listVersions lt' criteria hideOld showNightly days = do
               , lInstalled = True
               , lStray     = isNothing (Map.lookup ver avTools)
               , lNoBindist = False
-              , fromSrc    = False -- actually, we don't know :>
               , hlsPowered = False
               , lReleaseDay = Nothing
               , ..
@@ -248,7 +245,6 @@ listVersions lt' criteria hideOld showNightly days = do
               , lInstalled = True
               , lStray     = isNothing (Map.lookup ver avTools)
               , lNoBindist = False
-              , fromSrc    = False -- actually, we don't know :>
               , hlsPowered = False
               , lReleaseDay = Nothing
               , ..
@@ -284,7 +280,6 @@ listVersions lt' criteria hideOld showNightly days = do
               , lInstalled = True
               , lStray     = isNothing (Map.lookup ver avTools)
               , lNoBindist = False
-              , fromSrc    = False -- actually, we don't know :>
               , hlsPowered = False
               , lReleaseDay = Nothing
               , ..
@@ -306,7 +301,6 @@ listVersions lt' criteria hideOld showNightly days = do
                                            , lTag    = maybe (if isOld then [Old] else []) _viTags listVer
                                            , lCross  = Nothing
                                            , lTool   = GHCup
-                                           , fromSrc = False
                                            , lStray  = isNothing listVer
                                            , lSet    = True
                                            , lInstalled = True
@@ -340,7 +334,6 @@ listVersions lt' criteria hideOld showNightly days = do
         lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo' GHC tver
         lSet       <- fmap (== Just tver) $ ghcSet (_tvTarget tver)
         lInstalled <- ghcInstalled tver
-        fromSrc    <- ghcSrcInstalled tver
         hlsPowered <- fmap (elem tver) (fmap mkTVer <$> hlsGHCVersions)
         pure ListResult { lVer = _tvVersion tver , lCross = _tvTarget tver , lTag = _viTags, lTool = t, lStray = False, lReleaseDay = _viReleaseDay, .. }
       Cabal -> do
@@ -351,7 +344,6 @@ listVersions lt' criteria hideOld showNightly days = do
                         , lCross  = Nothing
                         , lTag    = _viTags
                         , lTool   = t
-                        , fromSrc = False
                         , lStray  = False
                         , hlsPowered = False
                         , lReleaseDay = _viReleaseDay
@@ -364,7 +356,6 @@ listVersions lt' criteria hideOld showNightly days = do
                         , lTag    = _viTags
                         , lCross  = Nothing
                         , lTool   = t
-                        , fromSrc = False
                         , lStray  = False
                         , lNoBindist = False
                         , hlsPowered = False
@@ -379,7 +370,6 @@ listVersions lt' criteria hideOld showNightly days = do
                         , lCross  = Nothing
                         , lTag    = _viTags
                         , lTool   = t
-                        , fromSrc = False
                         , lStray  = False
                         , hlsPowered = False
                         , lReleaseDay = _viReleaseDay
@@ -393,7 +383,6 @@ listVersions lt' criteria hideOld showNightly days = do
                         , lCross  = Nothing
                         , lTag    = _viTags
                         , lTool   = t
-                        , fromSrc = False
                         , lStray  = False
                         , hlsPowered = False
                         , lReleaseDay = _viReleaseDay
