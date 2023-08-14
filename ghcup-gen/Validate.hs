@@ -81,7 +81,7 @@ validate = do
     forM_ (M.toList dls) $ \(t, versions) ->
       forM_ (M.toList versions) $ \(v, vi) ->
         forM_ (M.toList $ _viArch vi) $ \(arch, pspecs) -> do
-          checkHasRequiredPlatforms t v (_viTags vi) arch (M.keys pspecs)
+          checkHasRequiredPlatforms t (_tvVersion v) (_viTags vi) arch (M.keys pspecs)
 
     checkGHCVerIsValid
     forM_ (M.toList dls) $ \(t, _) -> checkMandatoryTags t
@@ -154,7 +154,7 @@ validate = do
 
   checkGHCVerIsValid = do
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-    let ghcVers = toListOf (ix GHC % to M.keys % folded) dls
+    let ghcVers = toListOf (ix GHC % to M.keys % to (map _tvVersion) % folded) dls
     forM_ ghcVers $ \v ->
       case [ x | (x,"") <- readP_to_S V.parseVersion (T.unpack . prettyVer $ v) ] of
         [_] -> pure ()
@@ -178,7 +178,7 @@ validate = do
     let allTags = M.toList $ availableToolVersions dls GHC
     forM allTags $ \(ver, _viTags -> tags) -> case any isBase tags of
       False -> do
-        lift $ logError $ "Base tag missing from GHC ver " <> prettyVer ver
+        lift $ logError $ "Base tag missing from GHC ver " <> prettyVer (_tvVersion ver)
         addError
       True -> pure ()
 
@@ -211,7 +211,7 @@ validateTarballs (TarballFilter etool versionRegex) = do
 
    -- download/verify all tarballs
   let dlis = either (const []) (\tool -> nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool)
-                                 %> each %& indices (matchTest versionRegex . T.unpack . prettyVer)
+                                 %> each %& indices (matchTest versionRegex . T.unpack . prettyVer . _tvVersion)
                                                   % (viTestDL % _Just `summing` viSourceDL % _Just `summing` viArch % each % each % each)
                                )
                                etool
