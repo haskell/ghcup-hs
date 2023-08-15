@@ -1053,7 +1053,7 @@ ghcupDownloads:
               dlSubdir: ghc-9.8.0.20230809-aarch64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.8.0.20230809/ghc-9.8.0.20230809-aarch64-deb10-linux.tar.xz
       viChangeLog: https://downloads.haskell.org/~ghc/9.8.0.20230809/docs/users_guide/9.8.1-notes.html
-      viReleaseDay: '2023-03-09'
+      viReleaseDay: '2023-08-09'
       viSourceDL:
         dlHash: ecef10e9796082eaf3f18ece67fe5fcfedfd0baa77d34c1f772e37aabda3fa1c
         dlOutput: ghc-9.8.0.20230809-src.tar.xz
