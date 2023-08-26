@@ -142,3 +142,17 @@ jobs:
         name: Run build (aarch64 linux)
         with:
           args: sh -c '.github/workflows/install-bindist.sh'
+
+  signature-test:
+    name: Test signatures
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install requirements
+        shell: sh
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl bash git gnupg
+
+      - uses: actions/checkout@v3
+
+      - name: Test signatures
+        run: .github/workflows/test-sigs.sh

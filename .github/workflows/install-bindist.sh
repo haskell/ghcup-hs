@@ -14,14 +14,14 @@ ghcup --version
 which ghcup | grep foobarbaz
 
 ghcup_fun() {
-	ghcup -v --url-source=file:$METADATA_FILE "$@"
+	ghcup -v --url-source="file:$METADATA_FILE" "$@"
 }
 
 case $TOOL in
 	ghcup)
 		ghcup_fun upgrade --force
 		;;
-	*) ghcup_fun install $TOOL --set $VERSION
+	*) ghcup_fun install "$TOOL" --set "$VERSION"
 		;;
 esac
 
