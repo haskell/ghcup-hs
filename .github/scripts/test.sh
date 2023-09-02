@@ -18,8 +18,10 @@ mkdir -p "${GHCUP_BIN}"
 
 cp "out/${ARTIFACT}"-* "$GHCUP_BIN/ghcup${ext}"
 cp "out/test-${ARTIFACT}"-* "ghcup-test${ext}"
+cp "out/test-optparse-${ARTIFACT}"-* "ghcup-test-optparse${ext}"
 chmod +x "$GHCUP_BIN/ghcup${ext}"
 chmod +x "ghcup-test${ext}"
+chmod +x "ghcup-test-optparse${ext}"
 
 "$GHCUP_BIN/ghcup${ext}" --version
 eghcup --version
@@ -29,7 +31,8 @@ sha_sum "$(raw_eghcup --offline whereis ghcup)"
 ### Haskell test suite
 
 ./ghcup-test${ext}
-rm ghcup-test${ext}
+./ghcup-test-optparse${ext}
+rm ghcup-test${ext} ghcup-test-optparse${ext}
 
 ### manual cli based testing
 
