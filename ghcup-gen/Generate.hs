@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Generate where
 
@@ -47,6 +48,12 @@ import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
 import qualified Data.Yaml.Pretty              as YAML
 import qualified Text.Megaparsec               as MP
+
+import           Data.Bifoldable                (bifoldMap)
+import           Data.Foldable                  (traverse_)
+import           Data.Text                      (Text)
+
+import           Text.PrettyPrint.HughesPJClass (pPrint)
 
 data Format = FormatJSON
             | FormatYAML
@@ -228,3 +235,53 @@ generateSystemInfo output = do
   prettyPlat (Linux UnknownLinux) = "Linux (generic)"
   prettyPlat p = show p
 
+
+generateSystemInfoWithDistroVersion :: ( MonadFail m
+                      , MonadMask m
+                      , Monad m
+                      , MonadReader env m
+                      , HasSettings env
+                      , HasDirs env
+                      , HasLog env
+                      , MonadThrow m
+                      , MonadIO m
+                      , HasPlatformReq env
+                      , HasGHCupInfo env
+                      , MonadUnliftIO m
+                      )
+                   => Output
+                   -> m ExitCode
+generateSystemInfoWithDistroVersion output = do
+  handle <- case output of
+              StdOut -> pure stdout
+              FileOutput fp -> liftIO $ openFile fp WriteMode
+
+  GHCupInfo { _toolRequirements = tr } <- getGHCupInfo
+  let ghcInfo = M.lookup Nothing <$> M.lookup GHC tr
+  liftIO $ traverse_ (\(key, value)  -> do
+                        liftIO $ hPutStrLn handle $ "### " <> prettyPlat key <> "\n"
+                        liftIO $ hPutStrLn handle $ T.unpack $ versionsAndRequirements value <> T.pack "\n")
+                      $ M.toList $ fromJust (fromJust ghcInfo)
+  pure ExitSuccess
+
+  where
+    pretty' Requirements {..} =
+      let d = if not . null $ _distroPKGs
+            then "The following distro packages are required: " <> "`" <> T.intercalate " " _distroPKGs <> "`" <> "\n"
+            else ""
+          n = if not . T.null $ _notes then _notes else ""
+      in  if | T.null d -> n
+             | T.null n -> d
+             | otherwise -> d <> "\n" <> n
+
+    versionsAndRequirements :: PlatformReqVersionSpec -> Text
+    versionsAndRequirements =
+      bifoldMap
+        ( \case
+            Nothing -> T.pack $ "#### Generic" <> "\n"
+            Just verz -> T.pack "#### Version " <> T.pack (show $ pPrint verz) <> "\n"
+        )
+        pretty'
+
+    prettyPlat (Linux UnknownLinux) = "Linux (generic)"
+    prettyPlat p = show p

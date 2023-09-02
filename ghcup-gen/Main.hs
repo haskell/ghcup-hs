@@ -209,7 +209,7 @@ main = do
           ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (validateTarballs tarballFilter)
           GenerateHlsGhc vopts format output -> withValidateYamlOpts vopts (generateHLSGhc format output)
           GenerateToolTable vopts output -> withValidateYamlOpts vopts (generateTable output)
-          GenerateSystemDepsInfo vopts output -> withValidateYamlOpts vopts (generateSystemInfo output)
+          GenerateSystemDepsInfo vopts output -> withValidateYamlOpts vopts (generateSystemInfoWithDistroVersion output)
   pure ()
 
  where
