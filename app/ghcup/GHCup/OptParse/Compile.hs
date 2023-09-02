@@ -284,7 +284,7 @@ ghcCompileOpts =
             (  short 'i'
             <> long "isolate"
             <> metavar "DIR"
-            <> help "install in an isolated directory instead of the default one, no symlinks to this installation will be made"
+            <> help "install in an isolated absolute directory instead of the default one, no symlinks to this installation will be made"
             <> completer (bashCompleter "directory")
             )
            )
@@ -367,7 +367,7 @@ hlsCompileOpts =
             (  short 'i'
             <> long "isolate"
             <> metavar "DIR"
-            <> help "install in an isolated directory instead of the default one, no symlinks to this installation will be made"
+            <> help "install in an isolated absolute directory instead of the default one, no symlinks to this installation will be made"
             <> completer (bashCompleter "directory")
             )
            )

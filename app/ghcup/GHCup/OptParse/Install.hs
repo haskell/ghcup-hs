@@ -197,7 +197,7 @@ installOpts tool =
            (  short 'i'
            <> long "isolate"
            <> metavar "DIR"
-           <> help "install in an isolated dir instead of the default one"
+           <> help "install in an isolated absolute directory instead of the default one"
            <> completer (bashCompleter "directory")
            )
           )
