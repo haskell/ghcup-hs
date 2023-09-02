@@ -1033,7 +1033,7 @@ applyPatches pdir ddir = do
 
   patches <- liftIO $ quilt `catchIO` (\e ->
     if isDoesNotExistError e || isPermissionError e then
-      lexicographical 
+      lexicographical
     else throwIO e)
   forM_ patches $ \patch' -> applyPatch patch' ddir
 

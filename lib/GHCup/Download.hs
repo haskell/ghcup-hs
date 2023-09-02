@@ -246,7 +246,7 @@ getBase uri = do
     Settings { metaCache } <- lift getSettings
 
        -- for local files, let's short-circuit and ignore access time
-    if | scheme == "file" -> liftE $ download uri' Nothing Nothing Nothing (fromGHCupPath cacheDir) Nothing True
+    if | scheme == "file" -> liftE $ download uri' (Just $ over pathL' (<> ".sig") uri') Nothing Nothing (fromGHCupPath cacheDir) Nothing True
        | e -> do
           accessTime <- fmap utcTimeToPOSIXSeconds $ liftIO $ getAccessTime json_file
           let sinceLastAccess = utcTimeToPOSIXSeconds currentTime - accessTime
@@ -352,15 +352,20 @@ download :: ( MonadReader env m
 download rawUri gpgUri eDigest eCSize dest mfn etags
   | scheme == "https" = liftE dl
   | scheme == "http"  = liftE dl
+  | scheme == "file"
+  , Just s <- gpgScheme
+  , s /= "file" = throwIO $ userError $ "gpg scheme does not match base file scheme: " <> (T.unpack . decUTF8Safe $ s)
   | scheme == "file"  = do
+      Settings{ gpgSetting } <- lift getSettings
       let destFile' = T.unpack . decUTF8Safe $ view pathL' rawUri
       lift $ logDebug $ "using local file: " <> T.pack destFile'
-      forM_ eDigest (liftE . flip checkDigest destFile')
+      liftE $ verify gpgSetting destFile' (pure . T.unpack . decUTF8Safe . view pathL')
       pure destFile'
   | otherwise = throwE $ DownloadFailed (variantFromValue UnsupportedScheme)
 
  where
-  scheme = view (uriSchemeL' % schemeBSL') rawUri
+  scheme    = view (uriSchemeL' % schemeBSL') rawUri
+  gpgScheme = view (uriSchemeL' % schemeBSL') <$> gpgUri
   dl = do
     Settings{ mirrors } <- lift getSettings
     let uri = applyMirrors mirrors rawUri
@@ -402,30 +407,14 @@ download rawUri gpgUri eDigest eCSize dest mfn etags
                         else pure (\fp -> liftE . internalDL fp)
 #endif
               liftE $ downloadAction baseDestFile uri
-              case (gpgUri, gpgSetting) of
-                (_, GPGNone) -> pure ()
-                (Just gpgUri', _) -> do
-                  gpgDestFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile gpgUri' Nothing
-                  liftE $ flip onException
-                       (lift $ hideError doesNotExistErrorType $ recycleFile (tmpFile gpgDestFile))
-                   $ catchAllE @_ @'[GPGError, ProcessError, UnsupportedScheme, DownloadFailed] @'[GPGError]
-                        (\e -> if gpgSetting == GPGStrict then throwE (GPGError e) else lift $ logWarn $ T.pack (prettyHFError (GPGError e))
-                        ) $ do
-                      o' <- liftIO getGpgOpts
-                      lift $ logDebug $ "downloading: " <> (decUTF8Safe . serializeURIRef') gpgUri' <> " as file " <> T.pack gpgDestFile
-                      liftE $ downloadAction gpgDestFile gpgUri'
-                      lift $ logInfo $ "verifying signature of: " <> T.pack baseDestFile
-                      let args = o' ++ ["--batch", "--verify", "--quiet", "--no-tty", gpgDestFile, baseDestFile]
-                      cp <- lift $ executeOut "gpg" args Nothing
-                      case cp of
-                        CapturedProcess { _exitCode = ExitFailure i, _stdErr } -> do
-                          lift $ logDebug $ decUTF8Safe' _stdErr
-                          throwE (GPGError @'[ProcessError] (V (NonZeroExit i "gpg" args)))
-                        CapturedProcess { _stdErr } -> lift $ logDebug $ decUTF8Safe' _stdErr
-                _ -> pure ()
-
-              forM_ eCSize  (liftE . flip checkCSize  baseDestFile)
-              forM_ eDigest (liftE . flip checkDigest baseDestFile)
+              liftE $ verify gpgSetting baseDestFile
+                (\uri' -> do
+                  gpgDestFile <- liftE . reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getDestFile uri' Nothing
+                  lift $ logDebug $ "downloading: " <> (decUTF8Safe . serializeURIRef') uri' <> " as file " <> T.pack gpgDestFile
+                  flip onException (lift $ hideError doesNotExistErrorType $ recycleFile (tmpFile gpgDestFile)) $
+                    downloadAction gpgDestFile uri'
+                  pure gpgDestFile
+                )
     pure baseDestFile
 
   curlDL :: ( MonadCatch m
@@ -623,6 +612,41 @@ download rawUri gpgUri eDigest eCSize dest mfn etags
       liftIO $ hideError doesNotExistErrorType $ rmFile (etagsFile fp)
       pure Nothing
 
+  verify :: ( MonadReader env m
+            , HasLog env
+            , HasDirs env
+            , HasSettings env
+            , MonadCatch m
+            , MonadMask m
+            , MonadIO m
+            )
+            => GPGSetting
+            -> FilePath
+            -> (URI -> Excepts '[ProcessError, DownloadFailed, UnsupportedScheme] m FilePath)
+            -> Excepts '[DigestError, ContentLengthError, DownloadFailed, GPGError] m ()
+  verify gpgSetting destFile' downloadAction' = do
+    case (gpgUri, gpgSetting) of
+      (_, GPGNone) -> pure ()
+      (Just gpgUri', _) -> do
+        liftE $ catchAllE @_ @'[GPGError, ProcessError, UnsupportedScheme, DownloadFailed] @'[GPGError]
+              (\e -> if gpgSetting == GPGStrict then throwE (GPGError e) else lift $ logWarn $ T.pack (prettyHFError (GPGError e))
+              ) $ do
+            o' <- liftIO getGpgOpts
+            gpgDestFile <- liftE $ downloadAction' gpgUri'
+            lift $ logInfo $ "verifying signature of: " <> T.pack destFile'
+            let args = o' ++ ["--batch", "--verify", "--quiet", "--no-tty", gpgDestFile, destFile']
+            cp <- lift $ executeOut "gpg" args Nothing
+            case cp of
+              CapturedProcess { _exitCode = ExitFailure i, _stdErr } -> do
+                lift $ logDebug $ decUTF8Safe' _stdErr
+                throwE (GPGError @'[ProcessError] (V (NonZeroExit i "gpg" args)))
+              CapturedProcess { _stdErr } -> lift $ logDebug $ decUTF8Safe' _stdErr
+      _ -> pure ()
+
+    forM_ eCSize  (liftE . flip checkCSize  destFile')
+    forM_ eDigest (liftE . flip checkDigest destFile')
+
+
 
 -- | Download into tmpdir or use cached version, if it exists. If filename
 -- is omitted, infers the filename from the url.
@@ -642,7 +666,7 @@ downloadCached :: ( MonadReader env m
 downloadCached dli mfn = do
   Settings{ cache } <- lift getSettings
   case cache of
-    True -> downloadCached' dli mfn Nothing
+    True -> liftE $ downloadCached' dli mfn Nothing
     False -> do
       tmp <- lift withGHCupTmpDir
       liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) (fromGHCupPath tmp) outputFileName False
