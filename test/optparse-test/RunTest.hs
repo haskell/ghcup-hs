@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP               #-}
 
 module RunTest where
 
@@ -39,8 +40,13 @@ runCheckList =
   , ("run --cabal 3.10", defaultOptions{runCabalVer = Just $ ToolVersion $ mkVersion' "3.10"})
   , ("run --hls 2.0", defaultOptions{runHLSVer = Just $ ToolVersion $ mkVersion' "2.0"})
   , ("run --stack 2.9", defaultOptions{runStackVer = Just $ ToolVersion $ mkVersion' "2.9"})
+#ifdef IS_WINDOWS
+  , ("run -b C:\\\\tmp\\dir", defaultOptions{runBinDir = Just "C:\\\\tmp\\dir"})
+  , ("run --bindir C:\\\\tmp\\dir", defaultOptions{runBinDir = Just "C:\\\\tmp\\dir"})
+#else
   , ("run -b /tmp/dir", defaultOptions{runBinDir = Just "/tmp/dir"})
   , ("run --bindir /tmp/dir", defaultOptions{runBinDir = Just "/tmp/dir"})
+#endif
   , ("run -q", defaultOptions{runQuick = True})
   , ("run --quick", defaultOptions{runQuick = True})
   , ("run --ghc latest --cabal 3.10 --stack 2.9 --hls 2.0 --install",

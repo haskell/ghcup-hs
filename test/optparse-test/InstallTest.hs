@@ -1,5 +1,6 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 module InstallTest where
 
@@ -45,7 +46,11 @@ oldStyleCheckList =
       ("install", Right defaultOptions)
     : ("install --set", Right defaultOptions{instSet = True})
     : ("install --force", Right defaultOptions{forceInstall = True})
+#ifdef IS_WINDOWS
+    : ("install -i C:\\\\", Right defaultOptions{Install.isolateDir = Just "C:\\\\"})
+#else
     : ("install -i /", Right defaultOptions{Install.isolateDir = Just "/"})
+#endif
     : ("install -u https://gitlab.haskell.org/ghc/ghc/-/jobs/artifacts/master/raw/ghc-x86_64-linux-fedora33-release.tar.xz head"
     , Right defaultOptions
         { instBindist = Just [uri|https://gitlab.haskell.org/ghc/ghc/-/jobs/artifacts/master/raw/ghc-x86_64-linux-fedora33-release.tar.xz|]

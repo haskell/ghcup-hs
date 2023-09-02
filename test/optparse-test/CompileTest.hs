@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE CPP #-}
 
 module CompileTest where
 
@@ -91,8 +92,13 @@ compileGhcCheckList = mapSecond CompileGHC
   , (baseCmd <> "--flavour make", baseOptions{GHC.buildFlavour = Just "make"})
   , (baseCmd <> "--hadrian", baseOptions{GHC.buildSystem = Just Hadrian})
   , (baseCmd <> "--make", baseOptions{GHC.buildSystem = Just Make})
+#ifdef IS_WINDOWS
+  , (baseCmd <> "-i C:\\\\tmp\\out_dir", baseOptions{GHC.isolateDir = Just "C:\\\\tmp\\out_dir"})
+  , (baseCmd <> "--isolate C:\\\\tmp\\out_dir", baseOptions{GHC.isolateDir = Just "C:\\\\tmp\\out_dir"})
+#else
   , (baseCmd <> "-i /tmp/out_dir", baseOptions{GHC.isolateDir = Just "/tmp/out_dir"})
   , (baseCmd <> "--isolate /tmp/out_dir", baseOptions{GHC.isolateDir = Just "/tmp/out_dir"})
+#endif
   ]
   where
     baseCmd :: String
@@ -150,8 +156,13 @@ compileHlsCheckList = mapSecond CompileHLS
   , (baseCmd <> "-o 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $ mkVersion' "2.0.0.0-p1"})
   , (baseCmd <> "--overwrite-version 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $ mkVersion' "2.0.0.0-p1"})
   , (baseCmd <> "--git-describe-version", baseOptions{HLS.ovewrwiteVer = Left True})
+#ifdef IS_WINDOWS
+  , (baseCmd <> "-i C:\\\\tmp\\out_dir", baseOptions{HLS.isolateDir = Just "C:\\\\tmp\\out_dir"})
+  , (baseCmd <> "--isolate C:\\\\tmp\\out_dir", baseOptions{HLS.isolateDir = Just "C:\\\\tmp\\out_dir"})
+#else
   , (baseCmd <> "-i /tmp/out_dir", baseOptions{HLS.isolateDir = Just "/tmp/out_dir"})
   , (baseCmd <> "--isolate /tmp/out_dir", baseOptions{HLS.isolateDir = Just "/tmp/out_dir"})
+#endif
   , (baseCmd <> "--cabal-project file:///tmp/cabal.project", baseOptions{HLS.cabalProject = Just $ Right [uri|file:///tmp/cabal.project|]})
   , (baseCmd <> "--cabal-project cabal.ghc8107.project", baseOptions{HLS.cabalProject = Just $ Left "cabal.ghc8107.project"})
   , (baseCmd <> "--cabal-project-local file:///tmp/cabal.project.local", baseOptions{HLS.cabalProjectLocal = Just [uri|file:///tmp/cabal.project.local|]})
