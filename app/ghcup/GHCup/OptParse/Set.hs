@@ -53,6 +53,7 @@ data SetCommand = SetGHC SetOptions
                 | SetCabal SetOptions
                 | SetHLS SetOptions
                 | SetStack SetOptions
+                deriving (Eq, Show)
 
 
 
@@ -64,7 +65,7 @@ data SetCommand = SetGHC SetOptions
 
 data SetOptions = SetOptions
   { sToolVer :: SetToolVersion
-  }
+  } deriving (Eq, Show)
 
 
 

@@ -713,6 +713,7 @@ data ToolVersion = GHCVersion GHCTargetVersion
                  | ToolVersion Version
                  | ToolTag Tag
                  | ToolDay Day
+                 deriving (Eq, Show)
 
 instance Pretty ToolVersion where
   pPrint (GHCVersion v) = pPrint v

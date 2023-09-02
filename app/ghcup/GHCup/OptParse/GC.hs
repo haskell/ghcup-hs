@@ -47,7 +47,7 @@ data GCOptions = GCOptions
   , gcHLSNoGHC :: Bool
   , gcCache :: Bool
   , gcTmp :: Bool
-  }
+  } deriving (Eq, Show)
 
 
 

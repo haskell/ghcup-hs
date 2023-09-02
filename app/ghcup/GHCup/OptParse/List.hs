@@ -58,7 +58,7 @@ data ListOptions = ListOptions
   , lHideOld   :: Bool
   , lShowNightly :: Bool
   , lRawFormat :: Bool
-  }
+  } deriving (Eq, Show)
 
 
 

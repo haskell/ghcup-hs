@@ -24,7 +24,7 @@ spec = do
   -- https://github.com/haskell/ghcup-hs/issues/415
   describe "GHCup.Prelude.File.Posix.Traversals" $ do
     it "readDirEnt" $ do
-      dirstream <- liftIO $ openDirStreamPortable "test/data"
+      dirstream <- liftIO $ openDirStreamPortable "test/ghcup-test/data"
       (dt1, fp1) <- readDirEntPortable dirstream
       (dt2, fp2) <- readDirEntPortable dirstream
       (dt3, fp3) <- readDirEntPortable dirstream

@@ -5,4 +5,6 @@ cradle:
   - component: "ghcup:exe:ghcup"
     path: ./app/ghcup
   - component: "ghcup:test:ghcup-test"
-    path: ./test
+    path: ./test/ghcup-test
+  - component: "ghcup:test:ghcup-optparse-test"
+    path: ./test/optparse-test

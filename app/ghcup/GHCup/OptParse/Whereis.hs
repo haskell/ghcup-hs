@@ -54,6 +54,7 @@ data WhereisCommand = WhereisTool Tool (Maybe ToolVersion)
                     | WhereisCacheDir
                     | WhereisLogsDir
                     | WhereisConfDir
+                    deriving (Eq, Show)
 
 
 
@@ -66,7 +67,7 @@ data WhereisCommand = WhereisTool Tool (Maybe ToolVersion)
 
 data WhereisOptions = WhereisOptions {
    directory :: Bool
-}
+} deriving (Eq, Show)
 
 
 

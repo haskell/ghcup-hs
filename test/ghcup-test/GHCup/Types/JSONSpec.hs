@@ -17,6 +17,6 @@ spec = do
   roundtripAndGoldenSpecsWithSettings (defaultSettings { goldenDirectoryOption = CustomDirectoryName goldenDir }) (Proxy @GHCupInfo)
  where
   goldenDir
-    | isWindows = "test/golden/windows"
-    | otherwise = "test/golden/unix"
+    | isWindows = "test/ghcup-test/golden/windows"
+    | otherwise = "test/ghcup-test/golden/unix"
 

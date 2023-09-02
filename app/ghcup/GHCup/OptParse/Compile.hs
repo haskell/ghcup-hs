@@ -57,6 +57,7 @@ import Text.Read (readEither)
 
 data CompileCommand = CompileGHC GHCCompileOptions
                     | CompileHLS HLSCompileOptions
+                    deriving (Eq, Show)
 
 
 
@@ -78,7 +79,7 @@ data GHCCompileOptions = GHCCompileOptions
   , buildFlavour :: Maybe String
   , buildSystem  :: Maybe BuildSystem
   , isolateDir   :: Maybe FilePath
-  }
+  } deriving (Eq, Show)
 
 
 data HLSCompileOptions = HLSCompileOptions
@@ -93,7 +94,7 @@ data HLSCompileOptions = HLSCompileOptions
   , patches      :: Maybe (Either FilePath [URI])
   , targetGHCs   :: [ToolVersion]
   , cabalArgs    :: [Text]
-  }
+  } deriving (Eq, Show)
 
 
 

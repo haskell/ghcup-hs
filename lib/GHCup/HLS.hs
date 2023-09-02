@@ -75,6 +75,7 @@ data HLSVer = SourceDist Version
             | GitDist GitBranch
             | HackageDist Version
             | RemoteDist URI
+            deriving (Eq, Show)
 
 
 

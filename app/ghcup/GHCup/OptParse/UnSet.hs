@@ -48,6 +48,7 @@ data UnsetCommand = UnsetGHC   UnsetOptions
                   | UnsetCabal UnsetOptions
                   | UnsetHLS   UnsetOptions
                   | UnsetStack UnsetOptions
+                  deriving (Eq, Show)
 
 
 
@@ -59,7 +60,7 @@ data UnsetCommand = UnsetGHC   UnsetOptions
 
 data UnsetOptions = UnsetOptions
   { sToolVer :: Maybe T.Text -- target platform triple
-  }
+  } deriving (Eq, Show)
 
 
 
@@ -68,7 +69,7 @@ data UnsetOptions = UnsetOptions
     --[ Parsers ]--
     ---------------
 
-          
+
 unsetParser :: Parser UnsetCommand
 unsetParser =
   subparser

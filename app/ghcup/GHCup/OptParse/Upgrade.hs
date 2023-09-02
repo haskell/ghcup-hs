@@ -50,7 +50,7 @@ import Data.Versions         hiding (str)
 data UpgradeOpts = UpgradeInplace
                  | UpgradeAt FilePath
                  | UpgradeGHCupDir
-                 deriving Show
+                 deriving (Eq, Show)
 
 
 
