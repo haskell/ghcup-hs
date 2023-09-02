@@ -369,7 +369,9 @@ cabalSet = do
   handleIO' NoSuchThing (\_ -> pure Nothing) $ do
     broken <- liftIO $ isBrokenSymlink cabalbin
     if broken
-      then pure Nothing
+      then do
+        logWarn $ "Broken symlink at " <> T.pack cabalbin
+        pure Nothing
       else do
         link <- liftIO
           $ handleIO' InvalidArgument
@@ -466,7 +468,9 @@ stackSet = do
   handleIO' NoSuchThing (\_ -> pure Nothing) $ do
     broken <- liftIO $ isBrokenSymlink stackBin
     if broken
-      then pure Nothing
+      then do
+        logWarn $ "Broken symlink at " <> T.pack stackBin
+        pure Nothing
       else do
         link <- liftIO
           $ handleIO' InvalidArgument
@@ -520,15 +524,17 @@ isLegacyHLS ver = do
 
 
 -- Return the currently set hls version, if any.
-hlsSet :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
+hlsSet :: (HasLog env, MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m) => m (Maybe Version)
 hlsSet = do
   Dirs {..}  <- getDirs
   let hlsBin = binDir </> "haskell-language-server-wrapper" <> exeExt
 
-  liftIO $ handleIO' NoSuchThing (\_ -> pure Nothing) $ do
-    broken <- isBrokenSymlink hlsBin
+  handleIO' NoSuchThing (\_ -> pure Nothing) $ do
+    broken <- liftIO $ isBrokenSymlink hlsBin
     if broken
-      then pure Nothing
+      then do
+        logWarn $ "Broken symlink at " <> T.pack hlsBin
+        pure Nothing
       else do
         link <- liftIO $ getLinkTarget hlsBin
         Just <$> linkVersion link
@@ -556,6 +562,7 @@ hlsSet = do
 -- | Return the GHC versions the currently selected HLS supports.
 hlsGHCVersions :: ( MonadReader env m
                   , HasDirs env
+                  , HasLog env
                   , MonadIO m
                   , MonadThrow m
                   , MonadCatch m
