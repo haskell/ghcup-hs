@@ -38,48 +38,77 @@ Also see [tags and shortcuts](../guide/#tags-and-shortcuts) for more information
 
 ### Linux Debian
 
+#### Generic
+
 The following distro packages are required: `build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
+
+#### Version >= 11
+
+The following distro packages are required: `build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
 
 ### Linux Ubuntu
 
+#### Generic
+
 The following distro packages are required: `build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
+
+#### Version >= 20.04 && < 20.10
+
+The following distro packages are required: `build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
+
+#### Version >= 20.10
+
+The following distro packages are required: `build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
+
 
 ### Linux Fedora
 
+#### Generic
+
 The following distro packages are required: `gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl`
 
-### Linux Mageia
-
-The following distro packages are required: `curl gcc gcc-c++ gmp libffi-devel libffi7 libgmp-devel libgmp10 make libncurses-devel libncurses5 xz perl`
 
 ### Linux CentOS
 
+#### Generic
+
 The following distro packages are required: `gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl`
+
+#### Version >= 7 && < 8
+
+The following distro packages are required: `gcc gcc-c++ gmp gmp-devel make ncurses xz perl`
+
 
 ### Linux Alpine
 
+#### Generic
+
 The following distro packages are required: `binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz`
 
-### Linux VoidLinux
-
-The following distro packages are required: `gcc gmp curl coreutils xz ncurses make ncurses-libtinfo-libs perl tar`
 
 ### Linux (generic)
+
+#### Generic
 
 You need the following packages: curl g++ gcc gmp make ncurses realpath xz-utils. Consult your distro documentation on the exact names of those packages.
 
 ### Darwin
+
+#### Generic
 
 On OS X, in the course of running ghcup you will be given a dialog box to install the command line tools. Accept and the requirements will be installed for you. You will then need to run the command again.
 On Darwin M1 you might also need a working llvm installed (e.g. via brew) and have the toolchain exposed in PATH.
 
 ### FreeBSD
 
+#### Generic
+
 The following distro packages are required: `curl gcc gmp gmake ncurses perl5 libffi libiconv`
 
-Notice that only FreeBSD 13.x is supported. If the installation fails, complaining about `libncursesw.8.so`, you will need to install FreeBSD 12 compat package first, for example, `pkg install misc/compat12x`.
 
 ### Windows
+
+#### Generic
 
 On Windows, msys2 should already have been set up during the installation, so most users should just proceed. If you are installing manually, make sure to have a working mingw64 toolchain and shell.
 
