@@ -13,7 +13,12 @@ get_key() {
 }
 
 # verify signature
-keys=( 7D1E8AFD1D4A16D71FADA2F2CCC85C0E40C06A8C FE5AB6C91FEA597C3B31180B73EDE9E8CFBAEF01 88B57FCF7DB53B4DB3BFA4B1588764FBE22D19C4 )
+keys=(
+    7D1E8AFD1D4A16D71FADA2F2CCC85C0E40C06A8C # Julian Ospald <maerwald@hasufell.de>
+    FFEB7CE81E16A36B3E2DED6F2DE04D4E97DB64AD # Ben Gamari <ben@well-typed.com>
+    88B57FCF7DB53B4DB3BFA4B1588764FBE22D19C4 # Zubin Duggal <zubin@well-typed.com>
+)
+
 for key in "${keys[@]}" ; do
 	get_key "${key}" keys.openpgp.org || get_key "${key}" keyserver.ubuntu.com
 done
