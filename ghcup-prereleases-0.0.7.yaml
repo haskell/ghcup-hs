@@ -1406,12 +1406,12 @@ ghcupDownloads:
               dlHash: 67e6cea50dba52dbba39204605bf2c33154c88bee7f1494791a4f59589d64427
               dlSubdir:
                 RegexDir: "stack-.*"
-        # Darwin:
-        #   unknown_versioning:
-        #     dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.13.0.1/stack-2.13.0.1-osx-aarch64.tar.gz
-        #     dlHash:
-        #     dlSubdir:
-        #       RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.13.0.1/stack-2.13.0.1-osx-aarch64.tar.gz
+              dlHash: 9c3b957c7c8b1c5c09e0251907372563b48d5869c31e35be43916736f679535d
+              dlSubdir:
+                RegexDir: "stack-.*"
 
   GHCup:
     0.1.19.5:
