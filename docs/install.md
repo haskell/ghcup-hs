@@ -296,7 +296,14 @@ Lower availability of bindists. Stack and HLS binaries are experimental.
 Download the binary for your platform at [https://downloads.haskell.org/~ghcup/](https://downloads.haskell.org/~ghcup/)
 and place it into your `PATH` anywhere.
 
-If you want to GPG verify the binaries, import the following keys first: `7D1E8AFD1D4A16D71FADA2F2CCC85C0E40C06A8C` and `FE5AB6C91FEA597C3B31180B73EDE9E8CFBAEF01`.
+If you want to GPG verify the binaries, import the following keys first:
+
+```sh
+gpg --batch --keyserver keyserver.ubuntu.com --recv-keys 7D1E8AFD1D4A16D71FADA2F2CCC85C0E40C06A8C
+gpg --batch --keyserver keyserver.ubuntu.com --recv-keys FE5AB6C91FEA597C3B31180B73EDE9E8CFBAEF01
+gpg --batch --keyserver keyserver.ubuntu.com --recv-keys 88B57FCF7DB53B4DB3BFA4B1588764FBE22D19C4
+gpg --batch --keyserver keyserver.ubuntu.com --recv-keys EAF2A9A722C0C96F2B431CA511AAD8CEDEE0CAEF
+```
 
 Then adjust your `PATH` in `~/.bashrc` (or similar, depending on your shell) like so:
 
