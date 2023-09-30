@@ -824,7 +824,7 @@ checkForUpdates = do
 
 logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => GHCTargetVersion -> m ()
 logGHCPostRm ghcVer = do
-  cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store")
+  cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store or ~/.local/state/cabal/store")
     (runIdentity . CC.cfgStoreDir <$> CC.readConfig)
   let storeGhcDir = cabalStore </> ("ghc-" <> T.unpack (prettyVer $ _tvVersion ghcVer))
   logInfo $ T.pack $ "After removing GHC you might also want to clean up your cabal store at: " <> storeGhcDir
