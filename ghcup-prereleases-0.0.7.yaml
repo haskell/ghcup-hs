@@ -1290,7 +1290,7 @@ ghcupDownloads:
         dlSubdir: ghc-9.8.0.20230919
         dlUri: https://downloads.haskell.org/~ghc/9.8.0.20230919/ghc-9.8.0.20230919-src.tar.xz
       viTags:
-      - LatestPrerelease
+      - Prerelease
       - base-4.19.0.0
       viTestDL:
         dlHash: a586567b51ce856d15cc4bdde2316aa0aaf7381d80896d2fdcc4f13757b303e6
@@ -1406,8 +1406,8 @@ ghcupDownloads:
         dlSubdir: ghc-9.8.0.20230929
         dlUri: https://downloads.haskell.org/~ghc/9.8.0.20230929/ghc-9.8.0.20230929-src.tar.xz
       viTags:
-      - Latest
-      - TODO_base_version
+      - LatestPrerelease
+      - base-4.19.0.0
       viTestDL:
         dlHash: b0afd2912ba91914519739907ede6008857871668a138829410d72948c3c359e
         dlOutput: ghc-9.8.0.20230929-testsuite.tar.xz
