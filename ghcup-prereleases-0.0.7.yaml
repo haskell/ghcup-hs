@@ -13,11 +13,11 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_UnknownLinux:
-            unknown_versioning: &cabal-3720-32
+            unknown_versioning: &cabal-3720-64
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-x86_64-linux-alpine.tar.xz
               dlHash: c9e28e1578dfb851918e523040cb0f913df747fe95e24d089bcf7cd821c21885
           Linux_Alpine:
-            unknown_versioning: *cabal-3720-32
+            unknown_versioning: *cabal-3720-64
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.7.0.0-pre20220407/cabal-install-3.7-x86_64-darwin.tar.xz
@@ -59,11 +59,11 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_UnknownLinux:
-            unknown_versioning: &cabal-3810-32
+            unknown_versioning: &cabal-3810-64
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-x86_64-linux-alpine.tar.xz
               dlHash: a4e6cb7990d7150c4e64cbd3ebd0a62fb6b00f96f0f9bc3fb751ff6d1f898fdb
           Linux_Alpine:
-            unknown_versioning: *cabal-3810-32
+            unknown_versioning: *cabal-3810-64
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.8.1.0-rc1/cabal-install-3.8.0.20220526-x86_64-darwin.tar.xz
@@ -100,11 +100,11 @@ ghcupDownloads:
       viArch:
         A_64:
           Linux_UnknownLinux:
-            unknown_versioning: &cabal-3900-32
+            unknown_versioning: &cabal-3900-64
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.9.0.0/cabal-install-3.9-x86_64-linux-alpine.tar.xz
               dlHash: 0374716dc33f255e1fb9ec38d83fdd3a3dc81ecf38af0a94b8ab0e1ba1a1ac1c
           Linux_Alpine:
-            unknown_versioning: *cabal-3900-32
+            unknown_versioning: *cabal-3900-64
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~cabal/cabal-install-3.9.0.0/cabal-install-3.9-x86_64-darwin.tar.xz
@@ -210,7 +210,7 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.4.1-alpha2/ghc-9.4.0.20220523-src.tar.xz
         dlSubdir: ghc-9.4.0.20220523
         dlHash: 3bcac9a2043bbc99cd8113547d92fdcad7d7bb4c286a9222ccbcbd4b4a26b635
-      viPostRemove: &ghc-post-remove "After removing GHC you might also want to clean up your cabal store at: ~/.cabal/store/ghc-<ghcver>"
+      viPostRemove: *ghc-post-remove
       viArch:
         A_64:
           Linux_Debian:
@@ -549,11 +549,11 @@ ghcupDownloads:
       viArch:
         A_32:
           Linux_Debian:
-            <10: &ghc-961alpha2-64-deb9
+            <10: &ghc-961alpha2-32-deb9
               dlHash: e2f3e622f1aecfe0b6a305d0fb997e83453ecbc2949cb2b393549e35f2b062e1
               dlSubdir: ghc-9.6.0.20230128-i386-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.0.20230128/ghc-9.6.0.20230128-i386-deb9-linux.tar.xz
-            unknown_versioning: *ghc-961alpha2-64-deb9
+            unknown_versioning: *ghc-961alpha2-32-deb9
         A_64:
           Darwin:
             unknown_versioning:
