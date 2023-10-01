@@ -309,7 +309,7 @@ executable ghcup
 
   ghc-options:
     -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates
+    -fwarn-incomplete-record-updates -threaded
 
   build-depends:
     , ghcup
