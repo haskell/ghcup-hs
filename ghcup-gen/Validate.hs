@@ -51,6 +51,11 @@ data ValidationError = InternalError String
 
 instance Exception ValidationError
 
+data DistributionChannel = MainChan
+                         | PrereleaseChan
+                         | NightlyChan
+  deriving (Show, Eq)
+
 
 addError :: (MonadReader (IORef Int) m, MonadIO m, Monad m) => m ()
 addError = do
@@ -66,8 +71,9 @@ validate :: ( Monad m
             , MonadUnliftIO m
             , HasGHCupInfo env
             )
-         => m ExitCode
-validate = do
+         => DistributionChannel
+         -> m ExitCode
+validate distroChannel = do
   GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
 
   ref <- liftIO $ newIORef 0
@@ -95,33 +101,36 @@ validate = do
         lift $ logInfo "All good"
         pure ExitSuccess
  where
-  checkHasRequiredPlatforms t v tags arch pspecs = do
-    let v' = prettyVer v
-        arch' = prettyShow arch
-    when (Linux UnknownLinux `notElem` pspecs) $ do
-      lift $ logError $
-        "Linux UnknownLinux missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
-      addError
-    when ((Darwin `notElem` pspecs) && arch == A_64) $ do
-      lift $ logError $ "Darwin missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
-      addError
-    when ((FreeBSD `notElem` pspecs) && arch == A_64) $ lift $ logWarn $
-      "FreeBSD missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
-    when (Windows `notElem` pspecs && arch == A_64) $ do
-      lift $ logError $ "Windows missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
-      addError
+  checkHasRequiredPlatforms t v tags arch pspecs
+    -- relax requirements for prerelease and nightly channels
+    | distroChannel `elem` [PrereleaseChan, NightlyChan] = pure ()
+    | otherwise = do
+        let v' = prettyVer v
+            arch' = prettyShow arch
+        when (Linux UnknownLinux `notElem` pspecs) $ do
+          lift $ logError $
+            "Linux UnknownLinux missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
+          addError
+        when ((Darwin `notElem` pspecs) && arch == A_64) $ do
+          lift $ logError $ "Darwin missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
+          addError
+        when ((FreeBSD `notElem` pspecs) && arch == A_64) $ lift $ logWarn $
+          "FreeBSD missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
+        when (Windows `notElem` pspecs && arch == A_64) $ do
+          lift $ logError $ "Windows missing for for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack arch'
+          addError
 
-    -- alpine needs to be set explicitly, because
-    -- we cannot assume that "Linux UnknownLinux" runs on Alpine
-    -- (although it could be static)
-    when (Linux Alpine `notElem` pspecs) $
-      case t of
-        GHCup | arch `elem` [A_64, A_32] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)) >> addError
-        Cabal | v > [vver|2.4.1.0|]
-              , arch `elem` [A_64, A_32] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)) >> addError
-        GHC | Latest `elem` tags || Recommended `elem` tags
-            , arch `elem` [A_64, A_32] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch))
-        _ -> lift $ logWarn $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)
+        -- alpine needs to be set explicitly, because
+        -- we cannot assume that "Linux UnknownLinux" runs on Alpine
+        -- (although it could be static)
+        when (Linux Alpine `notElem` pspecs) $
+          case t of
+            GHCup | arch `elem` [A_64, A_32] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)) >> addError
+            Cabal | v > [vver|2.4.1.0|]
+                  , arch `elem` [A_64, A_32] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)) >> addError
+            GHC | Latest `elem` tags || Recommended `elem` tags
+                , arch `elem` [A_64, A_32] -> lift (logError $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch))
+            _ -> lift $ logWarn $ "Linux Alpine missing for " <> T.pack (prettyShow t) <> " " <> v' <> " " <> T.pack (prettyShow arch)
 
   checkUniqueTags tool = do
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -145,12 +154,15 @@ validate = do
         lift $ logError $ "Tags not unique for " <> T.pack (prettyShow tool) <> ": " <> T.pack (prettyShow xs)
         addError
    where
-    isUniqueTag Latest         = True
-    isUniqueTag Recommended    = True
-    isUniqueTag Old            = False
-    isUniqueTag Prerelease     = False
-    isUniqueTag (Base       _) = False
-    isUniqueTag (UnknownTag _) = False
+    isUniqueTag Latest           = True
+    isUniqueTag Recommended      = True
+    isUniqueTag Old              = False
+    isUniqueTag Prerelease       = False
+    isUniqueTag LatestPrerelease = True
+    isUniqueTag Nightly          = False
+    isUniqueTag LatestNightly    = True
+    isUniqueTag (Base       _)   = False
+    isUniqueTag (UnknownTag _)   = False
 
   checkGHCVerIsValid = do
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -166,11 +178,20 @@ validate = do
   checkMandatoryTags tool = do
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
     let allTags = _viTags =<< M.elems (availableToolVersions dls tool)
-    forM_ [Latest, Recommended] $ \t -> case t `elem` allTags of
+    forM_ (mandatoryTags tool) $ \t -> case t `elem` allTags of
       False -> do
         lift $ logError $ "Tag " <> T.pack (prettyShow t) <> " missing from " <> T.pack (prettyShow tool)
         addError
       True -> pure ()
+
+  mandatoryTags tool
+    -- due to a quirk, even for ghcup prereleases we need the 'latest' tag
+    -- https://github.com/haskell/ghcup-hs/issues/891
+    | tool == GHCup = [Latest, Recommended]
+    | otherwise = case distroChannel of
+                    MainChan       -> [Latest, Recommended]
+                    PrereleaseChan -> [LatestPrerelease]
+                    NightlyChan    -> [LatestNightly]
 
   -- all GHC versions must have a base tag
   checkGHCHasBaseVersion = do
