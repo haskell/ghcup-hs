@@ -5378,9 +5378,7 @@ ghcupDownloads:
               dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.9.3/stack-2.9.3-linux-aarch64.tar.gz
               dlHash: 161e1638da9efc56319f7225b3652ca3f339bcda9eadc7d6ce512f325b0f014a
     2.11.1:
-      viTags:
-        - Recommended
-        - Latest
+      viTags: []
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2111---2023-05-18
       viPostInstall: *stack-post
       viArch:
@@ -5410,4 +5408,49 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.11.1/stack-2.11.1-linux-aarch64.tar.gz
               dlHash: c7733d07ed78d6f4d82e0ebf6d260eb693c6c9df2208003d60caba69766f9c15
+    2.13.1:
+      viTags:
+        - Recommended
+        - Latest
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2131---2023-09-29
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-2131-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.13.1/stack-2.13.1-linux-x86_64.tar.gz
+              dlHash: 45281bb2385e928916ec8bcbc7ab790ce8721bbf805f3d0752544ada22ad5ea3
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.13.1/stack-2.13.1-osx-x86_64.tar.gz
+              dlHash: b7d46382edb17230d21943844550d3aaeacee8b6fb1fcc7980ca59bee500b2a5
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.13.1/stack-2.13.1-windows-x86_64.tar.gz
+              dlHash: 728be2371e257c6960341167192fa704ff1f92ab61657dd4781710a257fae7c1
+              dlSubdir:
+                RegexDir: "stack-.*"
+        # FreeBSD:
+        #   unknown_versioning:
+        #     dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.13.1/stack-2.13.1-freebsd-x86_64.tar.xz
+        #     dlHash: <replace_me>
+          Linux_Alpine:
+            unknown_versioning: *stack-2131-64
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.13.1/stack-2.13.1-linux-aarch64.tar.gz
+              dlHash: 37b1dbf39131eea629a6e3685fd1153fdfd2f0cd2179db92bb33784987b4ddb8
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/v2.13.1/stack-2.13.1-osx-aarch64.tar.gz
+              dlHash: 18ececd7112b1aad01ab0f88cb68ae63f2dc74aa9b8b5319828979f43cba9907
+              dlSubdir:
+                RegexDir: "stack-.*"
 
