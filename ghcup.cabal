@@ -25,10 +25,10 @@ extra-source-files:
   cbits/dirutils.h
   data/build_mk/cross
   data/build_mk/default
-  test/data/dir/.keep
-  test/data/file
-  test/golden/unix/GHCupInfo.json
-  test/golden/windows/GHCupInfo.json
+  test/ghcup-test/data/dir/.keep
+  test/ghcup-test/data/file
+  test/ghcup-test/golden/unix/GHCupInfo.json
+  test/ghcup-test/golden/windows/GHCupInfo.json
 
 source-repository head
   type:     git
