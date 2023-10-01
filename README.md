@@ -48,5 +48,7 @@ ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup
 ### Understanding tags
 
 Tags are documented [here](https://github.com/haskell/ghcup-hs/blob/master/lib/GHCup/Types.hs). Search for `data Tag`.
-Some tags are unique. Uniqueness is checked by cabal run ghcup-gen -- check -f ghcup-<yaml-ver>.yaml`.
+Some tags are unique. Uniqueness is checked by `cabal run ghcup-gen -- check -f ghcup-<yaml-ver>.yaml`.
+
+If you want to check prereleases, do: `cabal run ghcup-gen -- check -f ghcup-prereleases-<yaml-ver>.yaml --channel=prerelease`
 

@@ -18,6 +18,11 @@ on:
         required: true
         default: ghcup-0.0.7.yaml
         type: string
+      channel:
+        description: Distribution channel (main|prerelease|nightly)
+        required: true
+        default: Main
+        type: string
 env:
   BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
   BOOTSTRAP_HASKELL_MINIMAL: 1
@@ -25,6 +30,7 @@ env:
   TOOL: ${{ github.event.inputs.tool }}
   VERSION: ${{ github.event.inputs.version }}
   METADATA_FILE: ${{ github.event.inputs.metadataFile }}
+  CHANNEL: ${{ github.event.inputs.channel }}
 jobs:
   bindist-install:
     name: linux-${{ matrix.image }}
@@ -142,6 +148,63 @@ jobs:
         name: Run build (aarch64 linux)
         with:
           args: sh -c '.github/workflows/install-bindist.sh'
+
+  validate:
+    name: ghcup-gen check
+    runs-on: ubuntu-latest
+    env:
+      GHC: 9.2.8
+      CABAL: 3.10.1.0
+    steps:
+      - name: create ~/.local/bin
+        run: mkdir -p "$HOME/.local/bin"
+        shell: bash
+
+      - name: Add ~/.local/bin to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: install yamllint
+        run: pip install yamllint
+
+      - name: Update cabal cache
+        run: cabal update
+        shell: bash
+
+      - name: Install requirements
+        shell: sh
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          export TZ=Asia/Singapore
+          sudo apt-get update && sudo apt-get install -y curl bash git gnupg libarchive-dev
+
+      - uses: actions/checkout@v3
+
+      - name: Cache Cabal
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-cabal
+        with:
+          path: |
+            ~/.cabal/store
+            ~/.cabal/packages
+          key: v2-${{ runner.os }}-${{ env.GHC }}-${{ env.CABAL }}-build-${{ hashFiles('cabal.project') }}
+          restore-keys: |
+            v2-${{ runner.os }}-${{ env.GHC }}-${{ env.CABAL }}-build-${{ hashFiles('cabal.project') }}
+            v2-${{ runner.os }}-${{ env.GHC }}-${{ env.CABAL }}-build-
+            v2-${{ runner.os }}-${{ env.GHC }}
+
+      - name: Install ghcup-gen
+        run: |
+          ghcup run --cabal 3.10.1.0 --ghc 9.2.8 --install -- cabal install --installdir="$HOME/.local/bin" --overwrite-policy=always --install-method=copy ghcup-gen
+        shell: bash
+
+      - name: Check yaml
+        run: |
+          ghcup-gen -- check -f ${{ env.METADATA_FILE }} --channel ${{ env.CHANNEL }}
+          yamllint ${{ env.METADATA_FILE }}
+          python3 -c "import yaml ; stream = open('${{ env.METADATA_FILE }}', 'r') ; yaml.safe_load(stream)"
+        shell: bash
 
   signature-test:
     name: Test signatures

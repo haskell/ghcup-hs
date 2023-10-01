@@ -105,11 +105,30 @@ inputP :: Parser Input
 inputP = fileInput <|> stdInput
 
 data ValidateYAMLOpts = ValidateYAMLOpts
-  { vInput :: Maybe Input
+  { vChannel :: DistributionChannel
+  , vInput   :: Maybe Input
   }
 
 validateYAMLOpts :: Parser ValidateYAMLOpts
-validateYAMLOpts = ValidateYAMLOpts <$> optional inputP
+validateYAMLOpts = ValidateYAMLOpts <$> channelParser <*> optional inputP
+
+channelParser :: Parser DistributionChannel
+channelParser =
+    option
+    (eitherReader chanP)
+          (long "channel" <> metavar "CHANNEL" <> help
+            "Signal which distribution channel the YAML denotes: (main | prerelease | nightly). Main is defaul."
+            <> value MainChan
+          )
+ where
+  chanP :: String -> Either String DistributionChannel
+  chanP s' | t == T.pack "main"        = Right MainChan
+           | t == T.pack "prerelease"  = Right PrereleaseChan
+           | t == T.pack "prereleases" = Right PrereleaseChan
+           | t == T.pack "nightly"     = Right NightlyChan
+           | t == T.pack "nightlies"   = Right NightlyChan
+           | otherwise                 = Left ("Unknown channel value: " <> s')
+    where t = T.toLower (T.pack s')
 
 tarballFilterP :: Parser TarballFilter
 tarballFilterP = option readm $
@@ -205,7 +224,7 @@ main = do
 
   _ <- customExecParser (prefs showHelpOnError) (info (opts <**> helper) idm)
     >>= \Options {..} -> case optCommand of
-          ValidateYAML vopts -> withValidateYamlOpts vopts validate
+          ValidateYAML vopts@ValidateYAMLOpts{ .. } -> withValidateYamlOpts vopts (validate vChannel)
           ValidateTarballs vopts tarballFilter -> withValidateYamlOpts vopts (validateTarballs tarballFilter)
           GenerateHlsGhc vopts format output -> withValidateYamlOpts vopts (generateHLSGhc format output)
           GenerateToolTable vopts output -> withValidateYamlOpts vopts (generateTable output)
