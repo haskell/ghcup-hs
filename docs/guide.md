@@ -43,6 +43,14 @@ All of the following are valid arguments to `ghcup install ghc`:
 
 If the argument is omitted, the default is `recommended`.
 
+Other tags include:
+
+- `prerelease`: a prerelease version
+- `latest-prerelease`: the latest prerelease version
+- `nightly`: a nightly version
+- `latest-nightly`: the latest nightly version
+
+
 ## Manpages
 
 For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man` provider, then issue `man ghc`. Manpages only work for the currently set ghc.

@@ -158,12 +158,17 @@ instance NFData VersionInfo
 
 -- | A tag. These are currently attached to a version of a tool.
 data Tag = Latest
-         | Recommended
-         | Prerelease
-         | LatestPrerelease
-         | Nightly
-         | LatestNightly
-         | Base PVP
+         | Recommended        -- ^ the recommended version of a tool
+         | Prerelease         -- ^ denotes a prerelease version
+                              --   (a version should either be 'Prerelease' or
+                              --   'LatestPrerelease', but not both)
+         | LatestPrerelease   -- ^ the latest prerelease (there should be only
+                              --   one per tool)
+         | Nightly            -- ^ denotes a nightly version
+                              --   (a version should either be 'Nightly' or
+                              --   'LatestNightly', but not both)
+         | LatestNightly      -- ^ the latest nightly (there should be only one per tool)
+         | Base PVP           -- ^ the base version shipped with GHC
          | Old                -- ^ old versions are hidden by default in TUI
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, GHC.Generic, Show) -- FIXME: manual JSON instance
