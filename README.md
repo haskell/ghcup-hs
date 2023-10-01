@@ -45,3 +45,8 @@ ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup
     * https://github.com/haskell/ghcup-hs/blob/master/docs/guide.md#gpg-verification
 	* https://github.com/haskell/ghcup-hs/blob/master/docs/install.md#unix
 
+### Understanding tags
+
+Tags are documented [here](https://github.com/haskell/ghcup-hs/blob/master/lib/GHCup/Types.hs). Search for `data Tag`.
+Some tags are unique. Uniqueness is checked by cabal run ghcup-gen -- check -f ghcup-<yaml-ver>.yaml`.
+
