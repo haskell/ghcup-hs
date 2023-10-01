@@ -261,7 +261,7 @@ library ghcup-optparse
     GHCup.OptParse.Upgrade
     GHCup.OptParse.Whereis
 
-  hs-source-dirs:     app/ghcup
+  hs-source-dirs:     lib-opt
   default-language:   Haskell2010
   default-extensions:
     LambdaCase
@@ -284,12 +284,6 @@ library ghcup-optparse
 
   if (flag(tui) && !os(windows))
     cpp-options:   -DBRICK
-    other-modules: BrickMain
-    build-depends:
-      , brick         ^>=1.5
-      , transformers  ^>=0.5
-      , unix          ^>=2.7
-      , vty           ^>=5.37
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
@@ -300,26 +294,6 @@ library ghcup-optparse
 executable ghcup
   import:             app-common-depends
   main-is:            Main.hs
-  other-modules:
-    GHCup.OptParse
-    GHCup.OptParse.ChangeLog
-    GHCup.OptParse.Common
-    GHCup.OptParse.Compile
-    GHCup.OptParse.Config
-    GHCup.OptParse.DInfo
-    GHCup.OptParse.GC
-    GHCup.OptParse.Install
-    GHCup.OptParse.List
-    GHCup.OptParse.Nuke
-    GHCup.OptParse.Prefetch
-    GHCup.OptParse.Rm
-    GHCup.OptParse.Run
-    GHCup.OptParse.Set
-    GHCup.OptParse.Test
-    GHCup.OptParse.ToolRequirements
-    GHCup.OptParse.UnSet
-    GHCup.OptParse.Upgrade
-    GHCup.OptParse.Whereis
 
   hs-source-dirs:     app/ghcup
   default-language:   Haskell2010
@@ -335,7 +309,7 @@ executable ghcup
 
   ghc-options:
     -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates -threaded
+    -fwarn-incomplete-record-updates
 
   build-depends:
     , ghcup
