@@ -1081,7 +1081,7 @@ darwinNotarization :: (MonadReader env m, HasDirs env, MonadIO m)
                    -> FilePath
                    -> m (Either ProcessError ())
 darwinNotarization Darwin path = exec
-  "xattr"
+  "/usr/bin/xattr"
   ["-r", "-d", "com.apple.quarantine", path]
   Nothing
   Nothing
