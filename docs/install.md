@@ -42,9 +42,13 @@ Also see [tags and shortcuts](../guide/#tags-and-shortcuts) for more information
 
 The following distro packages are required: `build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
 
-#### Version >= 11
+#### Version 11
 
 The following distro packages are required: `build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
+
+#### Version 12 (`bookworm`)
+
+The following distro packages are required: `build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
 
 ### Linux Ubuntu
 
