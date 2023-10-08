@@ -354,7 +354,7 @@ test-suite ghcup-test
   default-language:   Haskell2010
   default-extensions:
     LambdaCase
-    MultiWayIf++-
+    MultiWayIf
     PackageImports
     RecordWildCards
     ScopedTypeVariables
