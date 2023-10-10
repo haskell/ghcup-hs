@@ -40,7 +40,7 @@ import Brick
 import qualified Brick
 import           Brick.Widgets.Border ( hBorder, borderWithLabel)
 import           Brick.Widgets.Border.Style ( unicode )
-import           Brick.Widgets.Center ( center )
+import           Brick.Widgets.Center ( center, centerLayer )
 import qualified Brick.Widgets.List as L
 import           Brick.Focus (FocusRing)
 import qualified Brick.Focus as F
@@ -241,7 +241,13 @@ sectionListSelectedElement generic_section_list = do
 
 -}
 
-type Name = String
+data Name = AllTools       -- The main list widget
+          | Singular Tool  -- The particular list for each tool
+          | IODialog       -- The pop up when installing a tool
+          | TutorialBox    -- The tutorial widget
+          deriving (Eq, Ord, Show)
+
+data Mode = Navigation | Tutorial deriving (Eq, Show, Ord)
 
 installedSign :: String
 #if IS_WINDOWS
@@ -287,6 +293,7 @@ data BrickState = BrickState
   , _appSettings :: BrickSettings
   , _appState    :: BrickInternalState
   , _appKeys     :: KeyBindings
+  , _mode        :: Mode
   }
   --deriving Show
 
@@ -295,7 +302,7 @@ makeLenses ''BrickState
 keyHandlers :: KeyBindings
             -> [ ( KeyCombination
                  , BrickSettings -> String
-                 , EventM String BrickState ()
+                 , EventM Name BrickState ()
                  )
                ]
 keyHandlers KeyBindings {..} =
@@ -311,6 +318,7 @@ keyHandlers KeyBindings {..} =
     )
   , (bUp, const "Up", appState %= moveCursor 1 Up)
   , (bDown, const "Down", appState %= moveCursor 1 Down)
+  , (Vty.KChar 'x', const "Tutorial", mode .= Tutorial)
   ]
  where
   --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
@@ -337,7 +345,7 @@ showMod :: Vty.Modifier -> String
 showMod = tail . show
 
 
-ui :: AttrMap -> BrickState -> Widget String
+ui :: AttrMap -> BrickState -> Widget Name
 ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
   = Brick.padBottom Max
       ( Brick.withBorderStyle unicode
@@ -432,14 +440,43 @@ ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
 minHSize :: Int -> Widget n -> Widget n
 minHSize s' = Brick.hLimit s' . Brick.vLimit 1 . (<+> Brick.fill ' ')
 
-app :: AttrMap -> AttrMap -> App BrickState () String
+app :: AttrMap -> AttrMap -> App BrickState () Name
 app attrs dimAttrs =
-  App { appDraw     = \st -> [ui dimAttrs st]
-  , appHandleEvent  = eventHandler
-  , appStartEvent   = return ()
-  , appAttrMap      = const attrs
-  , appChooseCursor = Brick.showFirstCursor
-  }
+  App { appDraw         = drawUI dimAttrs
+      , appHandleEvent  = eventHandler
+      , appStartEvent   = return ()
+      , appAttrMap      = const attrs
+      , appChooseCursor = Brick.showFirstCursor
+      }
+
+
+drawUI :: AttrMap -> BrickState -> [Widget Name]
+drawUI dimAttrs st = 
+  case st ^. mode of
+    Navigation -> [ui dimAttrs st]
+    Tutorial   -> 
+      let tutorial = centerLayer
+                   $ Brick.hLimitPercent 75
+                   $ Brick.vLimitPercent 50
+                   $ Brick.withBorderStyle unicode
+                   $ borderWithLabel (Brick.txt "Tutorial")
+                   $ Brick.vBox 
+                     [ Brick.txt "GHCup is a tool for managing your Haskell tooling."
+                     , center (Brick.txt "--- o ---")
+                     , Brick.txt "This symbol "
+                        <+> Brick.withAttr (Brick.attrName "installed") (Brick.str "✓ ")
+                        <+> Brick.txt " means that the tool is installed but not in used"
+                     , Brick.txt "This symbol "
+                        <+> Brick.withAttr (Brick.attrName "set") (Brick.str "✔✔") 
+                        <+> Brick.txt " means that the tool is installed and in used"
+                     , Brick.txt "This symbol "
+                        <+> Brick.withAttr (Brick.attrName "not-installed") (Brick.str "✗ ")
+                        <+> Brick.txt " means that the tool isn't installed"
+                     , center (Brick.txt "--- o ---")
+                     , Brick.txt "Press Enter to exit the tutorial"
+                     ]
+       in [tutorial, ui dimAttrs st]
+
 
 defaultAttributes :: Bool -> AttrMap
 defaultAttributes no_color = Brick.attrMap
@@ -481,8 +518,14 @@ dimAttributes no_color = Brick.attrMap
     withBackColor | no_color  = \attr _ -> attr `Vty.withStyle` Vty.reverseVideo
                   | otherwise = Vty.withBackColor
 
-eventHandler :: BrickEvent String e -> EventM String BrickState ()
-eventHandler ev = do
+tutorialHandler :: BrickEvent Name e -> EventM Name BrickState ()
+tutorialHandler ev = 
+  case ev of
+    VtyEvent (Vty.EvKey Vty.KEnter _) -> mode .= Navigation
+    _ -> pure ()
+
+navigationHandler :: BrickEvent Name e -> EventM Name BrickState ()
+navigationHandler ev = do
   AppState { keyBindings = kb } <- liftIO $ readIORef settings'
   case ev of
     inner_event@(VtyEvent (Vty.EvKey key _)) ->
@@ -490,6 +533,13 @@ eventHandler ev = do
         Nothing -> void $ Brick.zoom (toLensVL appState) $ handleGenericListEvent inner_event
         Just (_, _, handler) -> handler
     inner_event -> Brick.zoom (toLensVL appState) $ handleGenericListEvent inner_event
+
+eventHandler :: BrickEvent Name e -> EventM Name BrickState ()
+eventHandler ev = do
+  m <- use mode
+  case m of
+    Navigation -> navigationHandler ev
+    Tutorial   -> tutorialHandler ev
 
 -- | Suspend the current UI and run an IO action in terminal. If the
 -- IO action returns a Left value, then it's thrown as userError.
@@ -524,6 +574,7 @@ updateList appD BrickState{..} =
                  , _appData     = appD
                  , _appSettings = _appSettings
                  , _appKeys     = _appKeys
+                 , _mode        = Navigation
                  }
 
 constructList :: BrickData
@@ -538,8 +589,8 @@ constructList appD settings =
 -- | Focus on the tool section and the predicate which matches. If no result matches, focus on index 0
 selectBy :: Tool -> (ListResult -> Bool) -> BrickInternalState -> BrickInternalState
 selectBy tool predicate internal_state =
-  let new_focus = F.focusSetCurrent (show tool) (view sectionListFocusRingL internal_state)
-      tool_lens = sectionL (show tool) 
+  let new_focus = F.focusSetCurrent (Singular tool) (view sectionListFocusRingL internal_state)
+      tool_lens = sectionL (Singular tool) 
    in internal_state
         & sectionListFocusRingL .~ new_focus
         & tool_lens %~ L.listMoveTo 0            -- We move to 0 first
@@ -559,8 +610,8 @@ replaceLR :: (ListResult -> Bool)
           -> BrickInternalState
 replaceLR filterF list_result s =
   let oldElem = s >>= sectionListSelectedElement -- Maybe (Int, e)
-      newVec  =  [(show $ lTool (head g), V.fromList g) | g <- groupBy ((==) `on` lTool ) (filter filterF list_result)]
-      newSectionList = sectionList "GHCupList" newVec 0
+      newVec  =  [(Singular $ lTool (head g), V.fromList g) | g <- groupBy ((==) `on` lTool ) (filter filterF list_result)]
+      newSectionList = sectionList AllTools newVec 0
   in case oldElem of
       Just (_, el) -> selectBy (lTool el) (toolEqual el) newSectionList
       Nothing -> selectLatest newSectionList
@@ -817,6 +868,7 @@ brickMain s = do
                     defaultAppSettings
                     (constructList ad defaultAppSettings Nothing)
                     (keyBindings (s :: AppState))
+                    Navigation
 
           )
         $> ()
