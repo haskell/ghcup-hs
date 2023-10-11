@@ -214,17 +214,7 @@ url-source:
 Stack manages GHC versions internally by default. In order to make it use ghcup installed
 GHC versions there are two strategies.
 
-### Strategy 1: System GHC (works on all stack versions)
-
-You can instruct stack to use "system" GHC versions (whatever is in PATH). To do so,
-run the following commands:
-
-```sh
-stack config set install-ghc false --global
-stack config set system-ghc  true  --global
-```
-
-### Strategy 2: Stack hooks (new, recommended)
+### Strategy 1: Stack hooks (new, recommended)
 
 Since stack 2.9.1 you can customize the installation logic of GHC completely, see [https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation](https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation).
 
@@ -245,6 +235,16 @@ stack config set system-ghc false --global
 
 By default, when the hook fails for whatever reason, stack will fall back to its own installation logic. To disable
 this, run `stack config set install-ghc false --global`.
+
+### Strategy 2: System GHC (works on all stack versions)
+
+You can instruct stack to use "system" GHC versions (whatever is in PATH). To do so,
+run the following commands:
+
+```sh
+stack config set install-ghc false --global
+stack config set system-ghc  true  --global
+```
 
 ### Windows
 
