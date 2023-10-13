@@ -119,11 +119,11 @@ import Data.Time (Day(..), diffDays, addDays)
 -- >>> let lc = LoggerConfig { lcPrintDebug = False, consoleOutter = mempty, fileOutter = mempty, fancyColors = False }
 -- >>> dirs' <- getAllDirs
 -- >>> let installedVersions = [ ([pver|8.10.7|], "-debug+lol", Nothing), ([pver|8.10.4|], "", Nothing), ([pver|8.8.4|], "", Nothing), ([pver|8.8.3|], "", Nothing) ]
--- >>> let settings = Settings True 0 False Never Curl False GHCupURL True GPGNone False
+-- >>> let settings = defaultSettings { cache = True, metaCache = 0, noNetwork = True }
 -- >>> let leanAppState = LeanAppState settings dirs' defaultKeyBindings lc
 -- >>> cwd <- getCurrentDirectory
 -- >>> (Right ref) <- pure $ parseURI strictURIParserOptions $ "file://" <> E.encodeUtf8 (T.pack cwd) <> "/data/metadata/" <> (urlBaseName . view pathL' $ ghcupURL)
--- >>> (VRight r) <- (fmap . fmap) _ghcupDownloads $ flip runReaderT leanAppState . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError] $ liftE $ getBase ref
+-- >>> (VRight r) <- (fmap . fmap) _ghcupDownloads $ flip runReaderT leanAppState . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, ContentLengthError] $ liftE $ getBase ref
 
 
 
@@ -737,7 +737,7 @@ getGHCForPVP pvpIn mt = do
 -- | Like 'getGHCForPVP', except with explicit input parameter.
 --
 -- >>> getGHCForPVP' [pver|8|] installedVersions Nothing
--- Just (GHCTargetVersion {_tvTarget = Nothing, _tvVersion = Version {_vEpoch = Nothing, _vChunks = (Digits 8 :| []) :| [Digits 10 :| [],Digits 7 :| []], _vRel = [Str "debug" :| []], _vMeta = Just "lol"}})
+-- Just (GHCTargetVersion {_tvTarget = Nothing, _tvVersion = Version {_vEpoch = Nothing, _vChunks = Chunks (Numeric 8 :| [Numeric 10,Numeric 7]), _vRel = Just (Release (Alphanum "debug" :| [])), _vMeta = Just "lol"}})
 -- >>> fmap prettyShow $ getGHCForPVP' [pver|8.8|] installedVersions Nothing
 -- "Just 8.8.4"
 -- >>> fmap prettyShow $ getGHCForPVP' [pver|8.10.4|] installedVersions Nothing
@@ -763,11 +763,11 @@ getGHCForPVP' pvpIn ghcs' mt = do
 -- | Get the latest available ghc for the given PVP version, which
 -- may only contain parts.
 --
--- >>> (fmap . fmap) fst $ getLatestToolFor GHC [pver|8|] r
+-- >>> (fmap . fmap) (\(p, _, _) -> p) $ getLatestToolFor GHC Nothing [pver|8|] r
 -- Just (PVP {_pComponents = 8 :| [10,7]})
--- >>> (fmap . fmap) fst $ getLatestToolFor GHC [pver|8.8|] r
+-- >>> (fmap . fmap) (\(p, _, _) -> p) $ getLatestToolFor GHC Nothing [pver|8.8|] r
 -- Just (PVP {_pComponents = 8 :| [8,4]})
--- >>> (fmap . fmap) fst $ getLatestToolFor GHC [pver|8.8.4|] r
+-- >>> (fmap . fmap) (\(p, _, _) -> p) $ getLatestToolFor GHC Nothing [pver|8.8.4|] r
 -- Just (PVP {_pComponents = 8 :| [8,4]})
 getLatestToolFor :: MonadThrow m
                  => Tool
