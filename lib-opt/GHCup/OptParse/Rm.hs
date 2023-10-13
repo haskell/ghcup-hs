@@ -29,7 +29,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Maybe
-import           Data.Versions           hiding ( str )
+import           Data.Versions
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )

@@ -35,7 +35,7 @@ import System.Environment
 import GHCup.Utils
 import System.FilePath
 import GHCup.Types.Optics
-import Data.Versions         hiding (str)
+import Data.Versions
 
 
 

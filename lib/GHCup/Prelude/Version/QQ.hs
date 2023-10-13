@@ -26,9 +26,7 @@ import           GHC.Base
 #endif
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Quote      ( QuasiQuoter(..) )
-import           Language.Haskell.TH.Syntax     ( Lift
-                                                , dataToExpQ
-                                                )
+import           Language.Haskell.TH.Syntax     ( dataToExpQ )
 import qualified Data.Text                     as T
 import qualified Language.Haskell.TH.Syntax    as TH
 
