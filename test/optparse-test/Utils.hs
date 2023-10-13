@@ -4,14 +4,9 @@ module Utils where
 import GHCup.OptParse as GHCup
 import Options.Applicative
 import Data.Bifunctor
-import Data.Versions
-import Data.List.NonEmpty (NonEmpty)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Control.Monad.IO.Class
-import qualified Data.Text as T
-import Language.Haskell.TH (Exp, Q)
-import Language.Haskell.TH.Syntax (lift)
 
 parseWith :: [String] -> IO Command
 parseWith args =
@@ -24,13 +19,6 @@ padLeft desiredLength s = padding ++ s
 
 mapSecond :: (b -> c) -> [(a,b)] -> [(a,c)]
 mapSecond = map . second
-
--- | Parse a `Version` at compile time.
-verQ :: T.Text -> Q Exp
-verQ nm =
-  case version nm of
-    Left err -> fail (errorBundlePretty err)
-    Right v  -> lift v
 
 buildTestTree
   :: (Eq a, Show a)

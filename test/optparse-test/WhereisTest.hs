@@ -7,6 +7,7 @@ import Test.Tasty
 import GHCup.OptParse
 import Utils
 import GHCup.Types
+import Data.Versions (versionQ)
 
 whereisTests :: TestTree
 whereisTests = buildTestTree whereisParseWith ("whereis", whereisCheckList)
@@ -14,8 +15,8 @@ whereisTests = buildTestTree whereisParseWith ("whereis", whereisCheckList)
 whereisCheckList :: [(String, (WhereisOptions, WhereisCommand))]
 whereisCheckList = concatMap mk
   [ ("whereis ghc", WhereisTool GHC Nothing)
-  , ("whereis ghc 9.2.8", WhereisTool GHC (Just $ GHCVersion $ mkTVer $(verQ "9.2.8")))
-  , ("whereis ghc ghc-9.2.8", WhereisTool GHC (Just $ GHCVersion $ GHCTargetVersion (Just "ghc") $(verQ "9.2.8")))
+  , ("whereis ghc 9.2.8", WhereisTool GHC (Just $ GHCVersion $ mkTVer $(versionQ "9.2.8")))
+  , ("whereis ghc ghc-9.2.8", WhereisTool GHC (Just $ GHCVersion $ GHCTargetVersion (Just "ghc") $(versionQ "9.2.8")))
   , ("whereis ghc latest", WhereisTool GHC (Just $ ToolTag Latest))
   , ("whereis cabal", WhereisTool Cabal Nothing)
   , ("whereis hls", WhereisTool HLS Nothing)

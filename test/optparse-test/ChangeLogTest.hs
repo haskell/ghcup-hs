@@ -9,6 +9,7 @@ import Utils
 import Test.Tasty.HUnit
 import Control.Monad.IO.Class
 import GHCup.Types
+import Data.Versions (versionQ)
 
 changeLogTests :: TestTree
 changeLogTests = testGroup "changelog" $ map (uncurry check) checkList
@@ -31,7 +32,7 @@ checkList =
       (Just $ GHCVersion
         $ GHCTargetVersion
           Nothing
-          $(verQ "9.2"))
+          $(versionQ "9.2"))
     )
   , ("changelog recommended", ChangeLogOptions False Nothing (Just $ ToolTag Recommended))
   , ("changelog -t cabal recommended", ChangeLogOptions False (Just Cabal) (Just $ ToolTag Recommended))
@@ -39,7 +40,7 @@ checkList =
       (Just $ GHCVersion
         $ GHCTargetVersion
           Nothing
-          $(verQ "3.10.1.0"))
+          $(versionQ "3.10.1.0"))
     )
   , ("changelog 2023-07-22", ChangeLogOptions False Nothing (Just (ToolDay (read "2023-07-22"))))
   ]

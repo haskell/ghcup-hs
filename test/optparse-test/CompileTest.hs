@@ -60,12 +60,12 @@ compileGhcCheckList = mapSecond CompileGHC
   [ ("compile ghc -v 9.4.5 -b 9.2.8", baseOptions)
   , ("compile ghc -g a32db0b -b 9.2.8", mkDefaultGHCCompileOptions
         (GHC.GitDist $ GitBranch "a32db0b" Nothing)
-        (Left $(verQ "9.2.8"))
+        (Left $(versionQ "9.2.8"))
     )
   , ("compile ghc -g a32db0b -b 9.2.8 -r https://gitlab.haskell.org/ghc/ghc.git",
         mkDefaultGHCCompileOptions
           (GHC.GitDist $ GitBranch "a32db0b" (Just "https://gitlab.haskell.org/ghc/ghc.git"))
-          (Left $(verQ "9.2.8"))
+          (Left $(versionQ "9.2.8"))
     )
   , ("compile ghc -g a32db0b -r https://gitlab.haskell.org/ghc/ghc.git -b /usr/bin/ghc-9.2.2",
         mkDefaultGHCCompileOptions
@@ -74,7 +74,7 @@ compileGhcCheckList = mapSecond CompileGHC
     )
   , ("compile ghc --remote-source-dist https://gitlab.haskell.org/ghc/ghc.git -b 9.2.8", mkDefaultGHCCompileOptions
         (GHC.RemoteDist [uri|https://gitlab.haskell.org/ghc/ghc.git|])
-        (Left $(verQ "9.2.8"))
+        (Left $(versionQ "9.2.8"))
     )
   , (baseCmd <> "-j20", baseOptions{GHC.jobs = Just 20})
   , (baseCmd <> "--jobs 10", baseOptions{GHC.jobs = Just 10})
@@ -87,8 +87,8 @@ compileGhcCheckList = mapSecond CompileGHC
   , (baseCmd <> "--cross-target armv7-unknown-linux-gnueabihf", baseOptions{GHC.crossTarget = Just "armv7-unknown-linux-gnueabihf"})
   , (baseCmd <> "-- --enable-unregisterised", baseOptions{GHC.addConfArgs = ["--enable-unregisterised"]})
   , (baseCmd <> "--set", baseOptions{GHC.setCompile = True})
-  , (baseCmd <> "-o 9.4.5-p1", baseOptions{GHC.ovewrwiteVer = Just $(verQ "9.4.5-p1")})
-  , (baseCmd <> "--overwrite-version 9.4.5-p1", baseOptions{GHC.ovewrwiteVer = Just $(verQ "9.4.5-p1")})
+  , (baseCmd <> "-o 9.4.5-p1", baseOptions{GHC.ovewrwiteVer = Just $(versionQ "9.4.5-p1")})
+  , (baseCmd <> "--overwrite-version 9.4.5-p1", baseOptions{GHC.ovewrwiteVer = Just $(versionQ "9.4.5-p1")})
   , (baseCmd <> "-f make", baseOptions{GHC.buildFlavour = Just "make"})
   , (baseCmd <> "--flavour make", baseOptions{GHC.buildFlavour = Just "make"})
   , (baseCmd <> "--hadrian", baseOptions{GHC.buildSystem = Just Hadrian})
@@ -108,8 +108,8 @@ compileGhcCheckList = mapSecond CompileGHC
     baseOptions :: GHCCompileOptions
     baseOptions =
       mkDefaultGHCCompileOptions
-        (GHC.SourceDist $(verQ "9.4.5"))
-        (Left $(verQ "9.2.8"))
+        (GHC.SourceDist $(versionQ "9.4.5"))
+        (Left $(versionQ "9.2.8"))
 
 compileHlsCheckList :: [(String, CompileCommand)]
 compileHlsCheckList = mapSecond CompileHLS
@@ -137,7 +137,7 @@ compileHlsCheckList = mapSecond CompileHLS
     )
   , ("compile hls --source-dist 2.0.0.0 --ghc 9.2.8",
         mkDefaultHLSCompileOptions
-          (HLS.SourceDist $(verQ "2.0.0.0"))
+          (HLS.SourceDist $(versionQ "2.0.0.0"))
           [ghc928]
     )
   , ("compile hls --remote-source-dist https://github.com/haskell/haskell-language-server/archive/refs/tags/2.0.0.1.tar.gz --ghc 9.2.8",
@@ -147,15 +147,15 @@ compileHlsCheckList = mapSecond CompileHLS
     )
   , ("compile hls -v 2.0.0.0 --ghc latest",
         mkDefaultHLSCompileOptions
-          (HLS.HackageDist $(verQ "2.0.0.0"))
+          (HLS.HackageDist $(versionQ "2.0.0.0"))
           [ToolTag Latest]
     )
   , (baseCmd <> "-j20", baseOptions{HLS.jobs = Just 20})
   , (baseCmd <> "--jobs 10", baseOptions{HLS.jobs = Just 10})
   , (baseCmd <> "--no-set", baseOptions{HLS.setCompile = False})
   , (baseCmd <> "--cabal-update", baseOptions{HLS.updateCabal = True})
-  , (baseCmd <> "-o 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $(verQ "2.0.0.0-p1")})
-  , (baseCmd <> "--overwrite-version 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $(verQ "2.0.0.0-p1")})
+  , (baseCmd <> "-o 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $(versionQ "2.0.0.0-p1")})
+  , (baseCmd <> "--overwrite-version 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $(versionQ "2.0.0.0-p1")})
   , (baseCmd <> "--git-describe-version", baseOptions{HLS.ovewrwiteVer = Left True})
 #ifdef IS_WINDOWS
   , (baseCmd <> "-i C:\\\\tmp\\out_dir", baseOptions{HLS.isolateDir = Just "C:\\\\tmp\\out_dir"})
@@ -179,11 +179,11 @@ compileHlsCheckList = mapSecond CompileHLS
     baseOptions :: HLSCompileOptions
     baseOptions =
       mkDefaultHLSCompileOptions
-        (HLS.HackageDist $(verQ "2.0.0.0"))
+        (HLS.HackageDist $(versionQ "2.0.0.0"))
         [ghc928]
 
     ghc928 :: ToolVersion
-    ghc928 = GHCVersion $ GHCTargetVersion Nothing $(verQ "9.2.8")
+    ghc928 = GHCVersion $ GHCTargetVersion Nothing $(versionQ "9.2.8")
 
 compileParseWith :: [String] -> IO CompileCommand
 compileParseWith args = do
