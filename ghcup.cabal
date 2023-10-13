@@ -87,7 +87,7 @@ common app-common-depends
     , uri-bytestring         ^>=0.3.2.2
     , utf8-string            ^>=1.0
     , vector                 ^>=0.12
-    , versions               >=4.0.1    && <5.1
+    , versions               >=4.0.1    && <6.1
     , yaml-streamly          ^>=0.12.0
 
 library
@@ -189,7 +189,7 @@ library
     , unordered-containers  ^>=0.2.10.0
     , uri-bytestring        ^>=0.3.2.2
     , vector                ^>=0.12
-    , versions              >=4.0.1      && <5.1
+    , versions              >=4.0.1      && <6.1
     , word8                 ^>=0.1.3
     , yaml-streamly         ^>=0.12.0
     , zlib                  ^>=0.6.2.2
@@ -377,7 +377,7 @@ test-suite ghcup-test
     , text                      ^>=2.0
     , time                      >=1.9.3   && <1.12
     , uri-bytestring            ^>=0.3.2.2
-    , versions                  >=4.0.1   && <5.1
+    , versions                  >=4.0.1   && <6.1
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
@@ -417,6 +417,7 @@ test-suite ghcup-optparse-test
     , optparse-applicative
     , tasty
     , tasty-hunit
+    , template-haskell
     , text
     , uri-bytestring
     , versions

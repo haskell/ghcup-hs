@@ -33,29 +33,9 @@ import qualified Data.Text                     as T
 import qualified Language.Haskell.TH.Syntax    as TH
 
 
-
-deriving instance Data Versioning
-deriving instance Lift Versioning
-deriving instance Data Version
-deriving instance Lift Version
-deriving instance Data SemVer
-deriving instance Lift SemVer
-deriving instance Data Mess
-deriving instance Lift Mess
-deriving instance Data MChunk
-deriving instance Lift MChunk
-deriving instance Data PVP
-deriving instance Lift PVP
-deriving instance Lift VSep
-deriving instance Data VSep
-deriving instance Lift VUnit
-deriving instance Data VUnit
-
 #if !MIN_VERSION_base(4,13,0)
 deriving instance Lift (NonEmpty Word)
-deriving instance Lift (NonEmpty VChunk)
 deriving instance Lift (NonEmpty MChunk)
-deriving instance Lift (NonEmpty VUnit)
 #endif
 
 qq :: (Text -> Q Exp) -> QuasiQuoter

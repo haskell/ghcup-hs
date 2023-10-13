@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE CPP               #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module RunTest where
 
@@ -35,11 +36,11 @@ runCheckList =
   , ("run --install", defaultOptions{runInstTool' = True})
   , ("run -m", defaultOptions{runMinGWPath = True})
   , ("run --mingw-path", defaultOptions{runMinGWPath = True})
-  , ("run --ghc 9.2.8", defaultOptions{runGHCVer = Just $ GHCVersion $ mkTVer $ mkVersion' "9.2.8"})
+  , ("run --ghc 9.2.8", defaultOptions{runGHCVer = Just $ GHCVersion $ mkTVer $(verQ "9.2.8")})
   , ("run --ghc latest", defaultOptions{runGHCVer = Just $ ToolTag Latest})
-  , ("run --cabal 3.10", defaultOptions{runCabalVer = Just $ ToolVersion $ mkVersion' "3.10"})
-  , ("run --hls 2.0", defaultOptions{runHLSVer = Just $ ToolVersion $ mkVersion' "2.0"})
-  , ("run --stack 2.9", defaultOptions{runStackVer = Just $ ToolVersion $ mkVersion' "2.9"})
+  , ("run --cabal 3.10", defaultOptions{runCabalVer = Just $ ToolVersion $(verQ "3.10")})
+  , ("run --hls 2.0", defaultOptions{runHLSVer = Just $ ToolVersion $(verQ "2.0")})
+  , ("run --stack 2.9", defaultOptions{runStackVer = Just $ ToolVersion $(verQ "2.9") })
 #ifdef IS_WINDOWS
   , ("run -b C:\\\\tmp\\dir", defaultOptions{runBinDir = Just "C:\\\\tmp\\dir"})
   , ("run --bindir C:\\\\tmp\\dir", defaultOptions{runBinDir = Just "C:\\\\tmp\\dir"})
@@ -52,9 +53,9 @@ runCheckList =
   , ("run --ghc latest --cabal 3.10 --stack 2.9 --hls 2.0 --install",
         defaultOptions
           { runGHCVer = Just $ ToolTag Latest
-          , runCabalVer = Just $ ToolVersion $ mkVersion' "3.10"
-          , runHLSVer = Just $ ToolVersion $ mkVersion' "2.0"
-          , runStackVer = Just $ ToolVersion $ mkVersion' "2.9"
+          , runCabalVer = Just $ ToolVersion $(verQ "3.10")
+          , runHLSVer = Just $ ToolVersion $(verQ "2.0")
+          , runStackVer = Just $ ToolVersion $(verQ "2.9")
           , runInstTool' = True
           }
     )
