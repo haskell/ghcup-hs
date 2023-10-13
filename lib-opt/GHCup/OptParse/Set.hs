@@ -28,7 +28,7 @@ import           Control.Monad.Trans.Resource
 import           Data.Either
 import           Data.Functor
 import           Data.Maybe
-import           Data.Versions           hiding ( str )
+import           Data.Versions
 import           GHC.Unicode
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )

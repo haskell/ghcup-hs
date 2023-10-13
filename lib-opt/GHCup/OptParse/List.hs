@@ -27,7 +27,7 @@ import           Data.List                      ( intercalate, sort )
 import           Data.Functor
 import           Data.Maybe
 import           Data.Time.Calendar             ( Day )
-import           Data.Versions           hiding ( str )
+import           Data.Versions
 import           Data.Void
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )

@@ -45,7 +45,7 @@ import           Data.IORef
 import           Data.Vector                    ( Vector
                                                 , (!?)
                                                 )
-import           Data.Versions           hiding ( str )
+import           Data.Versions
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
 import           System.FilePath

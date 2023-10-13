@@ -48,7 +48,7 @@ import           Data.Maybe
 import           Data.Text                      ( Text )
 import           Data.Time.Calendar             ( Day )
 import           Data.Time.Format               ( parseTimeM, defaultTimeLocale )
-import           Data.Versions           hiding ( str )
+import           Data.Versions
 import           Data.Void
 import qualified Data.Vector      as V
 import           GHC.IO.Exception

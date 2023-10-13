@@ -25,7 +25,7 @@ extra-deps:
   - text-2.0.2
   - yaml-streamly-0.12.2
   - github: fosskers/versions
-    commit: e08a188150f120c9b1c5bee8237beed6b1c568bc
+    commit: 7bc3355348aac3510771d4622aff09ac38c9924d
 
 flags:
   http-io-streams:
