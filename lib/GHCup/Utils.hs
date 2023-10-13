@@ -687,10 +687,8 @@ hlsAllBinaries ver = do
 
 -- | Extract (major, minor) from any version.
 getMajorMinorV :: MonadThrow m => Version -> m (Int, Int)
-getMajorMinorV Version {..} = case _vChunks of
-  ((Digits x :| []) :| ((Digits y :| []):_)) -> pure (fromIntegral x, fromIntegral y)
-  _ -> throwM $ ParseError "Could not parse X.Y from version"
-
+getMajorMinorV (Version _ (Chunks (Numeric x :| Numeric y : _)) _ _) = pure (fromIntegral x, fromIntegral y)
+getMajorMinorV _ = throwM $ ParseError "Could not parse X.Y from version"
 
 matchMajor :: Version -> Int -> Int -> Bool
 matchMajor v' major' minor' = case getMajorMinorV v' of

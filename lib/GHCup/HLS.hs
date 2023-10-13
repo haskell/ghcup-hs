@@ -717,8 +717,10 @@ getCabalVersion fp = do
   gpd <- case parseGenericPackageDescriptionMaybe contents of
            Nothing -> fail $ "could not parse cabal file: " <> fp
            Just r -> pure r
-  let tver = (\c -> Version Nothing c [] Nothing)
-           . NE.fromList . fmap (NE.fromList . (:[]) . digits . fromIntegral)
+  let tver = (\c -> Version Nothing c Nothing Nothing)
+           . Chunks
+           . NE.fromList
+           . fmap (Numeric . fromIntegral)
            . versionNumbers
            . pkgVersion
            . package

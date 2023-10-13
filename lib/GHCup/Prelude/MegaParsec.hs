@@ -91,18 +91,16 @@ ghcTargetVerP =
   verP' :: MP.Parsec Void Text Text
   verP' = do
     v <- version'
-    let startsWithDigists =
+    let startsWithDigits =
           and
             . take 3
-            . concatMap
-              (map
-                (\case
-                  (Digits _) -> True
-                  (Str    _) -> False
-                ) . NE.toList)
+            . map (\case
+                      Numeric  _ -> True
+                      Alphanum _ -> False)
             . NE.toList
+            . (\(Chunks nec) -> nec)
             $ _vChunks v
-    if startsWithDigists && isNothing (_vEpoch v)
+    if startsWithDigits && isNothing (_vEpoch v)
       then pure $ prettyVer v
       else fail "Oh"
 
