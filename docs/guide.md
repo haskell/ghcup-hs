@@ -456,8 +456,48 @@ variables and, in the case of Windows, parameters to tweak the script behavior.
 
 ### github workflows
 
-On github workflows you can use [https://github.com/haskell/actions/](https://github.com/haskell/actions/).
-GHCup itself is also pre-installed on all platforms, but may use non-standard install locations.
+On github workflows GHCup itself is pre-installed on all platforms, but may use non-standard install locations.
+Here's an example workflow with a GHC matrix:
+
+```yaml
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-22.04, macOS-latest]
+        ghc: ['9.6', '9.4', '9.2', '9.0', '8.10', '8.8', '8.6']
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup toolchain
+      run: |
+        ghcup install cabal --set recommended
+        ghcup install ghc --set ${{ matrix.ghc }}
+    - name: Build
+      run: |
+        cabal update
+        cabal test all --test-show-details=direct
+
+  i386:
+    runs-on: ubuntu-latest
+    container:
+      image: i386/ubuntu:bionic
+    steps:
+    - name: Install GHCup in container
+      run: |
+        apt-get update -y
+        apt-get install -y autoconf build-essential zlib1g-dev libgmp-dev curl
+        # we just go with recommended versions of cabal and GHC
+        curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_INSTALL_NO_STACK=1 sh
+    - uses: actions/checkout@v1
+    - name: Test
+      run: |
+        # in containers we need to fix PATH
+        source ~/.ghcup/env
+        cabal update
+        cabal test all --test-show-details=direct
+```
 
 ## GPG verification
 
