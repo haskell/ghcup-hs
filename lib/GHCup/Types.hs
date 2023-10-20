@@ -249,6 +249,7 @@ data LinuxDistro = Debian
                  | RedHat
                  | Alpine
                  | AmazonLinux
+                 | RockyLinux
                  -- rolling
                  | Gentoo
                  | Exherbo
@@ -268,6 +269,7 @@ distroToString CentOS = "centos"
 distroToString RedHat = "redhat"
 distroToString Alpine = "alpine"
 distroToString AmazonLinux = "amazon"
+distroToString RockyLinux = "rocky"
 distroToString Gentoo = "gentoo"
 distroToString Exherbo = "exherbo"
 distroToString UnknownLinux = "unknown"
