@@ -7,24 +7,36 @@ toolRequirements:
   GHC:
     unknown_version:
       Linux_Debian:
-        unknown_versioning:
+        "( >= 11 && <= 12 )":
           distroPKGs:
           - build-essential
           - curl
           - libffi-dev
-          - libffi6
+          - libffi7
           - libgmp-dev
           - libgmp10
           - libncurses-dev
           - libncurses5
           - libtinfo5
           notes: ''
-        ">= 11":
+        ">= 12":
           distroPKGs:
           - build-essential
           - curl
           - libffi-dev
-          - libffi7
+          - libffi8
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+        unknown_versioning:
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi6
           - libgmp-dev
           - libgmp10
           - libncurses-dev
