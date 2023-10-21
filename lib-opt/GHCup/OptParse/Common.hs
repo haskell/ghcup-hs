@@ -209,19 +209,7 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
         )
     ]
   distroP :: MP.Parsec Void Text LinuxDistro
-  distroP = choice'
-    [ MP.chunk "debian" $> Debian
-    , MP.chunk "deb" $> Debian
-    , MP.chunk "ubuntu" $> Ubuntu
-    , MP.chunk "mint" $> Mint
-    , MP.chunk "fedora" $> Fedora
-    , MP.chunk "centos" $> CentOS
-    , MP.chunk "redhat" $> RedHat
-    , MP.chunk "alpine" $> Alpine
-    , MP.chunk "gentoo" $> Gentoo
-    , MP.chunk "exherbo" $> Exherbo
-    , MP.chunk "unknown" $> UnknownLinux
-    ]
+  distroP = choice' ((\d -> MP.chunk (T.pack $ distroToString d) $> d) <$> allDistros)
 
 
 uriParser :: String -> Either String URI
@@ -367,7 +355,7 @@ fileUri' add = \case
   -- We need to do this so bash doesn't expand out any ~ or other
   -- chars we want to complete on, or emit an end of line error
   -- when seeking the close to the quote.
-  -- 
+  --
   -- NOTE: copied from https://hackage.haskell.org/package/optparse-applicative-0.17.0.0/docs/src/Options.Applicative.Builder.Completer.html#requote
   requote :: String -> String
   requote s =
