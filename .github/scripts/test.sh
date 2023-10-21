@@ -30,32 +30,32 @@ sha_sum "$(raw_eghcup --offline whereis ghcup)"
 
 ### Haskell test suite
 
-./ghcup-test${ext}
-./ghcup-test-optparse${ext}
-rm ghcup-test${ext} ghcup-test-optparse${ext}
+./"ghcup-test${ext}"
+./"ghcup-test-optparse${ext}"
+rm "ghcup-test${ext}" "ghcup-test-optparse${ext}"
 
 ### manual cli based testing
 
 eghcup --numeric-version
 
-eghcup install ghc ${GHC_VER}
-eghcup unset ghc ${GHC_VER}
-ls -lah "$(eghcup whereis -d ghc ${GHC_VER})"
-[ "`$(eghcup whereis ghc ${GHC_VER}) --numeric-version`" = "${GHC_VER}" ]
-[ "`eghcup run --ghc ${GHC_VER} -- ghc --numeric-version`" = "${GHC_VER}" ]
-[ "`ghcup run --ghc ${GHC_VER} -- ghc -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)'`" = "`$(ghcup whereis ghc ${GHC_VER}) -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)'`" ]
-eghcup set ghc ${GHC_VER}
-eghcup install cabal ${CABAL_VER}
-[ "`$(eghcup whereis cabal ${CABAL_VER}) --numeric-version`" = "${CABAL_VER}" ]
+eghcup install ghc "${GHC_VER}"
+eghcup unset ghc "${GHC_VER}"
+ls -lah "$(eghcup whereis -d ghc "${GHC_VER}")"
+[ "$($(eghcup whereis ghc "${GHC_VER}") --numeric-version)" = "${GHC_VER}" ]
+[ "$(eghcup run -q --ghc "${GHC_VER}" -- ghc --numeric-version)" = "${GHC_VER}" ]
+[ "$(ghcup run -q --ghc "${GHC_VER}" -- ghc -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" = "$($(ghcup whereis ghc "${GHC_VER}") -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" ]
+eghcup set ghc "${GHC_VER}"
+eghcup install cabal "${CABAL_VER}"
+[ "$($(eghcup whereis cabal "${CABAL_VER}") --numeric-version)" = "${CABAL_VER}" ]
 eghcup unset cabal
 "$GHCUP_BIN"/cabal --version && exit 1 || echo yes
 
 # make sure no cabal is set when running 'ghcup run' to check that PATH propagages properly
 # https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/375
-[ "`eghcup run --cabal ${CABAL_VER} -- cabal --numeric-version`" = "${CABAL_VER}" ]
-eghcup set cabal ${CABAL_VER}
+[ "$(eghcup run -q --cabal "${CABAL_VER}" -- cabal --numeric-version)" = "${CABAL_VER}" ]
+eghcup set cabal "${CABAL_VER}"
 
-[ "`$(eghcup whereis cabal ${CABAL_VER}) --numeric-version`" = "${CABAL_VER}" ]
+[ "$($(eghcup whereis cabal "${CABAL_VER}") --numeric-version)" = "${CABAL_VER}" ]
 
 if [ "${OS}" != "FreeBSD" ] ; then
 	if [ "${ARCH}" = "64" ] && [ "${DISTRO}" != "Alpine" ] ; then
@@ -85,10 +85,10 @@ eghcup list -t cabal
 
 ghc_ver=$(ghc --numeric-version)
 ghc --version
-ghc-${ghc_ver} --version
+"ghc-${ghc_ver}" --version
 if [ "${OS}" != "Windows" ] ; then
 		ghci --version
-		ghci-${ghc_ver} --version
+		"ghci-${ghc_ver}" --version
 fi
 
 
@@ -132,11 +132,11 @@ else
 	eghcup --offline set 8.10.3
 	eghcup set 8.10.3
 	[ "$(ghc --numeric-version)" = "8.10.3" ]
-	eghcup set ${GHC_VER}
+	eghcup set "${GHC_VER}"
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 	eghcup unset ghc
     "$GHCUP_BIN"/ghc --numeric-version && exit 1 || echo yes
-	eghcup set ${GHC_VER}
+	eghcup set "${GHC_VER}"
 	eghcup --offline rm 8.10.3
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 
@@ -169,10 +169,10 @@ fi
 # check that lazy loading works for 'whereis'
 cp "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml" "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml.bak"
 echo '**' > "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml"
-eghcup whereis ghc $(ghc --numeric-version)
+eghcup whereis ghc "$(ghc --numeric-version)"
 mv -f "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml.bak" "$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml"
 
-eghcup rm $(ghc --numeric-version)
+eghcup rm "$(ghc --numeric-version)"
 
 # https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/116
 if [ "${OS}" = "Linux" ] ; then
@@ -186,7 +186,7 @@ eghcup gc -c
 
 # test etags
 rm -f "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml"
-raw_eghcup -s https://www.haskell.org/ghcup/data/ghcup-${JSON_VERSION}.yaml list
+raw_eghcup -s "https://www.haskell.org/ghcup/data/ghcup-${JSON_VERSION}.yaml" list
 # snapshot yaml and etags file
 etag=$(cat "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml.etags")
 sha=$(sha_sum "${GHCUP_DIR}/cache/ghcup-${JSON_VERSION}.yaml")
