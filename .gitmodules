@@ -1,4 +1,4 @@
 [submodule "data/metadata"]
 	path = data/metadata
 	url = https://github.com/haskell/ghcup-metadata.git
-	branch = master
+	branch = develop
