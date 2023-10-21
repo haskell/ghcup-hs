@@ -8,6 +8,11 @@ package ghcup
 constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0
 
+source-repository-package
+  type: git
+  location: https://github.com/fosskers/versions.git
+  tag: 7bc3355348aac3510771d4622aff09ac38c9924d
+
 package libarchive
   flags: -system-libarchive
 
