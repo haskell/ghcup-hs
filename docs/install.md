@@ -60,10 +60,13 @@ The following distro packages are required: `build-essential curl libffi-dev lib
 
 The following distro packages are required: `build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
 
-#### Version >= 20.10
+#### Version >= 20.10 && < 23
 
 The following distro packages are required: `build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5`
 
+#### Version >= 23
+
+The following distro packages are required: `build-essential curl libffi-dev libffi8ubuntu1 libgmp-dev libgmp10 libncurses-dev`
 
 ### Linux Fedora
 
