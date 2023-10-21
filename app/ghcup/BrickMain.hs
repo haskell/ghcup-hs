@@ -94,7 +94,7 @@ data BrickState = BrickState
 
 
 keyHandlers :: KeyBindings
-            -> [ ( Vty.Key
+            -> [ ( KeyCombination
                  , BrickSettings -> String
                  , BrickState -> EventM String BrickState ()
                  )
@@ -131,6 +131,9 @@ showKey Vty.KUp = "↑"
 showKey Vty.KDown = "↓"
 showKey key = tail (show key)
 
+showMod :: Vty.Modifier -> String
+showMod = tail . show
+
 
 ui :: AttrMap -> BrickState -> Widget String
 ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
@@ -147,7 +150,7 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
       . txtWrap
       . T.pack
       . foldr1 (\x y -> x <> "  " <> y)
-      . fmap (\(key, s, _) -> showKey key <> ":" <> s as)
+      . fmap (\(KeyCombination key mods, s, _) -> intercalate "+" (showKey key : (showMod <$> mods)) <> ":" <> s as)
       $ keyHandlers appKeys
   header =
     minHSize 2 emptyWidget
@@ -321,12 +324,12 @@ eventHandler st@BrickState{..} ev = do
     (MouseDown _ Vty.BScrollDown _ _) ->
       put (BrickState { appState = moveCursor 1 appState Down, .. })
     (VtyEvent (Vty.EvResize _ _)) -> put st
-    (VtyEvent (Vty.EvKey Vty.KUp _)) ->
+    (VtyEvent (Vty.EvKey Vty.KUp [])) ->
       put BrickState{ appState = moveCursor 1 appState Up, .. }
-    (VtyEvent (Vty.EvKey Vty.KDown _)) ->
+    (VtyEvent (Vty.EvKey Vty.KDown [])) ->
       put BrickState{ appState = moveCursor 1 appState Down, .. }
-    (VtyEvent (Vty.EvKey key _)) ->
-      case find (\(key', _, _) -> key' == key) (keyHandlers kb) of
+    (VtyEvent (Vty.EvKey key mods)) ->
+      case find (\(keyCombo, _, _) -> keyCombo == KeyCombination key mods) (keyHandlers kb) of
         Nothing -> put st
         Just (_, _, handler) -> handler st
     _ -> put st
