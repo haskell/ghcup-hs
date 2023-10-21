@@ -34,7 +34,7 @@ import GHCup.Errors (ParseError(..))
 -- Note that when updating this, CI requires that the file exsists AND the same file exists at
 -- 'https://www.haskell.org/ghcup/exp/ghcup-<ver>.yaml' with some newlines added.
 ghcupURL :: URI
-ghcupURL = [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.0.7.yaml|]
+ghcupURL = [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.0.8.yaml|]
 
 -- | The current ghcup version.
 ghcUpVer :: V.PVP
@@ -53,7 +53,7 @@ versionCmp ver1 (VR_eq ver2)   = ver1 == ver2
 
 versionRange :: V.Versioning -> VersionRange -> Bool
 versionRange ver' (SimpleRange cmps) = all (versionCmp ver') cmps
-versionRange ver' (OrRange cmps range) = 
+versionRange ver' (OrRange cmps range) =
   versionRange ver' (SimpleRange cmps) || versionRange ver' range
 
 pvpToVersion :: MonadThrow m => V.PVP -> Text -> m V.Version
