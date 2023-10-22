@@ -87,6 +87,7 @@ allHFError = unlines allErrors
     , let proxy = Proxy :: Proxy ToolShadowed in format proxy
     , let proxy = Proxy :: Proxy ContentLengthError in format proxy
     , let proxy = Proxy :: Proxy DuplicateReleaseChannel in format proxy
+    , let proxy = Proxy :: Proxy UnsupportedSetupCombo in format proxy
     , ""
     , "# high level errors (4000+)"
     , let proxy = Proxy :: Proxy DownloadFailed in format proxy
@@ -99,6 +100,7 @@ allHFError = unlines allErrors
     , let proxy = Proxy :: Proxy ParseError in format proxy
     , let proxy = Proxy :: Proxy UnexpectedListLength in format proxy
     , let proxy = Proxy :: Proxy NoUrlBase in format proxy
+    , let proxy = Proxy :: Proxy DigestMissing in format proxy
     , ""
     , "# orphans (800+)"
     , let proxy = Proxy :: Proxy URIParseError in format proxy
@@ -687,6 +689,17 @@ instance Pretty DuplicateReleaseChannel where
       <> (T.unpack . E.decodeUtf8With E.lenientDecode . serializeURIRef') uri
       <> "\nGiving up. You can use '--force' to remove and append the duplicate URI (this may change order/semantics)."
 
+data UnsupportedSetupCombo = UnsupportedSetupCombo Architecture Platform
+  deriving Show
+
+instance Pretty UnsupportedSetupCombo where
+  pPrint (UnsupportedSetupCombo arch plat) =
+    text "Could not find a compatible setup combo for:" <+> pPrint arch <+> pPrint plat
+
+instance HFErrorProject UnsupportedSetupCombo where
+  eBase _ = 360
+  eDesc _ = "Could not find a compatible setup combo"
+
     -------------------------
     --[ High-level errors ]--
     -------------------------
@@ -821,6 +834,18 @@ instance HFErrorProject NoUrlBase where
   eBase _ = 520
   eDesc _ = "URL does not have a base filename."
 
+data DigestMissing = DigestMissing URI
+  deriving Show
+
+instance Pretty DigestMissing where
+  pPrint (DigestMissing uri) =
+    text "Digest missing for:" <+> (text . T.unpack . E.decodeUtf8With E.lenientDecode . serializeURIRef') uri
+
+instance Exception DigestMissing
+
+instance HFErrorProject DigestMissing where
+  eBase _ = 530
+  eDesc _ = "An expected digest is missing."
 
 
     ------------------------

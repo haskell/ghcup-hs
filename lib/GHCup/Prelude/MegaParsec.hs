@@ -120,3 +120,17 @@ verP suffix = do
 
 pathSep :: MP.Parsec Void Text Char
 pathSep = MP.oneOf pathSeparators
+
+skipWhile :: (Char -> Bool) -> MP.Parsec Void Text ()
+skipWhile f = void $ MP.takeWhileP Nothing f
+
+skip :: (Char -> Bool) -> MP.Parsec Void Text ()
+skip f = void $ MP.satisfy f
+
+skipSpace :: MP.Parsec Void Text ()
+skipSpace = void $ MP.satisfy isSpace
+
+isSpace :: Char -> Bool
+isSpace c = (c == ' ') || ('\t' <= c && c <= '\r')
+{-# INLINE isSpace #-}
+

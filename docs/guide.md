@@ -246,6 +246,38 @@ stack config set install-ghc false --global
 stack config set system-ghc  true  --global
 ```
 
+### Using stack's setup-info metadata to install GHC
+
+You can now use stack's [setup-info metadata](https://github.com/commercialhaskell/stackage-content/blob/master/stack/stack-setup-2.yaml)
+to install GHC. For that, you can invoke ghcup like so:
+
+```sh
+ghcup install ghc --stack-setup 9.4.7
+```
+
+To make this permanent, you can add the following to you `~/.ghcup/config.yaml`:
+
+```yaml
+stack-setup: true
+```
+
+You can customize or add sections to the setup-info similar to how the [stack documentation](https://docs.haskellstack.org/en/stable/yaml_configuration/#setup-info) explains it. E.g. to change the 9.4.7 bindist, you might do:
+
+```yaml
+stack-setup-source:
+  AddSource:
+  - Left:
+      ghc:
+        linux64-tinfo6:
+          9.4.7:
+            url: "https://downloads.haskell.org/~ghc/9.4.7/ghc-9.4.7-x86_64-fedora27-linux.tar.xz"
+            content-length: 179117892
+            sha256: 216b76b7c6383e6ad9ba82533f323f8550e52893a8b9fa33c7b9dc4201ac766a
+```
+
+The main caveat with using this method is that there's no guarantee that GHCup will pick a compatible HLS bindist
+when you try to install HLS.
+
 ### Windows
 
 On windows, you may find the following config options useful too:

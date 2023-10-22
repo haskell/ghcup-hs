@@ -88,7 +88,7 @@ data Options = Options
   }
 
 data Command
-  = Install (Either InstallCommand InstallOptions)
+  = Install (Either InstallCommand InstallGHCOptions)
   | Test TestCommand
   | InstallCabalLegacy InstallOptions
   | Set (Either SetCommand SetOptions)

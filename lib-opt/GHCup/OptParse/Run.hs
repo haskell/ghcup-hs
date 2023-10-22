@@ -187,6 +187,11 @@ type RunEffects = '[ AlreadyInstalled
                    , ProcessError
                    , UninstallFailed
                    , MergeFileTreeError
+                   , NoCompatiblePlatform
+                   , GHCup.Errors.ParseError
+                   , UnsupportedSetupCombo
+                   , DistroNotFound
+                   , NoCompatibleArch
                    ]
 
 runLeanRUN :: (MonadUnliftIO m, MonadIO m)
@@ -226,6 +231,7 @@ run :: forall m .
        , MonadCatch m
        , MonadIO m
        , MonadUnliftIO m
+       , Alternative m
        )
    => RunOptions
    -> IO AppState
@@ -255,7 +261,9 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                liftIO $ putStr tmp
                pure ExitSuccess
              (cmd:args) -> do
-               newEnv <- liftIO $ addToPath tmp runAppendPATH
+               newEnv <- liftIO $ addToPath [tmp] runAppendPATH
+               let pathVar = if isWindows then "Path" else "PATH"
+               forM_ (Map.lookup pathVar . Map.fromList $ newEnv) $ liftIO . setEnv pathVar
 #ifndef IS_WINDOWS
                void $ liftIO $ SPP.executeFile cmd True args (Just newEnv)
                pure ExitSuccess
@@ -329,6 +337,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                            , MonadThrow m
                            , MonadIO m
                            , MonadCatch m
+                           , Alternative m
                            )
                         => Toolchain
                         -> FilePath
@@ -354,6 +363,11 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                               , CopyError
                               , UninstallFailed
                               , MergeFileTreeError
+                              , NoCompatiblePlatform
+                              , GHCup.Errors.ParseError
+                              , UnsupportedSetupCombo
+                              , DistroNotFound
+                              , NoCompatibleArch
                               ] (ResourceT (ReaderT AppState m)) ()
    installToolChainFull Toolchain{..} tmp = do
          case ghcVer of

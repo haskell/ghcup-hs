@@ -30,6 +30,7 @@ import           Brick.Widgets.List             ( listSelectedFocusedAttr
                                                 , listAttr
                                                 )
 import           Codec.Archive
+import           Control.Applicative
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -432,7 +433,7 @@ filterVisible v t e | lInstalled e = True
                                   (lTool e `notElem` hiddenTools)
 
 
-install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
+install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
          => BrickState
          -> (Int, ListResult)
          -> m (Either String ())
@@ -463,6 +464,11 @@ install' _ (_, ListResult {..}) = do
               , ToolShadowed
               , UninstallFailed
               , MergeFileTreeError
+              , NoCompatiblePlatform
+              , GHCup.Errors.ParseError
+              , UnsupportedSetupCombo
+              , DistroNotFound
+              , NoCompatibleArch
               ]
 
   run (do
@@ -509,7 +515,7 @@ install' _ (_, ListResult {..}) = do
             <> "Also check the logs in ~/.ghcup/logs"
 
 
-set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
+set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
      => BrickState
      -> (Int, ListResult)
      -> m (Either String ())

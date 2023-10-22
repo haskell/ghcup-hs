@@ -23,6 +23,7 @@ module GHCup.Types.JSON where
 
 import           GHCup.Types
 import           GHCup.Types.JSON.Utils
+import           GHCup.Types.JSON.Versions ()
 import           GHCup.Prelude.MegaParsec
 
 import           Control.Applicative            ( (<|>) )
@@ -112,34 +113,6 @@ instance FromJSONKey GHCTargetVersion where
     Right x -> pure x
     Left  e -> fail $ "Failure in GHCTargetVersion (FromJSONKey)" <> show e
 
-instance ToJSON Versioning where
-  toJSON = toJSON . prettyV
-
-instance FromJSON Versioning where
-  parseJSON = withText "Versioning" $ \t -> case versioning t of
-    Right x -> pure x
-    Left  e -> fail $ "Failure in GHCTargetVersion (FromJSON)" <> show e
-
-instance ToJSONKey Versioning where
-  toJSONKey = toJSONKeyText $ \x -> prettyV x
-
-instance FromJSONKey Versioning where
-  fromJSONKey = FromJSONKeyTextParser $ \t -> case versioning t of
-    Right x -> pure x
-    Left  e -> fail $ "Failure in Versioning (FromJSONKey)" <> show e
-
-instance ToJSONKey (Maybe Versioning) where
-  toJSONKey = toJSONKeyText $ \case
-    Just x  -> prettyV x
-    Nothing -> T.pack "unknown_versioning"
-
-instance FromJSONKey (Maybe Versioning) where
-  fromJSONKey = FromJSONKeyTextParser $ \t ->
-    if t == T.pack "unknown_versioning" then pure Nothing else just t
-   where
-    just t = case versioning t of
-      Right x -> pure $ Just x
-      Left  e -> fail $ "Failure in (Maybe Versioning) (FromJSONKey)" <> show e
 
 instance ToJSONKey Platform where
   toJSONKey = toJSONKeyText $ \case
@@ -175,43 +148,6 @@ instance ToJSONKey Architecture where
 
 instance FromJSONKey Architecture where
   fromJSONKey = genericFromJSONKey defaultJSONKeyOptions
-
-instance ToJSONKey (Maybe Version) where
-  toJSONKey = toJSONKeyText $ \case
-    Just x  -> prettyVer x
-    Nothing -> T.pack "unknown_version"
-
-instance FromJSONKey (Maybe Version) where
-  fromJSONKey = FromJSONKeyTextParser $ \t ->
-    if t == T.pack "unknown_version" then pure Nothing else just t
-   where
-    just t = case version t of
-      Right x -> pure $ Just x
-      Left  e -> fail $ "Failure in (Maybe Version) (FromJSONKey)" <> show e
-
-instance ToJSON Version where
-  toJSON = toJSON . prettyVer
-
-instance FromJSON Version where
-  parseJSON = withText "Version" $ \t -> case version t of
-    Right x -> pure x
-    Left  e -> fail $ "Failure in Version (FromJSON)" <> show e
-
-instance ToJSONKey Version where
-  toJSONKey = toJSONKeyText $ \x -> prettyVer x
-
-instance FromJSONKey Version where
-  fromJSONKey = FromJSONKeyTextParser $ \t -> case version t of
-    Right x -> pure x
-    Left  e -> fail $ "Failure in Version (FromJSONKey)" <> show e
-
-instance ToJSON PVP where
-  toJSON = toJSON . prettyPVP
-
-instance FromJSON PVP where
-  parseJSON = withText "PVP" $ \t -> case pvp t of
-    Right x -> pure x
-    Left  e -> fail $ "Failure in PVP (FromJSON)" <> show e
 
 instance ToJSONKey Tool where
   toJSONKey = genericToJSONKey defaultJSONKeyOptions
@@ -348,6 +284,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downlo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
 deriveToJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
+deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField, constructorTagModifier = \str' -> if str' == "StackSetupURL" then str' else maybe str' T.unpack . T.stripPrefix (T.pack "S") . T.pack $ str' } ''StackSetupURLSource
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel, unwrapUnaryRecords = True } ''Port
