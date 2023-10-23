@@ -249,15 +249,18 @@ data LinuxDistro = Debian
                  | RedHat
                  | Alpine
                  | AmazonLinux
-                 | RockyLinux
-                 | VoidLinux
+                 | Rocky
+                 | Void
                  -- rolling
                  | Gentoo
                  | Exherbo
                  -- not known
                  | UnknownLinux
                  -- ^ must exit
-  deriving (Eq, GHC.Generic, Ord, Show)
+  deriving (Eq, GHC.Generic, Ord, Show, Enum, Bounded)
+
+allDistros :: [LinuxDistro]
+allDistros = enumFromTo minBound maxBound
 
 instance NFData LinuxDistro
 
@@ -270,8 +273,8 @@ distroToString CentOS = "centos"
 distroToString RedHat = "redhat"
 distroToString Alpine = "alpine"
 distroToString AmazonLinux = "amazon"
-distroToString RockyLinux = "rocky"
-distroToString VoidLinux = "void"
+distroToString Rocky = "rocky"
+distroToString Void = "void"
 distroToString Gentoo = "gentoo"
 distroToString Exherbo = "exherbo"
 distroToString UnknownLinux = "unknown"

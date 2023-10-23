@@ -8,6 +8,22 @@
                             "A_64": {
                                 "Darwin": {},
                                 "Linux_Alpine": {
+                                    "( < 2.4.5 && < 5.4.5 && <= 4.4.4 && < 1.1.2 && == 5.5.3 && >= 1.5.3 ) || ( < 1.3.4 && <= 3.3.3 && > 3.4.1 && > 1.4.1 && < 1.2.2 )": {
+                                        "dlCSize": -5,
+                                        "dlHash": "nrstqz",
+                                        "dlOutput": "􇒺,Lz|F\u001d",
+                                        "dlSubdir": null,
+                                        "dlUri": "https:cruu"
+                                    },
+                                    "( > 5.3.4 )": {
+                                        "dlCSize": 0,
+                                        "dlHash": "",
+                                        "dlOutput": "}𬌁",
+                                        "dlSubdir": "c􃷀􀮂6/",
+                                        "dlUri": "http:"
+                                    }
+                                },
+                                "Linux_AmazonLinux": {
                                     "( < 2.2.1 && >= 3.4.1 && <= 4.1.2 && > 4.1.1 && > 5.5.1 && >= 5.3.4 )": {
                                         "dlCSize": null,
                                         "dlHash": "wyzhqo",
@@ -64,7 +80,7 @@
                                         "dlUri": "http:nc"
                                     }
                                 },
-                                "Linux_Mint": {
+                                "Linux_Fedora": {
                                     "( < 5.1.1 && <= 3.3.2 ) || ( < 4.2.3 && >= 5.2.4 ) || ( <= 3.2.1 )": {
                                         "dlCSize": 7,
                                         "dlHash": "qweeuq",
@@ -110,22 +126,6 @@
                                             "RegexDir": "]'"
                                         },
                                         "dlUri": "https:itbkee"
-                                    }
-                                },
-                                "Linux_RedHat": {
-                                    "( < 2.4.5 && < 5.4.5 && <= 4.4.4 && < 1.1.2 && == 5.5.3 && >= 1.5.3 ) || ( < 1.3.4 && <= 3.3.3 && > 3.4.1 && > 1.4.1 && < 1.2.2 )": {
-                                        "dlCSize": -5,
-                                        "dlHash": "nrstqz",
-                                        "dlOutput": "􇒺,Lz|F\u001d",
-                                        "dlSubdir": null,
-                                        "dlUri": "https:cruu"
-                                    },
-                                    "( > 5.3.4 )": {
-                                        "dlCSize": 0,
-                                        "dlHash": "",
-                                        "dlOutput": "}𬌁",
-                                        "dlSubdir": "c􃷀􀮂6/",
-                                        "dlUri": "http:"
                                     }
                                 },
                                 "Windows": {
@@ -272,7 +272,7 @@
                                     }
                                 },
                                 "Linux_Debian": {},
-                                "Linux_Ubuntu": {
+                                "Linux_Fedora": {
                                     "( > 2.1.5 && < 3.2.1 && <= 2.3.5 && >= 3.2.4 && <= 2.1.3 && > 2.3.3 ) || ( == 2.1.2 && < 4.4.2 && < 1.2.3 && > 2.2.2 ) || ( >= 2.1.3 )": {
                                         "dlCSize": 6,
                                         "dlHash": "xu",
@@ -290,6 +290,7 @@
                                         "dlUri": "https:xwhv"
                                     }
                                 },
+                                "Linux_Ubuntu": {},
                                 "Windows": {
                                     "( > 2.1.5 && <= 2.5.5 )": {
                                         "dlCSize": -3,
@@ -526,7 +527,7 @@
                                         "dlUri": "https:"
                                     }
                                 },
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( > 4.2.4 )": {
                                         "dlCSize": null,
                                         "dlHash": "",
@@ -648,7 +649,7 @@
                     "7.5.5": {
                         "viArch": {
                             "A_PowerPC": {
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( <= 5.2.2 && >= 1.5.1 && < 3.5.1 && <= 1.5.2 && <= 3.3.1 && <= 3.5.1 && >= 1.5.3 )": {
                                         "dlCSize": 6,
                                         "dlHash": "d",
@@ -760,7 +761,7 @@
                                     }
                                 },
                                 "FreeBSD": {},
-                                "Linux_Fedora": {
+                                "Linux_CentOS": {
                                     "( == 4.4.1 && < 1.1.5 && >= 5.2.4 && >= 4.4.1 && >= 3.2.2 && == 3.1.2 )": {
                                         "dlCSize": -2,
                                         "dlHash": "r",
@@ -810,7 +811,7 @@
                                         "dlUri": "http:ixs"
                                     }
                                 },
-                                "Linux_Gentoo": {
+                                "Linux_Fedora": {
                                     "( < 2.5.3 && < 5.3.1 && < 1.5.2 ) || ( >= 2.2.3 ) || ( <= 2.1.2 && <= 1.1.3 && >= 2.1.3 && >= 3.3.2 ) || ( >= 2.2.2 && == 1.1.1 && >= 3.2.2 && <= 2.2.2 )": {
                                         "dlCSize": -4,
                                         "dlHash": "",
@@ -908,7 +909,59 @@
                                         "dlUri": "https:kpjtbb"
                                     }
                                 },
-                                "Linux_Gentoo": {
+                                "Linux_Exherbo": {
+                                    "( < 5.3.5 )": {
+                                        "dlCSize": -3,
+                                        "dlHash": "uuo",
+                                        "dlOutput": "",
+                                        "dlSubdir": {
+                                            "RegexDir": "💅*f"
+                                        },
+                                        "dlUri": "http:s"
+                                    },
+                                    "( == 5.1.3 && < 4.1.4 && < 3.4.1 ) || ( > 3.1.4 && <= 4.4.1 && < 1.4.1 && == 3.3.2 )": {
+                                        "dlCSize": null,
+                                        "dlHash": "thcotse",
+                                        "dlOutput": null,
+                                        "dlSubdir": "?𨢋􏿜𬆁\u00143",
+                                        "dlUri": "http:hqmmlja"
+                                    },
+                                    "( > 2.3.5 && >= 3.5.5 && < 1.2.5 && == 4.5.4 && >= 5.3.4 ) || ( >= 2.4.3 && <= 3.1.1 ) || ( <= 1.3.1 )": {
+                                        "dlCSize": 0,
+                                        "dlHash": "wv",
+                                        "dlOutput": "T󼤪Cj",
+                                        "dlSubdir": "\\ \u0019{",
+                                        "dlUri": "http:skfkrh"
+                                    },
+                                    "( > 3.1.1 && <= 5.4.5 && > 2.2.3 && <= 2.2.5 && == 1.5.4 ) || ( == 3.1.1 && >= 4.2.2 )": {
+                                        "dlCSize": -4,
+                                        "dlHash": "tjfyaua",
+                                        "dlOutput": "^",
+                                        "dlSubdir": {
+                                            "RegexDir": ""
+                                        },
+                                        "dlUri": "https:c"
+                                    },
+                                    "( >= 1.3.5 && >= 4.3.4 && <= 2.4.5 && == 5.2.5 ) || ( >= 4.3.2 && == 4.3.3 && > 3.1.3 && >= 3.1.3 && == 3.4.1 && > 2.4.4 ) || ( <= 1.2.2 && < 1.2.2 && == 3.2.2 && >= 3.2.2 && > 3.3.3 )": {
+                                        "dlCSize": null,
+                                        "dlHash": "p",
+                                        "dlOutput": null,
+                                        "dlSubdir": {
+                                            "RegexDir": ">"
+                                        },
+                                        "dlUri": "https:sxsxq"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": 4,
+                                        "dlHash": "",
+                                        "dlOutput": null,
+                                        "dlSubdir": {
+                                            "RegexDir": ""
+                                        },
+                                        "dlUri": "https:ku"
+                                    }
+                                },
+                                "Linux_Void": {
                                     "( < 5.3.5 && < 3.3.5 && >= 5.2.5 ) || ( < 4.3.3 && < 1.3.1 && <= 4.3.4 ) || ( < 3.1.1 && > 4.2.1 && > 1.1.2 )": {
                                         "dlCSize": 6,
                                         "dlHash": "dzuwh",
@@ -996,8 +1049,8 @@
                         "viArch": {
                             "A_64": {},
                             "A_ARM": {
-                                "Linux_AmazonLinux": {},
-                                "Linux_CentOS": {
+                                "Linux_Rocky": {},
+                                "Linux_UnknownLinux": {
                                     "( < 2.3.1 ) || ( < 4.4.4 && == 3.3.4 && > 2.3.1 && > 2.5.1 && == 4.3.3 && == 3.4.3 )": {
                                         "dlCSize": 7,
                                         "dlHash": "m",
@@ -1141,22 +1194,63 @@
                                     }
                                 },
                                 "Linux_Alpine": {
-                                    "( < 1.4.4 && < 5.1.4 && > 2.1.2 && == 5.2.4 && >= 5.2.3 ) || ( <= 3.1.2 && < 2.3.1 && < 2.2.3 && == 4.3.1 && < 3.3.1 && == 4.3.4 )": {
-                                        "dlCSize": -6,
-                                        "dlHash": "",
-                                        "dlOutput": null,
-                                        "dlSubdir": null,
-                                        "dlUri": "http:ehkj"
+                                    "( == 4.1.5 && == 1.5.2 && > 5.2.1 ) || ( <= 1.2.2 && == 3.3.2 )": {
+                                        "dlCSize": 3,
+                                        "dlHash": "dnxfswe",
+                                        "dlOutput": "+%",
+                                        "dlSubdir": "",
+                                        "dlUri": "https:lcqyj"
                                     },
-                                    "( > 3.1.1 && == 2.2.2 && <= 4.3.4 )": {
-                                        "dlCSize": 7,
-                                        "dlHash": "rmdlo",
-                                        "dlOutput": "ꂇ\u001dE^M@",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:kfafmzk"
+                                    "( == 4.5.4 && <= 3.1.5 && < 1.5.3 && <= 2.1.3 && < 3.3.4 && == 1.4.1 )": {
+                                        "dlCSize": 1,
+                                        "dlHash": "vszyh",
+                                        "dlOutput": "r/󼹅2l󽥖􉗧",
+                                        "dlSubdir": "\u0016\u000c",
+                                        "dlUri": "http:rprpra"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": -4,
+                                        "dlHash": "hgiw",
+                                        "dlOutput": "gR󻯟䒯",
+                                        "dlSubdir": {
+                                            "RegexDir": "h\u0008L"
+                                        },
+                                        "dlUri": "http:jksbc"
                                     }
                                 },
-                                "Linux_CentOS": {
+                                "Linux_AmazonLinux": {
+                                    "( >= 1.5.3 && >= 3.5.5 && < 1.3.6 && > 3.4.3 ) || ( == 4.2.4 ) || ( >= 1.2.3 ) || ( < 1.1.1 )": {
+                                        "dlCSize": 3,
+                                        "dlHash": "zrhyf",
+                                        "dlOutput": "𧸭𦋴m@",
+                                        "dlSubdir": {
+                                            "RegexDir": "hjK􂛽4"
+                                        },
+                                        "dlUri": "https:sndl"
+                                    },
+                                    "( >= 4.3.1 && > 4.2.5 && > 5.3.5 && >= 3.2.1 && > 3.4.2 && > 2.4.3 && >= 3.1.1 )": {
+                                        "dlCSize": null,
+                                        "dlHash": "ky",
+                                        "dlOutput": "􎾬\u0007鿯h[",
+                                        "dlSubdir": "n\u001c𝘜",
+                                        "dlUri": "http:i"
+                                    },
+                                    "( >= 5.4.2 )": {
+                                        "dlCSize": -4,
+                                        "dlHash": "axjb",
+                                        "dlOutput": " >",
+                                        "dlSubdir": null,
+                                        "dlUri": "http:snlrl"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": 4,
+                                        "dlHash": "a",
+                                        "dlOutput": "\u001fd",
+                                        "dlSubdir": null,
+                                        "dlUri": "http:gqbpf"
+                                    }
+                                },
+                                "Linux_RedHat": {
                                     "( < 1.1.3 && == 5.1.3 )": {
                                         "dlCSize": null,
                                         "dlHash": "",
@@ -1190,7 +1284,23 @@
                                         "dlUri": "https:fmqppak"
                                     }
                                 },
-                                "Linux_Exherbo": {
+                                "Linux_Ubuntu": {
+                                    "( < 1.4.4 && < 5.1.4 && > 2.1.2 && == 5.2.4 && >= 5.2.3 ) || ( <= 3.1.2 && < 2.3.1 && < 2.2.3 && == 4.3.1 && < 3.3.1 && == 4.3.4 )": {
+                                        "dlCSize": -6,
+                                        "dlHash": "",
+                                        "dlOutput": null,
+                                        "dlSubdir": null,
+                                        "dlUri": "http:ehkj"
+                                    },
+                                    "( > 3.1.1 && == 2.2.2 && <= 4.3.4 )": {
+                                        "dlCSize": 7,
+                                        "dlHash": "rmdlo",
+                                        "dlOutput": "ꂇ\u001dE^M@",
+                                        "dlSubdir": null,
+                                        "dlUri": "http:kfafmzk"
+                                    }
+                                },
+                                "Linux_Void": {
                                     "( == 1.4.5 && < 3.1.4 && == 4.1.3 && <= 2.4.4 && > 1.3.5 && > 1.1.2 && <= 2.1.3 ) || ( == 2.2.1 && > 4.4.1 && < 4.2.1 )": {
                                         "dlCSize": null,
                                         "dlHash": "dpypg",
@@ -1208,31 +1318,6 @@
                                             "RegexDir": "Ej\u000f캪p𫬋"
                                         },
                                         "dlUri": "http:qq"
-                                    }
-                                },
-                                "Linux_RedHat": {
-                                    "( == 4.1.5 && == 1.5.2 && > 5.2.1 ) || ( <= 1.2.2 && == 3.3.2 )": {
-                                        "dlCSize": 3,
-                                        "dlHash": "dnxfswe",
-                                        "dlOutput": "+%",
-                                        "dlSubdir": "",
-                                        "dlUri": "https:lcqyj"
-                                    },
-                                    "( == 4.5.4 && <= 3.1.5 && < 1.5.3 && <= 2.1.3 && < 3.3.4 && == 1.4.1 )": {
-                                        "dlCSize": 1,
-                                        "dlHash": "vszyh",
-                                        "dlOutput": "r/󼹅2l󽥖􉗧",
-                                        "dlSubdir": "\u0016\u000c",
-                                        "dlUri": "http:rprpra"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": -4,
-                                        "dlHash": "hgiw",
-                                        "dlOutput": "gR󻯟䒯",
-                                        "dlSubdir": {
-                                            "RegexDir": "h\u0008L"
-                                        },
-                                        "dlUri": "http:jksbc"
                                     }
                                 }
                             },
@@ -1326,7 +1411,7 @@
                                         "dlUri": "https:uctlf"
                                     }
                                 },
-                                "Linux_UnknownLinux": {},
+                                "Linux_Gentoo": {},
                                 "Windows": {
                                     "( <= 5.5.2 && >= 2.5.5 && < 5.1.1 && <= 3.4.5 && == 5.5.2 ) || ( <= 1.4.3 && < 3.1.4 ) || ( <= 1.2.3 )": {
                                         "dlCSize": null,
@@ -1520,7 +1605,7 @@
                                         "dlUri": "https:fuq"
                                     }
                                 },
-                                "Linux_Exherbo": {
+                                "Linux_Void": {
                                     "( < 1.3.4 && < 5.5.4 && <= 5.1.1 && < 1.1.5 && <= 1.4.1 && == 3.5.1 ) || ( >= 1.2.1 && <= 3.1.2 )": {
                                         "dlCSize": 3,
                                         "dlHash": "oexc",
@@ -1562,56 +1647,6 @@
                                         "dlOutput": "Yc󶽣\u001f㖋𠃅𣥿",
                                         "dlSubdir": {
                                             "RegexDir": "9\u0001/"
-                                        },
-                                        "dlUri": "http:"
-                                    }
-                                },
-                                "Linux_Mint": {
-                                    "( < 1.2.1 && <= 3.3.5 )": {
-                                        "dlCSize": -7,
-                                        "dlHash": "psq",
-                                        "dlOutput": "𮈆m􏦼{7T\u0005",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:qepypq"
-                                    },
-                                    "( < 4.2.2 )": {
-                                        "dlCSize": null,
-                                        "dlHash": "gn",
-                                        "dlOutput": "rꥲ𗑒J:`",
-                                        "dlSubdir": {
-                                            "RegexDir": "󼌋\u0018\n\u0001"
-                                        },
-                                        "dlUri": "https:xhtb"
-                                    },
-                                    "( <= 5.5.5 && >= 1.4.3 && <= 3.3.1 && < 2.4.1 && <= 4.5.2 && >= 6.5.1 && == 2.5.4 ) || ( >= 1.2.1 ) || ( > 3.3.1 && == 2.3.3 && == 2.3.3 && > 1.2.1 && >= 2.2.3 ) || ( <= 2.3.2 )": {
-                                        "dlCSize": null,
-                                        "dlHash": "",
-                                        "dlOutput": "",
-                                        "dlSubdir": {
-                                            "RegexDir": "@vA"
-                                        },
-                                        "dlUri": "http:ajp"
-                                    },
-                                    "( > 5.2.4 && < 3.1.6 && >= 4.1.4 && == 4.3.4 && == 4.2.4 && < 2.1.5 && < 2.1.4 )": {
-                                        "dlCSize": null,
-                                        "dlHash": "",
-                                        "dlOutput": "[𝛩",
-                                        "dlSubdir": "*Elz",
-                                        "dlUri": "http:oy"
-                                    },
-                                    "( > 5.6.2 )": {
-                                        "dlCSize": null,
-                                        "dlHash": "oh",
-                                        "dlOutput": "2M㌰",
-                                        "dlSubdir": "`\u001a󶶂@e\u0012",
-                                        "dlUri": "http:ztoeag"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": -6,
-                                        "dlHash": "pjdmb",
-                                        "dlOutput": null,
-                                        "dlSubdir": {
-                                            "RegexDir": "𦟸i"
                                         },
                                         "dlUri": "http:"
                                     }
@@ -1723,7 +1758,7 @@
                                         "dlUri": "http:"
                                     }
                                 },
-                                "Linux_AmazonLinux": {
+                                "Linux_Rocky": {
                                     "( < 1.3.4 && == 2.1.2 && <= 1.2.3 && <= 1.4.4 && <= 5.1.4 && >= 5.1.4 && < 2.4.3 )": {
                                         "dlCSize": 1,
                                         "dlHash": "",
@@ -1762,15 +1797,6 @@
                                         "dlOutput": "𤿼PTh􌳴",
                                         "dlSubdir": "\u0010\n󸎹𤐯𢜂Ꮑ",
                                         "dlUri": "http:zkw"
-                                    }
-                                },
-                                "Linux_Debian": {
-                                    "( == 1.4.2 && < 2.2.3 && <= 4.3.5 && > 5.1.5 && > 3.3.5 && > 2.2.2 ) || ( <= 1.1.2 && == 1.4.3 && >= 5.2.4 && > 1.4.3 )": {
-                                        "dlCSize": 5,
-                                        "dlHash": "ywbja",
-                                        "dlOutput": "<eb\n􇏩",
-                                        "dlSubdir": "0󺱔D夌d󿇷",
-                                        "dlUri": "https:"
                                     }
                                 }
                             },
@@ -2038,7 +2064,25 @@
                                         "dlUri": "https:awjlqcx"
                                     }
                                 },
-                                "Linux_Mint": {
+                                "Linux_Alpine": {
+                                    "( < 3.3.3 )": {
+                                        "dlCSize": 4,
+                                        "dlHash": "",
+                                        "dlOutput": null,
+                                        "dlSubdir": "\u0008\u000f",
+                                        "dlUri": "https:upml"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": 0,
+                                        "dlHash": "zrg",
+                                        "dlOutput": "󿨍",
+                                        "dlSubdir": {
+                                            "RegexDir": "o\u0016\\j\u0011h"
+                                        },
+                                        "dlUri": "http:kaeins"
+                                    }
+                                },
+                                "Linux_Debian": {
                                     "( <= 1.3.4 )": {
                                         "dlCSize": 0,
                                         "dlHash": "brvm",
@@ -2077,25 +2121,7 @@
                                         "dlUri": "https:ar"
                                     }
                                 },
-                                "Linux_RedHat": {
-                                    "( < 3.3.3 )": {
-                                        "dlCSize": 4,
-                                        "dlHash": "",
-                                        "dlOutput": null,
-                                        "dlSubdir": "\u0008\u000f",
-                                        "dlUri": "https:upml"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": 0,
-                                        "dlHash": "zrg",
-                                        "dlOutput": "󿨍",
-                                        "dlSubdir": {
-                                            "RegexDir": "o\u0016\\j\u0011h"
-                                        },
-                                        "dlUri": "http:kaeins"
-                                    }
-                                },
-                                "Linux_UnknownLinux": {
+                                "Linux_Gentoo": {
                                     "( < 2.3.4 && <= 4.3.1 && == 2.2.3 && == 2.2.2 ) || ( >= 1.3.3 && > 3.4.3 )": {
                                         "dlCSize": -1,
                                         "dlHash": "sa",
@@ -2276,7 +2302,7 @@
                                         "dlUri": "http:"
                                     }
                                 },
-                                "Linux_Alpine": {
+                                "Linux_Ubuntu": {
                                     "( == 2.1.1 && > 5.4.2 && <= 1.1.1 && > 2.1.4 && == 4.4.4 && >= 3.4.2 && == 2.4.1 )": {
                                         "dlCSize": -7,
                                         "dlHash": "jfygxs",
@@ -2445,7 +2471,7 @@
                                         "dlUri": "https:xelkwlo"
                                     }
                                 },
-                                "Linux_Gentoo": {
+                                "Linux_Fedora": {
                                     "unknown_versioning": {
                                         "dlCSize": null,
                                         "dlHash": "s",
@@ -2564,7 +2590,7 @@
                                         "dlUri": "https:"
                                     }
                                 },
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "unknown_versioning": {
                                         "dlCSize": -1,
                                         "dlHash": "bks",
@@ -2573,7 +2599,7 @@
                                         "dlUri": "https:maed"
                                     }
                                 },
-                                "Linux_AmazonLinux": {
+                                "Linux_Rocky": {
                                     "( < 4.1.1 && == 4.3.5 && == 1.3.1 && < 2.4.3 )": {
                                         "dlCSize": 2,
                                         "dlHash": "hb",
@@ -2696,7 +2722,7 @@
                                         "dlUri": "http:asc"
                                     }
                                 },
-                                "Linux_RedHat": {
+                                "Linux_Alpine": {
                                     "( < 1.2.3 && > 6.5.1 && > 4.1.3 && < 5.5.2 && <= 1.5.4 && == 1.4.5 && == 5.1.4 ) || ( <= 2.1.2 && == 5.2.4 && < 1.3.2 ) || ( >= 2.1.3 && > 3.2.2 ) || ( >= 1.2.1 && == 1.1.1 && > 2.2.1 )": {
                                         "dlCSize": 3,
                                         "dlHash": "abrhfje",
@@ -2845,7 +2871,7 @@
                                         "dlUri": "http:yvf"
                                     }
                                 },
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( < 4.2.4 && == 1.3.4 )": {
                                         "dlCSize": -1,
                                         "dlHash": "bdon",
@@ -3002,55 +3028,7 @@
                                         "dlUri": "https:tmjtjoe"
                                     }
                                 },
-                                "Linux_Alpine": {
-                                    "( < 2.4.2 )": {
-                                        "dlCSize": 3,
-                                        "dlHash": "",
-                                        "dlOutput": null,
-                                        "dlSubdir": "<\u000c",
-                                        "dlUri": "http:yr"
-                                    },
-                                    "( < 2.5.3 && >= 2.1.1 && >= 3.5.4 && > 5.5.2 && >= 1.3.5 && > 4.5.5 && < 4.3.1 )": {
-                                        "dlCSize": null,
-                                        "dlHash": "ild",
-                                        "dlOutput": "\u0010v𝚉l",
-                                        "dlSubdir": "VA0𩷗􆄒󹍫",
-                                        "dlUri": "http:uupnlg"
-                                    },
-                                    "( <= 5.4.3 && >= 2.5.2 && == 1.3.4 && <= 3.1.3 && > 2.3.3 ) || ( >= 4.2.4 && < 1.3.1 && < 4.2.4 && > 3.4.1 && >= 1.4.3 && >= 1.4.2 )": {
-                                        "dlCSize": null,
-                                        "dlHash": "ijqye",
-                                        "dlOutput": null,
-                                        "dlSubdir": null,
-                                        "dlUri": "https:qgvihot"
-                                    },
-                                    "( == 4.1.2 && <= 2.5.2 && >= 1.2.5 && <= 2.4.5 && > 3.4.1 ) || ( <= 1.1.1 && < 1.4.1 )": {
-                                        "dlCSize": -1,
-                                        "dlHash": "",
-                                        "dlOutput": "\u001f𨗨􆷳聩r",
-                                        "dlSubdir": {
-                                            "RegexDir": "\u0011xM"
-                                        },
-                                        "dlUri": "http:jnjcjos"
-                                    },
-                                    "( > 5.5.3 && <= 5.4.1 )": {
-                                        "dlCSize": null,
-                                        "dlHash": "cqizxt",
-                                        "dlOutput": null,
-                                        "dlSubdir": "B",
-                                        "dlUri": "http:fbkg"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": 7,
-                                        "dlHash": "ojeen",
-                                        "dlOutput": " W𓍈􋵴󺜘",
-                                        "dlSubdir": {
-                                            "RegexDir": "亀𤢲蛉🁊"
-                                        },
-                                        "dlUri": "https:sq"
-                                    }
-                                },
-                                "Linux_Fedora": {
+                                "Linux_CentOS": {
                                     "( < 2.5.3 && < 3.5.4 ) || ( < 3.4.2 && < 1.1.2 && >= 3.4.4 && >= 2.3.2 ) || ( <= 2.3.1 && == 1.4.2 && == 2.3.2 && == 1.1.1 ) || ( <= 2.1.1 && <= 1.2.2 ) || ( > 1.1.1 && <= 1.2.1 )": {
                                         "dlCSize": -2,
                                         "dlHash": "xryf",
@@ -3098,7 +3076,7 @@
                                         "dlUri": "https:ntasmlw"
                                     }
                                 },
-                                "Linux_Ubuntu": {
+                                "Linux_Debian": {
                                     "( < 4.3.5 && >= 1.2.5 && == 5.1.4 && <= 1.3.1 )": {
                                         "dlCSize": 2,
                                         "dlHash": "ent",
@@ -3135,6 +3113,54 @@
                                         "dlOutput": null,
                                         "dlSubdir": "􍻋Vf",
                                         "dlUri": "https:k"
+                                    }
+                                },
+                                "Linux_Exherbo": {
+                                    "( < 2.4.2 )": {
+                                        "dlCSize": 3,
+                                        "dlHash": "",
+                                        "dlOutput": null,
+                                        "dlSubdir": "<\u000c",
+                                        "dlUri": "http:yr"
+                                    },
+                                    "( < 2.5.3 && >= 2.1.1 && >= 3.5.4 && > 5.5.2 && >= 1.3.5 && > 4.5.5 && < 4.3.1 )": {
+                                        "dlCSize": null,
+                                        "dlHash": "ild",
+                                        "dlOutput": "\u0010v𝚉l",
+                                        "dlSubdir": "VA0𩷗􆄒󹍫",
+                                        "dlUri": "http:uupnlg"
+                                    },
+                                    "( <= 5.4.3 && >= 2.5.2 && == 1.3.4 && <= 3.1.3 && > 2.3.3 ) || ( >= 4.2.4 && < 1.3.1 && < 4.2.4 && > 3.4.1 && >= 1.4.3 && >= 1.4.2 )": {
+                                        "dlCSize": null,
+                                        "dlHash": "ijqye",
+                                        "dlOutput": null,
+                                        "dlSubdir": null,
+                                        "dlUri": "https:qgvihot"
+                                    },
+                                    "( == 4.1.2 && <= 2.5.2 && >= 1.2.5 && <= 2.4.5 && > 3.4.1 ) || ( <= 1.1.1 && < 1.4.1 )": {
+                                        "dlCSize": -1,
+                                        "dlHash": "",
+                                        "dlOutput": "\u001f𨗨􆷳聩r",
+                                        "dlSubdir": {
+                                            "RegexDir": "\u0011xM"
+                                        },
+                                        "dlUri": "http:jnjcjos"
+                                    },
+                                    "( > 5.5.3 && <= 5.4.1 )": {
+                                        "dlCSize": null,
+                                        "dlHash": "cqizxt",
+                                        "dlOutput": null,
+                                        "dlSubdir": "B",
+                                        "dlUri": "http:fbkg"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": 7,
+                                        "dlHash": "ojeen",
+                                        "dlOutput": " W𓍈􋵴󺜘",
+                                        "dlSubdir": {
+                                            "RegexDir": "亀𤢲蛉🁊"
+                                        },
+                                        "dlUri": "https:sq"
                                     }
                                 },
                                 "Windows": {}
@@ -3174,7 +3200,7 @@
                     "3.5.3": {
                         "viArch": {
                             "A_64": {
-                                "Linux_Debian": {
+                                "Linux_Ubuntu": {
                                     "( < 1.5.1 && >= 1.3.1 && <= 4.2.2 && <= 3.2.4 ) || ( < 4.4.3 && == 2.2.1 && > 2.4.1 && >= 3.4.2 && >= 1.2.1 && <= 2.3.4 )": {
                                         "dlCSize": -3,
                                         "dlHash": "rctca",
@@ -3485,8 +3511,7 @@
                                         "dlUri": "http:"
                                     }
                                 },
-                                "Linux_CentOS": {},
-                                "Linux_Debian": {
+                                "Linux_Fedora": {
                                     "( == 1.2.3 && == 3.1.2 && < 5.1.4 && >= 5.4.3 && < 5.1.5 && < 1.5.4 && >= 4.1.2 )": {
                                         "dlCSize": 1,
                                         "dlHash": "voi",
@@ -3511,6 +3536,7 @@
                                         "dlUri": "https:jfwfv"
                                     }
                                 },
+                                "Linux_RedHat": {},
                                 "Windows": {
                                     "( < 1.4.3 && >= 4.2.5 && < 1.5.4 && >= 2.3.1 && >= 2.3.1 )": {
                                         "dlCSize": 0,
@@ -3643,7 +3669,7 @@
                                         "dlUri": "https:bw"
                                     }
                                 },
-                                "Linux_Fedora": {
+                                "Linux_Ubuntu": {
                                     "( > 5.4.2 && < 5.3.1 && > 3.1.3 && > 3.3.1 )": {
                                         "dlCSize": -7,
                                         "dlHash": "wcsr",
@@ -3813,7 +3839,7 @@
                                         "dlUri": "https:rwrifrd"
                                     }
                                 },
-                                "Linux_Ubuntu": {
+                                "Linux_Rocky": {
                                     "( <= 4.3.1 && <= 1.4.6 && > 2.4.5 && == 4.4.4 && < 1.5.3 && > 3.2.5 ) || ( == 3.2.1 )": {
                                         "dlCSize": 0,
                                         "dlHash": "",
@@ -3883,7 +3909,7 @@
                                         "dlUri": "http:be"
                                     }
                                 },
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( >= 5.5.1 && > 5.5.5 && == 3.5.2 && == 2.5.3 && <= 5.4.6 && <= 3.4.5 && <= 5.5.2 ) || ( > 2.3.4 && >= 4.3.1 && <= 3.2.2 && > 1.1.1 && > 3.2.2 && >= 2.1.3 )": {
                                         "dlCSize": null,
                                         "dlHash": "sfgnpru",
@@ -3892,7 +3918,7 @@
                                         "dlUri": "https:hzskpe"
                                     }
                                 },
-                                "Linux_CentOS": {
+                                "Linux_Mint": {
                                     "( < 4.5.1 && >= 1.3.4 && >= 5.3.4 && <= 3.5.3 && == 4.3.3 ) || ( >= 5.4.4 && > 1.4.2 && >= 4.3.2 ) || ( < 3.3.2 && <= 2.1.1 && > 2.2.1 && >= 3.2.3 && < 1.3.3 ) || ( < 1.2.2 && == 2.2.1 && == 2.1.2 && >= 2.2.1 ) || ( == 2.1.2 && > 1.1.1 )": {
                                         "dlCSize": 7,
                                         "dlHash": "",
@@ -3983,7 +4009,7 @@
                                         "dlUri": "https:xo"
                                     }
                                 },
-                                "Linux_Ubuntu": {
+                                "Linux_AmazonLinux": {
                                     "( < 1.4.1 && < 2.6.1 && >= 2.4.5 && == 3.2.3 && > 1.2.1 && > 3.1.2 ) || ( >= 4.3.4 && >= 1.2.4 ) || ( > 3.1.2 && > 2.2.2 && < 2.1.3 && > 1.2.1 )": {
                                         "dlCSize": -3,
                                         "dlHash": "e",
@@ -4172,7 +4198,8 @@
                                 "notes": "phwdibd"
                             }
                         },
-                        "Linux_AmazonLinux": {
+                        "Linux_Mint": {},
+                        "Linux_UnknownLinux": {
                             "( <= 3.2.4 ) || ( < 1.3.4 && == 4.4.1 ) || ( > 3.2.1 && <= 2.3.1 && == 1.5.1 )": {
                                 "distroPKGs": [
                                     "dqqtzj",
@@ -4218,7 +4245,6 @@
                                 "notes": "ckgs"
                             }
                         },
-                        "Linux_Ubuntu": {},
                         "Windows": {
                             "( < 5.3.2 && <= 3.4.1 && >= 3.4.5 ) || ( == 2.4.2 && > 2.2.2 )": {
                                 "distroPKGs": [
@@ -4361,7 +4387,7 @@
                                 "notes": "f"
                             }
                         },
-                        "Linux_RedHat": {
+                        "Linux_Alpine": {
                             "( < 4.3.3 && < 1.5.1 && <= 5.3.4 ) || ( < 2.3.3 && < 3.3.3 && == 1.4.4 && <= 1.4.1 && < 4.3.1 && <= 1.1.1 ) || ( <= 2.1.2 && == 1.3.1 && <= 3.2.3 && == 1.3.3 && >= 2.3.2 ) || ( > 1.3.1 && < 1.4.2 ) || ( > 1.1.1 && > 1.1.2 )": {
                                 "distroPKGs": [],
                                 "notes": "hx"
@@ -4629,7 +4655,7 @@
                                         "dlUri": "https:jp"
                                     }
                                 },
-                                "Linux_Mint": {
+                                "Linux_Debian": {
                                     "( < 3.1.6 && >= 4.2.2 && >= 3.3.2 && > 2.2.2 && <= 3.1.1 && >= 2.5.2 && > 5.4.4 ) || ( >= 4.1.1 )": {
                                         "dlCSize": 7,
                                         "dlHash": "w",
@@ -4718,7 +4744,7 @@
                                         "dlUri": "http:alxt"
                                     }
                                 },
-                                "Linux_Fedora": {
+                                "Linux_CentOS": {
                                     "( > 1.2.3 && >= 1.4.3 && == 2.3.5 && == 4.1.4 )": {
                                         "dlCSize": null,
                                         "dlHash": "obbbc",
@@ -4870,7 +4896,7 @@
                                         "dlUri": "http:j"
                                     }
                                 },
-                                "Linux_Fedora": {
+                                "Linux_CentOS": {
                                     "unknown_versioning": {
                                         "dlCSize": -4,
                                         "dlHash": "ljg",
@@ -4981,8 +5007,7 @@
                                         "dlUri": "http:"
                                     }
                                 },
-                                "Linux_AmazonLinux": {},
-                                "Linux_CentOS": {
+                                "Linux_RedHat": {
                                     "( > 1.4.3 && > 5.2.4 )": {
                                         "dlCSize": -3,
                                         "dlHash": "vigqp",
@@ -5002,6 +5027,7 @@
                                         "dlUri": "http:gndpwz"
                                     }
                                 },
+                                "Linux_Rocky": {},
                                 "Linux_Ubuntu": {
                                     "( < 4.5.2 && <= 2.2.1 && > 3.1.1 && >= 2.2.2 && < 2.3.5 )": {
                                         "dlCSize": 2,
@@ -5145,7 +5171,7 @@
                                         "dlUri": "https:mkbfxj"
                                     }
                                 },
-                                "Linux_AmazonLinux": {
+                                "Linux_Mint": {
                                     "( <= 1.2.3 && < 2.5.1 && > 5.1.2 && < 5.5.1 && < 2.4.5 && > 2.4.4 ) || ( == 1.4.4 && < 3.4.1 && < 2.1.2 && == 1.1.2 )": {
                                         "dlCSize": -5,
                                         "dlHash": "bzknxk",
@@ -5264,18 +5290,7 @@
                                         "dlUri": "http:xkmzyv"
                                     }
                                 },
-                                "Linux_Mint": {
-                                    "( <= 3.3.1 && < 2.4.3 ) || ( < 3.4.3 && > 4.2.4 && >= 2.3.3 && > 3.1.3 ) || ( == 1.2.3 && >= 3.1.2 ) || ( <= 1.3.2 && >= 3.1.2 && > 1.1.1 )": {
-                                        "dlCSize": 7,
-                                        "dlHash": "vzx",
-                                        "dlOutput": null,
-                                        "dlSubdir": {
-                                            "RegexDir": "hMYR(\u000e"
-                                        },
-                                        "dlUri": "https:kfrzydw"
-                                    }
-                                },
-                                "Linux_RedHat": {
+                                "Linux_Alpine": {
                                     "( == 2.5.2 )": {
                                         "dlCSize": null,
                                         "dlHash": "iwthx",
@@ -5300,6 +5315,17 @@
                                         "dlOutput": "",
                                         "dlSubdir": null,
                                         "dlUri": "http:mdyjw"
+                                    }
+                                },
+                                "Linux_Fedora": {
+                                    "( <= 3.3.1 && < 2.4.3 ) || ( < 3.4.3 && > 4.2.4 && >= 2.3.3 && > 3.1.3 ) || ( == 1.2.3 && >= 3.1.2 ) || ( <= 1.3.2 && >= 3.1.2 && > 1.1.1 )": {
+                                        "dlCSize": 7,
+                                        "dlHash": "vzx",
+                                        "dlOutput": null,
+                                        "dlSubdir": {
+                                            "RegexDir": "hMYR(\u000e"
+                                        },
+                                        "dlUri": "https:kfrzydw"
                                     }
                                 },
                                 "Linux_UnknownLinux": {
@@ -5466,7 +5492,7 @@
                                         "dlUri": "http:zzfdf"
                                     }
                                 },
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( < 4.5.2 && == 4.1.4 && <= 1.2.4 && < 1.2.3 && == 4.4.4 && <= 3.4.2 && < 1.1.3 ) || ( < 2.4.4 && < 3.1.3 && < 1.4.1 && < 3.2.1 && < 3.1.1 && > 2.4.2 ) || ( >= 3.1.1 && <= 2.2.2 && == 2.1.3 && <= 1.1.2 && == 2.3.1 )": {
                                         "dlCSize": 5,
                                         "dlHash": "tdro",
@@ -5491,7 +5517,7 @@
                                         "dlUri": "https:igvjho"
                                     }
                                 },
-                                "Linux_CentOS": {
+                                "Linux_Mint": {
                                     "unknown_versioning": {
                                         "dlCSize": null,
                                         "dlHash": "dpkpqwx",
@@ -5505,7 +5531,7 @@
                                 "Windows": {}
                             },
                             "A_Sparc64": {
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( < 5.1.4 && <= 5.3.5 && > 5.4.5 && <= 3.1.2 && < 4.5.5 )": {
                                         "dlCSize": null,
                                         "dlHash": "xpb",
@@ -5514,7 +5540,7 @@
                                         "dlUri": "http:uldc"
                                     }
                                 },
-                                "Linux_Mint": {
+                                "Linux_Fedora": {
                                     "( <= 1.4.4 && > 5.4.4 && == 1.1.3 && <= 3.4.5 && == 3.5.1 && < 2.1.3 && == 5.1.3 ) || ( <= 1.2.3 && > 1.2.4 )": {
                                         "dlCSize": -7,
                                         "dlHash": "has",
@@ -5641,7 +5667,7 @@
                                         "dlUri": "http:ajov"
                                     }
                                 },
-                                "Linux_Fedora": {
+                                "Linux_CentOS": {
                                     "( == 1.4.1 && <= 3.1.4 && >= 4.3.5 && == 3.4.1 && > 2.4.4 )": {
                                         "dlCSize": null,
                                         "dlHash": "ddygapo",
@@ -5659,7 +5685,7 @@
                                         "dlUri": "http:jsci"
                                     }
                                 },
-                                "Linux_Ubuntu": {
+                                "Linux_Mint": {
                                     "( == 5.2.4 && > 1.5.5 ) || ( == 2.4.4 && < 2.1.4 )": {
                                         "dlCSize": -2,
                                         "dlHash": "r",
@@ -5976,7 +6002,7 @@
                                         "dlUri": "https:buxjv"
                                     }
                                 },
-                                "Linux_Exherbo": {
+                                "Linux_Void": {
                                     "( < 5.1.3 && == 5.1.2 && <= 1.4.2 && < 2.2.3 ) || ( > 1.3.4 && == 2.1.2 )": {
                                         "dlCSize": null,
                                         "dlHash": "fvbag",
@@ -6099,7 +6125,7 @@
                                         "dlUri": "http:aprk"
                                     }
                                 },
-                                "Linux_CentOS": {
+                                "Linux_RedHat": {
                                     "( < 1.3.2 && > 4.1.4 && == 4.3.4 ) || ( == 1.1.4 && < 3.1.1 && == 2.3.3 && <= 3.4.2 ) || ( <= 3.3.2 ) || ( == 2.2.2 && < 1.1.2 && > 1.1.2 ) || ( >= 1.1.1 && <= 1.1.2 && > 1.2.1 )": {
                                         "dlCSize": -3,
                                         "dlHash": "cqn",
@@ -6222,32 +6248,7 @@
                                         "dlUri": "https:gsc"
                                     }
                                 },
-                                "Linux_Gentoo": {
-                                    "( >= 2.1.5 ) || ( == 4.2.4 && >= 2.3.3 && <= 2.1.1 )": {
-                                        "dlCSize": 5,
-                                        "dlHash": "euquel",
-                                        "dlOutput": "\u001f.1A@󻒩1",
-                                        "dlSubdir": "j#R8􃔚",
-                                        "dlUri": "https:sbcf"
-                                    },
-                                    "( >= 5.3.5 && <= 1.1.1 )": {
-                                        "dlCSize": 3,
-                                        "dlHash": "aml",
-                                        "dlOutput": null,
-                                        "dlSubdir": ")Ge\u0012󠄡",
-                                        "dlUri": "http:fzizsd"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": 2,
-                                        "dlHash": "nzrvula",
-                                        "dlOutput": "P",
-                                        "dlSubdir": {
-                                            "RegexDir": "\u0005󾞵"
-                                        },
-                                        "dlUri": "https:kvbliq"
-                                    }
-                                },
-                                "Linux_Mint": {
+                                "Linux_Fedora": {
                                     "( < 5.4.3 && >= 1.4.2 && == 1.3.6 && == 4.2.2 && < 5.1.2 && == 5.4.1 ) || ( >= 4.3.4 && == 3.2.3 && >= 2.4.3 && <= 1.3.2 && < 4.1.2 ) || ( <= 3.3.1 )": {
                                         "dlCSize": null,
                                         "dlHash": "ki",
@@ -6286,6 +6287,31 @@
                                         "dlUri": "https:rbhigg"
                                     }
                                 },
+                                "Linux_Gentoo": {
+                                    "( >= 2.1.5 ) || ( == 4.2.4 && >= 2.3.3 && <= 2.1.1 )": {
+                                        "dlCSize": 5,
+                                        "dlHash": "euquel",
+                                        "dlOutput": "\u001f.1A@󻒩1",
+                                        "dlSubdir": "j#R8􃔚",
+                                        "dlUri": "https:sbcf"
+                                    },
+                                    "( >= 5.3.5 && <= 1.1.1 )": {
+                                        "dlCSize": 3,
+                                        "dlHash": "aml",
+                                        "dlOutput": null,
+                                        "dlSubdir": ")Ge\u0012󠄡",
+                                        "dlUri": "http:fzizsd"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": 2,
+                                        "dlHash": "nzrvula",
+                                        "dlOutput": "P",
+                                        "dlSubdir": {
+                                            "RegexDir": "\u0005󾞵"
+                                        },
+                                        "dlUri": "https:kvbliq"
+                                    }
+                                },
                                 "Windows": {
                                     "( >= 5.3.4 && < 5.2.5 && > 2.3.4 && < 3.1.3 && <= 3.4.4 && < 1.5.1 && == 2.2.2 ) || ( <= 3.2.3 && > 4.4.3 && > 2.1.2 && == 4.4.1 && < 4.3.2 && < 2.4.2 ) || ( <= 1.1.1 )": {
                                         "dlCSize": 0,
@@ -6300,7 +6326,7 @@
                             },
                             "A_PowerPC64": {
                                 "FreeBSD": {},
-                                "Linux_Gentoo": {
+                                "Linux_UnknownLinux": {
                                     "( <= 4.2.4 && == 2.4.3 && > 4.2.4 && > 5.4.2 && >= 2.5.4 )": {
                                         "dlCSize": 4,
                                         "dlHash": "",
@@ -6488,32 +6514,7 @@
                                         "dlUri": "https:teynsdm"
                                     }
                                 },
-                                "Linux_AmazonLinux": {
-                                    "( < 3.1.3 && <= 3.4.2 && < 1.1.4 && == 5.2.5 && <= 1.1.1 )": {
-                                        "dlCSize": 6,
-                                        "dlHash": "evhic",
-                                        "dlOutput": "\\",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:k"
-                                    },
-                                    "( < 5.4.4 && < 3.1.1 && < 3.3.3 && < 3.2.5 )": {
-                                        "dlCSize": 6,
-                                        "dlHash": "ry",
-                                        "dlOutput": "뒎",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:vsacosi"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": -1,
-                                        "dlHash": "e",
-                                        "dlOutput": "\u001cᚸ󼢒",
-                                        "dlSubdir": {
-                                            "RegexDir": "i󽣧f"
-                                        },
-                                        "dlUri": "http:lwsqjv"
-                                    }
-                                },
-                                "Linux_Gentoo": {
+                                "Linux_Exherbo": {
                                     "( < 3.1.2 && < 1.2.5 && >= 4.1.3 && > 4.5.2 && == 5.3.2 && == 5.2.3 )": {
                                         "dlCSize": -6,
                                         "dlHash": "iwex",
@@ -6563,6 +6564,31 @@
                                         "dlOutput": "n琴󾉼𫗍S&z",
                                         "dlSubdir": "+𠭦<Y",
                                         "dlUri": "http:"
+                                    }
+                                },
+                                "Linux_Mint": {
+                                    "( < 3.1.3 && <= 3.4.2 && < 1.1.4 && == 5.2.5 && <= 1.1.1 )": {
+                                        "dlCSize": 6,
+                                        "dlHash": "evhic",
+                                        "dlOutput": "\\",
+                                        "dlSubdir": null,
+                                        "dlUri": "http:k"
+                                    },
+                                    "( < 5.4.4 && < 3.1.1 && < 3.3.3 && < 3.2.5 )": {
+                                        "dlCSize": 6,
+                                        "dlHash": "ry",
+                                        "dlOutput": "뒎",
+                                        "dlSubdir": null,
+                                        "dlUri": "http:vsacosi"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": -1,
+                                        "dlHash": "e",
+                                        "dlOutput": "\u001cᚸ󼢒",
+                                        "dlSubdir": {
+                                            "RegexDir": "i󽣧f"
+                                        },
+                                        "dlUri": "http:lwsqjv"
                                     }
                                 },
                                 "Windows": {
@@ -6678,30 +6704,7 @@
                                         "dlUri": "https:xltetl"
                                     }
                                 },
-                                "Linux_Exherbo": {
-                                    "( <= 4.1.4 && > 4.3.2 ) || ( == 3.4.1 && < 2.1.3 && > 2.3.1 && <= 1.1.4 && <= 4.1.1 )": {
-                                        "dlCSize": -5,
-                                        "dlHash": "y",
-                                        "dlOutput": null,
-                                        "dlSubdir": null,
-                                        "dlUri": "http:"
-                                    },
-                                    "( == 3.1.3 && > 2.5.1 && < 2.4.1 && >= 2.2.1 && > 3.5.2 ) || ( == 3.4.3 )": {
-                                        "dlCSize": -5,
-                                        "dlHash": "mspnnnr",
-                                        "dlOutput": "uGoM34𗫀",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:hmtrza"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": null,
-                                        "dlHash": "ou",
-                                        "dlOutput": "@7\u000fN𪧈",
-                                        "dlSubdir": "\u0013𩉭Dye\u0006",
-                                        "dlUri": "https:b"
-                                    }
-                                },
-                                "Linux_Mint": {
+                                "Linux_Debian": {
                                     "( < 2.1.2 && < 5.1.2 && <= 4.3.5 && >= 3.3.2 ) || ( <= 4.1.2 && < 2.2.2 ) || ( >= 1.2.1 )": {
                                         "dlCSize": -3,
                                         "dlHash": "ff",
@@ -6756,6 +6759,29 @@
                                         "dlOutput": null,
                                         "dlSubdir": null,
                                         "dlUri": "https:pihbup"
+                                    }
+                                },
+                                "Linux_Exherbo": {
+                                    "( <= 4.1.4 && > 4.3.2 ) || ( == 3.4.1 && < 2.1.3 && > 2.3.1 && <= 1.1.4 && <= 4.1.1 )": {
+                                        "dlCSize": -5,
+                                        "dlHash": "y",
+                                        "dlOutput": null,
+                                        "dlSubdir": null,
+                                        "dlUri": "http:"
+                                    },
+                                    "( == 3.1.3 && > 2.5.1 && < 2.4.1 && >= 2.2.1 && > 3.5.2 ) || ( == 3.4.3 )": {
+                                        "dlCSize": -5,
+                                        "dlHash": "mspnnnr",
+                                        "dlOutput": "uGoM34𗫀",
+                                        "dlSubdir": null,
+                                        "dlUri": "http:hmtrza"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": null,
+                                        "dlHash": "ou",
+                                        "dlOutput": "@7\u000fN𪧈",
+                                        "dlSubdir": "\u0013𩉭Dye\u0006",
+                                        "dlUri": "https:b"
                                     }
                                 }
                             },
@@ -7075,7 +7101,7 @@
                                         "dlUri": "http:okkl"
                                     }
                                 },
-                                "Linux_UnknownLinux": {
+                                "Linux_Gentoo": {
                                     "( == 5.2.4 )": {
                                         "dlCSize": 1,
                                         "dlHash": "bxxdkmn",
@@ -7275,7 +7301,7 @@
                                 }
                             },
                             "A_Sparc64": {
-                                "Linux_Debian": {
+                                "Linux_Alpine": {
                                     "( <= 1.3.5 && == 2.4.4 && >= 1.2.2 )": {
                                         "dlCSize": 1,
                                         "dlHash": "ayofdn",
@@ -7401,7 +7427,8 @@
                                         "dlUri": "http:ibhpyx"
                                     }
                                 },
-                                "Linux_Debian": {
+                                "Linux_Fedora": {},
+                                "Linux_Void": {
                                     "unknown_versioning": {
                                         "dlCSize": 4,
                                         "dlHash": "ze",
@@ -7411,8 +7438,7 @@
                                         },
                                         "dlUri": "https:"
                                     }
-                                },
-                                "Linux_Gentoo": {}
+                                }
                             },
                             "A_PowerPC64": {
                                 "Darwin": {
@@ -7497,7 +7523,7 @@
                                         "dlUri": "https:jdu"
                                     }
                                 },
-                                "Linux_Gentoo": {
+                                "Linux_Void": {
                                     "( < 3.1.4 && <= 1.1.3 && < 3.2.3 )": {
                                         "dlCSize": 1,
                                         "dlHash": "rxb",
@@ -7586,58 +7612,6 @@
                                     }
                                 },
                                 "Linux_Alpine": {
-                                    "( <= 2.5.2 && <= 2.1.5 && < 1.2.1 )": {
-                                        "dlCSize": 3,
-                                        "dlHash": "",
-                                        "dlOutput": "?",
-                                        "dlSubdir": null,
-                                        "dlUri": "https:i"
-                                    },
-                                    "( >= 2.1.1 && > 1.5.2 )": {
-                                        "dlCSize": 1,
-                                        "dlHash": "wk",
-                                        "dlOutput": null,
-                                        "dlSubdir": {
-                                            "RegexDir": "𭹫$v5􍍣\u0003"
-                                        },
-                                        "dlUri": "http:gbbdxm"
-                                    },
-                                    "( >= 2.2.4 && < 5.4.2 && <= 2.1.2 && >= 5.5.4 && <= 2.5.3 ) || ( <= 2.3.3 && > 4.4.2 && == 2.3.2 ) || ( <= 1.3.2 )": {
-                                        "dlCSize": 3,
-                                        "dlHash": "zcx",
-                                        "dlOutput": "𡝫k\u000cA𐴓?",
-                                        "dlSubdir": "\u0006B",
-                                        "dlUri": "https:jj"
-                                    }
-                                },
-                                "Linux_Exherbo": {
-                                    "( < 4.4.5 && < 3.2.1 && > 4.2.2 ) || ( == 1.1.1 && > 4.2.1 && <= 1.4.2 && < 1.4.3 && < 1.2.4 && >= 1.1.4 )": {
-                                        "dlCSize": -3,
-                                        "dlHash": "posp",
-                                        "dlOutput": "󳮳Lp",
-                                        "dlSubdir": {
-                                            "RegexDir": "9𡇿􅾦"
-                                        },
-                                        "dlUri": "https:vcpaxr"
-                                    },
-                                    "( <= 4.4.4 && < 1.2.1 && >= 2.1.4 && < 3.1.5 && >= 3.2.2 )": {
-                                        "dlCSize": 2,
-                                        "dlHash": "ammympl",
-                                        "dlOutput": "",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": 2,
-                                        "dlHash": "pru",
-                                        "dlOutput": "󹗣<E",
-                                        "dlSubdir": {
-                                            "RegexDir": "[𨀰𓆢y􉻀u"
-                                        },
-                                        "dlUri": "http:"
-                                    }
-                                },
-                                "Linux_RedHat": {
                                     "( < 2.1.1 && > 1.2.2 && <= 3.4.5 && <= 6.1.2 ) || ( >= 5.1.4 && >= 4.4.1 && > 4.1.1 && < 2.4.2 && >= 2.3.1 && <= 4.1.1 ) || ( == 2.3.2 && > 3.3.2 && < 3.1.1 && >= 3.1.1 )": {
                                         "dlCSize": null,
                                         "dlHash": "tytv",
@@ -7703,6 +7677,31 @@
                                         "dlUri": "http:csa"
                                     }
                                 },
+                                "Linux_AmazonLinux": {
+                                    "( <= 2.5.2 && <= 2.1.5 && < 1.2.1 )": {
+                                        "dlCSize": 3,
+                                        "dlHash": "",
+                                        "dlOutput": "?",
+                                        "dlSubdir": null,
+                                        "dlUri": "https:i"
+                                    },
+                                    "( >= 2.1.1 && > 1.5.2 )": {
+                                        "dlCSize": 1,
+                                        "dlHash": "wk",
+                                        "dlOutput": null,
+                                        "dlSubdir": {
+                                            "RegexDir": "𭹫$v5􍍣\u0003"
+                                        },
+                                        "dlUri": "http:gbbdxm"
+                                    },
+                                    "( >= 2.2.4 && < 5.4.2 && <= 2.1.2 && >= 5.5.4 && <= 2.5.3 ) || ( <= 2.3.3 && > 4.4.2 && == 2.3.2 ) || ( <= 1.3.2 )": {
+                                        "dlCSize": 3,
+                                        "dlHash": "zcx",
+                                        "dlOutput": "𡝫k\u000cA𐴓?",
+                                        "dlSubdir": "\u0006B",
+                                        "dlUri": "https:jj"
+                                    }
+                                },
                                 "Linux_UnknownLinux": {
                                     "( <= 4.5.5 && <= 5.3.2 && == 1.2.3 && <= 3.3.3 && <= 4.5.4 )": {
                                         "dlCSize": -1,
@@ -7726,6 +7725,33 @@
                                         "dlOutput": "u\u0005Q",
                                         "dlSubdir": {
                                             "RegexDir": "􆠖"
+                                        },
+                                        "dlUri": "http:"
+                                    }
+                                },
+                                "Linux_Void": {
+                                    "( < 4.4.5 && < 3.2.1 && > 4.2.2 ) || ( == 1.1.1 && > 4.2.1 && <= 1.4.2 && < 1.4.3 && < 1.2.4 && >= 1.1.4 )": {
+                                        "dlCSize": -3,
+                                        "dlHash": "posp",
+                                        "dlOutput": "󳮳Lp",
+                                        "dlSubdir": {
+                                            "RegexDir": "9𡇿􅾦"
+                                        },
+                                        "dlUri": "https:vcpaxr"
+                                    },
+                                    "( <= 4.4.4 && < 1.2.1 && >= 2.1.4 && < 3.1.5 && >= 3.2.2 )": {
+                                        "dlCSize": 2,
+                                        "dlHash": "ammympl",
+                                        "dlOutput": "",
+                                        "dlSubdir": null,
+                                        "dlUri": "http:"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": 2,
+                                        "dlHash": "pru",
+                                        "dlOutput": "󹗣<E",
+                                        "dlSubdir": {
+                                            "RegexDir": "[𨀰𓆢y􉻀u"
                                         },
                                         "dlUri": "http:"
                                     }
@@ -8033,7 +8059,7 @@
                                         "dlUri": "https:oxqqy"
                                     }
                                 },
-                                "Linux_Fedora": {
+                                "Linux_CentOS": {
                                     "( <= 3.1.4 && > 3.5.5 && < 2.5.5 && < 4.2.4 && < 4.3.4 && == 5.5.5 ) || ( > 2.4.2 && == 4.1.2 && == 1.3.3 && > 2.1.1 && <= 3.1.1 && > 1.4.4 )": {
                                         "dlCSize": null,
                                         "dlHash": "",
@@ -8199,7 +8225,7 @@
                                         "dlUri": "https:mikrv"
                                     }
                                 },
-                                "Linux_Mint": {
+                                "Linux_Fedora": {
                                     "( > 2.2.2 && >= 3.6.5 && > 5.2.5 && <= 4.4.1 )": {
                                         "dlCSize": -6,
                                         "dlHash": "ahjw",
@@ -8265,7 +8291,7 @@
                         "viArch": {
                             "A_32": {
                                 "FreeBSD": {},
-                                "Linux_AmazonLinux": {
+                                "Linux_Rocky": {
                                     "( <= 1.2.3 ) || ( < 4.3.5 && > 4.4.4 && < 3.2.2 && == 2.3.3 )": {
                                         "dlCSize": 2,
                                         "dlHash": "sldnlu",
@@ -8290,7 +8316,7 @@
                                         "dlUri": "http:"
                                     }
                                 },
-                                "Linux_Fedora": {
+                                "Linux_Ubuntu": {
                                     "( > 4.4.3 && == 3.2.3 && == 3.3.4 && > 1.4.5 && >= 4.2.3 && == 1.1.5 )": {
                                         "dlCSize": null,
                                         "dlHash": "zgydrif",
@@ -8326,7 +8352,7 @@
                                         "dlUri": "https:mj"
                                     }
                                 },
-                                "Linux_Gentoo": {
+                                "Linux_Void": {
                                     "( <= 5.2.3 )": {
                                         "dlCSize": 4,
                                         "dlHash": "vxjel",
@@ -8476,7 +8502,7 @@
                                         "dlUri": "https:zxw"
                                     }
                                 },
-                                "Linux_AmazonLinux": {
+                                "Linux_Rocky": {
                                     "( == 3.5.2 && == 2.3.5 && == 1.4.5 && >= 2.3.4 ) || ( == 4.3.4 )": {
                                         "dlCSize": 6,
                                         "dlHash": "lfq",
@@ -8526,7 +8552,7 @@
                             },
                             "A_ARM": {
                                 "Darwin": {},
-                                "Linux_CentOS": {
+                                "Linux_UnknownLinux": {
                                     "( < 1.3.4 && <= 1.5.2 && <= 2.4.4 && > 5.5.2 && > 3.3.5 ) || ( == 2.1.1 && >= 1.3.2 && == 2.4.5 && <= 1.5.2 && <= 1.1.1 )": {
                                         "dlCSize": null,
                                         "dlHash": "vxmzy",
@@ -8850,7 +8876,7 @@
                                         "dlUri": "https:mwqe"
                                     }
                                 },
-                                "Linux_AmazonLinux": {
+                                "Linux_Mint": {
                                     "( < 5.5.1 && <= 2.1.4 && <= 4.5.5 && <= 5.5.2 && <= 1.2.4 && > 5.5.4 ) || ( == 1.3.2 && > 1.1.2 && < 2.1.2 ) || ( >= 5.3.1 && >= 3.1.1 && < 1.1.3 )": {
                                         "dlCSize": -6,
                                         "dlHash": "dypt",
@@ -8875,7 +8901,7 @@
                                         "dlUri": "https:ak"
                                     }
                                 },
-                                "Linux_Debian": {
+                                "Linux_Ubuntu": {
                                     "( <= 3.2.1 && == 2.2.3 ) || ( < 3.1.4 && > 2.2.4 && < 1.4.1 && == 1.4.4 && == 4.2.2 ) || ( < 1.3.1 && >= 2.3.1 && >= 2.3.3 ) || ( >= 1.2.3 && < 1.1.2 && > 2.3.1 )": {
                                         "dlCSize": -3,
                                         "dlHash": "ond",
@@ -8909,36 +8935,7 @@
                                 }
                             },
                             "A_ARM": {
-                                "Linux_AmazonLinux": {
-                                    "( > 1.1.2 && == 2.2.3 && == 4.2.3 ) || ( >= 4.1.3 && <= 2.1.1 && >= 1.3.4 && == 2.4.4 && > 2.3.2 && < 4.1.3 ) || ( > 2.3.1 )": {
-                                        "dlCSize": 5,
-                                        "dlHash": "mtrgfzk",
-                                        "dlOutput": "\u000b􊥗",
-                                        "dlSubdir": {
-                                            "RegexDir": "\u001a"
-                                        },
-                                        "dlUri": "https:gyvwq"
-                                    },
-                                    "( > 1.1.4 && >= 4.2.4 ) || ( >= 4.4.2 && >= 2.2.3 ) || ( >= 3.1.1 && >= 3.1.1 && == 3.3.3 && > 3.3.1 && > 3.1.2 ) || ( < 1.1.1 && < 1.3.3 )": {
-                                        "dlCSize": -7,
-                                        "dlHash": "a",
-                                        "dlOutput": "KD7O\u0008N",
-                                        "dlSubdir": {
-                                            "RegexDir": "R\""
-                                        },
-                                        "dlUri": "https:nsqccl"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": -6,
-                                        "dlHash": "w",
-                                        "dlOutput": null,
-                                        "dlSubdir": {
-                                            "RegexDir": "􆯚5𩟒\u000c\u001f􏅘"
-                                        },
-                                        "dlUri": "http:dtetbji"
-                                    }
-                                },
-                                "Linux_UnknownLinux": {
+                                "Linux_RedHat": {
                                     "( < 1.5.4 && == 4.3.3 && == 2.5.2 && > 3.1.5 )": {
                                         "dlCSize": null,
                                         "dlHash": "",
@@ -8979,6 +8976,35 @@
                                             "RegexDir": "\\"
                                         },
                                         "dlUri": "http:uiso"
+                                    }
+                                },
+                                "Linux_Rocky": {
+                                    "( > 1.1.2 && == 2.2.3 && == 4.2.3 ) || ( >= 4.1.3 && <= 2.1.1 && >= 1.3.4 && == 2.4.4 && > 2.3.2 && < 4.1.3 ) || ( > 2.3.1 )": {
+                                        "dlCSize": 5,
+                                        "dlHash": "mtrgfzk",
+                                        "dlOutput": "\u000b􊥗",
+                                        "dlSubdir": {
+                                            "RegexDir": "\u001a"
+                                        },
+                                        "dlUri": "https:gyvwq"
+                                    },
+                                    "( > 1.1.4 && >= 4.2.4 ) || ( >= 4.4.2 && >= 2.2.3 ) || ( >= 3.1.1 && >= 3.1.1 && == 3.3.3 && > 3.3.1 && > 3.1.2 ) || ( < 1.1.1 && < 1.3.3 )": {
+                                        "dlCSize": -7,
+                                        "dlHash": "a",
+                                        "dlOutput": "KD7O\u0008N",
+                                        "dlSubdir": {
+                                            "RegexDir": "R\""
+                                        },
+                                        "dlUri": "https:nsqccl"
+                                    },
+                                    "unknown_versioning": {
+                                        "dlCSize": -6,
+                                        "dlHash": "w",
+                                        "dlOutput": null,
+                                        "dlSubdir": {
+                                            "RegexDir": "􆯚5𩟒\u000c\u001f􏅘"
+                                        },
+                                        "dlUri": "http:dtetbji"
                                     }
                                 },
                                 "Windows": {
@@ -9066,7 +9092,7 @@
                                         "dlUri": "http:mfqh"
                                     }
                                 },
-                                "Linux_Fedora": {
+                                "Linux_CentOS": {
                                     "unknown_versioning": {
                                         "dlCSize": -1,
                                         "dlHash": "pgcez",
@@ -9112,7 +9138,7 @@
                         "viArch": {
                             "A_PowerPC64": {
                                 "Darwin": {},
-                                "Linux_AmazonLinux": {
+                                "Linux_Rocky": {
                                     "( <= 4.3.2 )": {
                                         "dlCSize": -7,
                                         "dlHash": "vpha",
@@ -9226,7 +9252,7 @@
                                 }
                             },
                             "A_Sparc64": {
-                                "Linux_RedHat": {
+                                "Linux_Alpine": {
                                     "( <= 1.5.3 && > 1.4.3 && >= 1.5.1 && == 2.5.3 && == 1.2.5 && >= 4.3.2 )": {
                                         "dlCSize": -5,
                                         "dlHash": "tjs",
@@ -9297,7 +9323,7 @@
             "toolRequirements": {
                 "HLS": {
                     "2.6.9": {
-                        "Linux_CentOS": {
+                        "Linux_Mint": {
                             "( <= 1.3.3 && > 5.2.3 && == 4.5.4 && > 1.2.1 )": {
                                 "distroPKGs": [
                                     "wirvs",
@@ -9477,7 +9503,7 @@
                                 "notes": ""
                             }
                         },
-                        "Linux_AmazonLinux": {
+                        "Linux_Rocky": {
                             "( < 3.5.4 && >= 2.3.4 && <= 4.5.2 && > 3.3.2 && < 2.3.5 && > 2.5.1 )": {
                                 "distroPKGs": [
                                     "azrlx",
@@ -9656,7 +9682,7 @@
                                 "notes": "khxyn"
                             }
                         },
-                        "Linux_Alpine": {
+                        "Linux_AmazonLinux": {
                             "( < 2.3.4 && > 4.5.3 && < 3.4.3 ) || ( <= 4.3.1 && == 3.1.1 && <= 4.4.3 && < 2.4.1 ) || ( <= 1.2.3 && >= 3.2.3 )": {
                                 "distroPKGs": [
                                     "fognweg",
@@ -9706,7 +9732,7 @@
                                 "notes": ""
                             }
                         },
-                        "Linux_CentOS": {
+                        "Linux_RedHat": {
                             "( < 1.4.5 && <= 2.3.1 && <= 5.1.5 && == 5.2.2 && < 2.2.5 && >= 4.3.1 && >= 4.2.5 )": {
                                 "distroPKGs": [
                                     "",
@@ -9873,7 +9899,7 @@
                                 "notes": "zscajjj"
                             }
                         },
-                        "Linux_Alpine": {
+                        "Linux_AmazonLinux": {
                             "( == 5.2.2 && == 4.1.7 && > 5.5.5 && <= 2.4.5 && <= 5.2.3 && > 3.1.3 && <= 4.1.2 )": {
                                 "distroPKGs": [
                                     "sphik",
@@ -9892,7 +9918,45 @@
                                 "notes": "mj"
                             }
                         },
-                        "Linux_CentOS": {
+                        "Linux_Debian": {
+                            "( <= 1.1.5 )": {
+                                "distroPKGs": [
+                                    "mukmu",
+                                    "",
+                                    ""
+                                ],
+                                "notes": "ztoe"
+                            },
+                            "( <= 4.2.3 && >= 1.3.4 && <= 3.1.4 && > 4.2.1 ) || ( < 4.3.4 && > 2.2.2 && < 1.3.3 )": {
+                                "distroPKGs": [
+                                    "jjxdn",
+                                    "",
+                                    "b",
+                                    "",
+                                    "arsgc"
+                                ],
+                                "notes": "nygs"
+                            },
+                            "( >= 3.1.2 )": {
+                                "distroPKGs": [
+                                    "ysx",
+                                    "",
+                                    "fj",
+                                    "mdpligy",
+                                    "meugjtb",
+                                    "iohciwv",
+                                    "msi"
+                                ],
+                                "notes": ""
+                            },
+                            "unknown_versioning": {
+                                "distroPKGs": [
+                                    "ad"
+                                ],
+                                "notes": "mxew"
+                            }
+                        },
+                        "Linux_RedHat": {
                             "( < 3.4.4 && == 5.1.4 && == 2.4.4 && == 1.2.2 && < 3.5.3 && < 4.2.3 ) || ( <= 2.1.3 && >= 2.3.1 && >= 4.5.4 && == 2.2.2 && > 3.1.3 && > 3.1.2 ) || ( == 1.2.3 )": {
                                 "distroPKGs": [
                                     "iioqe",
@@ -9943,44 +10007,6 @@
                                     ""
                                 ],
                                 "notes": "qwee"
-                            }
-                        },
-                        "Linux_Debian": {
-                            "( <= 1.1.5 )": {
-                                "distroPKGs": [
-                                    "mukmu",
-                                    "",
-                                    ""
-                                ],
-                                "notes": "ztoe"
-                            },
-                            "( <= 4.2.3 && >= 1.3.4 && <= 3.1.4 && > 4.2.1 ) || ( < 4.3.4 && > 2.2.2 && < 1.3.3 )": {
-                                "distroPKGs": [
-                                    "jjxdn",
-                                    "",
-                                    "b",
-                                    "",
-                                    "arsgc"
-                                ],
-                                "notes": "nygs"
-                            },
-                            "( >= 3.1.2 )": {
-                                "distroPKGs": [
-                                    "ysx",
-                                    "",
-                                    "fj",
-                                    "mdpligy",
-                                    "meugjtb",
-                                    "iohciwv",
-                                    "msi"
-                                ],
-                                "notes": ""
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [
-                                    "ad"
-                                ],
-                                "notes": "mxew"
                             }
                         },
                         "Windows": {
@@ -10042,7 +10068,7 @@
                         }
                     },
                     "9.4.8": {
-                        "Linux_Mint": {
+                        "Linux_Fedora": {
                             "( < 4.6.5 && > 2.5.4 && == 2.1.4 ) || ( > 4.2.2 && >= 4.1.2 && > 4.4.5 && == 1.3.1 && > 4.4.2 )": {
                                 "distroPKGs": [
                                     "q",
@@ -10142,7 +10168,21 @@
                                 "notes": "koewqj"
                             }
                         },
-                        "Linux_AmazonLinux": {
+                        "Linux_Mint": {
+                            "( <= 5.1.3 && <= 5.5.1 && <= 5.4.3 && > 4.4.2 )": {
+                                "distroPKGs": [
+                                    "etmig",
+                                    "axmwt",
+                                    "zxi",
+                                    "bmwx",
+                                    "",
+                                    "duwlvk",
+                                    "ih"
+                                ],
+                                "notes": "ob"
+                            }
+                        },
+                        "Linux_Rocky": {
                             "( < 1.1.4 && < 3.4.2 && > 2.3.2 && == 5.1.1 && < 3.3.2 && >= 2.2.1 && == 3.5.1 ) || ( == 2.3.1 && == 3.2.1 && < 4.3.3 )": {
                                 "distroPKGs": [
                                     "nryyf"
@@ -10176,7 +10216,7 @@
                                 "notes": "gb"
                             }
                         },
-                        "Linux_CentOS": {
+                        "Linux_UnknownLinux": {
                             "unknown_versioning": {
                                 "distroPKGs": [
                                     "jbdwu",
@@ -10306,7 +10346,7 @@
                     "4.6.8": {
                         "viArch": {
                             "A_32": {
-                                "Linux_Fedora": {
+                                "Linux_CentOS": {
                                     "( == 6.5.3 && >= 3.2.3 && <= 2.1.3 && < 2.5.2 && < 3.2.3 && >= 3.3.3 ) || ( >= 2.4.1 && > 4.3.2 ) || ( > 1.1.3 && <= 3.1.1 && <= 1.1.1 && < 1.1.1 )": {
                                         "dlCSize": 6,
                                         "dlHash": "drbeftu",
@@ -10382,7 +10422,7 @@
                                         "dlUri": "http:urvvwnp"
                                     }
                                 },
-                                "Linux_Exherbo": {}
+                                "Linux_Void": {}
                             }
                         },
                         "viChangeLog": "http:",
@@ -10410,22 +10450,22 @@
                     "5.1.8": {
                         "viArch": {
                             "A_32": {
-                                "Linux_Gentoo": {
-                                    "( == 2.1.5 && > 2.2.5 && > 1.2.4 && >= 1.1.4 && > 4.3.1 && <= 3.4.4 ) || ( < 4.2.3 && <= 4.4.4 )": {
-                                        "dlCSize": -4,
-                                        "dlHash": "wlaiso",
-                                        "dlOutput": "𮔜",
-                                        "dlSubdir": "2擣󲝽g",
-                                        "dlUri": "https:fa"
-                                    }
-                                },
-                                "Linux_RedHat": {
+                                "Linux_Alpine": {
                                     "( >= 5.5.3 && > 3.3.4 && > 2.5.2 && == 2.2.5 && <= 2.1.1 && <= 4.5.2 ) || ( > 3.1.4 && > 1.2.3 && <= 1.1.2 && < 4.4.2 && < 1.4.1 ) || ( < 1.2.1 ) || ( <= 1.1.1 && < 2.1.2 ) || ( == 1.1.1 )": {
                                         "dlCSize": 5,
                                         "dlHash": "",
                                         "dlOutput": null,
                                         "dlSubdir": null,
                                         "dlUri": "https:tbswort"
+                                    }
+                                },
+                                "Linux_Fedora": {
+                                    "( == 2.1.5 && > 2.2.5 && > 1.2.4 && >= 1.1.4 && > 4.3.1 && <= 3.4.4 ) || ( < 4.2.3 && <= 4.4.4 )": {
+                                        "dlCSize": -4,
+                                        "dlHash": "wlaiso",
+                                        "dlOutput": "𮔜",
+                                        "dlSubdir": "2擣󲝽g",
+                                        "dlUri": "https:fa"
                                     }
                                 },
                                 "Windows": {
@@ -10487,7 +10527,7 @@
                                         "dlUri": "https:"
                                     }
                                 },
-                                "Linux_Mint": {
+                                "Linux_Fedora": {
                                     "( > 1.2.3 && == 2.4.5 ) || ( >= 2.3.5 ) || ( < 1.1.3 ) || ( < 2.1.2 )": {
                                         "dlCSize": -4,
                                         "dlHash": "iv",
@@ -10606,7 +10646,7 @@
                                         "dlUri": "https:q"
                                     }
                                 },
-                                "Linux_RedHat": {
+                                "Linux_Alpine": {
                                     "( < 1.4.3 ) || ( <= 2.2.4 && > 3.2.3 && <= 1.1.3 ) || ( > 4.3.2 && < 3.1.2 && > 2.2.4 && < 2.3.2 )": {
                                         "dlCSize": 1,
                                         "dlHash": "vqz",
@@ -10660,7 +10700,7 @@
                                         "dlUri": "https:cr"
                                     }
                                 },
-                                "Linux_RedHat": {
+                                "Linux_UnknownLinux": {
                                     "unknown_versioning": {
                                         "dlCSize": -5,
                                         "dlHash": "dxaosuh",
@@ -10725,7 +10765,7 @@
                                     }
                                 },
                                 "FreeBSD": {},
-                                "Linux_RedHat": {
+                                "Linux_Alpine": {
                                     "( < 1.3.2 && >= 5.1.4 && <= 3.1.5 && <= 5.4.4 && == 3.2.5 && < 1.5.3 && > 4.1.5 ) || ( >= 3.4.3 && < 3.3.4 && <= 1.1.1 )": {
                                         "dlCSize": 1,
                                         "dlHash": "udvxhw",
@@ -10844,7 +10884,7 @@
                     "5.4.7": {
                         "viArch": {
                             "A_32": {
-                                "Linux_CentOS": {
+                                "Linux_RedHat": {
                                     "( < 2.5.4 && > 4.1.2 && <= 1.1.2 && == 5.3.2 && <= 2.5.4 && <= 1.3.5 && > 1.3.3 )": {
                                         "dlCSize": 1,
                                         "dlHash": "tff",
@@ -11052,7 +11092,7 @@
                         "viArch": {
                             "A_ARM": {},
                             "A_ARM64": {
-                                "Linux_RedHat": {
+                                "Linux_Alpine": {
                                     "( == 5.1.4 && > 5.5.3 )": {
                                         "dlCSize": 6,
                                         "dlHash": "rdmg",
@@ -11164,7 +11204,7 @@
                                 }
                             },
                             "A_PowerPC": {
-                                "Linux_RedHat": {
+                                "Linux_UnknownLinux": {
                                     "( >= 3.4.3 && <= 5.3.2 && == 2.3.2 && == 3.3.3 && > 1.2.3 )": {
                                         "dlCSize": null,
                                         "dlHash": "dtt",
@@ -11335,7 +11375,8 @@
                                 "notes": "jysijo"
                             }
                         },
-                        "Linux_AmazonLinux": {
+                        "Linux_CentOS": {},
+                        "Linux_Rocky": {
                             "( >= 1.4.3 && == 4.2.5 && < 2.2.4 )": {
                                 "distroPKGs": [
                                     "udpg",
@@ -11352,8 +11393,7 @@
                                 "distroPKGs": [],
                                 "notes": "e"
                             }
-                        },
-                        "Linux_Fedora": {}
+                        }
                     },
                     "7.8.2": {
                         "FreeBSD": {
@@ -11515,39 +11555,7 @@
                                 "notes": "eec"
                             }
                         },
-                        "Linux_Mint": {
-                            "( < 2.3.1 && == 5.3.4 )": {
-                                "distroPKGs": [
-                                    "yksmf",
-                                    "lb",
-                                    "rkv",
-                                    "niuik",
-                                    "rhhv",
-                                    "cait"
-                                ],
-                                "notes": "jmtzxkq"
-                            },
-                            "( == 1.3.3 && >= 4.4.3 && == 3.3.2 && < 2.4.3 && >= 2.4.2 && > 5.4.3 ) || ( == 4.4.2 && < 5.2.4 )": {
-                                "distroPKGs": [
-                                    "whukylb",
-                                    "levkf",
-                                    "jfvwddy"
-                                ],
-                                "notes": "vxiivox"
-                            },
-                            "( == 5.2.4 && <= 3.4.4 && > 1.1.5 && < 2.2.1 && <= 3.2.3 && > 5.1.2 ) || ( >= 4.2.1 && <= 3.6.4 && == 3.1.3 && < 3.3.3 && > 2.3.1 ) || ( == 3.2.3 && < 2.1.3 && >= 2.2.2 && > 2.2.2 && < 1.2.1 )": {
-                                "distroPKGs": [],
-                                "notes": "jhaoof"
-                            },
-                            "( == 5.5.3 && == 1.3.2 && > 2.4.2 && < 2.4.6 && == 2.3.2 )": {
-                                "distroPKGs": [
-                                    "pvqob",
-                                    "kepuj"
-                                ],
-                                "notes": "ptbdxar"
-                            }
-                        },
-                        "Linux_RedHat": {
+                        "Linux_Alpine": {
                             "( < 3.2.5 && < 3.1.3 && > 1.2.4 && < 3.5.3 )": {
                                 "distroPKGs": [
                                     "xvahwm",
@@ -11607,6 +11615,38 @@
                                     "uc"
                                 ],
                                 "notes": "nu"
+                            }
+                        },
+                        "Linux_Debian": {
+                            "( < 2.3.1 && == 5.3.4 )": {
+                                "distroPKGs": [
+                                    "yksmf",
+                                    "lb",
+                                    "rkv",
+                                    "niuik",
+                                    "rhhv",
+                                    "cait"
+                                ],
+                                "notes": "jmtzxkq"
+                            },
+                            "( == 1.3.3 && >= 4.4.3 && == 3.3.2 && < 2.4.3 && >= 2.4.2 && > 5.4.3 ) || ( == 4.4.2 && < 5.2.4 )": {
+                                "distroPKGs": [
+                                    "whukylb",
+                                    "levkf",
+                                    "jfvwddy"
+                                ],
+                                "notes": "vxiivox"
+                            },
+                            "( == 5.2.4 && <= 3.4.4 && > 1.1.5 && < 2.2.1 && <= 3.2.3 && > 5.1.2 ) || ( >= 4.2.1 && <= 3.6.4 && == 3.1.3 && < 3.3.3 && > 2.3.1 ) || ( == 3.2.3 && < 2.1.3 && >= 2.2.2 && > 2.2.2 && < 1.2.1 )": {
+                                "distroPKGs": [],
+                                "notes": "jhaoof"
+                            },
+                            "( == 5.5.3 && == 1.3.2 && > 2.4.2 && < 2.4.6 && == 2.3.2 )": {
+                                "distroPKGs": [
+                                    "pvqob",
+                                    "kepuj"
+                                ],
+                                "notes": "ptbdxar"
                             }
                         },
                         "Windows": {
@@ -11743,7 +11783,7 @@
                                 "notes": ""
                             }
                         },
-                        "Linux_Gentoo": {
+                        "Linux_Void": {
                             "( > 5.1.5 && == 4.1.2 && == 5.1.1 ) || ( < 3.4.3 )": {
                                 "distroPKGs": [
                                     "nijdeb",
@@ -11847,7 +11887,7 @@
                     },
                     "unknown_version": {
                         "FreeBSD": {},
-                        "Linux_RedHat": {
+                        "Linux_Debian": {
                             "( < 3.4.1 && < 1.2.5 )": {
                                 "distroPKGs": [],
                                 "notes": "psz"
@@ -11900,7 +11940,7 @@
                 },
                 "Stack": {
                     "1.5.3": {
-                        "Linux_Debian": {
+                        "Linux_Alpine": {
                             "( < 1.4.1 && == 4.1.2 && >= 2.4.1 && >= 2.4.4 && == 4.5.1 ) || ( <= 4.1.2 && > 2.3.4 && > 3.4.5 && < 4.2.1 && > 3.3.4 ) || ( < 1.1.1 && < 3.3.2 && == 1.1.3 && <= 3.1.1 && <= 1.1.2 ) || ( > 2.3.1 && == 1.1.1 && <= 1.2.1 && == 1.1.1 ) || ( < 1.1.1 ) || ( == 2.1.1 )": {
                                 "distroPKGs": [
                                     "",
@@ -12179,6 +12219,19 @@
                         }
                     },
                     "8.5.8": {
+                        "Linux_CentOS": {
+                            "( == 2.5.5 ) || ( > 4.4.3 ) || ( <= 2.2.1 && >= 2.1.2 && == 2.1.1 ) || ( >= 2.2.2 && <= 2.2.1 ) || ( <= 1.1.1 && < 1.1.1 && <= 1.2.1 )": {
+                                "distroPKGs": [
+                                    "",
+                                    "",
+                                    "hq",
+                                    "ugbbmwf",
+                                    "ev",
+                                    "ypwzn"
+                                ],
+                                "notes": "itd"
+                            }
+                        },
                         "Linux_Exherbo": {
                             "( < 1.1.4 && >= 4.4.1 && >= 1.1.4 && == 5.4.2 ) || ( >= 1.2.4 && > 4.1.3 && < 2.3.4 ) || ( <= 1.1.1 && < 1.1.3 && > 2.1.3 && > 2.1.1 )": {
                                 "distroPKGs": [
@@ -12236,19 +12289,6 @@
                             }
                         },
                         "Linux_Fedora": {
-                            "( == 2.5.5 ) || ( > 4.4.3 ) || ( <= 2.2.1 && >= 2.1.2 && == 2.1.1 ) || ( >= 2.2.2 && <= 2.2.1 ) || ( <= 1.1.1 && < 1.1.1 && <= 1.2.1 )": {
-                                "distroPKGs": [
-                                    "",
-                                    "",
-                                    "hq",
-                                    "ugbbmwf",
-                                    "ev",
-                                    "ypwzn"
-                                ],
-                                "notes": "itd"
-                            }
-                        },
-                        "Linux_Gentoo": {
                             "( <= 2.1.4 && < 4.2.4 && >= 5.1.3 && == 1.5.1 && > 5.4.1 && >= 2.5.3 )": {
                                 "distroPKGs": [
                                     "xo",
@@ -12283,44 +12323,6 @@
                                     "d"
                                 ],
                                 "notes": "bli"
-                            }
-                        },
-                        "Linux_Mint": {
-                            "( < 4.3.3 && <= 3.5.3 && < 3.2.6 )": {
-                                "distroPKGs": [],
-                                "notes": "y"
-                            },
-                            "( <= 1.3.1 && >= 5.2.3 && < 3.5.2 && == 4.5.1 && >= 2.2.3 && <= 1.2.3 ) || ( == 2.3.2 ) || ( >= 2.1.1 && < 1.2.3 && <= 2.2.1 ) || ( == 1.1.2 && == 2.2.1 && == 2.1.1 && == 1.1.1 )": {
-                                "distroPKGs": [
-                                    "bqoz",
-                                    "ivivvo",
-                                    "gy",
-                                    "tfxxg",
-                                    "xk",
-                                    "ldpl",
-                                    "xwucrv"
-                                ],
-                                "notes": "rn"
-                            },
-                            "( <= 5.1.4 && == 4.5.5 && < 2.5.4 && <= 1.3.4 && == 4.1.5 && >= 1.5.3 ) || ( <= 3.3.3 && == 1.2.4 && >= 2.2.1 && < 4.3.3 && == 2.2.4 )": {
-                                "distroPKGs": [
-                                    "xie",
-                                    "",
-                                    "deku",
-                                    "k",
-                                    "ha",
-                                    "qishwz"
-                                ],
-                                "notes": "jxl"
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [
-                                    "aoefcox",
-                                    "goq",
-                                    "q",
-                                    "ld"
-                                ],
-                                "notes": "ekin"
                             }
                         },
                         "Windows": {
@@ -12550,7 +12552,7 @@
                                         "dlUri": "http:xsklrul"
                                     }
                                 },
-                                "Linux_UnknownLinux": {
+                                "Linux_RedHat": {
                                     "( < 4.4.2 && <= 1.2.3 && >= 3.4.4 )": {
                                         "dlCSize": null,
                                         "dlHash": "nebwjac",
@@ -12606,7 +12608,7 @@
                                         "dlUri": "http:jl"
                                     }
                                 },
-                                "Linux_Debian": {
+                                "Linux_RedHat": {
                                     "( >= 3.1.1 && == 2.1.2 )": {
                                         "dlCSize": 2,
                                         "dlHash": "",
@@ -12673,7 +12675,8 @@
                                 }
                             },
                             "A_Sparc": {
-                                "Linux_AmazonLinux": {
+                                "Linux_Alpine": {},
+                                "Linux_Rocky": {
                                     "( <= 1.4.4 && > 3.3.5 && < 4.5.2 && >= 2.5.5 )": {
                                         "dlCSize": 0,
                                         "dlHash": "tqcbwvv",
@@ -12716,7 +12719,6 @@
                                         "dlUri": "https:bzq"
                                     }
                                 },
-                                "Linux_RedHat": {},
                                 "Windows": {
                                     "( < 4.5.4 && >= 5.3.2 && > 2.1.2 && == 1.3.1 && > 4.3.3 && < 1.3.2 )": {
                                         "dlCSize": null,
@@ -12827,7 +12829,7 @@
                                         "dlUri": "http:rky"
                                     }
                                 },
-                                "Linux_Mint": {
+                                "Linux_Fedora": {
                                     "( < 5.4.1 && < 3.4.4 ) || ( < 4.3.1 && < 5.3.3 ) || ( == 4.2.1 && == 3.3.3 && == 2.1.1 )": {
                                         "dlCSize": 3,
                                         "dlHash": "ccz",
@@ -13015,7 +13017,7 @@
                                         "dlUri": "https:ecvxdvq"
                                     }
                                 },
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( < 5.1.1 && <= 4.3.5 && > 1.4.5 && < 5.5.3 && <= 4.5.5 && >= 5.6.4 && > 1.6.2 )": {
                                         "dlCSize": -5,
                                         "dlHash": "",
@@ -13176,7 +13178,6 @@
                                         "dlUri": "https:m"
                                     }
                                 },
-                                "Linux_AmazonLinux": {},
                                 "Linux_Debian": {
                                     "( <= 5.5.2 && <= 1.1.1 && <= 5.1.3 )": {
                                         "dlCSize": 6,
@@ -13188,6 +13189,7 @@
                                         "dlUri": "https:x"
                                     }
                                 },
+                                "Linux_Rocky": {},
                                 "Windows": {
                                     "( <= 5.2.3 && <= 5.2.5 )": {
                                         "dlCSize": 1,
@@ -13279,7 +13281,7 @@
                                         "dlUri": "https:zu"
                                     }
                                 },
-                                "Linux_RedHat": {
+                                "Linux_Debian": {
                                     "( <= 1.5.1 && <= 2.1.4 && > 3.3.5 && < 5.3.5 && <= 3.3.4 && == 1.1.3 )": {
                                         "dlCSize": null,
                                         "dlHash": "jk",
@@ -13706,7 +13708,43 @@
                     },
                     "7.6.7": {
                         "FreeBSD": {},
-                        "Linux_AmazonLinux": {
+                        "Linux_Debian": {
+                            "( <= 5.2.5 && > 2.2.3 && >= 3.2.1 && < 1.1.1 ) || ( < 4.4.2 && > 1.2.1 ) || ( < 1.1.1 && > 3.2.1 && == 3.3.1 && > 3.1.1 && < 3.3.2 )": {
+                                "distroPKGs": [
+                                    "slesljw"
+                                ],
+                                "notes": "fasp"
+                            },
+                            "( == 1.1.3 && < 1.1.2 && < 4.1.2 && <= 5.3.2 ) || ( >= 1.4.1 && <= 3.4.1 && > 1.2.4 )": {
+                                "distroPKGs": [
+                                    "hmm",
+                                    "oezvr",
+                                    "",
+                                    "dbsqvcy"
+                                ],
+                                "notes": "mzbvu"
+                            },
+                            "( > 1.1.1 && > 3.6.2 ) || ( >= 2.3.2 && < 3.3.4 )": {
+                                "distroPKGs": [
+                                    "iab",
+                                    "sgqbv",
+                                    "egqdeay",
+                                    "bpclusl"
+                                ],
+                                "notes": "icof"
+                            },
+                            "( >= 3.1.2 && > 1.5.3 ) || ( == 3.1.2 && > 4.4.4 && < 4.2.2 && <= 3.3.4 && == 3.1.2 && > 3.2.1 )": {
+                                "distroPKGs": [
+                                    "she"
+                                ],
+                                "notes": ""
+                            },
+                            "unknown_versioning": {
+                                "distroPKGs": [],
+                                "notes": "imvsso"
+                            }
+                        },
+                        "Linux_Rocky": {
                             "( <= 2.5.5 && <= 2.3.4 && > 4.4.2 && == 4.2.3 ) || ( == 1.2.1 && >= 4.3.1 && < 2.3.5 && >= 1.3.2 && < 4.3.2 && > 3.3.2 ) || ( <= 3.1.2 )": {
                                 "distroPKGs": [
                                     "e",
@@ -13781,63 +13819,6 @@
                                 "notes": ""
                             }
                         },
-                        "Linux_Gentoo": {
-                            "( <= 3.1.2 && >= 1.2.2 && > 1.6.2 && < 2.2.5 && > 1.5.4 && >= 1.1.3 && == 4.3.5 )": {
-                                "distroPKGs": [
-                                    "vu",
-                                    "c",
-                                    "qn",
-                                    "qqsskir",
-                                    "k",
-                                    "onjtdgp"
-                                ],
-                                "notes": "pypzkb"
-                            },
-                            "( <= 5.4.4 && == 1.2.5 && < 2.4.1 && <= 1.5.5 && == 1.1.3 && <= 5.2.3 && < 5.3.2 ) || ( >= 4.4.3 && > 2.2.3 ) || ( <= 1.4.2 && > 1.2.1 && < 3.2.5 && >= 1.2.3 ) || ( < 1.2.2 && <= 1.3.2 && > 1.1.1 )": {
-                                "distroPKGs": [
-                                    "rss",
-                                    "rhzxps",
-                                    "g"
-                                ],
-                                "notes": "hxqkrb"
-                            }
-                        },
-                        "Linux_Mint": {
-                            "( <= 5.2.5 && > 2.2.3 && >= 3.2.1 && < 1.1.1 ) || ( < 4.4.2 && > 1.2.1 ) || ( < 1.1.1 && > 3.2.1 && == 3.3.1 && > 3.1.1 && < 3.3.2 )": {
-                                "distroPKGs": [
-                                    "slesljw"
-                                ],
-                                "notes": "fasp"
-                            },
-                            "( == 1.1.3 && < 1.1.2 && < 4.1.2 && <= 5.3.2 ) || ( >= 1.4.1 && <= 3.4.1 && > 1.2.4 )": {
-                                "distroPKGs": [
-                                    "hmm",
-                                    "oezvr",
-                                    "",
-                                    "dbsqvcy"
-                                ],
-                                "notes": "mzbvu"
-                            },
-                            "( > 1.1.1 && > 3.6.2 ) || ( >= 2.3.2 && < 3.3.4 )": {
-                                "distroPKGs": [
-                                    "iab",
-                                    "sgqbv",
-                                    "egqdeay",
-                                    "bpclusl"
-                                ],
-                                "notes": "icof"
-                            },
-                            "( >= 3.1.2 && > 1.5.3 ) || ( == 3.1.2 && > 4.4.4 && < 4.2.2 && <= 3.3.4 && == 3.1.2 && > 3.2.1 )": {
-                                "distroPKGs": [
-                                    "she"
-                                ],
-                                "notes": ""
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [],
-                                "notes": "imvsso"
-                            }
-                        },
                         "Linux_Ubuntu": {
                             "( <= 3.4.1 && > 5.4.2 && <= 5.2.3 && > 2.1.1 && == 2.3.5 && >= 2.5.2 && >= 5.5.5 )": {
                                 "distroPKGs": [
@@ -13874,6 +13855,27 @@
                                     "nxehacw"
                                 ],
                                 "notes": "grdctf"
+                            }
+                        },
+                        "Linux_Void": {
+                            "( <= 3.1.2 && >= 1.2.2 && > 1.6.2 && < 2.2.5 && > 1.5.4 && >= 1.1.3 && == 4.3.5 )": {
+                                "distroPKGs": [
+                                    "vu",
+                                    "c",
+                                    "qn",
+                                    "qqsskir",
+                                    "k",
+                                    "onjtdgp"
+                                ],
+                                "notes": "pypzkb"
+                            },
+                            "( <= 5.4.4 && == 1.2.5 && < 2.4.1 && <= 1.5.5 && == 1.1.3 && <= 5.2.3 && < 5.3.2 ) || ( >= 4.4.3 && > 2.2.3 ) || ( <= 1.4.2 && > 1.2.1 && < 3.2.5 && >= 1.2.3 ) || ( < 1.2.2 && <= 1.3.2 && > 1.1.1 )": {
+                                "distroPKGs": [
+                                    "rss",
+                                    "rhzxps",
+                                    "g"
+                                ],
+                                "notes": "hxqkrb"
                             }
                         },
                         "Windows": {}
@@ -13935,7 +13937,7 @@
                                 "notes": "c"
                             }
                         },
-                        "Linux_Alpine": {
+                        "Linux_Exherbo": {
                             "( == 1.4.1 && >= 1.4.4 && < 3.5.2 && > 5.2.4 && == 1.1.2 ) || ( < 3.1.1 && == 5.2.2 && > 2.2.3 && < 2.4.3 ) || ( >= 3.1.3 && >= 2.1.1 && < 3.2.2 ) || ( < 2.2.2 ) || ( == 1.1.1 && > 1.1.1 ) || ( == 1.1.1 && < 1.1.1 ) || ( <= 1.2.2 )": {
                                 "distroPKGs": [
                                     "",
@@ -13944,7 +13946,7 @@
                                 "notes": "rkz"
                             }
                         },
-                        "Linux_AmazonLinux": {
+                        "Linux_Rocky": {
                             "( >= 1.4.2 && >= 1.3.3 && <= 5.3.1 && <= 3.4.3 && > 2.2.2 ) || ( > 2.3.2 && <= 2.4.5 && <= 3.3.3 && == 3.3.3 && == 3.4.3 )": {
                                 "distroPKGs": [],
                                 "notes": "bmuumgg"
@@ -13974,44 +13976,30 @@
                                 "notes": "iub"
                             }
                         },
-                        "Linux_CentOS": {
-                            "( < 5.1.2 && < 5.5.2 && > 2.5.5 && < 5.2.2 && > 3.1.4 && >= 4.3.2 ) || ( == 2.3.3 )": {
+                        "Linux_Debian": {
+                            "( <= 2.5.5 && >= 3.1.1 ) || ( >= 2.1.3 && >= 1.2.2 && < 2.4.4 && < 3.1.3 && <= 3.2.2 && > 4.1.1 )": {
                                 "distroPKGs": [
-                                    "wcmfbif"
-                                ],
-                                "notes": "adqanxk"
-                            },
-                            "( < 5.2.5 && <= 1.6.2 )": {
-                                "distroPKGs": [
+                                    "q",
+                                    "zuiw",
+                                    "qp",
+                                    "q",
+                                    "zvvffds",
+                                    "ukdpt",
                                     ""
                                 ],
-                                "notes": "gtfaix"
+                                "notes": "axmak"
                             },
-                            "( <= 1.6.4 && <= 4.3.5 && < 2.3.5 && < 3.2.2 && < 1.1.4 && >= 3.1.3 && >= 2.1.3 )": {
-                                "distroPKGs": [],
-                                "notes": "vxwlgz"
-                            },
-                            "( == 1.4.3 && == 4.2.3 && == 5.4.2 )": {
+                            "( <= 3.3.1 && >= 2.1.1 && >= 4.2.4 && >= 1.1.1 && < 3.5.4 && < 1.4.5 )": {
                                 "distroPKGs": [
-                                    "bvfi",
-                                    "",
-                                    "ptdx",
-                                    "",
-                                    "foz",
-                                    "vfign"
+                                    "soql",
+                                    "q",
+                                    "ez",
+                                    ""
                                 ],
-                                "notes": "ocyi"
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [
-                                    "",
-                                    "bspn",
-                                    "qn"
-                                ],
-                                "notes": "lucftef"
+                                "notes": "wdgawbm"
                             }
                         },
-                        "Linux_Fedora": {
+                        "Linux_Exherbo": {
                             "( < 1.2.1 && > 2.5.4 && <= 4.5.3 && <= 5.2.2 ) || ( < 5.2.3 && == 2.2.4 && > 3.3.2 && < 4.1.4 ) || ( < 3.3.2 && <= 2.3.2 && < 1.3.2 && <= 2.3.3 && >= 1.1.2 ) || ( == 2.1.3 && >= 1.1.2 && > 2.2.2 && < 1.1.1 )": {
                                 "distroPKGs": [
                                     "oz",
@@ -14055,27 +14043,41 @@
                                 "notes": "sqn"
                             }
                         },
-                        "Linux_Ubuntu": {
-                            "( <= 2.5.5 && >= 3.1.1 ) || ( >= 2.1.3 && >= 1.2.2 && < 2.4.4 && < 3.1.3 && <= 3.2.2 && > 4.1.1 )": {
+                        "Linux_RedHat": {
+                            "( < 5.1.2 && < 5.5.2 && > 2.5.5 && < 5.2.2 && > 3.1.4 && >= 4.3.2 ) || ( == 2.3.3 )": {
                                 "distroPKGs": [
-                                    "q",
-                                    "zuiw",
-                                    "qp",
-                                    "q",
-                                    "zvvffds",
-                                    "ukdpt",
-                                    ""
+                                    "wcmfbif"
                                 ],
-                                "notes": "axmak"
+                                "notes": "adqanxk"
                             },
-                            "( <= 3.3.1 && >= 2.1.1 && >= 4.2.4 && >= 1.1.1 && < 3.5.4 && < 1.4.5 )": {
+                            "( < 5.2.5 && <= 1.6.2 )": {
                                 "distroPKGs": [
-                                    "soql",
-                                    "q",
-                                    "ez",
                                     ""
                                 ],
-                                "notes": "wdgawbm"
+                                "notes": "gtfaix"
+                            },
+                            "( <= 1.6.4 && <= 4.3.5 && < 2.3.5 && < 3.2.2 && < 1.1.4 && >= 3.1.3 && >= 2.1.3 )": {
+                                "distroPKGs": [],
+                                "notes": "vxwlgz"
+                            },
+                            "( == 1.4.3 && == 4.2.3 && == 5.4.2 )": {
+                                "distroPKGs": [
+                                    "bvfi",
+                                    "",
+                                    "ptdx",
+                                    "",
+                                    "foz",
+                                    "vfign"
+                                ],
+                                "notes": "ocyi"
+                            },
+                            "unknown_versioning": {
+                                "distroPKGs": [
+                                    "",
+                                    "bspn",
+                                    "qn"
+                                ],
+                                "notes": "lucftef"
                             }
                         },
                         "Windows": {
@@ -14350,27 +14352,7 @@
                                 "notes": "kqu"
                             }
                         },
-                        "Linux_Debian": {
-                            "( < 4.1.3 && < 3.5.4 && > 2.7.1 && == 1.4.3 && > 1.3.2 )": {
-                                "distroPKGs": [],
-                                "notes": "cpqag"
-                            },
-                            "( <= 4.5.5 && < 5.5.1 )": {
-                                "distroPKGs": [],
-                                "notes": "sh"
-                            },
-                            "( == 4.2.1 )": {
-                                "distroPKGs": [
-                                    "",
-                                    "ds",
-                                    "bqnsa",
-                                    "trletko",
-                                    "hjxzkgs"
-                                ],
-                                "notes": "dbe"
-                            }
-                        },
-                        "Linux_Gentoo": {
+                        "Linux_Fedora": {
                             "( < 3.1.5 && == 6.2.5 && > 3.2.2 && <= 1.4.4 && >= 5.4.5 ) || ( == 1.1.1 && == 2.2.1 && > 4.4.1 && > 4.4.5 && < 2.1.4 && <= 1.2.1 ) || ( < 1.2.3 && <= 3.3.1 && == 3.1.1 && > 2.1.3 ) || ( > 1.2.2 && >= 2.2.2 && <= 2.2.3 && <= 1.2.1 ) || ( < 1.1.1 && >= 1.1.1 ) || ( <= 1.2.2 && == 2.2.1 ) || ( > 1.1.2 ) || ( > 1.1.2 )": {
                                 "distroPKGs": [
                                     "kmnggr",
@@ -14468,7 +14450,7 @@
                                 "notes": "fxmf"
                             }
                         },
-                        "Linux_Alpine": {
+                        "Linux_AmazonLinux": {
                             "( < 4.1.5 && <= 3.2.3 && <= 1.5.5 && >= 1.5.2 && > 3.4.2 )": {
                                 "distroPKGs": [
                                     "ytakp",
@@ -14512,7 +14494,7 @@
                                 "notes": "t"
                             }
                         },
-                        "Linux_Mint": {
+                        "Linux_Debian": {
                             "( > 4.5.3 && >= 3.3.4 && >= 5.2.5 && <= 4.4.2 ) || ( == 3.4.2 && > 2.3.4 && >= 1.5.1 && == 4.1.4 && < 1.2.3 && >= 3.3.2 ) || ( > 1.1.3 && < 2.1.2 && == 2.3.2 && == 1.1.3 ) || ( >= 2.1.1 ) || ( >= 1.2.2 && > 1.1.2 ) || ( == 2.1.2 )": {
                                 "distroPKGs": [
                                     "cgures",
@@ -14573,7 +14555,44 @@
                                 "notes": ""
                             }
                         },
-                        "Linux_Mint": {
+                        "Linux_Debian": {
+                            "( < 3.4.1 && > 3.3.2 && >= 1.2.4 && <= 1.5.5 ) || ( < 1.1.2 ) || ( > 2.2.3 && == 3.1.2 && <= 1.1.3 )": {
+                                "distroPKGs": [
+                                    "aqnod"
+                                ],
+                                "notes": "pgol"
+                            },
+                            "( < 4.3.6 && > 1.4.4 && > 3.2.1 && <= 1.1.3 && <= 5.1.2 ) || ( > 3.1.4 && > 4.3.3 && == 3.1.2 && < 3.3.1 )": {
+                                "distroPKGs": [],
+                                "notes": "uiht"
+                            },
+                            "( > 4.4.3 && >= 4.1.3 ) || ( <= 2.1.3 && < 1.1.3 && > 1.2.1 && >= 4.3.3 && >= 4.3.5 ) || ( < 3.2.3 && <= 2.2.2 && >= 2.3.3 ) || ( < 1.2.2 && >= 2.2.2 ) || ( <= 2.2.1 )": {
+                                "distroPKGs": [
+                                    "pqh",
+                                    "uhdllba",
+                                    "xhdxw",
+                                    "wwuetrv",
+                                    "tk"
+                                ],
+                                "notes": "xmgngsn"
+                            },
+                            "( >= 5.2.5 && <= 3.3.2 && >= 4.3.5 && == 5.5.3 && >= 2.1.2 && >= 4.3.1 )": {
+                                "distroPKGs": [
+                                    "iscz",
+                                    "qvibrcn",
+                                    "suz",
+                                    "qqvvuxh",
+                                    "o",
+                                    "uu"
+                                ],
+                                "notes": "tj"
+                            },
+                            "unknown_versioning": {
+                                "distroPKGs": [],
+                                "notes": ""
+                            }
+                        },
+                        "Linux_Fedora": {
                             "( <= 3.4.2 && < 4.3.4 && > 4.5.3 && <= 2.1.3 ) || ( == 1.3.1 && > 2.1.1 && < 3.2.2 && <= 2.3.4 && >= 1.4.3 ) || ( == 2.3.1 && >= 2.3.1 && == 1.1.3 && < 3.1.2 && > 1.3.3 )": {
                                 "distroPKGs": [
                                     "omkoe"
@@ -14615,43 +14634,6 @@
                                     "imda"
                                 ],
                                 "notes": "qntcbkp"
-                            }
-                        },
-                        "Linux_Ubuntu": {
-                            "( < 3.4.1 && > 3.3.2 && >= 1.2.4 && <= 1.5.5 ) || ( < 1.1.2 ) || ( > 2.2.3 && == 3.1.2 && <= 1.1.3 )": {
-                                "distroPKGs": [
-                                    "aqnod"
-                                ],
-                                "notes": "pgol"
-                            },
-                            "( < 4.3.6 && > 1.4.4 && > 3.2.1 && <= 1.1.3 && <= 5.1.2 ) || ( > 3.1.4 && > 4.3.3 && == 3.1.2 && < 3.3.1 )": {
-                                "distroPKGs": [],
-                                "notes": "uiht"
-                            },
-                            "( > 4.4.3 && >= 4.1.3 ) || ( <= 2.1.3 && < 1.1.3 && > 1.2.1 && >= 4.3.3 && >= 4.3.5 ) || ( < 3.2.3 && <= 2.2.2 && >= 2.3.3 ) || ( < 1.2.2 && >= 2.2.2 ) || ( <= 2.2.1 )": {
-                                "distroPKGs": [
-                                    "pqh",
-                                    "uhdllba",
-                                    "xhdxw",
-                                    "wwuetrv",
-                                    "tk"
-                                ],
-                                "notes": "xmgngsn"
-                            },
-                            "( >= 5.2.5 && <= 3.3.2 && >= 4.3.5 && == 5.5.3 && >= 2.1.2 && >= 4.3.1 )": {
-                                "distroPKGs": [
-                                    "iscz",
-                                    "qvibrcn",
-                                    "suz",
-                                    "qqvvuxh",
-                                    "o",
-                                    "uu"
-                                ],
-                                "notes": "tj"
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [],
-                                "notes": ""
                             }
                         },
                         "Windows": {
@@ -14814,7 +14796,7 @@
                                 "notes": "qmtsria"
                             }
                         },
-                        "Linux_UnknownLinux": {
+                        "Linux_RedHat": {
                             "( < 5.4.4 ) || ( <= 4.3.2 && > 1.1.2 && > 2.3.4 && < 4.2.4 ) || ( >= 2.3.2 && >= 2.3.2 && <= 2.1.2 )": {
                                 "distroPKGs": [],
                                 "notes": "bctkaav"
@@ -14945,7 +14927,7 @@
                                 "notes": ""
                             }
                         },
-                        "Linux_Fedora": {},
+                        "Linux_CentOS": {},
                         "Windows": {
                             "( == 2.3.1 && <= 4.1.4 && < 4.3.2 && > 3.1.1 && > 5.3.5 && < 4.1.5 && <= 4.3.1 )": {
                                 "distroPKGs": [
@@ -15056,7 +15038,7 @@
                                 "notes": "y"
                             }
                         },
-                        "Linux_Alpine": {
+                        "Linux_AmazonLinux": {
                             "( == 2.5.2 && > 5.6.5 && <= 1.2.3 && < 4.5.2 && <= 5.5.4 && >= 1.2.3 )": {
                                 "distroPKGs": [
                                     "",
@@ -15099,7 +15081,7 @@
                                 "notes": "ege"
                             }
                         },
-                        "Linux_Ubuntu": {
+                        "Linux_Mint": {
                             "( < 3.2.4 && <= 3.4.4 && < 2.1.1 && > 3.4.1 && <= 1.4.4 && == 3.1.5 ) || ( > 1.4.1 && == 3.4.3 )": {
                                 "distroPKGs": [
                                     "v"
@@ -15479,7 +15461,7 @@
                                     }
                                 },
                                 "FreeBSD": {},
-                                "Linux_Alpine": {
+                                "Linux_Ubuntu": {
                                     "( < 4.3.3 )": {
                                         "dlCSize": -1,
                                         "dlHash": "xufzw",
@@ -15651,7 +15633,7 @@
                                         "dlUri": "http:"
                                     }
                                 },
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( < 4.2.3 && > 1.1.1 && <= 5.1.5 && >= 3.5.1 && == 3.1.2 ) || ( >= 3.4.2 && < 2.2.3 ) || ( <= 2.1.1 && == 3.1.4 && == 2.3.1 ) || ( <= 1.2.1 && == 1.1.3 && > 1.2.1 ) || ( > 1.2.1 && < 1.2.1 && <= 1.1.1 )": {
                                         "dlCSize": null,
                                         "dlHash": "bkpga",
@@ -15678,7 +15660,7 @@
                                         "dlUri": "https:n"
                                     }
                                 },
-                                "Linux_AmazonLinux": {
+                                "Linux_Rocky": {
                                     "( < 4.5.1 && >= 4.3.2 && > 1.2.4 && > 1.4.4 && <= 2.2.3 && == 6.5.5 && <= 1.3.3 )": {
                                         "dlCSize": -5,
                                         "dlHash": "rolz",
@@ -15797,7 +15779,7 @@
                                     }
                                 },
                                 "FreeBSD": {},
-                                "Linux_AmazonLinux": {
+                                "Linux_Rocky": {
                                     "( < 1.4.1 ) || ( < 3.2.5 && == 3.1.1 ) || ( >= 1.3.1 )": {
                                         "dlCSize": 7,
                                         "dlHash": "sleyakh",
@@ -15859,64 +15841,7 @@
                                         "dlUri": "http:o"
                                     }
                                 },
-                                "Linux_Exherbo": {
-                                    "( <= 4.1.3 && >= 5.1.3 && >= 1.5.2 && > 3.5.2 && == 1.1.3 && <= 2.5.1 && > 5.3.3 ) || ( <= 4.4.1 && < 1.2.4 && == 4.2.1 && <= 4.1.4 && < 3.1.4 && >= 3.3.3 )": {
-                                        "dlCSize": 2,
-                                        "dlHash": "q",
-                                        "dlOutput": "4;]",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:ipre"
-                                    },
-                                    "( <= 4.1.4 && <= 4.2.4 && >= 2.1.4 && <= 1.1.5 && >= 3.1.3 && >= 3.1.4 )": {
-                                        "dlCSize": 0,
-                                        "dlHash": "tkmvmo",
-                                        "dlOutput": null,
-                                        "dlSubdir": {
-                                            "RegexDir": ""
-                                        },
-                                        "dlUri": "https:zrffil"
-                                    },
-                                    "( == 2.4.3 && >= 2.3.5 && > 5.2.3 && == 3.4.1 && < 1.3.6 && < 1.1.5 )": {
-                                        "dlCSize": -2,
-                                        "dlHash": "pe",
-                                        "dlOutput": "",
-                                        "dlSubdir": {
-                                            "RegexDir": "􊱿\u000e"
-                                        },
-                                        "dlUri": "https:gtw"
-                                    },
-                                    "( == 4.1.2 && < 5.4.3 && == 5.5.4 )": {
-                                        "dlCSize": -7,
-                                        "dlHash": "",
-                                        "dlOutput": null,
-                                        "dlSubdir": null,
-                                        "dlUri": "https:fiqsjmy"
-                                    },
-                                    "( == 4.5.2 && >= 4.1.1 && <= 1.3.1 && <= 5.2.3 ) || ( < 3.2.4 && > 1.4.3 )": {
-                                        "dlCSize": null,
-                                        "dlHash": "kxjwqp",
-                                        "dlOutput": "w3m",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:okfh"
-                                    },
-                                    "( > 2.1.5 )": {
-                                        "dlCSize": -2,
-                                        "dlHash": "ipj",
-                                        "dlOutput": "D>{Z)",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:nr"
-                                    },
-                                    "unknown_versioning": {
-                                        "dlCSize": 0,
-                                        "dlHash": "iisuidu",
-                                        "dlOutput": null,
-                                        "dlSubdir": {
-                                            "RegexDir": "Gy\u0014衷5G"
-                                        },
-                                        "dlUri": "https:ih"
-                                    }
-                                },
-                                "Linux_Fedora": {
+                                "Linux_Void": {
                                     "unknown_versioning": {
                                         "dlCSize": -6,
                                         "dlHash": "",
@@ -15986,8 +15911,7 @@
                                         "dlUri": "https:hsp"
                                     }
                                 },
-                                "Linux_CentOS": {},
-                                "Linux_Mint": {
+                                "Linux_Fedora": {
                                     "( <= 2.5.2 )": {
                                         "dlCSize": -5,
                                         "dlHash": "qm",
@@ -16043,7 +15967,8 @@
                                         "dlSubdir": null,
                                         "dlUri": "https:qj"
                                     }
-                                }
+                                },
+                                "Linux_Mint": {}
                             }
                         },
                         "viChangeLog": "https:uhv",
@@ -16162,7 +16087,7 @@
                                         "dlUri": "https:jvk"
                                     }
                                 },
-                                "Linux_Fedora": {
+                                "Linux_Ubuntu": {
                                     "( >= 2.4.5 && <= 5.3.4 && == 3.4.5 && <= 1.2.3 && == 4.1.1 )": {
                                         "dlCSize": -3,
                                         "dlHash": "nbopm",
@@ -16296,7 +16221,7 @@
                                         "dlUri": "http:xjldcjh"
                                     }
                                 },
-                                "Linux_RedHat": {
+                                "Linux_Alpine": {
                                     "( <= 4.4.2 && < 3.1.1 && > 3.4.1 && >= 3.5.4 )": {
                                         "dlCSize": 2,
                                         "dlHash": "rcefq",
@@ -16467,7 +16392,16 @@
                                         "dlUri": "http:wknpq"
                                     }
                                 },
-                                "Linux_Gentoo": {
+                                "Linux_Debian": {
+                                    "unknown_versioning": {
+                                        "dlCSize": -4,
+                                        "dlHash": "cze",
+                                        "dlOutput": null,
+                                        "dlSubdir": null,
+                                        "dlUri": "https:ypmuxhs"
+                                    }
+                                },
+                                "Linux_Void": {
                                     "( < 3.6.5 && > 1.1.4 && <= 1.2.1 && == 4.3.3 && == 2.1.4 && > 5.2.4 && > 1.5.1 ) || ( > 3.3.3 && >= 4.1.3 && == 4.4.1 && == 2.1.3 && > 4.1.4 )": {
                                         "dlCSize": null,
                                         "dlHash": "yltfiua",
@@ -16492,15 +16426,6 @@
                                         "dlOutput": null,
                                         "dlSubdir": "y⯞􅾂󰋖󱊛1",
                                         "dlUri": "http:"
-                                    }
-                                },
-                                "Linux_Mint": {
-                                    "unknown_versioning": {
-                                        "dlCSize": -4,
-                                        "dlHash": "cze",
-                                        "dlOutput": null,
-                                        "dlSubdir": null,
-                                        "dlUri": "https:ypmuxhs"
                                     }
                                 },
                                 "Windows": {
@@ -16540,7 +16465,7 @@
                                         "dlUri": "http:eppqg"
                                     }
                                 },
-                                "Linux_CentOS": {
+                                "Linux_RedHat": {
                                     "( <= 4.1.2 && < 5.1.2 && <= 3.5.1 && >= 2.3.3 )": {
                                         "dlCSize": 1,
                                         "dlHash": "hklddij",
@@ -16697,7 +16622,7 @@
                                         "dlUri": "https:yamomm"
                                     }
                                 },
-                                "Linux_Debian": {
+                                "Linux_Exherbo": {
                                     "( <= 2.5.3 && >= 1.2.3 && == 3.4.4 && <= 5.3.2 && > 1.2.5 && > 3.5.5 && > 5.3.1 ) || ( <= 5.2.4 )": {
                                         "dlCSize": -2,
                                         "dlHash": "sk",
@@ -17129,7 +17054,7 @@
                                         "dlUri": "https:craj"
                                     }
                                 },
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( <= 1.2.1 ) || ( >= 1.2.4 && == 4.1.2 && == 3.1.1 && >= 4.1.3 && < 3.3.2 )": {
                                         "dlCSize": null,
                                         "dlHash": "nfntrpn",
@@ -17269,36 +17194,43 @@
                                         "dlUri": "http:bzw"
                                     }
                                 },
-                                "Linux_CentOS": {
-                                    "( < 5.4.4 ) || ( >= 2.4.2 && > 1.5.3 )": {
-                                        "dlCSize": -7,
-                                        "dlHash": "fkn",
-                                        "dlOutput": null,
-                                        "dlSubdir": null,
-                                        "dlUri": "http:gftymbw"
-                                    },
-                                    "( <= 2.3.3 && >= 5.1.5 && > 4.2.5 ) || ( <= 3.3.3 && > 2.4.3 && > 1.1.2 )": {
+                                "Linux_RedHat": {
+                                    "( <= 2.3.4 && == 1.5.2 && == 2.6.4 ) || ( > 2.2.3 && <= 2.2.1 && > 4.2.1 && == 2.3.2 && < 2.4.1 )": {
                                         "dlCSize": 5,
-                                        "dlHash": "bff",
-                                        "dlOutput": "d\u0003",
-                                        "dlSubdir": null,
-                                        "dlUri": "https:snhiny"
+                                        "dlHash": "fp",
+                                        "dlOutput": null,
+                                        "dlSubdir": "\u001d\u001fU",
+                                        "dlUri": "http:xlgu"
                                     },
-                                    "( == 2.1.4 && == 3.4.5 ) || ( > 2.4.1 && == 4.3.3 && >= 4.3.1 && == 2.4.1 ) || ( >= 3.2.2 && > 3.1.1 && >= 3.2.3 )": {
-                                        "dlCSize": 3,
-                                        "dlHash": "niigh",
-                                        "dlOutput": "i0.ྼ",
-                                        "dlSubdir": null,
-                                        "dlUri": "http:hsu"
+                                    "( == 3.3.3 ) || ( > 1.1.4 && >= 4.3.1 && == 1.3.2 && == 3.3.1 ) || ( <= 2.2.1 && > 1.1.3 && >= 2.3.1 && >= 3.2.1 && > 2.1.1 ) || ( > 1.2.2 )": {
+                                        "dlCSize": 1,
+                                        "dlHash": "s",
+                                        "dlOutput": "􂊖f0V恀뾎",
+                                        "dlSubdir": "@",
+                                        "dlUri": "https:kdrmh"
                                     },
-                                    "unknown_versioning": {
-                                        "dlCSize": -2,
-                                        "dlHash": "qqqsbs",
-                                        "dlOutput": "\u0002Sa\u0004",
+                                    "( == 4.1.5 ) || ( < 4.4.1 && < 1.4.1 )": {
+                                        "dlCSize": null,
+                                        "dlHash": "hgop",
+                                        "dlOutput": "\rW",
+                                        "dlSubdir": null,
+                                        "dlUri": "https:nc"
+                                    },
+                                    "( == 4.2.3 && == 4.1.4 && == 3.3.2 && < 2.5.4 )": {
+                                        "dlCSize": 0,
+                                        "dlHash": "",
+                                        "dlOutput": "QPfz",
+                                        "dlSubdir": "",
+                                        "dlUri": "https:"
+                                    },
+                                    "( > 5.4.1 && <= 3.2.1 && > 1.5.1 && <= 4.1.2 && >= 1.2.5 )": {
+                                        "dlCSize": -4,
+                                        "dlHash": "",
+                                        "dlOutput": " 􎼯\n",
                                         "dlSubdir": {
-                                            "RegexDir": "P"
+                                            "RegexDir": "J\u0017;󽦙"
                                         },
-                                        "dlUri": "http:cmgryr"
+                                        "dlUri": "http:eqz"
                                     }
                                 },
                                 "Linux_UnknownLinux": {
@@ -17424,7 +17356,7 @@
                                 }
                             },
                             "A_ARM": {
-                                "Linux_Alpine": {
+                                "Linux_AmazonLinux": {
                                     "( < 3.2.2 && <= 1.3.4 && == 2.1.2 && < 4.1.3 ) || ( == 2.3.3 && < 3.4.4 && == 2.3.4 && == 1.4.2 && >= 4.1.4 )": {
                                         "dlCSize": 0,
                                         "dlHash": "j",
@@ -17542,8 +17474,7 @@
                                 }
                             },
                             "A_Sparc": {
-                                "Linux_CentOS": {},
-                                "Linux_Mint": {
+                                "Linux_Debian": {
                                     "( < 3.5.2 && <= 1.3.4 && == 3.3.5 && >= 3.1.4 && > 4.2.1 && < 2.4.5 && == 3.1.4 ) || ( <= 1.1.4 ) || ( > 3.1.2 && < 2.1.2 ) || ( >= 1.3.2 && >= 3.1.2 ) || ( <= 1.1.1 && > 1.1.1 && > 1.1.1 )": {
                                         "dlCSize": 2,
                                         "dlHash": "ksv",
@@ -17589,6 +17520,7 @@
                                         "dlUri": "https:nutv"
                                     }
                                 },
+                                "Linux_RedHat": {},
                                 "Windows": {
                                     "( <= 2.4.5 && == 5.3.2 && >= 5.3.2 && <= 3.1.3 && == 2.2.4 && <= 1.2.3 && <= 6.4.5 ) || ( >= 2.1.2 && > 1.3.2 && > 4.3.2 && > 1.4.4 && < 4.5.2 ) || ( <= 1.2.3 && <= 3.1.1 && <= 1.2.1 && > 1.2.1 )": {
                                         "dlCSize": null,
@@ -17817,7 +17749,7 @@
                                         "dlUri": "https:"
                                     }
                                 },
-                                "Linux_Debian": {
+                                "Linux_Ubuntu": {
                                     "( <= 2.1.4 && > 2.5.5 && == 2.6.6 && <= 3.4.1 && >= 4.4.5 && >= 1.3.4 && >= 5.2.3 ) || ( >= 1.4.1 && <= 3.2.1 && <= 2.3.2 ) || ( < 5.1.2 ) || ( < 1.2.2 ) || ( < 1.1.1 ) || ( >= 1.2.2 ) || ( >= 2.1.1 ) || ( < 2.1.1 ) || ( == 1.1.2 ) || ( <= 1.1.1 ) || ( > 1.1.1 )": {
                                         "dlCSize": 0,
                                         "dlHash": "nblwhg",
@@ -18055,7 +17987,7 @@
                                         "dlUri": "https:tqvf"
                                     }
                                 },
-                                "Linux_RedHat": {
+                                "Linux_Alpine": {
                                     "( < 2.2.5 && < 1.3.4 && > 1.5.5 )": {
                                         "dlCSize": null,
                                         "dlHash": "beo",
@@ -18125,27 +18057,7 @@
                                 }
                             },
                             "A_Sparc64": {
-                                "Linux_Gentoo": {
-                                    "( < 2.2.5 && == 5.2.4 )": {
-                                        "dlCSize": -1,
-                                        "dlHash": "cjxjgds",
-                                        "dlOutput": "I9/*",
-                                        "dlSubdir": {
-                                            "RegexDir": "z㗈2"
-                                        },
-                                        "dlUri": "http:dhaiy"
-                                    },
-                                    "( > 4.2.2 && >= 5.3.1 && < 5.1.1 && < 3.5.5 && <= 2.4.3 && < 1.1.2 ) || ( >= 1.3.1 && > 2.1.1 && < 2.1.1 ) || ( < 3.2.3 && > 3.1.3 ) || ( >= 2.2.1 && > 1.1.1 && < 1.2.2 )": {
-                                        "dlCSize": 0,
-                                        "dlHash": "qhb",
-                                        "dlOutput": "\u0000\u001cjj𑐝􄤉𐙹",
-                                        "dlSubdir": {
-                                            "RegexDir": "7q𰌛\u001bv"
-                                        },
-                                        "dlUri": "http:rr"
-                                    }
-                                },
-                                "Linux_Ubuntu": {
+                                "Linux_Debian": {
                                     "( < 4.4.1 && == 3.1.2 ) || ( < 1.2.3 && >= 1.4.3 && <= 1.1.2 && <= 2.2.3 )": {
                                         "dlCSize": null,
                                         "dlHash": "vr",
@@ -18175,6 +18087,26 @@
                                             "RegexDir": "ҡh"
                                         },
                                         "dlUri": "http:ohyqzp"
+                                    }
+                                },
+                                "Linux_Void": {
+                                    "( < 2.2.5 && == 5.2.4 )": {
+                                        "dlCSize": -1,
+                                        "dlHash": "cjxjgds",
+                                        "dlOutput": "I9/*",
+                                        "dlSubdir": {
+                                            "RegexDir": "z㗈2"
+                                        },
+                                        "dlUri": "http:dhaiy"
+                                    },
+                                    "( > 4.2.2 && >= 5.3.1 && < 5.1.1 && < 3.5.5 && <= 2.4.3 && < 1.1.2 ) || ( >= 1.3.1 && > 2.1.1 && < 2.1.1 ) || ( < 3.2.3 && > 3.1.3 ) || ( >= 2.2.1 && > 1.1.1 && < 1.2.2 )": {
+                                        "dlCSize": 0,
+                                        "dlHash": "qhb",
+                                        "dlOutput": "\u0000\u001cjj𑐝􄤉𐙹",
+                                        "dlSubdir": {
+                                            "RegexDir": "7q𰌛\u001bv"
+                                        },
+                                        "dlUri": "http:rr"
                                     }
                                 },
                                 "Windows": {
@@ -18283,7 +18215,7 @@
                                 "notes": "pt"
                             }
                         },
-                        "Linux_CentOS": {
+                        "Linux_Mint": {
                             "( < 3.4.4 && <= 3.4.1 )": {
                                 "distroPKGs": [
                                     "qqsrwn",
@@ -18392,6 +18324,56 @@
                             }
                         },
                         "Linux_Alpine": {
+                            "( < 5.5.4 && == 5.1.2 && >= 5.1.1 ) || ( >= 5.1.2 ) || ( > 3.3.1 )": {
+                                "distroPKGs": [
+                                    "g",
+                                    "kzheuds"
+                                ],
+                                "notes": "riamopc"
+                            },
+                            "( <= 3.2.3 && > 2.3.4 ) || ( > 3.3.3 && >= 3.1.1 )": {
+                                "distroPKGs": [],
+                                "notes": "iez"
+                            },
+                            "( == 1.1.4 && == 5.2.4 && < 2.5.2 && >= 2.2.5 )": {
+                                "distroPKGs": [
+                                    "",
+                                    "qixshbs",
+                                    "bpaw",
+                                    "xdc",
+                                    "nkwtodk",
+                                    ""
+                                ],
+                                "notes": "gk"
+                            },
+                            "( > 1.5.5 && >= 3.2.4 && == 1.2.3 && == 5.3.3 && > 2.5.2 )": {
+                                "distroPKGs": [
+                                    "qbix"
+                                ],
+                                "notes": "tafkee"
+                            },
+                            "( >= 1.4.4 && > 4.5.5 && >= 3.5.5 && == 3.1.3 ) || ( >= 2.1.2 && <= 1.1.3 && <= 3.3.4 && == 2.4.4 ) || ( >= 3.1.3 && <= 3.2.3 ) || ( <= 2.2.1 && > 2.2.2 ) || ( >= 1.1.1 && <= 1.1.1 ) || ( <= 2.1.1 )": {
+                                "distroPKGs": [
+                                    "wb",
+                                    "ythavli",
+                                    "rmamiee",
+                                    "bvw",
+                                    "okz",
+                                    "wlme",
+                                    "lqkpqu"
+                                ],
+                                "notes": "r"
+                            },
+                            "( >= 3.2.3 && < 3.3.1 && <= 1.3.3 && == 2.5.5 && <= 2.3.4 && < 5.4.1 )": {
+                                "distroPKGs": [],
+                                "notes": "day"
+                            },
+                            "unknown_versioning": {
+                                "distroPKGs": [],
+                                "notes": "rfjawuj"
+                            }
+                        },
+                        "Linux_AmazonLinux": {
                             "( < 2.1.1 && == 5.5.1 )": {
                                 "distroPKGs": [
                                     "y",
@@ -18459,7 +18441,7 @@
                                 "notes": "voilj"
                             }
                         },
-                        "Linux_Debian": {
+                        "Linux_Ubuntu": {
                             "( <= 4.5.2 && >= 2.4.1 && == 4.5.3 && < 5.4.1 ) || ( > 4.1.2 )": {
                                 "distroPKGs": [
                                     "",
@@ -18505,56 +18487,6 @@
                                     "gnqaicy"
                                 ],
                                 "notes": "gzy"
-                            }
-                        },
-                        "Linux_RedHat": {
-                            "( < 5.5.4 && == 5.1.2 && >= 5.1.1 ) || ( >= 5.1.2 ) || ( > 3.3.1 )": {
-                                "distroPKGs": [
-                                    "g",
-                                    "kzheuds"
-                                ],
-                                "notes": "riamopc"
-                            },
-                            "( <= 3.2.3 && > 2.3.4 ) || ( > 3.3.3 && >= 3.1.1 )": {
-                                "distroPKGs": [],
-                                "notes": "iez"
-                            },
-                            "( == 1.1.4 && == 5.2.4 && < 2.5.2 && >= 2.2.5 )": {
-                                "distroPKGs": [
-                                    "",
-                                    "qixshbs",
-                                    "bpaw",
-                                    "xdc",
-                                    "nkwtodk",
-                                    ""
-                                ],
-                                "notes": "gk"
-                            },
-                            "( > 1.5.5 && >= 3.2.4 && == 1.2.3 && == 5.3.3 && > 2.5.2 )": {
-                                "distroPKGs": [
-                                    "qbix"
-                                ],
-                                "notes": "tafkee"
-                            },
-                            "( >= 1.4.4 && > 4.5.5 && >= 3.5.5 && == 3.1.3 ) || ( >= 2.1.2 && <= 1.1.3 && <= 3.3.4 && == 2.4.4 ) || ( >= 3.1.3 && <= 3.2.3 ) || ( <= 2.2.1 && > 2.2.2 ) || ( >= 1.1.1 && <= 1.1.1 ) || ( <= 2.1.1 )": {
-                                "distroPKGs": [
-                                    "wb",
-                                    "ythavli",
-                                    "rmamiee",
-                                    "bvw",
-                                    "okz",
-                                    "wlme",
-                                    "lqkpqu"
-                                ],
-                                "notes": "r"
-                            },
-                            "( >= 3.2.3 && < 3.3.1 && <= 1.3.3 && == 2.5.5 && <= 2.3.4 && < 5.4.1 )": {
-                                "distroPKGs": [],
-                                "notes": "day"
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [],
-                                "notes": "rfjawuj"
                             }
                         },
                         "Windows": {}
@@ -18787,7 +18719,7 @@
                 },
                 "HLS": {
                     "1.4.5": {
-                        "Linux_Debian": {
+                        "Linux_Fedora": {
                             "( < 3.3.1 && <= 4.6.2 && >= 5.2.5 && == 4.4.4 )": {
                                 "distroPKGs": [
                                     "ighyjq",
@@ -18909,7 +18841,7 @@
                                 "notes": "uu"
                             }
                         },
-                        "Linux_RedHat": {
+                        "Linux_Alpine": {
                             "( < 3.3.4 && == 1.1.5 && == 1.4.1 && == 5.5.3 && < 4.2.5 )": {
                                 "distroPKGs": [
                                     "r",
@@ -19039,43 +18971,6 @@
                                 "notes": "uosryz"
                             }
                         },
-                        "Linux_AmazonLinux": {
-                            "( < 1.1.3 && >= 5.2.4 && > 4.5.1 && < 5.5.4 && == 4.1.3 && > 3.1.1 && >= 3.2.3 )": {
-                                "distroPKGs": [
-                                    "fophpiz",
-                                    "ptwe",
-                                    "",
-                                    "e",
-                                    "xopoo",
-                                    "go",
-                                    "tvu"
-                                ],
-                                "notes": "hh"
-                            },
-                            "( <= 3.1.2 && >= 1.1.4 && < 1.4.4 && == 2.4.3 && < 5.3.2 && > 3.2.4 && >= 2.5.3 ) || ( >= 4.3.2 && > 3.4.3 && > 2.1.1 ) || ( < 3.1.2 && == 3.2.3 && < 3.2.2 && > 1.3.3 && <= 3.3.4 )": {
-                                "distroPKGs": [],
-                                "notes": "fx"
-                            },
-                            "( == 5.1.3 && < 4.4.2 && == 3.2.1 && < 2.2.3 && < 4.2.4 && < 5.5.5 ) || ( > 2.4.4 && >= 3.1.1 && >= 1.1.4 )": {
-                                "distroPKGs": [
-                                    "jxgpzs",
-                                    "fcw"
-                                ],
-                                "notes": "rp"
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [
-                                    "",
-                                    "cnj",
-                                    "wficabv",
-                                    "ksozzmn",
-                                    "",
-                                    "zhg",
-                                    "e"
-                                ],
-                                "notes": "gyjehm"
-                            }
-                        },
                         "Linux_Debian": {
                             "( == 5.2.1 )": {
                                 "distroPKGs": [],
@@ -19138,6 +19033,43 @@
                                 "notes": "vujay"
                             }
                         },
+                        "Linux_Mint": {
+                            "( < 1.1.3 && >= 5.2.4 && > 4.5.1 && < 5.5.4 && == 4.1.3 && > 3.1.1 && >= 3.2.3 )": {
+                                "distroPKGs": [
+                                    "fophpiz",
+                                    "ptwe",
+                                    "",
+                                    "e",
+                                    "xopoo",
+                                    "go",
+                                    "tvu"
+                                ],
+                                "notes": "hh"
+                            },
+                            "( <= 3.1.2 && >= 1.1.4 && < 1.4.4 && == 2.4.3 && < 5.3.2 && > 3.2.4 && >= 2.5.3 ) || ( >= 4.3.2 && > 3.4.3 && > 2.1.1 ) || ( < 3.1.2 && == 3.2.3 && < 3.2.2 && > 1.3.3 && <= 3.3.4 )": {
+                                "distroPKGs": [],
+                                "notes": "fx"
+                            },
+                            "( == 5.1.3 && < 4.4.2 && == 3.2.1 && < 2.2.3 && < 4.2.4 && < 5.5.5 ) || ( > 2.4.4 && >= 3.1.1 && >= 1.1.4 )": {
+                                "distroPKGs": [
+                                    "jxgpzs",
+                                    "fcw"
+                                ],
+                                "notes": "rp"
+                            },
+                            "unknown_versioning": {
+                                "distroPKGs": [
+                                    "",
+                                    "cnj",
+                                    "wficabv",
+                                    "ksozzmn",
+                                    "",
+                                    "zhg",
+                                    "e"
+                                ],
+                                "notes": "gyjehm"
+                            }
+                        },
                         "Linux_Ubuntu": {
                             "( >= 1.5.2 && == 1.2.1 && <= 1.4.2 && < 6.5.5 && <= 5.4.1 && > 5.5.1 && > 1.5.3 )": {
                                 "distroPKGs": [
@@ -19197,25 +19129,6 @@
                                 "notes": "ays"
                             }
                         },
-                        "Linux_Exherbo": {
-                            "( >= 4.3.5 && <= 2.5.2 && <= 2.5.5 && <= 4.1.1 && < 3.5.2 && >= 3.2.5 )": {
-                                "distroPKGs": [
-                                    "e",
-                                    "v",
-                                    "qxuqu",
-                                    "qsymgxm",
-                                    "ta"
-                                ],
-                                "notes": "govf"
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [
-                                    "soup",
-                                    "gf"
-                                ],
-                                "notes": ""
-                            }
-                        },
                         "Linux_UnknownLinux": {
                             "( <= 1.3.3 && <= 5.5.1 && <= 2.3.5 && > 5.2.4 && > 4.2.4 )": {
                                 "distroPKGs": [
@@ -19253,6 +19166,25 @@
                             "unknown_versioning": {
                                 "distroPKGs": [],
                                 "notes": "bovybow"
+                            }
+                        },
+                        "Linux_Void": {
+                            "( >= 4.3.5 && <= 2.5.2 && <= 2.5.5 && <= 4.1.1 && < 3.5.2 && >= 3.2.5 )": {
+                                "distroPKGs": [
+                                    "e",
+                                    "v",
+                                    "qxuqu",
+                                    "qsymgxm",
+                                    "ta"
+                                ],
+                                "notes": "govf"
+                            },
+                            "unknown_versioning": {
+                                "distroPKGs": [
+                                    "soup",
+                                    "gf"
+                                ],
+                                "notes": ""
                             }
                         },
                         "Windows": {
@@ -19365,51 +19297,7 @@
                                 "notes": "y"
                             }
                         },
-                        "Linux_Exherbo": {
-                            "( < 2.5.1 )": {
-                                "distroPKGs": [
-                                    "ybnn",
-                                    "i",
-                                    ""
-                                ],
-                                "notes": ""
-                            },
-                            "( == 2.4.2 ) || ( >= 4.2.1 && < 2.3.1 && == 1.3.2 && < 5.1.1 )": {
-                                "distroPKGs": [
-                                    "",
-                                    "zy"
-                                ],
-                                "notes": "sizbx"
-                            },
-                            "( >= 2.4.2 && < 2.5.1 && < 5.5.3 )": {
-                                "distroPKGs": [
-                                    "",
-                                    "neyljfq",
-                                    "",
-                                    "bdfm",
-                                    "etfvb",
-                                    "ifqth"
-                                ],
-                                "notes": "lpymwns"
-                            },
-                            "( >= 4.4.4 && <= 5.4.2 && > 3.5.4 && == 1.2.5 && <= 1.3.1 ) || ( < 1.4.4 && >= 1.2.4 && > 3.1.2 && > 3.2.4 && <= 1.2.1 && >= 1.2.2 )": {
-                                "distroPKGs": [
-                                    "nxtyuk",
-                                    "pf",
-                                    "rpa",
-                                    "vlcg"
-                                ],
-                                "notes": "bmugu"
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [
-                                    "",
-                                    "jp"
-                                ],
-                                "notes": ""
-                            }
-                        },
-                        "Linux_Fedora": {
+                        "Linux_CentOS": {
                             "( < 1.2.2 && == 1.3.5 && >= 5.1.4 )": {
                                 "distroPKGs": [
                                     "zy",
@@ -19478,6 +19366,50 @@
                                     "uirknrs"
                                 ],
                                 "notes": "sd"
+                            }
+                        },
+                        "Linux_Void": {
+                            "( < 2.5.1 )": {
+                                "distroPKGs": [
+                                    "ybnn",
+                                    "i",
+                                    ""
+                                ],
+                                "notes": ""
+                            },
+                            "( == 2.4.2 ) || ( >= 4.2.1 && < 2.3.1 && == 1.3.2 && < 5.1.1 )": {
+                                "distroPKGs": [
+                                    "",
+                                    "zy"
+                                ],
+                                "notes": "sizbx"
+                            },
+                            "( >= 2.4.2 && < 2.5.1 && < 5.5.3 )": {
+                                "distroPKGs": [
+                                    "",
+                                    "neyljfq",
+                                    "",
+                                    "bdfm",
+                                    "etfvb",
+                                    "ifqth"
+                                ],
+                                "notes": "lpymwns"
+                            },
+                            "( >= 4.4.4 && <= 5.4.2 && > 3.5.4 && == 1.2.5 && <= 1.3.1 ) || ( < 1.4.4 && >= 1.2.4 && > 3.1.2 && > 3.2.4 && <= 1.2.1 && >= 1.2.2 )": {
+                                "distroPKGs": [
+                                    "nxtyuk",
+                                    "pf",
+                                    "rpa",
+                                    "vlcg"
+                                ],
+                                "notes": "bmugu"
+                            },
+                            "unknown_versioning": {
+                                "distroPKGs": [
+                                    "",
+                                    "jp"
+                                ],
+                                "notes": ""
                             }
                         },
                         "Windows": {
@@ -19561,6 +19493,15 @@
                             "unknown_versioning": {
                                 "distroPKGs": [],
                                 "notes": "lowvia"
+                            }
+                        },
+                        "Linux_Mint": {
+                            "( >= 3.5.2 ) || ( < 3.4.4 && < 2.1.3 && <= 2.4.4 ) || ( == 1.3.1 ) || ( == 2.3.1 && == 1.1.2 && < 2.2.1 && < 1.1.2 )": {
+                                "distroPKGs": [
+                                    "",
+                                    "t"
+                                ],
+                                "notes": "jac"
                             }
                         },
                         "Linux_Ubuntu": {
@@ -19726,7 +19667,7 @@
                 },
                 "Stack": {
                     "1.5.3": {
-                        "Linux_Gentoo": {
+                        "Linux_Exherbo": {
                             "( < 5.2.2 && >= 3.4.5 )": {
                                 "distroPKGs": [
                                     "ap",
@@ -19766,7 +19707,7 @@
                                 "notes": "cwnihy"
                             }
                         },
-                        "Linux_Mint": {
+                        "Linux_Fedora": {
                             "( >= 4.2.5 && > 5.4.5 && < 2.2.5 )": {
                                 "distroPKGs": [
                                     "rn",
@@ -19971,8 +19912,8 @@
                                 "notes": "stakcmt"
                             }
                         },
-                        "Linux_Alpine": {},
-                        "Linux_Mint": {
+                        "Linux_Exherbo": {},
+                        "Linux_Fedora": {
                             "( == 2.5.2 ) || ( > 1.2.1 && == 4.1.2 && == 4.3.4 && < 2.1.2 ) || ( >= 1.3.3 && == 2.4.2 ) || ( <= 1.2.2 && < 2.2.3 && < 1.1.1 && > 2.2.2 )": {
                                 "distroPKGs": [
                                     "szk",
@@ -19991,7 +19932,7 @@
                                 "notes": "fa"
                             }
                         },
-                        "Linux_Ubuntu": {
+                        "Linux_Rocky": {
                             "( > 2.1.3 && < 1.2.2 ) || ( >= 1.2.3 && <= 4.3.3 && <= 2.5.4 && <= 1.3.2 && < 4.3.1 && <= 2.4.3 )": {
                                 "distroPKGs": [
                                     "",
