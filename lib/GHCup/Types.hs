@@ -22,6 +22,7 @@ module GHCup.Types
   ( module GHCup.Types
 #if defined(BRICK)
   , Key(..)
+  , Modifier(..)
 #endif
   )
   where
@@ -40,7 +41,7 @@ import           Optics                         ( makeLenses )
 import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text)
 import           URI.ByteString
 #if defined(BRICK)
-import           Graphics.Vty                   ( Key(..) )
+import           Graphics.Vty                   ( Key(..), Modifier(..) )
 #endif
 
 import qualified Data.ByteString.Lazy          as BL
@@ -55,7 +56,13 @@ data Key = KEsc  | KChar Char | KBS | KEnter
          | KFun Int | KBackTab | KPrtScr | KPause | KIns
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
     deriving (Eq,Show,Read,Ord,GHC.Generic)
+
+data Modifier = MShift | MCtrl | MMeta | MAlt
+    deriving (Eq,Show,Read,Ord,GHC.Generic)
 #endif
+
+data KeyCombination = KeyCombination { key :: Key, mods :: [Modifier] }
+    deriving (Eq,Show,Read,Ord,GHC.Generic)
 
 
 
@@ -431,47 +438,51 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
   }
 
 data UserKeyBindings = UserKeyBindings
-  { kUp        :: Maybe Key
-  , kDown      :: Maybe Key
-  , kQuit      :: Maybe Key
-  , kInstall   :: Maybe Key
-  , kUninstall :: Maybe Key
-  , kSet       :: Maybe Key
-  , kChangelog :: Maybe Key
-  , kShowAll   :: Maybe Key
-  , kShowAllTools :: Maybe Key
+  { kUp           :: Maybe KeyCombination
+  , kDown         :: Maybe KeyCombination
+  , kQuit         :: Maybe KeyCombination
+  , kInstall      :: Maybe KeyCombination
+  , kUninstall    :: Maybe KeyCombination
+  , kSet          :: Maybe KeyCombination
+  , kChangelog    :: Maybe KeyCombination
+  , kShowAll      :: Maybe KeyCombination
+  , kShowAllTools :: Maybe KeyCombination
   }
   deriving (Show, GHC.Generic)
 
 data KeyBindings = KeyBindings
-  { bUp        :: Key
-  , bDown      :: Key
-  , bQuit      :: Key
-  , bInstall   :: Key
-  , bUninstall :: Key
-  , bSet       :: Key
-  , bChangelog :: Key
-  , bShowAllVersions :: Key
-  , bShowAllTools :: Key
+  { bUp              :: KeyCombination
+  , bDown            :: KeyCombination
+  , bQuit            :: KeyCombination
+  , bInstall         :: KeyCombination
+  , bUninstall       :: KeyCombination
+  , bSet             :: KeyCombination
+  , bChangelog       :: KeyCombination
+  , bShowAllVersions :: KeyCombination
+  , bShowAllTools    :: KeyCombination
   }
   deriving (Show, GHC.Generic)
 
 instance NFData KeyBindings
 #if defined(IS_WINDOWS) || !defined(BRICK)
 instance NFData Key
+
+instance NFData Modifier
+
 #endif
+instance NFData KeyCombination
 
 defaultKeyBindings :: KeyBindings
 defaultKeyBindings = KeyBindings
-  { bUp = KUp
-  , bDown = KDown
-  , bQuit = KChar 'q'
-  , bInstall = KChar 'i'
-  , bUninstall = KChar 'u'
-  , bSet = KChar 's'
-  , bChangelog = KChar 'c'
-  , bShowAllVersions = KChar 'a'
-  , bShowAllTools = KChar 't'
+  { bUp              = KeyCombination { key = KUp      , mods = [] }
+  , bDown            = KeyCombination { key = KDown    , mods = [] }
+  , bQuit            = KeyCombination { key = KChar 'q', mods = [] }
+  , bInstall         = KeyCombination { key = KChar 'i', mods = [] }
+  , bUninstall       = KeyCombination { key = KChar 'u', mods = [] }
+  , bSet             = KeyCombination { key = KChar 's', mods = [] }
+  , bChangelog       = KeyCombination { key = KChar 'c', mods = [] }
+  , bShowAllVersions = KeyCombination { key = KChar 'a', mods = [] }
+  , bShowAllTools    = KeyCombination { key = KChar 't', mods = [] }
   }
 
 data AppState = AppState

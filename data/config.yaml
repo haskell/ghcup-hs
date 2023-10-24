@@ -16,6 +16,11 @@ gpg-setting: GPGNone # GPGStrict | GPGLax | GPGNone
 # TUI key bindings,
 # see https://hackage.haskell.org/package/vty-5.31/docs/Graphics-Vty-Input-Events.html#t:Key
 # for possible values.
+# It's also possible to define key+modifier, e.g.:
+#   quit:
+#     Key:
+#       KChar: c
+#     Mods: [MCtrl]
 key-bindings:
   up:
     KUp: []

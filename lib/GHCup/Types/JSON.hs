@@ -286,15 +286,13 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupI
 deriveToJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField, constructorTagModifier = \str' -> if str' == "StackSetupURL" then str' else maybe str' T.unpack . T.stripPrefix (T.pack "S") . T.pack $ str' } ''StackSetupURLSource
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
-deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
+deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Modifier
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel, unwrapUnaryRecords = True } ''Port
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel, unwrapUnaryRecords = True } ''Host
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''UserInfo
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' (T.unpack . T.toLower) . T.stripPrefix (T.pack "authority") . T.pack $ str' } ''Authority
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadMirror
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadMirrors
-deriveToJSON defaultOptions { fieldLabelModifier = kebab } ''Settings
-deriveToJSON defaultOptions { fieldLabelModifier = drop 2 . kebab } ''KeyBindings -- move under key-bindings key
 
 instance FromJSON URLSource where
   parseJSON v =
@@ -328,4 +326,21 @@ instance FromJSON URLSource where
       r :: [Either GHCupInfo URI] <- o .: "AddSource"
       pure (AddSource r)
 
+instance FromJSON KeyCombination where
+  parseJSON v = proper v <|> simple v
+   where
+    simple = withObject "KeyCombination" $ \o -> do
+      k <- parseJSON (Object o)
+      pure (KeyCombination k [])
+    proper = withObject "KeyCombination" $ \o -> do
+      k <- o .: "Key"
+      m <- o .: "Mods"
+      pure $ KeyCombination k m
+
+instance ToJSON KeyCombination where
+  toJSON (KeyCombination k m) = object ["Key" .= k, "Mods" .= m]
+
+deriveToJSON defaultOptions { fieldLabelModifier = drop 2 . kebab } ''KeyBindings -- move under key-bindings key
+deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "u-") . T.pack . kebab $ str' } ''UserSettings
+deriveToJSON defaultOptions { fieldLabelModifier = kebab } ''Settings
