@@ -82,6 +82,18 @@ url-source:
     # - Right: "file:///home/jule/git/ghcup-hs/ghcup-prereleases.yaml"
     # - Right: "file:///home/jule/git/ghcup-hs/ghcup-custom.yaml"
 
+  # For stack's setup-info, this works similar, e.g.:
+  # stack-setup-source:
+  #   AddSource:
+  #   - Left:
+  #       ghc:
+  #         linux64-tinfo6:
+  #           9.4.7:
+  #             url: "https://downloads.haskell.org/~ghc/9.4.7/ghc-9.4.7-x86_64-fedora27-linux.tar.xz"
+  #             content-length: 179117892
+  #             sha256: 216b76b7c6383e6ad9ba82533f323f8550e52893a8b9fa33c7b9dc4201ac766a
+
+
 # This is a way to override platform detection, e.g. when you're running
 # a Ubuntu derivate based on 18.04, you could do:
 #

@@ -117,7 +117,9 @@ library
     GHCup.Types
     GHCup.Types.JSON
     GHCup.Types.JSON.Utils
+    GHCup.Types.JSON.Versions
     GHCup.Types.Optics
+    GHCup.Types.Stack
     GHCup.Utils
     GHCup.Utils.Dirs
     GHCup.Version

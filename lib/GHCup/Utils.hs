@@ -49,7 +49,6 @@ import           GHCup.Prelude.Logger.Internal
 import           GHCup.Prelude.MegaParsec
 import           GHCup.Prelude.Process
 import           GHCup.Prelude.String.QQ
-
 import           Codec.Archive           hiding ( Directory )
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -92,7 +91,7 @@ import qualified Data.List.NonEmpty            as NE
 import qualified Streamly.Prelude              as S
 import Control.DeepSeq (force)
 import GHC.IO (evaluate)
-import System.Environment (getEnvironment, setEnv)
+import System.Environment (getEnvironment)
 import Data.Time (Day(..), diffDays, addDays)
 
 
@@ -1321,20 +1320,27 @@ warnAboutHlsCompatibility = do
 
 
 
-addToPath :: FilePath
+addToPath :: [FilePath]
           -> Bool         -- ^ if False will prepend
           -> IO [(String, String)]
-addToPath path append = do
- cEnv <- Map.fromList <$> getEnvironment
- let paths          = ["PATH", "Path"]
-     curPaths       = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
-     {- HLINT ignore "Redundant bracket" -}
-     newPath        = intercalate [searchPathSeparator] (if append then (curPaths ++ [path]) else (path : curPaths))
-     envWithoutPath = foldr (\x y -> Map.delete x y) cEnv paths
-     pathVar        = if isWindows then "Path" else "PATH"
-     envWithNewPath = Map.toList $ Map.insert pathVar newPath envWithoutPath
- liftIO $ setEnv pathVar newPath
- return envWithNewPath
+addToPath paths append = do
+ cEnv <- getEnvironment
+ return $ addToPath' cEnv paths append
+
+addToPath' :: [(String, String)]
+          -> [FilePath]
+          -> Bool         -- ^ if False will prepend
+          -> [(String, String)]
+addToPath' cEnv' newPaths append =
+  let cEnv           = Map.fromList cEnv'
+      paths          = ["PATH", "Path"]
+      curPaths       = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
+      {- HLINT ignore "Redundant bracket" -}
+      newPath        = intercalate [searchPathSeparator] (if append then (curPaths ++ newPaths) else (newPaths ++ curPaths))
+      envWithoutPath = foldr (\x y -> Map.delete x y) cEnv paths
+      pathVar        = if isWindows then "Path" else "PATH"
+      envWithNewPath = Map.toList $ Map.insert pathVar newPath envWithoutPath
+  in envWithNewPath
 
 
     -----------

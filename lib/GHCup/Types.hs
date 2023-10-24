@@ -26,6 +26,7 @@ module GHCup.Types
   )
   where
 
+import           GHCup.Types.Stack              ( SetupInfo )
 import {-# SOURCE #-} GHCup.Utils.Dirs          ( fromGHCupPath, GHCupPath )
 
 import           Control.DeepSeq                ( NFData, rnf )
@@ -46,7 +47,6 @@ import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Text                     as T
 import qualified GHC.Generics                  as GHC
 import qualified Data.List.NonEmpty            as NE
-import           Data.Foldable                  (foldMap)
 
 #if !defined(BRICK)
 data Key = KEsc  | KChar Char | KBS | KEnter
@@ -56,6 +56,7 @@ data Key = KEsc  | KChar Char | KBS | KEnter
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
     deriving (Eq,Show,Read,Ord,GHC.Generic)
 #endif
+
 
 
     --------------------
@@ -339,9 +340,18 @@ data URLSource = GHCupURL
                | AddSource [Either GHCupInfo URI] -- ^ merge with GHCupURL
                deriving (GHC.Generic, Show)
 
+data StackSetupURLSource = StackSetupURL
+                         | SOwnSource [Either SetupInfo URI] -- ^ complete source list
+                         | SOwnSpec SetupInfo
+                         | SAddSource [Either SetupInfo URI] -- ^ merge with GHCupURL
+  deriving (Show, Eq, GHC.Generic)
+
+instance NFData StackSetupURLSource
+
 instance NFData URLSource
 instance NFData (URIRef Absolute) where
   rnf (URI !_ !_ !_ !_ !_) = ()
+
 
 data MetaMode = Strict
               | Lax
@@ -363,11 +373,13 @@ data UserSettings = UserSettings
   , uGPGSetting  :: Maybe GPGSetting
   , uPlatformOverride :: Maybe PlatformRequest
   , uMirrors     :: Maybe DownloadMirrors
+  , uStackSetupSource  :: Maybe StackSetupURLSource
+  , uStackSetup        :: Maybe Bool
   }
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
@@ -385,6 +397,8 @@ fromSettings Settings{..} Nothing =
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
+    , uStackSetupSource = Just stackSetupSource
+    , uStackSetup = Just stackSetup
   }
 fromSettings Settings{..} (Just KeyBindings{..}) =
   let ukb = UserKeyBindings
@@ -412,6 +426,8 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
+    , uStackSetupSource = Just stackSetupSource
+    , uStackSetup = Just stackSetup
   }
 
 data UserKeyBindings = UserKeyBindings
@@ -496,6 +512,8 @@ data Settings = Settings
   , noColor          :: Bool -- this also exists in LoggerConfig
   , platformOverride :: Maybe PlatformRequest
   , mirrors          :: DownloadMirrors
+  , stackSetupSource :: StackSetupURLSource
+  , stackSetup       :: Bool
   }
   deriving (Show, GHC.Generic)
 
@@ -503,7 +521,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty)
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty) StackSetupURL False
 
 instance NFData Settings
 
@@ -749,3 +767,4 @@ instance Pretty ToolVersion where
 data BuildSystem = Hadrian
                  | Make
   deriving (Show, Eq)
+

@@ -36,6 +36,9 @@ import Data.Void (Void)
 ghcupURL :: URI
 ghcupURL = [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.0.8.yaml|]
 
+stackSetupURL :: URI
+stackSetupURL = [uri|https://raw.githubusercontent.com/commercialhaskell/stackage-content/master/stack/stack-setup-2.yaml|]
+
 -- | The current ghcup version.
 ghcUpVer :: V.PVP
 ghcUpVer = V.PVP . NE.fromList . fmap fromIntegral $ versionBranch version

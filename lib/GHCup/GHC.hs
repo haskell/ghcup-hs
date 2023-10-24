@@ -26,6 +26,7 @@ import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
 import           GHCup.Utils
+import           GHCup.Platform
 import           GHCup.Prelude
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
@@ -74,6 +75,7 @@ import qualified Crypto.Hash.SHA256            as SHA256
 import qualified Data.ByteString.Base16        as B16
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as BL
+import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
@@ -216,7 +218,9 @@ testUnpackedGHC path tver addMakeArgs = do
   lift $ logInfo $ "Testing GHC version " <> tVerToText tver <> "!"
   ghcDir <- lift $ ghcupGHCDir tver
   let ghcBinDir = fromGHCupPath ghcDir </> "bin"
-  env <- liftIO $ addToPath ghcBinDir False
+  env <- liftIO $ addToPath [ghcBinDir] False
+  let pathVar = if isWindows then "Path" else "PATH"
+  forM_ (Map.lookup pathVar . Map.fromList $ env) $ liftIO . setEnv pathVar
 
   lEM $ make' (fmap T.unpack addMakeArgs)
               (Just $ fromGHCupPath path)
@@ -512,6 +516,7 @@ installGHCBin :: ( MonadFail m
                  , MonadResource m
                  , MonadIO m
                  , MonadUnliftIO m
+                 , Alternative m
                  )
               => GHCTargetVersion -- ^ the version to install
               -> InstallDir
@@ -533,11 +538,23 @@ installGHCBin :: ( MonadFail m
                     , ProcessError
                     , UninstallFailed
                     , MergeFileTreeError
+                    , NoCompatiblePlatform
+                    , ParseError
+                    , UnsupportedSetupCombo
+                    , DistroNotFound
+                    , NoCompatibleArch
                     ]
                    m
                    ()
 installGHCBin tver installDir forceInstall addConfArgs = do
-  dlinfo <- liftE $ getDownloadInfo' GHC tver
+  Settings{ stackSetupSource, stackSetup } <- lift getSettings
+  dlinfo <- if stackSetup
+            then do
+              lift $ logInfo "Using stack's setup-info to install GHC"
+              pfreq <- lift getPlatformReq
+              keys <- liftE $ getStackPlatformKey pfreq
+              liftE $ getStackDownloadInfo stackSetupSource keys GHC tver
+            else liftE $ getDownloadInfo' GHC tver
   liftE $ installGHCBindist dlinfo tver installDir forceInstall addConfArgs
 
 

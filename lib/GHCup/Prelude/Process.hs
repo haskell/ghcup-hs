@@ -11,6 +11,7 @@ Portability : portable
 -}
 module GHCup.Prelude.Process (
   executeOut,
+  executeOut',
   execLogged,
   exec,
   toProcessError,

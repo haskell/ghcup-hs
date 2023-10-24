@@ -70,6 +70,16 @@ executeOut path args chdir = liftIO $ captureOutStreams $ do
   maybe (pure ()) changeWorkingDirectory chdir
   SPP.executeFile path True args Nothing
 
+executeOut' :: MonadIO m
+            => FilePath          -- ^ command as filename, e.g. 'ls'
+            -> [String]          -- ^ arguments to the command
+            -> Maybe FilePath    -- ^ chdir to this path
+            -> Maybe [(String, String)]
+            -> m CapturedProcess
+executeOut' path args chdir env = liftIO $ captureOutStreams $ do
+  maybe (pure ()) changeWorkingDirectory chdir
+  SPP.executeFile path True args env
+
 
 execLogged :: ( MonadReader env m
               , HasSettings env
@@ -169,7 +179,7 @@ execLogged exe args chdir lfile env = do
     overwriteNthLine n str = pos1 <> moveLineUp n <> clearLine <> str <> moveLineDown n <> pos1
 
     blue :: ByteString -> ByteString
-    blue bs 
+    blue bs
       | no_color = bs
       | otherwise = "\x1b[0;34m" <> bs <> "\x1b[0m"
 

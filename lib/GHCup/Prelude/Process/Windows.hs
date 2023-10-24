@@ -140,8 +140,16 @@ executeOut :: MonadIO m
            -> [String]          -- ^ arguments to the command
            -> Maybe FilePath    -- ^ chdir to this path
            -> m CapturedProcess
-executeOut path args chdir = do
-  cp <- createProcessWithMingwPath ((proc path args){ cwd = chdir })
+executeOut path args chdir = executeOut' path args chdir Nothing
+
+executeOut' :: MonadIO m
+            => FilePath          -- ^ command as filename, e.g. 'ls'
+            -> [String]          -- ^ arguments to the command
+            -> Maybe FilePath    -- ^ chdir to this path
+            -> Maybe [(String, String)]
+            -> m CapturedProcess
+executeOut' path args chdir env' = do
+  cp <- createProcessWithMingwPath ((proc path args){ cwd = chdir, env = env' })
   (exit, out, err) <- liftIO $ readCreateProcessWithExitCodeBS cp ""
   pure $ CapturedProcess exit out err
 

@@ -90,6 +90,8 @@ toSettings options = do
          gpgSetting  = fromMaybe (fromMaybe (Types.gpgSetting defaultSettings) uGPGSetting) optGpg
          platformOverride = optPlatform <|> (uPlatformOverride <|> Types.platformOverride defaultSettings)
          mirrors  = fromMaybe (Types.mirrors defaultSettings) uMirrors
+         stackSetupSource  = fromMaybe (Types.stackSetupSource defaultSettings) uStackSetupSource
+         stackSetup = fromMaybe (Types.stackSetup defaultSettings) uStackSetup
      in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
@@ -339,11 +341,11 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                           , NextVerNotFound
                           , NoToolVersionSet
                           ] m Bool
-  alreadyInstalling (Install (Right InstallOptions{..}))                 (GHC, ver)   = cmp' GHC instVer ver
-  alreadyInstalling (Install (Left (InstallGHC InstallOptions{..})))     (GHC, ver)   = cmp' GHC instVer ver
-  alreadyInstalling (Install (Left (InstallCabal InstallOptions{..})))   (Cabal, ver) = cmp' Cabal instVer ver
-  alreadyInstalling (Install (Left (InstallHLS InstallOptions{..})))     (HLS, ver)   = cmp' HLS instVer ver
-  alreadyInstalling (Install (Left (InstallStack InstallOptions{..})))   (Stack, ver) = cmp' Stack instVer ver
+  alreadyInstalling (Install (Right InstallGHCOptions{..}))                 (GHC, ver)   = cmp' GHC instVer ver
+  alreadyInstalling (Install (Left (InstallGHC InstallGHCOptions{..})))     (GHC, ver)   = cmp' GHC instVer ver
+  alreadyInstalling (Install (Left (InstallCabal InstallOptions{..})))   (Cabal, ver)    = cmp' Cabal instVer ver
+  alreadyInstalling (Install (Left (InstallHLS InstallOptions{..})))     (HLS, ver)      = cmp' HLS instVer ver
+  alreadyInstalling (Install (Left (InstallStack InstallOptions{..})))   (Stack, ver)    = cmp' Stack instVer ver
   alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ ovewrwiteVer = Just over }))
     (GHC, ver)   = cmp' GHC (Just $ GHCVersion (mkTVer over)) ver
   alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ targetGhc = GHC.SourceDist tver }))
