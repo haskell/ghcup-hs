@@ -2,9 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NamedFieldPuns #-}
 
 module InstallTest where
 
@@ -16,8 +13,6 @@ import Data.Versions
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import GHCup.OptParse.Install as Install
 import URI.ByteString.QQ
-import URI.ByteString
-import Data.Text (Text)
 
 -- Some interests:
 --   install ghc *won't* select `set as activate version` as default
@@ -31,52 +26,37 @@ installTests = testGroup "install"
       (buildTestTree installParseWith)
       [ ("old-style", oldStyleCheckList)
       , ("ghc", installGhcCheckList)
-      , ("cabal", (fmap . fmap . fmap) toGHCOptions installCabalCheckList)
-      , ("hls", (fmap . fmap . fmap) toGHCOptions installHlsCheckList)
-      , ("stack", (fmap . fmap . fmap) toGHCOptions installStackCheckList)
+      , ("cabal", installCabalCheckList)
+      , ("hls", installHlsCheckList)
+      , ("stack", installStackCheckList)
       ]
-
-toGHCOptions :: InstallOptions -> InstallGHCOptions
-toGHCOptions InstallOptions{..}
-  = InstallGHCOptions instVer
-                      instBindist
-                      instSet
-                      isolateDir
-                      forceInstall
-                      addConfArgs
-                      Nothing
-
-
 
 defaultOptions :: InstallOptions
 defaultOptions = InstallOptions Nothing Nothing False Nothing False []
 
-defaultGHCOptions :: InstallGHCOptions
-defaultGHCOptions = InstallGHCOptions Nothing Nothing False Nothing False [] Nothing
-
 -- | Don't set as active version
-mkInstallOptions :: ToolVersion -> InstallGHCOptions
-mkInstallOptions ver = InstallGHCOptions (Just ver) Nothing False Nothing False [] Nothing
+mkInstallOptions :: ToolVersion -> InstallOptions
+mkInstallOptions ver = InstallOptions (Just ver) Nothing False Nothing False []
 
 -- | Set as active version
 mkInstallOptions' :: ToolVersion -> InstallOptions
 mkInstallOptions' ver = InstallOptions (Just ver) Nothing True Nothing False []
 
-oldStyleCheckList :: [(String, Either InstallCommand InstallGHCOptions)]
+oldStyleCheckList :: [(String, Either InstallCommand InstallOptions)]
 oldStyleCheckList =
-      ("install", Right defaultGHCOptions)
-    : ("install --set", Right (defaultGHCOptions{instSet = True} :: InstallGHCOptions))
-    : ("install --force", Right (defaultGHCOptions{forceInstall = True} :: InstallGHCOptions))
+      ("install", Right defaultOptions)
+    : ("install --set", Right defaultOptions{instSet = True})
+    : ("install --force", Right defaultOptions{forceInstall = True})
 #ifdef IS_WINDOWS
-    : ("install -i C:\\\\", Right (defaultGHCOptions{Install.isolateDir = Just "C:\\\\"} :: InstallGHCOptions))
+    : ("install -i C:\\\\", Right defaultOptions{Install.isolateDir = Just "C:\\\\"})
 #else
-    : ("install -i /", Right (defaultGHCOptions{Install.isolateDir = Just "/"} :: InstallGHCOptions))
+    : ("install -i /", Right defaultOptions{Install.isolateDir = Just "/"})
 #endif
     : ("install -u https://gitlab.haskell.org/ghc/ghc/-/jobs/artifacts/master/raw/ghc-x86_64-linux-fedora33-release.tar.xz head"
-    , Right (defaultGHCOptions
+    , Right defaultOptions
         { instBindist = Just [uri|https://gitlab.haskell.org/ghc/ghc/-/jobs/artifacts/master/raw/ghc-x86_64-linux-fedora33-release.tar.xz|]
         , instVer = Just $ GHCVersion $ GHCTargetVersion Nothing  $(versionQ "head")
-        } :: InstallGHCOptions)
+        }
     )
     : mapSecond
         (Right . mkInstallOptions)
@@ -128,9 +108,9 @@ oldStyleCheckList =
           )
         ]
 
-installGhcCheckList :: [(String, Either InstallCommand InstallGHCOptions)]
+installGhcCheckList :: [(String, Either InstallCommand InstallOptions)]
 installGhcCheckList =
-  ("install ghc", Left $ InstallGHC defaultGHCOptions)
+  ("install ghc", Left $ InstallGHC defaultOptions)
   : mapSecond (Left . InstallGHC . mkInstallOptions)
     [ ("install ghc 9.2", GHCVersion
           $ GHCTargetVersion
@@ -171,7 +151,7 @@ installGhcCheckList =
 
 installCabalCheckList :: [(String, Either InstallCommand InstallOptions)]
 installCabalCheckList =
-  ("install cabal", Left $ InstallCabal (defaultOptions{instSet = True} :: InstallOptions))
+  ("install cabal", Left $ InstallCabal defaultOptions{instSet = True})
   : mapSecond (Left . InstallCabal . mkInstallOptions')
     [ ("install cabal 3.10", ToolVersion $(versionQ "3.10"))
     , ("install cabal next", ToolVersion $(versionQ "next"))
@@ -217,7 +197,7 @@ installStackCheckList =
     , ("install stack stack-2.9", ToolVersion $(versionQ "stack-2.9"))
     ]
 
-installParseWith :: [String] -> IO (Either InstallCommand InstallGHCOptions)
+installParseWith :: [String] -> IO (Either InstallCommand InstallOptions)
 installParseWith args = do
   Install a <- parseWith args
   pure a

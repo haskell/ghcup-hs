@@ -153,8 +153,7 @@ To use a mirror, set the following option in `~/.ghcup/config.yaml`:
 
 ```yml
 url-source:
-  # Accepts file/http/https scheme
-  OwnSource: "https://some-url/ghcup-0.0.6.yaml"
+  - https://some-url/ghcup-0.0.6.yaml
 ```
 
 See [config.yaml](https://github.com/haskell/ghcup-hs/blob/master/data/config.yaml)
@@ -184,8 +183,8 @@ This will result in `~/.ghcup/config.yaml` to contain this record:
 
 ```yml
 url-source:
-  AddSource:
-  - Right: https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml
+  - GHCupURL
+  - https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml
 ```
 
 You can add as many channels as you like. They are combined under *Last*, so versions from the prerelease channel
@@ -195,14 +194,13 @@ To remove the channel, delete the entire `url-source` section or set it back to 
 
 ```yml
 url-source:
-  GHCupURL: []
+  - GHCupURL
 ```
 
 If you want to combine your release channel with a mirror, you'd do it like so:
 
 ```yml
 url-source:
-  OwnSource:
   # base metadata
   - "https://mirror.sjtu.edu.cn/ghcup/yaml/ghcup/data/ghcup-0.0.6.yaml"
   # prerelease channel
@@ -249,24 +247,32 @@ stack config set system-ghc  true  --global
 ### Using stack's setup-info metadata to install GHC
 
 You can now use stack's [setup-info metadata](https://github.com/commercialhaskell/stackage-content/blob/master/stack/stack-setup-2.yaml)
-to install GHC. For that, you can invoke ghcup like so:
+to install GHC. For that, you can invoke ghcup like so as a shorthand:
 
 ```sh
-ghcup install ghc --stack-setup 9.4.7
+# ghcup will only see GHC now
+ghcup -s StackSetupURL install ghc 9.4.7
+# this combines both ghcup and stack metadata
+ghcup -s '["GHCupURL", "StackSetupURL"]' install ghc 9.4.7
 ```
 
-To make this permanent, you can add the following to you `~/.ghcup/config.yaml`:
+To make this permanent and combine it with the GHCup metadata, you can add the following to your `~/.ghcup/config.yaml`:
 
 ```yaml
-stack-setup: true
+url-source:
+  - GHCupURL
+  # stack versions take precedence
+  # you'll still have access to GHCup provided versions and tools in case they don't exist in stack metadata
+  - StackSetupURL
 ```
 
 You can customize or add sections to the setup-info similar to how the [stack documentation](https://docs.haskellstack.org/en/stable/yaml_configuration/#setup-info) explains it. E.g. to change the 9.4.7 bindist, you might do:
 
 ```yaml
-stack-setup-source:
-  AddSource:
-  - Left:
+url-source:
+  - GHCupURL
+  - StackSetupURL
+  - setup-info:
       ghc:
         linux64-tinfo6:
           9.4.7:

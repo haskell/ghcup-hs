@@ -26,7 +26,6 @@ import           GHCup.Types
 import           GHCup.Types.JSON               ( )
 import           GHCup.Types.Optics
 import           GHCup.Utils
-import           GHCup.Platform
 import           GHCup.Prelude
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
@@ -547,14 +546,7 @@ installGHCBin :: ( MonadFail m
                    m
                    ()
 installGHCBin tver installDir forceInstall addConfArgs = do
-  Settings{ stackSetupSource, stackSetup } <- lift getSettings
-  dlinfo <- if stackSetup
-            then do
-              lift $ logInfo "Using stack's setup-info to install GHC"
-              pfreq <- lift getPlatformReq
-              keys <- liftE $ getStackPlatformKey pfreq
-              liftE $ getStackDownloadInfo stackSetupSource keys GHC tver
-            else liftE $ getDownloadInfo' GHC tver
+  dlinfo <- liftE $ getDownloadInfo' GHC tver
   liftE $ installGHCBindist dlinfo tver installDir forceInstall addConfArgs
 
 

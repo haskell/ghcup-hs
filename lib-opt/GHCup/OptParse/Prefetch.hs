@@ -14,6 +14,7 @@ module GHCup.OptParse.Prefetch where
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
+import           GHCup.Types.Optics
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
@@ -157,7 +158,9 @@ type PrefetchEffects = '[ TagNotFound
                         , GPGError
                         , DownloadFailed
                         , JSONError
-                        , FileDoesNotExistError ]
+                        , FileDoesNotExistError
+                        , StackPlatformDetectError
+                        ]
 
 
 runPrefetch :: MonadUnliftIO m
@@ -210,7 +213,8 @@ prefetch prefetchCommand runAppState runLogger =
         (v, _) <- liftE $ fromVersion mt Stack
         liftE $ fetchToolBindist (_tvVersion v) Stack pfCacheDir
       PrefetchMetadata -> do
-        _ <- liftE getDownloadsF
+        pfreq <- lift getPlatformReq
+        _ <- liftE $ getDownloadsF pfreq
         pure ""
        ) >>= \case
                 VRight _ -> do

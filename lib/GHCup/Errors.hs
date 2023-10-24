@@ -676,18 +676,18 @@ instance HFErrorProject ContentLengthError where
   eBase _ = 340
   eDesc _ = "File content length verification failed"
 
-data DuplicateReleaseChannel = DuplicateReleaseChannel URI
+data DuplicateReleaseChannel = DuplicateReleaseChannel NewURLSource
   deriving Show
 
 instance HFErrorProject DuplicateReleaseChannel where
   eBase _ = 350
-  eDesc _ = "Duplicate release channel detected when adding URI.\nGiving up. You can use '--force' to remove and append the duplicate URI (this may change order/semantics)."
+  eDesc _ = "Duplicate release channel detected when adding new source.\nGiving up. You can use '--force' to remove and append the duplicate source (this may change order/semantics)."
 
 instance Pretty DuplicateReleaseChannel where
-  pPrint (DuplicateReleaseChannel uri) =
+  pPrint (DuplicateReleaseChannel source) =
     text $ "Duplicate release channel detected when adding: \n  "
-      <> (T.unpack . E.decodeUtf8With E.lenientDecode . serializeURIRef') uri
-      <> "\nGiving up. You can use '--force' to remove and append the duplicate URI (this may change order/semantics)."
+      <> show source
+      <> "\nGiving up. You can use '--force' to remove and append the duplicate source (this may change order/semantics)."
 
 data UnsupportedSetupCombo = UnsupportedSetupCombo Architecture Platform
   deriving Show
@@ -786,6 +786,22 @@ instance HFErrorProject GHCupSetError where
   eBase _ = 9000
   eNum (GHCupSetError xs) = 9000 + eNum xs
   eDesc _ = "Setting the current version failed."
+
+-- | Executing stacks platform detection failed.
+data StackPlatformDetectError = forall es . (ToVariantMaybe StackPlatformDetectError es, PopVariant StackPlatformDetectError es, Show (V es), Pretty (V es), HFErrorProject (V es)) => StackPlatformDetectError (V es)
+
+instance Pretty StackPlatformDetectError where
+  pPrint (StackPlatformDetectError reason) =
+    case reason of
+      VMaybe (_ :: StackPlatformDetectError) -> pPrint reason
+      _ -> text "Running stack platform detection logic failed:" <+> pPrint reason
+
+deriving instance Show StackPlatformDetectError
+
+instance HFErrorProject StackPlatformDetectError where
+  eBase _ = 6000
+  eNum (StackPlatformDetectError xs) = 6000 + eNum xs
+  eDesc _ = "Running stack platform detection logic failed."
 
 
     ---------------------------------------------

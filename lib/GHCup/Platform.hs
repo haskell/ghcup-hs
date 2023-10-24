@@ -23,7 +23,7 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
-import           GHCup.Utils
+import           GHCup.Utils.Dirs
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
@@ -348,7 +348,7 @@ getStackOSKey PlatformRequest { .. } =
     (A_ARM64, FreeBSD) -> pure "freebsd-aarch64"
     (arch', os') -> throwE $ UnsupportedSetupCombo arch' os'
 
-getStackPlatformKey :: (MonadReader env m, Alternative m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
+getStackPlatformKey :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
                     => PlatformRequest
                     -> Excepts '[UnsupportedSetupCombo, ParseError, NoCompatiblePlatform, NoCompatibleArch, DistroNotFound, ProcessError] m [String]
 getStackPlatformKey pfreq@PlatformRequest{..} = do

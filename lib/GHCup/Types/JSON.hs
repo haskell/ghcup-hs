@@ -22,6 +22,7 @@ Portability : portable
 module GHCup.Types.JSON where
 
 import           GHCup.Types
+import           GHCup.Types.Stack (SetupInfo)
 import           GHCup.Types.JSON.Utils
 import           GHCup.Types.JSON.Versions ()
 import           GHCup.Prelude.MegaParsec
@@ -32,7 +33,9 @@ import           Data.Aeson.TH
 import           Data.Aeson.Types        hiding (Key)
 import           Data.ByteString                ( ByteString )
 import           Data.List.NonEmpty             ( NonEmpty(..) )
+import           Data.Maybe
 import           Data.Text.Encoding            as E
+import           Data.Foldable
 import           Data.Versions
 import           Data.Void
 import           URI.ByteString
@@ -278,13 +281,29 @@ instance FromJSONKey (Maybe VersionRange)  where
       Left  e -> fail $ "Failure in (Maybe VersionRange) (FromJSONKey)" <> MP.errorBundlePretty e
 
 
-
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
-deriveToJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''URLSource
-deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField, constructorTagModifier = \str' -> if str' == "StackSetupURL" then str' else maybe str' T.unpack . T.stripPrefix (T.pack "S") . T.pack $ str' } ''StackSetupURLSource
+
+instance FromJSON GHCupInfo where
+  parseJSON = withObject "GHCupInfo" $ \o -> do
+    toolRequirements' <- o .:? "toolRequirements"
+    globalTools'      <- o .:? "globalTools"
+    ghcupDownloads'   <- o .:  "ghcupDownloads"
+    pure (GHCupInfo (fromMaybe mempty toolRequirements') ghcupDownloads' (fromMaybe mempty globalTools'))
+
+deriveToJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
+
+instance ToJSON NewURLSource where
+  toJSON NewGHCupURL       = String "GHCupURL"
+  toJSON NewStackSetupURL  = String "StackSetupURL"
+  toJSON (NewGHCupInfo gi) = object [ "ghcup-info" .= gi ]
+  toJSON (NewSetupInfo si) = object [ "setup-info" .= si ]
+  toJSON (NewURI uri)      = toJSON uri
+
+instance ToJSON URLSource where
+  toJSON = toJSON . fromURLSource
+
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Modifier
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel, unwrapUnaryRecords = True } ''Port
@@ -297,13 +316,29 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downlo
 instance FromJSON URLSource where
   parseJSON v =
         parseGHCupURL v
+    <|> parseStackURL v
     <|> parseOwnSourceLegacy v
     <|> parseOwnSourceNew1 v
     <|> parseOwnSourceNew2 v
     <|> parseOwnSpec v
     <|> legacyParseAddSource v
     <|> newParseAddSource v
+    -- new since Stack SetupInfo
+    <|> parseOwnSpecNew v
+    <|> parseOwnSourceNew3 v
+    <|> newParseAddSource2 v
+    -- more lenient versions
+    <|> parseOwnSpecLenient v
+    <|> parseOwnSourceLenient v
+    <|> parseAddSourceLenient v
+    -- simplified list
+    <|> parseNewUrlSource v
+    <|> parseNewUrlSource' v
    where
+    convert'' :: Either GHCupInfo URI -> Either (Either GHCupInfo SetupInfo) URI
+    convert'' (Left gi)  = Left (Left gi)
+    convert'' (Right uri) = Right uri
+
     parseOwnSourceLegacy = withObject "URLSource" $ \o -> do
       r :: URI <- o .: "OwnSource"
       pure (OwnSource [Right r])
@@ -312,19 +347,84 @@ instance FromJSON URLSource where
       pure (OwnSource (fmap Right r))
     parseOwnSourceNew2 = withObject "URLSource" $ \o -> do
       r :: [Either GHCupInfo URI] <- o .: "OwnSource"
-      pure (OwnSource r)
+      pure (OwnSource (convert'' <$> r))
     parseOwnSpec = withObject "URLSource" $ \o -> do
       r :: GHCupInfo <- o .: "OwnSpec"
-      pure (OwnSpec r)
+      pure (OwnSpec $ Left r)
     parseGHCupURL = withObject "URLSource" $ \o -> do
       _ :: [Value] <- o .: "GHCupURL"
       pure GHCupURL
+    parseStackURL = withObject "URLSource" $ \o -> do
+      _ :: [Value] <- o .: "StackSetupURL"
+      pure StackSetupURL
     legacyParseAddSource = withObject "URLSource" $ \o -> do
       r :: Either GHCupInfo URI <- o .: "AddSource"
-      pure (AddSource [r])
+      pure (AddSource [convert'' r])
     newParseAddSource = withObject "URLSource" $ \o -> do
       r :: [Either GHCupInfo URI] <- o .: "AddSource"
+      pure (AddSource (convert'' <$> r))
+
+    -- new since Stack SetupInfo
+    parseOwnSpecNew = withObject "URLSource" $ \o -> do
+      r :: Either GHCupInfo SetupInfo <- o .: "OwnSpec"
+      pure (OwnSpec r)
+    parseOwnSourceNew3 = withObject "URLSource" $ \o -> do
+      r :: [Either (Either GHCupInfo SetupInfo) URI] <- o .: "OwnSource"
+      pure (OwnSource r)
+    newParseAddSource2 = withObject "URLSource" $ \o -> do
+      r :: [Either (Either GHCupInfo SetupInfo) URI] <- o .: "AddSource"
       pure (AddSource r)
+
+    -- more lenient versions
+    parseOwnSpecLenient = withObject "URLSource" $ \o -> do
+      spec :: Object <- o .: "OwnSpec"
+      OwnSpec <$> lenientInfoParser spec
+    parseOwnSourceLenient = withObject "URLSource" $ \o -> do
+      mown :: Array <- o .: "OwnSource"
+      OwnSource . toList <$> mapM lenientInfoUriParser mown
+    parseAddSourceLenient = withObject "URLSource" $ \o -> do
+      madd :: Array <- o .: "AddSource"
+      AddSource . toList <$> mapM lenientInfoUriParser madd
+
+    -- simplified
+    parseNewUrlSource = withArray "URLSource" $ \a -> do
+      SimpleList . toList <$> mapM parseJSON a
+    parseNewUrlSource' v' = SimpleList .(:[]) <$> parseJSON v'
+
+
+lenientInfoUriParser :: Value -> Parser (Either (Either GHCupInfo SetupInfo) URI)
+lenientInfoUriParser (Object o) = Left <$> lenientInfoParser o
+lenientInfoUriParser v@(String _) = Right <$> parseJSON v
+lenientInfoUriParser _ = fail "Unexpected json in lenientInfoUriParser"
+
+
+lenientInfoParser :: Object -> Parser (Either GHCupInfo SetupInfo)
+lenientInfoParser o = do
+  setup_info :: Maybe Object <- o .:? "setup-info"
+  case setup_info of
+    Nothing -> do
+      r <- parseJSON (Object o)
+      pure $ Left r
+    Just setup_info' -> do
+      r <- parseJSON (Object setup_info')
+      pure $ Right r
+
+instance FromJSON NewURLSource where
+  parseJSON v = uri v <|> url v <|> gi v <|> si v
+   where
+    uri = withText "NewURLSource" $ \t -> NewURI <$> parseJSON (String t)
+    url = withText "NewURLSource" $ \t -> case T.unpack t of
+                                            "GHCupURL" -> pure NewGHCupURL
+                                            "StackSetupURL" -> pure NewStackSetupURL
+                                            t' -> fail $ "Unexpected text value in NewURLSource: " <> t'
+    gi = withObject "NewURLSource" $ \o -> do
+       ginfo :: GHCupInfo <- o .: "ghcup-info"
+       pure $ NewGHCupInfo ginfo
+
+    si = withObject "NewURLSource" $ \o -> do
+       sinfo :: SetupInfo <- o .: "setup-info"
+       pure $ NewSetupInfo sinfo
+
 
 instance FromJSON KeyCombination where
   parseJSON v = proper v <|> simple v

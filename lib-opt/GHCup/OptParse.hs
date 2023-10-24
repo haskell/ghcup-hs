@@ -57,16 +57,13 @@ import           GHCup.Types
 import           Control.Monad.Fail             ( MonadFail )
 #endif
 import           Control.Monad.Reader
-import           Data.Bifunctor
 import           Data.Either
 import           Data.Functor
 import           Data.Maybe
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
-import           URI.ByteString
 
-import qualified Data.ByteString.UTF8          as UTF8
 
 
 data Options = Options
@@ -77,18 +74,19 @@ data Options = Options
   , optMetaCache   :: Maybe Integer
   , optMetaMode    :: Maybe MetaMode
   , optPlatform    :: Maybe PlatformRequest
-  , optUrlSource   :: Maybe URI
+  , optUrlSource   :: Maybe URLSource
   , optNoVerify    :: Maybe Bool
   , optKeepDirs    :: Maybe KeepDirs
   , optsDownloader :: Maybe Downloader
   , optNoNetwork   :: Maybe Bool
   , optGpg         :: Maybe GPGSetting
+  , optStackSetup  :: Maybe Bool
   -- commands
   , optCommand     :: Command
   }
 
 data Command
-  = Install (Either InstallCommand InstallGHCOptions)
+  = Install (Either InstallCommand InstallOptions)
   | Test TestCommand
   | InstallCabalLegacy InstallOptions
   | Set (Either SetCommand SetOptions)
@@ -134,13 +132,13 @@ opts =
       )
     <*> optional
           (option
-            (eitherReader parseUri)
+            (eitherReader parseUrlSource)
             (  short 's'
             <> long "url-source"
-            <> metavar "URL"
-            <> help "Alternative ghcup download info url"
+            <> metavar "URL_SOURCE"
+            <> help "Alternative ghcup download info"
             <> internal
-            <> completer fileUri
+            <> completer urlSourceCompleter
             )
           )
     <*> (fmap . fmap) not (invertableSwitch "verify" (Just 'n') True (help "Disable tarball checksum verification (default: enabled)"))
@@ -178,10 +176,9 @@ opts =
           "GPG verification (default: none)"
           <> completer (listCompleter ["strict", "lax", "none"])
           ))
+    <*> invertableSwitch "stack-setup" (Just 's') False (help "Use stack's setup info for discovering and installing GHC versions")
     <*> com
- where
-  parseUri s' =
-    first show $ parseURI strictURIParserOptions (UTF8.fromString s')
+
 
 
 com :: Parser Command

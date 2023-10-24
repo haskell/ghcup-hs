@@ -32,7 +32,6 @@ import           Options.Applicative     hiding ( style, ParseError )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
-import           URI.ByteString          hiding ( uriParser )
 
 import qualified Data.Text                     as T
 import qualified Data.ByteString.UTF8          as UTF8
@@ -51,7 +50,7 @@ data ConfigCommand
   = ShowConfig
   | SetConfig String (Maybe String)
   | InitConfig
-  | AddReleaseChannel Bool URI
+  | AddReleaseChannel Bool NewURLSource
   deriving (Eq, Show)
 
 
@@ -75,8 +74,8 @@ configP = subparser
   showP = info (pure ShowConfig) (progDesc "Show current config (default)")
   setP  = info argsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
   argsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
-  addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing") <*> argument (eitherReader uriParser) (metavar "URI" <> completer fileUri))
-    (progDesc "Add a release channel from a URI")
+  addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing") <*> argument (eitherReader parseNewUrlSource) (metavar "URL_SOURCE" <> completer urlSourceCompleter))
+    (progDesc "Add a release channel, e.g. from a URI")
 
 
 
@@ -135,9 +134,7 @@ updateSettings usl usr =
        gpgSetting' = uGPGSetting usl <|> uGPGSetting usr
        platformOverride' = uPlatformOverride usl <|> uPlatformOverride usr
        mirrors' = uMirrors usl <|> uMirrors usr
-       stackSetupSource' = uStackSetupSource usl <|> uStackSetupSource usr
-       stackSetup' = uStackSetup usl <|> uStackSetup usr
-   in UserSettings cache' metaCache' metaMode' noVerify' verbose' keepDirs' downloader' (updateKeyBindings (uKeyBindings usl) (uKeyBindings usr)) urlSource' noNetwork' gpgSetting' platformOverride' mirrors' stackSetupSource' stackSetup'
+   in UserSettings cache' metaCache' metaMode' noVerify' verbose' keepDirs' downloader' (updateKeyBindings (uKeyBindings usl) (uKeyBindings usr)) urlSource' noNetwork' gpgSetting' platformOverride' mirrors'
  where
   updateKeyBindings :: Maybe UserKeyBindings -> Maybe UserKeyBindings -> Maybe UserKeyBindings
   updateKeyBindings Nothing Nothing = Nothing
@@ -209,27 +206,15 @@ config configCommand settings userConf keybindings runLogger = case configComman
         pure $ ExitFailure 65
       VLeft _ -> pure $ ExitFailure 65
 
-  AddReleaseChannel force uri -> do
+  AddReleaseChannel force new -> do
     r <- runE @'[DuplicateReleaseChannel] $ do
-      case urlSource settings of
-        AddSource xs -> do
-          case checkDuplicate xs (Right uri) of
-            Duplicate
-              | not force -> throwE (DuplicateReleaseChannel uri)
-            DuplicateLast -> pure ()
-            _ -> lift $ doConfig (defaultUserSettings { uUrlSource = Just $ AddSource (appendUnique xs (Right uri)) })
-        GHCupURL -> do
-          lift $ doConfig (defaultUserSettings { uUrlSource = Just $ AddSource [Right uri] })
-          pure ()
-        OwnSource xs -> do
-          case checkDuplicate xs (Right uri) of
-            Duplicate
-              | not force -> throwE (DuplicateReleaseChannel uri)
-            DuplicateLast -> pure ()
-            _ -> lift $ doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource (appendUnique xs (Right uri)) })
-        OwnSpec spec -> do
-          lift $ doConfig (defaultUserSettings { uUrlSource = Just $ OwnSource [Left spec, Right uri] })
-          pure ()
+      let oldSources = fromURLSource (urlSource settings)
+      let merged = oldSources ++ [new]
+      case checkDuplicate oldSources new of
+        Duplicate
+          | not force -> throwE (DuplicateReleaseChannel new)
+        DuplicateLast -> pure ()
+        _ -> lift $ doConfig (defaultUserSettings { uUrlSource = Just $ SimpleList merged })
     case r of
       VRight _ -> do
         pure ExitSuccess
@@ -243,15 +228,6 @@ config configCommand settings userConf keybindings runLogger = case configComman
     | last xs == a = DuplicateLast
     | a `elem` xs  = Duplicate
     | otherwise    = NoDuplicate
-
-  -- appends the element to the end of the list, but also removes it from the existing list
-  appendUnique :: Eq a => [a] -> a -> [a]
-  appendUnique xs' e = go xs'
-   where
-    go [] = [e]
-    go (x:xs)
-      | x == e    =     go xs -- skip
-      | otherwise = x : go xs
 
   doConfig :: MonadIO m => UserSettings -> m ()
   doConfig usersettings = do
