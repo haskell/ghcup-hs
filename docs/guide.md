@@ -281,8 +281,13 @@ url-source:
             sha256: 216b76b7c6383e6ad9ba82533f323f8550e52893a8b9fa33c7b9dc4201ac766a
 ```
 
+#### Caveats
+
 The main caveat with using this method is that there's no guarantee that GHCup will pick a compatible HLS bindist
 when you try to install HLS.
+
+Another potential usability issue is that the `latest` and `recommended` shorthands won't work anymore, since
+Stack metadata doesn't have a concept of those and we don't try to be smart when combining the metadatas.
 
 ### Windows
 
