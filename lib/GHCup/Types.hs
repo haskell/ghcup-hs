@@ -201,7 +201,7 @@ instance Pretty Tag where
   pPrint (Base       pvp'') = text ("base-" ++ T.unpack (prettyPVP pvp''))
   pPrint (UnknownTag t    ) = text t
   pPrint LatestPrerelease   = text "latest-prerelease"
-  pPrint LatestNightly   = text "latest-prerelease"
+  pPrint LatestNightly      = text "latest-prerelease"
   pPrint Old                = mempty
 
 data Architecture = A_64
@@ -342,18 +342,35 @@ instance Pretty TarDir where
 
 -- | Where to fetch GHCupDownloads from.
 data URLSource = GHCupURL
-               | OwnSource [Either GHCupInfo URI] -- ^ complete source list
-               | OwnSpec GHCupInfo
-               | AddSource [Either GHCupInfo URI] -- ^ merge with GHCupURL
-               deriving (GHC.Generic, Show)
+               | StackSetupURL
+               | OwnSource     [Either (Either GHCupInfo SetupInfo) URI] -- ^ complete source list
+               | OwnSpec               (Either GHCupInfo SetupInfo)
+               | AddSource     [Either (Either GHCupInfo SetupInfo) URI] -- ^ merge with GHCupURL
+               | SimpleList    [NewURLSource]
+               deriving (Eq, GHC.Generic, Show)
 
-data StackSetupURLSource = StackSetupURL
-                         | SOwnSource [Either SetupInfo URI] -- ^ complete source list
-                         | SOwnSpec SetupInfo
-                         | SAddSource [Either SetupInfo URI] -- ^ merge with GHCupURL
-  deriving (Show, Eq, GHC.Generic)
+data NewURLSource = NewGHCupURL
+                  | NewStackSetupURL
+                  | NewGHCupInfo     GHCupInfo
+                  | NewSetupInfo     SetupInfo
+                  | NewURI           URI
+               deriving (Eq, GHC.Generic, Show)
 
-instance NFData StackSetupURLSource
+instance NFData NewURLSource
+
+fromURLSource :: URLSource -> [NewURLSource]
+fromURLSource GHCupURL              = [NewGHCupURL]
+fromURLSource StackSetupURL         = [NewStackSetupURL]
+fromURLSource (OwnSource arr)       = convert' <$> arr
+fromURLSource (AddSource arr)       = NewGHCupURL:(convert' <$> arr)
+fromURLSource (SimpleList arr)      = arr
+fromURLSource (OwnSpec (Left gi))   = [NewGHCupInfo gi]
+fromURLSource (OwnSpec (Right si)) = [NewSetupInfo si]
+
+convert' :: Either (Either GHCupInfo SetupInfo) URI -> NewURLSource
+convert' (Left (Left gi))  = NewGHCupInfo gi
+convert' (Left (Right si)) = NewSetupInfo si
+convert' (Right uri)       = NewURI uri
 
 instance NFData URLSource
 instance NFData (URIRef Absolute) where
@@ -380,13 +397,11 @@ data UserSettings = UserSettings
   , uGPGSetting  :: Maybe GPGSetting
   , uPlatformOverride :: Maybe PlatformRequest
   , uMirrors     :: Maybe DownloadMirrors
-  , uStackSetupSource  :: Maybe StackSetupURLSource
-  , uStackSetup        :: Maybe Bool
   }
   deriving (Show, GHC.Generic)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
@@ -404,8 +419,6 @@ fromSettings Settings{..} Nothing =
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
-    , uStackSetupSource = Just stackSetupSource
-    , uStackSetup = Just stackSetup
   }
 fromSettings Settings{..} (Just KeyBindings{..}) =
   let ukb = UserKeyBindings
@@ -433,8 +446,6 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
-    , uStackSetupSource = Just stackSetupSource
-    , uStackSetup = Just stackSetup
   }
 
 data UserKeyBindings = UserKeyBindings
@@ -523,8 +534,6 @@ data Settings = Settings
   , noColor          :: Bool -- this also exists in LoggerConfig
   , platformOverride :: Maybe PlatformRequest
   , mirrors          :: DownloadMirrors
-  , stackSetupSource :: StackSetupURLSource
-  , stackSetup       :: Bool
   }
   deriving (Show, GHC.Generic)
 
@@ -532,7 +541,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty) StackSetupURL False
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty)
 
 instance NFData Settings
 

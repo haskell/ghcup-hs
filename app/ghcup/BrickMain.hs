@@ -11,7 +11,7 @@ module BrickMain where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
-import           GHCup.Types.Optics ( getDirs )
+import           GHCup.Types.Optics ( getDirs, getPlatformReq )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
 import           GHCup.OptParse.Common (logGHCPostRm)
@@ -660,8 +660,10 @@ getGHCupInfo = do
 
   r <-
     flip runReaderT settings
-    . runE @'[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError]
-    $ liftE getDownloadsF
+    . runE @'[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError]
+    $ do
+      pfreq <- lift getPlatformReq
+      liftE $ getDownloadsF pfreq
 
   case r of
     VRight a -> pure $ Right a

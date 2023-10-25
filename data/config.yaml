@@ -51,53 +51,45 @@ meta-cache: 300 # in seconds
 #   2. Strict: fail hard
 meta-mode: Lax # Strict | Lax
 
-# Where to get GHC/cabal/hls download info/versions from. For more detailed explanation
-# check the 'URLSource' type in the code.
+# Where to get GHC/cabal/hls download info/versions from. This is a list that performs
+# union over tool versions, preferring the later entries.
 url-source:
   ## Use the internal download uri, this is the default
-  GHCupURL: []
+  - GHCupURL
 
-  ## Example 1: Read download info from this location instead
-  ## Accepts file/http/https scheme
-  ## Can also be an array of URLs or an array of 'Either GHCupInfo URL', in
-  ## which case they are merged right-biased (overwriting duplicate versions).
-  # OwnSource: "file:///home/jule/git/ghcup-hs/ghcup-0.0.3.yaml"
+  ## Prefer stack supplied metadata (will still use GHCup metadata for versions not existing in stack metadata)
+  # - StackSetupURL
 
-  ## Example 2: Add custom tarballs to the default downloads, overwriting duplicate versions.
-  ## Can also be an array of 'Either GHCupInfo URL', also see Example 3.
-  # AddSource:
-    # Left:
-      # globalTools: {}
-      # toolRequirements: {}
-      # ghcupDownloads:
-        # GHC:
-          # 9.10.2:
-            # viTags: []
-            # viArch:
-              # A_64:
-                # Linux_UnknownLinux:
-                  # unknown_versioning:
-                    # dlUri: https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-x86_64-deb8-linux.tar.bz2
-                    # dlSubdir: ghc-7.10.3
-                    # dlHash: 01cfbad8dff1e8b34a5fdca8caeaf843b56e36af919e29cd68870d2588563db5
+  ## Add pre-release channel
+  # - https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml
+  ## Add nightly channel
+  # - https://ghc.gitlab.haskell.org/ghcup-metadata/ghcup-nightlies-0.0.7.yaml
+  ## Add cross compiler channel
+  # - https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml
 
-  ## Example 3: Add multiple custom download files to the default downloads via right-biased merge (overwriting duplicate
-  ## versions).
-  # AddSource:
-    # - Right: "file:///home/jule/git/ghcup-hs/ghcup-prereleases.yaml"
-    # - Right: "file:///home/jule/git/ghcup-hs/ghcup-custom.yaml"
+  ## Use dwarf bindist for 9.4.7 for ghcup metadata
+  # - ghcup-info:
+  #     ghcupDownloads:
+  #       GHC:
+  #         9.4.7:
+  #           viTags: []
+  #           viArch:
+  #             A_64:
+  #               Linux_UnknownLinux:
+  #                 unknown_versioning:
+  #                   dlUri: https://downloads.haskell.org/ghc/9.4.7/ghc-9.4.7-x86_64-deb10-linux-dwarf.tar.xz
+  #                   dlSubdir:
+  #                     RegexDir: "ghc-.*"
+  #                   dlHash: b261b3438ba455e3cf757f9c8dc3a06fdc061ea8ec287a65b7809e25fe18bad4
 
-  # For stack's setup-info, this works similar, e.g.:
-  # stack-setup-source:
-  #   AddSource:
-  #   - Left:
-  #       ghc:
-  #         linux64-tinfo6:
-  #           9.4.7:
-  #             url: "https://downloads.haskell.org/~ghc/9.4.7/ghc-9.4.7-x86_64-fedora27-linux.tar.xz"
-  #             content-length: 179117892
-  #             sha256: 216b76b7c6383e6ad9ba82533f323f8550e52893a8b9fa33c7b9dc4201ac766a
-
+  ## for stack metadata and the linux64-tinfo6 bindists, use static alpine for 9.8.1
+  # - setup-info:
+  #     ghc:
+  #       linux64-tinfo6:
+  #         9.8.1:
+  #           url: "https://downloads.haskell.org/~ghc/9.8.1/ghc-9.8.1-x86_64-alpine3_12-linux-static.tar.xz"
+  #           content-length: 229037440
+  #           sha256: b48f3d3a508d0c140d1c801e04afc65e80c0d25e7e939a8a41edb387b26b81b3
 
 # This is a way to override platform detection, e.g. when you're running
 # a Ubuntu derivate based on 18.04, you could do:

@@ -31,10 +31,10 @@ import           GHCup.Download.Utils
 import           GHCup.Errors
 import           GHCup.Types
 import qualified GHCup.Types.Stack                as Stack
-import           GHCup.Types.Stack (downloadInfoUrl, downloadInfoSha256)
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
+import           GHCup.Platform
 import           GHCup.Prelude
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger.Internal
@@ -56,6 +56,7 @@ import           Data.ByteString                ( ByteString )
 import           Data.CaseInsensitive           ( mk )
 #endif
 import           Data.Maybe
+import           Data.Either
 import           Data.List
 import           Data.Time.Clock
 import           Data.Time.Clock.POSIX
@@ -113,24 +114,71 @@ getDownloadsF :: ( FromJSONKey Tool
                  , MonadFail m
                  , MonadMask m
                  )
-              => Excepts
-                   '[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError]
+              => PlatformRequest
+              -> Excepts
+                   '[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError]
                    m
                    GHCupInfo
-getDownloadsF = do
+getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   Settings { urlSource } <- lift getSettings
-  case urlSource of
-    GHCupURL -> liftE $ getBase ghcupURL
-    (OwnSource exts) -> do
-      ext  <- liftE $ mapM (either pure getBase) exts
-      mergeGhcupInfo ext
-    (OwnSpec av) -> pure av
-    (AddSource exts) -> do
-      base <- liftE $ getBase ghcupURL
-      ext  <- liftE $ mapM (either pure getBase) exts
-      mergeGhcupInfo (base:ext)
-
+  let newUrlSources = fromURLSource urlSource
+  infos <- liftE $ mapM dl' newUrlSources
+  keys <- if any isRight infos
+          then liftE . reThrowAll @_ @_ @'[StackPlatformDetectError] StackPlatformDetectError $ getStackPlatformKey pfreq
+          else pure []
+  ghcupInfos <- fmap catMaybes $ forM infos $ \case
+    Left gi  -> pure (Just gi)
+    Right si -> pure $ fromStackSetupInfo si keys
+  mergeGhcupInfo ghcupInfos
  where
+
+  dl' :: ( FromJSONKey Tool
+         , FromJSONKey Version
+         , FromJSON VersionInfo
+         , MonadReader env m
+         , HasSettings env
+         , HasDirs env
+         , MonadIO m
+         , MonadCatch m
+         , HasLog env
+         , MonadThrow m
+         , MonadFail m
+         , MonadMask m
+         )
+      => NewURLSource
+      -> Excepts
+           '[DownloadFailed, GPGError, DigestError, ContentLengthError, JSONError, FileDoesNotExistError]
+           m (Either GHCupInfo Stack.SetupInfo)
+  dl' NewGHCupURL       = fmap Left $ liftE $ getBase @GHCupInfo ghcupURL
+  dl' NewStackSetupURL  = fmap Right $ liftE $ getBase @Stack.SetupInfo stackSetupURL
+  dl' (NewGHCupInfo gi) = pure (Left gi)
+  dl' (NewSetupInfo si) = pure (Right si)
+  dl' (NewURI uri)      = catchE @JSONError (\(JSONDecodeError _) -> Right <$> getBase @Stack.SetupInfo uri)
+                            $ fmap Left $ getBase @GHCupInfo uri
+
+  fromStackSetupInfo :: MonadThrow m
+                     => Stack.SetupInfo
+                     -> [String]
+                     -> m GHCupInfo
+  fromStackSetupInfo (Stack.siGHCs -> ghcDli) keys = do
+    let ghcVersionsPerKey = (`M.lookup` ghcDli) <$> (T.pack <$> keys)
+        ghcVersions = fromMaybe mempty . listToMaybe . catMaybes $ ghcVersionsPerKey
+    (ghcupInfo' :: M.Map GHCTargetVersion DownloadInfo) <-
+      M.mapKeys mkTVer <$> M.traverseMaybeWithKey (\_ a -> pure $ fromStackDownloadInfo a) ghcVersions
+    let ghcupDownloads' = M.singleton GHC (M.map fromDownloadInfo ghcupInfo')
+    pure (GHCupInfo mempty ghcupDownloads' mempty)
+   where
+    fromDownloadInfo :: DownloadInfo -> VersionInfo
+    fromDownloadInfo dli = let aspec = M.singleton arch (M.singleton plat (M.singleton Nothing dli))
+                           in VersionInfo [] Nothing Nothing Nothing Nothing aspec Nothing Nothing Nothing
+
+    fromStackDownloadInfo :: MonadThrow m => Stack.GHCDownloadInfo -> m DownloadInfo
+    fromStackDownloadInfo (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do
+      url <- either (\e -> throwM $ ParseError (show e)) pure $ parseURI strictURIParserOptions . E.encodeUtf8 $ downloadInfoUrl
+      sha256 <- maybe (throwM $ DigestMissing url) (pure . E.decodeUtf8) downloadInfoSha256
+      pure $ DownloadInfo url (Just $ RegexDir "ghc-.*") sha256 Nothing Nothing
+
+
   mergeGhcupInfo :: MonadFail m
                  => [GHCupInfo]
                  -> m GHCupInfo
@@ -140,6 +188,7 @@ getDownloadsF = do
         newGlobalTools = M.unionsWith (\_ a2 -> a2              ) (_globalTools      <$> xs)
         newToolReqs    = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_toolRequirements <$> xs)
     in pure $ GHCupInfo newToolReqs newDownloads newGlobalTools
+
 
 
 yamlFromCache :: (MonadReader env m, HasDirs env) => URI -> m FilePath
@@ -152,7 +201,7 @@ etagsFile :: FilePath -> FilePath
 etagsFile = (<.> "etags")
 
 
-getBase :: ( MonadReader env m
+getBase :: forall j m env . ( MonadReader env m
            , HasDirs env
            , HasSettings env
            , MonadFail m
@@ -326,106 +375,6 @@ getDownloadInfo' t v = do
       Linux Alpine -> with_distro <|> without_distro_ver
       _            -> with_distro <|> without_distro_ver <|> without_distro
     )
-
-getStackDownloadInfo :: ( MonadReader env m
-                        , HasDirs env
-                        , HasGHCupInfo env
-                        , HasLog env
-                        , HasPlatformReq env
-                        , HasSettings env
-                        , MonadCatch m
-                        , MonadFail m
-                        , MonadIO m
-                        , MonadMask m
-                        , MonadThrow m
-                        )
-                     => StackSetupURLSource
-                     -> [String]
-                     -> Tool
-                     -> GHCTargetVersion
-                     -- ^ tool version
-                     -> Excepts
-                          '[NoDownload, DownloadFailed]
-                          m
-                          DownloadInfo
-getStackDownloadInfo stackSetupSource keys@(_:_) GHC tv@(GHCTargetVersion Nothing v) =
-  case stackSetupSource of
-    StackSetupURL -> do
-      (dli :: Stack.SetupInfo) <- liftE $ reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getBase stackSetupURL
-      sDli <- liftE $ stackDownloadInfo dli
-      lift $ fromStackDownloadInfo sDli
-    (SOwnSource exts) -> do
-      (dlis :: [Stack.SetupInfo]) <- liftE $ reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ mapM (either pure getBase) exts
-      dli <- lift $ mergeSetupInfo dlis
-      sDli <- liftE $ stackDownloadInfo dli
-      lift $ fromStackDownloadInfo sDli
-    (SOwnSpec si) -> do
-      sDli <- liftE $ stackDownloadInfo si
-      lift $ fromStackDownloadInfo sDli
-    (SAddSource exts) -> do
-      base :: Stack.SetupInfo     <- liftE $ reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ getBase stackSetupURL
-      (dlis :: [Stack.SetupInfo]) <- liftE $ reThrowAll @_ @_ @'[DownloadFailed] DownloadFailed $ mapM (either pure getBase) exts
-      dli <- lift $ mergeSetupInfo (base:dlis)
-      sDli <- liftE $ stackDownloadInfo dli
-      lift $ fromStackDownloadInfo sDli
-
- where
-  stackDownloadInfo :: MonadIO m => Stack.SetupInfo -> Excepts '[NoDownload] m Stack.DownloadInfo
-  stackDownloadInfo dli@Stack.SetupInfo{} = do
-    let siGHCs = Stack.siGHCs dli
-        ghcVersionsPerKey = (`M.lookup` siGHCs) <$> (T.pack <$> keys)
-    ghcVersions <- (listToMaybe . catMaybes $ ghcVersionsPerKey) ?? NoDownload tv GHC Nothing
-    (Stack.gdiDownloadInfo <$> M.lookup v ghcVersions) ?? NoDownload tv GHC Nothing
-
-  mergeSetupInfo :: MonadFail m
-                 => [Stack.SetupInfo]
-                 -> m Stack.SetupInfo
-  mergeSetupInfo [] = fail "mergeSetupInfo: internal error: need at least one SetupInfo"
-  mergeSetupInfo xs@(Stack.SetupInfo{}: _) =
-    let newSevenzExe   = Stack.siSevenzExe $ last xs
-        newSevenzDll   = Stack.siSevenzDll $ last xs
-        newMsys2       = M.unionsWith (\_ a2 -> a2              ) (Stack.siMsys2 <$> xs)
-        newGHCs        = M.unionsWith (M.unionWith (\_ b2 -> b2)) (Stack.siGHCs  <$> xs)
-        newStack       = M.unionsWith (M.unionWith (\_ b2 -> b2)) (Stack.siStack <$> xs)
-    in pure $ Stack.SetupInfo newSevenzExe newSevenzDll newMsys2 newGHCs newStack
-
-  fromStackDownloadInfo :: MonadThrow m => Stack.DownloadInfo -> m DownloadInfo
-  fromStackDownloadInfo Stack.DownloadInfo{..} = do
-    url <- either (\e -> throwM $ ParseError (show e)) pure $ parseURI strictURIParserOptions . E.encodeUtf8 $ downloadInfoUrl
-    sha256 <- maybe (throwM $ DigestMissing url) (pure . E.decodeUtf8) downloadInfoSha256
-    pure $ DownloadInfo url (Just $ RegexDir "ghc-.*") sha256 Nothing Nothing
-getStackDownloadInfo _ _ t v = throwE $ NoDownload v t Nothing
-
-{--
-data SetupInfo = SetupInfo
-  { siSevenzExe :: Maybe DownloadInfo
-  , siSevenzDll :: Maybe DownloadInfo
-  , siMsys2     :: Map Text VersionedDownloadInfo
-  , siGHCs      :: Map Text (Map Version GHCDownloadInfo)
-  , siStack     :: Map Text (Map Version DownloadInfo)
-
-data VersionedDownloadInfo = VersionedDownloadInfo
-  { vdiVersion      :: Version
-  , vdiDownloadInfo :: DownloadInfo
-  }
-  }
-
-data DownloadInfo = DownloadInfo
-  { downloadInfoUrl           :: Text
-    -- ^ URL or absolute file path
-  , downloadInfoContentLength :: Maybe Int
-  , downloadInfoSha1          :: Maybe ByteString
-  , downloadInfoSha256        :: Maybe ByteString
-  }
-
-data GHCDownloadInfo = GHCDownloadInfo
-  { gdiConfigureOpts :: [Text]
-  , gdiConfigureEnv  :: Map Text Text
-  , gdiDownloadInfo  :: DownloadInfo
-  }
-
-
-   --}
 
 
 

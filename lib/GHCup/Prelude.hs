@@ -43,6 +43,10 @@ import           Control.Monad.Reader
 import           Haskus.Utils.Variant.Excepts
 import           Text.PrettyPrint.HughesPJClass ( Pretty )
 import qualified Data.Text                     as T
+import System.Environment (getEnvironment)
+import qualified Data.Map.Strict               as Map
+import System.FilePath
+import Data.List (intercalate)
 
 
 
@@ -88,3 +92,25 @@ throwSomeE :: forall es' es a m. (Monad m, LiftVariant es' es) => V es' -> Excep
 {-# INLINABLE throwSomeE #-}
 throwSomeE = Excepts . pure . VLeft . liftVariant
 #endif
+
+addToPath :: [FilePath]
+          -> Bool         -- ^ if False will prepend
+          -> IO [(String, String)]
+addToPath paths append = do
+ cEnv <- getEnvironment
+ return $ addToPath' cEnv paths append
+
+addToPath' :: [(String, String)]
+          -> [FilePath]
+          -> Bool         -- ^ if False will prepend
+          -> [(String, String)]
+addToPath' cEnv' newPaths append =
+  let cEnv           = Map.fromList cEnv'
+      paths          = ["PATH", "Path"]
+      curPaths       = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
+      {- HLINT ignore "Redundant bracket" -}
+      newPath        = intercalate [searchPathSeparator] (if append then (curPaths ++ newPaths) else (newPaths ++ curPaths))
+      envWithoutPath = foldr (\x y -> Map.delete x y) cEnv paths
+      pathVar        = if isWindows then "Path" else "PATH"
+      envWithNewPath = Map.toList $ Map.insert pathVar newPath envWithoutPath
+  in envWithNewPath

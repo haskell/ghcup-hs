@@ -50,7 +50,7 @@ import qualified Data.Text                     as T
     ----------------
 
 
-data InstallCommand = InstallGHC InstallGHCOptions
+data InstallCommand = InstallGHC InstallOptions
                     | InstallCabal InstallOptions
                     | InstallHLS InstallOptions
                     | InstallStack InstallOptions
@@ -62,16 +62,6 @@ data InstallCommand = InstallGHC InstallGHCOptions
     ---------------
     --[ Options ]--
     ---------------
-
-data InstallGHCOptions = InstallGHCOptions
-  { instVer       :: Maybe ToolVersion
-  , instBindist   :: Maybe URI
-  , instSet       :: Bool
-  , isolateDir    :: Maybe FilePath
-  , forceInstall  :: Bool
-  , addConfArgs   :: [T.Text]
-  , useStackSetup :: Maybe Bool
-  } deriving (Eq, Show)
 
 data InstallOptions = InstallOptions
   { instVer      :: Maybe ToolVersion
@@ -102,14 +92,14 @@ installCabalFooter = [s|Discussion:
     --[ Parsers ]--
     ---------------
 
-installParser :: Parser (Either InstallCommand InstallGHCOptions)
+installParser :: Parser (Either InstallCommand InstallOptions)
 installParser =
   (Left <$> subparser
       (  command
           "ghc"
           (   InstallGHC
           <$> info
-                (installGHCOpts <**> helper)
+                (installOpts (Just GHC) <**> helper)
                 (  progDesc "Install GHC"
                 <> footerDoc (Just $ text installGHCFooter)
                 )
@@ -143,7 +133,7 @@ installParser =
            )
       )
     )
-    <|> (Right <$> installGHCOpts)
+    <|> (Right <$> installOpts (Just GHC))
  where
   installHLSFooter :: String
   installHLSFooter = [s|Discussion:
@@ -218,12 +208,6 @@ installOpts tool =
     Nothing  -> False
     Just GHC -> False
     Just _   -> True
-
-installGHCOpts :: Parser InstallGHCOptions
-installGHCOpts =
-  (\InstallOptions{..} b -> let useStackSetup = b in InstallGHCOptions{..})
-    <$> installOpts (Just GHC)
-    <*> invertableSwitch "stack-setup" (Just 's') False (help "Set as active version after install")
 
 
 
@@ -328,7 +312,7 @@ runInstGHC appstate' =
     -------------------
 
 
-install :: Either InstallCommand InstallGHCOptions -> Settings -> IO AppState -> (ReaderT LeanAppState IO () -> IO ()) -> IO ExitCode
+install :: Either InstallCommand InstallOptions -> Settings -> IO AppState -> (ReaderT LeanAppState IO () -> IO ()) -> IO ExitCode
 install installCommand settings getAppState' runLogger = case installCommand of
   (Right iGHCopts) -> do
     runLogger (logWarn "This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.")
@@ -338,11 +322,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
   (Left (InstallHLS iopts))    -> installHLS iopts
   (Left (InstallStack iopts))  -> installStack iopts
  where
-  installGHC :: InstallGHCOptions -> IO ExitCode
-  installGHC InstallGHCOptions{..} = do
+  installGHC :: InstallOptions -> IO ExitCode
+  installGHC InstallOptions{..} = do
     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
     (case instBindist of
-       Nothing -> runInstGHC s'{ settings = maybe settings (\b -> settings {stackSetup = b}) useStackSetup }  $ do
+       Nothing -> runInstGHC s' $ do
          (v, vi) <- liftE $ fromVersion instVer GHC
          liftE $ runBothE' (installGHCBin
                      v

@@ -89,9 +89,9 @@ import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 import qualified Data.List.NonEmpty            as NE
 import qualified Streamly.Prelude              as S
+
 import Control.DeepSeq (force)
 import GHC.IO (evaluate)
-import System.Environment (getEnvironment)
 import Data.Time (Day(..), diffDays, addDays)
 
 
@@ -1318,29 +1318,6 @@ warnAboutHlsCompatibility = do
 
     _ -> return ()
 
-
-
-addToPath :: [FilePath]
-          -> Bool         -- ^ if False will prepend
-          -> IO [(String, String)]
-addToPath paths append = do
- cEnv <- getEnvironment
- return $ addToPath' cEnv paths append
-
-addToPath' :: [(String, String)]
-          -> [FilePath]
-          -> Bool         -- ^ if False will prepend
-          -> [(String, String)]
-addToPath' cEnv' newPaths append =
-  let cEnv           = Map.fromList cEnv'
-      paths          = ["PATH", "Path"]
-      curPaths       = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
-      {- HLINT ignore "Redundant bracket" -}
-      newPath        = intercalate [searchPathSeparator] (if append then (curPaths ++ newPaths) else (newPaths ++ curPaths))
-      envWithoutPath = foldr (\x y -> Map.delete x y) cEnv paths
-      pathVar        = if isWindows then "Path" else "PATH"
-      envWithNewPath = Map.toList $ Map.insert pathVar newPath envWithoutPath
-  in envWithNewPath
 
 
     -----------

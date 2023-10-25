@@ -42,7 +42,6 @@ import           Data.Aeson.Encode.Pretty       ( encodePretty )
 import           Data.Either
 import           Data.Functor
 import           Data.Maybe
-import           Data.Versions
 import           GHC.IO.Encoding
 import           Haskus.Utils.Variant.Excepts
 import           Language.Haskell.TH
@@ -85,13 +84,11 @@ toSettings options = do
          keepDirs    = fromMaybe (fromMaybe (Types.keepDirs defaultSettings) uKeepDirs) optKeepDirs
          downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
-         urlSource   = maybe (fromMaybe (Types.urlSource defaultSettings) uUrlSource) (OwnSource . (:[]) . Right) optUrlSource
+         urlSource   = fromMaybe (fromMaybe (Types.urlSource defaultSettings) uUrlSource) optUrlSource
          noNetwork   = fromMaybe (fromMaybe (Types.noNetwork defaultSettings) uNoNetwork) optNoNetwork
          gpgSetting  = fromMaybe (fromMaybe (Types.gpgSetting defaultSettings) uGPGSetting) optGpg
          platformOverride = optPlatform <|> (uPlatformOverride <|> Types.platformOverride defaultSettings)
          mirrors  = fromMaybe (Types.mirrors defaultSettings) uMirrors
-         stackSetupSource  = fromMaybe (Types.stackSetupSource defaultSettings) uStackSetupSource
-         stackSetup = fromMaybe (Types.stackSetup defaultSettings) uStackSetup
      in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
@@ -213,10 +210,9 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                                             exitWith (ExitFailure 2)
 
                 ghcupInfo <-
-                  ( flip runReaderT leanAppstate
-                    . runE @'[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed, FileDoesNotExistError]
-                    $ liftE getDownloadsF
-                    )
+                  ( flip runReaderT leanAppstate . runE @'[ContentLengthError, DigestError, DistroNotFound, DownloadFailed, FileDoesNotExistError, GPGError, JSONError, NoCompatibleArch, NoCompatiblePlatform, NoDownload, GHCup.Errors.ParseError, ProcessError, UnsupportedSetupCombo, StackPlatformDetectError] $ do
+                     liftE $ getDownloadsF pfreq
+                  )
                     >>= \case
                           VRight r -> pure r
                           VLeft  e -> do
@@ -341,8 +337,8 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                           , NextVerNotFound
                           , NoToolVersionSet
                           ] m Bool
-  alreadyInstalling (Install (Right InstallGHCOptions{..}))                 (GHC, ver)   = cmp' GHC instVer ver
-  alreadyInstalling (Install (Left (InstallGHC InstallGHCOptions{..})))     (GHC, ver)   = cmp' GHC instVer ver
+  alreadyInstalling (Install (Right InstallOptions{..}))                 (GHC, ver)   = cmp' GHC instVer ver
+  alreadyInstalling (Install (Left (InstallGHC InstallOptions{..})))     (GHC, ver)   = cmp' GHC instVer ver
   alreadyInstalling (Install (Left (InstallCabal InstallOptions{..})))   (Cabal, ver)    = cmp' Cabal instVer ver
   alreadyInstalling (Install (Left (InstallHLS InstallOptions{..})))     (HLS, ver)      = cmp' HLS instVer ver
   alreadyInstalling (Install (Left (InstallStack InstallOptions{..})))   (Stack, ver)    = cmp' Stack instVer ver
@@ -380,3 +376,4 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
   cmp' tool instVer ver = do
     (v, _) <- liftE $ fromVersion instVer tool
     pure (v == ver)
+

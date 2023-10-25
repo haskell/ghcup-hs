@@ -64,6 +64,8 @@ import           URI.ByteString
 import qualified Data.ByteString.UTF8          as UTF8
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
+import qualified Data.Text.Lazy.Encoding       as LE
+import qualified Data.Text.Lazy                as LT
 import qualified Text.Megaparsec               as MP
 import qualified System.FilePath.Posix         as FP
 import GHCup.Version
@@ -322,6 +324,15 @@ toolCompleter = listCompleter ["ghc", "cabal", "hls", "stack"]
 gitFileUri :: [String] -> Completer
 gitFileUri add = mkCompleter $ fileUri' (["git://"] <> add)
 
+urlSourceCompleter :: Completer
+urlSourceCompleter = mkCompleter $ urlSourceCompleter' []
+
+urlSourceCompleter' :: [String] -> String -> IO [String]
+urlSourceCompleter' add str' = do
+  let static = ["GHCupURL", "StackSetupURL"]
+  file <- fileUri' add str'
+  pure $ static ++ file
+
 fileUri :: Completer
 fileUri = mkCompleter $ fileUri' []
 
@@ -450,13 +461,15 @@ tagCompleter tool add = listIOCompleter $ do
         defaultKeyBindings
         loggerConfig
 
-  mGhcUpInfo <- flip runReaderT appState . runE $ getDownloadsF
-  case mGhcUpInfo of
-    VRight ghcupInfo -> do
-      let allTags = filter (/= Old)
-            $ _viTags =<< M.elems (availableToolVersions (_ghcupDownloads ghcupInfo) tool)
-      pure $ nub $ (add ++) $ fmap tagToString allTags
-    VLeft _ -> pure  (nub $ ["recommended", "latest", "latest-prerelease"] ++ add)
+  mpFreq <- flip runReaderT appState . runE $ platformRequest
+  forFold mpFreq $ \pfreq -> do
+    mGhcUpInfo <- flip runReaderT appState . runE $ getDownloadsF pfreq
+    case mGhcUpInfo of
+      VRight ghcupInfo -> do
+        let allTags = filter (/= Old)
+              $ _viTags =<< M.elems (availableToolVersions (_ghcupDownloads ghcupInfo) tool)
+        pure $ nub $ (add ++) $ fmap tagToString allTags
+      VLeft _ -> pure  (nub $ ["recommended", "latest", "latest-prerelease"] ++ add)
 
 versionCompleter :: [ListCriteria] -> Tool -> Completer
 versionCompleter criteria tool = versionCompleter' criteria tool (const True)
@@ -477,8 +490,8 @@ versionCompleter' criteria tool filter' = listIOCompleter $ do
                    defaultKeyBindings
                    loggerConfig
   mpFreq <- flip runReaderT leanAppState . runE $ platformRequest
-  mGhcUpInfo <- flip runReaderT leanAppState . runE $ getDownloadsF
   forFold mpFreq $ \pfreq -> do
+    mGhcUpInfo <- flip runReaderT leanAppState . runE $ getDownloadsF pfreq
     forFold mGhcUpInfo $ \ghcupInfo -> do
       let appState = AppState
             settings
@@ -816,4 +829,16 @@ logGHCPostRm ghcVer = do
     (runIdentity . CC.cfgStoreDir <$> CC.readConfig)
   let storeGhcDir = cabalStore </> ("ghc-" <> T.unpack (prettyVer $ _tvVersion ghcVer))
   logInfo $ T.pack $ "After removing GHC you might also want to clean up your cabal store at: " <> storeGhcDir
+
+parseUrlSource :: String -> Either String URLSource
+parseUrlSource "GHCupURL" = pure GHCupURL
+parseUrlSource "StackSetupURL" = pure StackSetupURL
+parseUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
+            <|> (fmap (OwnSource . (:[]) . Right) . first show . parseURI strictURIParserOptions .UTF8.fromString $ s')
+
+parseNewUrlSource :: String -> Either String NewURLSource
+parseNewUrlSource "GHCupURL" = pure NewGHCupURL
+parseNewUrlSource "StackSetupURL" = pure NewStackSetupURL
+parseNewUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
+            <|> (fmap NewURI . first show . parseURI strictURIParserOptions .UTF8.fromString $ s')
 
