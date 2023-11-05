@@ -5,6 +5,8 @@
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE ViewPatterns      #-}
+{-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 module BrickMain where
 
@@ -16,7 +18,6 @@ import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
 import           GHCup.OptParse.Common (logGHCPostRm)
 import           GHCup.Prelude ( decUTF8Safe )
-import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
 import           GHCup.Prompts
@@ -49,7 +50,6 @@ import           Data.Vector                    ( Vector
 import           Data.Versions
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
-import           System.FilePath
 import           System.Exit
 import           System.IO.Unsafe
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
@@ -62,9 +62,32 @@ import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
 import System.Environment (getExecutablePath)
 #if !IS_WINDOWS
+import           GHCup.Prelude.File
+import           System.FilePath
 import qualified System.Posix.Process          as SPP
 #endif
 
+
+installedSign :: String
+#if IS_WINDOWS
+installedSign = "I "
+#else
+installedSign = "✓ "
+#endif
+
+setSign :: String
+#if IS_WINDOWS
+setSign = "IS"
+#else
+setSign = "✔✔"
+#endif
+
+notInstalledSign :: String
+#if IS_WINDOWS
+notInstalledSign = "X "
+#else
+notInstalledSign = "✗ "
+#endif
 
 hiddenTools :: [Tool]
 hiddenTools = []
@@ -167,9 +190,9 @@ ui dimAttrs BrickState{ appSettings = as@BrickSettings{}, ..}
     in withDefAttr listAttr . drawListElements (renderItem minTagSize minVerSize) True $ bis
   renderItem minTagSize minVerSize _ b listResult@ListResult{lTag = lTag', ..} =
     let marks = if
-          | lSet       -> (withAttr (attrName "set") $ str "✔✔")
-          | lInstalled -> (withAttr (attrName "installed") $ str "✓ ")
-          | otherwise  -> (withAttr (attrName "not-installed") $ str "✗ ")
+          | lSet       -> (withAttr (attrName "set") $ str setSign)
+          | lInstalled -> (withAttr (attrName "installed") $ str installedSign)
+          | otherwise  -> (withAttr (attrName "not-installed") $ str notInstalledSign)
         ver = case lCross of
           Nothing -> T.unpack . prettyVer $ lVer
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
