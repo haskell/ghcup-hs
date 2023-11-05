@@ -61,7 +61,9 @@ import qualified Data.Text.Lazy                as L
 import qualified Graphics.Vty                  as Vty
 import qualified Data.Vector                   as V
 import System.Environment (getExecutablePath)
+#if !IS_WINDOWS
 import qualified System.Posix.Process          as SPP
+#endif
 
 
 hiddenTools :: [Tool]
@@ -500,12 +502,15 @@ install' _ (_, ListResult {..}) = do
             forM_ (_viPostInstall =<< vi) $ \msg -> logInfo msg
             case lTool of
               GHCup -> do
+#if !IS_WINDOWS
                 up <- liftIO $ fmap (either (const Nothing) Just)
                   $ try @_ @SomeException $ canonicalizePath (binDir </> "ghcup" <.> exeExt)
                 when ((normalise <$> up) == Just (normalise ce)) $
                   -- TODO: track cli arguments of previous invocation
                   liftIO $ SPP.executeFile ce False ["tui"] Nothing
+#else
                 logInfo "Please restart 'ghcup' for the changes to take effect"
+#endif
               _ -> pure ()
             pure $ Right ()
           VRight (vi, _, _) -> do
