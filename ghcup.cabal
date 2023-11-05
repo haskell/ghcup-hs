@@ -238,7 +238,7 @@ library
 
   if (flag(tui) && !os(windows))
     cpp-options:   -DBRICK
-    build-depends: vty ^>=5.39
+    build-depends: vty ^>=6.0
 
 library ghcup-optparse
   import:             app-common-depends
@@ -324,10 +324,10 @@ executable ghcup
     cpp-options:   -DBRICK
     other-modules: BrickMain
     build-depends:
-      , brick         ^>=1.5
+      , brick         ^>=2.1
       , transformers  ^>=0.5
       , unix          ^>=2.7
-      , vty           ^>=5.39
+      , vty           ^>=6.0
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
