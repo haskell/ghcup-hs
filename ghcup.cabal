@@ -36,7 +36,7 @@ source-repository head
 
 flag tui
   description:
-    Build the brick powered tui (ghcup tui). This is disabled on windows.
+    Build the brick powered tui (ghcup tui).
 
   default:     False
   manual:      True
@@ -236,7 +236,7 @@ library
       , unix             ^>=2.7
       , unix-bytestring  ^>=0.3.7.3
 
-  if (flag(tui) && !os(windows))
+  if flag(tui)
     cpp-options:   -DBRICK
     build-depends: vty ^>=6.0
 
@@ -284,7 +284,7 @@ library ghcup-optparse
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER
 
-  if (flag(tui) && !os(windows))
+  if flag(tui)
     cpp-options:   -DBRICK
 
   if os(windows)
@@ -320,13 +320,12 @@ executable ghcup
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER
 
-  if (flag(tui) && !os(windows))
+  if flag(tui)
     cpp-options:   -DBRICK
     other-modules: BrickMain
     build-depends:
       , brick         ^>=2.1
       , transformers  ^>=0.5
-      , unix          ^>=2.7
       , vty           ^>=6.0
 
   if os(windows)
