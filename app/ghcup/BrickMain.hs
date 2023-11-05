@@ -10,6 +10,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE BangPatterns #-}
 
 module BrickMain where
 
@@ -32,7 +33,6 @@ import Brick
       AttrMap,
       EventM,
       Size(..),
-      Named(..),
       Widget(..), 
       ViewportType (Vertical), 
       (<+>),
@@ -62,7 +62,7 @@ import           Data.IORef (IORef, readIORef, newIORef, writeIORef, modifyIORef
 import           Data.Vector                    ( Vector
                                                 
                                                 )
-import           Data.Versions
+import           Data.Versions hiding (Lens')
 import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
@@ -113,9 +113,6 @@ data GenericSectionList n t e
 makeLensesFor [("sectionListFocusRing", "sectionListFocusRingL"), ("sectionListElements", "sectionListElementsL"), ("sectionListName", "sectionListNameL")] ''GenericSectionList
 
 type SectionList n e = GenericSectionList n V.Vector e
-
-instance Named (GenericSectionList n t e) n where
-    getName = sectionListName
 
 
 -- | Build a SectionList from nonempty list. If empty we could not defined sectionL lenses. 
@@ -206,29 +203,33 @@ handleGenericListEvent _ = pure ()
 
 -- This re-uses Brick.Widget.List.renderList
 renderSectionList :: (Traversable t, Ord n, Show n, Eq n, L.Splittable t)
-                  => (Bool -> n -> Widget n)             -- ^ Rendering function for separator between sections. True for selected before section
-                  -> (Bool -> n -> Widget n -> Widget n) -- ^ Rendering function for the borders. True for selected section
-                  -> (Bool -> e -> Widget n)             -- ^ Rendering function of the list element, True for the selected element
+                  => (Bool -> e -> Widget n)             -- ^ Rendering function of the list element, True for the selected element
                   -> Bool                                -- ^ Whether the section list has focus
                   -> GenericSectionList n t e            -- ^ The section list to render
                   -> Widget n
-renderSectionList render_separator render_border render_elem section_focus (GenericSectionList focus elms sl_name) =
-  Widget Greedy Greedy $ render $
-    Brick.viewport sl_name Vertical $
-      V.foldl' (\wacc list ->
-                  let has_focus_list = is_focused_section list
-                      list_name = L.listName list
-                  in   wacc
-                    <=> render_separator has_focus_list list_name
-                    <=> inner_widget has_focus_list list_name list
-              )
-              Brick.emptyWidget elms
-  where
-    is_focused_section l = section_focus && Just (L.listName l) == F.focusGetCurrent focus
-    inner_widget has_focus k l = 
-      let w = render_border has_focus k (Brick.vLimit (length l) $ L.renderList render_elem has_focus l)
-       in if has_focus then Brick.visible w else w
-
+renderSectionList render_elem section_focus (GenericSectionList focus elms sl_name) =
+    Brick.Widget Brick.Greedy Brick.Greedy $ do
+        c <- Brick.getContext
+        let -- A section is focused if the whole thing is focused, and the inner list has focus
+            section_is_focused l = section_focus && (Just (L.listName l) == F.focusGetCurrent focus)
+            -- We need to limit the widget size when the length of the list is higher than the size of the terminal
+            limit = min (Brick.windowHeight c) (Brick.availHeight c)
+            s_idx = fromMaybe 0 $ V.findIndex section_is_focused elms
+            render_inner_list has_focus l = Brick.vLimit (length l) $ L.renderList (\b -> render_elem (b && has_focus)) has_focus l
+            (widget, off) = 
+                V.ifoldl' (\wacc i list ->
+                                let has_focus_list = section_is_focused list
+                                    (!acc_widget, !acc_off) = wacc
+                                    new_widget = if i == 0 then render_inner_list has_focus_list list else hBorder <=> render_inner_list has_focus_list list
+                                    new_off 
+                                        | i < s_idx  = 1 + L.listItemHeight list * length list 
+                                        | i == s_idx = 1 + L.listItemHeight list * fromMaybe 0 (L.listSelected list)
+                                        | otherwise  = 0
+                                in  (acc_widget <=> new_widget, acc_off + new_off)
+                                )
+                (Brick.emptyWidget, 0)
+                elms
+        Brick.render $  Brick.viewport sl_name Brick.Vertical $ Brick.translateBy (Brick.Location (0, min 0 (limit-off))) widget
 
 -- | Equivalent to listSelectedElement
 sectionListSelectedElement :: (Eq n, L.Splittable t, Traversable t, Semigroup (t e)) => GenericSectionList n t e -> Maybe (Int, e)
@@ -243,7 +244,6 @@ sectionListSelectedElement generic_section_list = do
 
 data Name = AllTools       -- The main list widget
           | Singular Tool  -- The particular list for each tool
-          | IODialog       -- The pop up when installing a tool
           | TutorialBox    -- The tutorial widget
           deriving (Eq, Ord, Show)
 
@@ -318,7 +318,7 @@ keyHandlers KeyBindings {..} =
     )
   , (bUp, const "Up", appState %= moveCursor 1 Up)
   , (bDown, const "Down", appState %= moveCursor 1 Down)
-  , (Vty.KChar 'x', const "Tutorial", mode .= Tutorial)
+  , (KeyCombination (Vty.KChar 'x') [], const "Tutorial", mode .= Tutorial)
   ]
  where
   --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
@@ -350,7 +350,7 @@ ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
   = Brick.padBottom Max
       ( Brick.withBorderStyle unicode
         $ borderWithLabel (Brick.str "GHCup")
-          (center (header <=> renderList' _appState))
+          (center (header <=> hBorder <=> renderList' _appState))
       )
     <=> footer
  where
@@ -371,14 +371,12 @@ ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
     let allElements = V.concatMap L.listElements $ sectionListElements bis
         minTagSize = V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) allElements
         minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (GHCTargetVersion lCross lVer)) allElements
-        render_separator _ _ = hBorder
-        render_border _ _ = id
-    in Brick.withDefAttr L.listAttr $ renderSectionList render_separator render_border (renderItem minTagSize minVerSize) True bis
+    in Brick.withDefAttr L.listAttr $ renderSectionList (renderItem minTagSize minVerSize) True bis
   renderItem minTagSize minVerSize b listResult@ListResult{lTag = lTag', ..} =
     let marks = if
-          | lSet       -> (Brick.withAttr (Brick.attrName "set") $ str setSign)
-          | lInstalled -> (Brick.withAttr (Brick.attrName "installed") $ str installedSign)
-          | otherwise  -> (Brick.withAttr (Brick.attrName "not-installed") $ str notInstalledSign)
+          | lSet       -> (Brick.withAttr (Brick.attrName "set") $ Brick.str setSign)
+          | lInstalled -> (Brick.withAttr (Brick.attrName "installed") $ Brick.str installedSign)
+          | otherwise  -> (Brick.withAttr (Brick.attrName "not-installed") $ Brick.str notInstalledSign)
         ver = case lCross of
           Nothing -> T.unpack . prettyVer $ lVer
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
@@ -529,7 +527,7 @@ navigationHandler ev = do
   AppState { keyBindings = kb } <- liftIO $ readIORef settings'
   case ev of
     inner_event@(VtyEvent (Vty.EvKey key _)) ->
-      case find (\(key', _, _) -> key' == key) (keyHandlers kb) of
+      case find (\(key', _, _) -> key' == KeyCombination key []) (keyHandlers kb) of
         Nothing -> void $ Brick.zoom (toLensVL appState) $ handleGenericListEvent inner_event
         Just (_, _, handler) -> handler
     inner_event -> Brick.zoom (toLensVL appState) $ handleGenericListEvent inner_event
@@ -611,7 +609,7 @@ replaceLR :: (ListResult -> Bool)
 replaceLR filterF list_result s =
   let oldElem = s >>= sectionListSelectedElement -- Maybe (Int, e)
       newVec  =  [(Singular $ lTool (head g), V.fromList g) | g <- groupBy ((==) `on` lTool ) (filter filterF list_result)]
-      newSectionList = sectionList AllTools newVec 0
+      newSectionList = sectionList AllTools newVec 1
   in case oldElem of
       Just (_, el) -> selectBy (lTool el) (toolEqual el) newSectionList
       Nothing -> selectLatest newSectionList
@@ -631,7 +629,7 @@ filterVisible v e | lInstalled e = True
                                   (Nightly `notElem` lTag e)
 
 
-install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
+install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
          => (Int, ListResult)
          -> m (Either String ())
 install' (_, ListResult {..}) = do
