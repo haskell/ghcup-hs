@@ -17,7 +17,8 @@ elif os(darwin)
 elif os(mingw32)
   constraints: zlib +bundled-c-zlib,
                lzma +static,
-               text -simdutf
+               text -simdutf,
+			   vty-windows >=0.1.0.3
 elif os(freebsd)
   constraints: zlib +bundled-c-zlib,
                zip +disable-zstd
