@@ -4257,7 +4257,7 @@ ghcupDownloads:
             unknown_versioning: *cabal-31020-32
           Linux_Debian:
             '( >= 9 )':
-              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-deb9.tar.xz
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-i386-linux-deb9.tar.xz
               dlHash: 2b26d2cb67f1ba3561509fbccc30810ccc1c5032238fca00666e3dcd03e941a8
             unknown_versioning: *cabal-31020-32
         A_ARM64:
