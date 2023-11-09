@@ -234,7 +234,7 @@ setStack ver = do
 
   liftIO (isShadowed stackbin) >>= \case
     Nothing -> pure ()
-    Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed Cabal pa stackbin ver)
+    Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed Stack pa stackbin ver)
 
   pure ()
 
