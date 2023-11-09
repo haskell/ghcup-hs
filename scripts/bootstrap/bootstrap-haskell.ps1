@@ -11,7 +11,7 @@
     * cabal - The Cabal build tool for managing Haskell software"
     * stack - (optional) A cross-platform program for developing Haskell projects"
     * hls   - (optional) A language server for developers to integrate with their editor/IDE"
-    
+
 	By default, the installation is non-interactive, unless you run it with 'Interactive $true'.
 #>
 param (
@@ -42,7 +42,9 @@ param (
     # The Msys2 version to download (e.g. 20221216)
     [string]$Msys2Version,
     # The Msys2 sha256sum hash
-    [string]$Msys2Hash
+    [string]$Msys2Hash,
+    # Whether to disable creation of several desktop shortcuts
+    [switch]$DontWriteDesktopShortcuts
 )
 
 $DefaultMsys2Version = "20221216"
@@ -139,7 +141,7 @@ filter Get-FileSize {
 function Get-FileWCSynchronous{
     param(
         [Parameter(Mandatory=$true)]
-        [string]$url, 
+        [string]$url,
         [string]$destinationFolder="$env:USERPROFILE\Downloads",
         [switch]$includeStats
     )
@@ -229,7 +231,7 @@ if ($GhcupBasePrefixEnv) {
     Print-Msg -color Green -msg ("Picked {0} as default Install prefix!" -f $defaultGhcupBasePrefix)
   } else {
     Print-Msg -color Red -msg "Couldn't find a writable partition with at least 5GB free disk space!"
-    Exit 1    
+    Exit 1
   }
 }
 
@@ -274,7 +276,7 @@ Press enter to accept the default [{0}]:
     if (!($GhcupBasePrefix.EndsWith('\'))) {
       $GhcupBasePrefix = ('{0}\' -f $GhcupBasePrefix)
     }
-  
+
     $GhcupBasePrefix = $GhcupBasePrefix.TrimEnd().TrimStart()
     if (!($GhcupBasePrefix)) {
       Print-Msg -color Red -msg "No directory specified!"
@@ -350,7 +352,7 @@ if ($CabalDir) {
   $CabDirEnv = $CabalDir
   if (!($CabDirEnv)) {
     Print-Msg -color Red -msg "No directory specified!"
-    Exit 1        
+    Exit 1
   } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
     Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
     Exit 1
@@ -365,7 +367,7 @@ if ($CabalDir) {
 
     $CabDirEnv = $CabDirEnv.TrimEnd().TrimStart()
     if (!($CabDirEnv)) {
-      Print-Msg -color Red -msg "No directory specified!"         
+      Print-Msg -color Red -msg "No directory specified!"
     } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
       Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
     } else {
@@ -410,6 +412,26 @@ if (!($InstallStack)) {
   }
 }
 
+if ($Interactive) {
+	$DesktopDecision = $Host.UI.PromptForChoice('Create Desktop shortcuts'
+                                        , 'Do you want to create convenience desktop shortcuts (e.g. for uninstallation and msys2 shell)?'
+                                        , [System.Management.Automation.Host.ChoiceDescription[]] @('&Yes'
+                                            '&No'
+                                            '&Abort'), 0)
+	if ($DesktopDecision -eq 0) {
+      $InstallDesktopShortcuts = $true
+    } elseif ($DesktopDecision -eq 2) {
+      Exit 0
+    }
+} else {
+	if ($Minimal) {
+      $InstallDesktopShortcuts = $false
+	} elseif ($DontWriteDesktopShortcuts) {
+      $InstallDesktopShortcuts = $false
+	} else {
+      $InstallDesktopShortcuts = $true
+	}
+}
 
 # mingw foo
 Print-Msg -msg 'First checking for Msys2...'
@@ -485,12 +507,12 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
         $MsysDirPrompt = Read-Host
         $MsysDir = ($defaultMsys2Dir,$MsysDirPrompt)[[bool]$MsysDirPrompt]
       } else {
-        Print-Msg -color Magenta -msg 'Input existing MSys2 toolchain directory:' 
+        Print-Msg -color Magenta -msg 'Input existing MSys2 toolchain directory:'
         $MsysDir = Read-Host
       }
       $MsysDir = $MsysDir.TrimEnd().TrimStart()
       if (!($MsysDir)) {
-        Print-Msg -color Red -msg "No directory specified!"         
+        Print-Msg -color Red -msg "No directory specified!"
       } elseif (!(Test-Path -LiteralPath ('{0}' -f $MsysDir))) {
         Print-Msg -color Red -msg ('MSys2 installation at ''{0}'' could not be found!' -f $MsysDir)
       } elseif (!(Split-Path -IsAbsolute -Path "$MsysDir")) {
@@ -510,8 +532,11 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 	Start-Sleep -s 5
 }
 
-Print-Msg -msg 'Creating shortcuts...'
-$uninstallShortCut = @'
+
+if ($InstallDesktopShortcuts) {
+
+	Print-Msg -msg 'Creating shortcuts...'
+	$uninstallShortCut = @'
 $decision = $Host.UI.PromptForChoice('Uninstall Haskell'
 , 'Do you want to uninstall all of the haskell toolchain, including GHC, Cabal, Stack and GHCup itself?'
 , [System.Management.Automation.Host.ChoiceDescription[]] @('&Uninstall'
@@ -573,12 +598,13 @@ if ($Host.Name -eq "ConsoleHost")
 }
 '@
 
-$GhcInstArgs = '-mingw64 -mintty -c "pacman --noconfirm -S --needed base-devel gettext autoconf make libtool automake python p7zip patch unzip"'
-Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $GhcInstArgs -DestinationPath 'Install GHC dev dependencies.lnk' -TempPath $GhcupDir
-Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath 'Mingw haskell shell.lnk' -TempPath $GhcupDir
-Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath 'Mingw package management docs.url' -TempPath $GhcupDir
-$DesktopDir = [Environment]::GetFolderPath("Desktop")
-$null = New-Item -Path $DesktopDir -Name "Uninstall Haskell.ps1" -ItemType "file" -Force -Value $uninstallShortCut
+	$GhcInstArgs = '-mingw64 -mintty -c "pacman --noconfirm -S --needed base-devel gettext autoconf make libtool automake python p7zip patch unzip"'
+	Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $GhcInstArgs -DestinationPath 'Install GHC dev dependencies.lnk' -TempPath $GhcupDir
+	Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath 'Mingw haskell shell.lnk' -TempPath $GhcupDir
+	Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath 'Mingw package management docs.url' -TempPath $GhcupDir
+	$DesktopDir = [Environment]::GetFolderPath("Desktop")
+	$null = New-Item -Path $DesktopDir -Name "Uninstall Haskell.ps1" -ItemType "file" -Force -Value $uninstallShortCut
+}
 
 Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
 Add-EnvPath -Path ('{0}\bin' -f ([System.IO.Path]::GetFullPath("$GhcupDir"))) -Container 'User'
