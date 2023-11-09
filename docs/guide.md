@@ -95,7 +95,7 @@ platform-override:
 
 This is the complete list of env variables that change GHCup behavior:
 
-* `GHCUP_USE_XDG_DIRS`: see [XDG support](#xdg-support) above
+* `GHCUP_USE_XDG_DIRS`: see [XDG support](#xdg-support) below
 * `GHCUP_INSTALL_BASE_PREFIX`: the base of ghcup (default: `$HOME`)
 * `GHCUP_CURL_OPTS`: additional options that can be passed to curl
 * `GHCUP_WGET_OPTS`: additional options that can be passed to wget
