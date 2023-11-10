@@ -4383,8 +4383,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.8.1.0/armv7-linux-cabal-3.8.1.0.tar.xz
               dlHash: 836d89aa1c98a3a848b8b691f9b99123f260dcd4cc1163cb77435a31559475fe
     3.10.1.0:
-      viTags:
-        - Latest
+      viTags: []
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.1.0.md
       viArch:
         A_64:
@@ -4429,57 +4428,141 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.1.0/cabal-install-3.10.1.0-armv7-linux-deb10.tar.xz
               dlHash: 79869dd72cb0a6f90f2e1e0e57af4ea6ee09b041550abc09252d1cf309b4f96e
+    3.10.2.0:
+      viPostInstall: "cabal run is currently partially broken on Windows, please see https://github.com/haskell/cabal/issues/9334"
+      viTags:
+        - Latest
+      viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.2.0.md
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-31020-64
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-alpine3_12.tar.xz
+              dlHash: b54e1cd235c47c62c03cdb9f6cf90e5fe8ae38c5e5befb9e21c8d1395f4bde05
+          Linux_Alpine:
+            unknown_versioning: *cabal-31020-64
+          Linux_CentOS:
+            unknown_versioning: &cabal-31020-64-centos7
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-centos7.tar.xz
+              dlHash: cfcdab399380dec7fedda55898bff975ac30b5d5d579433cbf8773b17c15f410
+          Linux_Debian:
+            ' ( >= 9 && < 10)': &cabal-31020-64-debian
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-deb9.tar.xz
+              dlHash: af5ce42114cf7720c37fee3238781df4c75bb74914c62e6a68833fb434e0cad7
+            ' ( == 10 && < 11)':
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-deb10.tar.xz
+              dlHash: bdeb27c008b09c3b86f8a2768018d62a1aee02565304d123fda87ed432549418
+            ' ( >= 11)':
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-deb11.tar.xz
+              dlHash: 9ca5625c89e8fcada02edced5048c3a3db0254e2bef1eb792d549d633222b108
+            unknown_versioning: *cabal-31020-64-debian
+          Linux_Fedora:
+            '>= 33':
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-fedora33.tar.xz
+              dlHash: 1e59dc1e1a1b33085a1789b8ddafb55026211454efe0b4e814c956ef86fe3ea5
+            unknown_versioning: *cabal-31020-64-centos7
+          Linux_Ubuntu:
+            '< 20': &cabal-31020-64-ubuntu18
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-ubuntu18_04.tar.xz
+              dlHash: 7b0bb22c263ae0b43459de1995bf465560d412c12d47af011b2ac27b5d30c7aa
+            '>= 20': &cabal-31020-64-ubuntu20
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-ubuntu20_04.tar.xz
+              dlHash: c2a8048caa3dbfe021d0212804f7f2faad4df1154f1ff52bd2f3c68c1d445fe1
+            unknown_versioning: *cabal-31020-64-ubuntu18
+          Linux_Mint:
+            '< 20': *cabal-31020-64-ubuntu18
+            '>= 20': *cabal-31020-64-ubuntu20
+            unknown_versioning: *cabal-31020-64-ubuntu18
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-darwin.tar.xz
+              dlHash: cd64f2a8f476d0f320945105303c982448ca1379ff54b8625b79fb982b551d90
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-windows.zip
+              dlHash: b09e335b2ebeafa1db5e1e5614e3e10fb37da230a36865d76646ab27b2f3f46b
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-freebsd.tar.xz
+              dlHash: 6dcd9d38a9f2101a0a3c3b74cacb2e41b8f7226f181780c0f872f2f1206dee37
+        A_32:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-31020-32
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-i386-linux-alpine3_12.tar.xz
+              dlHash: e219d2c6446c29e09644c4f064f4b87d486871ad6f6de16f0d2fcbd8626b5a5b
+          Linux_Alpine:
+            unknown_versioning: *cabal-31020-32
+          Linux_Debian:
+            '( >= 9 )':
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-i386-linux-deb9.tar.xz
+              dlHash: 2b26d2cb67f1ba3561509fbccc30810ccc1c5032238fca00666e3dcd03e941a8
+            unknown_versioning: *cabal-31020-32
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-aarch64-darwin.tar.xz
+              dlHash: d2bd336d7397cf4b76f3bb0d80dea24ca0fa047903e39c8305b136e855269d7b
+          Linux_Debian:
+            '( >= 10 && < 11)': &cabal-31020-arm64
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-aarch64-linux-deb10.tar.xz
+              dlHash: 004ed4a7ca890fadee23f58f9cb606c066236a43e16b34be2532b177b231b06d
+            '( >= 11)':
+              dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-aarch64-linux-deb11.tar.xz
+              dlHash: daa767a1b844fbc2bfa0cc14b7ba67f29543e72dd630f144c6db5a34c0d22eb1
+            unknown_versioning: *cabal-31020-arm64
+          Linux_UnknownLinux:
+            unknown_versioning: *cabal-31020-arm64
   GHCup:
-    0.1.19.4:
+    0.1.20.0:
       viTags:
       - Recommended
       - Latest
       viChangeLog: https://github.com/haskell/ghcup-hs/blob/master/CHANGELOG.md
       viSourceDL:
-        dlUri: https://downloads.haskell.org/~ghcup/0.1.19.4/ghcup-0.1.19.4-src.tar.gz
-        dlSubdir: ghcup-0.1.19.4
-        dlHash: 5008f9e9591b61746b11e28741fee4b4e1a0801c127021d07879ebc76aa9107a
+        dlUri: https://downloads.haskell.org/~ghcup/0.1.20.0/ghcup-0.1.20.0-src.tar.gz
+        dlSubdir: ghcup-0.1.20.0
+        dlHash: 6ae313d135a60f08fcd4a1720ceedfcd699d58e9381346d578a548438d1ccddb
       viArch:
         A_64:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-64
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.4/x86_64-linux-ghcup-0.1.19.4
-              dlHash: c79d45273c44f13bcbd8265ef05a6bad58de1563cc54b93b8a75b7e3cdf8f44d
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.20.0/x86_64-linux-ghcup-0.1.20.0
+              dlHash: 0634ab60c659ab14dab4f73d8ee9a7fb4c4e2e959406dc74ed967781df798a3d
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.4/x86_64-apple-darwin-ghcup-0.1.19.4
-              dlHash: cbace2c55e62e16a994b798d5c350eb618789ea8e2788cc92f2f5dd185c77b38
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.20.0/x86_64-apple-darwin-ghcup-0.1.20.0
+              dlHash: 0769f4751e9ff9c625a22470349c38cfaed11d135b52dfa59320a96b6521a57b
           FreeBSD:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.4/x86_64-portbld-freebsd-ghcup-0.1.19.4
-              dlHash: 318ecd132a1e06d64b3866ad3ead521d13ddc1d9dd71738acef80ee63521f4c6
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.20.0/x86_64-portbld-freebsd-ghcup-0.1.20.0
+              dlHash: cfa22b835c2901095f227f20ffa1993a4b5ad947bff3ad301298758bc371608f
           Windows:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.4/x86_64-mingw64-ghcup-0.1.19.4.exe
-              dlHash: 7d8a8c8b89c26f4ac95b87bb0d2c7135bd504c9830ef30bab1dffeb5d76abcf9
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.20.0/x86_64-mingw64-ghcup-0.1.20.0.exe
+              dlHash: c2058a510977e982332ee910cc717e6776502243fc1d53d58f3a58b79ce86f43
           Linux_Alpine:
             unknown_versioning: *ghcup-64
         A_32:
           Linux_UnknownLinux:
             unknown_versioning: &ghcup-32
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.4/i386-linux-ghcup-0.1.19.4
-              dlHash: fb7e501fcb2c1309257a7cd718e7dd1f906173fe8ba8ab172de31d18b0f307ae
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.20.0/i386-linux-ghcup-0.1.20.0
+              dlHash: 99cb3e886fce5b8d880a5ff9dfe5f67f0fd812cd356db43ea38d2c7ae5cd366b
           Linux_Alpine:
             unknown_versioning: *ghcup-32
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.4/aarch64-linux-ghcup-0.1.19.4
-              dlHash: 9850348d3a302f73d27a50108b611d8b66904658c1a46160f7f3bdd4c327d325
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.20.0/aarch64-linux-ghcup-0.1.20.0
+              dlHash: 79cb967034ea20b495a7c4e99eefd2a3d4e41e964c69f50d5d626627995751e3
           Darwin:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.4/aarch64-apple-darwin-ghcup-0.1.19.4
-              dlHash: fb946e0e7affac27e39d744ea0052f0a4359c4700f8594582081c6ec18b59b0a
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.20.0/aarch64-apple-darwin-ghcup-0.1.20.0
+              dlHash: d2068b4a58417c3cb1d90c5a30b83b33c044829a9daf18594dee3dcdf8a4d59b
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/0.1.19.4/armv7-linux-ghcup-0.1.19.4
-              dlHash: 85980b3e64b5d2ce5420baa6ad5230e4df153db578b4ace238bb748158a3d5ef
+              dlUri: https://downloads.haskell.org/~ghcup/0.1.20.0/armv7-linux-ghcup-0.1.20.0
+              dlHash: 0e0d3db97a418847077e5f784f551ac21170caf519d6250e2be525bd120d87a0
   HLS:
     1.1.0:
       viTags:
