@@ -1,8 +1,20 @@
 # Revision history for ghcup
 
-## 0.1.19.5 -- ????-?-??
+## 0.1.20.0 -- 2023-11-10
 
-* support JS cross compilers wrt [#838](https://github.com/haskell/ghcup-hs/issues/838)
+### New features
+
+* support TUI on windows thanks to the work from vty and brick maintainers (Chris Hackett, Timofey Zakrevskiy, Jonathan Daugherty, ...), wrt [#912](https://github.com/haskell/ghcup-hs/pull/912)
+* support JS and wasm cross compilers wrt [#838](https://github.com/haskell/ghcup-hs/issues/838), thanks to Sylvain Henry and IOG
+* Support stacks installation strategy and metadata wrt [#892](https://github.com/haskell/ghcup-hs/issues/892)
+  - you can now enable stacks installation method via `ghcup config set url-source '["GHCupURL", "StackSetupURL"]'`... for more information, check the [documentation](https://www.haskell.org/ghcup/guide/#using-stacks-setup-info-metadata-to-install-ghc)
+
+### Improvements and bug fixes
+
+* fix segfault in TUI when hitting enter early wrt [#887](https://github.com/haskell/ghcup-hs/issues/887)
+* Improve key handling in TUI, fixes [#875](https://github.com/haskell/ghcup-hs/issues/875)
+* add explicit support for Void Linux and Rocky Linux (this requires a metadata version bump to `ghcup-0.0.8.yaml`)
+* optparse cli interface now has a test suite thanks to Lei Zhu, wrt [#862](https://github.com/haskell/ghcup-hs/pull/862)
 
 ## 0.1.19.4 -- 2023-7-02
 
