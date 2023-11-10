@@ -475,7 +475,7 @@ data KeyBindings = KeyBindings
   deriving (Show, GHC.Generic)
 
 instance NFData KeyBindings
-#if defined(IS_WINDOWS) || !defined(BRICK)
+#if !defined(BRICK)
 instance NFData Key
 
 instance NFData Modifier

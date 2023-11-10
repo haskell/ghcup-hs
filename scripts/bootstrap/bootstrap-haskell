@@ -172,9 +172,8 @@ _done() {
 				green "Start a new haskell project in the current directory via:"
 				green "  cabal init --interactive"
 				green
-				green "Install other GHC versions and tools via:"
-				green "  ghcup list"
-				green "  ghcup install <tool> <version>"
+				green "To install other GHC versions and tools, run:"
+				green "  ghcup tui"
 				green
 				green "To install system libraries and update msys2/mingw64,"
 				green "open the \"Mingw haskell shell\""

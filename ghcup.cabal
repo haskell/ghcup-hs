@@ -36,7 +36,7 @@ source-repository head
 
 flag tui
   description:
-    Build the brick powered tui (ghcup tui). This is disabled on windows.
+    Build the brick powered tui (ghcup tui).
 
   default:     False
   manual:      True
@@ -86,7 +86,7 @@ common app-common-depends
     , unordered-containers   ^>=0.2
     , uri-bytestring         ^>=0.3.2.2
     , utf8-string            ^>=1.0
-    , vector                 ^>=0.12
+    , vector                 >=0.12     && <0.14
     , versions               >=6.0.3    && <6.1
     , yaml-streamly          ^>=0.12.0
 
@@ -190,7 +190,7 @@ library
     , unliftio-core         ^>=0.2.0.1
     , unordered-containers  ^>=0.2.10.0
     , uri-bytestring        ^>=0.3.2.2
-    , vector                ^>=0.12
+    , vector                 >=0.12     && <0.14
     , versions              >=6.0.3      && <6.1
     , word8                 ^>=0.1.3
     , yaml-streamly         ^>=0.12.0
@@ -236,9 +236,9 @@ library
       , unix             ^>=2.7
       , unix-bytestring  ^>=0.3.7.3
 
-  if (flag(tui) && !os(windows))
+  if flag(tui)
     cpp-options:   -DBRICK
-    build-depends: vty ^>=5.39
+    build-depends: vty ^>=6.0
 
 library ghcup-optparse
   import:             app-common-depends
@@ -284,7 +284,7 @@ library ghcup-optparse
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER
 
-  if (flag(tui) && !os(windows))
+  if flag(tui)
     cpp-options:   -DBRICK
 
   if os(windows)
@@ -320,14 +320,13 @@ executable ghcup
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER
 
-  if (flag(tui) && !os(windows))
+  if flag(tui)
     cpp-options:   -DBRICK
     other-modules: BrickMain
     build-depends:
-      , brick         ^>=1.5
+      , brick         ^>=2.1
       , transformers  ^>=0.5
-      , unix          ^>=2.7
-      , vty           ^>=5.39
+      , vty           ^>=6.0
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
