@@ -255,7 +255,7 @@ This list may not be exhaustive and specifies support for bindists only.
 
 | Platform | Architecture | ghcup | GHC | cabal | HLS | stack |
 | ------ | ------ | ------ | ------ | ------ | ------ | ------ |
-| Windows 7 | amd64 | ❔ | ✅ | ✅ | ✅ | ✅ |
+| Windows 8.1 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Windows 10 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Windows Server 2016 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Windows Server 2019 | amd64 | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -271,12 +271,11 @@ This list may not be exhaustive and specifies support for bindists only.
 | Linux generic | aarch64 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
 | Linux generic | armv7 | ✅ | ⚠️ | ✅ | ⚠️ | ❌ |
 
-### Windows 7
+### Windows <8.1
 
-May or may not work, several issues:
-
-* [https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/140](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/140)
-* [https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/197](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/197)
+No longer supported for recent GHCs, according to manual testing of GHC 9.8.1 on Windows 7.
+According to [msys2 documentation](https://www.msys2.org/docs/windows_support), the minimum Windows
+version is now 8.1.
 
 ### WSL1
 
