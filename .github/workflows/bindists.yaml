@@ -16,7 +16,7 @@ on:
       metadataFile:
         description: Metadata file
         required: true
-        default: ghcup-0.0.7.yaml
+        default: ghcup-0.0.8.yaml
         type: string
       channel:
         description: Distribution channel (main|prerelease|nightly)
@@ -48,6 +48,9 @@ jobs:
           - image: debian:11
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev  libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 libnuma-dev
+          - image: debian:unstable
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev  libgmp-dev libgmp10 libncurses-dev libncurses6 libtinfo6 libnuma-dev
           - image: ubuntu:18.04
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
