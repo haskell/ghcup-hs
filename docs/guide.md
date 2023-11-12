@@ -432,7 +432,7 @@ ghcup compile hls --git-ref master --git-describe-version --ghc 8.10.7 --ghc 9.2
 
 This however will create a new HLS version in ghcup, e.g. `1.7.0.0-105-gdc682ba1`, for both 8.10.7 and 9.2.4. If you want to switch back to the official bindists, run `ghcup set hls 1.7.0.0`.
 
-### Cross support
+## Cross support
 
 ghcup can compile a cross GHC for any target. However, this
 requires that the build host has a complete cross toolchain and various
@@ -452,7 +452,7 @@ ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup
 
 The next sections explain how to install each cross bindist.
 
-#### GHC JS cross bindists
+### GHC JS cross bindists
 
 You need the required emscripten JS toolchain:
 
@@ -482,7 +482,7 @@ javascript-unknown-ghcjs-ghc -fforce-recomp hello.hs
 
 You can follow the instructions [here](https://gitlab.haskell.org/ghc/ghc/-/wikis/javascript-backend/building#compiling-hello-world).
 
-#### GHC WASM cross bindists
+### GHC WASM cross bindists
 
 You need the required wasm toolchain:
 
