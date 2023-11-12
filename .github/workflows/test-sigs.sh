@@ -21,3 +21,7 @@ done
 unset key
 gpg --verify "${METADATA_FILE}.sig"
 
+for f in ghcup-*.json ghcup-*.yaml hls-metadata-*.json ; do
+	gpg --verify "${f}.sig"
+done
+
