@@ -724,7 +724,7 @@ data InstallSetError = forall xs1 xs2 . (Show (V xs1), Pretty (V xs1), HFErrorPr
 
 instance Pretty InstallSetError where
   pPrint (InstallSetError reason1 reason2) =
-     text "Both installation and setting the tool failed. Install error was:"
+     text "Both installation and setting the tool failed.\nInstall error was:"
       <+> pPrint reason1
       <+> text "\nSet error was:"
       <+> pPrint reason2

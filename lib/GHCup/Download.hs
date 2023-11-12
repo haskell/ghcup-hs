@@ -149,12 +149,16 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
       -> Excepts
            '[DownloadFailed, GPGError, DigestError, ContentLengthError, JSONError, FileDoesNotExistError]
            m (Either GHCupInfo Stack.SetupInfo)
-  dl' NewGHCupURL       = fmap Left $ liftE $ getBase @GHCupInfo ghcupURL
-  dl' NewStackSetupURL  = fmap Right $ liftE $ getBase @Stack.SetupInfo stackSetupURL
+  dl' NewGHCupURL       = fmap Left $ liftE (getBase ghcupURL) >>= liftE . decodeMetadata @GHCupInfo
+  dl' NewStackSetupURL  = fmap Right $ liftE (getBase stackSetupURL) >>= liftE . decodeMetadata @Stack.SetupInfo
   dl' (NewGHCupInfo gi) = pure (Left gi)
   dl' (NewSetupInfo si) = pure (Right si)
-  dl' (NewURI uri)      = catchE @JSONError (\(JSONDecodeError _) -> Right <$> getBase @Stack.SetupInfo uri)
-                            $ fmap Left $ getBase @GHCupInfo uri
+  dl' (NewURI uri)      = do
+                            base <- liftE $ getBase uri
+                            catchE @JSONError (\(JSONDecodeError _) -> do
+                                logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: "
+                                Right <$> decodeMetadata @Stack.SetupInfo base)
+                              $ fmap Left $ decodeMetadata @GHCupInfo base
 
   fromStackSetupInfo :: MonadThrow m
                      => Stack.SetupInfo
@@ -201,7 +205,7 @@ etagsFile :: FilePath -> FilePath
 etagsFile = (<.> "etags")
 
 
-getBase :: forall j m env . ( MonadReader env m
+getBase :: forall m env . ( MonadReader env m
            , HasDirs env
            , HasSettings env
            , MonadFail m
@@ -209,10 +213,9 @@ getBase :: forall j m env . ( MonadReader env m
            , MonadCatch m
            , HasLog env
            , MonadMask m
-           , FromJSON j
            )
         => URI
-        -> Excepts '[DownloadFailed, GPGError, DigestError, ContentLengthError, JSONError, FileDoesNotExistError] m j
+        -> Excepts '[DownloadFailed, GPGError, DigestError, ContentLengthError] m FilePath
 getBase uri = do
   Settings { noNetwork, downloader, metaMode } <- lift getSettings
 
@@ -232,25 +235,8 @@ getBase uri = do
                $ uri
 
   -- if we didn't get a filepath from the download, use the cached yaml
-  actualYaml <- maybe (lift $ yamlFromCache uri) pure mYaml
-  lift $ logDebug $ "Decoding yaml at: " <> T.pack actualYaml
-
-  liftE
-    . onE_ (onError actualYaml)
-    . lEM' @_ @_ @'[JSONError] (\(displayException -> e) -> JSONDecodeError $ unlines [e, "Consider removing " <> actualYaml <> " manually."])
-    . liftIO
-    . Y.decodeFileEither
-    $ actualYaml
+  maybe (lift $ yamlFromCache uri) pure mYaml
  where
-  -- On error, remove the etags file and set access time to 0. This should ensure the next invocation
-  -- may re-download and succeed.
-  onError :: (MonadReader env m, HasLog env, MonadMask m, MonadCatch m, MonadIO m) => FilePath -> m ()
-  onError fp = do
-    let efp = etagsFile fp
-    handleIO (\e -> logWarn $ "Couldn't remove file " <> T.pack efp <> ", error was: " <> T.pack (displayException e))
-      (hideError doesNotExistErrorType $ rmFile efp)
-    liftIO $ hideError doesNotExistErrorType $ setAccessTime fp (posixSecondsToUTCTime (fromIntegral @Int 0))
-
   warnCache :: (MonadReader env m, HasLog env, MonadMask m, MonadCatch m, MonadIO m) => FilePath -> Downloader -> m ()
   warnCache s downloader' = do
     let tryDownloder = case downloader' of
@@ -321,6 +307,39 @@ getBase uri = do
       handleIO (\e -> logWarn $ "setAccessTime failed with: " <> T.pack (displayException e)) $ liftIO $ setAccessTime f modTime
 
       pure f
+
+decodeMetadata :: forall j m env .
+               ( MonadReader env m
+               , HasDirs env
+               , HasSettings env
+               , MonadFail m
+               , MonadIO m
+               , MonadCatch m
+               , HasLog env
+               , MonadMask m
+               , FromJSON j
+               )
+               => FilePath
+               -> Excepts '[JSONError, FileDoesNotExistError] m j
+decodeMetadata actualYaml = do
+  lift $ logDebug $ "Decoding yaml at: " <> T.pack actualYaml
+
+  liftE
+    . onE_ (onError actualYaml)
+    . lEM' @_ @_ @'[JSONError] (\(displayException -> e) -> JSONDecodeError $ unlines [e, "Consider removing " <> actualYaml <> " manually."])
+    . liftIO
+    . Y.decodeFileEither
+    $ actualYaml
+ where
+  -- On error, remove the etags file and set access time to 0. This should ensure the next invocation
+  -- may re-download and succeed.
+  onError :: (MonadReader env m, HasLog env, MonadMask m, MonadCatch m, MonadIO m) => FilePath -> m ()
+  onError fp = do
+    let efp = etagsFile fp
+    handleIO (\e -> logWarn $ "Couldn't remove file " <> T.pack efp <> ", error was: " <> T.pack (displayException e))
+      (hideError doesNotExistErrorType $ rmFile efp)
+    liftIO $ hideError doesNotExistErrorType $ setAccessTime fp (posixSecondsToUTCTime (fromIntegral @Int 0))
+
 
 getDownloadInfo :: ( MonadReader env m
                    , HasPlatformReq env

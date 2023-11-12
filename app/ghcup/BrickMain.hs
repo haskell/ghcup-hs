@@ -555,7 +555,35 @@ set' bs input@(_, ListResult {..}) = do
 
   let run =
         flip runReaderT settings
-          . runE @'[FileDoesNotExistError , NotInstalled , TagNotFound]
+          . runResourceT
+          . runE
+            @'[ AlreadyInstalled
+              , ArchiveResult
+              , UnknownArchive
+              , FileDoesNotExistError
+              , CopyError
+              , NoDownload
+              , NotInstalled
+              , BuildFailed
+              , TagNotFound
+              , DigestError
+              , ContentLengthError
+              , GPGError
+              , DownloadFailed
+              , DirNotEmpty
+              , NoUpdate
+              , TarDirDoesNotExist
+              , FileAlreadyExistsError
+              , ProcessError
+              , ToolShadowed
+              , UninstallFailed
+              , MergeFileTreeError
+              , NoCompatiblePlatform
+              , GHCup.Errors.ParseError
+              , UnsupportedSetupCombo
+              , DistroNotFound
+              , NoCompatibleArch
+              ]
 
   run (do
       case lTool of
@@ -563,7 +591,12 @@ set' bs input@(_, ListResult {..}) = do
         Cabal -> liftE $ setCabal lVer $> ()
         HLS   -> liftE $ setHLS lVer SetHLSOnly Nothing $> ()
         Stack -> liftE $ setStack lVer $> ()
-        GHCup -> pure ()
+        GHCup -> do
+          promptAnswer <- getUserPromptResponse "Switching GHCup versions is not supported.\nDo you want to install the latest version? [Y/N]: "
+          case promptAnswer of
+                PromptYes -> do
+                  void $ liftE $ upgradeGHCup Nothing False False
+                PromptNo -> pure ()
     )
     >>= \case
           VRight _ -> pure $ Right ()
