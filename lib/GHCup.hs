@@ -100,7 +100,7 @@ fetchToolBindist :: ( MonadFail m
                     , MonadIO m
                     , MonadUnliftIO m
                     )
-                 => Version
+                 => GHCTargetVersion
                  -> Tool
                  -> Maybe FilePath
                  -> Excepts
@@ -113,7 +113,7 @@ fetchToolBindist :: ( MonadFail m
                       m
                       FilePath
 fetchToolBindist v t mfp = do
-  dlinfo <- liftE $ getDownloadInfo t v
+  dlinfo <- liftE $ getDownloadInfo' t v
   liftE $ downloadCached' dlinfo Nothing mfp
 
 

@@ -199,19 +199,19 @@ prefetch prefetchCommand runAppState runLogger =
           (v, _) <- liftE $ fromVersion mt GHC
           if pfGHCSrc
           then liftE $ fetchGHCSrc v pfCacheDir
-          else liftE $ fetchToolBindist (_tvVersion v) GHC pfCacheDir
+          else liftE $ fetchToolBindist v GHC pfCacheDir
       PrefetchCabal PrefetchOptions {pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
         (v, _) <- liftE $ fromVersion mt Cabal
-        liftE $ fetchToolBindist (_tvVersion v) Cabal pfCacheDir
+        liftE $ fetchToolBindist v Cabal pfCacheDir
       PrefetchHLS PrefetchOptions {pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
         (v, _) <- liftE $ fromVersion mt HLS
-        liftE $ fetchToolBindist (_tvVersion v) HLS pfCacheDir
+        liftE $ fetchToolBindist v HLS pfCacheDir
       PrefetchStack PrefetchOptions {pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
         (v, _) <- liftE $ fromVersion mt Stack
-        liftE $ fetchToolBindist (_tvVersion v) Stack pfCacheDir
+        liftE $ fetchToolBindist v Stack pfCacheDir
       PrefetchMetadata -> do
         pfreq <- lift getPlatformReq
         _ <- liftE $ getDownloadsF pfreq
