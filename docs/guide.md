@@ -434,7 +434,7 @@ This however will create a new HLS version in ghcup, e.g. `1.7.0.0-105-gdc682ba1
 
 ### Cross support
 
-ghcup can compile and install a cross GHC for any target. However, this
+ghcup can compile a cross GHC for any target. However, this
 requires that the build host has a complete cross toolchain and various
 libraries installed for the target platform.
 
@@ -442,6 +442,73 @@ Consult the GHC documentation on the [prerequisites](https://gitlab.haskell.org/
 For distributions with non-standard locations of cross toolchain and
 libraries, this may need some tweaking of `build.mk` or configure args.
 See `ghcup compile ghc --help` for further information.
+
+Since ghcup version 0.1.20.0, we provide cross bindists for GHC JS and WASM. These can be installed conveniently.
+First, add the cross release channel:
+
+```sh
+ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/develop/ghcup-cross-0.0.8.yaml
+```
+
+The next sections explain how to install each cross bindist.
+
+#### GHC JS cross bindists
+
+You need the required emscripten JS toolchain:
+
+```sh
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+```
+
+Instructions are also here: [Download and install — Emscripten 3.1.43-git (dev) documentation](https://emscripten.org/docs/getting_started/downloads.html).
+
+To install we need to invoke ghcup like so:
+
+```sh
+emconfigure ghcup install ghc --set javascript-unknown-ghcjs-9.6.2
+```
+
+You'll now have the compiler `javascript-unknown-ghcjs-ghc`. To build a hello world, do e.g.:
+
+```sh
+echo 'main = putStrLn "hello world"' > hello.hs
+javascript-unknown-ghcjs-ghc -fforce-recomp hello.hs
+./hello
+```
+
+You can follow the instructions [here](https://gitlab.haskell.org/ghc/ghc/-/wikis/javascript-backend/building#compiling-hello-world).
+
+#### GHC WASM cross bindists
+
+You need the required wasm toolchain:
+
+```sh
+git clone https://gitlab.haskell.org/ghc/ghc-wasm-meta.git
+cd ghc-wasm-meta/
+export SKIP_GHC=yes
+sh setup.sh
+source ~/.ghc-wasm/env
+```
+
+To install, we need to invoke ghcup like so also passing the `--host=<host>` flag (adjust as needed):
+
+```sh
+ghcup install ghc --set wasm32-wasi-9.6.3.20230927 -- --host=x86_64-linux --with-intree-gmp --with-system-libffi
+```
+
+Also check the documentation here: [Glasgow Haskell Compiler / ghc-wasm-meta](https://gitlab.haskell.org/ghc/ghc-wasm-meta).
+
+You'll now have the compiler `wasm32-wasi-ghc`. To build a hello world, do e.g.:
+
+```sh
+echo 'main = putStrLn "hello world"' > hello.hs
+wasm32-wasi-ghc hello.hs -o hello.wasm
+wasmtime ./hello.wasm
+```
 
 ## Isolated installs
 
