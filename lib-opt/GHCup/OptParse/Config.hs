@@ -67,7 +67,6 @@ configP = subparser
       <> command "show" showP
       <> command "add-release-channel" addP
       )
-    <|> argsP -- add show for a single option
     <|> pure ShowConfig
  where
   initP = info (pure InitConfig) (progDesc "Write default config to ~/.ghcup/config.yaml")
