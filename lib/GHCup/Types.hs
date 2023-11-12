@@ -398,7 +398,7 @@ data UserSettings = UserSettings
   , uPlatformOverride :: Maybe PlatformRequest
   , uMirrors     :: Maybe DownloadMirrors
   }
-  deriving (Show, GHC.Generic)
+  deriving (Show, GHC.Generic, Eq)
 
 defaultUserSettings :: UserSettings
 defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
@@ -459,7 +459,7 @@ data UserKeyBindings = UserKeyBindings
   , kShowAll      :: Maybe KeyCombination
   , kShowAllTools :: Maybe KeyCombination
   }
-  deriving (Show, GHC.Generic)
+  deriving (Show, GHC.Generic, Eq)
 
 data KeyBindings = KeyBindings
   { bUp              :: KeyCombination

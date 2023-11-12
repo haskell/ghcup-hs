@@ -193,10 +193,14 @@ config configCommand settings userConf keybindings runLogger = case configComman
           throwE $ ParseError "Empty values are not allowed"
         Nothing -> do
           usersettings <- decodeSettings k
+          when (usersettings == defaultUserSettings)
+            $ throwE $ ParseError ("Failed to parse setting (maybe typo?): " <> k)
           lift $ doConfig usersettings
           pure ()
         Just v -> do
           usersettings <- decodeSettings (k <> ": " <> v <> "\n")
+          when (usersettings == defaultUserSettings)
+            $ throwE $ ParseError ("Failed to parse key '" <> k <> "' with value '" <> v <> "' as user setting. Maybe typo?")
           lift $ doConfig usersettings
           pure ()
     case r of
@@ -204,7 +208,9 @@ config configCommand settings userConf keybindings runLogger = case configComman
       VLeft (V (JSONDecodeError e)) -> do
         runLogger $ logError $ "Error decoding config: " <> T.pack e
         pure $ ExitFailure 65
-      VLeft _ -> pure $ ExitFailure 65
+      VLeft e -> do
+        runLogger (logError $ T.pack $ prettyHFError e)
+        pure $ ExitFailure 65
 
   AddReleaseChannel force new -> do
     r <- runE @'[DuplicateReleaseChannel] $ do
