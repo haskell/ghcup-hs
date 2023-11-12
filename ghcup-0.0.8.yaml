@@ -3637,7 +3637,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.4.8/ghc-9.4.8-x86_64-deb11-linux.tar.xz
               dlSubdir: ghc-9.4.8-x86_64-unknown-linux
               dlHash: 2743629d040f3213499146cb5154621d6f25e85271019afc9b9009e04d66bf6c
-            unknown_versioning: *ghc-948-64-deb9
+            unknown_versioning: *ghc-948-64-deb11
           Linux_Ubuntu:
             unknown_versioning: *ghc-948-64-deb10
             '( >= 16 && < 19 )': *ghc-948-64-deb9
