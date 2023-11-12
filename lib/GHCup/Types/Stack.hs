@@ -50,7 +50,7 @@ instance FromJSON SetupInfo where
     siSevenzExe <- o .:? "sevenzexe-info"
     siSevenzDll <- o .:? "sevenzdll-info"
     siMsys2     <- o .:? "msys2"          .!= mempty
-    siGHCs      <- o .:? "ghc"            .!= mempty
+    siGHCs      <- o .: "ghc"
     siStack     <- o .:? "stack"          .!= mempty
     pure SetupInfo {..}
 
