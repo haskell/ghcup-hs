@@ -36,12 +36,12 @@ toolRequirements:
           - build-essential
           - curl
           - libffi-dev
-          - libffi6
+          - libffi8
           - libgmp-dev
           - libgmp10
           - libncurses-dev
-          - libncurses5
-          - libtinfo5
+          - libncurses6
+          - libtinfo6
           notes: ''
       Linux_Ubuntu:
         "( >= 20.04 && < 20.10 )":
