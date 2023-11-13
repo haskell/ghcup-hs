@@ -175,10 +175,6 @@ instance Arbitrary Tool where
   arbitrary = genericArbitrary
   shrink    = genericShrink
 
-instance Arbitrary GlobalTool where
-  arbitrary = genericArbitrary
-  shrink    = genericShrink
-
 instance Arbitrary GHCupInfo where
   arbitrary = genericArbitrary
   shrink    = genericShrink

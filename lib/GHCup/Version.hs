@@ -39,6 +39,12 @@ ghcupURL = [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/
 stackSetupURL :: URI
 stackSetupURL = [uri|https://raw.githubusercontent.com/commercialhaskell/stackage-content/master/stack/stack-setup-2.yaml|]
 
+shimGenURL :: URI
+shimGenURL = [uri|https://downloads.haskell.org/~ghcup/shimgen/shim-2.exe|]
+
+shimGenSHA :: T.Text
+shimGenSHA = T.pack "7c55e201f71860c5babea886007c8fa44b861abf50d1c07e5677eb0bda387a70"
+
 -- | The current ghcup version.
 ghcUpVer :: V.PVP
 ghcUpVer = V.PVP . NE.fromList . fmap fromIntegral $ versionBranch version

@@ -387,7 +387,7 @@ rmLink fp
 --
 -- This overwrites previously existing files.
 --
--- On windows, this requires that 'ensureGlobalTools' was run beforehand.
+-- On windows, this requires that 'ensureShimGen' was run beforehand.
 createLink :: ( MonadMask m
               , MonadThrow m
               , HasLog env

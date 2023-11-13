@@ -170,7 +170,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
     (ghcupInfo' :: M.Map GHCTargetVersion DownloadInfo) <-
       M.mapKeys mkTVer <$> M.traverseMaybeWithKey (\_ a -> pure $ fromStackDownloadInfo a) ghcVersions
     let ghcupDownloads' = M.singleton GHC (M.map fromDownloadInfo ghcupInfo')
-    pure (GHCupInfo mempty ghcupDownloads' mempty)
+    pure (GHCupInfo mempty ghcupDownloads')
    where
     fromDownloadInfo :: DownloadInfo -> VersionInfo
     fromDownloadInfo dli = let aspec = M.singleton arch (M.singleton plat (M.singleton Nothing dli))
@@ -189,9 +189,8 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   mergeGhcupInfo [] = fail "mergeGhcupInfo: internal error: need at least one GHCupInfo"
   mergeGhcupInfo xs@(GHCupInfo{}: _) =
     let newDownloads   = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_ghcupDownloads   <$> xs)
-        newGlobalTools = M.unionsWith (\_ a2 -> a2              ) (_globalTools      <$> xs)
         newToolReqs    = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_toolRequirements <$> xs)
-    in pure $ GHCupInfo newToolReqs newDownloads newGlobalTools
+    in pure $ GHCupInfo newToolReqs newDownloads
 
 
 

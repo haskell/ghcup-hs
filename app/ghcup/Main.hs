@@ -261,7 +261,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                          Just _ -> pure ()
 
                 -- TODO: always run for windows
-                siletRunLogger (flip runReaderT s' $ runE ensureGlobalTools) >>= \case
+                siletRunLogger (flip runReaderT s' $ runE ensureShimGen) >>= \case
                   VRight _ -> pure ()
                   VLeft e -> do
                     runLogger

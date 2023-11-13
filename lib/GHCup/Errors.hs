@@ -209,7 +209,6 @@ instance HFErrorProject NoCompatiblePlatform where
 
 -- | Unable to find a download for the requested version/distro.
 data NoDownload = NoDownload GHCTargetVersion Tool (Maybe PlatformRequest)
-                | NoDownload' GlobalTool
   deriving Show
 
 instance Pretty NoDownload where
@@ -227,7 +226,6 @@ instance Pretty NoDownload where
              <> T.unpack (prettyVer vv)
              <> "'"
     | otherwise = text $ "Unable to find a download for " <> T.unpack (tVerToText tver)
-  pPrint (NoDownload' globalTool) = text $ "Unable to find a download for " <> prettyShow globalTool
 
 instance HFErrorProject NoDownload where
   eBase _ = 10
