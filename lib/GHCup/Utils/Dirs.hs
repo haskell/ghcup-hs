@@ -29,6 +29,7 @@ module GHCup.Utils.Dirs
   , relativeSymlink
   , withGHCupTmpDir
   , getConfigFilePath
+  , getConfigFilePath'
   , useXDG
   , cleanupTrash
 
@@ -359,6 +360,12 @@ getConfigFilePath :: (MonadIO m) => m FilePath
 getConfigFilePath = do
   confDir <- liftIO ghcupConfigDir
   pure $ fromGHCupPath confDir </> "config.yaml"
+
+getConfigFilePath' :: (MonadReader env m, HasDirs env) => m FilePath
+getConfigFilePath' = do
+  Dirs {..} <- getDirs
+  pure $ fromGHCupPath confDir </> "config.yaml"
+
 
 ghcupConfigFile :: (MonadIO m)
                 => Excepts '[JSONError] m UserSettings

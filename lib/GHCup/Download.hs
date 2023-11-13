@@ -158,7 +158,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
                             catchE @JSONError (\(JSONDecodeError _) -> do
                                 logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: "
                                 Right <$> decodeMetadata @Stack.SetupInfo base)
-                              $ fmap Left $ decodeMetadata @GHCupInfo base
+                              $ fmap Left (decodeMetadata @GHCupInfo base >>= \gI -> warnOnMetadataUpdate uri gI >> pure gI)
 
   fromStackSetupInfo :: MonadThrow m
                      => Stack.SetupInfo
@@ -170,7 +170,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
     (ghcupInfo' :: M.Map GHCTargetVersion DownloadInfo) <-
       M.mapKeys mkTVer <$> M.traverseMaybeWithKey (\_ a -> pure $ fromStackDownloadInfo a) ghcVersions
     let ghcupDownloads' = M.singleton GHC (M.map fromDownloadInfo ghcupInfo')
-    pure (GHCupInfo mempty ghcupDownloads')
+    pure (GHCupInfo mempty ghcupDownloads' Nothing)
    where
     fromDownloadInfo :: DownloadInfo -> VersionInfo
     fromDownloadInfo dli = let aspec = M.singleton arch (M.singleton plat (M.singleton Nothing dli))
@@ -190,7 +190,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   mergeGhcupInfo xs@(GHCupInfo{}: _) =
     let newDownloads   = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_ghcupDownloads   <$> xs)
         newToolReqs    = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_toolRequirements <$> xs)
-    in pure $ GHCupInfo newToolReqs newDownloads
+    in pure $ GHCupInfo newToolReqs newDownloads Nothing
 
 
 
@@ -306,6 +306,36 @@ getBase uri = do
       handleIO (\e -> logWarn $ "setAccessTime failed with: " <> T.pack (displayException e)) $ liftIO $ setAccessTime f modTime
 
       pure f
+
+warnOnMetadataUpdate ::
+           ( MonadReader env m
+           , MonadIO m
+           , HasLog env
+           , HasDirs env
+           )
+        => URI
+        -> GHCupInfo
+        -> m ()
+warnOnMetadataUpdate uri (GHCupInfo { _metadataUpdate = Just newUri })
+  | scheme' uri == "file"
+  , urlBase' uri /= urlBase' newUri = do
+      confFile <- getConfigFilePath'
+      logWarn $ "New metadata version detected"
+                           <> "\n    old URI: " <> (decUTF8Safe . serializeURIRef') uri
+                           <> "\n    new URI: " <> (decUTF8Safe . serializeURIRef') newUri
+                           <> "\nYou might need to update your " <> T.pack confFile
+  | scheme' uri /= "file"
+  , uri /= newUri = do
+      confFile <- getConfigFilePath'
+      logWarn $ "New metadata version detected"
+                           <> "\n    old URI: " <> (decUTF8Safe . serializeURIRef') uri
+                           <> "\n    new URI: " <> (decUTF8Safe . serializeURIRef') newUri
+                           <> "\nYou might need to update your " <> T.pack confFile
+ where
+  scheme' = view (uriSchemeL' % schemeBSL')
+  urlBase' = T.unpack . decUTF8Safe . urlBaseName . view pathL'
+warnOnMetadataUpdate _ _ = pure ()
+
 
 decodeMetadata :: forall j m env .
                ( MonadReader env m

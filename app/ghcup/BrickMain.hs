@@ -683,7 +683,7 @@ settings' = unsafePerformIO $ do
   newIORef $ AppState defaultSettings
                       dirs
                       defaultKeyBindings
-                      (GHCupInfo mempty mempty)
+                      (GHCupInfo mempty mempty Nothing)
                       (PlatformRequest A_64 Darwin Nothing)
                       loggerConfig
 

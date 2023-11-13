@@ -74,6 +74,7 @@ data KeyCombination = KeyCombination { key :: Key, mods :: [Modifier] }
 data GHCupInfo = GHCupInfo
   { _toolRequirements :: ToolRequirements
   , _ghcupDownloads   :: GHCupDownloads
+  , _metadataUpdate   :: Maybe URI
   }
   deriving (Show, GHC.Generic, Eq)
 

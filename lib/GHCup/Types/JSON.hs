@@ -281,8 +281,9 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Versio
 instance FromJSON GHCupInfo where
   parseJSON = withObject "GHCupInfo" $ \o -> do
     toolRequirements' <- o .:? "toolRequirements"
+    metadataUpdate    <- o .:? "metadataUpdate"
     ghcupDownloads'   <- o .:  "ghcupDownloads"
-    pure (GHCupInfo (fromMaybe mempty toolRequirements') ghcupDownloads')
+    pure (GHCupInfo (fromMaybe mempty toolRequirements') ghcupDownloads' metadataUpdate)
 
 deriveToJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
 
