@@ -142,49 +142,29 @@ If you experience problems, consider clearing the cache via `ghcup gc --cache`.
 
 ## Metadata
 
-The metadata are the files that describe tool versions, where to download them etc. and
-can be viewed here: [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata)
+Metadata files are also called release or distribution channels. They describe tool versions, where to download them etc. and
+can be viewed here: [https://github.com/haskell/ghcup-metadata](https://github.com/haskell/ghcup-metadata).
 
-### Mirrors
+See the [description](https://github.com/haskell/ghcup-metadata#metadata-variants-distribution-channels)
+of metadata files to understand their purpose. These can be combined.
 
-GHCup allows to use custom mirrors/download-info hosted by yourself or 3rd parties.
-
-To use a mirror, set the following option in `~/.ghcup/config.yaml`:
-
-```yml
-url-source:
-  - https://some-url/ghcup-0.0.6.yaml
-```
-
-See [config.yaml](https://github.com/haskell/ghcup-hs/blob/master/data/config.yaml)
-for more options.
-
-Alternatively you can do it via a cli switch:
-
-```sh
-ghcup --url-source=https://some-url/ghcup-0.0.6.yaml list
-```
-
-#### Known mirrors
-
-1. [https://mirror.sjtu.edu.cn/docs/ghcup](https://mirror.sjtu.edu.cn/docs/ghcup)
-2. [https://mirrors.ustc.edu.cn/help/ghcup.html](https://mirrors.ustc.edu.cn/help/ghcup.html)
-
-### (Pre-)Release channels
-
-A release channel is basically just a metadata file location. You can add additional release
-channels that complement the default one, such as the **prerelease channel** like so:
+For example, if you want access to both prerelease and cross bindists, you'd do:
 
 ```sh
 ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml
+ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml
 ```
 
-This will result in `~/.ghcup/config.yaml` to contain this record:
+This results in the following configuration in `~/.ghcup/config.yaml`:
 
-```yml
+```yaml
 url-source:
-  - GHCupURL
-  - https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml
+# the base url that contains all the release bindists
+- GHCupURL
+# prereleases
+- https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.8.yaml
+# cross bindists
+- https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml
 ```
 
 You can add as many channels as you like. They are combined under *Last*, so versions from the prerelease channel
@@ -197,14 +177,65 @@ url-source:
   - GHCupURL
 ```
 
-If you want to combine your release channel with a mirror, you'd do it like so:
+Also see [config.yaml](https://github.com/haskell/ghcup-hs/blob/master/data/config.yaml)
+for more options.
+
+You can also use an alternative metadata via one-shot cli option:
+
+```sh
+ghcup --url-source=https://some-url/ghcup-0.0.8.yaml tui
+```
+
+One main caveat of using URLs is that you might need to check whether there are new versions
+of the file (e.g. `ghcup-0.0.7.yaml` vs `ghcup-0.0.8.yaml`). Although old metadata files
+are supported for some time, they are not so indefinitely.
+
+### Mirrors
+
+Metadata files can also be used to operate 3rd party mirrors, in which case you want to use
+a URL instead of the `GHCupURL` alias. E.g. in `~/.ghcup/config.yaml`, you'd do:
 
 ```yml
 url-source:
-  # base metadata
-  - "https://mirror.sjtu.edu.cn/ghcup/yaml/ghcup/data/ghcup-0.0.6.yaml"
-  # prerelease channel
-  - "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
+  - https://mirror.sjtu.edu.cn/ghcup/yaml/ghcup/data/ghcup-0.0.6.yaml
+```
+
+Note that later versions of GHCup allow more sophisticated mirror support, see [here](./#mirrors-proper).
+
+#### Known mirrors
+
+1. [https://mirror.sjtu.edu.cn/docs/ghcup](https://mirror.sjtu.edu.cn/docs/ghcup)
+2. [https://mirrors.ustc.edu.cn/help/ghcup.html](https://mirrors.ustc.edu.cn/help/ghcup.html)
+
+### Git based metadata config
+
+If you don't like the way ghcup updates its metadata with caching and fetching via curl, you can also do as follows:
+
+Clone the metadata git repo:
+
+```sh
+mkdir -p /home/user/git/
+cd /home/user/git/
+git clone -b master https://github.com/haskell/ghcup-metadata.git
+```
+
+Then tell ghcup to use file locations in `~/.ghcup/config.yaml`, e.g.:
+
+```yaml
+url-source:
+- file:///home/user/git/ghcup-metadata/ghcup-0.0.8.yaml
+- file:///home/user/git/ghcup-metadata/ghcup-cross-0.0.8.yaml
+- file:///home/user/git/ghcup-metadata/ghcup-prereleases-0.0.8.yaml
+```
+
+Now, if you invoke `ghcup tui`, it will open instantly without any download, since it just
+reads the metadata from local disk.
+
+You'll have to update the metadata manually though, like so:
+
+```sh
+cd /home/user/git/
+git pull --ff-only origin master
 ```
 
 ## Stack integration
@@ -295,6 +326,39 @@ On windows, you may find the following config options useful too:
 `skip-msys`, `extra-path`, `extra-include-dirs`, `extra-lib-dirs`.
 
 Also check out: [https://docs.haskellstack.org/en/stable/yaml_configuration](https://docs.haskellstack.org/en/stable/yaml_configuration)
+
+## Mirrors (proper)
+
+Mirrors are now supported via configuration, instead of specifying alternative metadata files.
+
+As an example, this would be a complete mirror configuration in `~/.ghcup/config.yaml`:
+
+```yaml
+mirrors:
+  # yaml download location, would result in:
+  #      https://raw.githubusercontent.com/haskell/ghcup-metadata/develop/ghcup-0.0.8.yaml
+  #   -> https://mirror.sjtu.edu.cn/ghcup/yaml/haskell/ghcup-metadata/master/ghcup-0.0.8.yaml
+  "raw.githubusercontent.com":
+    authority:
+      host: "mirror.sjtu.edu.cn"
+    pathPrefix: "ghcup/yaml"
+  # for stack and some older HLS versions, would result in e.g.
+  #      https://github.com/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-Windows-1.2.0.tar.gz
+  #   -> https://mirror.sjtu.edu.cn/ghcup/github/haskell/haskell-language-server/releases/download/1.2.0/haskell-language-server-Windows-1.2.0.tar.gz
+  "github.com":
+    authority:
+      host: "mirror.sjtu.edu.cn"
+    pathPrefix: "ghcup/github"
+  # for all haskell.org hosted bindists, would result in e.g.
+  #      https://downloads.haskell.org/~ghc/9.8.1/ghc-9.8.1-x86_64-deb10-linux.tar.xz
+  #   -> https://mirror.sjtu.edu.cn/ghcup/haskell-downloads/~ghc/9.8.1/ghc-9.8.1-x86_64-deb10-linux.tar.xz
+  "downloads.haskell.org":
+    authority:
+      host: "mirror.sjtu.edu.cn"
+    pathPrefix: "downloads.haskell.org"
+```
+
+The configuration depends on the host of the mirror and they have to provide the correct configuration.
 
 # More on installation
 
