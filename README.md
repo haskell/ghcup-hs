@@ -7,7 +7,7 @@
 * `ghcup-A.B.C.yaml`: this is the main metadata and what ghcup uses by default
 * `ghcup-vanilla-A.B.C.yaml`: this is similar to `ghcup-A.B.C.yaml`, but only uses upstream bindists (no patches/fixes are applied, no missing platforms added)
 * `ghcup-prereleases-A.B.C.yaml`: this contains pre-releases of all tools
-* `ghcup-cross-A.B.C.yaml`: this contains (usually experimental) cross compilers
+* `ghcup-cross-A.B.C.yaml`: this contains experimental cross compilers. See https://www.haskell.org/ghcup/guide/#cross-support for details.
 
 ### Using the metadata
 
