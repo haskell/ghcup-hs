@@ -508,6 +508,9 @@ libraries, this may need some tweaking of `build.mk` or configure args.
 See `ghcup compile ghc --help` for further information.
 
 Since ghcup version 0.1.20.0, we provide cross bindists for GHC JS and WASM. These can be installed conveniently.
+However, these are intended as a developer preview only. By using these GHC variants, you are implicitly signing up to participate in GHC development!
+If you run into bugs or missing behavior, join the dev chat at https://matrix.to/#/#GHC:matrix.org. 
+
 First, add the cross release channel:
 
 ```sh
@@ -516,7 +519,7 @@ ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup
 
 The next sections explain how to install each cross bindist.
 
-### GHC JS cross bindists
+### GHC JS cross bindists (experimental)
 
 You need the required emscripten JS toolchain:
 
@@ -546,7 +549,7 @@ javascript-unknown-ghcjs-ghc -fforce-recomp hello.hs
 
 You can follow the instructions [here](https://gitlab.haskell.org/ghc/ghc/-/wikis/javascript-backend/building#compiling-hello-world).
 
-### GHC WASM cross bindists
+### GHC WASM cross bindists (experimental)
 
 You need the required wasm toolchain:
 
