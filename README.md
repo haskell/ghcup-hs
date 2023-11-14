@@ -18,6 +18,14 @@ ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup
 ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml
 ```
 
+If you want **only** vanilla upstream bindists and opt out of all unofficial stuff, you'd run:
+
+```sh
+ghcup config set url-source https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.8.yaml
+```
+
+Also check the [config.yaml documentation](https://github.com/haskell/ghcup-hs/blob/master/data/config.yaml).
+
 ## For contributors
 
 ### Adding a new GHC version
