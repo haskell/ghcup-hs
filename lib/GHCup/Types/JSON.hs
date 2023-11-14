@@ -59,7 +59,6 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Chunk
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Release
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''SemVer
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Tool
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GlobalTool
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''KeepDirs
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downloader
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GPGSetting
@@ -156,12 +155,6 @@ instance ToJSONKey Tool where
   toJSONKey = genericToJSONKey defaultJSONKeyOptions
 
 instance FromJSONKey Tool where
-  fromJSONKey = genericFromJSONKey defaultJSONKeyOptions
-
-instance ToJSONKey GlobalTool where
-  toJSONKey = genericToJSONKey defaultJSONKeyOptions
-
-instance FromJSONKey GlobalTool where
   fromJSONKey = genericFromJSONKey defaultJSONKeyOptions
 
 instance ToJSON TarDir where
@@ -288,9 +281,9 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Versio
 instance FromJSON GHCupInfo where
   parseJSON = withObject "GHCupInfo" $ \o -> do
     toolRequirements' <- o .:? "toolRequirements"
-    globalTools'      <- o .:? "globalTools"
+    metadataUpdate    <- o .:? "metadataUpdate"
     ghcupDownloads'   <- o .:  "ghcupDownloads"
-    pure (GHCupInfo (fromMaybe mempty toolRequirements') ghcupDownloads' (fromMaybe mempty globalTools'))
+    pure (GHCupInfo (fromMaybe mempty toolRequirements') ghcupDownloads' metadataUpdate)
 
 deriveToJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
 

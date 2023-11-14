@@ -4116,17 +4116,7 @@
                     }
                 }
             },
-            "globalTools": {
-                "ShimGen": {
-                    "dlCSize": -1,
-                    "dlHash": "xrocmtsmjzgmemxrenf",
-                    "dlOutput": null,
-                    "dlSubdir": {
-                        "RegexDir": "\u0013tt\u0013m-"
-                    },
-                    "dlUri": "https:wjmqkzflmlzetqdcxed"
-                }
-            },
+            "metadataUpdate": "https:ixnnceymgu",
             "toolRequirements": {
                 "GHCup": {
                     "3.8.8": {
@@ -9309,17 +9299,7 @@
                     }
                 }
             },
-            "globalTools": {
-                "ShimGen": {
-                    "dlCSize": -18,
-                    "dlHash": "wbpx",
-                    "dlOutput": null,
-                    "dlSubdir": {
-                        "RegexDir": "[u3"
-                    },
-                    "dlUri": "https:"
-                }
-            },
+            "metadataUpdate": "https:cxnnfovqllcccybmllaikuvluhp",
             "toolRequirements": {
                 "HLS": {
                     "2.6.9": {
@@ -11308,15 +11288,7 @@
                     }
                 }
             },
-            "globalTools": {
-                "ShimGen": {
-                    "dlCSize": null,
-                    "dlHash": "yfwka",
-                    "dlOutput": "c5q",
-                    "dlSubdir": "􊆁M󿅃/|",
-                    "dlUri": "https:yolsdtmmo"
-                }
-            },
+            "metadataUpdate": "http:fbptvnonarkxeszcsn",
             "toolRequirements": {
                 "Cabal": {
                     "7.7.4": {
@@ -13648,15 +13620,7 @@
                 "GHCup": {},
                 "Stack": {}
             },
-            "globalTools": {
-                "ShimGen": {
-                    "dlCSize": null,
-                    "dlHash": "hoegok",
-                    "dlOutput": null,
-                    "dlSubdir": "􁃽\u0005]?9\u0001Q:𭲎8ᙣ𑐛'oD\u001a󱧼(𛆎􃥧\u0004\\𢨓[\u001e",
-                    "dlUri": "https:nimu"
-                }
-            },
+            "metadataUpdate": null,
             "toolRequirements": {
                 "Cabal": {
                     "3.5.4": {
@@ -18153,17 +18117,7 @@
                     }
                 }
             },
-            "globalTools": {
-                "ShimGen": {
-                    "dlCSize": null,
-                    "dlHash": "mpljxguikoebuynzv",
-                    "dlOutput": "Q􆹿@i\"%\u0014gb0/PPYE\u001f\u0014KC`-wL",
-                    "dlSubdir": {
-                        "RegexDir": ".`_\u0005󹦸&󲥠\u0014^1Fml\u001e􄋔>o􅟘G"
-                    },
-                    "dlUri": "http:tmcnu"
-                }
-            },
+            "metadataUpdate": "http:ntkddscbgdrjmwymnvpqpmgr",
             "toolRequirements": {
                 "GHC": {
                     "6.3.1": {

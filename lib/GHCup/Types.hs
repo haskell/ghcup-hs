@@ -74,7 +74,7 @@ data KeyCombination = KeyCombination { key :: Key, mods :: [Modifier] }
 data GHCupInfo = GHCupInfo
   { _toolRequirements :: ToolRequirements
   , _ghcupDownloads   :: GHCupDownloads
-  , _globalTools      :: Map GlobalTool DownloadInfo
+  , _metadataUpdate   :: Maybe URI
   }
   deriving (Show, GHC.Generic, Eq)
 
@@ -135,14 +135,6 @@ instance Pretty Tool where
   pPrint Stack = text "stack"
 
 instance NFData Tool
-
-data GlobalTool = ShimGen
-  deriving (Eq, GHC.Generic, Ord, Show, Enum, Bounded)
-
-instance NFData GlobalTool
-
-instance Pretty GlobalTool where
-  pPrint ShimGen = text "shimgen"
 
 
 -- | All necessary information of a tool version, including

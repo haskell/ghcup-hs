@@ -322,7 +322,7 @@ jobs:
         with:
           name: testfiles
           path: |
-            ./test/golden/unix/GHCupInfo*json
+            ./test/ghcup-test/golden/unix/GHCupInfo*json
 
   test-arm:
     name: Test ARM
@@ -389,7 +389,7 @@ jobs:
         with:
           name: testfiles
           path: |
-            ./test/golden/unix/GHCupInfo*json
+            ./test/ghcup-test/golden/unix/GHCupInfo*json
 
   test-macwin:
     name: Test Mac/Win
@@ -458,7 +458,7 @@ jobs:
         with:
           name: testfiles
           path: |
-            ./test/golden/windows/GHCupInfo*json
+            ./test/ghcup-test/golden/windows/GHCupInfo*json
 
       - if: failure() && runner.os != 'Windows'
         name: Upload artifact
@@ -466,7 +466,7 @@ jobs:
         with:
           name: testfiles
           path: |
-            ./test/golden/unix/GHCupInfo*json
+            ./test/ghcup-test/golden/unix/GHCupInfo*json
   hls:
     name: hls
     needs: build-linux

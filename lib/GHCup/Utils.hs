@@ -1199,24 +1199,22 @@ getVersionInfo v' tool =
     )
 
 
-ensureGlobalTools :: ( MonadMask m
-                     , MonadThrow m
-                     , HasLog env
-                     , MonadIO m
-                     , MonadReader env m
-                     , HasDirs env
-                     , HasSettings env
-                     , HasGHCupInfo env
-                     , MonadUnliftIO m
-                     , MonadFail m
-                     )
-                  => Excepts '[GPGError, DigestError, ContentLengthError, DownloadFailed, NoDownload] m ()
-ensureGlobalTools
+ensureShimGen :: ( MonadMask m
+                 , MonadThrow m
+                 , HasLog env
+                 , MonadIO m
+                 , MonadReader env m
+                 , HasDirs env
+                 , HasSettings env
+                 , HasGHCupInfo env
+                 , MonadUnliftIO m
+                 , MonadFail m
+                 )
+              => Excepts '[GPGError, DigestError, ContentLengthError, DownloadFailed, NoDownload] m ()
+ensureShimGen
   | isWindows = do
-      (GHCupInfo _ _ gTools) <- lift getGHCupInfo
       dirs <- lift getDirs
-      shimDownload <- liftE $ lE @_ @'[NoDownload]
-        $ maybe (Left (NoDownload' ShimGen)) Right $ Map.lookup ShimGen gTools
+      let shimDownload = DownloadInfo shimGenURL Nothing shimGenSHA Nothing Nothing
       let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
       void $ (\DigestError{} -> do
           lift $ logWarn "Digest doesn't match, redownloading gs.exe..."

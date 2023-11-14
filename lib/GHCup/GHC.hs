@@ -763,7 +763,8 @@ rmGHCVer ver = do
 
   Dirs {..} <- lift getDirs
 
-  lift $ hideError doesNotExistErrorType $ rmDirectoryLink (fromGHCupPath baseDir </> "share")
+  when isSetGHC $ do
+    lift $ hideError doesNotExistErrorType $ rmDirectoryLink (fromGHCupPath baseDir </> "share")
 
 
 
