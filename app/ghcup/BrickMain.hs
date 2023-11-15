@@ -355,7 +355,7 @@ ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
     <=> footer
  where
   footer =
-    Brick.withAttr (Brick.attrName "help")
+    Brick.withAttr helpAttr
       . Brick.txtWrap
       . T.pack
       . foldr1 (\x y -> x <> "  " <> y)
@@ -374,9 +374,9 @@ ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
     in Brick.withDefAttr L.listAttr $ renderSectionList (renderItem minTagSize minVerSize) True bis
   renderItem minTagSize minVerSize b listResult@ListResult{lTag = lTag', ..} =
     let marks = if
-          | lSet       -> (Brick.withAttr (Brick.attrName "set") $ Brick.str setSign)
-          | lInstalled -> (Brick.withAttr (Brick.attrName "installed") $ Brick.str installedSign)
-          | otherwise  -> (Brick.withAttr (Brick.attrName "not-installed") $ Brick.str notInstalledSign)
+          | lSet       -> (Brick.withAttr setAttr $ Brick.str setSign)
+          | lInstalled -> (Brick.withAttr installedAttr $ Brick.str installedSign)
+          | otherwise  -> (Brick.withAttr notInstalledAttr $ Brick.str notInstalledSign)
         ver = case lCross of
           Nothing -> T.unpack . prettyVer $ lVer
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
@@ -388,7 +388,7 @@ ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
           | otherwise  = id
         hooray
           | elem Latest lTag' && not lInstalled =
-              Brick.withAttr (Brick.attrName "hooray")
+              Brick.withAttr hoorayAttr
           | otherwise = id
     in  hooray $ dim
           (   marks
@@ -411,14 +411,14 @@ ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
           <+> Brick.vLimit 1 (Brick.fill ' ')
           )
 
-  printTag Recommended    = Just $ Brick.withAttr (Brick.attrName "recommended") $ Brick.str "recommended"
-  printTag Latest         = Just $ Brick.withAttr (Brick.attrName "latest") $ Brick.str "latest"
-  printTag Prerelease     = Just $ Brick.withAttr (Brick.attrName "prerelease") $ Brick.str "prerelease"
-  printTag Nightly        = Just $ Brick.withAttr (Brick.attrName "nightly") $ Brick.str "nightly"
+  printTag Recommended    = Just $ Brick.withAttr recommendedAttr $ Brick.str "recommended"
+  printTag Latest         = Just $ Brick.withAttr latestAttr $ Brick.str "latest"
+  printTag Prerelease     = Just $ Brick.withAttr prereleaseAttr $ Brick.str "prerelease"
+  printTag Nightly        = Just $ Brick.withAttr nightlyAttr $ Brick.str "nightly"
   printTag (Base pvp'')   = Just $ Brick.str ("base-" ++ T.unpack (prettyPVP pvp''))
   printTag Old            = Nothing
-  printTag LatestPrerelease = Just $ Brick.withAttr (Brick.attrName "latest-prerelease") $ Brick.str "latest-prerelease"
-  printTag LatestNightly    = Just $ Brick.withAttr (Brick.attrName "latest-nightly") $ Brick.str "latest-nightly"
+  printTag LatestPrerelease = Just $ Brick.withAttr latestPrereleaseAttr $ Brick.str "latest-prerelease"
+  printTag LatestNightly    = Just $ Brick.withAttr latestNightlyAttr $ Brick.str "latest-nightly"
   printTag (UnknownTag t) = Just $ Brick.str t
 
   printTool Cabal = Brick.str "cabal"
@@ -428,12 +428,12 @@ ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
   printTool Stack = Brick.str "Stack"
 
   printNotes ListResult {..} =
-    (if hlsPowered then [Brick.withAttr (Brick.attrName "hls-powered") $ Brick.str "hls-powered"] else mempty
+    (if hlsPowered then [Brick.withAttr hlsPoweredAttr $ Brick.str "hls-powered"] else mempty
       )
-      ++ (if lStray then [Brick.withAttr (Brick.attrName "stray") $ Brick.str "stray"] else mempty)
+      ++ (if lStray then [Brick.withAttr strayAttr $ Brick.str "stray"] else mempty)
       ++ (case lReleaseDay of
             Nothing -> mempty
-            Just d  -> [Brick.withAttr (Brick.attrName "day") $ Brick.str (show d)])
+            Just d  -> [Brick.withAttr dayAttr $ Brick.str (show d)])
 
 minHSize :: Int -> Widget n -> Widget n
 minHSize s' = Brick.hLimit s' . Brick.vLimit 1 . (<+> Brick.fill ' ')
@@ -453,49 +453,78 @@ drawUI dimAttrs st =
   case st ^. mode of
     Navigation -> [ui dimAttrs st]
     Tutorial   -> 
-      let tutorial = centerLayer
-                   $ Brick.hLimitPercent 75
-                   $ Brick.vLimitPercent 50
-                   $ Brick.withBorderStyle unicode
-                   $ borderWithLabel (Brick.txt "Tutorial")
-                   $ Brick.vBox 
-                     [ Brick.txt "GHCup is a tool for managing your Haskell tooling."
-                     , center (Brick.txt "--- o ---")
-                     , Brick.txt "This symbol "
-                        <+> Brick.withAttr (Brick.attrName "installed") (Brick.str "✓ ")
-                        <+> Brick.txt " means that the tool is installed but not in used"
-                     , Brick.txt "This symbol "
-                        <+> Brick.withAttr (Brick.attrName "set") (Brick.str "✔✔") 
-                        <+> Brick.txt " means that the tool is installed and in used"
-                     , Brick.txt "This symbol "
-                        <+> Brick.withAttr (Brick.attrName "not-installed") (Brick.str "✗ ")
-                        <+> Brick.txt " means that the tool isn't installed"
-                     , center (Brick.txt "--- o ---")
-                     , Brick.txt "Press Enter to exit the tutorial"
-                     ]
+      let mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
+          txt_separator = hBorder <+> Brick.str " o " <+> hBorder
+          tutorial = centerLayer
+                      $ Brick.hLimitPercent 75
+                      $ Brick.vLimitPercent 50
+                      $ Brick.withBorderStyle unicode
+                      $ borderWithLabel (Brick.txt "Tutorial")
+                      $ Brick.vBox 
+                          (fmap center
+                            [ mkTextBox [Brick.txt "GHCup is a distribution channel for Haskell's tools."]
+                            , txt_separator
+                            , mkTextBox [
+                                Brick.hBox [
+                                   Brick.txt "This symbol "
+                                 , Brick.withAttr installedAttr (Brick.str installedSign)
+                                 , Brick.txt " means that the tool is installed but not in used"
+                                ]
+                              , Brick.hBox [
+                                   Brick.txt "This symbol "
+                                 , Brick.withAttr setAttr (Brick.str setSign)
+                                 , Brick.txt " means that the tool is installed and in used"
+                                ]
+                              , Brick.hBox [
+                                   Brick.txt "This symbol "
+                                 , Brick.withAttr notInstalledAttr (Brick.str notInstalledSign)
+                                 , Brick.txt " means that the tool isn't installed"
+                                ]
+                              ]
+                            , txt_separator
+                            , mkTextBox [
+                                Brick.hBox [
+                                   Brick.withAttr recommendedAttr $ Brick.str "recommended"
+                                 , Brick.txt " tag is based on ..."
+                                ]
+                              , Brick.hBox [
+                                   Brick.withAttr latestAttr $ Brick.str "latest"
+                                 , Brick.txt " tag is for the latest distributed version of the tool"
+                                ]
+                              , Brick.hBox [
+                                   Brick.withAttr latestAttr $ Brick.str "hls-powered"
+                                 , Brick.txt " denotes the compiler version supported by the currently set ("
+                                 , Brick.withAttr setAttr (Brick.str setSign)
+                                 , Brick.txt ") hls"
+                                ]
+                              , Brick.txt "base-X.Y.Z.W tag is the minimun version of the base package admited in such ghc version"
+                              ]
+                            , Brick.txt " "                            
+                            ])
+                        <=> Brick.padRight Brick.Max (Brick.txt "Press Enter to exit the tutorial")
        in [tutorial, ui dimAttrs st]
 
 
 defaultAttributes :: Bool -> AttrMap
 defaultAttributes no_color = Brick.attrMap
   Vty.defAttr
-  [ (L.listSelectedFocusedAttr          , Vty.defAttr `withBackColor` Vty.blue)  --, (attrName "active"            , Vty.defAttr `withBackColor` Vty.blue)
-  , (L.listSelectedAttr                 , Vty.defAttr)                           -- we use list attributes for active.
-  , (Brick.attrName "not-installed"     , Vty.defAttr `withForeColor` Vty.red)
-  , (Brick.attrName "set"               , Vty.defAttr `withForeColor` Vty.green)
-  , (Brick.attrName "installed"         , Vty.defAttr `withForeColor` Vty.green)
-  , (Brick.attrName "recommended"       , Vty.defAttr `withForeColor` Vty.green)
-  , (Brick.attrName "hls-powered"       , Vty.defAttr `withForeColor` Vty.green)
-  , (Brick.attrName "latest"            , Vty.defAttr `withForeColor` Vty.yellow)
-  , (Brick.attrName "latest-prerelease" , Vty.defAttr `withForeColor` Vty.red)
-  , (Brick.attrName "latest-nightly"    , Vty.defAttr `withForeColor` Vty.red)
-  , (Brick.attrName "prerelease"        , Vty.defAttr `withForeColor` Vty.red)
-  , (Brick.attrName "nightly"           , Vty.defAttr `withForeColor` Vty.red)
-  , (Brick.attrName "compiled"          , Vty.defAttr `withForeColor` Vty.blue)
-  , (Brick.attrName "stray"             , Vty.defAttr `withForeColor` Vty.blue)
-  , (Brick.attrName "day"               , Vty.defAttr `withForeColor` Vty.blue)
-  , (Brick.attrName "help"              , Vty.defAttr `withStyle`     Vty.italic)
-  , (Brick.attrName "hooray"            , Vty.defAttr `withForeColor` Vty.brightWhite)
+  [ (L.listSelectedFocusedAttr , Vty.defAttr `withBackColor` Vty.blue)  --, (attrName "active"            , Vty.defAttr `withBackColor` Vty.blue)
+  , (L.listSelectedAttr        , Vty.defAttr)                           -- we use list attributes for active.
+  , (notInstalledAttr          , Vty.defAttr `withForeColor` Vty.red)
+  , (setAttr                   , Vty.defAttr `withForeColor` Vty.green)
+  , (installedAttr             , Vty.defAttr `withForeColor` Vty.green)
+  , (recommendedAttr           , Vty.defAttr `withForeColor` Vty.green)
+  , (hlsPoweredAttr            , Vty.defAttr `withForeColor` Vty.green)
+  , (latestAttr                , Vty.defAttr `withForeColor` Vty.yellow)
+  , (latestPrereleaseAttr      , Vty.defAttr `withForeColor` Vty.red)
+  , (latestNightlyAttr         , Vty.defAttr `withForeColor` Vty.red)
+  , (prereleaseAttr            , Vty.defAttr `withForeColor` Vty.red)
+  , (nightlyAttr               , Vty.defAttr `withForeColor` Vty.red)
+  , (compiledAttr              , Vty.defAttr `withForeColor` Vty.blue)
+  , (strayAttr                 , Vty.defAttr `withForeColor` Vty.blue)
+  , (dayAttr                   , Vty.defAttr `withForeColor` Vty.blue)
+  , (helpAttr                  , Vty.defAttr `withStyle`     Vty.italic)
+  , (hoorayAttr                , Vty.defAttr `withForeColor` Vty.brightWhite)
   ]
   where
     withForeColor | no_color  = const
@@ -505,6 +534,27 @@ defaultAttributes no_color = Brick.attrMap
                   | otherwise = Vty.withBackColor
 
     withStyle                 = Vty.withStyle
+
+
+notInstalledAttr, setAttr, installedAttr, recommendedAttr, hlsPoweredAttr:: Brick.AttrName
+latestAttr, latestPrereleaseAttr, latestNightlyAttr, prereleaseAttr, nightlyAttr:: Brick.AttrName
+compiledAttr, strayAttr, dayAttr, helpAttr, hoorayAttr:: Brick.AttrName
+
+notInstalledAttr = Brick.attrName "not-installed"
+setAttr = Brick.attrName "set" 
+installedAttr = Brick.attrName "installed" 
+recommendedAttr = Brick.attrName "recommended" 
+hlsPoweredAttr = Brick.attrName "hls-powered"
+latestAttr = Brick.attrName "latest" 
+latestPrereleaseAttr = Brick.attrName "latest-prerelease"
+latestNightlyAttr = Brick.attrName "latest-nightly"
+prereleaseAttr = Brick.attrName "prerelease" 
+nightlyAttr = Brick.attrName "nightly" 
+compiledAttr = Brick.attrName "compiled" 
+strayAttr = Brick.attrName "stray" 
+dayAttr = Brick.attrName "day" 
+helpAttr = Brick.attrName "help" 
+hoorayAttr = Brick.attrName "hooray" 
 
 dimAttributes :: Bool -> AttrMap
 dimAttributes no_color = Brick.attrMap
