@@ -24,7 +24,7 @@ jobs:
       ARCH: 64
       DEBIAN_FRONTEND: noninteractive
       TZ: Asia/Singapore
-      GHC_VERSION: 9.2.3
+      GHC_VERSION: 9.2.8
     strategy:
       fail-fast: false
       matrix:
@@ -198,7 +198,7 @@ jobs:
       TZ: Asia/Singapore
       ARCH: ARM64
       DISTRO: Ubuntu
-      GHC_VERSION: 9.2.2
+      GHC_VERSION: 9.2.8
     strategy:
       fail-fast: false
       matrix:
@@ -261,7 +261,7 @@ jobs:
       ARCH: 64
       TARBALL_EXT: tar.xz
       DISTRO: na
-      GHC_VERSION: 9.2.3
+      GHC_VERSION: 9.2.8
     steps:
       - uses: actions/checkout@v3
         with:
@@ -294,7 +294,7 @@ jobs:
       TARBALL_EXT: tar.xz
       DISTRO: na
       HOMEBREW_CHANGE_ARCH_TO_ARM: 1
-      GHC_VERSION: 9.2.3
+      GHC_VERSION: 9.2.8
     steps:
       - uses: actions/checkout@v3
         with:
@@ -327,7 +327,7 @@ jobs:
       ARCH: 64
       TARBALL_EXT: "zip"
       DISTRO: na
-      GHC_VERSION: 9.2.3
+      GHC_VERSION: 9.2.8
     steps:
       - name: install windows deps
         shell: pwsh
