@@ -2954,6 +2954,12 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.2.8/ghc-9.2.8-aarch64-apple-darwin.tar.xz
               dlSubdir: ghc-9.2.8-aarch64-apple-darwin
               dlHash: 34db9b19571905b08ca1e444b46490e7c19cb73a0fe778696fa6ec02ff8d3c4b
+        A_ARM:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghc/9.2.8/ghc-9.2.8-armv7-deb10-linux.tar.xz
+              dlSubdir: ghc-9.2.8
+              dlHash: 78af6f7350fad956b1e4609a4c4a05e5522e9734c3038a9d56e3ceb5f260c7c4
     9.4.1:
       viTags:
       - base-4.17.0.0
