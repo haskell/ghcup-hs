@@ -2957,9 +2957,9 @@ ghcupDownloads:
         A_ARM:
           Linux_UnknownLinux:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghc/9.2.8/ghc-9.2.8-armv7-deb10-linux.tar.xz
-              dlSubdir: ghc-9.2.8
-              dlHash: 78af6f7350fad956b1e4609a4c4a05e5522e9734c3038a9d56e3ceb5f260c7c4
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.2.8/ghc-9.2.8-armv7-linux-gnueabihf.tar.xz
+              dlSubdir: ghc-9.2.8-armv7-linux-gnueabihf
+              dlHash: 2515ceb6fef585f481c7856fcf9431415889784b0ec8626b5051599792f068d8
     9.4.1:
       viTags:
       - base-4.17.0.0
