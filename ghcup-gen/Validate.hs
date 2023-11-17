@@ -207,7 +207,7 @@ validate distroChannel = do
   isBase _        = False
 
 data TarballFilter = TarballFilter
-  { tfTool    :: Either GlobalTool (Maybe Tool)
+  { tfTool    :: Maybe Tool
   , tfVersion :: Regex
   }
 
@@ -226,20 +226,16 @@ validateTarballs :: ( Monad m
                     )
                  => TarballFilter
                  -> m ExitCode
-validateTarballs (TarballFilter etool versionRegex) = do
-  GHCupInfo { _ghcupDownloads = dls, _globalTools = gt } <- getGHCupInfo
+validateTarballs (TarballFilter mtool versionRegex) = do
+  GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
   ref <- liftIO $ newIORef 0
 
    -- download/verify all tarballs
-  let dlis = either (const []) (\tool -> nubOrd $ dls ^.. each %& indices (maybe (const True) (==) tool)
-                                 %> each %& indices (matchTest versionRegex . T.unpack . prettyVer . _tvVersion)
-                                                  % (viTestDL % _Just `summing` viSourceDL % _Just `summing` viArch % each % each % each)
-                               )
-                               etool
-  let gdlis = nubOrd $ gt ^.. each
-  let allDls = either (const gdlis) (const dlis) etool
-  when (null allDls) $ logError "no tarballs selected by filter" *> runReaderT addError ref
-  forM_ allDls (downloadAll ref)
+  let dlis = nubOrd $ dls ^.. each %& indices (maybe (const True) (==) mtool)
+                    %> each %& indices (matchTest versionRegex . T.unpack . prettyVer . _tvVersion)
+                    % (viTestDL % _Just `summing` viSourceDL % _Just `summing` viArch % each % each % each)
+  when (null dlis) $ logError "no tarballs selected by filter" *> runReaderT addError ref
+  forM_ dlis (downloadAll ref)
 
   -- exit
   e <- liftIO $ readIORef ref
@@ -273,20 +269,16 @@ validateTarballs (TarballFilter etool versionRegex) = do
                , ContentLengthError
                ]
       $ do
-        case etool of
-          Right (Just GHCup) -> do
+        case mtool of
+          (Just GHCup) -> do
             tmpUnpack <- lift mkGhcupTmpDir
             _ <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) Nothing (fromGHCupPath tmpUnpack) Nothing False
             pure Nothing
-          Right _ -> do
+          _ -> do
             p <- liftE $ downloadCached dli Nothing
             fmap Just $ liftE
                   . getArchiveFiles
                   $ p
-          Left ShimGen -> do
-            tmpUnpack <- lift mkGhcupTmpDir
-            _ <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) Nothing (fromGHCupPath tmpUnpack) Nothing False
-            pure Nothing
     case r of
       VRight (Just entries) -> do
         case _dlSubdir dli of

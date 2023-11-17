@@ -65,5 +65,5 @@ executable ghcup-gen
     , safe-exceptions       ^>=0.1
     , text                  ^>=2.0
     , transformers          ^>=0.5
-    , versions              >=4.0.1    && <5.1
+    , versions              >=6.0.0
     , yaml-streamly         ^>=0.12.0

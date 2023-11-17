@@ -135,15 +135,13 @@ tarballFilterP = option readm $
   long "tarball-filter" <> short 'u' <> metavar "<tool>-<version>" <> value def
     <> help "Only check certain tarballs (format: <tool>-<version>)"
   where
-    def = TarballFilter (Right Nothing) (makeRegex ("" :: String))
+    def = TarballFilter Nothing (makeRegex ("" :: String))
     readm = do
       s <- str
       case span (/= '-') s of
         (_, []) -> fail "invalid format, missing '-' after the tool name"
         (t, v) | [tool] <- [ tool | tool <- [minBound..maxBound], low (show tool) == low t ] ->
-          pure (TarballFilter $ Right $ Just tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
-        (t, v) | [tool] <- [ tool | tool <- [minBound..maxBound], low (show tool) == low t ] ->
-          pure (TarballFilter $ Left tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
+          pure (TarballFilter $ Just tool) <*> makeRegexOptsM compIgnoreCase execBlank (drop 1 v)
         _ -> fail "invalid tool"
     low = fmap toLower
 
@@ -206,7 +204,7 @@ main = do
               flip runReaderT leanAppstate $ logError $ T.pack $ prettyShow e
               liftIO $ exitWith (ExitFailure 2)
 
-  let appstate = AppState (Settings True 0 Lax False Never Curl True GHCupURL False GPGNone True Nothing (DM mempty)) dirs defaultKeyBindings (GHCupInfo mempty mempty mempty) pfreq loggerConfig
+  let appstate = AppState (Settings True 0 Lax False Never Curl True GHCupURL False GPGNone True Nothing (DM mempty)) dirs defaultKeyBindings (GHCupInfo mempty mempty Nothing) pfreq loggerConfig
 
   let withValidateYamlOpts vopts f = case vopts of
         ValidateYAMLOpts { vInput = Nothing } ->
