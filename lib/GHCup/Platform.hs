@@ -152,6 +152,9 @@ getLinuxDistro = do
         | hasWord name ["exherbo"] -> Exherbo
         | hasWord name ["gentoo"]  -> Gentoo
         | hasWord name ["amazonlinux", "Amazon Linux"] -> AmazonLinux
+        | hasWord name ["rocky", "Rocky Linux"] -> Rocky
+        -- https://github.com/void-linux/void-packages/blob/master/srcpkgs/base-files/files/os-release
+        | hasWord name ["void", "Void Linux"] -> Void
         | otherwise                -> UnknownLinux
   pure (distro, parsedVer)
  where
