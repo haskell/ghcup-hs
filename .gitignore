@@ -12,6 +12,6 @@ tags
 TAGS
 /tmp/
 .entangled
-release/
-releases/
+/release/
+/releases/
 site/
