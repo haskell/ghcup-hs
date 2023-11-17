@@ -4507,10 +4507,6 @@ ghcupDownloads:
             unknown_versioning: &cabal-3621-64-unknown
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.1/cabal-install-3.6.2.1-x86_64-linux-unknown.tar.xz
               dlHash: 5966d7cadb0a5ddc9e3129e0e5e1af32943aa96139c208aa11634f0865427d1a
-          Linux_Rocky:
-            unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.1/cabal-install-3.6.2.1-x86_64-linux-rocky8.tar.xz
-              dlHash: cca053ccab20975edfb1e03c62d47589a3e0c13e1e25d011f4b5b62c25e546c1
           Linux_Alpine:
             unknown_versioning: *cabal-3621-64-unknown
           Darwin:
