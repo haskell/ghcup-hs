@@ -29,6 +29,8 @@ mkdir -p /tmp/install-bindist-ci
 cp "$METADATA_FILE" /tmp/install-bindist-ci/
 cd /tmp/install-bindist-ci
 
+trap 'rm -rf -- /tmp/install-bindist-ci' EXIT
+
 cat <<EOF > main.hs
 {- cabal:
 build-depends: base
@@ -103,6 +105,10 @@ case $TOOL in
 		ghc --info
 		ghc -prof main.hs
 		[[ $(./main +RTS -s) -eq 2 ]]
+		ghcup_fun install cabal recommended
+		cabal --version
+		cabal update
+		cabal install --lib --package-env=. clock
 		;;
     cabal)
 		ghcup_fun install ghc --set "$(ghcup_fun list -t ghc -r -c available | tail -1 | awk '{ print $2 }')"
