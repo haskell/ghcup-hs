@@ -25,9 +25,9 @@ build_task:
   script:
     - tzsetup Etc/GMT
     - adjkerntz -a
-      #- git clone --branch cabal-install-v3.6.2.0-p1 https://github.com/hasufell/cabal.git
-      #- cd cabal/
+    - git clone --branch cabal-install-v3.6.2.0-p1 https://github.com/hasufell/cabal.git
+    - cd cabal/
     - bash .github/scripts/build.sh
   binaries_artifacts:
-    path: "cabal/out/*"
+    path: "out/*"
 
