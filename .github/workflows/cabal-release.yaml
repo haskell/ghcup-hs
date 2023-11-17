@@ -205,10 +205,10 @@ jobs:
         include:
           - os: [self-hosted, Linux, ARM64]
             ARCH: ARM
-            ARTIFACT: "armv7-linux-ubuntu20"
+            ARTIFACT: "armv7-linux-deb10"
           - os: [self-hosted, Linux, ARM64]
             ARCH: ARM64
-            ARTIFACT: "aarch64-linux-ubuntu20"
+            ARTIFACT: "aarch64-linux-deb10"
     steps:
       - uses: docker://arm64v8/ubuntu:focal
         name: Cleanup (aarch64 linux)
@@ -226,7 +226,7 @@ jobs:
           ref: ${{ github.event.inputs.ref }}
 
       - if: matrix.ARCH == 'ARM'
-        uses: docker://hasufell/arm32v7-ubuntu-haskell:focal
+        uses: docker://hasufell/arm32v7-debian-haskell:10
         name: Run build (armv7 linux)
         with:
           args: bash .github/scripts/build.sh
@@ -234,7 +234,7 @@ jobs:
           ARTIFACT: ${{ matrix.ARTIFACT }}
 
       - if: matrix.ARCH == 'ARM64'
-        uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
+        uses: docker://hasufell/arm64v8-debian-haskell:10
         name: Run build (aarch64 linux)
         with:
           args: bash .github/scripts/build.sh
