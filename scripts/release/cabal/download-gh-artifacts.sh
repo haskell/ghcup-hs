@@ -25,7 +25,7 @@ gh release download "$RELEASE"
 
 # cirrus
 curl --fail -L -o "cabal-install-${VERSION}-x86_64-portbld-freebsd.tar.xz" \
-	"https://api.cirrus-ci.com/v1/artifact/github/hasufell/cabal/build/binaries/out/cabal-install-${VERSION}-x86_64-portbld-freebsd.tar.xz?branch=${RELEASE}"
+	"https://api.cirrus-ci.com/v1/artifact/github/haskell/ghcup-metadata/build/binaries/out/cabal-install-${VERSION}-x86_64-portbld-freebsd.tar.xz?branch=develop"
 
 
 sha256sum ./* > SHA256SUMS
