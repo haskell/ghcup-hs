@@ -80,7 +80,7 @@ logInternal logLevel msg = do
         Info    -> style' "[ Info  ]"
         Warn    -> style' "[ Warn  ]"
         Error   -> style' "[ Error ]"
-  let strs = T.split (== '\n') msg
+  let strs = T.split (== '\n') . T.dropWhileEnd (`elem` ("\n\r" :: String)) $ msg
   let out = case strs of
               [] -> T.empty
               (x:xs) ->
