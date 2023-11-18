@@ -238,7 +238,9 @@ sectionListSelectedElement generic_section_list = do
   let current_section = generic_section_list ^. sectionL current_focus
   L.listSelectedElement current_section 
 
-{- GHCUp State
+{- Brick app data structures.
+
+In this section we define the state, the widgets and the core data structures which we will be using for the brick app.
 
 -}
 
@@ -299,41 +301,21 @@ data BrickState = BrickState
 
 makeLenses ''BrickState
 
-keyHandlers :: KeyBindings
-            -> [ ( KeyCombination
-                 , BrickSettings -> String
-                 , EventM Name BrickState ()
-                 )
-               ]
-keyHandlers KeyBindings {..} =
-  [ (bQuit, const "Quit"     , Brick.halt)
-  , (bInstall, const "Install"  , withIOAction install')
-  , (bUninstall, const "Uninstall", withIOAction del')
-  , (bSet, const "Set"      , withIOAction set')
-  , (bChangelog, const "ChangeLog", withIOAction changelog')
-  , ( bShowAllVersions
-    , \BrickSettings {..} ->
-       if _showAllVersions then "Don't show all versions" else "Show all versions"
-    , hideShowHandler' (not . _showAllVersions) _showAllTools
-    )
-  , (bUp, const "Up", appState %= moveCursor 1 Up)
-  , (bDown, const "Down", appState %= moveCursor 1 Down)
-  , (KeyCombination (Vty.KChar 'x') [], const "Tutorial", mode .= Tutorial)
-  ]
- where
-  --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
-  hideShowHandler' f p = do 
-    app_settings <- use appSettings
-    let 
-      vers = f app_settings
-      tools = p app_settings
-      newAppSettings = app_settings & showAllVersions .~ vers & showAllTools .~ tools
-    ad <- use appData
-    current_app_state <- use appState
-    appSettings .= newAppSettings
-    appState    .= constructList ad newAppSettings (Just current_app_state)
+app :: AttrMap -> AttrMap -> App BrickState () Name
+app attrs dimAttrs =
+  App { appDraw         = drawUI dimAttrs
+      , appHandleEvent  = eventHandler
+      , appStartEvent   = return ()
+      , appAttrMap      = const attrs
+      , appChooseCursor = Brick.showFirstCursor
+      }
 
 
+{- Drawing.
+
+The section for creating our widgets. 
+
+-}
 
 showKey :: Vty.Key -> String
 showKey (Vty.KChar c) = [c]
@@ -345,8 +327,8 @@ showMod :: Vty.Modifier -> String
 showMod = tail . show
 
 
-ui :: AttrMap -> BrickState -> Widget Name
-ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
+drawNavigation :: AttrMap -> BrickState -> Widget Name
+drawNavigation dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
   = Brick.padBottom Max
       ( Brick.withBorderStyle unicode
         $ borderWithLabel (Brick.str "GHCup")
@@ -435,81 +417,79 @@ ui dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
             Nothing -> mempty
             Just d  -> [Brick.withAttr dayAttr $ Brick.str (show d)])
 
-minHSize :: Int -> Widget n -> Widget n
-minHSize s' = Brick.hLimit s' . Brick.vLimit 1 . (<+> Brick.fill ' ')
+  minHSize s' = Brick.hLimit s' . Brick.vLimit 1 . (<+> Brick.fill ' ')
 
-app :: AttrMap -> AttrMap -> App BrickState () Name
-app attrs dimAttrs =
-  App { appDraw         = drawUI dimAttrs
-      , appHandleEvent  = eventHandler
-      , appStartEvent   = return ()
-      , appAttrMap      = const attrs
-      , appChooseCursor = Brick.showFirstCursor
-      }
+drawTutorial :: AttrMap -> BrickState -> Widget Name
+drawTutorial dimAttrs st = 
+  let
+    mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
+    txt_separator = hBorder <+> Brick.str " o " <+> hBorder
+  in centerLayer
+      $ Brick.hLimitPercent 75
+      $ Brick.vLimitPercent 50
+      $ Brick.withBorderStyle unicode
+      $ borderWithLabel (Brick.txt "Tutorial")
+      $ Brick.vBox 
+          (fmap center
+            [ mkTextBox [Brick.txt "GHCup is a distribution channel for Haskell's tools."]
+            , txt_separator
+            , mkTextBox [
+                Brick.hBox [
+                  Brick.txt "This symbol "
+                , Brick.withAttr installedAttr (Brick.str installedSign)
+                , Brick.txt " means that the tool is installed but not in used"
+                ]
+              , Brick.hBox [
+                  Brick.txt "This symbol "
+                , Brick.withAttr setAttr (Brick.str setSign)
+                , Brick.txt " means that the tool is installed and in used"
+                ]
+              , Brick.hBox [
+                  Brick.txt "This symbol "
+                , Brick.withAttr notInstalledAttr (Brick.str notInstalledSign)
+                , Brick.txt " means that the tool isn't installed"
+                ]
+              ]
+            , txt_separator
+            , mkTextBox [
+                Brick.hBox [
+                  Brick.withAttr recommendedAttr $ Brick.str "recommended"
+                , Brick.txt " tag is based on ..."
+                ]
+              , Brick.hBox [
+                  Brick.withAttr latestAttr $ Brick.str "latest"
+                , Brick.txt " tag is for the latest distributed version of the tool"
+                ]
+              , Brick.hBox [
+                  Brick.withAttr latestAttr $ Brick.str "hls-powered"
+                , Brick.txt " denotes the compiler version supported by the currently set ("
+                , Brick.withAttr setAttr (Brick.str setSign)
+                , Brick.txt ") hls"
+                ]
+              , Brick.txt "base-X.Y.Z.W tag is the minimun version of the base package admited in such ghc version"
+              ]
+            , Brick.txt " "                            
+            ])
+        <=> Brick.padRight Brick.Max (Brick.txt "Press Enter to exit the tutorial")
+
 
 
 drawUI :: AttrMap -> BrickState -> [Widget Name]
 drawUI dimAttrs st = 
   case st ^. mode of
-    Navigation -> [ui dimAttrs st]
-    Tutorial   -> 
-      let mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
-          txt_separator = hBorder <+> Brick.str " o " <+> hBorder
-          tutorial = centerLayer
-                      $ Brick.hLimitPercent 75
-                      $ Brick.vLimitPercent 50
-                      $ Brick.withBorderStyle unicode
-                      $ borderWithLabel (Brick.txt "Tutorial")
-                      $ Brick.vBox 
-                          (fmap center
-                            [ mkTextBox [Brick.txt "GHCup is a distribution channel for Haskell's tools."]
-                            , txt_separator
-                            , mkTextBox [
-                                Brick.hBox [
-                                   Brick.txt "This symbol "
-                                 , Brick.withAttr installedAttr (Brick.str installedSign)
-                                 , Brick.txt " means that the tool is installed but not in used"
-                                ]
-                              , Brick.hBox [
-                                   Brick.txt "This symbol "
-                                 , Brick.withAttr setAttr (Brick.str setSign)
-                                 , Brick.txt " means that the tool is installed and in used"
-                                ]
-                              , Brick.hBox [
-                                   Brick.txt "This symbol "
-                                 , Brick.withAttr notInstalledAttr (Brick.str notInstalledSign)
-                                 , Brick.txt " means that the tool isn't installed"
-                                ]
-                              ]
-                            , txt_separator
-                            , mkTextBox [
-                                Brick.hBox [
-                                   Brick.withAttr recommendedAttr $ Brick.str "recommended"
-                                 , Brick.txt " tag is based on ..."
-                                ]
-                              , Brick.hBox [
-                                   Brick.withAttr latestAttr $ Brick.str "latest"
-                                 , Brick.txt " tag is for the latest distributed version of the tool"
-                                ]
-                              , Brick.hBox [
-                                   Brick.withAttr latestAttr $ Brick.str "hls-powered"
-                                 , Brick.txt " denotes the compiler version supported by the currently set ("
-                                 , Brick.withAttr setAttr (Brick.str setSign)
-                                 , Brick.txt ") hls"
-                                ]
-                              , Brick.txt "base-X.Y.Z.W tag is the minimun version of the base package admited in such ghc version"
-                              ]
-                            , Brick.txt " "                            
-                            ])
-                        <=> Brick.padRight Brick.Max (Brick.txt "Press Enter to exit the tutorial")
-       in [tutorial, ui dimAttrs st]
+    Navigation -> [drawNavigation dimAttrs st]
+    Tutorial   -> [drawTutorial dimAttrs st, drawNavigation dimAttrs st]
+
+{- Attributes
+
+-}
 
 
 defaultAttributes :: Bool -> AttrMap
 defaultAttributes no_color = Brick.attrMap
   Vty.defAttr
-  [ (L.listSelectedFocusedAttr , Vty.defAttr `withBackColor` Vty.blue)  --, (attrName "active"            , Vty.defAttr `withBackColor` Vty.blue)
-  , (L.listSelectedAttr        , Vty.defAttr)                           -- we use list attributes for active.
+  [ (L.listSelectedFocusedAttr , Vty.defAttr `withBackColor` Vty.blue)
+  , (L.listSelectedAttr        , Vty.defAttr)
   , (notInstalledAttr          , Vty.defAttr `withForeColor` Vty.red)
   , (setAttr                   , Vty.defAttr `withForeColor` Vty.green)
   , (installedAttr             , Vty.defAttr `withForeColor` Vty.green)
@@ -566,6 +546,43 @@ dimAttributes no_color = Brick.attrMap
     withBackColor | no_color  = \attr _ -> attr `Vty.withStyle` Vty.reverseVideo
                   | otherwise = Vty.withBackColor
 
+{- Handlers
+
+-}
+
+keyHandlers :: KeyBindings
+            -> [ ( KeyCombination
+                 , BrickSettings -> String
+                 , EventM Name BrickState ()
+                 )
+               ]
+keyHandlers KeyBindings {..} =
+  [ (bQuit, const "Quit"     , Brick.halt)
+  , (bInstall, const "Install"  , withIOAction install')
+  , (bUninstall, const "Uninstall", withIOAction del')
+  , (bSet, const "Set"      , withIOAction set')
+  , (bChangelog, const "ChangeLog", withIOAction changelog')
+  , ( bShowAllVersions
+    , \BrickSettings {..} ->
+       if _showAllVersions then "Don't show all versions" else "Show all versions"
+    , hideShowHandler' (not . _showAllVersions) _showAllTools
+    )
+  , (KeyCombination (Vty.KChar 'x') [], const "Tutorial", mode .= Tutorial)
+  ]
+ where
+  --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
+  hideShowHandler' f p = do 
+    app_settings <- use appSettings
+    let 
+      vers = f app_settings
+      tools = p app_settings
+      newAppSettings = app_settings & showAllVersions .~ vers & showAllTools .~ tools
+    ad <- use appData
+    current_app_state <- use appState
+    appSettings .= newAppSettings
+    appState    .= constructList ad newAppSettings (Just current_app_state)
+
+
 tutorialHandler :: BrickEvent Name e -> EventM Name BrickState ()
 tutorialHandler ev = 
   case ev of
@@ -588,6 +605,17 @@ eventHandler ev = do
   case m of
     Navigation -> navigationHandler ev
     Tutorial   -> tutorialHandler ev
+
+
+{- Core Logic. 
+
+This section defines the IO actions we can execute within the Brick App:
+ - Install
+ - Set
+ - UnInstall
+ - Launch the Changelog
+
+-}
 
 -- | Suspend the current UI and run an IO action in terminal. If the
 -- IO action returns a Left value, then it's thrown as userError.
