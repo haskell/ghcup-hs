@@ -422,7 +422,6 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
             , kSet          = Just bSet
             , kChangelog    = Just bChangelog
             , kShowAll      = Just bShowAllVersions
-            , kShowAllTools = Just bShowAllTools
             }
   in UserSettings {
       uCache = Just cache
@@ -449,7 +448,6 @@ data UserKeyBindings = UserKeyBindings
   , kSet          :: Maybe KeyCombination
   , kChangelog    :: Maybe KeyCombination
   , kShowAll      :: Maybe KeyCombination
-  , kShowAllTools :: Maybe KeyCombination
   }
   deriving (Show, GHC.Generic, Eq)
 
@@ -462,7 +460,6 @@ data KeyBindings = KeyBindings
   , bSet             :: KeyCombination
   , bChangelog       :: KeyCombination
   , bShowAllVersions :: KeyCombination
-  , bShowAllTools    :: KeyCombination
   }
   deriving (Show, GHC.Generic)
 
@@ -485,7 +482,6 @@ defaultKeyBindings = KeyBindings
   , bSet             = KeyCombination { key = KChar 's', mods = [] }
   , bChangelog       = KeyCombination { key = KChar 'c', mods = [] }
   , bShowAllVersions = KeyCombination { key = KChar 'a', mods = [] }
-  , bShowAllTools    = KeyCombination { key = KChar 't', mods = [] }
   }
 
 data AppState = AppState

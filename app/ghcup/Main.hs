@@ -107,7 +107,6 @@ toSettings options = do
          , bSet = fromMaybe bSet kSet
          , bChangelog = fromMaybe bChangelog kChangelog
          , bShowAllVersions = fromMaybe bShowAllVersions kShowAll
-         , bShowAllTools = fromMaybe bShowAllTools kShowAllTools
          }
 
 

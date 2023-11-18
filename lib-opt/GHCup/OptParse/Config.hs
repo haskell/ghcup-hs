@@ -149,7 +149,6 @@ updateSettings usl usr =
          , kSet = kSet kbl <|> kSet kbr
          , kChangelog = kChangelog kbl <|> kChangelog kbr
          , kShowAll = kShowAll kbl <|> kShowAll kbr
-         , kShowAllTools = kShowAllTools kbl <|> kShowAllTools kbr
          }
 
 

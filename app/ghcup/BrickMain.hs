@@ -89,9 +89,6 @@ notInstalledSign = "X "
 notInstalledSign = "✗ "
 #endif
 
-hiddenTools :: [Tool]
-hiddenTools = []
-
 
 data BrickData = BrickData
   { lr    :: [ListResult]
@@ -100,7 +97,6 @@ data BrickData = BrickData
 
 data BrickSettings = BrickSettings
   { showAllVersions    :: Bool
-  , showAllTools       :: Bool
   }
   deriving Show
 
@@ -134,19 +130,14 @@ keyHandlers KeyBindings {..} =
   , ( bShowAllVersions
     , \BrickSettings {..} ->
        if showAllVersions then "Don't show all versions" else "Show all versions"
-    , hideShowHandler (not . showAllVersions) showAllTools
-    )
-  , ( bShowAllTools
-    , \BrickSettings {..} ->
-       if showAllTools then "Don't show all tools" else "Show all tools"
-    , hideShowHandler showAllVersions (not . showAllTools)
+    , hideShowHandler (not . showAllVersions)
     )
   , (bUp, const "Up", \BrickState {..} -> put BrickState{ appState = moveCursor 1 appState Up, .. })
   , (bDown, const "Down", \BrickState {..} -> put BrickState{ appState = moveCursor 1 appState Down, .. })
   ]
  where
-  hideShowHandler f p BrickState{..} =
-    let newAppSettings   = appSettings { showAllVersions = f appSettings , showAllTools = p appSettings }
+  hideShowHandler f BrickState{..} =
+    let newAppSettings   = appSettings { showAllVersions = f appSettings }
         newInternalState = constructList appData newAppSettings (Just appState)
     in  put (BrickState appData newAppSettings newInternalState appKeys)
 
@@ -411,8 +402,7 @@ constructList :: BrickData
               -> Maybe BrickInternalState
               -> BrickInternalState
 constructList appD appSettings =
-  replaceLR (filterVisible (showAllVersions appSettings)
-                           (showAllTools appSettings))
+  replaceLR (filterVisible (showAllVersions appSettings))
             (lr appD)
 
 listSelectedElement' :: BrickInternalState -> Maybe (Int, ListResult)
@@ -443,22 +433,15 @@ replaceLR filterF lr s =
     lTool e1 == lTool e2 && lVer e1 == lVer e2 && lCross e1 == lCross e2
 
 
-filterVisible :: Bool -> Bool -> ListResult -> Bool
-filterVisible v t e | lInstalled e = True
-                    | v
-                    , not t
-                    , Nightly `notElem` lTag e
-                    , lTool e `notElem` hiddenTools = True
-                    | not v
-                    , t
-                    , Old `notElem` lTag e
-                    , Nightly `notElem` lTag e = True
-                    | v
-                    , Nightly `notElem` lTag e
-                    , t = True
-                    | otherwise = (Old `notElem` lTag e)       &&
-                                  (Nightly `notElem` lTag e)   &&
-                                  (lTool e `notElem` hiddenTools)
+filterVisible :: Bool -> ListResult -> Bool
+filterVisible v e | lInstalled e = True
+                  | v
+                  , Nightly `notElem` lTag e = True
+                  | not v
+                  , Old `notElem` lTag e
+                  , Nightly `notElem` lTag e = True
+                  | otherwise = (Old `notElem` lTag e)       &&
+                                  (Nightly `notElem` lTag e)
 
 
 install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
@@ -712,7 +695,7 @@ brickMain s = do
 
 
 defaultAppSettings :: BrickSettings
-defaultAppSettings = BrickSettings { showAllVersions = False, showAllTools = False }
+defaultAppSettings = BrickSettings { showAllVersions = False }
 
 
 getGHCupInfo :: IO (Either String GHCupInfo)
