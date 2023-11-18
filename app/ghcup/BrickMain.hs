@@ -246,10 +246,11 @@ In this section we define the state, the widgets and the core data structures wh
 
 data Name = AllTools       -- The main list widget
           | Singular Tool  -- The particular list for each tool
+          | KeyInfoBox     -- The text box widget with action informacion
           | TutorialBox    -- The tutorial widget
           deriving (Eq, Ord, Show)
 
-data Mode = Navigation | Tutorial deriving (Eq, Show, Ord)
+data Mode = Navigation | KeyInfo | Tutorial deriving (Eq, Show, Ord)
 
 installedSign :: String
 #if IS_WINDOWS
@@ -419,8 +420,8 @@ drawNavigation dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
 
   minHSize s' = Brick.hLimit s' . Brick.vLimit 1 . (<+> Brick.fill ' ')
 
-drawTutorial :: AttrMap -> BrickState -> Widget Name
-drawTutorial dimAttrs st = 
+drawTutorial :: Widget Name
+drawTutorial = 
   let
     mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
     txt_separator = hBorder <+> Brick.str " o " <+> hBorder
@@ -431,18 +432,18 @@ drawTutorial dimAttrs st =
       $ borderWithLabel (Brick.txt "Tutorial")
       $ Brick.vBox 
           (fmap center
-            [ mkTextBox [Brick.txt "GHCup is a distribution channel for Haskell's tools."]
+            [ mkTextBox [Brick.txtWrap "GHCup is a distribution channel for Haskell's tools."]
             , txt_separator
             , mkTextBox [
                 Brick.hBox [
                   Brick.txt "This symbol "
                 , Brick.withAttr installedAttr (Brick.str installedSign)
-                , Brick.txt " means that the tool is installed but not in used"
+                , Brick.txtWrap " means that the tool is installed but not in used"
                 ]
               , Brick.hBox [
                   Brick.txt "This symbol "
                 , Brick.withAttr setAttr (Brick.str setSign)
-                , Brick.txt " means that the tool is installed and in used"
+                , Brick.txtWrap " means that the tool is installed and in used"
                 ]
               , Brick.hBox [
                   Brick.txt "This symbol "
@@ -454,11 +455,11 @@ drawTutorial dimAttrs st =
             , mkTextBox [
                 Brick.hBox [
                   Brick.withAttr recommendedAttr $ Brick.str "recommended"
-                , Brick.txt " tag is based on ..."
+                , Brick.txtWrap " tag is based on ..."
                 ]
               , Brick.hBox [
                   Brick.withAttr latestAttr $ Brick.str "latest"
-                , Brick.txt " tag is for the latest distributed version of the tool"
+                , Brick.txtWrap " tag is for the latest distributed version of the tool"
                 ]
               , Brick.hBox [
                   Brick.withAttr latestAttr $ Brick.str "hls-powered"
@@ -466,19 +467,71 @@ drawTutorial dimAttrs st =
                 , Brick.withAttr setAttr (Brick.str setSign)
                 , Brick.txt ") hls"
                 ]
-              , Brick.txt "base-X.Y.Z.W tag is the minimun version of the base package admited in such ghc version"
+              , Brick.txtWrap "base-X.Y.Z.W tag is the minimun version of the base package admited in such ghc version"
               ]
             , Brick.txt " "                            
             ])
-        <=> Brick.padRight Brick.Max (Brick.txt "Press Enter to exit the tutorial")
+        <=> Brick.padRight Brick.Max (Brick.txt "Press q to exit the tutorial")
 
-
+drawKeyInfo :: KeyBindings -> Widget Name
+drawKeyInfo KeyBindings {..} =
+  let
+    mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
+    keyToWidget (KeyCombination key mods) = Brick.str $ intercalate "+" (showKey key : (showMod <$> mods))
+  in centerLayer
+      $ Brick.hLimitPercent 75
+      $ Brick.vLimitPercent 50
+      $ Brick.withBorderStyle unicode
+      $ borderWithLabel (Brick.txt "Key Actions")
+      $ Brick.vBox [
+        center $
+         mkTextBox [
+            Brick.hBox [
+              Brick.txt "Press "
+            , keyToWidget bUp, Brick.txt " and ", keyToWidget bDown
+            , Brick.txtWrap " to navigate the list of tools"
+            ]
+          , Brick.hBox [
+              Brick.txt "Press "
+            , keyToWidget bInstall
+            , Brick.txtWrap " to install the selected tool. Notice, you may need to set it as default afterwards"
+            ]
+          , Brick.hBox [
+              Brick.txt "Press "
+            , keyToWidget bSet
+            , Brick.txtWrap " to set a tool as the one for use"
+            ]
+          , Brick.hBox [
+              Brick.txt "Press "
+            , keyToWidget bUninstall
+            , Brick.txtWrap " to uninstall a tool"
+            ]
+          , Brick.hBox [
+              Brick.txt "Press "
+            , keyToWidget bChangelog
+            , Brick.txtWrap " to open the tool's changelog. It will open a web browser"
+            ]
+          , Brick.hBox [
+              Brick.txt "Press "
+            , keyToWidget bShowAllVersions
+            , Brick.txtWrap " to show older version of each tool"
+            ]
+          , Brick.hBox [
+              Brick.txt "Press "
+            , keyToWidget bShowAllTools
+            , Brick.txtWrap " to ??? "
+            ]
+          ]
+        ]
+      <=> Brick.hBox [Brick.txt "Press q to return to Navigation" <+> Brick.padRight Brick.Max (Brick.txt " ") <+> Brick.txt "Press Enter to go to the Tutorial"]
 
 drawUI :: AttrMap -> BrickState -> [Widget Name]
 drawUI dimAttrs st = 
-  case st ^. mode of
-    Navigation -> [drawNavigation dimAttrs st]
-    Tutorial   -> [drawTutorial dimAttrs st, drawNavigation dimAttrs st]
+  let navg = drawNavigation dimAttrs st
+  in case st ^. mode of
+       Navigation -> [navg]
+       Tutorial   -> [drawTutorial, navg]
+       KeyInfo    -> [drawKeyInfo (st ^. appKeys), navg]
 
 {- Attributes
 
@@ -567,7 +620,7 @@ keyHandlers KeyBindings {..} =
        if _showAllVersions then "Don't show all versions" else "Show all versions"
     , hideShowHandler' (not . _showAllVersions) _showAllTools
     )
-  , (KeyCombination (Vty.KChar 'x') [], const "Tutorial", mode .= Tutorial)
+  , (KeyCombination (Vty.KChar 'h') [], const "help", mode .= KeyInfo)
   ]
  where
   --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
@@ -586,7 +639,14 @@ keyHandlers KeyBindings {..} =
 tutorialHandler :: BrickEvent Name e -> EventM Name BrickState ()
 tutorialHandler ev = 
   case ev of
-    VtyEvent (Vty.EvKey Vty.KEnter _) -> mode .= Navigation
+    VtyEvent (Vty.EvKey (Vty.KChar 'q') _ ) -> mode .= Navigation
+    _ -> pure ()
+
+keyInfoHandler :: BrickEvent Name e -> EventM Name BrickState ()
+keyInfoHandler ev = do
+  case ev of
+    VtyEvent (Vty.EvKey (Vty.KChar 'q') _ ) -> mode .= Navigation
+    VtyEvent (Vty.EvKey Vty.KEnter _ )   -> mode .= Tutorial
     _ -> pure ()
 
 navigationHandler :: BrickEvent Name e -> EventM Name BrickState ()
@@ -603,8 +663,9 @@ eventHandler :: BrickEvent Name e -> EventM Name BrickState ()
 eventHandler ev = do
   m <- use mode
   case m of
-    Navigation -> navigationHandler ev
+    KeyInfo    -> keyInfoHandler ev
     Tutorial   -> tutorialHandler ev
+    Navigation -> navigationHandler ev
 
 
 {- Core Logic. 
