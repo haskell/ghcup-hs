@@ -52,6 +52,7 @@ import           Haskus.Utils.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 import           System.IO.Unsafe
+import           System.Process                 ( system )
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           URI.ByteString
 
@@ -644,12 +645,18 @@ changelog' _ (_, ListResult {..}) = do
     Nothing -> pure $ Left $
       "Could not find ChangeLog for " <> prettyShow lTool <> ", version " <> T.unpack (prettyVer lVer)
     Just uri -> do
-      let cmd = case _rPlatform pfreq of
-            Darwin  -> "open"
-            Linux _ -> "xdg-open"
-            FreeBSD -> "xdg-open"
-            Windows -> "start"
-      exec cmd [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing >>= \case
+      case _rPlatform pfreq of
+            Darwin  -> exec "open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+            Linux _ -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+            FreeBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+            Windows -> do
+              let args = "start \"\" " ++ (T.unpack $ decUTF8Safe $ serializeURIRef' uri)
+              c <- liftIO $ system $ args
+              case c of
+                 (ExitFailure xi) -> pure $ Left $ NonZeroExit xi "cmd.exe" [args]
+                 ExitSuccess -> pure $ Right ()
+
+       >>= \case
         Right _ -> pure $ Right ()
         Left  e -> pure $ Left $ prettyHFError e
 

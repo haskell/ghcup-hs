@@ -29,6 +29,7 @@ import           Data.Maybe
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
+import           System.Process                 ( system )
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
@@ -128,21 +129,22 @@ changelog ChangeLogOptions{..} runAppState runLogger = do
     Just uri -> do
       pfreq <- runAppState getPlatformReq
       let uri' = T.unpack . decUTF8Safe . serializeURIRef' $ uri
-          cmd = case _rPlatform pfreq of
-                  Darwin  -> "open"
-                  Linux _ -> "xdg-open"
-                  FreeBSD -> "xdg-open"
-                  Windows -> "start"
-
       if clOpen
         then do
           runAppState $
-            exec cmd
-                 [T.unpack $ decUTF8Safe $ serializeURIRef' uri]
-                 Nothing
-                 Nothing
+            case _rPlatform pfreq of
+              Darwin  -> exec "open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+              Linux _ -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+              FreeBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+              Windows -> do
+                let args = "start \"\" " ++ (T.unpack $ decUTF8Safe $ serializeURIRef' uri)
+                c <- liftIO $ system $ args
+                case c of
+                   (ExitFailure xi) -> pure $ Left $ NonZeroExit xi "cmd.exe" [args]
+                   ExitSuccess -> pure $ Right ()
               >>= \case
                     Right _ -> pure ExitSuccess
                     Left  e -> logError (T.pack $ prettyHFError e)
                       >> pure (ExitFailure 13)
         else liftIO $ putStrLn uri' >> pure ExitSuccess
+
