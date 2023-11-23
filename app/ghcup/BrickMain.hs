@@ -192,8 +192,8 @@ handleGenericListEvent (VtyEvent (Vty.EvKey (Vty.KChar '\t') [])) = sectionListF
 handleGenericListEvent (VtyEvent (Vty.EvKey Vty.KBackTab []))     = sectionListFocusRingL %= F.focusPrev
 handleGenericListEvent (MouseDown _ Vty.BScrollDown _ _)          = moveDown
 handleGenericListEvent (MouseDown _ Vty.BScrollUp _ _)            = moveUp
-handleGenericListEvent (VtyEvent (Vty.EvKey Vty.KDown []))     = moveDown
-handleGenericListEvent (VtyEvent (Vty.EvKey Vty.KUp []))       = moveUp
+handleGenericListEvent (VtyEvent (Vty.EvKey Vty.KDown []))        = moveDown
+handleGenericListEvent (VtyEvent (Vty.EvKey Vty.KUp []))          = moveUp
 handleGenericListEvent (VtyEvent ev) = do
     ring <- use sectionListFocusRingL
     case F.focusGetCurrent ring of
@@ -281,10 +281,7 @@ data BrickData = BrickData
 
 makeLenses ''BrickData
 
-data BrickSettings = BrickSettings
-  { _showAllVersions    :: Bool
-  , _showAllTools       :: Bool
-  }
+data BrickSettings = BrickSettings { _showAllVersions :: Bool}
   --deriving Show
 
 makeLenses ''BrickSettings
@@ -455,7 +452,7 @@ drawTutorial =
             , mkTextBox [
                 Brick.hBox [
                   Brick.withAttr recommendedAttr $ Brick.str "recommended"
-                , Brick.txtWrap " tag is based on ..."
+                , Brick.txtWrap " tag is based on community adoption, known bugs, etc... So It makes this version the least experimental"
                 ]
               , Brick.hBox [
                   Brick.withAttr latestAttr $ Brick.str "latest"
@@ -515,11 +512,6 @@ drawKeyInfo KeyBindings {..} =
               Brick.txt "Press "
             , keyToWidget bShowAllVersions
             , Brick.txtWrap " to show older version of each tool"
-            ]
-          , Brick.hBox [
-              Brick.txt "Press "
-            , keyToWidget bShowAllTools
-            , Brick.txtWrap " to ??? "
             ]
           ]
         ]
@@ -618,18 +610,19 @@ keyHandlers KeyBindings {..} =
   , ( bShowAllVersions
     , \BrickSettings {..} ->
        if _showAllVersions then "Don't show all versions" else "Show all versions"
-    , hideShowHandler' (not . _showAllVersions) _showAllTools
+    , hideShowHandler' (not . _showAllVersions)
     )
+  , (bUp, const "Up", Brick.zoom (toLensVL appState) moveUp)
+  , (bDown, const "Down", Brick.zoom (toLensVL appState) moveDown)
   , (KeyCombination (Vty.KChar 'h') [], const "help", mode .= KeyInfo)
   ]
  where
   --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
-  hideShowHandler' f p = do 
+  hideShowHandler' f = do 
     app_settings <- use appSettings
     let 
       vers = f app_settings
-      tools = p app_settings
-      newAppSettings = app_settings & showAllVersions .~ vers & showAllTools .~ tools
+      newAppSettings = app_settings & showAllVersions .~ vers
     ad <- use appData
     current_app_state <- use appState
     appSettings .= newAppSettings
@@ -719,8 +712,7 @@ constructList :: BrickData
               -> Maybe BrickInternalState
               -> BrickInternalState
 constructList appD settings =
-  replaceLR (filterVisible (_showAllVersions settings)
-                           (_showAllTools settings))
+  replaceLR (filterVisible (_showAllVersions settings))
             (_lr appD)
 
 -- | Focus on the tool section and the predicate which matches. If no result matches, focus on index 0
@@ -1015,7 +1007,7 @@ brickMain s = do
 
 
 defaultAppSettings :: BrickSettings
-defaultAppSettings = BrickSettings { _showAllVersions = False, _showAllTools = False }
+defaultAppSettings = BrickSettings { _showAllVersions = False}
 
 
 getGHCupInfo :: IO (Either String GHCupInfo)
