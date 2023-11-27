@@ -3826,7 +3826,7 @@ ghcupDownloads:
       - base-4.18.0.0
       viTestDL:
         dlHash: 8bfa74d102da570cb87fbbc3465c7f778a4e6dc76606fef80207de7e8b64114f
-        dlSubdir: ghc-9.6.1
+        dlSubdir: ghc-9.6.1/testsuite
         dlUri: https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-testsuite.tar.xz
     9.6.2:
       viArch:
