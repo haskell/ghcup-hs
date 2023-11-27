@@ -4052,6 +4052,11 @@ ghcupDownloads:
               dlOutput: ghc-9.8.1-x86_64-darwin.tar.xz
               dlSubdir: ghc-9.8.1-x86_64-apple-darwin
               dlUri: https://downloads.haskell.org/~ghc/9.8.1/ghc-9.8.1-x86_64-apple-darwin.tar.xz
+          FreeBSD:
+            '( >= 13 )':
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.8.1/ghc-9.8.1-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-9.8.1-x86_64-portbld-freebsd
+              dlHash: cb82a34c59611f02b0ae3398a0a2101966c0ad3ac479215f699d6848f28cfa42
           Linux_Alpine:
             unknown_versioning:
               dlHash: d83e28a0ec6d9a88f7d16cdb64e1110cf122a64166b03b84cb87de38f0fb5e78
