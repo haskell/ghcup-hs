@@ -2920,6 +2920,11 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.2.8/ghc-9.2.8-x86_64-apple-darwin.tar.xz
               dlSubdir: ghc-9.2.8-x86_64-apple-darwin
               dlHash: eb78361feaf4277f627cbdc4b849849d09d175d0d878d28433719b7482db27f5
+          FreeBSD:
+            unknown_versioning:
+              dlUri: http://distcache.FreeBSD.org/local-distfiles/arrowd/stack-bindists/ghc-9.2.8-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: ghc-9.2.8-x86_64-portbld-freebsd
+              dlHash: 9babe91f8ec1087de053bec1f37ed71be25cf1799374c3a6c79e7e271f962d93
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghc/9.2.8/ghc-9.2.8-x86_64-unknown-mingw32.tar.xz
