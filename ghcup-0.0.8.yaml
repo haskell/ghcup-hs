@@ -4695,6 +4695,7 @@ ghcupDownloads:
           FreeBSD:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-freebsd.tar.xz
+              dlSubdir: cabal-install-3.10.2.0-x86_64-freebsd
               dlHash: 6dcd9d38a9f2101a0a3c3b74cacb2e41b8f7226f181780c0f872f2f1206dee37
         A_32:
           Linux_UnknownLinux:
