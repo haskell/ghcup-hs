@@ -4137,9 +4137,8 @@ ghcupDownloads:
       - base-4.19.0.0
       viTestDL:
         dlHash: 2626f3bb974428cbb795c5433017e18088f0d8de8a66d5a23ff4776847a5bec3
-        dlOutput: ghc-9.8.1-testsuite.tar.xz
-        dlSubdir: ghc-9.8.1
-        dlUri: https://downloads.haskell.org/~ghc/9.8.1/ghc-9.8.1-src.tar.xz
+        dlSubdir: ghc-9.8.1/testsuite
+        dlUri: https://downloads.haskell.org/ghc/9.8.1/ghc-9.8.1-testsuite.tar.xz
 
   Cabal:
     2.4.1.0:
