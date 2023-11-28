@@ -557,7 +557,7 @@ You need the required wasm toolchain:
 git clone https://gitlab.haskell.org/ghc/ghc-wasm-meta.git
 cd ghc-wasm-meta/
 export SKIP_GHC=yes
-sh setup.sh
+./setup.sh
 source ~/.ghc-wasm/env
 ```
 
