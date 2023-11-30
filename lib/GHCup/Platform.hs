@@ -8,7 +8,7 @@
 
 
 {-|
-Module      : GHCup.Plaform
+Module      : GHCup.Platform
 Description : Retrieving platform information
 Copyright   : (c) Julian Ospald, 2020
 License     : LGPL-3.0

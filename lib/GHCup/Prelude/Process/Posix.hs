@@ -148,7 +148,7 @@ execLogged exe args chdir lfile env = do
       void $ SPIB.fdWrite fileFd (bs' <> "\n")
       void $ SPIB.fdWrite stdOutput (bs' <> "\n")
 
-  -- Reads fdIn and logs the output in a continous scrolling area
+  -- Reads fdIn and logs the output in a continuous scrolling area
   -- of 'size' terminal lines. Also writes to a log file.
   printToRegion :: Fd -> Fd -> Int -> MVar Bool -> Bool -> IO ()
   printToRegion fileFd fdIn size pState no_color = do

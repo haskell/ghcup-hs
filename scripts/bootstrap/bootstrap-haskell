@@ -680,7 +680,7 @@ ask_hls() {
 				*)
 					echo "Possible choices are:"
 					echo
-					echo "Y - Yes, install the haskell-langauge-server"
+					echo "Y - Yes, install the haskell-language-server"
 					echo "N - No, don't install anything more (default)"
 					echo
 					echo "Please make your choice and press ENTER."

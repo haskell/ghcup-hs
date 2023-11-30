@@ -1102,8 +1102,8 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
     let possible_files = if isWindows
                          then ((workdir </> "hadrian") </>) <$> ["build.bat"]
                          else ((workdir </> "hadrian") </>) <$> ["build", "build.sh"]
-    exsists <- forM possible_files (\f -> liftIO (doesFileExist f) <&> (,f))
-    case filter fst exsists of
+    exists <- forM possible_files (\f -> liftIO (doesFileExist f) <&> (,f))
+    case filter fst exists of
       [] -> throwE HadrianNotFound
       ((_, x):_) -> pure x
 

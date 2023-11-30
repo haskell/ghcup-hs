@@ -79,7 +79,7 @@ Partial configuration is fine. Command line options always override the config f
 
 ## Overriding distro detection
 
-If you're running e.g. an Ubuntu derivate based on 18.04 and ghcup is picking bindists that
+If you're running e.g. an Ubuntu derivative based on 18.04 and ghcup is picking bindists that
 don't work well, you could do this in `config.yaml`:
 
 ```yml
@@ -611,7 +611,7 @@ Examples:
 ## Continuous integration
 
 On Windows, GHCup can be installed automatically on a CI runner
-non-interactively, as below. The paramaters to the PowerShell script are
+non-interactively, as below. The parameters to the PowerShell script are
 specified positionally, after `-ArgumentList`:
 
 ```ps
