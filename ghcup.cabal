@@ -327,12 +327,10 @@ executable ghcup
       , brick         ^>=2.1
       , transformers  ^>=0.5
       , vty           ^>=6.0
-      , unix          ^>=2.7
       , optics        ^>=0.4
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
-
   else
     build-depends: unix ^>=2.7
 
