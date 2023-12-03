@@ -2932,9 +2932,9 @@ ghcupDownloads:
               dlHash: f11c7270839c50fda44f98b54254ae50340bb58b04f8d81ebcbe67a2827bd511
           Linux_Alpine:
             unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghc/9.2.8/ghc-9.2.8-x86_64-alpine3.12-linux-gmp.tar.xz
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.2.8/ghc-9.2.8-x86_64-alpine-linux.tar.xz
               dlSubdir: ghc-9.2.8-x86_64-unknown-linux
-              dlHash: 7c9e5a38af4a84a91e44ae80c187e26d67c0bf3f0f786d40c44feb7762702c80
+              dlHash: 1356ac4567999f6ae32471555bbe11e807a01ee9f5d4009c1486a660adbc7c3d
         A_32:
           Linux_Debian:
             '< 10': &ghc-928-32-deb9
@@ -3969,9 +3969,9 @@ ghcupDownloads:
               dlHash: e011a1663903412f1e6b05a1f84520cfaa4a3583cdf88424db2950fc7e9d152e
           Linux_Alpine:
             unknown_versioning:
-              dlHash: f9acd12ab36f0b52167d34af662d56a7ec42e7651afa4919da169e761df59e74
+              dlHash: b4d1540dffc1f4864a3e6a0f1cb20e258c6ea87fbc9837d1bc8a920505727299
               dlSubdir: ghc-9.6.3-x86_64-unknown-linux
-              dlUri: https://downloads.haskell.org/~ghc/9.6.3/ghc-9.6.3-x86_64-alpine3_12-linux-static-int_native.tar.xz
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/9.6.3/ghc-9.6.3-x86_64-alpine-linux.tar.xz
           Linux_CentOS:
             ( >= 7 && < 8 ): &ghc-963-64-centos7
               dlHash: 30ac2ada05a14aa785e3dd07edc9bba6e94043015bb1cafd75206315766132a4
