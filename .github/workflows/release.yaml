@@ -189,13 +189,13 @@ jobs:
       - if: matrix.ARCH == 'ARM64' && runner.os == 'macOS'
         name: Run build
         run: |
-          bash .github/scripts/brew.sh git coreutils llvm@11 autoconf automake
-          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$HOME/.brew/opt/llvm@11/bin:$PATH"
-          export CC="$HOME/.brew/opt/llvm@11/bin/clang"
-          export CXX="$HOME/.brew/opt/llvm@11/bin/clang++"
+          bash .github/scripts/brew.sh git coreutils llvm@13 autoconf automake
+          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$HOME/.brew/opt/llvm@13/bin:$PATH"
+          export CC="$HOME/.brew/opt/llvm@13/bin/clang"
+          export CXX="$HOME/.brew/opt/llvm@13/bin/clang++"
           export LD=ld
-          export AR="$HOME/.brew/opt/llvm@11/bin/llvm-ar"
-          export RANLIB="$HOME/.brew/opt/llvm@11/bin/llvm-ranlib"
+          export AR="$HOME/.brew/opt/llvm@13/bin/llvm-ar"
+          export RANLIB="$HOME/.brew/opt/llvm@13/bin/llvm-ranlib"
           bash .github/scripts/build.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
