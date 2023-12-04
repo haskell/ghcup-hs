@@ -1,4 +1,4 @@
-FROM --platform=linux/i386 i386/alpine:3.16
+FROM --platform=linux/i386 i386/alpine:3.12
 
 ENV LANG C.UTF-8
 
