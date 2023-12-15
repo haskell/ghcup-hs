@@ -4,7 +4,7 @@ This is a more in-depth guide specific to GHCup. `ghcup --help` is your friend.
 
 ## Basic usage
 
-For the simple, interactive, text-based user interface (TUI) (not available on windows), run:
+For the simple, interactive, text-based user interface (TUI), run:
 
 ```sh
 ghcup tui
@@ -67,8 +67,7 @@ and make sure your bashrc sources the startup script
 
 `ghcup` is very portable. There are a few exceptions though:
 
-1. `ghcup tui` is only available on non-windows platforms
-2. legacy subcommands `ghcup install` (without a tool identifier) and `ghcup install-cabal` may be removed in the future
+1. legacy subcommands `ghcup install` (without a tool identifier) and `ghcup install-cabal` may be removed in the future
 
 # Configuration
 
