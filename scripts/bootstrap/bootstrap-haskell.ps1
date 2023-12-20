@@ -476,7 +476,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 
     Print-Msg -msg 'Extracting Msys2 archive...'
     $null = & "$archivePath" '-y' ('-o{0}' -f $GhcupDir)  # Extract
-    Remove-Item -Path "$archivePath"
+    Remove-Item -Path "$archivePath" -ErrorAction Continue
 
     Print-Msg -msg 'Processing MSYS2 bash for first time use...'
     Exec "$Bash" '-lc' 'exit'
