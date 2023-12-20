@@ -476,6 +476,8 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 
     Print-Msg -msg 'Extracting Msys2 archive...'
     $null = & "$archivePath" '-y' ('-o{0}' -f $GhcupDir)  # Extract
+    # We ignore errors because we don't want the installation script to fail just because a temporary file can't be removed.
+    # Relevant issue: https://github.com/haskell/ghcup-hs/issues/952
     Remove-Item -Path "$archivePath" -ErrorAction Continue
 
     Print-Msg -msg 'Processing MSYS2 bash for first time use...'
