@@ -6410,8 +6410,7 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.9.3/stack-2.9.3-osx-aarch64.tar.gz
               dlHash: a56d2cd37611eccf00ab8df38c3718923cf5677f3aeacd250394e79b676dcb98
     2.11.1:
-      viTags:
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2111---2023-05-18
       viPostInstall: *stack-post
       viArch:
@@ -6456,6 +6455,7 @@ ghcupDownloads:
     2.13.1:
       viTags:
         - Latest
+        - Recommended
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2131---2023-09-29
       viPostInstall: *stack-post
       viArch:
