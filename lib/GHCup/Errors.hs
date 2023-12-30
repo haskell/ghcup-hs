@@ -212,20 +212,22 @@ data NoDownload = NoDownload GHCTargetVersion Tool (Maybe PlatformRequest)
   deriving Show
 
 instance Pretty NoDownload where
-  pPrint (NoDownload tver@(GHCTargetVersion mtarget vv) tool mpfreq)
-    | (Just target) <- mtarget
-    , target `elem` (T.pack . prettyShow <$> enumFromTo (minBound :: Tool) (maxBound :: Tool))
-    = text $ "Unable to find a download for "
+  pPrint (NoDownload tver@(GHCTargetVersion mtarget vv) tool mpfreq) =
+    let helperMsg
+          | (Just target) <- mtarget
+          , target `elem` (T.pack . prettyShow <$> enumFromTo (minBound :: Tool) (maxBound :: Tool)) =
+              "\nPerhaps you meant: 'ghcup <command> "
+              <> T.unpack target
+              <> " "
+              <> T.unpack (prettyVer vv)
+              <> "'"
+          | otherwise = ""
+    in text $ "Unable to find a download for "
              <> show tool
-             <> " version '"
-             <> T.unpack (tVerToText tver)
-             <> maybe "'\n" (\pfreq -> "' on detected platform " <> pfReqToString pfreq <> "\n") mpfreq
-             <> "Perhaps you meant: 'ghcup <command> "
-             <> T.unpack target
-             <> " "
-             <> T.unpack (prettyVer vv)
-             <> "'"
-    | otherwise = text $ "Unable to find a download for " <> T.unpack (tVerToText tver)
+             <> " version "
+             <> "'" <> T.unpack (tVerToText tver) <> "'"
+             <> maybe "" (\pfreq -> " on detected platform " <> pfReqToString pfreq) mpfreq
+             <> helperMsg
 
 instance HFErrorProject NoDownload where
   eBase _ = 10
