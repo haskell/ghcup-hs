@@ -5,7 +5,7 @@ optional-packages: ./vendored/*/*.cabal
 optimization: 2
 
 package ghcup
-  flags: +tui
+  flags: +tui -tar
 
 if os(linux)
   if arch(x86_64) || arch(i386)

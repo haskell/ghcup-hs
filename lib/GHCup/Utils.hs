@@ -49,7 +49,13 @@ import           GHCup.Prelude.Logger.Internal
 import           GHCup.Prelude.MegaParsec
 import           GHCup.Prelude.Process
 import           GHCup.Prelude.String.QQ
+#if defined(TAR)
+import           Codec.Archive.Zip
+import qualified Codec.Archive.Tar             as Tar
+import qualified Codec.Archive.Tar.Entry       as Tar
+#else
 import           Codec.Archive           hiding ( Directory )
+#endif
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
@@ -802,11 +808,19 @@ unpackToDir dfp av = do
   let fn = takeFileName av
   lift $ logInfo $ "Unpacking: " <> T.pack fn <> " to " <> T.pack dfp
 
+#if defined(TAR)
+  let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
+      untar = liftIO . Tar.unpack dfp . Tar.read
+
+      rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
+      rf = liftIO . BL.readFile
+#else
   let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
       untar = lEM . liftIO . runArchiveM . unpackToDirLazy dfp
 
       rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
       rf = liftIO . BL.readFile
+#endif
 
   -- extract, depending on file extension
   if
@@ -819,23 +833,42 @@ unpackToDir dfp av = do
     | ".tar.bz2" `isSuffixOf` fn ->
       liftE (untar . BZip.decompress =<< rf av)
     | ".tar" `isSuffixOf` fn -> liftE (untar =<< rf av)
+#if defined(TAR)
+    | ".zip" `isSuffixOf` fn -> withArchive av (unpackInto dfp)
+#else
+    -- libarchive supports zip
     | ".zip" `isSuffixOf` fn -> liftE (untar =<< rf av)
+#endif
     | otherwise -> throwE $ UnknownArchive fn
 
 
 getArchiveFiles :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m)
                 => FilePath       -- ^ archive path
-                -> Excepts '[UnknownArchive
+                -> Excepts '[ UnknownArchive
                             , ArchiveResult
                             ] m [FilePath]
 getArchiveFiles av = do
   let fn = takeFileName av
+#if defined(TAR)
+  let entries :: Monad m => BL.ByteString -> Excepts '[ArchiveResult] m [FilePath]
+      entries =
+          lE @ArchiveResult
+          . Tar.foldEntries
+            (\e x -> fmap (Tar.entryTarPath e :) x)
+            (Right [])
+            (\_ -> Left ArchiveFailed)
+          . Tar.decodeLongNames
+          . Tar.read
 
+      rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
+      rf = liftIO . BL.readFile
+#else
   let entries :: Monad m => BL.ByteString -> Excepts '[ArchiveResult] m [FilePath]
       entries = (fmap . fmap) filepath . lE . readArchiveBSL
 
       rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
       rf = liftIO . BL.readFile
+#endif
 
   -- extract, depending on file extension
   if
@@ -848,7 +881,14 @@ getArchiveFiles av = do
     | ".tar.bz2" `isSuffixOf` fn ->
       liftE (entries . BZip.decompress =<< rf av)
     | ".tar" `isSuffixOf` fn -> liftE (entries =<< rf av)
-    | ".zip" `isSuffixOf` fn -> liftE (entries =<< rf av)
+    | ".zip" `isSuffixOf` fn ->
+#if defined(TAR)
+        withArchive av $ do
+          entries' <- getEntries
+          pure $ fmap unEntrySelector $ Map.keys entries'
+#else
+        liftE (entries =<< rf av)
+#endif
     | otherwise -> throwE $ UnknownArchive fn
 
 

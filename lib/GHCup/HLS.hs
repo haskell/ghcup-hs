@@ -30,7 +30,6 @@ import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
 import           GHCup.Prelude.String.QQ
 
-import           Codec.Archive                  ( ArchiveResult )
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad

@@ -34,7 +34,6 @@ import           GHCup.Prelude.String.QQ
 import           GHCup.Prelude.Version.QQ
 import           GHCup.Prelude.MegaParsec
 
-import           Codec.Archive                  ( ArchiveResult )
 import           Control.Applicative
 import           Control.Concurrent             ( threadDelay )
 import           Control.Exception.Safe

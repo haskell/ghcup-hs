@@ -3,6 +3,7 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -24,6 +25,7 @@ module GHCup.Types
   , Key(..)
   , Modifier(..)
 #endif
+  , ArchiveResult(..)
   )
   where
 
@@ -31,6 +33,11 @@ import           GHCup.Types.Stack              ( SetupInfo )
 import {-# SOURCE #-} GHCup.Utils.Dirs          ( fromGHCupPath, GHCupPath )
 
 import           Control.DeepSeq                ( NFData, rnf )
+#if defined(TAR)
+import           Control.Exception              ( Exception )
+#else
+import           Codec.Archive                  ( ArchiveResult(..) )
+#endif
 import           Data.Map.Strict                ( Map )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
 import           Data.Time.Calendar             ( Day )
@@ -775,4 +782,14 @@ instance Pretty ToolVersion where
 data BuildSystem = Hadrian
                  | Make
   deriving (Show, Eq)
+
+#if defined(TAR)
+data ArchiveResult = ArchiveFatal
+                   | ArchiveFailed
+                   | ArchiveWarn
+                   | ArchiveRetry
+                   | ArchiveOk
+                   | ArchiveEOF
+  deriving (Eq, Show, GHC.Generic, NFData, Exception)
+#endif
 

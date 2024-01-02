@@ -21,7 +21,9 @@ module GHCup.Errors where
 
 import           GHCup.Types
 
+#if !defined(TAR)
 import           Codec.Archive
+#endif
 import           Control.Exception.Safe
 import           Data.ByteString                ( ByteString )
 import           Data.CaseInsensitive           ( CI )

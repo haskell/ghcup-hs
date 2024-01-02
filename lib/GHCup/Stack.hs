@@ -26,7 +26,6 @@ import           GHCup.Prelude
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
 
-import           Codec.Archive                  ( ArchiveResult )
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
