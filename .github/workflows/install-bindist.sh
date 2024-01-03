@@ -109,6 +109,8 @@ case $TOOL in
 		cabal --version
 		cabal update
 		cabal install --lib --package-env=. clock
+        # https://github.com/haskell/ghcup-hs/issues/966
+		cabal install --lib --package-env=. hashable
 		;;
     cabal)
 		ghcup_fun install ghc --set "$(ghcup_fun list -t ghc -r -c available | tail -1 | awk '{ print $2 }')"
