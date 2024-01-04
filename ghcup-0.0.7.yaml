@@ -4816,14 +4816,6 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.2.1/cabal-install-3.10.2.1-x86_64-linux-centos7.tar.xz
               dlHash: 0d3735af6ddaa84d0822db296f5401bc5ba0189c0b171dedf23174cbde25a126
             unknown_versioning: *cabal-31021-64-unknown
-          Linux_Rocky:
-            '( >= 8 && < 9 )': &cabal-31021-64-rocky8
-              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.2.1/cabal-install-3.10.2.1-x86_64-linux-rocky8.tar.xz
-              dlHash: 6a92fae58d3e62f7438a59e6ce128eb49278e6e6f07b744b63382778dba508e7
-            '( >= 9 )': &cabal-31021-64-rocky9
-              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.2.1/cabal-install-3.10.2.1-x86_64-linux-rocky9.tar.xz
-              dlHash: 79eba1969b943e709d2dd1b745ea0557f500263fac149f8daf084ed6ed92834a
-            unknown_versioning: *cabal-31021-64-unknown
           Linux_RedHat:
             unknown_versioning: *cabal-31021-64-unknown
           Linux_Alpine:
@@ -4833,8 +4825,6 @@ ghcupDownloads:
             '( >= 3.19 )': &cabal-31021-64-alpine319
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.2.1/cabal-install-3.10.2.1-x86_64-linux-alpine319.tar.xz
               dlHash: b91f53717c6bc6af53cf1929f71779af26932eadc394a1e72d16d033757b35a6
-            unknown_versioning: *cabal-31021-64-unknown
-          Linux_Void:
             unknown_versioning: *cabal-31021-64-unknown
           Darwin:
             unknown_versioning:
