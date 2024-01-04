@@ -4176,7 +4176,7 @@ ghcupDownloads:
         - old
       viPostInstall: &cabal-HSEC-2023-0015 |
         This release is vulnerable: https://github.com/haskell/security-advisories/blob/main/advisories/hackage/cabal-install/HSEC-2023-0015.md
-        Update to 3.6.2.0-p1 or 3.10.2.0.
+        Update to 3.10.2.0 or later.
       viChangeLog: https://downloads.haskell.org/~cabal/cabal-install-2.4.1.0/changelog
       viArch:
         A_64:
@@ -4489,14 +4489,13 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.0/cabal-install-3.6.2.0-armv7-linux-deb10.tar.xz
               dlHash: 694ba7c14f8d720c6e790ab0488dbff2d8a07d9c6de97b4deeba31088f825bc2
     3.6.2.0-p1:
-      viTags:
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.6.2.0.md
       viPostInstall: |
         This is a distributor release to fix https://github.com/haskell/security-advisories/blob/main/advisories/hackage/cabal-install/HSEC-2023-0015.md
         The applied downstream patches can be viewed here: https://github.com/hasufell/cabal/tree/cabal-install-v3.6.2.1
         Upstream PR: https://github.com/haskell/cabal/issues/9451
-        You can alternatively update to 3.10.2.0.
+        You can alternatively update to 3.10.2.0 or later.
       viArch:
         A_64:
           Linux_Debian:
@@ -4678,6 +4677,7 @@ ghcupDownloads:
       viPostInstall: "cabal run is currently partially broken on Windows, please see https://github.com/haskell/cabal/issues/9334"
       viTags:
         - Latest
+        - Recommended
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.2.0.md
       viArch:
         A_64:
