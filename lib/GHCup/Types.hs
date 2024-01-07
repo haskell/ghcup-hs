@@ -3,7 +3,6 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -790,6 +789,11 @@ data ArchiveResult = ArchiveFatal
                    | ArchiveRetry
                    | ArchiveOk
                    | ArchiveEOF
-  deriving (Eq, Show, GHC.Generic, NFData, Exception)
+  deriving (Eq, Show, GHC.Generic)
+
+instance NFData ArchiveResult
+
+instance Exception ArchiveResult
+
 #endif
 

@@ -135,6 +135,7 @@ library
     GHCup.Types.Stack
     GHCup.Utils
     GHCup.Utils.Dirs
+    GHCup.Utils.Tar
     GHCup.Version
 
   hs-source-dirs:     lib
