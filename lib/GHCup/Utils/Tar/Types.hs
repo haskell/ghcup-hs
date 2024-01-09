@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP               #-}
+#if defined(TAR)
 {-# LANGUAGE DeriveGeneric     #-}
+#endif
 
 module GHCup.Utils.Tar.Types
   ( ArchiveResult(..)
