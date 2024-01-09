@@ -30,6 +30,7 @@ import           System.FilePath
 import           Codec.Archive.Zip
 import qualified Codec.Archive.Tar             as Tar
 import qualified Codec.Archive.Tar.Entry       as Tar
+import qualified Data.Map.Strict               as Map
 #else
 import           Codec.Archive           hiding ( Directory
                                                 , ArchiveResult -- imported from "GHCup.Utils.Tar.Types"
@@ -40,7 +41,6 @@ import qualified Codec.Compression.BZip        as BZip
 import qualified Codec.Compression.GZip        as GZip
 import qualified Codec.Compression.Lzma        as Lzma
 import qualified Data.ByteString.Lazy          as BL
-import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
 
 
