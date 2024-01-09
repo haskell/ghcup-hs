@@ -29,14 +29,10 @@ module GHCup.Types
   where
 
 import           GHCup.Types.Stack              ( SetupInfo )
+import           GHCup.Utils.Tar.Types          ( ArchiveResult(..) )
 import {-# SOURCE #-} GHCup.Utils.Dirs          ( fromGHCupPath, GHCupPath )
 
 import           Control.DeepSeq                ( NFData, rnf )
-#if defined(TAR)
-import           Control.Exception              ( Exception )
-#else
-import           Codec.Archive                  ( ArchiveResult(..) )
-#endif
 import           Data.Map.Strict                ( Map )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
 import           Data.Time.Calendar             ( Day )
@@ -781,19 +777,3 @@ instance Pretty ToolVersion where
 data BuildSystem = Hadrian
                  | Make
   deriving (Show, Eq)
-
-#if defined(TAR)
-data ArchiveResult = ArchiveFatal
-                   | ArchiveFailed
-                   | ArchiveWarn
-                   | ArchiveRetry
-                   | ArchiveOk
-                   | ArchiveEOF
-  deriving (Eq, Show, GHC.Generic)
-
-instance NFData ArchiveResult
-
-instance Exception ArchiveResult
-
-#endif
-

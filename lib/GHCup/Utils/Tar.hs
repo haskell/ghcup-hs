@@ -14,7 +14,7 @@ Portability : portable
 -}
 module GHCup.Utils.Tar where
 
-import           GHCup.Types
+import           GHCup.Utils.Tar.Types ( ArchiveResult(..) )
 import           GHCup.Errors
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger.Internal
@@ -31,7 +31,9 @@ import           Codec.Archive.Zip
 import qualified Codec.Archive.Tar             as Tar
 import qualified Codec.Archive.Tar.Entry       as Tar
 #else
-import           Codec.Archive           hiding ( Directory )
+import           Codec.Archive           hiding ( Directory
+                                                , ArchiveResult -- imported from "GHCup.Utils.Tar.Types"
+                                                )
 #endif
 
 import qualified Codec.Compression.BZip        as BZip
