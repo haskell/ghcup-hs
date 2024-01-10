@@ -322,6 +322,57 @@ library ghcup-optparse
   else
     build-depends:  unix ^>=2.7 || ^>=2.8
 
+library ghcup-tui
+  import:             app-common-depends
+  exposed-modules:
+    GHCup.BrickMain
+    GHCup.Brick.Widgets.Navigation
+    GHCup.Brick.Widgets.Tutorial
+    GHCup.Brick.Widgets.KeyInfo
+    GHCup.Brick.Widgets.SectionList
+    GHCup.Brick.Actions
+    GHCup.Brick.App
+    GHCup.Brick.BrickState
+    GHCup.Brick.Attributes
+    GHCup.Brick.Common
+
+  hs-source-dirs:     lib-tui
+  default-language:   Haskell2010
+  default-extensions:
+    LambdaCase
+    MultiWayIf
+    NamedFieldPuns
+    PackageImports
+    RecordWildCards
+    ScopedTypeVariables
+    StrictData
+    TupleSections
+
+  ghc-options:
+    -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
+    -fwarn-incomplete-record-updates
+
+  build-depends:  
+    , ghcup
+    , ghcup-optparse
+    , optics        ^>=0.4
+    , brick         ^>=2.1
+    , transformers  ^>=0.5
+    , vty           ^>=6.0
+    , optics        ^>=0.4
+
+  if flag(internal-downloader)
+    cpp-options: -DINTERNAL_DOWNLOADER
+
+  if flag(tui)
+    cpp-options:   -DBRICK
+
+  if os(windows)
+    cpp-options: -DIS_WINDOWS
+
+  else
+    build-depends: unix ^>=2.7
+
 executable ghcup
   import:             app-common-depends
   main-is:            Main.hs
@@ -345,6 +396,7 @@ executable ghcup
   build-depends:
     , ghcup
     , ghcup-optparse
+    , ghcup-tui
 
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER
