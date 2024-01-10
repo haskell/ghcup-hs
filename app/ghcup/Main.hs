@@ -11,7 +11,8 @@
 module Main where
 
 #if defined(BRICK)
-import           BrickMain                    ( brickMain )
+-- import           BrickMain                    ( brickMain )
+import           GHCup.BrickMain (brickMain)
 #endif
 
 import qualified GHCup.GHC as GHC
