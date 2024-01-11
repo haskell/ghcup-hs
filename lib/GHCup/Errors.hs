@@ -389,7 +389,7 @@ data NotInstalled = NotInstalled Tool GHCTargetVersion
 
 instance Pretty NotInstalled where
   pPrint (NotInstalled tool ver) =
-    text "The version" <+> pPrint ver <+> text "of the tool" <+> pPrint tool <+> text "is not installed."
+    text "The version" <+> (text "'" <> pPrint ver <> text "'") <+> text "of the tool" <+> pPrint tool <+> text "is not installed."
 
 instance HFErrorProject NotInstalled where
   eBase _ = 130
