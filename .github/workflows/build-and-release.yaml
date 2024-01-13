@@ -1,0 +1,10 @@
+on:
+  workflow_dispatch:
+
+jobs:
+  build_test:
+    uses: ./.github/workflows/build-test.yaml
+
+  release:
+    needs: [build_test]
+    uses: ./.github/workflows/release.yaml
