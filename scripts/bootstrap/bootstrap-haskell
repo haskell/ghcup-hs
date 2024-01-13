@@ -742,7 +742,7 @@ find_stack_root() {
     if [ -n "${STACK_ROOT}" ] ; then
         echo "${STACK_ROOT}"
     elif [ -n "${STACK_XDG}" ] ; then
-        echo "${XDG_DATA_HOME}/stack"
+        echo "${XDG_DATA_HOME:-$HOME/.local/share}/stack"
     else
         echo "${HOME}/.stack"
     fi
