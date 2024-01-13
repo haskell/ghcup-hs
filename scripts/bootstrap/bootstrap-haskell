@@ -738,6 +738,15 @@ ask_stack() {
 	unset stack_answer
 }
 
+find_stack_root() {
+    if [ -n "${STACK_ROOT}" ] ; then
+        echo "${STACK_ROOT}"
+    elif [ -n "${STACK_XDG}" ] ; then
+        echo "${XDG_DATA_HOME}/stack"
+    else
+        echo "${HOME}/.stack"
+    fi
+}
 
 find_shell
 
@@ -850,8 +859,9 @@ case $ask_stack_answer in
 		;;
 	2)
         (_eghcup --cache install stack) || die "Stack installation failed"
-        edo mkdir -p "${STACK_ROOT:-$HOME/.stack}"/hooks
-        hook_exe="${STACK_ROOT:-$HOME/.stack}"/hooks/ghc-install.sh
+        stack_root="$(find_stack_root)"
+        edo mkdir -p "${stack_root}"/hooks
+        hook_exe="${stack_root}"/hooks/ghc-install.sh
         hook_url="https://www.haskell.org/ghcup/sh/hooks/stack/ghc-install.sh"
 
         if [ -e "${hook_exe}" ] ; then
