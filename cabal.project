@@ -14,11 +14,6 @@ constraints: http-io-streams -brotli,
 
 source-repository-package
   type: git
-  location: https://github.com/fosskers/versions.git
-  tag: 7bc3355348aac3510771d4622aff09ac38c9924d
-
-source-repository-package
-  type: git
   location: https://github.com/haskell/tar.git
   tag: d94a988be4311b830149a9f8fc16739927e5fc1c
 

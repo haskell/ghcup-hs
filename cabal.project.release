@@ -44,3 +44,13 @@ package aeson
 package streamly
   flags: +use-unliftio
 
+source-repository-package
+  type: git
+  location: https://github.com/haskell/tar.git
+  tag: d94a988be4311b830149a9f8fc16739927e5fc1c
+
+source-repository-package
+  type: git
+  location: https://github.com/hasufell/uri-bytestring.git
+  tag: 4fb5ed14b500c192e6e7a97f6b2b1eb478806001
+
