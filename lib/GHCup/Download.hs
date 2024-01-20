@@ -855,7 +855,7 @@ getGpgOpts =
 -- "baz"
 urlBaseName :: ByteString  -- ^ the url path (without scheme and host)
             -> ByteString
-urlBaseName = snd . B.breakEnd (== _slash) . urlDecode False
+urlBaseName = snd . B.breakEnd (== _slash)
 
 
 -- | Curl saves all intermediate connect headers as well, not just the last one, so we make an effort to take the
