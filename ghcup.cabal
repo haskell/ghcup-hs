@@ -142,6 +142,7 @@ library
     GHCup.Utils.Dirs
     GHCup.Utils.Tar
     GHCup.Utils.Tar.Types
+    GHCup.Utils.URI
     GHCup.Version
 
   hs-source-dirs:     lib
@@ -184,6 +185,7 @@ library
     , disk-free-space       ^>=0.1.0.1
     , exceptions            ^>=0.10
     , filepath              ^>=1.4.2.1
+    , file-uri              ^>=0.1.0.0
     , haskus-utils-types    ^>=1.5
     , haskus-utils-variant  ^>=3.3
     , lzma-static           ^>=5.2.5.3

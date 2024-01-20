@@ -11,6 +11,7 @@ import           GHCup.Download.Utils
 import           GHCup.Errors
 import           GHCup.Types.JSON               ( )
 import           GHCup.Prelude
+import           GHCup.Utils.URI
 
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -28,7 +29,7 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.ProgressBar
-import           URI.ByteString
+import           URI.ByteString          hiding (parseURI)
 
 import qualified Data.ByteString               as BS
 import qualified Data.Map.Strict               as M
@@ -114,7 +115,7 @@ downloadInternal = go (5 :: Int)
             | otherwise -> throwE $ HTTPStatusError scode (getHeaderMap r)
         )
 
-    followRedirectURL bs = case parseURI strictURIParserOptions bs of
+    followRedirectURL bs = case parseURI bs of
       Right uri' -> do
         (https', host', fullPath', port') <- liftE $ uriToQuadruple uri'
         go (redirs - 1) progressBar https' host' fullPath' port' consumer setup addHeaders eCSize
