@@ -21,8 +21,8 @@ jobs:
     name: Build linux binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.1.0
-      JSON_VERSION: "0.0.7"
+      CABAL_VER: 3.10.2.0
+      JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -32,11 +32,11 @@ jobs:
         include:
           - os: ubuntu-latest
             ARTIFACT: "i386-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.4.8
             ARCH: 32
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.4.8
             ARCH: 64
     steps:
       - name: Checkout code
@@ -46,7 +46,7 @@ jobs:
 
       - if: matrix.ARCH == '32'
         name: Run build (32 bit linux)
-        uses: docker://hasufell/i386-alpine-haskell:3.12
+        uses: docker://hasufell/i386-alpine-haskell:3.16
         with:
           args: sh .github/scripts/build.sh
         env:
@@ -85,8 +85,8 @@ jobs:
     name: Build ARM binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.1.0
-      JSON_VERSION: "0.0.7"
+      CABAL_VER: 3.6.2.0
+      JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -96,11 +96,11 @@ jobs:
         include:
           - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "armv7-linux-ghcup"
-            GHC_VER: 9.2.2
+            GHC_VER: 9.2.8
             ARCH: ARM
           - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.2.6
+            GHC_VER: 9.4.8
             ARCH: ARM64
     steps:
       - uses: docker://arm64v8/debian:10
@@ -158,9 +158,9 @@ jobs:
     name: Build binary (Mac/Win)
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.1.0
+      CABAL_VER: 3.10.2.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
-      JSON_VERSION: "0.0.7"
+      JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -170,15 +170,15 @@ jobs:
         include:
           - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.2.6
+            GHC_VER: 9.4.8
             ARCH: ARM64
           - os: macOS-11
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.2.6
+            GHC_VER: 9.4.8
             ARCH: 64
           - os: windows-latest
             ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.2.8
             ARCH: 64
     steps:
       - name: Checkout code
@@ -189,13 +189,13 @@ jobs:
       - if: matrix.ARCH == 'ARM64' && runner.os == 'macOS'
         name: Run build
         run: |
-          bash .github/scripts/brew.sh git coreutils llvm@11 autoconf automake
-          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$HOME/.brew/opt/llvm@11/bin:$PATH"
-          export CC="$HOME/.brew/opt/llvm@11/bin/clang"
-          export CXX="$HOME/.brew/opt/llvm@11/bin/clang++"
+          bash .github/scripts/brew.sh git coreutils llvm@13 autoconf automake
+          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$HOME/.brew/opt/llvm@13/bin:$PATH"
+          export CC="$HOME/.brew/opt/llvm@13/bin/clang"
+          export CXX="$HOME/.brew/opt/llvm@13/bin/clang++"
           export LD=ld
-          export AR="$HOME/.brew/opt/llvm@11/bin/llvm-ar"
-          export RANLIB="$HOME/.brew/opt/llvm@11/bin/llvm-ranlib"
+          export AR="$HOME/.brew/opt/llvm@13/bin/llvm-ar"
+          export RANLIB="$HOME/.brew/opt/llvm@13/bin/llvm-ranlib"
           bash .github/scripts/build.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
@@ -251,24 +251,24 @@ jobs:
     needs: "build-linux"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.1.0
-      JSON_VERSION: "0.0.7"
+      CABAL_VER: 3.10.2.0
+      JSON_VERSION: "0.0.8"
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
             ARTIFACT: "i386-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.4.8
             ARCH: 32
             DISTRO: Alpine
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.4.8
             ARCH: 64
             DISTRO: Alpine
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.4.8
             ARCH: 64
             DISTRO: Ubuntu
 
@@ -285,7 +285,7 @@ jobs:
 
       - if: matrix.ARCH == '32' && matrix.DISTRO == 'Alpine'
         name: Run test (32 bit linux Alpine)
-        uses: docker://hasufell/i386-alpine-haskell:3.12
+        uses: docker://hasufell/i386-alpine-haskell:3.16
         with:
           args: sh .github/scripts/test.sh
         env:
@@ -329,19 +329,19 @@ jobs:
     needs: "build-arm"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.1.0
-      JSON_VERSION: "0.0.7"
+      CABAL_VER: 3.6.2.0
+      JSON_VERSION: "0.0.8"
     strategy:
       matrix:
         include:
           - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "armv7-linux-ghcup"
-            GHC_VER: 9.2.2
+            GHC_VER: 9.2.8
             ARCH: ARM
             DISTRO: Ubuntu
           - os: [self-hosted, Linux, ARM64]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.2.6
+            GHC_VER: 9.4.8
             ARCH: ARM64
             DISTRO: Ubuntu
 
@@ -396,25 +396,25 @@ jobs:
     needs: "build-macwin"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.1.0
+      CABAL_VER: 3.10.2.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
-      JSON_VERSION: "0.0.7"
+      JSON_VERSION: "0.0.8"
     strategy:
       matrix:
         include:
           - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.2.6
+            GHC_VER: 9.4.8
             ARCH: ARM64
             DISTRO: na
           - os: macOS-11
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.2.6
+            GHC_VER: 9.4.8
             ARCH: 64
             DISTRO: na
           - os: windows-latest
             ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.2.8
             ARCH: 64
             DISTRO: na
 
@@ -475,7 +475,7 @@ jobs:
       GHC_VERSION: "8.10.7"
       HLS_TARGET_VERSION: "1.8.0.0"
       CABAL_VERSION: "3.8.1.0"
-      JSON_VERSION: "0.0.7"
+      JSON_VERSION: "0.0.8"
       ARTIFACT: "x86_64-linux-ghcup"
       DISTRO: Ubuntu
       ARCH: 64
