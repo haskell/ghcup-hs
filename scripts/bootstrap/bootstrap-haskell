@@ -12,6 +12,7 @@
 #   * BOOTSTRAP_HASKELL_VERBOSE - any nonzero value for more verbose installation
 #   * BOOTSTRAP_HASKELL_GHC_VERSION - the ghc version to install
 #   * BOOTSTRAP_HASKELL_CABAL_VERSION - the cabal version to install
+#   * BOOTSTRAP_HASKELL_CABAL_XDG - don't disable the XDG logic (this doesn't force XDG though, because cabal is confusing)
 #   * BOOTSTRAP_HASKELL_INSTALL_NO_STACK - disable installation of stack
 #   * BOOTSTRAP_HASKELL_INSTALL_NO_STACK_HOOK - disable installation stack ghcup hook
 #   * BOOTSTRAP_HASKELL_INSTALL_HLS - whether to install latest hls
@@ -819,6 +820,15 @@ if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
 	eghcup --cache install cabal "${BOOTSTRAP_HASKELL_CABAL_VERSION}"
 
 	do_cabal_config_init $ask_cabal_config_init_answer
+
+    if [ -z "${BOOTSTRAP_HASKELL_CABAL_XDG}" ] ; then
+        # disable XDG if we can
+        if [ -e "${XDG_CONFIG_HOME:-"$HOME/.config"}/cabal" ] || [ -n "${CABAL_DIR}" ] || [ -n "${CABAL_CONFIG}" ] ; then
+            :
+        else
+            edo mkdir -p "${HOME}/.cabal"
+        fi
+    fi
 
 	edo cabal update --ignore-project
 else # don't install ghc and cabal
