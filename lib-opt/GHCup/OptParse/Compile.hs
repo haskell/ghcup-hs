@@ -157,7 +157,7 @@ Examples:
   ghcup compile hls --version 1.7.0.0 --ghc 8.10.7 --cabal-update
   # compile from master for ghc 9.2.3 using 'git describe' to name the binary and ignore the pinned index state
   ghcup compile hls -g master --git-describe-version --ghc 9.2.3 -- --index-state=@(date '+%s')
-  # compile a specific commit for ghc 9.2.3 and set a specifc version for the binary name
+  # compile a specific commit for ghc 9.2.3 and set a specific version for the binary name
   ghcup compile hls -g a32db0b -o 1.7.0.0-p1 --ghc 9.2.3|]
 
 

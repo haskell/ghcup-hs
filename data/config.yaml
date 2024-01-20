@@ -92,7 +92,7 @@ url-source:
   #           sha256: b48f3d3a508d0c140d1c801e04afc65e80c0d25e7e939a8a41edb387b26b81b3
 
 # This is a way to override platform detection, e.g. when you're running
-# a Ubuntu derivate based on 18.04, you could do:
+# a Ubuntu derivative based on 18.04, you could do:
 #
 # platform-override:
 #   arch: A_64

@@ -277,7 +277,7 @@ rmPlainHLS = do
     -----------------------------------
 
 
--- | Whether the given GHC versin is installed.
+-- | Whether the given GHC version is installed.
 ghcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => GHCTargetVersion -> m Bool
 ghcInstalled ver = do
   ghcdir <- ghcupGHCDir ver

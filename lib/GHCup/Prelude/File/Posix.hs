@@ -240,7 +240,7 @@ recreateSymlink symsource newsym fail' = do
   createSymbolicLink sympoint newsym
 
 
--- copys files, recreates symlinks, fails on all other types
+-- copies files, recreates symlinks, fails on all other types
 install :: FilePath -> FilePath -> Bool -> IO ()
 install from to fail' = do
   fs <- PF.getSymbolicLinkStatus from

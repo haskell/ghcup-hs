@@ -525,7 +525,7 @@ data HTTPNotModified = HTTPNotModified Text
 
 instance Pretty HTTPNotModified where
   pPrint (HTTPNotModified etag) =
-    text "Remote resource not modifed, etag was:" <+> pPrint etag
+    text "Remote resource not modified, etag was:" <+> pPrint etag
 
 instance HFErrorProject HTTPNotModified where
   eBase _ = 240
@@ -820,7 +820,7 @@ instance Exception ParseError
 
 instance HFErrorProject ParseError where
   eBase _ = 500
-  eDesc _ = "A parse error occured."
+  eDesc _ = "A parse error occurred."
 
 
 data UnexpectedListLength = UnexpectedListLength String

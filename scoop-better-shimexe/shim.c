@@ -205,7 +205,7 @@ int main()
       // CreateProcess, and therefore we fallback to ShellExecuteEx,
       // which CAN create elevated processes, at the cost of opening a new separate
       // window.
-      // Theorically, this could be fixed (or rather, worked around) using pipes
+      // Theoretically, this could be fixed (or rather, worked around) using pipes
       // and IPC, but... this is a question for another day.
       SHELLEXECUTEINFOW sei = {0};
 
