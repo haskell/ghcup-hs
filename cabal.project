@@ -2,8 +2,12 @@ packages: ./ghcup.cabal
 
 optional-packages: ./vendored/*/*.cabal
 
-package ghcup
-    flags: +tui +tar
+if impl(ghc < 9.0)
+    package ghcup
+        flags: +tui -tar
+else
+    package ghcup
+        flags: +tui +tar
 
 constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0

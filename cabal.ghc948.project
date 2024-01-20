@@ -43,4 +43,4 @@ package *
 allow-newer: cabal-install-parsers:tar
 
 
-with-compiler: ghc-8.10.7
+with-compiler: ghc-9.4.8
