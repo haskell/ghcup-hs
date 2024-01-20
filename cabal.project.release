@@ -54,3 +54,5 @@ source-repository-package
   location: https://github.com/hasufell/uri-bytestring.git
   tag: 4fb5ed14b500c192e6e7a97f6b2b1eb478806001
 
+allow-newer: cabal-install-parsers:tar
+
