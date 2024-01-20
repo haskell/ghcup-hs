@@ -24,10 +24,12 @@ module GHCup.Types
   , Key(..)
   , Modifier(..)
 #endif
+  , ArchiveResult(..)
   )
   where
 
 import           GHCup.Types.Stack              ( SetupInfo )
+import           GHCup.Utils.Tar.Types          ( ArchiveResult(..) )
 import {-# SOURCE #-} GHCup.Utils.Dirs          ( fromGHCupPath, GHCupPath )
 
 import           Control.DeepSeq                ( NFData, rnf )
@@ -775,4 +777,3 @@ instance Pretty ToolVersion where
 data BuildSystem = Hadrian
                  | Make
   deriving (Show, Eq)
-

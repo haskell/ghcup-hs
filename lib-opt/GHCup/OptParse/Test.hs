@@ -23,7 +23,6 @@ import           GHCup.Utils.Dirs
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 
-import           Codec.Archive
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif

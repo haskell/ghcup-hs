@@ -21,7 +21,6 @@ module GHCup.Errors where
 
 import           GHCup.Types
 
-import           Codec.Archive
 import           Control.Exception.Safe
 import           Data.ByteString                ( ByteString )
 import           Data.CaseInsensitive           ( CI )

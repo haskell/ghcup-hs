@@ -44,7 +44,6 @@ import           Brick.Widgets.Center ( center, centerLayer )
 import qualified Brick.Widgets.List as L
 import           Brick.Focus (FocusRing)
 import qualified Brick.Focus as F
-import           Codec.Archive
 import           Control.Applicative
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)

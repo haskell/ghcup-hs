@@ -21,6 +21,7 @@ installation and introspection of files/versions etc.
 -}
 module GHCup.Utils
   ( module GHCup.Utils.Dirs
+  , module GHCup.Utils.Tar
   , module GHCup.Utils
 #if defined(IS_WINDOWS)
   , module GHCup.Prelude.Windows
@@ -42,6 +43,7 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
+import           GHCup.Utils.Tar
 import           GHCup.Version
 import           GHCup.Prelude
 import           GHCup.Prelude.File
@@ -49,7 +51,6 @@ import           GHCup.Prelude.Logger.Internal
 import           GHCup.Prelude.MegaParsec
 import           GHCup.Prelude.Process
 import           GHCup.Prelude.String.QQ
-import           Codec.Archive           hiding ( Directory )
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
@@ -79,10 +80,6 @@ import           Text.Regex.Posix
 import           Text.PrettyPrint.HughesPJClass (prettyShow)
 import           URI.ByteString
 
-import qualified Codec.Compression.BZip        as BZip
-import qualified Codec.Compression.GZip        as GZip
-import qualified Codec.Compression.Lzma        as Lzma
-import qualified Data.ByteString.Lazy          as BL
 import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
@@ -783,99 +780,6 @@ getLatestToolFor tool target pvpIn dls = do
 
 
 
-
-
-    -----------------
-    --[ Unpacking ]--
-    -----------------
-
-
-
--- | Unpack an archive to a temporary directory and return that path.
-unpackToDir :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m)
-            => FilePath       -- ^ destination dir
-            -> FilePath       -- ^ archive path
-            -> Excepts '[UnknownArchive
-                        , ArchiveResult
-                        ] m ()
-unpackToDir dfp av = do
-  let fn = takeFileName av
-  lift $ logInfo $ "Unpacking: " <> T.pack fn <> " to " <> T.pack dfp
-
-  let untar :: MonadIO m => BL.ByteString -> Excepts '[ArchiveResult] m ()
-      untar = lEM . liftIO . runArchiveM . unpackToDirLazy dfp
-
-      rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
-      rf = liftIO . BL.readFile
-
-  -- extract, depending on file extension
-  if
-    | ".tar.gz" `isSuffixOf` fn -> liftE
-      (untar . GZip.decompress =<< rf av)
-    | ".tar.xz" `isSuffixOf` fn -> do
-      filecontents <- liftE $ rf av
-      let decompressed = Lzma.decompressWith (Lzma.defaultDecompressParams { Lzma.decompressAutoDecoder= True }) filecontents
-      liftE $ untar decompressed
-    | ".tar.bz2" `isSuffixOf` fn ->
-      liftE (untar . BZip.decompress =<< rf av)
-    | ".tar" `isSuffixOf` fn -> liftE (untar =<< rf av)
-    | ".zip" `isSuffixOf` fn -> liftE (untar =<< rf av)
-    | otherwise -> throwE $ UnknownArchive fn
-
-
-getArchiveFiles :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m)
-                => FilePath       -- ^ archive path
-                -> Excepts '[UnknownArchive
-                            , ArchiveResult
-                            ] m [FilePath]
-getArchiveFiles av = do
-  let fn = takeFileName av
-
-  let entries :: Monad m => BL.ByteString -> Excepts '[ArchiveResult] m [FilePath]
-      entries = (fmap . fmap) filepath . lE . readArchiveBSL
-
-      rf :: MonadIO m => FilePath -> Excepts '[ArchiveResult] m BL.ByteString
-      rf = liftIO . BL.readFile
-
-  -- extract, depending on file extension
-  if
-    | ".tar.gz" `isSuffixOf` fn -> liftE
-      (entries . GZip.decompress =<< rf av)
-    | ".tar.xz" `isSuffixOf` fn -> do
-      filecontents <- liftE $ rf av
-      let decompressed = Lzma.decompressWith (Lzma.defaultDecompressParams { Lzma.decompressAutoDecoder= True }) filecontents
-      liftE $ entries decompressed
-    | ".tar.bz2" `isSuffixOf` fn ->
-      liftE (entries . BZip.decompress =<< rf av)
-    | ".tar" `isSuffixOf` fn -> liftE (entries =<< rf av)
-    | ".zip" `isSuffixOf` fn -> liftE (entries =<< rf av)
-    | otherwise -> throwE $ UnknownArchive fn
-
-
-intoSubdir :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m, MonadCatch m)
-           => GHCupPath       -- ^ unpacked tar dir
-           -> TarDir         -- ^ how to descend
-           -> Excepts '[TarDirDoesNotExist] m GHCupPath
-intoSubdir bdir tardir = case tardir of
-  RealDir pr -> do
-    whenM (fmap not . liftIO . doesDirectoryExist $ fromGHCupPath (bdir `appendGHCupPath` pr))
-          (throwE $ TarDirDoesNotExist tardir)
-    pure (bdir `appendGHCupPath` pr)
-  RegexDir r -> do
-    let rs = split (`elem` pathSeparators) r
-    foldlM
-      (\y x ->
-        (handleIO (\_ -> pure []) . liftIO . findFiles (fromGHCupPath y) . regex $ x) >>= (\case
-          []      -> throwE $ TarDirDoesNotExist tardir
-          (p : _) -> pure (y `appendGHCupPath` p)) . sort
-      )
-      bdir
-      rs
-    where regex = makeRegexOpts compIgnoreCase execBlank
-
-
-
-
     ------------
     --[ Tags ]--
     ------------
@@ -928,6 +832,28 @@ getLatestBaseVersion av pvpVer =
     -------------
     --[ Other ]--
     -------------
+
+
+intoSubdir :: (MonadReader env m, HasLog env, MonadIO m, MonadThrow m, MonadCatch m)
+           => GHCupPath       -- ^ unpacked tar dir
+           -> TarDir         -- ^ how to descend
+           -> Excepts '[TarDirDoesNotExist] m GHCupPath
+intoSubdir bdir tardir = case tardir of
+  RealDir pr -> do
+    whenM (fmap not . liftIO . doesDirectoryExist $ fromGHCupPath (bdir `appendGHCupPath` pr))
+          (throwE $ TarDirDoesNotExist tardir)
+    pure (bdir `appendGHCupPath` pr)
+  RegexDir r -> do
+    let rs = split (`elem` pathSeparators) r
+    foldlM
+      (\y x ->
+        (handleIO (\_ -> pure []) . liftIO . findFiles (fromGHCupPath y) . regex $ x) >>= (\case
+          []      -> throwE $ TarDirDoesNotExist tardir
+          (p : _) -> pure (y `appendGHCupPath` p)) . sort
+      )
+      bdir
+      rs
+    where regex = makeRegexOpts compIgnoreCase execBlank
 
 -- | Usually @~\/.ghcup\/ghc\/\<ver\>\/bin\/@
 ghcInternalBinDir :: (MonadReader env m, HasDirs env, MonadThrow m, MonadFail m, MonadIO m)
