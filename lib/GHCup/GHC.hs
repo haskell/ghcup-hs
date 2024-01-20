@@ -448,13 +448,30 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
            = []
 
       lift $ logInfo "Installing GHC (this may take a while)"
+      env <- case _rPlatform of
+               -- https://github.com/haskell/ghcup-hs/issues/967
+               Linux Alpine
+                 -- lets not touch LD for cross targets
+                 | Nothing <- _tvTarget tver -> do
+                     cEnv <- liftIO getEnvironment
+                     spaths <- liftIO getSearchPath
+                     has_ld_bfd <- isJust <$> liftIO (searchPath spaths "ld.bfd")
+                     let ldSet = isJust $ lookup "LD" cEnv
+                     -- only set LD if ld.bfd exists in PATH and LD is not set
+                     -- already
+                     if has_ld_bfd && not ldSet
+                     then do
+                       lift $ logInfo "Detected alpine linux... setting LD=ld.bfd"
+                       pure $ Just (("LD", "ld.bfd") : cEnv)
+                     else pure Nothing
+               _ -> pure Nothing
       lEM $ execLogged "sh"
                        ("./configure" : ("--prefix=" <> fromInstallDir inst)
                         : (maybe mempty (\x -> ["--target=" <> T.unpack x]) (_tvTarget tver) <> ldOverride <> (T.unpack <$> addConfArgs))
                        )
                        (Just $ fromGHCupPath path)
                        "ghc-configure"
-                       Nothing
+                       env
       tmpInstallDest <- lift withGHCupTmpDir
       lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "install"] (Just $ fromGHCupPath path)
       liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpInstallDest)
