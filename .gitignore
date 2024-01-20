@@ -4,6 +4,7 @@ codex.tags
 dist-newstyle/
 cabal.project.local
 .stack-work/
+.hiefiles/
 bin/
 /*.prof
 /*.ps
