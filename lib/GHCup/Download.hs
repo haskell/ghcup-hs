@@ -165,7 +165,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
                      -> [String]
                      -> m GHCupInfo
   fromStackSetupInfo (Stack.siGHCs -> ghcDli) keys = do
-    let ghcVersionsPerKey = (`M.lookup` ghcDli) <$> (T.pack <$> keys)
+    let ghcVersionsPerKey = (`M.lookup` ghcDli) . T.pack <$> keys
         ghcVersions = fromMaybe mempty . listToMaybe . catMaybes $ ghcVersionsPerKey
     (ghcupInfo' :: M.Map GHCTargetVersion DownloadInfo) <-
       M.mapKeys mkTVer <$> M.traverseMaybeWithKey (\_ a -> pure $ fromStackDownloadInfo a) ghcVersions

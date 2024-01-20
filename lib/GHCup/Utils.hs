@@ -889,7 +889,7 @@ ghcToolFiles ver = do
   groupToolFiles = groupBy (\(a, _) (b, _) -> a == b) . fmap (splitOnPVP "-")
 
   getUniqueTools :: [[(FilePath, String)]] -> [String]
-  getUniqueTools = filter (isNotAnyInfix blackListedTools) . nub . fmap fst . filter ((== "") . snd) . concat
+  getUniqueTools = filter (isNotAnyInfix blackListedTools) . nub . fmap fst . concatMap (filter ((== "") . snd))
 
   blackListedTools :: [String]
   blackListedTools = ["haddock-ghc"]
