@@ -14,14 +14,100 @@ ecabal() {
 }
 
 raw_eghcup() {
-	ghcup -v -c "$@"
+	if command -v sydbox 1>/dev/null ; then
+        sydbox \
+            -m core/sandbox/read:deny \
+            -m core/sandbox/write:deny \
+            -m core/sandbox/network:allow \
+            -m allowlist/read+/usr/lib/os-release \
+            -m "allowlist/read+${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/***" \
+            -m "allowlist/write+${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/***" \
+            -m "allowlist/read+${TMPDIR}/***" \
+            -m "allowlist/write+${TMPDIR}/***" \
+            -m "allowlist/read+/usr/lib/***" \
+            -m 'allowlist/read+/etc/ld.so.cache' \
+            -m "allowlist/read+/lib/***" \
+            -m 'allowlist/read+/etc/ssl/openssl.cnf' \
+            -m 'allowlist/read+/proc/sys/crypto/fips_enabled' \
+            -m 'allowlist/read+/etc/nsswitch.conf' \
+            -m 'allowlist/read+/etc/host.conf' \
+            -m 'allowlist/read+/etc/resolv.conf' \
+            -m 'allowlist/read+/etc/hosts' \
+            -m 'allowlist/read+/etc/gai.conf' \
+            -m 'allowlist/read+/etc/ssl/certs/ca-certificates.crt' \
+            -m 'allowlist/read+/usr/share/zoneinfo/Etc/UTC' \
+            -m 'allowlist/read+/dev/urandom' \
+            -m 'core/violation/decision:killall' \
+		    -- ghcup -v -c "$@"
+	else
+		ghcup -v -c "$@"
+	fi
 }
 
 eghcup() {
 	if [ "${OS}" = "WINDOWS" ] ; then
+        sydbox \
+            -m core/sandbox/read:deny \
+            -m core/sandbox/write:deny \
+            -m core/sandbox/network:allow \
+            -m allowlist/read+/usr/lib/os-release \
+            -m "allowlist/read+${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/***" \
+            -m "allowlist/write+${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/***" \
+            -m "allowlist/read+${TMPDIR}/***" \
+            -m "allowlist/write+${TMPDIR}/***" \
+            -m "allowlist/read+/usr/lib/***" \
+            -m 'allowlist/read+/etc/ld.so.cache' \
+            -m "allowlist/read+/lib/***" \
+            -m 'allowlist/read+/etc/ssl/openssl.cnf' \
+            -m 'allowlist/read+/proc/sys/crypto/fips_enabled' \
+            -m 'allowlist/read+/etc/nsswitch.conf' \
+            -m 'allowlist/read+/etc/host.conf' \
+            -m 'allowlist/read+/etc/resolv.conf' \
+            -m 'allowlist/read+/etc/hosts' \
+            -m 'allowlist/read+/etc/gai.conf' \
+            -m 'allowlist/read+/etc/ssl/certs/ca-certificates.crt' \
+            -m 'allowlist/read+/usr/share/zoneinfo/Etc/UTC' \
+            -m 'allowlist/read+/dev/urandom' \
+            -m 'core/violation/decision:killall' \
+    
 		ghcup -v -c -s file:/$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
 	else
-		ghcup -v -c -s file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
+		if command -v sydbox 1>/dev/null ; then
+			ghcup -v -c -s file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
+		else
+			ghcup -v -c -s file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml "$@"
+		fi
+	fi
+}
+
+eghcup_offline() {
+	if command -v sydbox 1>/dev/null ; then
+        sydbox \
+            -m core/sandbox/read:deny \
+            -m core/sandbox/write:deny \
+            -m core/sandbox/network:deny \
+            -m allowlist/read+/usr/lib/os-release \
+            -m "allowlist/read+${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/***" \
+            -m "allowlist/write+${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/***" \
+            -m "allowlist/read+${TMPDIR}/***" \
+            -m "allowlist/write+${TMPDIR}/***" \
+            -m "allowlist/read+/usr/lib/***" \
+            -m 'allowlist/read+/etc/ld.so.cache' \
+            -m "allowlist/read+/lib/***" \
+            -m 'allowlist/read+/etc/ssl/openssl.cnf' \
+            -m 'allowlist/read+/proc/sys/crypto/fips_enabled' \
+            -m 'allowlist/read+/etc/nsswitch.conf' \
+            -m 'allowlist/read+/etc/host.conf' \
+            -m 'allowlist/read+/etc/resolv.conf' \
+            -m 'allowlist/read+/etc/hosts' \
+            -m 'allowlist/read+/etc/gai.conf' \
+            -m 'allowlist/read+/etc/ssl/certs/ca-certificates.crt' \
+            -m 'allowlist/read+/usr/share/zoneinfo/Etc/UTC' \
+            -m 'allowlist/read+/dev/urandom' \
+            -m 'core/violation/decision:killall' \
+			-- ghcup -v --offline "$@"
+	else
+		ghcup -v --offline "$@"
 	fi
 }
 
@@ -155,7 +241,7 @@ else
 	# https://gitlab.haskell.org/haskell/ghcup-hs/issues/7
 	if [ "${OS}" = "LINUX" ] ; then
 		eghcup --downloader=wget prefetch ghc 8.10.3
-		eghcup --offline install ghc 8.10.3
+		eghcup_offline install ghc 8.10.3
 		if [ "${ARCH}" = "64" ] ; then
 			expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghc-8.10.3-linux.files" | sort)
 			actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find . | sort)
@@ -164,17 +250,17 @@ else
 		fi
 	elif [ "${OS}" = "WINDOWS" ] ; then
 		eghcup prefetch ghc 8.10.3
-		eghcup --offline install ghc 8.10.3
+		eghcup_offline install ghc 8.10.3
 		expected=$(cat "$( cd "$(dirname "$0")" ; pwd -P )/../ghc-8.10.3-windows.files" | sort)
 		actual=$(cd "${GHCUP_DIR}/ghc/8.10.3/" && find . | sort)
 		[ "${actual}" = "${expected}" ]
 		unset actual expected
 	else
 		eghcup prefetch ghc 8.10.3
-		eghcup --offline install ghc 8.10.3
+		eghcup_offline install ghc 8.10.3
 	fi
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
-	eghcup --offline set 8.10.3
+	eghcup_offline set 8.10.3
 	eghcup set 8.10.3
 	[ "$(ghc --numeric-version)" = "8.10.3" ]
 	eghcup set ${GHC_VERSION}
@@ -182,7 +268,7 @@ else
 	eghcup unset ghc
     "$GHCUP_BIN"/ghc --numeric-version && exit 1 || echo yes
 	eghcup set ${GHC_VERSION}
-	eghcup --offline rm 8.10.3
+	eghcup_offline rm 8.10.3
 	[ "$(ghc --numeric-version)" = "${ghc_ver}" ]
 
 
