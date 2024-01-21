@@ -44,7 +44,7 @@ raw_eghcup() {
 
 eghcup() {
 	if [ "${OS}" = "Windows" ] ; then
-		"$GHCUP_BIN/ghcup${ext}" -c -s "file:/$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml" "$@"
+		"$GHCUP_BIN/ghcup${ext}" -c -s "file:${GITHUB_WORKSPACE//\\//}/data/metadata/ghcup-${JSON_VERSION}.yaml" "$@"
 	else
 		"$GHCUP_BIN/ghcup${ext}" -c -s "file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml" "$@"
 	fi
