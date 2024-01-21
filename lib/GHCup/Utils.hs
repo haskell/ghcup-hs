@@ -23,6 +23,7 @@ module GHCup.Utils
   ( module GHCup.Utils.Dirs
   , module GHCup.Utils.Tar
   , module GHCup.Utils
+  , module GHCup.Utils.URI
 #if defined(IS_WINDOWS)
   , module GHCup.Prelude.Windows
 #else
@@ -44,6 +45,7 @@ import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.Tar
+import           GHCup.Utils.URI
 import           GHCup.Version
 import           GHCup.Prelude
 import           GHCup.Prelude.File
@@ -78,7 +80,7 @@ import           System.FilePath
 import           System.IO.Error
 import           Text.Regex.Posix
 import           Text.PrettyPrint.HughesPJClass (prettyShow)
-import           URI.ByteString
+import           URI.ByteString hiding (parseURI)
 
 import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T

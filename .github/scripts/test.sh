@@ -11,6 +11,7 @@ else
 	GHCUP_DIR="${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
 fi
 
+env
 git_describe
 
 rm -rf "${GHCUP_DIR}"

@@ -178,7 +178,7 @@ jobs:
             ARCH: 64
           - os: windows-latest
             ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 9.2.8
+            GHC_VER: 9.4.8
             ARCH: 64
     steps:
       - name: Checkout code
@@ -414,7 +414,7 @@ jobs:
             DISTRO: na
           - os: windows-latest
             ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 9.2.8
+            GHC_VER: 9.4.8
             ARCH: 64
             DISTRO: na
 

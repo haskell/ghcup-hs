@@ -34,6 +34,7 @@ import qualified GHCup.Types.Stack                as Stack
 import           GHCup.Types.Optics
 import           GHCup.Types.JSON               ( )
 import           GHCup.Utils.Dirs
+import           GHCup.Utils.URI
 import           GHCup.Platform
 import           GHCup.Prelude
 import           GHCup.Prelude.File
@@ -77,7 +78,7 @@ import           System.Exit
 import           System.FilePath
 import           System.IO.Error
 import           System.IO.Temp
-import           URI.ByteString
+import           URI.ByteString          hiding (parseURI)
 
 import qualified Crypto.Hash.SHA256            as SHA256
 import qualified Data.ByteString               as B
@@ -178,7 +179,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
 
     fromStackDownloadInfo :: MonadThrow m => Stack.GHCDownloadInfo -> m DownloadInfo
     fromStackDownloadInfo (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do
-      url <- either (\e -> throwM $ ParseError (show e)) pure $ parseURI strictURIParserOptions . E.encodeUtf8 $ downloadInfoUrl
+      url <- either (\e -> throwM $ ParseError (show e)) pure $ parseURI . E.encodeUtf8 $ downloadInfoUrl
       sha256 <- maybe (throwM $ DigestMissing url) (pure . E.decodeUtf8) downloadInfoSha256
       pure $ DownloadInfo url (Just $ RegexDir "ghc-.*") sha256 Nothing Nothing
 

@@ -17,6 +17,7 @@ import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
+import           GHCup.Utils.URI
 import           GHCup.Prelude
 import           GHCup.Prelude.Process
 import           GHCup.Prelude.Logger
@@ -59,7 +60,7 @@ import           Safe
 import           System.Process                  ( readProcess )
 import           System.FilePath
 import           Text.HTML.TagSoup       hiding ( Tag )
-import           URI.ByteString
+import           URI.ByteString          hiding (parseURI)
 
 import qualified Data.ByteString.UTF8          as UTF8
 import qualified Data.Map.Strict               as M
@@ -215,7 +216,7 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
 
 
 uriParser :: String -> Either String URI
-uriParser = first show . parseURI strictURIParserOptions . UTF8.fromString
+uriParser = first show . parseURI . UTF8.fromString
 
 
 absolutePathParser :: FilePath -> Either String FilePath
@@ -834,11 +835,11 @@ parseUrlSource :: String -> Either String URLSource
 parseUrlSource "GHCupURL" = pure GHCupURL
 parseUrlSource "StackSetupURL" = pure StackSetupURL
 parseUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
-            <|> (fmap (OwnSource . (:[]) . Right) . first show . parseURI strictURIParserOptions .UTF8.fromString $ s')
+            <|> (fmap (OwnSource . (:[]) . Right) . first show . parseURI .UTF8.fromString $ s')
 
 parseNewUrlSource :: String -> Either String NewURLSource
 parseNewUrlSource "GHCupURL" = pure NewGHCupURL
 parseNewUrlSource "StackSetupURL" = pure NewStackSetupURL
 parseNewUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
-            <|> (fmap NewURI . first show . parseURI strictURIParserOptions .UTF8.fromString $ s')
+            <|> (fmap NewURI . first show . parseURI .UTF8.fromString $ s')
 

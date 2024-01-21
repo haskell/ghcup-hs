@@ -80,7 +80,11 @@ compileGhcCheckList = mapSecond CompileGHC
   , (baseCmd <> "--jobs 10", baseOptions{GHC.jobs = Just 10})
   , (baseCmd <> "-c build.mk", baseOptions{GHC.buildConfig = Just "build.mk"})
   , (baseCmd <> "--config build.mk", baseOptions{GHC.buildConfig = Just "build.mk"})
+#ifdef IS_WINDOWS
+  , (baseCmd <> "--patch file:c:/example.patch", baseOptions{GHC.patches = Just $ Right [[uri|file:c:/example.patch|]]})
+#else
   , (baseCmd <> "--patch file:///example.patch", baseOptions{GHC.patches = Just $ Right [[uri|file:///example.patch|]]})
+#endif
   , (baseCmd <> "-p patch_dir", baseOptions{GHC.patches = Just (Left "patch_dir")})
   , (baseCmd <> "--patchdir patch_dir", baseOptions{GHC.patches = Just (Left "patch_dir")})
   , (baseCmd <> "-x armv7-unknown-linux-gnueabihf", baseOptions{GHC.crossTarget = Just "armv7-unknown-linux-gnueabihf"})
@@ -164,10 +168,22 @@ compileHlsCheckList = mapSecond CompileHLS
   , (baseCmd <> "-i /tmp/out_dir", baseOptions{HLS.isolateDir = Just "/tmp/out_dir"})
   , (baseCmd <> "--isolate /tmp/out_dir", baseOptions{HLS.isolateDir = Just "/tmp/out_dir"})
 #endif
+#ifdef IS_WINDOWS
+  , (baseCmd <> "--cabal-project file:c:/tmp/cabal.project", baseOptions{HLS.cabalProject = Just $ Right [uri|file:c:/tmp/cabal.project|]})
+#else
   , (baseCmd <> "--cabal-project file:///tmp/cabal.project", baseOptions{HLS.cabalProject = Just $ Right [uri|file:///tmp/cabal.project|]})
+#endif
   , (baseCmd <> "--cabal-project cabal.ghc8107.project", baseOptions{HLS.cabalProject = Just $ Left "cabal.ghc8107.project"})
+#ifdef IS_WINDOWS
+  , (baseCmd <> "--cabal-project-local file:c:/tmp/cabal.project.local", baseOptions{HLS.cabalProjectLocal = Just [uri|file:c:/tmp/cabal.project.local|]})
+#else
   , (baseCmd <> "--cabal-project-local file:///tmp/cabal.project.local", baseOptions{HLS.cabalProjectLocal = Just [uri|file:///tmp/cabal.project.local|]})
+#endif
+#ifdef IS_WINDOWS
+  , (baseCmd <> "--patch file:c:/example.patch", baseOptions{HLS.patches = Just $ Right [[uri|file:c:/example.patch|]]})
+#else
   , (baseCmd <> "--patch file:///example.patch", baseOptions{HLS.patches = Just $ Right [[uri|file:///example.patch|]]})
+#endif
   , (baseCmd <> "-p patch_dir", baseOptions{HLS.patches = Just (Left "patch_dir")})
   , (baseCmd <> "--patchdir patch_dir", baseOptions{HLS.patches = Just (Left "patch_dir")})
   , (baseCmd <> "-- --enable-tests", baseOptions{HLS.cabalArgs = ["--enable-tests"]})

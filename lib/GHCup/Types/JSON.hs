@@ -26,6 +26,7 @@ import           GHCup.Types.Stack (SetupInfo)
 import           GHCup.Types.JSON.Utils
 import           GHCup.Types.JSON.Versions ()
 import           GHCup.Prelude.MegaParsec
+import           GHCup.Utils.URI
 
 import           Control.Applicative            ( (<|>) )
 import           Data.Aeson              hiding (Key)
@@ -38,7 +39,7 @@ import           Data.Text.Encoding            as E
 import           Data.Foldable
 import           Data.Versions
 import           Data.Void
-import           URI.ByteString
+import           URI.ByteString hiding (parseURI)
 import           Text.Casing
 
 import qualified Data.List.NonEmpty            as NE
@@ -95,7 +96,7 @@ instance ToJSON URI where
 
 instance FromJSON URI where
   parseJSON = withText "URL" $ \t ->
-    case parseURI strictURIParserOptions (encodeUtf8 t) of
+    case parseURI (encodeUtf8 t) of
       Right x -> pure x
       Left  e -> fail . show $ e
 
