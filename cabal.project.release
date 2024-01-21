@@ -18,7 +18,9 @@ elif os(mingw32)
   constraints: zlib +bundled-c-zlib,
                lzma +static,
                text -simdutf,
-			   vty-windows >=0.1.0.3
+               vty-windows >=0.1.0.3
+  if impl(ghc >= 9.4)
+    constraints: language-c >= 0.9.3
 elif os(freebsd)
   constraints: zlib +bundled-c-zlib,
                zip +disable-zstd
