@@ -7,7 +7,7 @@ package ghcup
 source-repository-package
   type: git
   location: https://github.com/haskell/ghcup-hs.git
-  tag: b1106985ec1173a0122f2781719e9bb1a85de257
+  tag: 91ef2c7666d118bc6bd7d2fc2eeb7754081a9f3d
 
 constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0

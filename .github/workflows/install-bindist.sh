@@ -14,7 +14,14 @@ ghcup --version
 which ghcup | grep foobarbaz
 
 ghcup_fun() {
-	ghcup -v --url-source="file:$METADATA_FILE" "$@"
+	case "$(uname -s)" in
+		MSYS_*|MINGW*)
+			ghcup -v --url-source="file:${GITHUB_WORKSPACE//\\//}/$METADATA_FILE" "$@"
+			;;
+		*)
+			ghcup -v --url-source="file://${GITHUB_WORKSPACE}/$METADATA_FILE" "$@"
+			;;
+	esac
 }
 
 case $TOOL in
@@ -26,7 +33,6 @@ case $TOOL in
 esac
 
 mkdir -p /tmp/install-bindist-ci
-cp "$METADATA_FILE" /tmp/install-bindist-ci/
 cd /tmp/install-bindist-ci
 
 trap 'rm -rf -- /tmp/install-bindist-ci' EXIT
@@ -62,7 +68,6 @@ case $TOOL in
 			cd "$tmp_dir"
 			cabal unpack "${test_package}"
 			cd "${test_package}"
-			cp "/tmp/install-bindist-ci/${METADATA_FILE}" .
 		}
 
 		# For all HLS GHC versions and the wrapper, run 'typecheck'
