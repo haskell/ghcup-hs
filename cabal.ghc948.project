@@ -12,6 +12,10 @@ else
 constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0
 
+if os(mingw32)
+  if impl(ghc >= 9.4)
+    constraints: language-c >= 0.9.3
+
 source-repository-package
   type: git
   location: https://github.com/haskell/tar.git
@@ -21,6 +25,11 @@ source-repository-package
   type: git
   location: https://github.com/hasufell/uri-bytestring.git
   tag: 4fb5ed14b500c192e6e7a97f6b2b1eb478806001
+
+source-repository-package
+  type: git
+  location: https://github.com/hasufell/versions.git
+  tag: 79e18fbc44fae3064d8957c550cc0229465db320
 
 package libarchive
   flags: -system-libarchive
