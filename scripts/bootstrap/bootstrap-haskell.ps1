@@ -44,7 +44,9 @@ param (
     # The Msys2 sha256sum hash
     [string]$Msys2Hash,
     # Whether to disable creation of several desktop shortcuts
-    [switch]$DontWriteDesktopShortcuts
+    [switch]$DontWriteDesktopShortcuts,
+    # Whether to disable adjusting bashrc (in msys2 env) with PATH
+    [switch]$DontAdjustBashRc
 )
 
 $DefaultMsys2Version = "20221216"
@@ -647,10 +649,14 @@ if ($DisableCurl) {
   $DownloadScript = 'curl --proto ''=https'' --tlsv1.2 -sSf'
 }
 
+if (!($DontAdjustBashRc)) {
+  $AdjustBashRcExport = 'export BOOTSTRAP_HASKELL_ADJUST_BASHRC=1 ;'
+}
+
 if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBash) {
-  Exec "$Bash" '-lc' ('{4} {6} {7} {8} {9} {10} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript)
+  Exec "$Bash" '-lc' ('{4} {6} {7} {8} {9} {10} {12} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript, $AdjustBashRcExport)
 } else {
-  Exec "$Msys2Shell" '-mingw64' '-mintty'  '-shell' 'bash' '-c' ('{4} {6} {7} {8} {9} {10} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript)
+  Exec "$Msys2Shell" '-mingw64' '-mintty'  '-shell' 'bash' '-c' ('{4} {6} {7} {8} {9} {10} {12} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript, $AdjustBashRcExport)
 }
 
 
