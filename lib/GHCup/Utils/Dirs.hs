@@ -32,6 +32,8 @@ module GHCup.Utils.Dirs
   , getConfigFilePath'
   , useXDG
   , cleanupTrash
+  , ghcupMsys2BinDirs
+  , ghcupMsys2BinDirs'
 
   , GHCupPath
   , appendGHCupPath
@@ -136,6 +138,7 @@ import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
 import           Haskus.Utils.Variant.Excepts
 import           Optics hiding ( uncons )
 import           Safe
+import           System.Info
 import           System.Directory hiding ( removeDirectory
                                          , removeDirectoryRecursive
                                          , removePathForcibly
@@ -338,6 +341,48 @@ ghcupTMPDir
         else ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "tmp"))
 
 
+ghcupMsys2Dir :: IO FilePath
+ghcupMsys2Dir =
+  lookupEnv "GHCUP_MSYS2" >>= \case
+    Just fp -> pure fp
+    Nothing -> do
+      baseDir <- liftIO ghcupBaseDir
+      pure (fromGHCupPath baseDir </> "msys64")
+
+ghcupMsys2BinDirs :: (MonadFail m, MonadIO m, MonadReader env m, HasDirs env) => m [FilePath]
+ghcupMsys2BinDirs = do
+  Dirs{..} <- getDirs
+  liftIO $ ghcupMsys2BinDirs_ msys2Dir
+
+ghcupMsys2BinDirs' :: IO [FilePath]
+ghcupMsys2BinDirs' = do
+  msys2Dir <- ghcupMsys2Dir
+  ghcupMsys2BinDirs_ msys2Dir
+
+ghcupMsys2BinDirs_ :: FilePath -> IO [FilePath]
+ghcupMsys2BinDirs_ msys2Dir' = do
+  env <- liftIO (lookupEnv "GHCUP_MSYS2_ENV") >>= \case
+    Just env -> maybe (fail parseFailMsg) pure $ readMay @MSYS2Env env
+    Nothing
+      | "x86_64"  <- arch -> pure MINGW64
+      | "i386"    <- arch -> pure MINGW32
+      | "aarch64" <- arch -> pure CLANGARM64
+      | otherwise -> fail "No compatible architecture for msys2"
+  pure [msys2Dir' </> toEnvDir env </> "bin", msys2Dir' </> toEnvDir MSYS </> "bin"]
+ where
+  -- https://www.msys2.org/docs/environments/
+  toEnvDir :: MSYS2Env -> FilePath
+  toEnvDir MSYS       = "usr"
+  toEnvDir UCRT64     = "ucrt64"
+  toEnvDir CLANG64    = "clang64"
+  toEnvDir CLANGARM64 = "clangarm64"
+  toEnvDir CLANG32    = "clang32"
+  toEnvDir MINGW64    = "mingw64"
+  toEnvDir MINGW32    = "mingw32"
+
+  parseFailMsg = "Invalid value for GHCUP_MSYS2_ENV. Valid values are: MSYS, UCRT64, CLANG64, CLANGARM64, CLANG32, MINGW64, MINGW32"
+
+
 getAllDirs :: IO Dirs
 getAllDirs = do
   baseDir    <- ghcupBaseDir
@@ -348,6 +393,7 @@ getAllDirs = do
   recycleDir <- ghcupRecycleDir
   tmpDir     <- ghcupTMPDir
   dbDir      <- ghcupDbDir
+  msys2Dir   <- ghcupMsys2Dir
   pure Dirs { .. }
 
 

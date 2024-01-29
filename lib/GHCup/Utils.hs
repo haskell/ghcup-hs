@@ -1155,7 +1155,7 @@ ensureShimGen
 
 -- | Ensure ghcup directory structure exists.
 ensureDirectories :: Dirs -> IO ()
-ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir dbDir tmpDir) = do
+ensureDirectories (Dirs baseDir binDir cacheDir logsDir confDir trashDir dbDir tmpDir _) = do
   createDirRecursive' (fromGHCupPath baseDir)
   createDirRecursive' (fromGHCupPath baseDir </> "ghc")
   createDirRecursive' (fromGHCupPath baseDir </> "hls")

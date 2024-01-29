@@ -544,10 +544,22 @@ data Dirs = Dirs
   , dbDir      :: GHCupPath
   , recycleDir :: GHCupPath -- mainly used on windows
   , tmpDir     :: GHCupPath
+  , msys2Dir   :: FilePath
   }
   deriving (Show, GHC.Generic)
 
 instance NFData Dirs
+
+data MSYS2Env = MSYS
+              | UCRT64
+              | CLANG64
+              | CLANGARM64
+              | CLANG32
+              | MINGW64
+              | MINGW32
+  deriving (Eq, Show, Ord, GHC.Generic, Read)
+
+instance NFData MSYS2Env
 
 data KeepDirs = Always
               | Errors

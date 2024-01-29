@@ -52,7 +52,9 @@ jobs:
       - if: runner.os == 'Windows'
         name: Run bootstrap
         run: |
+          $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
           $curDir = Get-Location
           Write-Host "Current Working Directory: $curDir"
-          ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ("{0}/scripts/bootstrap/bootstrap-haskell" -f $curDir) -InBash
+          ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ("{0}/scripts/bootstrap/bootstrap-haskell" -f $curDir) -InBash -Msys2Env "MINGW64"
         shell: pwsh
+

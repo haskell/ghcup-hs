@@ -20,12 +20,22 @@
 #   * BOOTSTRAP_HASKELL_ADJUST_CABAL_CONFIG - whether to adjust mingw paths in cabal.config on windows
 #   * BOOTSTRAP_HASKELL_DOWNLOADER - which downloader to use (default: curl)
 #   * GHCUP_BASE_URL - the base url for ghcup binary download (use this to overwrite https://downloads.haskell.org/~ghcup with a mirror)
+#   * GHCUP_MSYS2_ENV - the msys2 environment to use on windows, see https://www.msys2.org/docs/environments/ (defauts to MINGW64, MINGW32 or CLANGARM64, depending on the architecture)
 
 # License: LGPL-3.0
 
 
 # safety subshell to avoid executing anything in case this script is not downloaded properly
 (
+
+die() {
+    if [ -n "${NO_COLOR}" ] ; then
+        (>&2 printf "%s\\n" "$1")
+    else
+        (>&2 printf "\\033[0;31m%s\\033[0m\\n" "$1")
+    fi
+    exit 2
+}
 
 plat="$(uname -s)"
 arch=$(uname -m)
@@ -55,18 +65,40 @@ case "${plat}" in
 			;;
 esac
 
+case "${GHCUP_MSYS2_ENV}" in
+    "")
+        case "${arch}" in
+            x86_64|amd64)
+                GHCUP_MSYS2_ENV_DIR="mingw64" ;;
+            i*86)
+                GHCUP_MSYS2_ENV_DIR="mingw32" ;;
+            aarch64|arm64)
+                GHCUP_MSYS2_ENV_DIR="clangarm64" ;;
+            *) die "Unknown architecture: ${arch}" ;;
+        esac
+        ;;
+    MSYS)
+        GHCUP_MSYS2_ENV_DIR="usr" ;;
+    UCRT64)
+        GHCUP_MSYS2_ENV_DIR="ucrt64" ;;
+    CLANG64)
+        GHCUP_MSYS2_ENV_DIR="clang64" ;;
+    CLANGARM64)
+        GHCUP_MSYS2_ENV_DIR="clangarm64" ;;
+    CLANG32)
+        GHCUP_MSYS2_ENV_DIR="clang32" ;;
+    MINGW64)
+        GHCUP_MSYS2_ENV_DIR="mingw64" ;;
+    MINGW32)
+        GHCUP_MSYS2_ENV_DIR="mingw32" ;;
+    *)
+        die "Invalid value for GHCUP_MSYS2_ENV. Valid values are: MSYS, UCRT64, CLANG64, CLANGARM64, CLANG32, MINGW64, MINGW32" ;;
+esac
+
 : "${BOOTSTRAP_HASKELL_GHC_VERSION:=recommended}"
 : "${BOOTSTRAP_HASKELL_CABAL_VERSION:=recommended}"
 
 
-die() {
-    if [ -n "${NO_COLOR}" ] ; then
-        (>&2 printf "%s\\n" "$1")
-    else
-        (>&2 printf "\\033[0;31m%s\\033[0m\\n" "$1")
-    fi
-    exit 2
-}
 
 warn() {
     if [ -n "${NO_COLOR}" ] ; then
@@ -595,7 +627,7 @@ adjust_cabal_config() {
     else
         cabal_bin="$HOME/AppData/Roaming/cabal/bin"
     fi
-    ecabal user-config -a "extra-prog-path: $(cygpath -w "$GHCUP_BIN"), $(cygpath -w "$cabal_bin"), $(cygpath -w "$GHCUP_MSYS2"/mingw64/bin), $(cygpath -w "$GHCUP_MSYS2"/usr/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/mingw64/lib)" -f init
+    ecabal user-config -a "extra-prog-path: $(cygpath -w "$GHCUP_BIN"), $(cygpath -w "$cabal_bin"), $(cygpath -w "$GHCUP_MSYS2"/${GHCUP_MSYS2_ENV_DIR}/bin), $(cygpath -w "$GHCUP_MSYS2"/usr/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/${GHCUP_MSYS2_ENV_DIR}/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/${GHCUP_MSYS2_ENV_DIR}/lib)" -f init
 }
 
 ask_cabal_config_init() {
