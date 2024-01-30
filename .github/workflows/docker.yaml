@@ -57,6 +57,7 @@ jobs:
     steps:
       - uses: docker://arm64v8/ubuntu:focal
         name: Cleanup (aarch64 linux)
+        continue-on-error: true
         with:
           args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
 
@@ -93,6 +94,7 @@ jobs:
     steps:
       - uses: docker://arm64v8/ubuntu:focal
         name: Cleanup (aarch64 linux)
+        continue-on-error: true
         with:
           args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
 
