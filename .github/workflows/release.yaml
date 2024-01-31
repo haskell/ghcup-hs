@@ -247,6 +247,42 @@ jobs:
           path: |
             ./out/*
 
+  build-freebsd:
+    name: Build binary (FreeBSD)
+    runs-on: [self-hosted, FreeBSD, X64]
+    env:
+      CABAL_VER: 3.10.2.0
+      MACOSX_DEPLOYMENT_TARGET: 10.13
+      JSON_VERSION: "0.0.8"
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      S3_HOST: ${{ secrets.S3_HOST }}
+      ARTIFACT: "x86_64-portbld-freebsd-ghcup"
+      GHC_VER: 9.4.8
+      ARCH: 64
+      DISTRO: na
+      RUNNER_OS: FreeBSD
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Run build
+        run: |
+          sed -i.bak -e 's/quarterly/latest/' /etc/pkg/FreeBSD.conf
+          pkg install -y ghc hs-cabal-install git bash misc/compat10x misc/compat11x misc/compat12x gmake llvm14
+          tzsetup Etc/GMT
+          adjkerntz -a
+          bash .github/scripts/build.sh
+      - if: always()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            ./out/*
+
   test-linux:
     name: Test linux
     needs: "build-linux"
