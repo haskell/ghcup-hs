@@ -30,6 +30,7 @@ import           GHCup.Prelude.String.QQ
 import           GHCup.Version
 
 import           Cabal.Plan ( findPlanJson, SearchPlanJson(..) )
+import           Control.Monad (when, forM_, unless)
 import           Control.Concurrent
 import           Control.Concurrent.Async
 import           Control.Exception.Safe

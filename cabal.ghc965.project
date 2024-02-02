@@ -1,0 +1,8 @@
+if os(mingw32)
+  import: cabal.ghc965.Win32.project
+  import: cabal.ghc965.Win32.project.freeze
+else
+  import: cabal.ghc965.Unix.project
+  import: cabal.ghc965.Unix.project.freeze
+
+with-compiler: ghc-9.6.5
