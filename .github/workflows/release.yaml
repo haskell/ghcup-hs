@@ -493,6 +493,41 @@ jobs:
           name: testfiles
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
+  test-freebsd:
+    name: Test FreeBSD
+    needs: "build-freebsd"
+    runs-on: [self-hosted, FreeBSD, X64]
+    env:
+      CABAL_VER: 3.10.2.0
+      MACOSX_DEPLOYMENT_TARGET: 10.13
+      JSON_VERSION: "0.0.8"
+      ARTIFACT: "x86_64-portbld-freebsd-ghcup"
+      GHC_VER: 9.4.8
+      ARCH: 64
+      DISTRO: na
+      RUNNER_OS: FreeBSD
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifacts
+          path: ./out
+
+      - name: Run test
+        run: |
+          bash .github/scripts/test.sh
+
+      - if: failure()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: testfiles
+          path: |
+            ./test/ghcup-test/golden/unix/GHCupInfo*json
   hls:
     name: hls
     needs: build-linux
@@ -526,7 +561,7 @@ jobs:
 
   release:
     name: release
-    needs: ["test-linux", "test-arm", "test-macwin", "hls"]
+    needs: ["test-linux", "test-arm", "test-macwin", "test-freebsd", "hls"]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
