@@ -561,6 +561,10 @@ adjust_bashrc() {
 					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 					;;
 			esac
+            if [ -e "$HOME/.profile" ] ; then
+					sed -i -e '/# ghcup-env$/d' "$(posix_realpath "$HOME/.profile")"
+					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "$HOME/.profile"
+            fi
 			echo
 			echo "==============================================================================="
 			echo
