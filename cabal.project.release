@@ -1,6 +1,4 @@
-packages: ./ghcup.cabal
-
-optional-packages: ./vendored/*/*.cabal
+import: cabal.project
 
 optimization: 2
 
@@ -14,13 +12,6 @@ if os(linux)
 elif os(darwin)
   constraints: zlib +bundled-c-zlib,
                lzma +static
-elif os(mingw32)
-  constraints: zlib +bundled-c-zlib,
-               lzma +static,
-               text -simdutf,
-               vty-windows >=0.2.0.2
-  if impl(ghc >= 9.4)
-    constraints: language-c >= 0.9.3
 elif os(freebsd)
   constraints: zlib +bundled-c-zlib,
                zip +disable-zstd
@@ -56,11 +47,6 @@ package streamly
 
 package hashable
   flags: -arch-native
-
-source-repository-package
-  type: git
-  location: https://github.com/haskell/tar.git
-  tag: d94a988be4311b830149a9f8fc16739927e5fc1c
 
 source-repository-package
   type: git
