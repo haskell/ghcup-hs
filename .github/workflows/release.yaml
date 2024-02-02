@@ -94,21 +94,15 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "armv7-linux-ghcup"
             GHC_VER: 9.2.8
             ARCH: ARM
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
             GHC_VER: 9.4.8
             ARCH: ARM64
     steps:
-      - uses: docker://arm64v8/debian:10
-        name: Cleanup (aarch64 linux)
-        continue-on-error: true
-        with:
-          args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
-
       - name: git config
         run: |
           git config --global --get-all safe.directory | grep '^\*$' || git config --global --add safe.directory "*"
@@ -247,6 +241,42 @@ jobs:
           path: |
             ./out/*
 
+  build-freebsd:
+    name: Build binary (FreeBSD)
+    runs-on: [self-hosted, FreeBSD, X64]
+    env:
+      CABAL_VER: 3.10.2.0
+      MACOSX_DEPLOYMENT_TARGET: 10.13
+      JSON_VERSION: "0.0.8"
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      S3_HOST: ${{ secrets.S3_HOST }}
+      ARTIFACT: "x86_64-portbld-freebsd-ghcup"
+      GHC_VER: 9.4.8
+      ARCH: 64
+      DISTRO: na
+      RUNNER_OS: FreeBSD
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Run build
+        run: |
+          sed -i.bak -e 's/quarterly/latest/' /etc/pkg/FreeBSD.conf
+          pkg install -y ghc hs-cabal-install git bash misc/compat10x misc/compat11x misc/compat12x gmake llvm14 libiconv
+          tzsetup Etc/GMT
+          adjkerntz -a
+          bash .github/scripts/build.sh
+      - if: always()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            ./out/*
+
   test-linux:
     name: Test linux
     needs: "build-linux"
@@ -335,24 +365,18 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "armv7-linux-ghcup"
             GHC_VER: 9.2.8
             ARCH: ARM
             DISTRO: Ubuntu
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
             GHC_VER: 9.4.8
             ARCH: ARM64
             DISTRO: Ubuntu
 
     steps:
-      - uses: docker://arm64v8/debian:10
-        name: Cleanup (aarch64 linux)
-        continue-on-error: true
-        with:
-          args: "find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +"
-
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -469,6 +493,41 @@ jobs:
           name: testfiles
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
+  test-freebsd:
+    name: Test FreeBSD
+    needs: "build-freebsd"
+    runs-on: [self-hosted, FreeBSD, X64]
+    env:
+      CABAL_VER: 3.10.2.0
+      MACOSX_DEPLOYMENT_TARGET: 10.13
+      JSON_VERSION: "0.0.8"
+      ARTIFACT: "x86_64-portbld-freebsd-ghcup"
+      GHC_VER: 9.4.8
+      ARCH: 64
+      DISTRO: na
+      RUNNER_OS: FreeBSD
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifacts
+          path: ./out
+
+      - name: Run test
+        run: |
+          bash .github/scripts/test.sh
+
+      - if: failure()
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: testfiles
+          path: |
+            ./test/ghcup-test/golden/unix/GHCupInfo*json
   hls:
     name: hls
     needs: build-linux
@@ -502,7 +561,7 @@ jobs:
 
   release:
     name: release
-    needs: ["test-linux", "test-arm", "test-macwin", "hls"]
+    needs: ["test-linux", "test-arm", "test-macwin", "test-freebsd", "hls"]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
