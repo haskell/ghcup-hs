@@ -539,11 +539,11 @@ adjust_bashrc() {
 					;;
 				bash)
 					sed -i -e '/# ghcup-env$/d' "$(posix_realpath "${GHCUP_PROFILE_FILE}")"
-					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && . \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 					case "${plat}" in
 						"Darwin"|"darwin")
 							if ! grep -q "ghcup-env" "${HOME}/.bash_profile" ; then
-								printf "\n%s" "[[ -f ~/.bashrc ]] && source ~/.bashrc # ghcup-env" >> "${HOME}/.bash_profile"
+								printf "\n%s" "[[ -f ~/.bashrc ]] && . ~/.bashrc # ghcup-env" >> "${HOME}/.bash_profile"
 							fi
 							;;
    						MSYS*|MINGW*|CYGWIN*)
@@ -558,18 +558,18 @@ adjust_bashrc() {
 
 				zsh)
 					sed -i -e '/# ghcup-env$/d' "$(posix_realpath "${GHCUP_PROFILE_FILE}")"
-					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
+					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && . \"${GHCUP_DIR}/env\" # ghcup-env" >> "${GHCUP_PROFILE_FILE}"
 					;;
 			esac
             if [ -e "$HOME/.profile" ] ; then
 					sed -i -e '/# ghcup-env$/d' "$(posix_realpath "$HOME/.profile")"
-					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && source \"${GHCUP_DIR}/env\" # ghcup-env" >> "$HOME/.profile"
+					printf "\n%s" "[ -f \"${GHCUP_DIR}/env\" ] && . \"${GHCUP_DIR}/env\" # ghcup-env" >> "$HOME/.profile"
             fi
 			echo
 			echo "==============================================================================="
 			echo
 			warn "OK! ${GHCUP_PROFILE_FILE} has been modified. Restart your terminal for the changes to take effect,"
-			warn "or type \"source ${GHCUP_DIR}/env\" to apply them in your current terminal session."
+			warn "or type \". ${GHCUP_DIR}/env\" to apply them in your current terminal session."
 			return
 			;;
 		*)
