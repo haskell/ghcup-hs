@@ -20,6 +20,7 @@ import           GHCup.Prelude.String.QQ
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
+import           Control.Monad (when)
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Functor
