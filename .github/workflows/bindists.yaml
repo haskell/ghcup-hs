@@ -152,6 +152,15 @@ jobs:
         with:
           args: sh -c '.github/workflows/install-bindist.sh'
 
+  bindist-install-freebsd:
+    name: Install FreeBSD binary
+    runs-on: [self-hosted, FreeBSD, X64]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run build
+        run: .github/workflows/install-bindist.sh
+
   validate:
     name: ghcup-gen check
     runs-on: ubuntu-latest
