@@ -155,34 +155,35 @@ handleGenericListEvent (VtyEvent ev) = do
 handleGenericListEvent _ = pure ()
 
 -- This re-uses Brick.Widget.List.renderList
-renderSectionList :: (Traversable t, Ord n, Show n, Eq n, L.Splittable t)
+renderSectionList :: forall n t e . (Traversable t, Ord n, Show n, Eq n, L.Splittable t, Semigroup (t e))
                   => (Bool -> e -> Widget n)             -- ^ Rendering function of the list element, True for the selected element
                   -> Bool                                -- ^ Whether the section list has focus
                   -> GenericSectionList n t e            -- ^ The section list to render
                   -> Widget n
-renderSectionList render_elem section_focus (GenericSectionList focus elms sl_name) =
-    Brick.Widget Brick.Greedy Brick.Greedy $ do
-        c <- Brick.getContext
-        let -- A section is focused if the whole thing is focused, and the inner list has focus
-            section_is_focused l = section_focus && (Just (L.listName l) == F.focusGetCurrent focus)
-            -- We need to limit the widget size when the length of the list is higher than the size of the terminal
-            limit = min (Brick.windowHeight c) (Brick.availHeight c)
-            s_idx = fromMaybe 0 $ V.findIndex section_is_focused elms
-            render_inner_list has_focus l = Brick.vLimit (length l) $ L.renderList (\b -> render_elem (b && has_focus)) has_focus l
-            (widget, off) = 
-                V.ifoldl' (\wacc i list ->
-                                let has_focus_list = section_is_focused list
-                                    (!acc_widget, !acc_off) = wacc
-                                    new_widget = if i == 0 then render_inner_list has_focus_list list else hBorder <=> render_inner_list has_focus_list list
-                                    new_off 
-                                        | i < s_idx  = 1 + L.listItemHeight list * length list 
-                                        | i == s_idx = 1 + L.listItemHeight list * fromMaybe 0 (L.listSelected list)
-                                        | otherwise  = 0
-                                in  (acc_widget <=> new_widget, acc_off + new_off)
-                                )
-                (Brick.emptyWidget, 0)
-                elms
-        Brick.render $  Brick.viewport sl_name Brick.Vertical $ Brick.translateBy (Brick.Location (0, min 0 (limit-off))) widget
+renderSectionList renderElem sectionFocus ge@(GenericSectionList focus elms slName) =
+    Brick.Widget Brick.Greedy Brick.Greedy $ Brick.render $ Brick.viewport slName Brick.Vertical $
+      V.ifoldl' (\(!accWidget) !i list ->
+                      let hasFocusList = sectionIsFocused list
+                          makeVisible = if hasFocusList then Brick.visibleRegion (Brick.Location (c, r)) (1, 1) else id
+                          appendBorder = if i == 0 then id else (hBorder <=>)
+                          newWidget = appendBorder (makeVisible $ renderInnerList hasFocusList list)
+                      in accWidget <=> newWidget
+                      )
+      Brick.emptyWidget
+      elms
+ where
+  -- A section is focused if the whole thing is focused, and the inner list has focus
+  sectionIsFocused :: L.GenericList n t e -> Bool
+  sectionIsFocused l = sectionFocus && (Just (L.listName l) == F.focusGetCurrent focus)
+
+  renderInnerList :: Bool -> L.GenericList n t e -> Widget n
+  renderInnerList hasFocus l = Brick.vLimit (length l) $ L.renderList (\b -> renderElem (b && hasFocus)) hasFocus l
+
+  -- compute the location to focus on within the active section
+  (c, r) :: (Int, Int) = case sectionListSelectedElement ge of
+                           Nothing -> (0, 0)
+                           Just (selElIx, _) -> (0, selElIx)
+
 
 -- | Equivalent to listSelectedElement
 sectionListSelectedElement :: (Eq n, L.Splittable t, Traversable t, Semigroup (t e)) => GenericSectionList n t e -> Maybe (Int, e)
