@@ -25,7 +25,7 @@ elif os(freebsd)
   constraints: zlib +bundled-c-zlib,
                zip +disable-zstd
   package *
-    ghc-options: -split-sections -pgmc clang++14
+    ghc-options: -split-sections
 
 constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0,
