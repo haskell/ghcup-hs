@@ -187,6 +187,13 @@ function Exec
     }
 }
 
+# Only x86 32/64-bit is supported
+$SupportedArchitectures = 'AMD64', 'x86'
+if (!$SupportedArchitectures.contains($env:PROCESSOR_ARCHITECTURE)) {
+  Print-Msg -color Red -msg ("Unsupported processor architecture: {0}. Supported architectures: {1}." -f $env:PROCESSOR_ARCHITECTURE, ($SupportedArchitectures -join ", "))
+  Exit 1
+}
+
 $ErrorActionPreference = 'Stop'
 
 $GhcupBasePrefixEnv = [System.Environment]::GetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'user')
