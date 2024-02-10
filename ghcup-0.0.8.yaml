@@ -6800,6 +6800,8 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.13.1/stack-2.13.1-freebsd-x86_64.tar.xz
               dlHash: 3a1a026d747d8f4858fc83080143acc10dbd7a40a766848bebeb401fde5afd4c
+              dlSubdir:
+                RegexDir: "stack-.*"
           Linux_Alpine:
             unknown_versioning: *stack-2131-64
         A_ARM64:
