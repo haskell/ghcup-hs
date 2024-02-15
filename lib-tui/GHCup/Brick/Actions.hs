@@ -31,7 +31,6 @@ import           GHCup.Brick.Widgets.Navigation (BrickInternalState)
 import qualified Brick
 import qualified Brick.Widgets.List as L
 import qualified Brick.Focus as F
-import           Codec.Archive
 import           Control.Applicative
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)

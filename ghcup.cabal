@@ -330,6 +330,7 @@ library ghcup-tui
     GHCup.Brick.Widgets.Tutorial
     GHCup.Brick.Widgets.KeyInfo
     GHCup.Brick.Widgets.SectionList
+    GHCup.Brick.Widgets.Menu
     GHCup.Brick.Actions
     GHCup.Brick.App
     GHCup.Brick.BrickState
