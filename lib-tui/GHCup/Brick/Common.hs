@@ -25,12 +25,15 @@ This module contains common values used across the library. Crucially it contain
 module GHCup.Brick.Common where
 
 import           GHCup.List ( ListResult )
-import           GHCup.Types ( Tool )
+import           GHCup.Types ( Tool, KeyCombination (KeyCombination) )
+import Data.List (intercalate)
 import           Prelude                 hiding ( appendFile )
 import qualified Graphics.Vty                  as Vty
 import           Optics.TH (makeLenses)
 import           Optics.Lens (toLensVL)
 import qualified Brick
+import qualified Brick.Widgets.Border as Border
+import Brick ((<+>))
 
 -- | Some verbosity. A FocusRing (to loop through advance options), needs an set of resource names to be able to 
 -- dtermine focus. See https://hackage.haskell.org/package/brick-2.1.1/docs/Brick-Focus.html#t:FocusRing
@@ -90,6 +93,13 @@ showKey key = tail (show key)
 showMod :: Vty.Modifier -> String
 showMod = tail . show
 
+-- | Given a KeyComb, produces a string widget with and user friendly text
+keyToWidget :: KeyCombination -> Brick.Widget n
+keyToWidget (KeyCombination key mods) = Brick.str $ intercalate "+" (showKey key : (showMod <$> mods))
+
+-- | A section separator with max width. Looks like this:    -------- o --------
+separator :: Brick.Widget n
+separator = Border.hBorder <+> Brick.str " o " <+> Border.hBorder
 
 -- I refuse to give this a type signature. 
 

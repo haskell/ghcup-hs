@@ -40,6 +40,8 @@ defaultAttributes no_color = Brick.attrMap
   , (dayAttr                   , Vty.defAttr `withForeColor` Vty.blue)
   , (helpAttr                  , Vty.defAttr `withStyle`     Vty.italic)
   , (hoorayAttr                , Vty.defAttr `withForeColor` Vty.brightWhite)
+  , (helpMsgAttr               , Vty.defAttr `withForeColor` Vty.brightBlack)
+  , (errMsgAttr                , Vty.defAttr `withForeColor` Vty.red)
   ]
   where
     withForeColor | no_color  = const
@@ -51,9 +53,9 @@ defaultAttributes no_color = Brick.attrMap
     withStyle                 = Vty.withStyle
 
 
-notInstalledAttr, setAttr, installedAttr, recommendedAttr, hlsPoweredAttr:: Brick.AttrName
-latestAttr, latestPrereleaseAttr, latestNightlyAttr, prereleaseAttr, nightlyAttr:: Brick.AttrName
-compiledAttr, strayAttr, dayAttr, helpAttr, hoorayAttr:: Brick.AttrName
+notInstalledAttr, setAttr, installedAttr, recommendedAttr, hlsPoweredAttr :: Brick.AttrName
+latestAttr, latestPrereleaseAttr, latestNightlyAttr, prereleaseAttr, nightlyAttr :: Brick.AttrName
+compiledAttr, strayAttr, dayAttr, helpAttr, hoorayAttr, helpMsgAttr, errMsgAttr :: Brick.AttrName
 
 notInstalledAttr = Brick.attrName "not-installed"
 setAttr = Brick.attrName "set"
@@ -70,6 +72,8 @@ strayAttr = Brick.attrName "stray"
 dayAttr = Brick.attrName "day"
 helpAttr = Brick.attrName "help"
 hoorayAttr = Brick.attrName "hooray"
+helpMsgAttr = Brick.attrName "helpMsg"
+errMsgAttr = Brick.attrName "errMsg"
 
 dimAttributes :: Bool -> AttrMap
 dimAttributes no_color = Brick.attrMap
