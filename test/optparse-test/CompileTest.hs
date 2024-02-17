@@ -47,7 +47,7 @@ mkDefaultHLSCompileOptions target ghcs =
     Nothing
     True
     False
-    (Left False)
+    Nothing
     Nothing
     Nothing
     Nothing
@@ -91,8 +91,8 @@ compileGhcCheckList = mapSecond CompileGHC
   , (baseCmd <> "--cross-target armv7-unknown-linux-gnueabihf", baseOptions{GHC.crossTarget = Just "armv7-unknown-linux-gnueabihf"})
   , (baseCmd <> "-- --enable-unregisterised", baseOptions{GHC.addConfArgs = ["--enable-unregisterised"]})
   , (baseCmd <> "--set", baseOptions{GHC.setCompile = True})
-  , (baseCmd <> "-o 9.4.5-p1", baseOptions{GHC.ovewrwiteVer = Just $(versionQ "9.4.5-p1")})
-  , (baseCmd <> "--overwrite-version 9.4.5-p1", baseOptions{GHC.ovewrwiteVer = Just $(versionQ "9.4.5-p1")})
+  , (baseCmd <> "-o 9.4.5-p1", baseOptions{GHC.overwriteVer = Just [S "9.4.5-p1"]})
+  , (baseCmd <> "--overwrite-version 9.4.5-p1", baseOptions{GHC.overwriteVer = Just [S "9.4.5-p1"]})
   , (baseCmd <> "-f make", baseOptions{GHC.buildFlavour = Just "make"})
   , (baseCmd <> "--flavour make", baseOptions{GHC.buildFlavour = Just "make"})
   , (baseCmd <> "--hadrian", baseOptions{GHC.buildSystem = Just Hadrian})
@@ -158,9 +158,11 @@ compileHlsCheckList = mapSecond CompileHLS
   , (baseCmd <> "--jobs 10", baseOptions{HLS.jobs = Just 10})
   , (baseCmd <> "--no-set", baseOptions{HLS.setCompile = False})
   , (baseCmd <> "--cabal-update", baseOptions{HLS.updateCabal = True})
-  , (baseCmd <> "-o 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $(versionQ "2.0.0.0-p1")})
-  , (baseCmd <> "--overwrite-version 2.0.0.0-p1", baseOptions{HLS.ovewrwiteVer = Right $(versionQ "2.0.0.0-p1")})
-  , (baseCmd <> "--git-describe-version", baseOptions{HLS.ovewrwiteVer = Left True})
+  , (baseCmd <> "-o 2.0.0.0-p1", baseOptions{HLS.overwriteVer = Just [S "2.0.0.0-p1"]})
+  , (baseCmd <> "--overwrite-version 2.0.0.0-p1", baseOptions{HLS.overwriteVer = Just [S "2.0.0.0-p1"]})
+  , (baseCmd <> "--overwrite-version %v-%h-%H-%b-%g-coco%l", baseOptions{HLS.overwriteVer
+    = Just [CabalVer, S "-", GitHashShort, S "-", GitHashLong, S "-", GitBranchName, S "-", GitDescribe, S "-coco", S "%", S "l"]})
+  , (baseCmd <> "--git-describe-version", baseOptions{HLS.overwriteVer = Just [GitDescribe]})
 #ifdef IS_WINDOWS
   , (baseCmd <> "-i C:\\\\tmp\\out_dir", baseOptions{HLS.isolateDir = Just "C:\\\\tmp\\out_dir"})
   , (baseCmd <> "--isolate C:\\\\tmp\\out_dir", baseOptions{HLS.isolateDir = Just "C:\\\\tmp\\out_dir"})

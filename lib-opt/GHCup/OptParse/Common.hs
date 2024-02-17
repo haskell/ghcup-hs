@@ -17,7 +17,6 @@ import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
-import           GHCup.Utils.URI
 import           GHCup.Prelude
 import           GHCup.Prelude.Process
 import           GHCup.Prelude.Logger
@@ -77,7 +76,6 @@ import qualified Cabal.Config            as CC
     -------------
     --[ Types ]--
     -------------
-
 
 -- a superset of ToolVersion
 data SetToolVersion = SetGHCVersion GHCTargetVersion
@@ -311,6 +309,29 @@ gpgParser s' | t == T.pack "strict" = Right GPGStrict
              | t == T.pack "none"   = Right GPGNone
              | otherwise = Left ("Unknown gpg setting value: " <> s')
   where t = T.toLower (T.pack s')
+
+
+
+overWriteVersionParser :: String -> Either String [VersionPattern]
+overWriteVersionParser = first (const "Not a valid version pattern") . MP.parse (MP.many versionPattern <* MP.eof) "" . T.pack
+ where
+  versionPattern :: MP.Parsec Void Text VersionPattern
+  versionPattern = do
+    str' <- T.unpack <$> MP.takeWhileP Nothing (/= '%')
+    if str' /= mempty
+    then pure (S str')
+    else     fmap (const CabalVer)      v_cabal
+         <|> fmap (const GitBranchName) b_name
+         <|> fmap (const GitHashShort)  s_hash
+         <|> fmap (const GitHashLong)   l_hash
+         <|> fmap (const GitDescribe)   g_desc
+         <|> ((\a b -> S (a : T.unpack b)) <$> MP.satisfy (const True) <*> MP.takeWhileP Nothing (== '%')) -- invalid pattern, e.g. "%k"
+   where
+    v_cabal = MP.chunk "%v"
+    b_name  = MP.chunk "%b"
+    s_hash  = MP.chunk "%h"
+    l_hash  = MP.chunk "%H"
+    g_desc  = MP.chunk "%g"
 
 
 

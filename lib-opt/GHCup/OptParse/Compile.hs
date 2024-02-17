@@ -36,7 +36,7 @@ import qualified Data.Versions as V
 import           Data.Text                      ( Text )
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
-import           Options.Applicative.Help.Pretty ( text )
+import           Options.Applicative.Help.Pretty ( text, vsep )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 
@@ -74,7 +74,7 @@ data GHCCompileOptions = GHCCompileOptions
   , crossTarget  :: Maybe Text
   , addConfArgs  :: [Text]
   , setCompile   :: Bool
-  , ovewrwiteVer :: Maybe Version
+  , overwriteVer :: Maybe [VersionPattern]
   , buildFlavour :: Maybe String
   , buildSystem  :: Maybe BuildSystem
   , isolateDir   :: Maybe FilePath
@@ -86,7 +86,7 @@ data HLSCompileOptions = HLSCompileOptions
   , jobs         :: Maybe Int
   , setCompile   :: Bool
   , updateCabal  :: Bool
-  , ovewrwiteVer :: Either Bool Version
+  , overwriteVer :: Maybe [VersionPattern]
   , isolateDir   :: Maybe FilePath
   , cabalProject :: Maybe (Either FilePath URI)
   , cabalProjectLocal :: Maybe URI
@@ -155,8 +155,8 @@ Examples:
 Examples:
   # compile 1.7.0.0 from hackage for 8.10.7, running 'cabal update' before the build
   ghcup compile hls --version 1.7.0.0 --ghc 8.10.7 --cabal-update
-  # compile from master for ghc 9.2.3 using 'git describe' to name the binary and ignore the pinned index state
-  ghcup compile hls -g master --git-describe-version --ghc 9.2.3 -- --index-state=@(date '+%s')
+  # compile from master for ghc 9.2.3, appending the short git commit hash to the version and ignore the pinned index state
+  ghcup compile hls -g master -o '%v-%h' --ghc 9.2.3 -- --index-state=@(date '+%s')
   # compile a specific commit for ghc 9.2.3 and set a specific version for the binary name
   ghcup compile hls -g a32db0b -o 1.7.0.0-p1 --ghc 9.2.3|]
 
@@ -253,11 +253,16 @@ ghcCompileOpts =
     <*> fmap (fromMaybe False) (invertableSwitch "set" Nothing False (help "Set as active version after install"))
     <*> optional
           (option
-            (eitherReader
-              (first (const "Not a valid version") . version . T.pack)
+            (eitherReader overWriteVersionParser
             )
-            (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION" <> help
-              "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
+            (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION"
+              <> helpDoc (Just $ vsep [ text "Overwrite the finally installed VERSION with a different one. Allows to specify patterns"
+                                      , text "%v  version"
+                                      , text "%b  branch name"
+                                      , text "%h  short commit hash"
+                                      , text "%H  long commit hash"
+                                      , text "%g  'git describe' output"
+                                      ])
             <> (completer $ versionCompleter [] GHC)
             )
           )
@@ -343,19 +348,25 @@ hlsCompileOpts =
     <*> switch (long "cabal-update" <> help "Run 'cabal update' before the build")
     <*>
          (
-          (Right <$> option
-            (eitherReader
-              (first (const "Not a valid version") . version . T.pack)
+          optional (option
+            (eitherReader overWriteVersionParser
             )
-            (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION" <> help
-              "Allows to overwrite the finally installed VERSION with a different one, e.g. when you build 8.10.4 with your own patches, you might want to set this to '8.10.4-p1'"
+            (short 'o' <> long "overwrite-version" <> metavar "OVERWRITE_VERSION"
+              <> helpDoc (Just $ vsep [ text "Overwrite the finally installed VERSION with a different one. Allows to specify patterns"
+                                      , text "%v  version from cabal file"
+                                      , text "%b  branch name"
+                                      , text "%h  short commit hash"
+                                      , text "%H  long commit hash"
+                                      , text "%g  'git describe' output"
+                                      ])
             <> (completer $ versionCompleter [] HLS)
             )
           )
           <|>
-          (Left <$> (switch
+          ((\b -> if b then Just [GitDescribe] else Nothing) <$> (switch
                       (long "git-describe-version"
                          <> help "Use the output of 'git describe' (if building from git) as the VERSION component of the installed binary."
+                         <> internal
                       )
                     )
           )
@@ -529,7 +540,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     targetHLS
                     ghcs
                     jobs
-                    ovewrwiteVer
+                    overwriteVer
                     (maybe GHCupInternal IsolateDir isolateDir)
                     cabalProject
                     cabalProjectLocal
@@ -576,7 +587,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
         targetVer <- liftE $ compileGHC
                     targetGhc
                     crossTarget
-                    ovewrwiteVer
+                    overwriteVer
                     bootstrapGhc
                     jobs
                     buildConfig

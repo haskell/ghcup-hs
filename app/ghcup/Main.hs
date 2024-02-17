@@ -41,6 +41,7 @@ import           Data.Aeson                     ( decodeStrict', Value )
 import           Data.Aeson.Encode.Pretty       ( encodePretty )
 import           Data.Either
 import           Data.Functor
+import           Data.Versions (version)
 import           Data.Maybe
 import           GHC.IO.Encoding
 import           Haskus.Utils.Variant.Excepts
@@ -341,12 +342,14 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
   alreadyInstalling (Install (Left (InstallCabal InstallOptions{..})))   (Cabal, ver)    = cmp' Cabal instVer ver
   alreadyInstalling (Install (Left (InstallHLS InstallOptions{..})))     (HLS, ver)      = cmp' HLS instVer ver
   alreadyInstalling (Install (Left (InstallStack InstallOptions{..})))   (Stack, ver)    = cmp' Stack instVer ver
-  alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ ovewrwiteVer = Just over }))
-    (GHC, ver)   = cmp' GHC (Just $ GHCVersion (mkTVer over)) ver
+  alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ overwriteVer = Just [S over] })) (GHC, ver)
+    | Right over' <- version (T.pack over) = cmp' GHC (Just $ GHCVersion (mkTVer over')) ver
+    | otherwise = pure False
   alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ targetGhc = GHC.SourceDist tver }))
     (GHC, ver)   = cmp' GHC (Just $ ToolVersion tver) ver
-  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ ovewrwiteVer = Right over }))
-    (HLS, ver)   = cmp' HLS (Just $ ToolVersion over) ver
+  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ overwriteVer = Just [S over] })) (HLS, ver)
+    | Right over' <- version (T.pack over) = cmp' HLS (Just $ ToolVersion over') ver
+    | otherwise = pure False
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.SourceDist tver }))
     (HLS, ver)   = cmp' HLS (Just $ ToolVersion tver) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.HackageDist tver }))

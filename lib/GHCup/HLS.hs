@@ -335,7 +335,7 @@ compileHLS :: ( MonadMask m
            => HLSVer
            -> [Version]
            -> Maybe Int
-           -> Either Bool Version
+           -> Maybe [VersionPattern]
            -> InstallDir
            -> Maybe (Either FilePath URI)
            -> Maybe URI
@@ -353,7 +353,7 @@ compileHLS :: ( MonadMask m
                        , BuildFailed
                        , NotInstalled
                        ] m Version
-compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal updateCabal patches cabalArgs = do
+compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal updateCabal patches cabalArgs = do
   pfreq@PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   Dirs { .. } <- lift getDirs
@@ -362,7 +362,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
     lift $ logInfo "Updating cabal DB"
     lEM $ exec "cabal" ["update"] (Just $ fromGHCupPath tmpDir) Nothing
 
-  (workdir, tmpUnpack, tver, git_describe) <- case targetHLS of
+  (workdir, tmpUnpack, tver, ov) <- case targetHLS of
     -- unpack from version tarball
     SourceDist tver -> do
       lift $ logDebug $ "Requested to compile: " <> prettyVer tver
@@ -382,7 +382,11 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
                        (liftE . intoSubdir tmpUnpack)
                        (view dlSubdir dlInfo)
 
-      pure (workdir, tmpUnpack, tver, Nothing)
+      ov <- case vps of
+              Just vps' -> fmap Just $ expandVersionPattern (Just tver) "" "" "" "" vps'
+              Nothing   -> pure Nothing
+
+      pure (workdir, tmpUnpack, tver, ov)
 
     HackageDist tver -> do
       lift $ logDebug $ "Requested to compile (from hackage): " <> prettyVer tver
@@ -396,7 +400,11 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
 
       let workdir = appendGHCupPath tmpUnpack hls
 
-      pure (workdir, tmpUnpack, tver, Nothing)
+      ov <- case vps of
+              Just vps' -> fmap Just $ expandVersionPattern (Just tver) "" "" "" "" vps'
+              Nothing   -> pure Nothing
+
+      pure (workdir, tmpUnpack, tver, ov)
 
     RemoteDist uri -> do
       lift $ logDebug $ "Requested to compile (from uri): " <> T.pack (show uri)
@@ -419,7 +427,11 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
 
       let workdir = appendGHCupPath tmpUnpack (takeDirectory cf)
 
-      pure (workdir, tmpUnpack, tver, Nothing)
+      ov <- case vps of
+              Just vps' -> fmap Just $ expandVersionPattern (Just tver) "" "" "" "" vps'
+              Nothing   -> pure Nothing
+
+      pure (workdir, tmpUnpack, tver, ov)
 
     -- clone from git
     GitDist GitBranch{..} -> do
@@ -459,28 +471,31 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
                         then pure Nothing
                         else fmap Just $ gitOut ["describe", "--tags"] (fromGHCupPath tmpUnpack)
         chash <- gitOut ["rev-parse", "HEAD" ] (fromGHCupPath tmpUnpack)
+        branch <- gitOut ["rev-parse", "--abbrev-ref", "HEAD" ] (fromGHCupPath tmpUnpack)
         tver <- getCabalVersion (fromGHCupPath tmpUnpack </> "haskell-language-server.cabal")
 
         liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
+
+        ov <- case vps of
+                Just vps' -> fmap Just $ expandVersionPattern
+                                           (Just tver)
+                                           (take 7 $ T.unpack chash)
+                                           (T.unpack chash)
+                                           (maybe "" T.unpack git_describe)
+                                           (T.unpack branch)
+                                           vps'
+                Nothing -> pure Nothing
+
         lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
                                     "HLS version (from cabal file): " <> prettyVer tver <>
+                                    "\n  branch: " <> branch <>
                                     (if not shallow_clone then "\n  " <> "'git describe' output: " <> fromJust git_describe else mempty) <>
                                     (if isCommitHash ref then mempty else "\n  " <> "commit hash: " <> chash)
-
-        pure (tmpUnpack, tmpUnpack, tver, git_describe)
+        pure (tmpUnpack, tmpUnpack, tver, ov)
 
   -- the version that's installed may differ from the
   -- compiled version, so the user can overwrite it
-  installVer <- case ov of
-                  Left True -> case git_describe of
-                                 -- git describe
-                                 Just h -> either (fail . displayException) pure . version $ h
-                                 -- git describe, but not building from git, lol
-                                 Nothing -> pure tver
-                  -- default: use detected version
-                  Left False -> pure tver
-                  -- overwrite version with users value
-                  Right v -> pure v
+  installVer <- maybe (pure tver) pure ov
 
   liftE $ runBuildAction
     tmpUnpack
@@ -558,9 +573,7 @@ compileHLS targetHLS ghcs jobs ov installDir cabalProject cabalProjectLocal upda
 
   pure installVer
  where
-  gitDescribeRequested = case ov of
-                           Left b -> b
-                           _      -> False
+  gitDescribeRequested = maybe False (GitDescribe `elem`) vps
 
 
     -----------------
