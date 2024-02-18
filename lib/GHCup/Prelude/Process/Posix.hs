@@ -3,6 +3,7 @@
 {-# LANGUAGE DataKinds  #-}
 {-# LANGUAGE MultiWayIf  #-}
 {-# LANGUAGE CApiFFI #-}
+{-# LANGUAGE CPP #-}
 
 {-|
 Module      : GHCup.Utils.File.Posix
@@ -98,7 +99,12 @@ execLogged exe args chdir lfile env = do
   Dirs {..} <- getDirs
   logDebug $ T.pack $ "Running " <> exe <> " with arguments " <> show args
   let logfile = fromGHCupPath logsDir </> lfile <> ".log"
-  liftIO $ bracket (openFd logfile WriteOnly (Just newFilePerms) defaultFileFlags{ append = True })
+  liftIO $ bracket
+#if MIN_VERSION_unix(2,8,0)
+                   (openFd logfile WriteOnly defaultFileFlags{ append = True, creat = Just newFilePerms })
+#else
+                   (openFd logfile WriteOnly (Just newFilePerms) defaultFileFlags{ append = True })
+#endif
                    closeFd
                    (action verbose noColor)
  where
@@ -339,7 +345,11 @@ cleanup fds = for_ fds $ \fd -> handleIO (\_ -> pure ()) $ closeFd fd
 -- | Create a new regular file in write-only mode. The file must not exist.
 createRegularFileFd :: FileMode -> FilePath -> IO Fd
 createRegularFileFd fm dest =
+#if MIN_VERSION_unix(2,8,0)
+  openFd dest WriteOnly defaultFileFlags{ exclusive = True, creat = Just fm }
+#else
   openFd dest WriteOnly (Just fm) defaultFileFlags{ exclusive = True }
+#endif
 
 
 -- | Thin wrapper around `executeFile`.
