@@ -4,7 +4,9 @@ cradle:
     path: ./lib
   - component: "ghcup:exe:ghcup"
     path: ./app/ghcup
+  - component: "ghcup:lib:ghcup-optparse"
+    path: "./lib-opt"
   - component: "ghcup:test:ghcup-test"
-    path: ./test/ghcup-test
+    path: "./test/ghcup-test"
   - component: "ghcup:test:ghcup-optparse-test"
-    path: ./test/optparse-test
+    path: "./test/optparse-test"
