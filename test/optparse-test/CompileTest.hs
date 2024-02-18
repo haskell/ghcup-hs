@@ -98,8 +98,8 @@ compileGhcCheckList = mapSecond CompileGHC
   , (baseCmd <> "--hadrian", baseOptions{GHC.buildSystem = Just Hadrian})
   , (baseCmd <> "--make", baseOptions{GHC.buildSystem = Just Make})
 #ifdef IS_WINDOWS
-  , (baseCmd <> "-i C:\\\\tmp\\out_dir", baseOptions{GHC.isolateDir = Just "C:\\\\tmp\\out_dir"})
-  , (baseCmd <> "--isolate C:\\\\tmp\\out_dir", baseOptions{GHC.isolateDir = Just "C:\\\\tmp\\out_dir"})
+  , (baseCmd <> "-i C:\\\\tmp\\out_dir", baseOptions{GHC.isolateDir = Just "C:\\tmp\\out_dir"})
+  , (baseCmd <> "--isolate C:\\\\tmp\\out_dir", baseOptions{GHC.isolateDir = Just "C:\\tmp\\out_dir"})
 #else
   , (baseCmd <> "-i /tmp/out_dir", baseOptions{GHC.isolateDir = Just "/tmp/out_dir"})
   , (baseCmd <> "--isolate /tmp/out_dir", baseOptions{GHC.isolateDir = Just "/tmp/out_dir"})
@@ -164,8 +164,8 @@ compileHlsCheckList = mapSecond CompileHLS
     = Just [CabalVer, S "-", GitHashShort, S "-", GitHashLong, S "-", GitBranchName, S "-", GitDescribe, S "-coco", S "%", S "l"]})
   , (baseCmd <> "--git-describe-version", baseOptions{HLS.overwriteVer = Just [GitDescribe]})
 #ifdef IS_WINDOWS
-  , (baseCmd <> "-i C:\\\\tmp\\out_dir", baseOptions{HLS.isolateDir = Just "C:\\\\tmp\\out_dir"})
-  , (baseCmd <> "--isolate C:\\\\tmp\\out_dir", baseOptions{HLS.isolateDir = Just "C:\\\\tmp\\out_dir"})
+  , (baseCmd <> "-i C:\\\\tmp\\out_dir", baseOptions{HLS.isolateDir = Just "C:\\tmp\\out_dir"})
+  , (baseCmd <> "--isolate C:\\\\tmp\\out_dir", baseOptions{HLS.isolateDir = Just "C:\\tmp\\out_dir"})
 #else
   , (baseCmd <> "-i /tmp/out_dir", baseOptions{HLS.isolateDir = Just "/tmp/out_dir"})
   , (baseCmd <> "--isolate /tmp/out_dir", baseOptions{HLS.isolateDir = Just "/tmp/out_dir"})

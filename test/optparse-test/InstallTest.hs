@@ -48,7 +48,7 @@ oldStyleCheckList =
     : ("install --set", Right defaultOptions{instSet = True})
     : ("install --force", Right defaultOptions{forceInstall = True})
 #ifdef IS_WINDOWS
-    : ("install -i C:\\\\", Right defaultOptions{Install.isolateDir = Just "C:\\\\"})
+    : ("install -i C:\\\\", Right defaultOptions{Install.isolateDir = Just "C:\\"})
 #else
     : ("install -i /", Right defaultOptions{Install.isolateDir = Just "/"})
 #endif
