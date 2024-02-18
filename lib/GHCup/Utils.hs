@@ -1084,27 +1084,6 @@ cleanUpOnError bdir action = do
   flip onException (lift exAction) $ onE_ exAction action
 
 
--- | Clean up the given directory if the action fails,
--- depending on the Settings.
-cleanFinally :: ( MonadReader env m
-                  , HasDirs env
-                  , HasSettings env
-                  , MonadIO m
-                  , MonadMask m
-                  , HasLog env
-                  , MonadUnliftIO m
-                  , MonadFail m
-                  , MonadCatch m
-                  )
-               => GHCupPath        -- ^ build directory (cleaned up depending on Settings)
-               -> Excepts e m a
-               -> Excepts e m a
-cleanFinally bdir action = do
-  Settings {..} <- lift getSettings
-  let exAction = when (keepDirs == Never) $ rmBDir bdir
-  flip finally (lift exAction) $ onE_ exAction action
-
-
 -- | Remove a build directory, ignoring if it doesn't exist and gracefully
 -- printing other errors without crashing.
 rmBDir :: (MonadReader env m, HasLog env, MonadUnliftIO m, MonadIO m) => GHCupPath -> m ()

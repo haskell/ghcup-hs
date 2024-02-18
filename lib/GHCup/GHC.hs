@@ -908,7 +908,7 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
       GitDist GitBranch{..} -> do
         tmpUnpack <- lift mkGhcupTmpDir
         let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
-        (tver, ov) <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError] DownloadFailed $ do
+        (tver, ov) <- cleanUpOnError tmpUnpack $ reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
           lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
           lEM $ git [ "init" ]
