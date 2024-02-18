@@ -92,6 +92,8 @@ import qualified Data.Yaml.Aeson               as Y
 
 
 
+-- $setup
+-- >>> :set -XOverloadedStrings
 
 
 

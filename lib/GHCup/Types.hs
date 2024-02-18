@@ -777,3 +777,13 @@ instance Pretty ToolVersion where
 data BuildSystem = Hadrian
                  | Make
   deriving (Show, Eq)
+
+
+data VersionPattern = CabalVer
+                    | GitHashShort
+                    | GitHashLong
+                    | GitDescribe
+                    | GitBranchName
+                    | S String
+  deriving (Eq, Show)
+

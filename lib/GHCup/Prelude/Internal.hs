@@ -57,12 +57,10 @@ import qualified Data.Text.Lazy.Encoding       as TLE
 
 -- $setup
 -- >>> import Data.ByteString.Internal (c2w, w2c)
--- >>> import Test.QuickCheck
 -- >>> import Data.Word8
 -- >>> import qualified Data.Text as T
 -- >>> import qualified Data.Char as C
 -- >>> import Data.List
--- >>> instance Arbitrary T.Text where arbitrary = T.pack <$> arbitrary
 
 
 fS :: IsString a => String -> a
@@ -299,7 +297,7 @@ escapeVerRex = B.pack . go . B.unpack . verToBS
 
 
 recover :: (MonadIO m, MonadMask m) => m a -> m a
-recover action = 
+recover action =
   recovering (fullJitterBackoff 25000 <> limitRetries 10)
     [\_ -> Handler (\e -> pure $ isPermissionError e)
     ,\_ -> Handler (\e -> pure (ioeGetErrorType e == InappropriateType))

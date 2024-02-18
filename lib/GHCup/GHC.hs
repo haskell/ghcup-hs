@@ -807,7 +807,7 @@ compileGHC :: ( MonadMask m
               )
            => GHCVer
            -> Maybe Text               -- ^ cross target
-           -> Maybe Version            -- ^ overwrite version
+           -> Maybe [VersionPattern]
            -> Either Version FilePath  -- ^ version to bootstrap with
            -> Maybe Int                -- ^ jobs
            -> Maybe FilePath           -- ^ build config
@@ -843,12 +843,12 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs buildFlavour buildSystem installDir
+compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buildFlavour buildSystem installDir
   = do
     pfreq@PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
-    (workdir, tmpUnpack, tver) <- case targetGhc of
+    (workdir, tmpUnpack, tver, ov) <- case targetGhc of
       -- unpack from version tarball
       SourceDist ver -> do
         lift $ logDebug $ "Requested to compile: " <> prettyVer ver <> " with " <> either prettyVer T.pack bstrap
@@ -870,7 +870,11 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
                          (view dlSubdir dlInfo)
         liftE $ applyAnyPatch patches (fromGHCupPath workdir)
 
-        pure (workdir, tmpUnpack, Just (GHCTargetVersion crossTarget ver))
+        ov <- case vps of
+                Just vps' -> fmap Just $ expandVersionPattern (Just ver) "" "" "" "" vps'
+                Nothing   -> pure Nothing
+
+        pure (workdir, tmpUnpack, Just (GHCTargetVersion crossTarget ver), ov)
 
       RemoteDist uri -> do
         lift $ logDebug $ "Requested to compile (from uri): " <> T.pack (show uri)
@@ -894,13 +898,17 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
 
         let workdir = appendGHCupPath tmpUnpack (takeDirectory bf)
 
-        pure (workdir, tmpUnpack, GHCTargetVersion crossTarget <$> tver)
+        ov <- case vps of
+                Just vps' -> fmap Just $ expandVersionPattern tver "" "" "" "" vps'
+                Nothing   -> pure Nothing
+
+        pure (workdir, tmpUnpack, GHCTargetVersion crossTarget <$> tver, ov)
 
       -- clone from git
       GitDist GitBranch{..} -> do
         tmpUnpack <- lift mkGhcupTmpDir
         let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
-        tver <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError] DownloadFailed $ do
+        (tver, ov) <- reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
           lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
           lEM $ git [ "init" ]
@@ -932,6 +940,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
                           then pure Nothing
                           else fmap Just $ liftE $ gitOut ["describe", "--tags"] (fromGHCupPath tmpUnpack)
           chash <- liftE $ gitOut ["rev-parse", "HEAD" ] (fromGHCupPath tmpUnpack)
+          branch <- liftE $ gitOut ["rev-parse", "--abbrev-ref", "HEAD" ] (fromGHCupPath tmpUnpack)
 
           -- clone submodules
           lEM $ git [ "submodule", "update", "--init", "--depth", "1" ]
@@ -949,9 +958,19 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
                            (if isCommitHash ref then mempty else "\n  " <> "commit hash: " <> chash)
           liftIO $ threadDelay 5000000 -- give the user a sec to intervene
 
-          pure tver
+          ov <- case vps of
+                  Just vps' -> fmap Just $ expandVersionPattern
+                                             tver
+                                             (take 7 $ T.unpack chash)
+                                             (T.unpack chash)
+                                             (maybe "" T.unpack git_describe)
+                                             (T.unpack branch)
+                                             vps'
+                  Nothing -> pure Nothing
 
-        pure (tmpUnpack, tmpUnpack, GHCTargetVersion crossTarget <$> tver)
+          pure (tver, ov)
+
+        pure (tmpUnpack, tmpUnpack, GHCTargetVersion crossTarget <$> tver, ov)
     -- the version that's installed may differ from the
     -- compiled version, so the user can overwrite it
     installVer <- if | Just ov'   <- ov   -> pure (GHCTargetVersion crossTarget ov')
@@ -1091,7 +1110,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
   compileHadrianBindist tver workdir ghcdir = do
     liftE $ configureBindist tver workdir ghcdir
 
-    lift $ logInfo "Building (this may take a while)..."
+    lift $ logInfo $ "Building GHC version " <> tVerToText tver <> " (this may take a while)..."
     hadrian_build <- liftE $ findHadrianFile workdir
     lEM $ execLogged hadrian_build
                           ( maybe [] (\j  -> ["-j" <> show j]         ) jobs
@@ -1163,7 +1182,7 @@ compileGHC targetGhc crossTarget ov bstrap jobs mbuildConfig patches aargs build
 
     liftE $ checkBuildConfig (build_mk workdir)
 
-    lift $ logInfo "Building (this may take a while)..."
+    lift $ logInfo $ "Building GHC version " <> tVerToText tver <> " (this may take a while)..."
     lEM $ make (maybe [] (\j -> ["-j" <> fS (show j)]) jobs) (Just workdir)
 
     if | isCross tver -> do

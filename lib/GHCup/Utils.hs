@@ -108,6 +108,7 @@ import Data.Time (Day(..), diffDays, addDays)
 -- >>> import GHCup.Errors
 -- >>> import GHCup.Types
 -- >>> import GHCup.Types.Optics
+-- >>> import Data.Versions
 -- >>> import Optics
 -- >>> import GHCup.Prelude.Version.QQ
 -- >>> import qualified Data.Text.Encoding as E
@@ -120,8 +121,8 @@ import Data.Time (Day(..), diffDays, addDays)
 -- >>> let settings = defaultSettings { cache = True, metaCache = 0, noNetwork = True }
 -- >>> let leanAppState = LeanAppState settings dirs' defaultKeyBindings lc
 -- >>> cwd <- getCurrentDirectory
--- >>> (Right ref) <- pure $ parseURI strictURIParserOptions $ "file://" <> E.encodeUtf8 (T.pack cwd) <> "/data/metadata/" <> (urlBaseName . view pathL' $ ghcupURL)
--- >>> (VRight r) <- (fmap . fmap) _ghcupDownloads $ flip runReaderT leanAppState . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, ContentLengthError] $ liftE $ getBase ref
+-- >>> (Right ref) <- pure $ GHCup.Utils.parseURI $ "file://" <> E.encodeUtf8 (T.pack cwd) <> "/data/metadata/" <> (urlBaseName . view pathL' $ ghcupURL)
+-- >>> (VRight r) <- (fmap . fmap) _ghcupDownloads $ flip runReaderT leanAppState . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, ContentLengthError] $ liftE (getBase ref) >>= liftE . decodeMetadata @GHCupInfo
 
 
 
@@ -1274,4 +1275,34 @@ processBranches str' = let lines'   = lines (T.unpack str')
                            refs     = catMaybes $ fmap (`atMay` 1) words'
                            branches = catMaybes $ fmap (stripPrefix "refs/heads/") $ filter (isPrefixOf "refs/heads/") refs
                        in branches
+
+
+
+    ------------------
+    --[ Versioning ]--
+    ------------------
+
+
+-- | Expand a list of version patterns describing a string such as "%v-%h".
+--
+-- >>> expandVersionPattern (either (const Nothing) Just $ version "3.4.3") "a386748" "a3867484ccc391daad1a42002c3a2ba6a93c5221" "v0.1.20.0-119-ga386748" "issue-998" [CabalVer, S "-", GitHashShort, S "-", GitHashLong, S "-", GitBranchName, S "-", GitDescribe, S "-coco"]
+-- Version {_vEpoch = Nothing, _vChunks = Chunks (Numeric 3 :| [Numeric 4,Numeric 3]), _vRel = Just (Release (Alphanum "a386748-a3867484ccc391daad1a42002c3a2ba6a93c5221-issue-998-v0" :| [Numeric 1,Numeric 20,Alphanum "0-119-ga386748-coco"])), _vMeta = Nothing}
+expandVersionPattern :: MonadFail m
+                     => Maybe Version  -- ^ cabal ver
+                     -> String         -- ^ git hash (short), if any
+                     -> String         -- ^ git hash (long), if any
+                     -> String         -- ^ git describe output, if any
+                     -> String         -- ^ git branch name, if any
+                     -> [VersionPattern]
+                     -> m Version
+expandVersionPattern cabalVer gitHashS gitHashL gitDescribe gitBranch
+  = either (fail . displayException) pure . version . T.pack . go
+ where
+  go [] = ""
+  go (CabalVer:xs) = T.unpack (maybe "" prettyVer cabalVer) <> go xs
+  go (GitHashShort:xs) = gitHashS <> go xs
+  go (GitHashLong:xs) = gitHashL <> go xs
+  go (GitDescribe:xs) = gitDescribe <> go xs
+  go (GitBranchName:xs) = gitBranch <> go xs
+  go (S str:xs) = str <> go xs
 
