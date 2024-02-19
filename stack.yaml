@@ -14,7 +14,8 @@ extra-deps:
   - generically-0.1.1
   - haskus-utils-data-1.4@sha256:bfa94363b94b14779edd6834fbd59dbb847c3d7b8f48e3844f456ffdc077da4a,1466
   - haskus-utils-types-1.5.1@sha256:991c472f4e751e2f0d7aab6ad4220ef151d6160876dcf0511bbf876bbd432020,1298
-  - haskus-utils-variant-3.2.1
+  - haskus-utils-variant-3.3
+  - file-uri-0.1.0.0
   - libarchive-3.0.3.2
   - libyaml-streamly-0.2.1
   - lzma-static-5.2.5.5
