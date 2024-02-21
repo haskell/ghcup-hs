@@ -39,6 +39,12 @@ rm "ghcup-test${ext}" "ghcup-test-optparse${ext}"
 
 eghcup --numeric-version
 
+# test PATH on windows wrt msys2
+# https://github.com/haskell/ghcup-hs/pull/992/checks
+if [ "${OS}" = "Windows" ] ; then
+	eghcup run -m -- sh -c 'echo $PATH' | sed 's/:/\n/' | grep '^/mingw64/bin$'
+fi
+
 eghcup install ghc "${GHC_VER}"
 eghcup unset ghc "${GHC_VER}"
 ls -lah "$(eghcup whereis -d ghc "${GHC_VER}")"

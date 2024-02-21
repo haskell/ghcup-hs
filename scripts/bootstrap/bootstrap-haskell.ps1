@@ -46,7 +46,9 @@ param (
     # Whether to disable creation of several desktop shortcuts
     [switch]$DontWriteDesktopShortcuts,
     # Whether to disable adjusting bashrc (in msys2 env) with PATH
-    [switch]$DontAdjustBashRc
+    [switch]$DontAdjustBashRc,
+    # The msys2 environment to use, see https://www.msys2.org/docs/environments/ (defauts to MINGW64, MINGW32 or CLANGARM64, depending on the architecture)
+    [string]$Msys2Env
 )
 
 $DefaultMsys2Version = "20221216"
@@ -191,6 +193,36 @@ function Exec
 $SupportedArchitectures = 'AMD64', 'x86'
 if (!$SupportedArchitectures.contains($env:PROCESSOR_ARCHITECTURE)) {
   Print-Msg -color Red -msg ("Unsupported processor architecture: {0}. Supported architectures: {1}." -f $env:PROCESSOR_ARCHITECTURE, ($SupportedArchitectures -join ", "))
+  Exit 1
+}
+
+# set default Msys2Env if not set
+if (!$Msys2Env) {
+  if ($env:PROCESSOR_ARCHITECTURE -eq 'x86') {
+	  $Msys2Env = 'MINGW32'
+  } elseif ($env:PROCESSOR_ARCHITECTURE -eq 'AMD64') {
+	  $Msys2Env = 'MINGW64'
+  }
+}
+
+# parse Msys2Env and set the corresponding variables
+if ($Msys2Env -eq 'MINGW32') {
+	$ShellType = '-mingw32'
+	$PkgConf = 'mingw-w64-i686-pkgconf'
+} elseif ($Msys2Env -eq 'MINGW64') {
+	$ShellType = '-mingw64'
+	$PkgConf = 'mingw-w64-x86_64-pkgconf'
+} elseif ($Msys2Env -eq 'MSYS') {
+	$ShellType = '-msys2'
+	$PkgConf = 'pkgconf'
+} elseif ($Msys2Env -eq 'UCRT64') {
+	$ShellType = '-ucrt64'
+	$PkgConf = 'mingw-w64-ucrt-x86_64-pkgconf'
+} elseif ($Msys2Env -eq 'CLANG64') {
+	$ShellType = '-clang64'
+	$PkgConf = 'mingw-w64-clang-x86_64-pkgconf'
+} else {
+  Print-Msg -color Red -msg ("Unsupported Msys2 environment: {0}. Supported environments are: MINGW64, MINGW32, MSYS, UCRT64, CLANG64" -f $Msys2Env)
   Exit 1
 }
 
@@ -501,7 +533,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
 
     Print-Msg -msg 'Installing Dependencies...'
-    Exec "$Bash" '-lc' 'pacman --noconfirm -S --needed curl autoconf mingw-w64-x86_64-pkgconf'
+    Exec "$Bash" '-lc' ('pacman --noconfirm -S --needed curl autoconf {0}' -f $PkgConf)
 
     Print-Msg -msg 'Updating SSL root certificate authorities...'
     Exec "$Bash" '-lc' 'pacman --noconfirm -S ca-certificates'
@@ -609,9 +641,9 @@ if ($Host.Name -eq "ConsoleHost")
 }
 '@
 
-	$GhcInstArgs = '-mingw64 -mintty -c "pacman --noconfirm -S --needed base-devel gettext autoconf make libtool automake python p7zip patch unzip"'
+	$GhcInstArgs = ('{0} -mintty -c "pacman --noconfirm -S --needed base-devel gettext autoconf make libtool automake python p7zip patch unzip"' -f $ShellType)
 	Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $GhcInstArgs -DestinationPath 'Install GHC dev dependencies.lnk' -TempPath $GhcupDir
-	Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe '-mingw64' -DestinationPath 'Mingw haskell shell.lnk' -TempPath $GhcupDir
+	Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $ShellType -DestinationPath 'Mingw haskell shell.lnk' -TempPath $GhcupDir
 	Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath 'Mingw package management docs.url' -TempPath $GhcupDir
 	$DesktopDir = [Environment]::GetFolderPath("Desktop")
 	$null = New-Item -Path $DesktopDir -Name "Uninstall Haskell.ps1" -ItemType "file" -Force -Value $uninstallShortCut
@@ -660,10 +692,15 @@ if (!($DontAdjustBashRc)) {
   $AdjustBashRcExport = 'export BOOTSTRAP_HASKELL_ADJUST_BASHRC=1 ;'
 }
 
+# set msys2 env export for the shell bootstrap script
+$Msys2EnvExport = ('export GHCUP_MSYS2_ENV={0} ;' -f $Msys2Env)
+# export GHCUP_MSYS2_ENV
+$null = [Environment]::SetEnvironmentVariable("GHCUP_MSYS2_ENV", $Msys2Env, [System.EnvironmentVariableTarget]::User)
+
 if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBash) {
-  Exec "$Bash" '-lc' ('{4} {6} {7} {8} {9} {10} {12} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript, $AdjustBashRcExport)
+  Exec "$Bash" '-lc' ('{4} {6} {7} {8} {9} {10} {12} {13} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript, $AdjustBashRcExport, $Msys2EnvExport)
 } else {
-  Exec "$Msys2Shell" '-mingw64' '-mintty'  '-shell' 'bash' '-c' ('{4} {6} {7} {8} {9} {10} {12} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript, $AdjustBashRcExport)
+  Exec "$Msys2Shell" $ShellType '-mintty'  '-shell' 'bash' '-c' ('{4} {6} {7} {8} {9} {10} {12} {13} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript, $AdjustBashRcExport, $Msys2EnvExport)
 }
 
 

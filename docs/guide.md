@@ -105,6 +105,7 @@ This is the complete list of env variables that change GHCup behavior:
 On windows, there's additionally:
 
 * `GHCUP_MSYS2`: Has to point to the root of an existing MSYS2 installation (when installed by GHCup, that's e.g. `C:\ghcup\msys64`). GHCup bootstrap takes care of this usually.
+* `GHCUP_MSYS2_ENV`: The [MSYS2 environment](https://www.msys2.org/docs/environments/) to use when executing e.g. `ghcup run --mingw-path`. Possible values are `MSYS`, `UCRT64`, `CLANG64`, `CLANGARM64`, `CLANG32`, `MINGW64`, `MINGW32`. Defaults to `MINGW64`, `MINGW32` or `CLANGARM64`, depending on the architecture. `MSYS` is always added as the last component. If you change this value after running the bootstrap script, you may need to make sure that the cabal config reflects this change, more specifically `extra-prog-path`, `extra-include-dirs` and `extra-lib-dirs`. (**NOTE: specifying anything other than the default is considered experimental**)
 
 ### XDG support
 
@@ -508,7 +509,7 @@ See `ghcup compile ghc --help` for further information.
 
 Since ghcup version 0.1.20.0, we provide cross bindists for GHC JS and WASM. These can be installed conveniently.
 However, these are intended as a developer preview only. By using these GHC variants, you are implicitly signing up to participate in GHC development!
-If you run into bugs or missing behavior, join the dev chat at https://matrix.to/#/#GHC:matrix.org. 
+If you run into bugs or missing behavior, join the dev chat at https://matrix.to/#/#GHC:matrix.org.
 
 First, add the cross release channel:
 
