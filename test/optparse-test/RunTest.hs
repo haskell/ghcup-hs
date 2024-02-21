@@ -43,8 +43,8 @@ runCheckList =
   , ("run --hls 2.0", defaultOptions{runHLSVer = Just $ ToolVersion $(versionQ "2.0")})
   , ("run --stack 2.9", defaultOptions{runStackVer = Just $ ToolVersion $(versionQ "2.9") })
 #ifdef IS_WINDOWS
-  , ("run -b C:\\\\tmp\\dir", defaultOptions{runBinDir = Just "C:\\\\tmp\\dir"})
-  , ("run --bindir C:\\\\tmp\\dir", defaultOptions{runBinDir = Just "C:\\\\tmp\\dir"})
+  , ("run -b C:\\\\tmp\\dir", defaultOptions{runBinDir = Just "C:\\tmp\\dir"})
+  , ("run --bindir C:\\\\tmp\\dir", defaultOptions{runBinDir = Just "C:\\tmp\\dir"})
 #else
   , ("run -b /tmp/dir", defaultOptions{runBinDir = Just "/tmp/dir"})
   , ("run --bindir /tmp/dir", defaultOptions{runBinDir = Just "/tmp/dir"})
