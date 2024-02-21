@@ -40,6 +40,19 @@ ghcupDownloads:
               dlOutput: ghc-9.6.3.20230927-x86_64-linux-alpine3_12-cross_wasm32-wasi-release+fully_static.tar.xz
           Linux_Alpine:
             unknown_versioning: *ghc-wasm32-wasi-963-64-static
+    wasm32-wasi-9.6.4:
+      viTags:
+      - base-4.18.2.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-964-64-static
+              dlHash: 9eebb42c40d880ec777f729e24b9b52e8aa51d76994f386bd79893d065f5239a
+              dlSubdir: ghc-9.6.4-wasm32-wasi
+              dlUri: https://github.com/amesgen/ghc-wasm-bindists/releases/download/20240218T031934/wasm32-wasi-ghc-9.6.tar.xz
+              dlOutput: ghc-9.6.4-x86_64-linux-alpine3_18-wasm-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-964-64-static
     wasm32-wasi-9.8.0.20230927:
       viTags:
       - base-4.19.0.0
@@ -53,4 +66,16 @@ ghcupDownloads:
               dlOutput: ghc-9.8.0.20230927-x86_64-linux-alpine3_12-cross_wasm32-wasi-release+fully_static.tar.xz
           Linux_Alpine:
             unknown_versioning: *ghc-wasm32-wasi-980-64-static
-
+    wasm32-wasi-9.8.1:
+      viTags:
+      - base-4.19.0.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-981-64-static
+              dlHash: b1714d54468754e3a4353661bec883fef8b5d27398db53b5955753db7453da3e
+              dlSubdir: ghc-9.8.1-wasm32-wasi
+              dlUri: https://github.com/amesgen/ghc-wasm-bindists/releases/download/20240218T031934/wasm32-wasi-ghc-9.8.tar.xz
+              dlOutput: ghc-9.8.1-x86_64-linux-alpine3_18-wasm-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-981-64-static
