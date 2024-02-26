@@ -4143,7 +4143,7 @@ ghcupDownloads:
             unknown_versioning:
               dlHash: 0e1a8156ec82de77a7160db023b297cf00ab1e04e395f1e8b77f602ba051b1d5
               dlOutput: ghc-9.8.2-aarch64-alpine3_18-linux.tar.xz
-              dlSubdir: ghc-9.8.2-x86_64-unknown-linux
+              dlSubdir: ghc-9.8.2-aarch64-alpine-linux
               dlUri: https://downloads.haskell.org/~ghc/9.8.2/ghc-9.8.2-aarch64-alpine3_18-linux.tar.xz
           Linux_UnknownLinux:
             unknown_versioning:
