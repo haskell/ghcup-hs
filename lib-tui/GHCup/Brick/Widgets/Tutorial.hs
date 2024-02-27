@@ -23,9 +23,8 @@ import Brick
       (<+>),
       (<=>))
 import qualified Brick
-import           Brick.Widgets.Border ( hBorder, borderWithLabel)
-import           Brick.Widgets.Border.Style ( unicode )
-import           Brick.Widgets.Center ( center, centerLayer )
+import           Brick.Widgets.Border ( hBorder)
+import           Brick.Widgets.Center ( center )
 import           Prelude                 hiding ( appendFile )
 
 
@@ -34,16 +33,12 @@ draw :: Widget Common.Name
 draw =
   let
     mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
-    txt_separator = hBorder <+> Brick.str " o " <+> hBorder
-  in centerLayer
-      $ Brick.hLimitPercent 75
-      $ Brick.vLimitPercent 50
-      $ Brick.withBorderStyle unicode
-      $ borderWithLabel (Brick.txt "Tutorial")
+
+  in Common.frontwardLayer "Tutorial"
       $ Brick.vBox
           (fmap center
             [ mkTextBox [Brick.txtWrap "GHCup is a distribution channel for Haskell's tools."]
-            , txt_separator
+            , Common.separator
             , mkTextBox [
                 Brick.hBox [
                   Brick.txt "This symbol "
@@ -61,7 +56,7 @@ draw =
                 , Brick.txt " means that the tool isn't installed"
                 ]
               ]
-            , txt_separator
+            , Common.separator
             , mkTextBox [
                 Brick.hBox [
                   Brick.withAttr Attributes.recommendedAttr $ Brick.str "recommended"
