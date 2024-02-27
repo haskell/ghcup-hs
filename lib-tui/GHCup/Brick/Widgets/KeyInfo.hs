@@ -14,7 +14,7 @@ A very simple information-only widget with no handler.
 
 module GHCup.Brick.Widgets.KeyInfo where
 
-import           GHCup.Types ( KeyBindings(..), KeyCombination(KeyCombination) )
+import           GHCup.Types ( KeyBindings(..) )
 import qualified GHCup.Brick.Common as Common
 
 
@@ -24,10 +24,7 @@ import Brick
       (<+>),
       (<=>))
 import qualified Brick
-import           Brick.Widgets.Border ( borderWithLabel)
-import           Brick.Widgets.Border.Style ( unicode )
-import           Brick.Widgets.Center ( center, centerLayer )
-import           Data.List ( intercalate )
+import           Brick.Widgets.Center ( center )
 import           Prelude                 hiding ( appendFile )
 
 
@@ -36,43 +33,38 @@ draw :: KeyBindings -> Widget Common.Name
 draw KeyBindings {..} =
   let
     mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
-    keyToWidget (KeyCombination key mods) = Brick.str $ intercalate "+" (Common.showKey key : (Common.showMod <$> mods))
-  in centerLayer
-      $ Brick.hLimitPercent 75
-      $ Brick.vLimitPercent 50
-      $ Brick.withBorderStyle unicode
-      $ borderWithLabel (Brick.txt "Key Actions")
+  in Common.frontwardLayer "Key Actions"
       $ Brick.vBox [
         center $
          mkTextBox [
             Brick.hBox [
               Brick.txt "Press "
-            , keyToWidget bUp, Brick.txt " and ", keyToWidget bDown
+            , Common.keyToWidget bUp, Brick.txt " and ", Common.keyToWidget bDown
             , Brick.txtWrap " to navigate the list of tools"
             ]
           , Brick.hBox [
               Brick.txt "Press "
-            , keyToWidget bInstall
+            , Common.keyToWidget bInstall
             , Brick.txtWrap " to install the selected tool. Notice, you may need to set it as default afterwards"
             ]
           , Brick.hBox [
               Brick.txt "Press "
-            , keyToWidget bSet
+            , Common.keyToWidget bSet
             , Brick.txtWrap " to set a tool as the one for use"
             ]
           , Brick.hBox [
               Brick.txt "Press "
-            , keyToWidget bUninstall
+            , Common.keyToWidget bUninstall
             , Brick.txtWrap " to uninstall a tool"
             ]
           , Brick.hBox [
               Brick.txt "Press "
-            , keyToWidget bChangelog
+            , Common.keyToWidget bChangelog
             , Brick.txtWrap " to open the tool's changelog. It will open a web browser"
             ]
           , Brick.hBox [
               Brick.txt "Press "
-            , keyToWidget bShowAllVersions
+            , Common.keyToWidget bShowAllVersions
             , Brick.txtWrap " to show older version of each tool"
             ]
           ]

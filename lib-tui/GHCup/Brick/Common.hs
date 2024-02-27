@@ -13,6 +13,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 {-
 This module contains common values used across the library. Crucially it contains two important types for the brick app:
@@ -34,20 +35,23 @@ import           Optics.Lens (toLensVL)
 import qualified Brick
 import qualified Brick.Widgets.Border as Border
 import Brick ((<+>))
+import qualified Data.Text as T
+import qualified Brick.Widgets.Center as Brick
+import qualified Brick.Widgets.Border.Style as Border
 
--- | Some verbosity. A FocusRing (to loop through advance options), needs an set of resource names to be able to 
--- dtermine focus. See https://hackage.haskell.org/package/brick-2.1.1/docs/Brick-Focus.html#t:FocusRing
-{- data PopUpResources 
-    = UrlEditBox
-    | SetCheckBox
-    | IsolateEditBox
-    | ForceCheckBox
-    | AdditionalEditBox
-    | RegularInstallButton
-    | AdvanceInstallButton
-    | CancellInstallButton
-    deriving (Eq, Ord, Show)
--}
+-- We could use regular ADTs but different menus share the same options.
+-- example: all of ghcup compile ghc, ghcup compile hls, ghcup install cabal, etc...
+-- all have a --set, --force, etc... common arguments. If we went for the ADT we'd end up
+-- with SetCompileHLSOption, SetCompileGHCOption, SetInstallCabalOption, etc...
+-- which isn't terrible, but verbose enough to reject it.
+
+-- | A newtype for labeling resources in menus. It is bundled along with pattern synonyms
+newtype ResourceId = ResourceId Int deriving (Eq, Ord, Show)
+
+pattern OkButton = ResourceId 0
+pattern AdvanceInstallButton = ResourceId 100
+pattern CompilieButton = ResourceId 101
+
 
 -- | Name data type. Uniquely identifies each widget in the TUI. 
 -- some constructors might end up unused, but still is a good practise
@@ -56,8 +60,8 @@ data Name = AllTools        -- ^ The main list widget
           | Singular Tool   -- ^ The particular list for each tool
           | KeyInfoBox      -- ^ The text box widget with action informacion
           | TutorialBox     -- ^ The tutorial widget
---           | PopUpBox        -- ^ The whole popUp widget
---           | PopUpElement PopUpResources -- ^ each element in the popUp
+          | ContextBox      -- ^ The resource for the context menu
+          | MenuElement ResourceId  -- ^ The resource for field/buttons in a menu
           deriving (Eq, Ord, Show)
 
 -- | Mode type. It helps to dispatch events to different handlers.
@@ -100,6 +104,15 @@ keyToWidget (KeyCombination key mods) = Brick.str $ intercalate "+" (showKey key
 -- | A section separator with max width. Looks like this:    -------- o --------
 separator :: Brick.Widget n
 separator = Border.hBorder <+> Brick.str " o " <+> Border.hBorder
+
+-- | Used to create a layer on top of the main navigation widget (tutorial, info, menus...)
+frontwardLayer :: T.Text -> Brick.Widget n -> Brick.Widget n
+frontwardLayer layer_name = 
+    Brick.centerLayer 
+      . Brick.hLimitPercent 75
+      . Brick.vLimitPercent 50
+      . Brick.withBorderStyle Border.unicode
+      . Border.borderWithLabel (Brick.txt layer_name)
 
 -- I refuse to give this a type signature. 
 
