@@ -345,14 +345,14 @@ drawMenu menu =
 
     -- A list of functions which draw a highlighted label with right padding at the left of a widget. 
     amplifiers =
-      let labelsWidgets = fmap (\b -> renderAslabel b) fieldLabels
+      let labelsWidgets = fmap renderAslabel fieldLabels
        in fmap (\f b -> ((centerV . leftify (maxWidth + 10) $ f b) <+>) ) labelsWidgets
     drawFields = fmap drawField amplifiers
     fieldWidgets = zipWith (F.withFocusRing (menu ^. menuFocusRingL)) drawFields (menu ^. menuFieldsL)
 
     buttonAmplifiers =
-      let buttonAsWidgets = fmap (\b -> renderAslabel b) buttonLabels
-       in fmap (\f b -> ((leftify (maxWidth + 10) . Border.border $ f b) <+>) ) buttonAsWidgets
+      let buttonAsWidgets = fmap renderAslabel buttonLabels
+       in fmap (\f b -> ((leftify (maxWidth + 10) . Border.border $ Brick.str (show b) <+> f b) <+>) ) buttonAsWidgets
     drawButtons = fmap drawField buttonAmplifiers
     buttonWidgets = zipWith (F.withFocusRing (menu ^. menuFocusRingL)) drawButtons (menu ^. menuButtonsL)
 

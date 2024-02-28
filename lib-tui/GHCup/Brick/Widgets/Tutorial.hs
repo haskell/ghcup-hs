@@ -23,7 +23,6 @@ import Brick
       (<+>),
       (<=>))
 import qualified Brick
-import           Brick.Widgets.Border ( hBorder)
 import           Brick.Widgets.Center ( center )
 import           Prelude                 hiding ( appendFile )
 

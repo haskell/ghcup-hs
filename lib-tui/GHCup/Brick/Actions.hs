@@ -26,6 +26,7 @@ import           GHCup.Brick.Common (BrickData(..), BrickSettings(..), Name(..),
 import qualified GHCup.Brick.Common as Common
 import           GHCup.Brick.BrickState
 import           GHCup.Brick.Widgets.SectionList
+import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import           GHCup.Brick.Widgets.Navigation (BrickInternalState)
 
 import qualified Brick
@@ -70,6 +71,8 @@ import           Optics.State (use)
 import           Optics.State.Operators ( (.=))
 import           Optics.Operators ((.~),(%~))
 import           Optics.Getter (view)
+import Optics.Optic ((%))
+import Optics (to)
 
 
 {- Core Logic. 
@@ -86,14 +89,11 @@ This module defines the IO actions we can execute within the Brick App:
 -- This synchronises @BrickInternalState@ with @BrickData@
 -- and @BrickSettings@.
 updateList :: BrickData -> BrickState -> BrickState
-updateList appD BrickState{..} =
+updateList appD st@BrickState{..} =
   let newInternalState = constructList appD _appSettings (Just _appState)
-  in  BrickState { _appState    = newInternalState
-                 , _appData     = appD
-                 , _appSettings = _appSettings
-                 , _appKeys     = _appKeys
-                 , _mode        = Navigation
-                 }
+  in  st & appState .~ newInternalState
+         & appData .~ appD
+         & mode .~ Navigation
 
 constructList :: BrickData
               -> BrickSettings
@@ -447,8 +447,20 @@ keyHandlers KeyBindings {..} =
   , (bUp, const "Up", Common.zoom appState moveUp)
   , (bDown, const "Down", Common.zoom appState moveDown)
   , (KeyCombination (Vty.KChar 'h') [], const "help", mode .= KeyInfo)
+  , (KeyCombination Vty.KEnter [], const "advance options", createMenuforTool )
   ]
  where
+  createMenuforTool = do 
+    e <- use (appState % to sectionListSelectedElement)
+    case e of
+      Nothing     -> pure ()
+      Just (_, r) -> do
+        -- Create new menus
+        contextMenu    .= ContextMenu.create r bQuit
+        -- Set mode to context
+        mode           .= ContextPanel
+    pure ()
+
   --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
   hideShowHandler' f = do 
     app_settings <- use appSettings

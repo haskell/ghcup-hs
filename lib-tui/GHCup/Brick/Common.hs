@@ -65,7 +65,7 @@ data Name = AllTools        -- ^ The main list widget
           deriving (Eq, Ord, Show)
 
 -- | Mode type. It helps to dispatch events to different handlers.
-data Mode = Navigation | KeyInfo | Tutorial deriving (Eq, Show, Ord)
+data Mode = Navigation | KeyInfo | Tutorial | ContextPanel deriving (Eq, Show, Ord)
 
 installedSign :: String
 #if IS_WINDOWS

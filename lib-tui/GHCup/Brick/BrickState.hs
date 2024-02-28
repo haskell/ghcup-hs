@@ -31,6 +31,7 @@ module GHCup.Brick.BrickState where
 import           GHCup.Types                    ( KeyBindings )
 import           GHCup.Brick.Common             ( BrickData(..), BrickSettings(..), Mode(..))
 import           GHCup.Brick.Widgets.Navigation ( BrickInternalState)
+import           GHCup.Brick.Widgets.Menus.Context (ContextMenu)
 import           Optics.TH                      (makeLenses)
 
 
@@ -38,6 +39,7 @@ data BrickState = BrickState
   { _appData     :: BrickData
   , _appSettings :: BrickSettings
   , _appState    :: BrickInternalState
+  , _contextMenu    :: ContextMenu
   , _appKeys     :: KeyBindings
   , _mode        :: Mode
   }
