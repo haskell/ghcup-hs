@@ -150,6 +150,14 @@ fieldHelpMsgL = lens g s
   where g (MenuField {..})= fieldInput ^. inputHelpL
         s (MenuField{..}) msg = MenuField {fieldInput = fieldInput & inputHelpL .~ msg , ..}
 
+-- | How to draw a field given a formater
+drawField :: Formatter n -> Bool -> MenuField s n -> Widget n
+drawField amp focus (MenuField { fieldInput = FieldInput {..}, ..}) =
+  let input = inputRender focus fieldStatus inputHelp inputState (amp focus)
+    in if focus
+        then Brick.visible input
+        else input
+
 instance Brick.Named (MenuField s n) n where
   getName :: MenuField s n -> n
   getName entry = entry & fieldName
@@ -330,12 +338,6 @@ drawMenu menu =
           <+> Brick.txt " to go back"
       ]
   where
-    drawField amp focus (MenuField { fieldInput = FieldInput {..}, ..}) =
-      let input = inputRender focus fieldStatus inputHelp inputState (amp focus)
-       in if focus
-            then Brick.visible input
-            else input
-    
     fieldLabels  = [field & fieldLabel | field <- menu ^. menuFieldsL]
     buttonLabels = [button & fieldLabel | button <- menu ^. menuButtonsL]
     allLabels    = fieldLabels ++ buttonLabels
