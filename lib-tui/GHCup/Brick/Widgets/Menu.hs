@@ -194,15 +194,14 @@ createEditableInput name validator = FieldInput initEdit validateEditContent "" 
       let 
         borderBox = amp . Border.border . Brick.padRight Brick.Max
         editorRender = Edit.renderEditor (Brick.txt . T.unlines) focus edi
+        isEditorEmpty = Edit.getEditContents edi == [mempty]
       in case errMsg of
-           Valid ->
-              if Edit.getEditContents edi == [mempty] 
-                then borderBox $ renderAsHelpMsg help 
-                else borderBox editorRender
-           Invalid msg ->
-              if focus
-                then borderBox editorRender
-                else borderBox $ renderAsErrMsg msg
+           Valid | isEditorEmpty -> borderBox $ renderAsHelpMsg help
+                 | otherwise -> borderBox editorRender
+           Invalid msg 
+             | focus && isEditorEmpty -> borderBox $ renderAsHelpMsg help
+             | focus     -> borderBox editorRender
+             | otherwise -> borderBox $ renderAsErrMsg msg
     validateEditContent = validator . T.unlines . Edit.getEditContents
     initEdit = Edit.editorText name (Just 1) ""
 

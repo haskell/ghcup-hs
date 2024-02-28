@@ -27,6 +27,7 @@ import qualified GHCup.Brick.BrickState as AppState
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import qualified GHCup.Brick.Widgets.SectionList as Navigation
 import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
+import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import qualified Brick
 
 import Control.Monad.Reader ( ReaderT(runReaderT) )
@@ -65,6 +66,7 @@ brickMain s = do
                       initial_list
                       (ContextMenu.create e exit_key)
                       (AdvanceInstall.create (bQuit . keyBindings $ s ))
+                      (CompileGHC.create exit_key)
                       (keyBindings s)
                       Common.Navigation
           in Brick.defaultMain initapp initstate 

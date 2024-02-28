@@ -28,6 +28,8 @@ import           GHCup.Brick.BrickState
 import           GHCup.Brick.Widgets.SectionList
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import           GHCup.Brick.Widgets.Navigation (BrickInternalState)
+import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
+import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 
 import qualified Brick
 import qualified Brick.Widgets.List as L
@@ -73,7 +75,7 @@ import           Optics.Operators ((.~),(%~))
 import           Optics.Getter (view)
 import Optics.Optic ((%))
 import Optics ((^.), to)
-import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
+
 
 
 {- Core Logic. 
@@ -458,8 +460,9 @@ keyHandlers KeyBindings {..} =
       Nothing     -> pure ()
       Just (_, r) -> do
         -- Create new menus
-        contextMenu        .= ContextMenu.create r bQuit
+        contextMenu .= ContextMenu.create r bQuit
         advanceInstallMenu .= AdvanceInstall.create bQuit
+        compileGHCMenu .= CompileGHC.create bQuit
         -- Set mode to context
         mode           .= ContextPanel
     pure ()

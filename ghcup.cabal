@@ -333,6 +333,7 @@ library ghcup-tui
     GHCup.Brick.Widgets.Menu
     GHCup.Brick.Widgets.Menus.Context
     GHCup.Brick.Widgets.Menus.AdvanceInstall
+    GHCup.Brick.Widgets.Menus.CompileGHC
     GHCup.Brick.Actions
     GHCup.Brick.App
     GHCup.Brick.BrickState

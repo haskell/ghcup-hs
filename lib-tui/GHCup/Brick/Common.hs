@@ -23,7 +23,30 @@ This module contains common values used across the library. Crucially it contain
 
 -}
 
-module GHCup.Brick.Common where
+module GHCup.Brick.Common  (
+  installedSign,
+  setSign,
+  notInstalledSign,
+  showKey,
+  showMod,
+  keyToWidget,
+  separator,
+  frontwardLayer,
+  zoom,
+  defaultAppSettings,
+  lr,
+  showAllVersions,
+  Name(..),
+  Mode(..),
+  BrickData(..),
+  BrickSettings(..),
+  ResourceId (
+      UrlEditBox, SetCheckBox, IsolateEditBox, ForceCheckBox, AdditionalEditBox
+    , TargetGhcEditBox, BootstrapGhcEditBox, JobsEditBox, BuildConfigEditBox
+    , PatchesEditBox, CrossTargetEditBox, AddConfArgsEditBox, OvewrwiteVerEditBox
+    , BuildFlavourEditBox, BuildSystemEditBox, OkButton, AdvanceInstallButton
+    , CompilieButton
+  ) ) where
 
 import           GHCup.List ( ListResult )
 import           GHCup.Types ( Tool, KeyCombination (KeyCombination) )
@@ -48,15 +71,44 @@ import qualified Brick.Widgets.Border.Style as Border
 -- | A newtype for labeling resources in menus. It is bundled along with pattern synonyms
 newtype ResourceId = ResourceId Int deriving (Eq, Ord, Show)
 
+pattern OkButton :: ResourceId
 pattern OkButton = ResourceId 0
+pattern AdvanceInstallButton :: ResourceId
 pattern AdvanceInstallButton = ResourceId 100
+pattern CompilieButton :: ResourceId
 pattern CompilieButton = ResourceId 101
 
+pattern UrlEditBox :: ResourceId
 pattern UrlEditBox = ResourceId 1
+pattern SetCheckBox :: ResourceId
 pattern SetCheckBox = ResourceId 2
+pattern IsolateEditBox :: ResourceId
 pattern IsolateEditBox = ResourceId 3
+pattern ForceCheckBox :: ResourceId
 pattern ForceCheckBox = ResourceId 4
+pattern AdditionalEditBox :: ResourceId
 pattern AdditionalEditBox = ResourceId 5
+
+pattern TargetGhcEditBox :: ResourceId
+pattern TargetGhcEditBox = ResourceId 6
+pattern BootstrapGhcEditBox :: ResourceId
+pattern BootstrapGhcEditBox = ResourceId 7
+pattern JobsEditBox :: ResourceId
+pattern JobsEditBox = ResourceId 8
+pattern BuildConfigEditBox :: ResourceId
+pattern BuildConfigEditBox = ResourceId 9
+pattern PatchesEditBox :: ResourceId
+pattern PatchesEditBox = ResourceId 10
+pattern CrossTargetEditBox :: ResourceId
+pattern CrossTargetEditBox = ResourceId 11
+pattern AddConfArgsEditBox :: ResourceId
+pattern AddConfArgsEditBox = ResourceId 12
+pattern OvewrwiteVerEditBox :: ResourceId
+pattern OvewrwiteVerEditBox = ResourceId 13
+pattern BuildFlavourEditBox :: ResourceId
+pattern BuildFlavourEditBox = ResourceId 14
+pattern BuildSystemEditBox :: ResourceId
+pattern BuildSystemEditBox = ResourceId 15
 
 -- | Name data type. Uniquely identifies each widget in the TUI. 
 -- some constructors might end up unused, but still is a good practise
@@ -65,8 +117,9 @@ data Name = AllTools                   -- ^ The main list widget
           | Singular Tool              -- ^ The particular list for each tool
           | KeyInfoBox                 -- ^ The text box widget with action informacion
           | TutorialBox                -- ^ The tutorial widget
-          | ContextBox                 -- ^ The Context Menu for a Tool
-          | AdvanceInstallBox          -- ^ The Menu for AdvanceInstall
+          | ContextBox                 -- ^ The resource for Context Menu
+          | CompileGHCBox              -- ^ The resource for CompileGHC Menu 
+          | AdvanceInstallBox          -- ^ The resource for AdvanceInstall Menu 
           | MenuElement ResourceId     -- ^ Each element in a Menu. Resources must not be share for visible
                                        --   Menus, but MenuA and MenuB can share resources if they both are
                                        --   invisible, or just one of them is visible.
@@ -79,6 +132,7 @@ data Mode = Navigation
           | Tutorial
           | ContextPanel
           | AdvanceInstallPanel 
+          | CompileGHCPanel
           deriving (Eq, Show, Ord)
 
 installedSign :: String
