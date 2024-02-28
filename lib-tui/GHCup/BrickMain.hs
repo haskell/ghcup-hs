@@ -17,13 +17,15 @@ module GHCup.BrickMain where
 
 import GHCup.Types
     ( Settings(noColor),
-      AppState(ghcupInfo, settings, keyBindings, loggerConfig) )
+      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings (bQuit) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.App as BrickApp
 import qualified GHCup.Brick.Attributes as Attributes
 import qualified GHCup.Brick.BrickState as AppState
+import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
+import qualified GHCup.Brick.Widgets.SectionList as Navigation
 import qualified Brick
 
 import Control.Monad.Reader ( ReaderT(runReaderT) )
@@ -43,18 +45,28 @@ brickMain s = do
 
   eAppData <- Actions.getAppData (Just $ ghcupInfo s)
   case eAppData of
-    Right ad ->
-      Brick.defaultMain
-          (BrickApp.app (Attributes.defaultAttributes (noColor $ settings s))
-                        (Attributes.dimAttributes (noColor $ settings s)))
-          (AppState.BrickState ad
-                    Common.defaultAppSettings
-                    (Actions.constructList ad Common.defaultAppSettings Nothing)
-                    (keyBindings (s :: AppState))
-                    Common.Navigation
-
-          )
-        $> ()
+    Right ad -> do
+      let initial_list = Actions.constructList ad Common.defaultAppSettings Nothing
+          current_element = Navigation.sectionListSelectedElement initial_list
+          exit_key = bQuit . keyBindings $ s 
+      case current_element of
+        Nothing -> do
+          flip runReaderT s $ logError "Error building app state: empty ResultList" 
+          exitWith $ ExitFailure 2
+        Just (_, e) ->
+          let initapp = 
+                BrickApp.app 
+                  (Attributes.defaultAttributes $ noColor $ settings s)
+                  (Attributes.dimAttributes $ noColor $ settings s)
+              initstate =
+                AppState.BrickState ad
+                      Common.defaultAppSettings
+                      initial_list
+                      (ContextMenu.create e exit_key)
+                      (keyBindings s)
+                      Common.Navigation
+          in Brick.defaultMain initapp initstate 
+          $> ()
     Left e -> do
       flip runReaderT s $ logError $ "Error building app state: " <> T.pack (show e)
       exitWith $ ExitFailure 2

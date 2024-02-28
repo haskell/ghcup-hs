@@ -26,11 +26,12 @@ module GHCup.Brick.App where
 import           GHCup.Types ( AppState(AppState, keyBindings), KeyCombination(KeyCombination) )
 import           GHCup.Brick.Common ( Name(..), Mode(..))
 import qualified GHCup.Brick.Common as Common
-import           GHCup.Brick.BrickState (BrickState(..), appState, mode, appKeys, appSettings)
+import           GHCup.Brick.BrickState (BrickState(..), appState, mode, appKeys, appSettings, contextMenu)
 import qualified GHCup.Brick.Attributes as Attributes
 import qualified GHCup.Brick.Widgets.Navigation as Navigation
 import qualified GHCup.Brick.Widgets.Tutorial as Tutorial
 import qualified GHCup.Brick.Widgets.KeyInfo as KeyInfo
+import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import qualified GHCup.Brick.Actions as Actions
 
 import Brick
@@ -53,6 +54,11 @@ import           Optics.State (use)
 import           Optics.State.Operators ( (.=))
 import           Optics.Operators ((^.))
 import qualified Data.Text as T
+import qualified GHCup.Brick.Widgets.Menu as Menu
+import Optics.Optic ((%))
+import qualified Brick.Focus as F
+import Optics.Getter (to)
+
 
 app :: AttrMap -> AttrMap -> App BrickState () Name
 app attrs dimAttrs =
@@ -79,7 +85,7 @@ drawUI dimAttrs st =
        Navigation   -> [navg]
        Tutorial     -> [Tutorial.draw, navg]
        KeyInfo      -> [KeyInfo.draw (st ^. appKeys), navg]
---       InstallPopUp -> [drawCompilePopUp (st ^. popUp),  navg]
+       ContextPanel -> [ContextMenu.draw (st ^. contextMenu), navg]
 
 -- | On q, go back to navigation. 
 --   On Enter, to go to tutorial
@@ -107,6 +113,22 @@ navigationHandler ev = do
         Nothing -> void $ Common.zoom appState $ Navigation.handler inner_event
     inner_event -> Common.zoom appState $ Navigation.handler inner_event
 
+contextMenuHandler :: BrickEvent Name e -> EventM Name BrickState ()
+contextMenuHandler ev = do
+  ctx <- use contextMenu 
+  let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
+      buttons = ctx ^. Menu.menuButtonsL
+      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
+  case (ev, focusedElement) of
+    (_ , Nothing) -> pure ()
+    (VtyEvent (Vty.EvKey k m), Just n ) 
+      |  k == exitKey 
+          && m == mods 
+          && n `elem` [Menu.fieldName button | button <- buttons]
+      -> mode .= Navigation
+    (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.AdvanceInstallButton) ) -> pure ()
+    (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompilieButton) ) -> pure ()
+    _ -> Common.zoom contextMenu $ ContextMenu.handler ev
 
 eventHandler :: BrickEvent Name e -> EventM Name BrickState ()
 eventHandler ev = do
@@ -115,4 +137,4 @@ eventHandler ev = do
     KeyInfo      -> keyInfoHandler ev
     Tutorial     -> tutorialHandler ev
     Navigation   -> navigationHandler ev
---    InstallPopUp -> compilePopUpHandler ev
+    ContextPanel -> contextMenuHandler ev
