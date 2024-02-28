@@ -72,7 +72,8 @@ import           Optics.State.Operators ( (.=))
 import           Optics.Operators ((.~),(%~))
 import           Optics.Getter (view)
 import Optics.Optic ((%))
-import Optics (to)
+import Optics ((^.), to)
+import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 
 
 {- Core Logic. 
@@ -89,11 +90,12 @@ This module defines the IO actions we can execute within the Brick App:
 -- This synchronises @BrickInternalState@ with @BrickData@
 -- and @BrickSettings@.
 updateList :: BrickData -> BrickState -> BrickState
-updateList appD st@BrickState{..} =
-  let newInternalState = constructList appD _appSettings (Just _appState)
-  in  st & appState .~ newInternalState
-         & appData .~ appD
-         & mode .~ Navigation
+updateList appD bst =
+  let newInternalState = constructList appD (bst ^. appSettings) (Just (bst ^. appState))
+  in  bst
+        & appState .~ newInternalState
+        & appData .~ appD
+        & mode .~ Navigation
 
 constructList :: BrickData
               -> BrickSettings
@@ -456,7 +458,8 @@ keyHandlers KeyBindings {..} =
       Nothing     -> pure ()
       Just (_, r) -> do
         -- Create new menus
-        contextMenu    .= ContextMenu.create r bQuit
+        contextMenu        .= ContextMenu.create r bQuit
+        advanceInstallMenu .= AdvanceInstall.create bQuit
         -- Set mode to context
         mode           .= ContextPanel
     pure ()

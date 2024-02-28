@@ -31,7 +31,7 @@ create lr exit_key = Menu.createMenu Common.ContextBox lr exit_key buttons []
       & Menu.fieldLabelL .~ "Install"
       & Menu.fieldHelpMsgL .~ "Advance Installation Settings"
   compileButton =
-    Menu.createButtonField (MenuElement Common.AdvanceInstallButton)
+    Menu.createButtonField (MenuElement Common.CompilieButton)
       & Menu.fieldLabelL .~ "Compile"
       & Menu.fieldHelpMsgL .~ "Compile tool from source (to be implemented)"
   buttons =

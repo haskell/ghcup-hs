@@ -52,20 +52,34 @@ pattern OkButton = ResourceId 0
 pattern AdvanceInstallButton = ResourceId 100
 pattern CompilieButton = ResourceId 101
 
+pattern UrlEditBox = ResourceId 1
+pattern SetCheckBox = ResourceId 2
+pattern IsolateEditBox = ResourceId 3
+pattern ForceCheckBox = ResourceId 4
+pattern AdditionalEditBox = ResourceId 5
 
 -- | Name data type. Uniquely identifies each widget in the TUI. 
 -- some constructors might end up unused, but still is a good practise
 -- to have all of them defined, just in case
-data Name = AllTools        -- ^ The main list widget
-          | Singular Tool   -- ^ The particular list for each tool
-          | KeyInfoBox      -- ^ The text box widget with action informacion
-          | TutorialBox     -- ^ The tutorial widget
-          | ContextBox      -- ^ The resource for the context menu
-          | MenuElement ResourceId  -- ^ The resource for field/buttons in a menu
+data Name = AllTools                   -- ^ The main list widget
+          | Singular Tool              -- ^ The particular list for each tool
+          | KeyInfoBox                 -- ^ The text box widget with action informacion
+          | TutorialBox                -- ^ The tutorial widget
+          | ContextBox                 -- ^ The Context Menu for a Tool
+          | AdvanceInstallBox          -- ^ The Menu for AdvanceInstall
+          | MenuElement ResourceId     -- ^ Each element in a Menu. Resources must not be share for visible
+                                       --   Menus, but MenuA and MenuB can share resources if they both are
+                                       --   invisible, or just one of them is visible.
+
           deriving (Eq, Ord, Show)
 
 -- | Mode type. It helps to dispatch events to different handlers.
-data Mode = Navigation | KeyInfo | Tutorial | ContextPanel deriving (Eq, Show, Ord)
+data Mode = Navigation
+          | KeyInfo
+          | Tutorial
+          | ContextPanel
+          | AdvanceInstallPanel 
+          deriving (Eq, Show, Ord)
 
 installedSign :: String
 #if IS_WINDOWS
@@ -88,6 +102,7 @@ notInstalledSign = "X "
 notInstalledSign = "✗ "
 #endif
 
+
 showKey :: Vty.Key -> String
 showKey (Vty.KChar c) = [c]
 showKey Vty.KUp = "↑"
@@ -107,8 +122,8 @@ separator = Border.hBorder <+> Brick.str " o " <+> Border.hBorder
 
 -- | Used to create a layer on top of the main navigation widget (tutorial, info, menus...)
 frontwardLayer :: T.Text -> Brick.Widget n -> Brick.Widget n
-frontwardLayer layer_name = 
-    Brick.centerLayer 
+frontwardLayer layer_name =
+    Brick.centerLayer
       . Brick.hLimitPercent 75
       . Brick.vLimitPercent 50
       . Brick.withBorderStyle Border.unicode
@@ -132,4 +147,4 @@ data BrickSettings = BrickSettings { _showAllVersions :: Bool}
 makeLenses ''BrickSettings
 
 defaultAppSettings :: BrickSettings
-defaultAppSettings = BrickSettings { _showAllVersions = False}
+defaultAppSettings = BrickSettings False
