@@ -20,7 +20,6 @@ import qualified GHCup.Brick.Attributes as Attributes
 import Brick
     ( Padding(Max),
       Widget(..),
-      (<+>),
       (<=>))
 import qualified Brick
 import           Brick.Widgets.Center ( center )

@@ -23,42 +23,47 @@ module should only contain:
 
 module GHCup.Brick.App where
 
-import           GHCup.Types ( AppState(AppState, keyBindings), KeyCombination(KeyCombination) )
-import           GHCup.Brick.Common ( Name(..), Mode(..))
-import qualified GHCup.Brick.Common as Common
-import           GHCup.Brick.BrickState (BrickState(..), appState, mode, appKeys, appSettings, contextMenu)
+import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Attributes as Attributes
-import qualified GHCup.Brick.Widgets.Navigation as Navigation
-import qualified GHCup.Brick.Widgets.Tutorial as Tutorial
+import GHCup.Brick.BrickState (BrickState (..), advanceInstallMenu, appKeys, appSettings, appState, contextMenu, mode)
+import GHCup.Brick.Common (Mode (..), Name (..))
+import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Widgets.KeyInfo as KeyInfo
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
-import qualified GHCup.Brick.Actions as Actions
-
-import Brick
-    ( BrickEvent(VtyEvent),
-      App(..),
-      AttrMap,
-      EventM,
-      Widget(..),
-      (<=>))
-import qualified Brick
-import Control.Monad.Reader
-    ( void, MonadIO(liftIO) )
-import Data.List ( find, intercalate)
-import           Data.IORef (readIORef)
-import           Prelude                 hiding ( appendFile )
-
-import qualified Graphics.Vty                  as Vty
-
-import           Optics.State (use)
-import           Optics.State.Operators ( (.=))
-import           Optics.Operators ((^.))
-import qualified Data.Text as T
+import qualified GHCup.Brick.Widgets.Navigation as Navigation
+import qualified GHCup.Brick.Widgets.Tutorial as Tutorial
 import qualified GHCup.Brick.Widgets.Menu as Menu
-import Optics.Optic ((%))
-import qualified Brick.Focus as F
-import Optics.Getter (to)
+import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 
+import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination))
+
+import qualified Brick.Focus as F
+import Brick (
+  App (..),
+  AttrMap,
+  BrickEvent (VtyEvent),
+  EventM,
+  Widget (..),
+  (<=>),
+ )
+import qualified Brick
+import Control.Monad.Reader (
+  MonadIO (liftIO),
+  void,
+ )
+import Data.IORef (readIORef)
+import Data.List (find, intercalate)
+import Prelude hiding (appendFile)
+
+import qualified Graphics.Vty as Vty
+
+import qualified Data.Text as T
+
+import Optics.Getter (to)
+import Optics.Operators ((^.))
+import Optics.Optic ((%))
+import Optics.State (use)
+import Optics.State.Operators ((.=))
 
 app :: AttrMap -> AttrMap -> App BrickState () Name
 app attrs dimAttrs =
@@ -86,6 +91,8 @@ drawUI dimAttrs st =
        Tutorial     -> [Tutorial.draw, navg]
        KeyInfo      -> [KeyInfo.draw (st ^. appKeys), navg]
        ContextPanel -> [ContextMenu.draw (st ^. contextMenu), navg]
+       AdvanceInstallPanel -> [AdvanceInstall.draw (st ^. advanceInstallMenu), navg] 
+
 
 -- | On q, go back to navigation. 
 --   On Enter, to go to tutorial
@@ -121,14 +128,29 @@ contextMenuHandler ev = do
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n ) 
+    (VtyEvent (Vty.EvKey k m), Just n) 
       |  k == exitKey 
           && m == mods 
           && n `elem` [Menu.fieldName button | button <- buttons]
       -> mode .= Navigation
-    (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.AdvanceInstallButton) ) -> pure ()
+    (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.AdvanceInstallButton) ) -> mode .= Common.AdvanceInstallPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompilieButton) ) -> pure ()
     _ -> Common.zoom contextMenu $ ContextMenu.handler ev
+-- 
+advanceInstallHandler :: BrickEvent Name e -> EventM Name BrickState ()
+advanceInstallHandler ev = do
+  ctx <- use advanceInstallMenu 
+  let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
+      buttons = ctx ^. Menu.menuButtonsL
+      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
+  case (ev, focusedElement) of
+    (_ , Nothing) -> pure ()
+    (VtyEvent (Vty.EvKey k m), Just n)
+      | k == exitKey
+          && m == mods
+          && n `elem` [Menu.fieldName button | button <- buttons]
+      -> mode .= ContextPanel
+    _ -> Common.zoom advanceInstallMenu $ AdvanceInstall.handler ev
 
 eventHandler :: BrickEvent Name e -> EventM Name BrickState ()
 eventHandler ev = do
@@ -138,3 +160,4 @@ eventHandler ev = do
     Tutorial     -> tutorialHandler ev
     Navigation   -> navigationHandler ev
     ContextPanel -> contextMenuHandler ev
+    AdvanceInstallPanel -> advanceInstallHandler ev

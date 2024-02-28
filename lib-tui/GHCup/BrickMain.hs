@@ -17,7 +17,7 @@ module GHCup.BrickMain where
 
 import GHCup.Types
     ( Settings(noColor),
-      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings (bQuit) )
+      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings (..) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Common as Common
@@ -26,6 +26,7 @@ import qualified GHCup.Brick.Attributes as Attributes
 import qualified GHCup.Brick.BrickState as AppState
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import qualified GHCup.Brick.Widgets.SectionList as Navigation
+import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 import qualified Brick
 
 import Control.Monad.Reader ( ReaderT(runReaderT) )
@@ -63,6 +64,7 @@ brickMain s = do
                       Common.defaultAppSettings
                       initial_list
                       (ContextMenu.create e exit_key)
+                      (AdvanceInstall.create (bQuit . keyBindings $ s ))
                       (keyBindings s)
                       Common.Navigation
           in Brick.defaultMain initapp initstate 

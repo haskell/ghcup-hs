@@ -352,7 +352,7 @@ drawMenu menu =
 
     buttonAmplifiers =
       let buttonAsWidgets = fmap renderAslabel buttonLabels
-       in fmap (\f b -> ((leftify (maxWidth + 10) . Border.border $ Brick.str (show b) <+> f b) <+>) ) buttonAsWidgets
+       in fmap (\f b -> ((leftify (maxWidth + 10) . Border.border $ f b) <+>) ) buttonAsWidgets
     drawButtons = fmap drawField buttonAmplifiers
     buttonWidgets = zipWith (F.withFocusRing (menu ^. menuFocusRingL)) drawButtons (menu ^. menuButtonsL)
 
