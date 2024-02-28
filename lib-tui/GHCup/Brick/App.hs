@@ -25,7 +25,7 @@ module GHCup.Brick.App where
 
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Attributes as Attributes
-import GHCup.Brick.BrickState (BrickState (..), advanceInstallMenu, appKeys, appSettings, appState, contextMenu, mode)
+import GHCup.Brick.BrickState (BrickState (..), advanceInstallMenu, appKeys, appSettings, appState, contextMenu, mode, compileGHCMenu)
 import GHCup.Brick.Common (Mode (..), Name (..))
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Widgets.KeyInfo as KeyInfo
@@ -64,6 +64,7 @@ import Optics.Operators ((^.))
 import Optics.Optic ((%))
 import Optics.State (use)
 import Optics.State.Operators ((.=))
+import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 
 app :: AttrMap -> AttrMap -> App BrickState () Name
 app attrs dimAttrs =
@@ -91,7 +92,8 @@ drawUI dimAttrs st =
        Tutorial     -> [Tutorial.draw, navg]
        KeyInfo      -> [KeyInfo.draw (st ^. appKeys), navg]
        ContextPanel -> [ContextMenu.draw (st ^. contextMenu), navg]
-       AdvanceInstallPanel -> [AdvanceInstall.draw (st ^. advanceInstallMenu), navg] 
+       AdvanceInstallPanel -> [AdvanceInstall.draw (st ^. advanceInstallMenu), navg]
+       CompileGHCPanel     -> [CompileGHC.draw (st ^. compileGHCMenu), navg]
 
 
 -- | On q, go back to navigation. 
@@ -134,7 +136,7 @@ contextMenuHandler ev = do
           && n `elem` [Menu.fieldName button | button <- buttons]
       -> mode .= Navigation
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.AdvanceInstallButton) ) -> mode .= Common.AdvanceInstallPanel
-    (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompilieButton) ) -> pure ()
+    (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompilieButton) ) -> mode .= Common.CompileGHCPanel
     _ -> Common.zoom contextMenu $ ContextMenu.handler ev
 -- 
 advanceInstallHandler :: BrickEvent Name e -> EventM Name BrickState ()
@@ -152,6 +154,21 @@ advanceInstallHandler ev = do
       -> mode .= ContextPanel
     _ -> Common.zoom advanceInstallMenu $ AdvanceInstall.handler ev
 
+compileGHCHandler :: BrickEvent Name e -> EventM Name BrickState ()
+compileGHCHandler ev = do
+  ctx <- use compileGHCMenu 
+  let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
+      buttons = ctx ^. Menu.menuButtonsL
+      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
+  case (ev, focusedElement) of
+    (_ , Nothing) -> pure ()
+    (VtyEvent (Vty.EvKey k m), Just n)
+      | k == exitKey
+          && m == mods
+          && n `elem` [Menu.fieldName button | button <- buttons]
+      -> mode .= ContextPanel
+    _ -> Common.zoom compileGHCMenu $ CompileGHC.handler ev
+
 eventHandler :: BrickEvent Name e -> EventM Name BrickState ()
 eventHandler ev = do
   m <- use mode
@@ -161,3 +178,4 @@ eventHandler ev = do
     Navigation   -> navigationHandler ev
     ContextPanel -> contextMenuHandler ev
     AdvanceInstallPanel -> advanceInstallHandler ev
+    CompileGHCPanel     -> compileGHCHandler ev
