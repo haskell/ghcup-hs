@@ -18,7 +18,7 @@ import           GHCup.Types.Optics ( getDirs, getPlatformReq )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
 import           GHCup.OptParse.Common (logGHCPostRm)
-import           GHCup.Prelude ( decUTF8Safe )
+import           GHCup.Prelude ( decUTF8Safe, runBothE' )
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
 import           GHCup.Prompts
@@ -173,12 +173,19 @@ withIOAction action = do
             pure (updateList data' as)
           Left err -> throwIO $ userError err
 
-install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
-         => (Int, ListResult)
+installWithOptions :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
+         => AdvanceInstall.InstallOptions
+         -> (Int, ListResult)
          -> m (Either String ())
-install' (_, ListResult {..}) = do
+installWithOptions opts (_, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
-
+  let 
+    misolated = opts ^. AdvanceInstall.isolateDirL
+    shouldIsolate = maybe GHCupInternal IsolateDir (opts ^. AdvanceInstall.isolateDirL)
+    shouldForce   = opts ^. AdvanceInstall.forceInstallL
+    shouldSet     = opts ^. AdvanceInstall.instSetL
+    extraArgs     = opts ^. AdvanceInstall.addConfArgsL
+    v = GHCTargetVersion lCross lVer
   let run =
         runResourceT
           . runE
@@ -208,6 +215,7 @@ install' (_, ListResult {..}) = do
               , UnsupportedSetupCombo
               , DistroNotFound
               , NoCompatibleArch
+              , InstallSetError
               ]
 
   run (do
@@ -216,20 +224,81 @@ install' (_, ListResult {..}) = do
       dirs <- lift getDirs
       case lTool of
         GHC   -> do
-          let vi = getVersionInfo (GHCTargetVersion lCross lVer) GHC dls
-          liftE $ installGHCBin (GHCTargetVersion lCross lVer) GHCupInternal False [] $> (vi, dirs, ce)
+          let vi = getVersionInfo v GHC dls
+          case opts ^. AdvanceInstall.instBindistL of
+            Nothing -> do
+              liftE $
+                runBothE' 
+                  (installGHCBin v shouldIsolate shouldForce  extraArgs)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setGHC v SetGHCOnly Nothing))
+              pure (vi, dirs, ce) 
+            Just uri -> do
+              liftE $
+                runBothE' 
+                  (installGHCBindist
+                      (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing) 
+                      v
+                      shouldIsolate
+                      shouldForce
+                      extraArgs)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setGHC v SetGHCOnly Nothing))
+              pure (vi, dirs, ce)
+
         Cabal -> do
-          let vi = getVersionInfo (GHCTargetVersion lCross lVer) Cabal dls
-          liftE $ installCabalBin lVer GHCupInternal False $> (vi, dirs, ce)
+          let vi = getVersionInfo v Cabal dls
+          case opts ^. AdvanceInstall.instBindistL of
+            Nothing -> do
+              liftE $ 
+                runBothE' 
+                  (installCabalBin lVer shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal lVer))
+              pure (vi, dirs, ce)
+            Just uri -> do
+              liftE $ 
+                runBothE' 
+                  (installCabalBindist (DownloadInfo uri Nothing "" Nothing Nothing) lVer shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal lVer))
+              pure (vi, dirs, ce)
+
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
           liftE $ upgradeGHCup Nothing False False $> (vi, dirs, ce)
-        HLS   -> do
-          let vi = getVersionInfo (GHCTargetVersion lCross lVer) HLS dls
-          liftE $ installHLSBin lVer GHCupInternal False $> (vi, dirs, ce)
+        HLS   -> do          
+          let vi = getVersionInfo v HLS dls
+          case opts ^. AdvanceInstall.instBindistL of
+            Nothing -> do
+              liftE $ 
+                runBothE' 
+                  (installHLSBin lVer shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setHLS lVer SetHLSOnly Nothing))
+              pure (vi, dirs, ce) 
+            Just uri -> do
+              liftE $ 
+                runBothE'                 
+                  (installHLSBindist 
+                    (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing)
+                    lVer
+                    shouldIsolate
+                    shouldForce)
+                  (when (shouldSet && isNothing misolated)  (liftE $ void $ setHLS lVer SetHLSOnly Nothing))
+              pure (vi, dirs, ce)
+
         Stack -> do
-          let vi = getVersionInfo (GHCTargetVersion lCross lVer) Stack dls
-          liftE $ installStackBin lVer GHCupInternal False $> (vi, dirs, ce)
+          let vi = getVersionInfo v Stack dls
+          case opts ^. AdvanceInstall.instBindistL of
+            Nothing -> do
+              liftE $
+                runBothE' 
+                  (installStackBin lVer shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setStack lVer))
+              pure (vi, dirs, ce)
+            Just uri -> do
+              liftE $
+                runBothE' 
+                  (installStackBindist (DownloadInfo uri Nothing "" Nothing Nothing) lVer shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setStack lVer))
+              pure (vi, dirs, ce)
+
     )
     >>= \case
           VRight (vi, Dirs{..}, Just ce) -> do
@@ -256,6 +325,9 @@ install' (_, ListResult {..}) = do
           VLeft e -> pure $ Left $ prettyHFError e <> "\n"
             <> "Also check the logs in ~/.ghcup/logs"
 
+install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m) 
+         => (Int, ListResult) -> m (Either String ())
+install' = installWithOptions (AdvanceInstall.InstallOptions Nothing False Nothing False [])
 
 set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
      => (Int, ListResult)

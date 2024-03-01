@@ -36,9 +36,10 @@ import Data.Function ((&))
 import Optics ((.~))
 import Data.Char (isSpace)
 import Data.Versions (Version, version)
-import System.FilePath (isPathSeparator)
+import System.FilePath (isPathSeparator, isValid, isAbsolute, normalise)
 import Control.Applicative (Alternative((<|>)))
 import Text.Read (readEither)
+import GHCup.Prelude (stripNewlineEnd)
 
 data CompileGHCOptions = CompileGHCOptions
   { _bootstrapGhc :: Either Version FilePath
@@ -84,10 +85,11 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
       case not $ emptyEditor i of
         True  -> 
           let readVersion = bimap (const "Not a valid version") Left (version (T.init i)) -- Brick adds \n at the end, hence T.init
-              readPath
-                 = if isPathSeparator (T.head i) 
-                    then pure $ Right (T.unpack i)
-                    else Left "Not an absolute Path"
+              readPath = do 
+                mfilepath <- filepathV i
+                case mfilepath of
+                  Nothing -> Left "Invalid Empty value"
+                  Just f  -> Right (Right f)
            in if T.any isPathSeparator i 
                 then readPath
                 else readVersion
@@ -113,7 +115,15 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
           in first T.pack $ x <|> y
 
     filepathV :: T.Text -> Either Menu.ErrorMessage (Maybe FilePath)
-    filepathV = whenEmpty Nothing (Right . Just . T.unpack)
+    filepathV i = 
+      case not $ emptyEditor i of
+        True  -> absolutePathParser (T.unpack i)
+        False -> Right Nothing
+
+    absolutePathParser :: FilePath -> Either Menu.ErrorMessage (Maybe FilePath)
+    absolutePathParser f = case isValid f && isAbsolute f of
+                  True -> Right . Just . stripNewlineEnd . normalise $ f
+                  False -> Left "Please enter a valid absolute filepath."
 
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace
