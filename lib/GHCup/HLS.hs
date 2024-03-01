@@ -437,7 +437,7 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
     GitDist GitBranch{..} -> do
       tmpUnpack <- lift mkGhcupTmpDir
       let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
-      reThrowAll @_ @'[ProcessError] DownloadFailed $ do
+      cleanUpOnError tmpUnpack $ reThrowAll @_ @'[ProcessError] DownloadFailed $ do
         let rep = fromMaybe "https://github.com/haskell/haskell-language-server.git" repo
         lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
         lEM $ git [ "init" ]
