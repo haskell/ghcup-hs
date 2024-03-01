@@ -14,7 +14,18 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
-module GHCup.Brick.Widgets.Menus.AdvanceInstall (InstallOptions, AdvanceInstallMenu, create, handler, draw) where
+module GHCup.Brick.Widgets.Menus.AdvanceInstall (
+  InstallOptions (..),
+  AdvanceInstallMenu,
+  create,
+  handler,
+  draw,
+  instBindistL,
+  instSetL,
+  isolateDirL,
+  forceInstallL,
+  addConfArgsL,
+) where
 
 import GHCup.Brick.Widgets.Menu (Menu)
 import qualified GHCup.Brick.Widgets.Menu as Menu
@@ -35,6 +46,8 @@ import Data.Bifunctor (Bifunctor(..))
 import Data.Function ((&))
 import Optics ((.~))
 import Data.Char (isSpace)
+import System.FilePath (isValid, isAbsolute, normalise)
+import GHCup.Prelude (stripNewlineEnd)
 
 data InstallOptions = InstallOptions
   { instBindist  :: Maybe URI
@@ -71,8 +84,13 @@ create k = Menu.createMenu AdvanceInstallBox initialState k [ok] fields
     filepathValidator :: T.Text -> Either Menu.ErrorMessage (Maybe FilePath)
     filepathValidator i = 
       case not $ emptyEditor i of
-        True  -> Right . Just . T.unpack $ i
+        True  -> absolutePathParser (T.unpack i)
         False -> Right Nothing
+
+    absolutePathParser :: FilePath -> Either Menu.ErrorMessage (Maybe FilePath)
+    absolutePathParser f = case isValid f && isAbsolute f of
+                  True -> Right . Just . stripNewlineEnd . normalise $ f
+                  False -> Left "Please enter a valid absolute filepath."
 
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace

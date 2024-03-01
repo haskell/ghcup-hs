@@ -148,10 +148,13 @@ advanceInstallHandler ev = do
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
     (VtyEvent (Vty.EvKey k m), Just n)
-      | k == exitKey
-          && m == mods
-          && n `elem` [Menu.fieldName button | button <- buttons]
-      -> mode .= ContextPanel
+        | k == exitKey
+            && m == mods
+            && n `elem` [Menu.fieldName button | button <- buttons]
+        -> mode .= ContextPanel
+    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
+        let iopts = ctx ^. Menu.menuStateL
+        Actions.withIOAction $ Actions.installWithOptions iopts
     _ -> Common.zoom advanceInstallMenu $ AdvanceInstall.handler ev
 
 compileGHCHandler :: BrickEvent Name e -> EventM Name BrickState ()
