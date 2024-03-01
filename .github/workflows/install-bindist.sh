@@ -86,6 +86,7 @@ case $TOOL in
 					ghcup_fun rm ghc "${bin_noexe/haskell-language-server-/}"
 				fi
 			done
+			ghcup_fun install ghc --set recommended
 			"$bindir/haskell-language-server-wrapper${ext}" typecheck "${test_module}" || fail "failed to typecheck with HLS wrapper"
 		}
 
