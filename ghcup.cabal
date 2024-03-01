@@ -1,9 +1,9 @@
 cabal-version:      2.4
 name:               ghcup
-version:            0.1.20.0
+version:            0.1.22.0
 license:            LGPL-3.0-only
 license-file:       LICENSE
-copyright:          Julian Ospald 2020
+copyright:          Julian Ospald 2024
 maintainer:         hasufell@posteo.de
 author:             Julian Ospald
 homepage:           https://github.com/haskell/ghcup-hs

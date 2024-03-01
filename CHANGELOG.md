@@ -1,5 +1,37 @@
 # Revision history for ghcup
 
+## 0.1.22.0 -- ????-??-??
+
+### New features
+
+* Beef up `--overwrite-version`, fixes [#998](https://github.com/haskell/ghcup-hs/issues/998)
+  * e.g. `ghcup compile hls -g master --overwrite-version='%v-%h' --ghc 9.4.8` will produce a binary called `haskell-language-server-wrapper-<version-from-cabal-file>-<short-git-commit-hash>`... refer to `ghcup compile hls --help` for more information
+* Allow to set ghcup msys2 environment wrt [#982](https://github.com/haskell/ghcup-hs/issues/982)
+* Add mechanism to warn on new metadata versions, fixes [#860](https://github.com/haskell/ghcup-hs/issues/860)
+
+### Improvements and bug fixes
+
+* Clean up on git clone errors, fixes [#1004](https://github.com/haskell/ghcup-hs/issues/1004)
+* Error out on empty UserSettings wrt [#922](https://github.com/haskell/ghcup-hs/issues/922)
+* Fix failure mode when metadata is garbage, fixes [#921](https://github.com/haskell/ghcup-hs/issues/921)
+* Be less confusing when user tries to 'set' ghcup in TUI, fixes [#923](https://github.com/haskell/ghcup-hs/issues/923)
+* Fix prefetch for cross bindists
+* Fix misinterpretation of '+' in URI paths, fixes [#408](https://github.com/haskell/ghcup-hs/issues/408)
+* Stricter (and better) file uri handling
+* Set LD=ld.bfd on Alpine linux during bindist configure
+* Add rocky/void detection
+* Logging improvements
+* Remove the "show all tool" config in the TUI
+* Fix opening changelog on windows
+* Don't remove share dir link prematurely
+* Require user to explicitly choose subcommand for 'ghcup config'
+* Don't download twice when trying stack decoding
+
+### Refactoring and maintenance
+
+* Large TUI code cleanup by @lsmor (Luis Morillo)... more coming up soon
+* Allow building with `tar` instead of `libarchive` (mainly to make contributions easier)
+
 ## 0.1.20.0 -- 2023-11-10
 
 ### New features
