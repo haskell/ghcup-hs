@@ -17,6 +17,7 @@ import           GHCup.Types
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
 
+import           Control.Concurrent (threadDelay)
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
@@ -135,8 +136,15 @@ upgrade uOpts force' fatal Dirs{..} runAppState runLogger = do
     UpgradeGHCupDir -> pure (Just (binDir </> "ghcup" <> exeExt))
 
   runUpgrade runAppState (do
-    v' <- liftE $ upgradeGHCup target force' fatal
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+    Just (tver, vi) <- pure $ getLatest dls GHCup
+    let latestVer = _tvVersion tver
+    forM_ (_viPreInstall vi) $ \msg -> do
+      lift $ logWarn msg
+      lift $ logWarn
+        "...waiting for 5 seconds, you can still abort..."
+      liftIO $ threadDelay 5000000 -- give the user a sec to intervene
+    v' <- liftE $ upgradeGHCup' target force' fatal latestVer
     pure (v', dls)
     ) >>= \case
       VRight (v', dls) -> do

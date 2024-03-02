@@ -177,7 +177,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
    where
     fromDownloadInfo :: DownloadInfo -> VersionInfo
     fromDownloadInfo dli = let aspec = M.singleton arch (M.singleton plat (M.singleton Nothing dli))
-                           in VersionInfo [] Nothing Nothing Nothing Nothing aspec Nothing Nothing Nothing
+                           in VersionInfo [] Nothing Nothing Nothing Nothing aspec Nothing Nothing Nothing Nothing
 
     fromStackDownloadInfo :: MonadThrow m => Stack.GHCDownloadInfo -> m DownloadInfo
     fromStackDownloadInfo (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do

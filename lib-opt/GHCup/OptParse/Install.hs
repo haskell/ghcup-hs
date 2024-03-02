@@ -24,6 +24,7 @@ import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 
+import           Control.Concurrent (threadDelay)
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
@@ -327,6 +328,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
     (case instBindist of
        Nothing -> runInstGHC s' $ do
          (v, vi) <- liftE $ fromVersion instVer GHC
+         forM_ (_viPreInstall =<< vi) $ \msg -> do
+           lift $ logWarn msg
+           lift $ logWarn
+             "...waiting for 5 seconds, you can still abort..."
+           liftIO $ threadDelay 5000000 -- give the user a sec to intervene
          liftE $ runBothE' (installGHCBin
                      v
                      (maybe GHCupInternal IsolateDir isolateDir)
@@ -338,6 +344,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
        Just uri -> do
          runInstGHC s'{ settings = settings {noVerify = True}} $ do
            (v, vi) <- liftE $ fromVersion instVer GHC
+           forM_ (_viPreInstall =<< vi) $ \msg -> do
+             lift $ logWarn msg
+             lift $ logWarn
+               "...waiting for 5 seconds, you can still abort..."
+             liftIO $ threadDelay 5000000 -- give the user a sec to intervene
            liftE $ runBothE' (installGHCBindist
                        (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing)
                        v
@@ -399,6 +410,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
     (case instBindist of
        Nothing -> runInstTool s' $ do
          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
+         forM_ (_viPreInstall =<< vi) $ \msg -> do
+           lift $ logWarn msg
+           lift $ logWarn
+             "...waiting for 5 seconds, you can still abort..."
+           liftIO $ threadDelay 5000000 -- give the user a sec to intervene
          liftE $ runBothE' (installCabalBin
                                     v
                                     (maybe GHCupInternal IsolateDir isolateDir)
@@ -408,6 +424,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
        Just uri -> do
          runInstTool s'{ settings = settings { noVerify = True}} $ do
            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
+           forM_ (_viPreInstall =<< vi) $ \msg -> do
+             lift $ logWarn msg
+             lift $ logWarn
+               "...waiting for 5 seconds, you can still abort..."
+             liftIO $ threadDelay 5000000 -- give the user a sec to intervene
            liftE $ runBothE' (installCabalBindist
                                       (DownloadInfo uri Nothing "" Nothing Nothing)
                                       v
@@ -448,6 +469,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
      (case instBindist of
        Nothing -> runInstTool s' $ do
          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
+         forM_ (_viPreInstall =<< vi) $ \msg -> do
+           lift $ logWarn msg
+           lift $ logWarn
+             "...waiting for 5 seconds, you can still abort..."
+           liftIO $ threadDelay 5000000 -- give the user a sec to intervene
          liftE $ runBothE' (installHLSBin
                                     v
                                     (maybe GHCupInternal IsolateDir isolateDir)
@@ -457,6 +483,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
        Just uri -> do
          runInstTool s'{ settings = settings { noVerify = True}} $ do
            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
+           forM_ (_viPreInstall =<< vi) $ \msg -> do
+             lift $ logWarn msg
+             lift $ logWarn
+               "...waiting for 5 seconds, you can still abort..."
+             liftIO $ threadDelay 5000000 -- give the user a sec to intervene
            -- TODO: support legacy
            liftE $ runBothE' (installHLSBindist
                                       (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing)
@@ -498,6 +529,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
      (case instBindist of
         Nothing -> runInstTool s' $ do
           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
+          forM_ (_viPreInstall =<< vi) $ \msg -> do
+            lift $ logWarn msg
+            lift $ logWarn
+              "...waiting for 5 seconds, you can still abort..."
+            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           liftE $ runBothE' (installStackBin
                                      v
                                      (maybe GHCupInternal IsolateDir isolateDir)
@@ -507,6 +543,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
         Just uri -> do
           runInstTool s'{ settings = settings { noVerify = True}} $ do
             (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
+            forM_ (_viPreInstall =<< vi) $ \msg -> do
+              lift $ logWarn msg
+              lift $ logWarn
+                "...waiting for 5 seconds, you can still abort..."
+              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
             liftE $ runBothE' (installStackBindist
                                        (DownloadInfo uri Nothing "" Nothing Nothing)
                                        v
