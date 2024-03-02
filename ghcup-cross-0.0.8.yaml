@@ -30,6 +30,9 @@ ghcupDownloads:
     wasm32-wasi-9.6.3.20230927:
       viTags:
       - base-4.18.1.0
+      viPreInstall: &old-wasm-pre-install |
+        To use this bindist, you need to use the commit c0aa3bb7d88bb6ec809210e17658dd1ed64ba66c of ghc-wasm-meta repository.
+        Also see: https://www.haskell.org/ghcup/guide/#ghc-wasm-cross-bindists-experimental
       viArch:
         A_64:
           Linux_UnknownLinux:
@@ -56,6 +59,7 @@ ghcupDownloads:
     wasm32-wasi-9.8.0.20230927:
       viTags:
       - base-4.19.0.0
+      viPreInstall: *old-wasm-pre-install
       viArch:
         A_64:
           Linux_UnknownLinux:
