@@ -561,6 +561,8 @@ export SKIP_GHC=yes
 source ~/.ghc-wasm/env
 ```
 
+**Note that some wasm bindists don't work with the master branch of ghc-wasm-meta. GHCup will warn you about such cases prior to installation and point you to the right commit.**
+
 To install, we need to invoke ghcup like so also passing the `--host=<host>` flag (adjust as needed):
 
 ```sh
