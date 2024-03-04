@@ -35,6 +35,7 @@ import GHCup.Brick.Widgets.Menus.Context (ContextMenu)
 import GHCup.Brick.Widgets.Menus.AdvanceInstall (AdvanceInstallMenu)
 import GHCup.Brick.Widgets.Menus.CompileGHC (CompileGHCMenu)
 import Optics.TH                      (makeLenses)
+import GHCup.Brick.Widgets.Menus.CompileHLS (CompileHLSMenu)
 
 
 data BrickState = BrickState
@@ -44,6 +45,7 @@ data BrickState = BrickState
   , _contextMenu        :: ContextMenu
   , _advanceInstallMenu :: AdvanceInstallMenu
   , _compileGHCMenu     :: CompileGHCMenu
+  , _compileHLSMenu     :: CompileHLSMenu
   , _appKeys            :: KeyBindings
   , _mode               :: Mode
   }

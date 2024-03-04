@@ -75,6 +75,7 @@ import           Optics.Operators ((.~),(%~))
 import           Optics.Getter (view)
 import Optics.Optic ((%))
 import Optics ((^.), to)
+import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
 
 
 
@@ -535,6 +536,7 @@ keyHandlers KeyBindings {..} =
         contextMenu .= ContextMenu.create r bQuit
         advanceInstallMenu .= AdvanceInstall.create bQuit
         compileGHCMenu .= CompileGHC.create bQuit
+        compileHLSMenu .= CompileHLS.create bQuit
         -- Set mode to context
         mode           .= ContextPanel
     pure ()

@@ -45,7 +45,8 @@ module GHCup.Brick.Common  (
     , TargetGhcEditBox, BootstrapGhcEditBox, JobsEditBox, BuildConfigEditBox
     , PatchesEditBox, CrossTargetEditBox, AddConfArgsEditBox, OvewrwiteVerEditBox
     , BuildFlavourEditBox, BuildSystemEditBox, OkButton, AdvanceInstallButton
-    , CompilieButton
+    , CompileGHCButton, CompileHLSButton, CabalProjectEditBox
+    , CabalProjectLocalEditBox, UpdateCabalCheckBox
   ) ) where
 
 import           GHCup.List ( ListResult )
@@ -75,8 +76,10 @@ pattern OkButton :: ResourceId
 pattern OkButton = ResourceId 0
 pattern AdvanceInstallButton :: ResourceId
 pattern AdvanceInstallButton = ResourceId 100
-pattern CompilieButton :: ResourceId
-pattern CompilieButton = ResourceId 101
+pattern CompileGHCButton :: ResourceId
+pattern CompileGHCButton = ResourceId 101
+pattern CompileHLSButton :: ResourceId
+pattern CompileHLSButton = ResourceId 102
 
 pattern UrlEditBox :: ResourceId
 pattern UrlEditBox = ResourceId 1
@@ -110,6 +113,14 @@ pattern BuildFlavourEditBox = ResourceId 14
 pattern BuildSystemEditBox :: ResourceId
 pattern BuildSystemEditBox = ResourceId 15
 
+pattern CabalProjectEditBox  :: ResourceId
+pattern CabalProjectEditBox  = ResourceId 16
+pattern CabalProjectLocalEditBox  :: ResourceId
+pattern CabalProjectLocalEditBox  = ResourceId 17
+pattern UpdateCabalCheckBox  :: ResourceId
+pattern UpdateCabalCheckBox  = ResourceId 18
+
+
 -- | Name data type. Uniquely identifies each widget in the TUI. 
 -- some constructors might end up unused, but still is a good practise
 -- to have all of them defined, just in case
@@ -133,6 +144,7 @@ data Mode = Navigation
           | ContextPanel
           | AdvanceInstallPanel 
           | CompileGHCPanel
+          | CompileHLSPanel
           deriving (Eq, Show, Ord)
 
 installedSign :: String

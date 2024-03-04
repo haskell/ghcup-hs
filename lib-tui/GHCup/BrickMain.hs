@@ -37,6 +37,7 @@ import           Prelude                 hiding ( appendFile )
 import System.Exit ( ExitCode(ExitFailure), exitWith )
 
 import qualified Data.Text                     as T
+import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
 
 
 
@@ -67,6 +68,7 @@ brickMain s = do
                       (ContextMenu.create e exit_key)
                       (AdvanceInstall.create (bQuit . keyBindings $ s ))
                       (CompileGHC.create exit_key)
+                      (CompileHLS.create exit_key)
                       (keyBindings s)
                       Common.Navigation
           in Brick.defaultMain initapp initstate 
