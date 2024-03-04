@@ -35,14 +35,18 @@ create lr exit_key = Menu.createMenu Common.ContextBox lr exit_key buttons []
     Menu.createButtonField (MenuElement Common.AdvanceInstallButton)
       & Menu.fieldLabelL .~ "Install"
       & Menu.fieldHelpMsgL .~ "Advance Installation Settings"
-  compileButton =
-    Menu.createButtonField (MenuElement Common.CompilieButton)
+  compileGhcButton =
+    Menu.createButtonField (MenuElement Common.CompileGHCButton)
       & Menu.fieldLabelL .~ "Compile"
-      & Menu.fieldHelpMsgL .~ "Compile tool from source"
+      & Menu.fieldHelpMsgL .~ "Compile GHC from source"
+  compileHLSButton =
+    Menu.createButtonField (MenuElement Common.CompileHLSButton)
+      & Menu.fieldLabelL .~ "Compile"
+      & Menu.fieldHelpMsgL .~ "Compile HLS from source"
   buttons =
     case lTool lr of
-      GHC -> [advInstallButton, compileButton]
-      HLS -> [advInstallButton, compileButton]
+      GHC -> [advInstallButton, compileGhcButton]
+      HLS -> [advInstallButton, compileHLSButton]
       _ -> [advInstallButton]
 
 draw :: ContextMenu -> Widget Name
