@@ -7043,7 +7043,7 @@ ghcupDownloads:
     2.15.1:
       viTags:
         - Latest
-      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2151---2023-02-09
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2151---2024-02-09
       viPostInstall: *stack-post
       viArch:
         A_64:
