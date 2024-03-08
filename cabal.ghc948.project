@@ -10,7 +10,10 @@ else
         flags: +tui +tar
 
 constraints: http-io-streams -brotli,
-             any.aeson >= 2.0.1.0
+             any.aeson >= 2.0.1.0,
+             bzlib-conduit >= 0.3.0.3,
+             bz2 >= 1.0.1.1,
+             bzlib >= 0.5.2.0
 
 if os(mingw32)
   if impl(ghc >= 9.4)
