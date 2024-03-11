@@ -17,6 +17,7 @@ defaultOptions =
     False
     False
     False
+    False
 
 gcCheckList :: [(String, GCOptions)]
 gcCheckList =
@@ -33,7 +34,9 @@ gcCheckList =
   , ("gc --cache", defaultOptions{gcCache = True})
   , ("gc -t", defaultOptions{gcTmp = True})
   , ("gc --tmpdirs", defaultOptions{gcTmp = True})
-  , ("gc -o -p -s -h -c -t", GCOptions True True True True True True)
+  , ("gc -u", defaultOptions{gcUnset = True})
+  , ("gc --unset", defaultOptions{gcUnset = True})
+  , ("gc -o -p -s -h -c -t -u", GCOptions True True True True True True True)
   ]
 
 gcParseWith :: [String] -> IO GCOptions

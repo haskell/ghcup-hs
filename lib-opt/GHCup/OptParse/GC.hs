@@ -47,6 +47,7 @@ data GCOptions = GCOptions
   , gcHLSNoGHC :: Bool
   , gcCache :: Bool
   , gcTmp :: Bool
+  , gcUnset :: Bool
   } deriving (Eq, Show)
 
 
@@ -77,6 +78,9 @@ gcP =
   <*>
     switch
       (short 't' <> long "tmpdirs" <> help "Remove tmpdir leftovers")
+  <*>
+    switch
+      (short 'u' <> long "unset" <> help "Remove all tool versions that are not 'set'")
 
 
 
@@ -134,6 +138,7 @@ gc GCOptions{..} runAppState runLogger = runGC runAppState (do
   liftE $ when gcHLSNoGHC rmHLSNoGHC
   lift $ when gcCache rmCache
   lift $ when gcTmp rmTmp
+  liftE $ when gcUnset rmUnsetTools
    ) >>= \case
             VRight _ -> do
                   pure ExitSuccess

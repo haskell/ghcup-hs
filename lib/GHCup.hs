@@ -542,6 +542,26 @@ rmOldGHC = do
   forM_ ghcs $ \ghc -> when (ghc `elem` oldGHCs) $ rmGHCVer ghc
 
 
+rmUnsetTools :: ( MonadReader env m
+                , HasGHCupInfo env
+                , HasPlatformReq env
+                , HasDirs env
+                , HasLog env
+                , MonadIO m
+                , MonadFail m
+                , MonadMask m
+                , MonadUnliftIO m
+                )
+             => Excepts '[NotInstalled, UninstallFailed] m ()
+rmUnsetTools = do
+  vers <- lift $ listVersions Nothing [ListInstalled True, ListSet False] False True (Nothing, Nothing)
+  forM_ vers $ \ListResult{..} -> case lTool of
+    GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer)
+    HLS   -> liftE $ rmHLSVer lVer
+    Cabal -> liftE $ rmCabalVer lVer
+    Stack -> liftE $ rmStackVer lVer
+    GHCup -> pure ()
+
 
 rmProfilingLibs :: ( MonadReader env m
                    , HasDirs env
