@@ -175,6 +175,7 @@ library
     , base16-bytestring     >=0.1.1.6    && <1.1
     , binary                ^>=0.8.6.0
     , bytestring            >=0.10       && <0.12
+    , bz2                   ^>=1.0.1.1
     , Cabal                 ^>=3.0.0.0 || ^>=3.2.0.0 || ^>=3.4.0.0 || ^>=3.6.0.0 || ^>=3.8.0.0 || ^>= 3.10.0.0
     , case-insensitive      ^>=1.2.1.0
     , casing                ^>=0.1.4.1
@@ -244,7 +245,6 @@ library
     -- GHCup.OptParse.Run uses this
     exposed-modules: GHCup.Prelude.Process.Windows
     build-depends:
-      , bzlib
       , process  ^>=1.6.11.0
       , Win32    >=2.10
 
@@ -261,7 +261,6 @@ library
     install-includes: dirutils.h
     c-sources:        cbits/dirutils.c
     build-depends:
-      , bz2              >=0.5.0.5 && <1.1
       , terminal-size    ^>=0.3.3
       , unix             ^>=2.7 || ^>=2.8
       , unix-bytestring  ^>=0.3.7.3
