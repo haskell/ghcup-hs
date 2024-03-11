@@ -149,6 +149,7 @@ data VersionInfo = VersionInfo
   , _viTestDL      :: Maybe DownloadInfo -- ^ test tarball
   , _viArch        :: ArchitectureSpec   -- ^ descend for binary downloads per arch
   -- informative messages
+  , _viPreInstall  :: Maybe Text
   , _viPostInstall :: Maybe Text
   , _viPostRemove  :: Maybe Text
   , _viPreCompile  :: Maybe Text

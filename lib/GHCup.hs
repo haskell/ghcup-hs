@@ -273,7 +273,6 @@ getDebugInfo = do
     --[ GHCup upgrade etc ]--
     -------------------------
 
-
 -- | Upgrade ghcup and place it in @~\/.ghcup\/bin\/ghcup@,
 -- if no path is provided.
 upgradeGHCup :: ( MonadMask m
@@ -308,11 +307,48 @@ upgradeGHCup :: ( MonadMask m
                   m
                   Version
 upgradeGHCup mtarget force' fatal = do
-  Dirs {..} <- lift getDirs
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-
-  lift $ logInfo "Upgrading GHCup..."
   let latestVer = _tvVersion $ fst (fromJust (getLatest dls GHCup))
+  upgradeGHCup' mtarget force' fatal latestVer
+
+
+-- | Upgrade ghcup and place it in @~\/.ghcup\/bin\/ghcup@,
+-- if no path is provided.
+upgradeGHCup' :: ( MonadMask m
+                 , MonadReader env m
+                 , HasDirs env
+                 , HasPlatformReq env
+                 , HasGHCupInfo env
+                 , HasSettings env
+                 , MonadCatch m
+                 , HasLog env
+                 , MonadThrow m
+                 , MonadFail m
+                 , MonadResource m
+                 , MonadIO m
+                 , MonadUnliftIO m
+                 )
+              => Maybe FilePath    -- ^ full file destination to write ghcup into
+              -> Bool              -- ^ whether to force update regardless
+                                   --   of currently installed version
+              -> Bool              -- ^ whether to throw an error if ghcup is shadowed
+              -> Version
+              -> Excepts
+                   '[ CopyError
+                    , DigestError
+                    , ContentLengthError
+                    , GPGError
+                    , GPGError
+                    , DownloadFailed
+                    , NoDownload
+                    , NoUpdate
+                    , ToolShadowed
+                    ]
+                   m
+                   Version
+upgradeGHCup' mtarget force' fatal latestVer = do
+  Dirs {..} <- lift getDirs
+  lift $ logInfo "Upgrading GHCup..."
   (Just ghcupPVPVer) <- pure $ pvpToVersion ghcUpVer ""
   when (not force' && (latestVer <= ghcupPVPVer)) $ throwE NoUpdate
   dli   <- liftE $ getDownloadInfo GHCup latestVer

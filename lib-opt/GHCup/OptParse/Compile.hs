@@ -529,9 +529,14 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
           HLS.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
             let vi = getVersionInfo (mkTVer targetVer) HLS dls
+            forM_ (_viPreInstall =<< vi) $ \msg -> do
+              lift $ logWarn msg
+              lift $ logWarn
+                "...waiting for 5 seconds, you can still abort..."
+              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
             forM_ (_viPreCompile =<< vi) $ \msg -> do
-              lift $ logInfo msg
-              lift $ logInfo
+              lift $ logWarn msg
+              lift $ logWarn
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
           _ -> pure ()
@@ -578,9 +583,14 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
           GHC.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
             let vi = getVersionInfo (mkTVer targetVer) GHC dls
+            forM_ (_viPreInstall =<< vi) $ \msg -> do
+              lift $ logWarn msg
+              lift $ logWarn
+                "...waiting for 5 seconds, you can still abort..."
+              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
             forM_ (_viPreCompile =<< vi) $ \msg -> do
-              lift $ logInfo msg
-              lift $ logInfo
+              lift $ logWarn msg
+              lift $ logWarn
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
           _ -> pure ()
