@@ -16,8 +16,11 @@ constraints: http-io-streams -brotli,
              bzlib >= 0.5.2.0
 
 if os(mingw32)
+  constraints: vty-windows >=0.2.0.2
+
   if impl(ghc >= 9.4)
     constraints: language-c >= 0.9.3
+
 
 source-repository-package
   type: git
