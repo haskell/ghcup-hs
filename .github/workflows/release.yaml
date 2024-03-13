@@ -94,11 +94,11 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "armv7-linux-ghcup"
             GHC_VER: 9.2.8
             ARCH: ARM
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
             GHC_VER: 9.4.8
             ARCH: ARM64
@@ -365,12 +365,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "armv7-linux-ghcup"
             GHC_VER: 9.2.8
             ARCH: ARM
             DISTRO: Ubuntu
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
             GHC_VER: 9.4.8
             ARCH: ARM64
