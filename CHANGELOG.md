@@ -4,6 +4,7 @@
 
 ### New features
 
+* A help screen/tutorial in the TUI by @lsmor (Luis Morillo)
 * Beef up `--overwrite-version`, fixes [#998](https://github.com/haskell/ghcup-hs/issues/998)
   * e.g. `ghcup compile hls -g master --overwrite-version='%v-%h' --ghc 9.4.8` will produce a binary called `haskell-language-server-wrapper-<version-from-cabal-file>-<short-git-commit-hash>`... refer to `ghcup compile hls --help` for more information
 * Allow to set ghcup msys2 environment wrt [#982](https://github.com/haskell/ghcup-hs/issues/982)
