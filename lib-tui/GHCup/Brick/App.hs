@@ -172,6 +172,9 @@ compileGHCHandler ev = do
           && m == mods
           && n `elem` [Menu.fieldName button | button <- buttons]
       -> mode .= ContextPanel
+    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
+        let iopts = ctx ^. Menu.menuStateL
+        Actions.withIOAction $ Actions.compileGHC iopts
     _ -> Common.zoom compileGHCMenu $ CompileGHC.handler ev
 
 

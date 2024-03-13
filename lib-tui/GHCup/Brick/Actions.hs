@@ -76,6 +76,8 @@ import           Optics.Getter (view)
 import Optics.Optic ((%))
 import Optics ((^.), to)
 import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
+import Control.Concurrent (threadDelay)
+import qualified GHCup.GHC as GHC
 
 
 
@@ -456,6 +458,94 @@ changelog' (_, ListResult {..}) = do
        >>= \case
         Right _ -> pure $ Right ()
         Left  e -> pure $ Left $ prettyHFError e
+
+compileGHC :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m) 
+           => CompileGHC.CompileGHCOptions -> (Int, ListResult) -> m (Either String ())
+compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
+  appstate <- ask
+  let run = 
+        runResourceT
+         . runE @'[ AlreadyInstalled
+                  , BuildFailed
+                  , DigestError
+                  , ContentLengthError
+                  , GPGError
+                  , DownloadFailed
+                  , GHCupSetError
+                  , NoDownload
+                  , NotFoundInPATH
+                  , PatchFailed
+                  , UnknownArchive
+                  , TarDirDoesNotExist
+                  , NotInstalled
+                  , DirNotEmpty
+                  , ArchiveResult
+                  , FileDoesNotExistError
+                  , HadrianNotFound
+                  , InvalidBuildConfig
+                  , ProcessError
+                  , CopyError
+                  , BuildFailed
+                  , UninstallFailed
+                  , MergeFileTreeError
+                  ]
+  compileResult <- run (do
+      AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
+      let vi = getVersionInfo (mkTVer lVer) GHC dls
+      forM_ (_viPreCompile =<< vi) $ \msg -> do
+        logInfo msg
+        logInfo
+          "...waiting for 5 seconds, you can still abort..."
+        liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
+
+      targetVer <- liftE $ GHCup.compileGHC 
+                    (GHC.SourceDist lVer)
+                    (compopts ^. CompileGHC.crossTarget)
+                    (compopts ^. CompileGHC.overwriteVer)
+                    (compopts ^. CompileGHC.bootstrapGhc)
+                    (compopts ^. CompileGHC.jobs)
+                    (compopts ^. CompileGHC.buildConfig)
+                    (compopts ^. CompileGHC.patches)
+                    (compopts ^. CompileGHC.addConfArgs)
+                    (compopts ^. CompileGHC.buildFlavour)
+                    (compopts ^. CompileGHC.buildSystem)
+                    (maybe GHCupInternal IsolateDir $ compopts ^. CompileGHC.isolateDir)
+      AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls2 }} <- ask
+      let vi2 = getVersionInfo targetVer GHC dls2
+      when
+        (compopts ^. CompileGHC.setCompile)
+        (liftE . void $ GHCup.setGHC targetVer SetGHCOnly Nothing)
+      pure (vi2, targetVer)
+      )
+  case compileResult of
+      VRight (vi, tv) -> do
+        logInfo "GHC successfully compiled and installed"
+        forM_ (_viPostInstall =<< vi) $ \msg -> logInfo msg
+        liftIO $ putStr (T.unpack $ tVerToText tv)
+        pure $ Right ()
+      VLeft (V (AlreadyInstalled _ v)) -> do
+        logWarn $
+          "GHC ver " <> prettyVer v <> " already installed, remove it first to reinstall"
+        pure $ Right ()
+      VLeft (V (DirNotEmpty fp)) -> do
+        logError $
+          "Install directory " <> T.pack fp <> " is not empty."
+        pure $ Right ()
+      VLeft err@(V (BuildFailed tmpdir _)) -> do
+        case keepDirs (appstate & settings) of
+          Never -> logError $ T.pack $ prettyHFError err
+          _ -> logError $ T.pack (prettyHFError err) <> "\n" 
+            <> "Check the logs at " <> T.pack (fromGHCupPath (appstate & dirs & logsDir)) 
+            <> " and the build directory "
+            <> T.pack tmpdir <> " for more clues." <> "\n" 
+            <> "Make sure to clean up " <> T.pack tmpdir <> " afterwards."
+        pure $ Right ()
+      VLeft e -> do
+        logError $ T.pack $ prettyHFError e
+        pure $ Right ()
+-- This is the case when the tool is not GHC... which should be impossible but,
+-- it exhaustes pattern matches
+compileGHC _ (_, ListResult{lTool = _}) = pure (Right ())
 
 
 settings' :: IORef AppState
