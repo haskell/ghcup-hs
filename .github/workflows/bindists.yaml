@@ -126,9 +126,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARCH: ARM
-          - os: [self-hosted, Linux, ARM64]
+          - os: [self-hosted, Linux, ARM64, maerwald]
             ARCH: ARM64
     steps:
       - uses: docker://arm64v8/ubuntu:focal
