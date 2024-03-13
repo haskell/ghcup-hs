@@ -196,6 +196,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
        Menu.createButtonField (Common.MenuElement Common.OkButton)
            & Menu.fieldLabelL .~ "Compile"
            & Menu.fieldHelpMsgL .~ "Compile GHC from source with options below"
+           & Menu.fieldStatusL .~ Menu.Invalid "bootstrap GHC is mandatory"
       ]
 
 handler :: BrickEvent Name e -> EventM Name CompileGHCMenu ()

@@ -66,6 +66,7 @@ import Optics.State (use)
 import Optics.State.Operators ((.=))
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
+import Control.Monad (when)
 
 app :: AttrMap -> AttrMap -> App BrickState () Name
 app attrs dimAttrs =
@@ -174,7 +175,8 @@ compileGHCHandler ev = do
       -> mode .= ContextPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
         let iopts = ctx ^. Menu.menuStateL
-        Actions.withIOAction $ Actions.compileGHC iopts
+        when (Menu.isValidMenu ctx) 
+          (Actions.withIOAction $ Actions.compileGHC iopts)
     _ -> Common.zoom compileGHCMenu $ CompileGHC.handler ev
 
 
@@ -193,7 +195,8 @@ compileHLSHandler ev = do
       -> mode .= ContextPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
         let iopts = ctx ^. Menu.menuStateL
-        Actions.withIOAction $ Actions.compileHLS iopts
+        when (Menu.isValidMenu ctx)
+          (Actions.withIOAction $ Actions.compileHLS iopts)
     _ -> Common.zoom compileHLSMenu $ CompileHLS.handler ev
 
 eventHandler :: BrickEvent Name e -> EventM Name BrickState ()

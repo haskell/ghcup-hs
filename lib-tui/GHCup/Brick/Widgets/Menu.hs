@@ -93,7 +93,7 @@ idFormatter = const id
 
 -- | An error message
 type ErrorMessage = T.Text
-data ErrorStatus = Valid | Invalid ErrorMessage
+data ErrorStatus = Valid | Invalid ErrorMessage deriving (Eq)
 
 -- | A lens which does nothing. Usefull to defined no-op fields
 emptyLens :: Lens' s ()
@@ -137,6 +137,8 @@ data MenuField s n where
       , fieldName      :: n
       } -> MenuField s n
 
+isValidField :: MenuField s n -> Bool
+isValidField = (== Valid) . fieldStatus 
 
 makeLensesFor
   [ ("fieldLabel", "fieldLabelL")
@@ -226,7 +228,9 @@ type Button = MenuField
 
 createButtonInput :: FieldInput () () n
 createButtonInput = FieldInput () Right "" drawButton (const $ pure ())
-  where drawButton _ _ help _ amp = amp . centerV . renderAsHelpMsg $ help
+  where 
+    drawButton True (Invalid err) _    _ amp = amp . centerV . renderAsErrMsg $ err
+    drawButton _    _             help _ amp = amp . centerV . renderAsHelpMsg $ help
 
 createButtonField :: n -> Button s n
 createButtonField = MenuField emptyLens createButtonInput "" Valid
@@ -281,13 +285,15 @@ data Menu s n
     , menuName      :: n                 -- ^ The resource Name.
     }
 
-
 makeLensesFor
   [ ("menuFields", "menuFieldsL"), ("menuState", "menuStateL")
   , ("menuButtons", "menuButtonsL"), ("menuFocusRing", "menuFocusRingL")
   , ("menuExitKey", "menuExitKeyL"), ("menuName", "menuNameL")
   ]
   ''Menu
+
+isValidMenu :: Menu s n -> Bool
+isValidMenu = all isValidField . menuFields
 
 createMenu :: n -> s -> KeyCombination -> [Button s n] -> [MenuField s n] -> Menu s n
 createMenu n initial exitK buttons fields = Menu fields initial buttons ring exitK n
@@ -307,6 +313,9 @@ handlerMenu ev =
         Nothing -> pure ()
         Just n  -> do 
           updated_fields <- updateFields n (VtyEvent e) fields
+          if all isValidField updated_fields
+            then menuButtonsL %= fmap (fieldStatusL .~ Valid)
+            else menuButtonsL %= fmap (fieldStatusL .~ Invalid "Some fields are invalid")
           menuFieldsL .= updated_fields
     _ -> pure ()
  where
