@@ -39,6 +39,9 @@ constraints: http-io-streams -brotli,
 package libarchive
   flags: -system-libarchive
 
+package libyaml-streamly
+  flags: -system-libyaml
+
 package aeson-pretty
   flags: +lib-only
 
