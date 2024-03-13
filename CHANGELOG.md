@@ -8,9 +8,14 @@
   * e.g. `ghcup compile hls -g master --overwrite-version='%v-%h' --ghc 9.4.8` will produce a binary called `haskell-language-server-wrapper-<version-from-cabal-file>-<short-git-commit-hash>`... refer to `ghcup compile hls --help` for more information
 * Allow to set ghcup msys2 environment wrt [#982](https://github.com/haskell/ghcup-hs/issues/982)
 * Add mechanism to warn on new metadata versions, fixes [#860](https://github.com/haskell/ghcup-hs/issues/860)
+* Add pre-install message support via ghcup metadata, wrt [#1016](https://github.com/haskell/ghcup-hs/issues/1016)
+* Allow to remove all unset versions, fixes [#1019](https://github.com/haskell/ghcup-hs/issues/1019)
+  * e.g.: `ghcup gc --unset`
 
 ### Improvements and bug fixes
 
+* Fix potential [HSEC-2024-0002](https://haskell.github.io/security-advisories/advisory/HSEC-2024-0002.html)
+* Fix TUI crash in windows terminal 1.19 [#1013](https://github.com/haskell/ghcup-hs/issues/1013)
 * Clean up on git clone errors, fixes [#1004](https://github.com/haskell/ghcup-hs/issues/1004)
 * Error out on empty UserSettings wrt [#922](https://github.com/haskell/ghcup-hs/issues/922)
 * Fix failure mode when metadata is garbage, fixes [#921](https://github.com/haskell/ghcup-hs/issues/921)
