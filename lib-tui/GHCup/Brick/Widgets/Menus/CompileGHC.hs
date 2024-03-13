@@ -14,7 +14,24 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
-module GHCup.Brick.Widgets.Menus.CompileGHC (CompileGHCOptions, CompileGHCMenu, create, handler, draw) where
+module GHCup.Brick.Widgets.Menus.CompileGHC (
+  CompileGHCOptions,
+  CompileGHCMenu,
+  create,
+  handler,
+  draw,
+  bootstrapGhc,
+  jobs,
+  buildConfig,
+  patches,
+  crossTarget,
+  addConfArgs,
+  setCompile,
+  overwriteVer,
+  buildFlavour,
+  buildSystem,
+  isolateDir,
+) where
 
 import GHCup.Brick.Widgets.Menu (Menu)
 import qualified GHCup.Brick.Widgets.Menu as Menu
@@ -26,7 +43,8 @@ import Brick
 import           Prelude                 hiding ( appendFile )
 import           Optics.TH (makeLenses)
 import qualified GHCup.Brick.Common as Common
-import GHCup.Types (KeyCombination, BuildSystem (Hadrian))
+import GHCup.Types
+    ( KeyCombination, BuildSystem(Hadrian), VersionPattern )
 import URI.ByteString (URI)
 import qualified Data.Text as T
 import qualified Data.ByteString.UTF8 as UTF8
@@ -40,6 +58,7 @@ import System.FilePath (isPathSeparator, isValid, isAbsolute, normalise)
 import Control.Applicative (Alternative((<|>)))
 import Text.Read (readEither)
 import GHCup.Prelude (stripNewlineEnd)
+import qualified GHCup.OptParse.Common as OptParse
 
 data CompileGHCOptions = CompileGHCOptions
   { _bootstrapGhc :: Either Version FilePath
@@ -49,7 +68,7 @@ data CompileGHCOptions = CompileGHCOptions
   , _crossTarget  :: Maybe T.Text
   , _addConfArgs  :: [T.Text]
   , _setCompile   :: Bool
-  , _ovewrwiteVer :: Maybe Version
+  , _overwriteVer :: Maybe [VersionPattern]
   , _buildFlavour :: Maybe String
   , _buildSystem  :: Maybe BuildSystem
   , _isolateDir   :: Maybe FilePath
@@ -62,8 +81,8 @@ type CompileGHCMenu = Menu CompileGHCOptions Name
 create :: KeyCombination -> CompileGHCMenu
 create k = Menu.createMenu CompileGHCBox initialState k buttons fields
   where
-    initialState = 
-      CompileGHCOptions 
+    initialState =
+      CompileGHCOptions
         (Right "")
         Nothing
         Nothing
@@ -83,39 +102,39 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
     bootstrapV :: T.Text -> Either Menu.ErrorMessage (Either Version FilePath)
     bootstrapV i =
       case not $ emptyEditor i of
-        True  -> 
+        True  ->
           let readVersion = bimap (const "Not a valid version") Left (version (T.init i)) -- Brick adds \n at the end, hence T.init
-              readPath = do 
+              readPath = do
                 mfilepath <- filepathV i
                 case mfilepath of
                   Nothing -> Left "Invalid Empty value"
                   Just f  -> Right (Right f)
-           in if T.any isPathSeparator i 
+           in if T.any isPathSeparator i
                 then readPath
                 else readVersion
         False -> Left "Invalid Empty value"
 
-    versionV :: T.Text -> Either Menu.ErrorMessage (Maybe Version)
-    versionV = bimap (const "Not a valid version") Just . version . T.init  -- Brick adds \n at the end, hence T.init
+    versionV :: T.Text -> Either Menu.ErrorMessage (Maybe [VersionPattern])
+    versionV = whenEmpty Nothing (bimap T.pack Just . OptParse.overWriteVersionParser . T.unpack . T.init)  -- Brick adds \n at the end, hence T.init
 
     jobsV :: T.Text -> Either Menu.ErrorMessage (Maybe Int)
-    jobsV = 
+    jobsV =
       let parseInt = bimap (const "Invalid value. Must be an integer") Just . readEither @Int . T.unpack
-       in whenEmpty Nothing parseInt 
+       in whenEmpty Nothing parseInt
 
     patchesV :: T.Text -> Either Menu.ErrorMessage (Maybe (Either FilePath [URI]))
     patchesV = whenEmpty Nothing readPatches
-      where 
+      where
         readUri :: T.Text -> Either String URI
-        readUri = first show . parseURI . UTF8.fromString . T.unpack 
-        readPatches j = 
-          let 
+        readUri = first show . parseURI . UTF8.fromString . T.unpack
+        readPatches j =
+          let
             x = (bimap T.unpack (fmap Left) $ filepathV j)
             y = second (Just . Right) $ traverse readUri (T.split isSpace j)
           in first T.pack $ x <|> y
 
     filepathV :: T.Text -> Either Menu.ErrorMessage (Maybe FilePath)
-    filepathV i = 
+    filepathV i =
       case not $ emptyEditor i of
         True  -> absolutePathParser (T.unpack i)
         False -> Right Nothing
@@ -130,13 +149,13 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
 
     systemV :: T.Text -> Either Menu.ErrorMessage (Maybe BuildSystem)
     systemV = whenEmpty Nothing readSys
-      where 
+      where
         readSys i
           | T.toLower i == "hadrian" = Right $ Just Hadrian
           | T.toLower i == "make"    = Right $ Just Hadrian
           | otherwise = Left "Not a valid Build System"
 
-    fields = 
+    fields =
       [ Menu.createEditableField (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapV bootstrapGhc
            & Menu.fieldLabelL .~ "bootstrap-ghc"
            & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to bootstrap with (must be installed)"
@@ -159,7 +178,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
-      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV ovewrwiteVer
+      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer
           & Menu.fieldLabelL .~ "overwrite-version"
           & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
       , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour
