@@ -7018,8 +7018,7 @@ ghcupDownloads:
               dlSubdir:
                 RegexDir: "stack-.*"
     2.15.1:
-      viTags:
-        - Latest
+      viTags: []
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2151---2024-02-09
       viPostInstall: *stack-post
       viArch:
@@ -7061,5 +7060,51 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.15.1/stack-2.15.1-osx-aarch64.tar.gz
               dlHash: 3644a3825124c7275c1e77c609c4ad96f1175083750fea2665c438c5a093c1ec
+              dlSubdir:
+                RegexDir: "stack-.*"
+    2.15.3:
+      viTags:
+        - Latest
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2153---2024-03-07
+      viPostInstall: *stack-post
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-2153-64
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.15.3/stack-2.15.3-linux-x86_64.tar.gz
+              dlHash: a5ee1fdf6a36f749df88dfd552dd0defb8d29c15548400fb937fc536a0033bc6
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.15.3/stack-2.15.3-osx-x86_64.tar.gz
+              dlHash: ba6f63bea27d2d87f887bb0376a5984b0610b052ac5886b3bb3ca5cbf0fa994f
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.15.3/stack-2.15.3-windows-x86_64.tar.gz
+              dlHash: d0011cd343365b856b012bd6d94346d6b77b901927462d701a4b401f1402b08e
+              dlSubdir:
+                RegexDir: "stack-.*"
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.15.3/stack-2.15.3-freebsd-x86_64.tar.gz
+              dlHash: 03808912ade4e256693a118aee6fd77aa98358f2e771a230726a756271dff8d2
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-2153-64
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.15.3/stack-2.15.3-linux-aarch64.tar.gz
+              dlHash: ce7e2dab7fff39071e43825d577f721f42d25376b31155f981b52623dd1a4983
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/2.15.3/stack-2.15.3-osx-aarch64.tar.gz
+              dlHash: 70403629a22f5f4c9b3b87385b3d31a8a035598ec84c81f3c9326d762da04a17
               dlSubdir:
                 RegexDir: "stack-.*"
