@@ -6,7 +6,7 @@ set -eo pipefail
 
 export GHCUP_INSTALL_BASE_PREFIX=$RUNNER_TEMP/foobarbaz
 
-curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/haskell/ghcup-hs/master/scripts/bootstrap/bootstrap-haskell | sh
 
 source "$GHCUP_INSTALL_BASE_PREFIX"/.ghcup/env || source "$HOME/.bashrc"
 
