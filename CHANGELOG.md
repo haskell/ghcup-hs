@@ -1,6 +1,6 @@
 # Revision history for ghcup
 
-## 0.1.22.0 -- ????-??-??
+## 0.1.22.0 -- 2024-03-13
 
 ### New features
 
