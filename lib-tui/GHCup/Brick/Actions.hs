@@ -78,6 +78,8 @@ import Optics ((^.), to)
 import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
 import Control.Concurrent (threadDelay)
 import qualified GHCup.GHC as GHC
+import qualified GHCup.OptParse.Common as OptParse
+import qualified GHCup.HLS as HLS
 
 
 
@@ -535,7 +537,7 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
         case keepDirs (appstate & settings) of
           Never -> logError $ T.pack $ prettyHFError err
           _ -> logError $ T.pack (prettyHFError err) <> "\n" 
-            <> "Check the logs at " <> T.pack (fromGHCupPath (appstate & dirs & logsDir)) 
+            <> "Check the logs at " <> T.pack (fromGHCupPath $ appstate & dirs & logsDir) 
             <> " and the build directory "
             <> T.pack tmpdir <> " for more clues." <> "\n" 
             <> "Make sure to clean up " <> T.pack tmpdir <> " afterwards."
@@ -546,6 +548,87 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
 -- This is the case when the tool is not GHC... which should be impossible but,
 -- it exhaustes pattern matches
 compileGHC _ (_, ListResult{lTool = _}) = pure (Right ())
+
+
+compileHLS :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m) 
+           => CompileHLS.CompileHLSOptions -> (Int, ListResult) -> m (Either String ())
+compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
+  appstate <- ask
+  let run = 
+        runResourceT
+         . runE @'[ AlreadyInstalled
+                  , BuildFailed
+                  , DigestError
+                  , ContentLengthError
+                  , GPGError
+                  , DownloadFailed
+                  , GHCupSetError
+                  , NoDownload
+                  , NotFoundInPATH
+                  , PatchFailed
+                  , UnknownArchive
+                  , TarDirDoesNotExist
+                  , TagNotFound
+                  , DayNotFound
+                  , NextVerNotFound
+                  , NoToolVersionSet
+                  , NotInstalled
+                  , DirNotEmpty
+                  , ArchiveResult
+                  , UninstallFailed
+                  , MergeFileTreeError
+                  ]
+  compileResult <- run (do
+      AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
+      let vi = getVersionInfo (mkTVer lVer) GHC dls
+      forM_ (_viPreCompile =<< vi) $ \msg -> do
+        logInfo msg
+        logInfo
+          "...waiting for 5 seconds, you can still abort..."
+        liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
+
+      ghcs <- 
+        liftE $ forM (compopts ^. CompileHLS.targetGHCs) 
+                     (\ghc -> fmap (_tvVersion . fst) . OptParse.fromVersion (Just ghc) $ GHC)
+      targetVer <- liftE $ GHCup.compileHLS 
+                      (HLS.SourceDist lVer)
+                      ghcs
+                      (compopts ^. CompileHLS.jobs)
+                      (compopts ^. CompileHLS.overwriteVer)
+                      (maybe GHCupInternal IsolateDir $ compopts ^. CompileHLS.isolateDir)
+                      (compopts ^. CompileHLS.cabalProject)
+                      (compopts ^. CompileHLS.cabalProjectLocal)
+                      (compopts ^. CompileHLS.updateCabal)
+                      (compopts ^. CompileHLS.patches)
+                      (compopts ^. CompileHLS.cabalArgs)
+      AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls2 }} <- ask
+      let vi2 = getVersionInfo (mkTVer targetVer) GHC dls2
+      when
+        (compopts ^. CompileHLS.setCompile)
+        (liftE . void $ GHCup.setHLS targetVer SetHLSOnly Nothing)
+      pure (vi2, targetVer)
+      )
+  case compileResult of
+      VRight (vi, tv) -> do
+        logInfo "HLS successfully compiled and installed"
+        forM_ (_viPostInstall =<< vi) $ \msg -> logInfo msg
+        liftIO $ putStr (T.unpack $ prettyVer tv)
+        pure $ Right ()
+      VLeft err@(V (BuildFailed tmpdir _)) -> do
+        case keepDirs (appstate & settings) of
+          Never -> logError $ T.pack $ prettyHFError err
+          _ -> logError $ T.pack (prettyHFError err) <> "\n" 
+            <> "Check the logs at " <> T.pack (fromGHCupPath $ appstate & dirs & logsDir)
+               <> " and the build directory "
+            <> T.pack tmpdir <> " for more clues." <> "\n" 
+            <> "Make sure to clean up " <> T.pack tmpdir <> " afterwards."
+        pure $ Right ()
+      VLeft e -> do
+        logError $ T.pack $ prettyHFError e
+        pure $ Right ()
+-- This is the case when the tool is not HLS... which should be impossible but,
+-- it exhaustes pattern matches
+compileHLS _ (_, ListResult{lTool = _}) = pure (Right ())
 
 
 settings' :: IORef AppState

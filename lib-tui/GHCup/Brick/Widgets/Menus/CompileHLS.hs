@@ -14,7 +14,24 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
-module GHCup.Brick.Widgets.Menus.CompileHLS (CompileHLSOptions, CompileHLSMenu, create, handler, draw) where
+module GHCup.Brick.Widgets.Menus.CompileHLS (
+  CompileHLSOptions,
+  CompileHLSMenu,
+  create,
+  handler,
+  draw,
+  jobs,
+  setCompile,
+  updateCabal,
+  overwriteVer,
+  isolateDir,
+  cabalProject,
+  cabalProjectLocal,
+  patches,
+  targetGHCs,
+  cabalArgs,
+)
+where
 
 import GHCup.Brick.Widgets.Menu (Menu)
 import qualified GHCup.Brick.Widgets.Menu as Menu
