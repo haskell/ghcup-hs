@@ -54,6 +54,7 @@ allow-newer-deps:
   - process
   - streamly
   - cabal-install-parsers
+  - ghcup
 
 flags:
   http-io-streams:
