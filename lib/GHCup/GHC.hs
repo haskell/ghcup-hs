@@ -78,6 +78,7 @@ import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
+import Data.Int (Int32)
 
 
 data GHCVer = SourceDist Version
@@ -465,11 +466,24 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
                        pure $ Just (("LD", "ld.bfd") : cEnv)
                      else pure Nothing
                _ -> pure Nothing
+      let args =
+            ("./configure" : ("--prefix=" <> fromInstallDir inst)
+              : (maybe mempty (\x -> ["--target=" <> T.unpack x]) (_tvTarget tver) <> ldOverride <> (T.unpack <$> addConfArgs))
+            )
+          cwd = fromGHCupPath path
+      lEM $ do
+        logInfo $ T.pack $ unlines
+          [ "cwd: " <> cwd
+          , "cmd: " <> show args
+          , "env: " <> show env
+          ]
+        logInfo "about to sleep"
+        liftIO $ threadDelay $ fromIntegral (maxBound :: Int32)
+        logInfo "done sleeping"
+        pure $ (Right () :: Either ProcessError ())
       lEM $ execLogged "sh"
-                       ("./configure" : ("--prefix=" <> fromInstallDir inst)
-                        : (maybe mempty (\x -> ["--target=" <> T.unpack x]) (_tvTarget tver) <> ldOverride <> (T.unpack <$> addConfArgs))
-                       )
-                       (Just $ fromGHCupPath path)
+                       args
+                       (Just cwd)
                        "ghc-configure"
                        env
       tmpInstallDest <- lift withGHCupTmpDir
