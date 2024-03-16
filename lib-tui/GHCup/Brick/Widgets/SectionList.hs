@@ -15,8 +15,8 @@
 
 {- A general system for lists with sections
 
-Consider this code as private. GenericSectionList should not be used directly as the FocusRing should be align with the Vector containing 
-the elements, otherwise you'd be focusing on a non-existent widget with unknown result (In theory the code is safe unless you have an empty section list). 
+Consider this code as private. GenericSectionList should not be used directly as the FocusRing should be align with the Vector containing
+the elements, otherwise you'd be focusing on a non-existent widget with unknown result (In theory the code is safe unless you have an empty section list).
 
 - To build a SectionList use the safe constructor sectionList
 - To access sections use the lens provider sectionL and the name of the section you'd like to access
@@ -33,7 +33,7 @@ import Brick
     ( BrickEvent(VtyEvent, MouseDown),
       EventM,
       Size(..),
-      Widget(..), 
+      Widget(..),
       ViewportType (Vertical),
       (<=>))
 import qualified Brick
@@ -68,8 +68,8 @@ makeLensesFor [("sectionListFocusRing", "sectionListFocusRingL"), ("sectionListE
 type SectionList n e = GenericSectionList n V.Vector e
 
 
--- | Build a SectionList from nonempty list. If empty we could not defined sectionL lenses. 
-sectionList :: Foldable t 
+-- | Build a SectionList from nonempty list. If empty we could not defined sectionL lenses.
+sectionList :: Foldable t
             => n                     -- The name of the section list
             -> [(n, t e)]            -- a list of tuples (section name, collection of elements)
             -> Int
@@ -81,14 +81,14 @@ sectionList name elements height
   , sectionListName = name
   }
 -- | This lens constructor, takes a name and looks if a section has such a name.
---   Used to dispatch events to sections. It is a partial function only meant to 
+--   Used to dispatch events to sections. It is a partial function only meant to
 --   be used with the FocusRing inside GenericSectionList
 sectionL :: Eq n => n -> Lens' (GenericSectionList n t e) (L.GenericList n t e)
 sectionL section_name = lens g s
     where is_section_name = (== section_name) . L.listName
           g section_list =
             let elms   = section_list ^. sectionListElementsL
-                zeroth = elms V.! 0 -- TODO: This crashes for empty vectors. 
+                zeroth = elms V.! 0 -- TODO: This crashes for empty vectors.
             in fromMaybe zeroth (V.find is_section_name elms)
           s gl@(GenericSectionList _ elms _) list =
             case V.findIndex is_section_name elms of
@@ -97,16 +97,16 @@ sectionL section_name = lens g s
                              in gl & sectionListElementsL .~ new_elms
 
 moveDown :: (L.Splittable t, Ord n, Foldable t) => EventM n (GenericSectionList n t e) ()
-moveDown = do 
+moveDown = do
     ring <- use sectionListFocusRingL
-    case F.focusGetCurrent ring of 
+    case F.focusGetCurrent ring of
         Nothing -> pure ()
         Just l  -> do      -- If it is the last element, move to the first element of the next focus; else, just handle regular list event.
             current_list <- use (sectionL l)
             let current_idx = L.listSelected current_list
                 list_length = current_list & length
             if current_idx == Just (list_length - 1)
-                then do 
+                then do
                     new_focus <- sectionListFocusRingL <%= F.focusNext
                     case F.focusGetCurrent new_focus of
                         Nothing -> pure () -- |- Optic.Zoom.zoom doesn't typecheck but Lens.Micro.Mtl.zoom does. It is re-exported by Brick
@@ -122,10 +122,10 @@ moveUp = do
             current_list <- use (sectionL l)
             let current_idx = L.listSelected current_list
             if current_idx == Just 0
-                then do 
+                then do
                     new_focus <- sectionListFocusRingL <%= F.focusPrev
                     case F.focusGetCurrent new_focus of
-                        Nothing -> pure ()  
+                        Nothing -> pure ()
                         Just new_l -> Common.zoom (sectionL new_l) (Brick.modify L.listMoveToEnd)
                 else Common.zoom (sectionL l) $ Brick.modify L.listMoveUp
 
@@ -188,6 +188,6 @@ renderSectionList renderElem sectionFocus ge@(GenericSectionList focus elms slNa
 -- | Equivalent to listSelectedElement
 sectionListSelectedElement :: (Eq n, L.Splittable t, Traversable t, Semigroup (t e)) => GenericSectionList n t e -> Maybe (Int, e)
 sectionListSelectedElement generic_section_list = do
-  current_focus <- generic_section_list ^. sectionListFocusRingL & F.focusGetCurrent 
+  current_focus <- generic_section_list ^. sectionListFocusRingL & F.focusGetCurrent
   let current_section = generic_section_list ^. sectionL current_focus
-  L.listSelectedElement current_section 
+  L.listSelectedElement current_section

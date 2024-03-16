@@ -50,14 +50,14 @@ create lr exit_key = Menu.createMenu Common.ContextBox lr exit_key buttons []
       _ -> [advInstallButton]
 
 draw :: ContextMenu -> Widget Name
-draw menu = 
+draw menu =
   Common.frontwardLayer
     ("Context Menu for " <> tool_str <> " " <> prettyVer (lVer $ menu ^. Menu.menuStateL))
     $ Brick.vBox
         [ Brick.vBox buttonWidgets
         , Brick.txt " "
-        , Brick.padRight Brick.Max $ 
-            Brick.txt "Press " 
+        , Brick.padRight Brick.Max $
+            Brick.txt "Press "
             <+> Common.keyToWidget (menu ^. Menu.menuExitKeyL)
             <+> Brick.txt " to go back"
         ]

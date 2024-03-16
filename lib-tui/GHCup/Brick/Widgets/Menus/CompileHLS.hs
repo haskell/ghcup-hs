@@ -112,7 +112,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
 
     overWriteVersionParser :: T.Text -> Either Menu.ErrorMessage (Maybe [VersionPattern])
     overWriteVersionParser = bimap T.pack Just . OptParse.overWriteVersionParser . T.unpack
-    
+
     jobsV :: T.Text -> Either Menu.ErrorMessage (Maybe Int)
     jobsV =
       let parseInt = bimap (const "Invalid value. Must be an integer") Just . readEither @Int . T.unpack

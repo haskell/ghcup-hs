@@ -51,14 +51,14 @@ brickMain s = do
     Right ad -> do
       let initial_list = Actions.constructList ad Common.defaultAppSettings Nothing
           current_element = Navigation.sectionListSelectedElement initial_list
-          exit_key = bQuit . keyBindings $ s 
+          exit_key = bQuit . keyBindings $ s
       case current_element of
         Nothing -> do
-          flip runReaderT s $ logError "Error building app state: empty ResultList" 
+          flip runReaderT s $ logError "Error building app state: empty ResultList"
           exitWith $ ExitFailure 2
         Just (_, e) ->
-          let initapp = 
-                BrickApp.app 
+          let initapp =
+                BrickApp.app
                   (Attributes.defaultAttributes $ noColor $ settings s)
                   (Attributes.dimAttributes $ noColor $ settings s)
               initstate =
@@ -71,7 +71,7 @@ brickMain s = do
                       (CompileHLS.create exit_key)
                       (keyBindings s)
                       Common.Navigation
-          in Brick.defaultMain initapp initstate 
+          in Brick.defaultMain initapp initstate
           $> ()
     Left e -> do
       flip runReaderT s $ logError $ "Error building app state: " <> T.pack (show e)

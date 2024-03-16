@@ -14,15 +14,15 @@
 {-# LANGUAGE InstanceSigs #-}
 
 {-
-This module contains the BrickState. One could be tempted to include this data structure in GHCup.Brick.Common, 
+This module contains the BrickState. One could be tempted to include this data structure in GHCup.Brick.Common,
 but it is better to make a separated module in order to avoid cyclic dependencies.
 
-This happens because the BrickState is sort of a container for all widgets, 
+This happens because the BrickState is sort of a container for all widgets,
 but widgets depends on common functionality, hence:
 
-             BrickState `depends on` Widgets.XYZ `depends on` Common 
+             BrickState `depends on` Widgets.XYZ `depends on` Common
 
-The linear relation above breaks if BrickState is defined in Common. 
+The linear relation above breaks if BrickState is defined in Common.
 
 -}
 

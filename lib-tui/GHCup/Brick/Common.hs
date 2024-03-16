@@ -121,7 +121,7 @@ pattern UpdateCabalCheckBox  :: ResourceId
 pattern UpdateCabalCheckBox  = ResourceId 18
 
 
--- | Name data type. Uniquely identifies each widget in the TUI. 
+-- | Name data type. Uniquely identifies each widget in the TUI.
 -- some constructors might end up unused, but still is a good practise
 -- to have all of them defined, just in case
 data Name = AllTools                   -- ^ The main list widget
@@ -129,8 +129,8 @@ data Name = AllTools                   -- ^ The main list widget
           | KeyInfoBox                 -- ^ The text box widget with action informacion
           | TutorialBox                -- ^ The tutorial widget
           | ContextBox                 -- ^ The resource for Context Menu
-          | CompileGHCBox              -- ^ The resource for CompileGHC Menu 
-          | AdvanceInstallBox          -- ^ The resource for AdvanceInstall Menu 
+          | CompileGHCBox              -- ^ The resource for CompileGHC Menu
+          | AdvanceInstallBox          -- ^ The resource for AdvanceInstall Menu
           | MenuElement ResourceId     -- ^ Each element in a Menu. Resources must not be share for visible
                                        --   Menus, but MenuA and MenuB can share resources if they both are
                                        --   invisible, or just one of them is visible.
@@ -142,7 +142,7 @@ data Mode = Navigation
           | KeyInfo
           | Tutorial
           | ContextPanel
-          | AdvanceInstallPanel 
+          | AdvanceInstallPanel
           | CompileGHCPanel
           | CompileHLSPanel
           deriving (Eq, Show, Ord)
@@ -195,7 +195,7 @@ frontwardLayer layer_name =
       . Brick.withBorderStyle Border.unicode
       . Border.borderWithLabel (Brick.txt layer_name)
 
--- I refuse to give this a type signature. 
+-- I refuse to give this a type signature.
 
 -- | Given a lens, zoom on it. It is needed because Brick uses microlens but GHCup uses optics.
 zoom l = Brick.zoom (toLensVL l)

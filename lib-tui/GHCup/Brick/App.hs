@@ -79,12 +79,12 @@ app attrs dimAttrs =
 
 drawUI :: AttrMap -> BrickState -> [Widget Name]
 drawUI dimAttrs st =
-  let 
+  let
     footer = Brick.withAttr Attributes.helpAttr
       . Brick.txtWrap
       . T.pack
       . foldr1 (\x y -> x <> "  " <> y)
-      . fmap (\(KeyCombination key mods, pretty_setting, _) 
+      . fmap (\(KeyCombination key mods, pretty_setting, _)
                   -> intercalate "+" (Common.showKey key : (Common.showMod <$> mods)) <> ":" <> pretty_setting (st ^. appSettings)
              )
       $ Actions.keyHandlers (st ^. appKeys)
@@ -98,7 +98,7 @@ drawUI dimAttrs st =
        CompileGHCPanel     -> [CompileGHC.draw (st ^. compileGHCMenu), navg]
        CompileHLSPanel     -> [CompileHLS.draw (st ^. compileHLSMenu), navg]
 
--- | On q, go back to navigation. 
+-- | On q, go back to navigation.
 --   On Enter, to go to tutorial
 keyInfoHandler :: BrickEvent Name e -> EventM Name BrickState ()
 keyInfoHandler ev = case ev of
@@ -113,7 +113,7 @@ tutorialHandler ev =
     VtyEvent (Vty.EvKey (Vty.KChar 'q') _ ) -> mode .= Navigation
     _ -> pure ()
 
--- | Tab/Arrows to navigate. 
+-- | Tab/Arrows to navigate.
 navigationHandler :: BrickEvent Name e -> EventM Name BrickState ()
 navigationHandler ev = do
   AppState { keyBindings = kb } <- liftIO $ readIORef Actions.settings'
@@ -126,25 +126,25 @@ navigationHandler ev = do
 
 contextMenuHandler :: BrickEvent Name e -> EventM Name BrickState ()
 contextMenuHandler ev = do
-  ctx <- use contextMenu 
+  ctx <- use contextMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
       buttons = ctx ^. Menu.menuButtonsL
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n) 
-      |  k == exitKey 
-          && m == mods 
+    (VtyEvent (Vty.EvKey k m), Just n)
+      |  k == exitKey
+          && m == mods
           && n `elem` [Menu.fieldName button | button <- buttons]
       -> mode .= Navigation
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.AdvanceInstallButton) ) -> mode .= Common.AdvanceInstallPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompileGHCButton) ) -> mode .= Common.CompileGHCPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompileHLSButton) ) -> mode .= Common.CompileHLSPanel
     _ -> Common.zoom contextMenu $ ContextMenu.handler ev
--- 
+--
 advanceInstallHandler :: BrickEvent Name e -> EventM Name BrickState ()
 advanceInstallHandler ev = do
-  ctx <- use advanceInstallMenu 
+  ctx <- use advanceInstallMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
       buttons = ctx ^. Menu.menuButtonsL
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
@@ -162,7 +162,7 @@ advanceInstallHandler ev = do
 
 compileGHCHandler :: BrickEvent Name e -> EventM Name BrickState ()
 compileGHCHandler ev = do
-  ctx <- use compileGHCMenu 
+  ctx <- use compileGHCMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
       buttons = ctx ^. Menu.menuButtonsL
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
@@ -175,14 +175,14 @@ compileGHCHandler ev = do
       -> mode .= ContextPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
         let iopts = ctx ^. Menu.menuStateL
-        when (Menu.isValidMenu ctx) 
+        when (Menu.isValidMenu ctx)
           (Actions.withIOAction $ Actions.compileGHC iopts)
     _ -> Common.zoom compileGHCMenu $ CompileGHC.handler ev
 
 
 compileHLSHandler :: BrickEvent Name e -> EventM Name BrickState ()
 compileHLSHandler ev = do
-  ctx <- use compileHLSMenu 
+  ctx <- use compileHLSMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
       buttons = ctx ^. Menu.menuButtonsL
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
