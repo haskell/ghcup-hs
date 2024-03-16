@@ -12,7 +12,7 @@ for ghc_ver in "$@" ; do
 	cp cabal.project "${project_file}"
 	case "$(uname -s)" in
         MSYS*|MINGW*)
-			cabal freeze --project-file="${project_file}" -w "ghc-${ghc_ver}"
+			cabal freeze --project-file="${project_file}" -w "ghc-${ghc_ver}" -ftui
 			;;
 		*)
 			cabal freeze --project-file="${project_file}" -w "ghc-${ghc_ver}" -ftui -finternal-downloader
@@ -25,3 +25,4 @@ for ghc_ver in "$@" ; do
 
 	sed -i -e '/ghcup/d' "${project_file}".freeze
 done
+
