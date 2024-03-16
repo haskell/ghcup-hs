@@ -34,9 +34,9 @@ An input (type FieldInput) consist in
   b) a validator function
   c) a handler and a renderer
 
-We have to use existential types to achive a composable API since every FieldInput has a different 
-internal type, and every MenuField has a different Lens. For example: 
-  - The menu state is a record (MyRecord {uri: URI, flag : Bool}) 
+We have to use existential types to achive a composable API since every FieldInput has a different
+internal type, and every MenuField has a different Lens. For example:
+  - The menu state is a record (MyRecord {uri: URI, flag : Bool})
   - Then, there are two MenuField:
     - One MenuField has (Lens' MyRecord URI) and the other has (Lens' MyRecord Bool)
     - The MenuFields has FieldInputs with internal state Text and Bool, respectively
@@ -113,7 +113,7 @@ data FieldInput a b n =
                   -> HelpMessage
                   -> b
                   -> (Widget n -> Widget n)
-                  -> Widget n                             -- ^ How to draw the input, with focus a help message and input. 
+                  -> Widget n                             -- ^ How to draw the input, with focus a help message and input.
                                                           --   A extension function can be applied too
     , inputHandler :: BrickEvent n () -> EventM n b ()    -- ^ The handler
     }
@@ -138,7 +138,7 @@ data MenuField s n where
       } -> MenuField s n
 
 isValidField :: MenuField s n -> Bool
-isValidField = (== Valid) . fieldStatus 
+isValidField = (== Valid) . fieldStatus
 
 makeLensesFor
   [ ("fieldLabel", "fieldLabelL")
@@ -181,7 +181,7 @@ createCheckBoxInput = FieldInput False Right "" checkBoxRender checkBoxHandler
           else border . Brick.withAttr Attributes.notInstalledAttr $ Brick.str Common.notInstalledSign
     checkBoxRender focus _ help check f =
       let core = f $ drawBool check
-      in if focus 
+      in if focus
         then core
         else core <+> (Brick.padLeft (Brick.Pad 1) . centerV . renderAsHelpMsg $ help)
     checkBoxHandler = \case
@@ -201,14 +201,14 @@ createEditableInput :: (Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a)
 createEditableInput name validator = FieldInput initEdit validateEditContent "" drawEdit Edit.handleEditorEvent
   where
     drawEdit focus errMsg help edi amp =
-      let 
+      let
         borderBox = amp . Border.border . Brick.padRight Brick.Max
         editorRender = Edit.renderEditor (Brick.txt . T.unlines) focus edi
         isEditorEmpty = Edit.getEditContents edi == [mempty]
       in case errMsg of
            Valid | isEditorEmpty -> borderBox $ renderAsHelpMsg help
                  | otherwise -> borderBox editorRender
-           Invalid msg 
+           Invalid msg
              | focus && isEditorEmpty -> borderBox $ renderAsHelpMsg help
              | focus     -> borderBox editorRender
              | otherwise -> borderBox $ renderAsErrMsg msg
@@ -228,7 +228,7 @@ type Button = MenuField
 
 createButtonInput :: FieldInput () () n
 createButtonInput = FieldInput () Right "" drawButton (const $ pure ())
-  where 
+  where
     drawButton True (Invalid err) _    _ amp = amp . centerV . renderAsErrMsg $ err
     drawButton _    _             help _ amp = amp . centerV . renderAsHelpMsg $ help
 
@@ -250,14 +250,14 @@ renderAslabel t focus =
     then highlighted $ Brick.txt t
     else Brick.txt t
 
--- | Creates a left align column. 
+-- | Creates a left align column.
 -- Example:       |- col2 is align dispite the length of col1
 --   row1_col1         row1_col2
 --   row2_col1_large   row2_col2
 leftify :: Int -> Brick.Widget n -> Brick.Widget n
 leftify i = Brick.hLimit i . Brick.padRight Brick.Max
 
--- | center a line in three rows. 
+-- | center a line in three rows.
 centerV :: Widget n -> Widget n
 centerV = Brick.padTopBottom 1
 
@@ -273,8 +273,8 @@ renderAsErrMsg = Brick.withAttr Attributes.errMsgAttr . Brick.txt
   Menu widget
 ***************** -}
 
--- | A menu is a list of Fields and a state. Informally we can think about s in terms of the record type returned by 
--- a form. 
+-- | A menu is a list of Fields and a state. Informally we can think about s in terms of the record type returned by
+-- a form.
 data Menu s n
     = Menu
     { menuFields    :: [MenuField s n]   -- ^ The datatype representing the list of entries. Precisely, any array-like data type is highly unconvinient.
@@ -311,7 +311,7 @@ handlerMenu ev =
       fields  <- use menuFieldsL
       case focused of
         Nothing -> pure ()
-        Just n  -> do 
+        Just n  -> do
           updated_fields <- updateFields n (VtyEvent e) fields
           if all isValidField updated_fields
             then menuButtonsL %= fmap (fieldStatusL .~ Valid)
@@ -333,7 +333,7 @@ handlerMenu ev =
 
 
 drawMenu :: (Eq n, Ord n, Show n, Brick.Named (MenuField s n) n) => Menu s n -> Widget n
-drawMenu menu = 
+drawMenu menu =
   Brick.vBox
       [ Brick.vBox buttonWidgets
       , Common.separator
@@ -341,8 +341,8 @@ drawMenu menu =
           $ Brick.viewport (menu ^. menuNameL) Brick.Vertical
           $ Brick.vBox fieldWidgets
       , Brick.txt " "
-      , Brick.padRight Brick.Max $ 
-          Brick.txt "Press " 
+      , Brick.padRight Brick.Max $
+          Brick.txt "Press "
           <+> Common.keyToWidget (menu ^. menuExitKeyL)
           <+> Brick.txt " to go back"
       ]
@@ -353,7 +353,7 @@ drawMenu menu =
 
     maxWidth = foldl' max 5 (fmap Brick.textWidth allLabels)
 
-    -- A list of functions which draw a highlighted label with right padding at the left of a widget. 
+    -- A list of functions which draw a highlighted label with right padding at the left of a widget.
     amplifiers =
       let labelsWidgets = fmap renderAslabel fieldLabels
        in fmap (\f b -> ((centerV . leftify (maxWidth + 10) $ f b) <+>) ) labelsWidgets

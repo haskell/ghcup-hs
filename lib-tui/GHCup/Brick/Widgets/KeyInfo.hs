@@ -9,7 +9,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 {-
-A very simple information-only widget with no handler. 
+A very simple information-only widget with no handler.
 -}
 
 module GHCup.Brick.Widgets.KeyInfo where
@@ -20,7 +20,7 @@ import qualified GHCup.Brick.Common as Common
 
 import Brick
     ( Padding(Max),
-      Widget(..), 
+      Widget(..),
       (<+>),
       (<=>))
 import qualified Brick

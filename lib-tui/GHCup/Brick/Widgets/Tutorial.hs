@@ -9,7 +9,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 {-
-A very simple information-only widget with no handler. 
+A very simple information-only widget with no handler.
 -}
 
 module GHCup.Brick.Widgets.Tutorial (draw) where

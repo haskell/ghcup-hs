@@ -74,15 +74,15 @@ create k = Menu.createMenu AdvanceInstallBox initialState k [ok] fields
     initialState = InstallOptions Nothing False Nothing False []
     -- Brick's internal editor representation is [mempty].
     emptyEditor i = T.null i || (i == "\n")
-    
+
     uriValidator :: T.Text -> Either Menu.ErrorMessage (Maybe URI)
-    uriValidator i = 
+    uriValidator i =
       case not $ emptyEditor i of
         True  -> bimap (T.pack . show) Just . parseURI . UTF8.fromString . T.unpack $ i
         False -> Right Nothing
 
     filepathValidator :: T.Text -> Either Menu.ErrorMessage (Maybe FilePath)
-    filepathValidator i = 
+    filepathValidator i =
       case not $ emptyEditor i of
         True  -> absolutePathParser (T.unpack i)
         False -> Right Nothing
@@ -95,7 +95,7 @@ create k = Menu.createMenu AdvanceInstallBox initialState k [ok] fields
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace
 
-    fields = 
+    fields =
       [ Menu.createEditableField (Common.MenuElement Common.UrlEditBox) uriValidator instBindistL
           & Menu.fieldLabelL .~ "url"
           & Menu.fieldHelpMsgL .~ "Install the specified version from this bindist"
@@ -112,7 +112,7 @@ create k = Menu.createMenu AdvanceInstallBox initialState k [ok] fields
           & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
           & Menu.fieldHelpMsgL .~ "Additional arguments to bindist configure, prefix with '-- ' (longopts)"
       ]
-    
+
     ok = Menu.createButtonField (Common.MenuElement Common.OkButton)
           & Menu.fieldLabelL .~ "Advance Install"
           & Menu.fieldHelpMsgL .~ "Install with options below"

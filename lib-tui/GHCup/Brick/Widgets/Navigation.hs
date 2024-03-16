@@ -54,7 +54,7 @@ type BrickInternalState = SectionList.SectionList Common.Name ListResult
 -- | How to create a navigation widget
 create :: Common.Name                         -- The name of the section list
        -> [(Common.Name, Vector ListResult)]  -- a list of tuples (section name, collection of elements)
-       -> Int                                 -- The height of each item in a list. Commonly 1 
+       -> Int                                 -- The height of each item in a list. Commonly 1
        -> BrickInternalState
 create = SectionList.sectionList
 

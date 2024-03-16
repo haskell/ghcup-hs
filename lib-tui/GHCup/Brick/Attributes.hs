@@ -46,10 +46,8 @@ defaultAttributes no_color = Brick.attrMap
   where
     withForeColor | no_color  = const
                   | otherwise = Vty.withForeColor
-
     withBackColor | no_color  = \attr _ -> attr `Vty.withStyle` Vty.reverseVideo
                   | otherwise = Vty.withBackColor
-
     withStyle                 = Vty.withStyle
 
 
