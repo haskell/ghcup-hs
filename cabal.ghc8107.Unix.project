@@ -1,0 +1,60 @@
+packages: ./ghcup.cabal
+
+optional-packages: ./vendored/*/*.cabal
+
+if impl(ghc < 9.0)
+    package ghcup
+        flags: +tui -tar
+else
+    package ghcup
+        flags: +tui +tar
+
+constraints: http-io-streams -brotli,
+             any.aeson >= 2.0.1.0,
+             any.hsc2hs ==0.68.8,
+             bzlib-conduit >= 0.3.0.3,
+             bz2 >= 1.0.1.1,
+             bzlib >= 0.5.2.0,
+             directory >= 1.3.8.3,
+             filepath == 1.4.101.0 || == 1.4.300.1 || >= 1.5.2.0
+
+if os(mingw32)
+  constraints: zlib +bundled-c-zlib,
+               lzma +static,
+               text -simdutf,
+               vty-windows >=0.2.0.2
+
+  if impl(ghc >= 9.4)
+    constraints: language-c >= 0.9.3
+
+
+source-repository-package
+  type: git
+  location: https://github.com/haskell/tar.git
+  tag: d94a988be4311b830149a9f8fc16739927e5fc1c
+
+source-repository-package
+  type: git
+  location: https://github.com/hasufell/uri-bytestring.git
+  tag: 4fb5ed14b500c192e6e7a97f6b2b1eb478806001
+
+package libarchive
+  flags: -system-libarchive
+
+package aeson-pretty
+  flags: +lib-only
+
+package cabal-plan
+  flags: -exe
+
+package aeson
+  flags: +ordered-keymap
+
+package streamly
+  flags: +use-unliftio
+
+package *
+  test-show-details: direct
+
+allow-newer: cabal-install-parsers:tar, streamly:Win32
+
