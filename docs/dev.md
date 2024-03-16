@@ -1,6 +1,26 @@
-# Development
+# Development and contribution
 
 All you wanted to know about GHCup development.
+
+## Building
+
+GHCup supports development via cabal and stack. E.g.:
+
+* build via stack: `stack build`
+* build via cabal (with whatever GHC version): `cabal build`
+* build via cabal reproducibly with a specific GHC version
+    - GHC 8.10.7: `cabal build --project-file=cabal.ghc8107.project`
+    - GHC 9.0.2: `cabal build --project-file=cabal.ghc902.project`
+    - and so on (check supported versions via `ls cabal.ghc+([0-9]).project`)
+* build the release binaries: `cabal build --project-file=cabal.project.release`
+
+## Contribution process and expectations
+
+* discuss your idea first before implementing anything
+* GHCup is a dictatorship, so the final decisions are made by the author
+* we don't manage contributors... you can work on anything you like
+* reviews focus on logic and design, not on style and formatting
+* remember that features, decisions and bugs are high impact, since GHCup is used in CIs, github workflows, etc.
 
 ## Module graph
 
@@ -61,7 +81,7 @@ Some light suggestions:
 3. use `where` a lot, so the main function body reads like prose
 4. documentation is part of the code
 
-## Common Tasks
+## Common tasks
 
 ### Adding a new GHC version
 
