@@ -1,0 +1,39 @@
+name: Test cabal.project files
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  build:
+    name: Build binary
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macOS-latest, macOS-11, windows-latest, ubuntu-latest]
+        ghc: ["8.10.7", "9.0.2", "9.2.8", "9.4.8"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Run build
+        run: |
+          env
+          ghcup --version
+          ghcup run -i --cabal latest -- cabal update
+          ghcup run -i --cabal latest --ghc ${GHC_VER} -- cabal build --project-file=cabal.ghc${GHC_VER//./}.project
+        env:
+          GHC_VER: ${{ matrix.ghc }}
+        shell: bash
+
