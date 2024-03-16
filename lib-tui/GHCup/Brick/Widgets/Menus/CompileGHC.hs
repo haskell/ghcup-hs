@@ -44,7 +44,7 @@ import           Prelude                 hiding ( appendFile )
 import           Optics.TH (makeLenses)
 import qualified GHCup.Brick.Common as Common
 import GHCup.Types
-    ( KeyCombination, BuildSystem(Hadrian), VersionPattern )
+    ( KeyCombination, BuildSystem(..), VersionPattern )
 import URI.ByteString (URI)
 import qualified Data.Text as T
 import qualified Data.ByteString.UTF8 as UTF8
@@ -152,7 +152,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
       where
         readSys i
           | T.toLower i == "hadrian" = Right $ Just Hadrian
-          | T.toLower i == "make"    = Right $ Just Hadrian
+          | T.toLower i == "make"    = Right $ Just Make
           | otherwise = Left "Not a valid Build System"
 
     fields =
@@ -181,11 +181,11 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
       , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer
           & Menu.fieldLabelL .~ "overwrite-version"
           & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
-      , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour
-          & Menu.fieldLabelL .~ "flavour"
-          & Menu.fieldHelpMsgL .~ "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
       , Menu.createEditableField (Common.MenuElement Common.BuildSystemEditBox) systemV buildSystem
           & Menu.fieldLabelL .~ "build system"
+          & Menu.fieldHelpMsgL .~ "either 'make' or 'hadrian'"
+      , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour
+          & Menu.fieldLabelL .~ "flavour"
           & Menu.fieldHelpMsgL .~ "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir
           & Menu.fieldLabelL .~ "isolated"

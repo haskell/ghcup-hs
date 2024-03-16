@@ -118,8 +118,8 @@ navigationHandler :: BrickEvent Name e -> EventM Name BrickState ()
 navigationHandler ev = do
   AppState { keyBindings = kb } <- liftIO $ readIORef Actions.settings'
   case ev of
-    inner_event@(VtyEvent (Vty.EvKey key _)) ->
-      case find (\(key', _, _) -> key' == KeyCombination key []) (Actions.keyHandlers kb) of
+    inner_event@(VtyEvent (Vty.EvKey key mods)) ->
+      case find (\(key', _, _) -> key' == KeyCombination key mods) (Actions.keyHandlers kb) of
         Just (_, _, handler) -> handler
         Nothing -> void $ Common.zoom appState $ Navigation.handler inner_event
     inner_event -> Common.zoom appState $ Navigation.handler inner_event
