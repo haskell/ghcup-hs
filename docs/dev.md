@@ -61,7 +61,17 @@ Some light suggestions:
 3. use `where` a lot, so the main function body reads like prose
 4. documentation is part of the code
 
-## Common Tasks
+## Contributing
+
+GHCup supports development via cabal and stack. E.g.:
+
+* build via stack: `stack build`
+* build via cabal (with whatever GHC version): `cabal build`
+* build via cabal reproducibly with a specific GHC version
+  - GHC 8.10.7: `cabal build --project-file=cabal.ghc8107.project`
+  - GHC 9.0.2: `cabal build --project-file=cabal.ghc902.project`
+  - and so on (check supported versions via `ls cabal.ghc+([0-9]).project`)
+* build the release binaries: `cabal build --project-file=cabal.project.release`
 
 ### Adding a new GHC version
 
