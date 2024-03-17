@@ -74,4 +74,4 @@ draw =
               ]
             , Brick.txt " "
             ])
-        <=> Brick.padRight Brick.Max (Brick.txt "Press q to exit the tutorial")
+        <=> Brick.padRight Brick.Max (Brick.txt "Press c+ctrl to exit the tutorial")

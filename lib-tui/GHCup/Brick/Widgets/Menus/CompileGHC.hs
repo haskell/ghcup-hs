@@ -103,7 +103,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
     bootstrapV i =
       case not $ emptyEditor i of
         True  ->
-          let readVersion = bimap (const "Not a valid version") Left (version (T.init i)) -- Brick adds \n at the end, hence T.init
+          let readVersion = bimap (const "Not a valid version") Left (version i)
               readPath = do
                 mfilepath <- filepathV i
                 case mfilepath of
@@ -115,7 +115,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
         False -> Left "Invalid Empty value"
 
     versionV :: T.Text -> Either Menu.ErrorMessage (Maybe [VersionPattern])
-    versionV = whenEmpty Nothing (bimap T.pack Just . OptParse.overWriteVersionParser . T.unpack . T.init)  -- Brick adds \n at the end, hence T.init
+    versionV = whenEmpty Nothing (bimap T.pack Just . OptParse.overWriteVersionParser . T.unpack)
 
     jobsV :: T.Text -> Either Menu.ErrorMessage (Maybe Int)
     jobsV =

@@ -17,7 +17,7 @@ module GHCup.BrickMain where
 
 import GHCup.Types
     ( Settings(noColor),
-      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings (..) )
+      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings (..), KeyCombination (KeyCombination) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Common as Common
@@ -29,6 +29,7 @@ import qualified GHCup.Brick.Widgets.SectionList as Navigation
 import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import qualified Brick
+import qualified Graphics.Vty as Vty
 
 import Control.Monad.Reader ( ReaderT(runReaderT) )
 import Data.Functor ( ($>) )
@@ -51,7 +52,7 @@ brickMain s = do
     Right ad -> do
       let initial_list = Actions.constructList ad Common.defaultAppSettings Nothing
           current_element = Navigation.sectionListSelectedElement initial_list
-          exit_key = bQuit . keyBindings $ s
+          exit_key = KeyCombination (Vty.KChar 'c') [Vty.MCtrl] -- bQuit . keyBindings $ s
       case current_element of
         Nothing -> do
           flip runReaderT s $ logError "Error building app state: empty ResultList"
@@ -66,7 +67,7 @@ brickMain s = do
                       Common.defaultAppSettings
                       initial_list
                       (ContextMenu.create e exit_key)
-                      (AdvanceInstall.create (bQuit . keyBindings $ s ))
+                      (AdvanceInstall.create exit_key)
                       (CompileGHC.create exit_key)
                       (CompileHLS.create exit_key)
                       (keyBindings s)
