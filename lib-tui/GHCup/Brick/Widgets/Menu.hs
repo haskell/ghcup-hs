@@ -212,7 +212,7 @@ createEditableInput name validator = FieldInput initEdit validateEditContent "" 
              | focus && isEditorEmpty -> borderBox $ renderAsHelpMsg help
              | focus     -> borderBox editorRender
              | otherwise -> borderBox $ renderAsErrMsg msg
-    validateEditContent = validator . T.unlines . Edit.getEditContents
+    validateEditContent = validator . T.init . T.unlines . Edit.getEditContents
     initEdit = Edit.editorText name (Just 1) ""
 
 createEditableField :: (Eq n, Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> Lens' s a  -> EditableField s n
@@ -319,6 +319,7 @@ handlerMenu ev =
           menuFieldsL .= updated_fields
     _ -> pure ()
  where
+  -- runs the Event with the inner handler of MenuField.
   updateFields :: n -> BrickEvent n () -> [MenuField s n] -> EventM n (Menu s n) [MenuField s n]
   updateFields n e [] = pure []
   updateFields n e (x@(MenuField {fieldInput = i@(FieldInput {..}) , ..}):xs) =

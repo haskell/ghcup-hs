@@ -702,14 +702,15 @@ keyHandlers KeyBindings {..} =
  where
   createMenuforTool = do
     e <- use (appState % to sectionListSelectedElement)
+    let exitKey = KeyCombination (Vty.KChar 'c') [Vty.MCtrl]
     case e of
       Nothing     -> pure ()
       Just (_, r) -> do
         -- Create new menus
-        contextMenu .= ContextMenu.create r bQuit
-        advanceInstallMenu .= AdvanceInstall.create bQuit
-        compileGHCMenu .= CompileGHC.create bQuit
-        compileHLSMenu .= CompileHLS.create bQuit
+        contextMenu .= ContextMenu.create r exitKey
+        advanceInstallMenu .= AdvanceInstall.create exitKey
+        compileGHCMenu .= CompileGHC.create exitKey
+        compileHLSMenu .= CompileHLS.create exitKey
         -- Set mode to context
         mode           .= ContextPanel
     pure ()

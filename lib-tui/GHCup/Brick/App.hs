@@ -102,7 +102,7 @@ drawUI dimAttrs st =
 --   On Enter, to go to tutorial
 keyInfoHandler :: BrickEvent Name e -> EventM Name BrickState ()
 keyInfoHandler ev = case ev of
-  VtyEvent (Vty.EvKey (Vty.KChar 'q') _ ) -> mode .= Navigation
+  VtyEvent (Vty.EvKey (Vty.KChar 'c') [Vty.MCtrl]) -> mode .= Navigation
   VtyEvent (Vty.EvKey Vty.KEnter _ )   -> mode .= Tutorial
   _ -> pure ()
 
@@ -110,7 +110,7 @@ keyInfoHandler ev = case ev of
 tutorialHandler :: BrickEvent Name e -> EventM Name BrickState ()
 tutorialHandler ev =
   case ev of
-    VtyEvent (Vty.EvKey (Vty.KChar 'q') _ ) -> mode .= Navigation
+    VtyEvent (Vty.EvKey (Vty.KChar 'c') [Vty.MCtrl]) -> mode .= Navigation
     _ -> pure ()
 
 -- | Tab/Arrows to navigate.
@@ -128,15 +128,10 @@ contextMenuHandler :: BrickEvent Name e -> EventM Name BrickState ()
 contextMenuHandler ev = do
   ctx <- use contextMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      buttons = ctx ^. Menu.menuButtonsL
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n)
-      |  k == exitKey
-          && m == mods
-          && n `elem` [Menu.fieldName button | button <- buttons]
-      -> mode .= Navigation
+    (VtyEvent (Vty.EvKey k m), Just n) |  k == exitKey && m == mods -> mode .= Navigation
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.AdvanceInstallButton) ) -> mode .= Common.AdvanceInstallPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompileGHCButton) ) -> mode .= Common.CompileGHCPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompileHLSButton) ) -> mode .= Common.CompileHLSPanel
@@ -146,15 +141,10 @@ advanceInstallHandler :: BrickEvent Name e -> EventM Name BrickState ()
 advanceInstallHandler ev = do
   ctx <- use advanceInstallMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      buttons = ctx ^. Menu.menuButtonsL
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n)
-        | k == exitKey
-            && m == mods
-            && n `elem` [Menu.fieldName button | button <- buttons]
-        -> mode .= ContextPanel
+    (VtyEvent (Vty.EvKey k m), Just n) | k == exitKey && m == mods -> mode .= ContextPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
         let iopts = ctx ^. Menu.menuStateL
         Actions.withIOAction $ Actions.installWithOptions iopts
@@ -164,15 +154,10 @@ compileGHCHandler :: BrickEvent Name e -> EventM Name BrickState ()
 compileGHCHandler ev = do
   ctx <- use compileGHCMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      buttons = ctx ^. Menu.menuButtonsL
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n)
-      | k == exitKey
-          && m == mods
-          && n `elem` [Menu.fieldName button | button <- buttons]
-      -> mode .= ContextPanel
+    (VtyEvent (Vty.EvKey k m), Just n) | k == exitKey && m == mods -> mode .= ContextPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
         let iopts = ctx ^. Menu.menuStateL
         when (Menu.isValidMenu ctx)
@@ -184,15 +169,10 @@ compileHLSHandler :: BrickEvent Name e -> EventM Name BrickState ()
 compileHLSHandler ev = do
   ctx <- use compileHLSMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      buttons = ctx ^. Menu.menuButtonsL
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n)
-      | k == exitKey
-          && m == mods
-          && n `elem` [Menu.fieldName button | button <- buttons]
-      -> mode .= ContextPanel
+    (VtyEvent (Vty.EvKey k m), Just n) | k == exitKey && m == mods -> mode .= ContextPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
         let iopts = ctx ^. Menu.menuStateL
         when (Menu.isValidMenu ctx)
