@@ -5075,6 +5075,10 @@ ghcupDownloads:
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.3.0.md
       viArch:
         A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &cabal-31030-64-unknown
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/cabal/3.10.3.0/cabal-install-3.10.3.0-x86_64-linux-unknown.tar.xz
+              dlHash: 4b7af602c532c944e908a342b303fbaf76e68b9a50d6258f6aa08a5c8d8239e1
           Linux_Debian:
             '< 10': &cabal-31030-64-deb9
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/cabal/3.10.3.0/cabal-install-3.10.3.0-x86_64-linux-deb9.tar.xz
@@ -5098,6 +5102,7 @@ ghcupDownloads:
               dlHash: c947e2f15c427caba8f875fbe2274d85a9d0cdc5e2933ddd0acb3976461e0270
             unknown_versioning: *cabal-31030-64-ubuntu18
           Linux_Mint:
+            '< 20': *cabal-31030-64-unknown
             '(>= 20 && < 21)': &cabal-31030-64-mint20
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/cabal/3.10.3.0/cabal-install-3.10.3.0-x86_64-linux-mint20.tar.xz
               dlHash: 008036dbfecb3b05aa2ef7f1912bf890b34d1ef0e7851b097707656242d8d2ad
@@ -5123,10 +5128,6 @@ ghcupDownloads:
             unknown_versioning: *cabal-31030-64-centos
           Linux_RedHat:
             unknown_versioning: *cabal-31030-64-centos
-          Linux_UnknownLinux:
-            unknown_versioning: &cabal-31030-64-unknown
-              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/cabal/3.10.3.0/cabal-install-3.10.3.0-x86_64-linux-unknown.tar.xz
-              dlHash: 4b7af602c532c944e908a342b303fbaf76e68b9a50d6258f6aa08a5c8d8239e1
           Linux_Alpine:
             '( >= 3.12 && < 3.19 )': &cabal-31030-64-alpine312
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/cabal/3.10.3.0/cabal-install-3.10.3.0-x86_64-linux-alpine312.tar.xz
