@@ -1626,7 +1626,8 @@ ghcupDownloads:
                 RegexDir: "stack-.*"
     2.15.0.1:
       viTags:
-        - LatestPrerelease
+        - Prerelease
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/rc/v2.15/ChangeLog.md#v21501-release-candidate---2024-01-27
       viArch:
         A_64:
@@ -1661,5 +1662,44 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.15.0.1/stack-2.15.0.1-osx-aarch64.tar.gz
               dlHash: 2c5fb2efcf646287aa91d3a1d6f8d08129734bc3e0c50d6756aba81b9309d7c1
+              dlSubdir:
+                RegexDir: "stack-.*"
+    2.15.4.1:
+      viTags:
+        - LatestPrerelease
+      viChangeLog: https://github.com/commercialhaskell/stack/blob/rc/v2.15/ChangeLog.md#v21541-release-candidate---2024-30-20
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &stack-21541-64
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.15.4.1/stack-2.15.4.1-linux-x86_64.tar.gz
+              dlHash: 4bb514147384329b16d7aa7ddf394336b18364456f86e6235ad620e6cba3e168
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.15.4.1/stack-2.15.4.1-osx-x86_64.tar.gz
+              dlHash: 49c442e5c51dc89fd47b6c914539822cb1bca67d968b6cc96d5b3d39d8fdfe66
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Windows:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.15.4.1/stack-2.15.4.1-windows-x86_64.tar.gz
+              dlHash: 3a1dafff2b91dacfc71803bb0c76d1e8d6a55ad3d5f14f4aa17e0de6b2207d2e
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Linux_Alpine:
+            unknown_versioning: *stack-21541-64
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.15.4.1/stack-2.15.4.1-linux-aarch64.tar.gz
+              dlHash: 72094efade888f63c2b0709886899ba76c2101941efeccd5dd770cb36c5a350f
+              dlSubdir:
+                RegexDir: "stack-.*"
+          Darwin:
+            unknown_versioning:
+              dlUri: https://github.com/commercialhaskell/stack/releases/download/rc/v2.15.4.1/stack-2.15.4.1-osx-aarch64.tar.gz
+              dlHash: 1361f068a3ccfec59a6290f94ebfe38d42dd368b8e6c937375d9e3ec3cbdbc1e
               dlSubdir:
                 RegexDir: "stack-.*"
