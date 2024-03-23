@@ -21,8 +21,8 @@ jobs:
     name: Build linux binary
     runs-on: [self-hosted, Linux, X64, maerwald]
     env:
-      CABAL_VER: 3.10.1.0
-      JSON_VERSION: "0.0.7"
+      CABAL_VER: 3.10.3.0
+      JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -61,13 +61,13 @@ jobs:
     needs: "build"
     runs-on: [self-hosted, Linux, X64]
     container:
-      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb10:8d0224e6b2a08157649651e69302380b2bd24e11
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb10:a9297a370025101b479cfd4977f8f910814e03ab
       options: --user root
       env:
-        CABAL_VER: 3.6.2.0
+        CABAL_VER: 3.10.3.0
         BUILD_CONF_ARGS: "--enable-unregisterised"
         HADRIAN_FLAVOUR: ""
-        JSON_VERSION: "0.0.7"
+        JSON_VERSION: "0.0.8"
         GHC_VER: 8.10.6
         GHC_TARGET_VERSION: "8.10.7"
         ARCH: 64
@@ -101,13 +101,13 @@ jobs:
     needs: "build"
     runs-on: [self-hosted, Linux, X64]
     container:
-      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb10:8d0224e6b2a08157649651e69302380b2bd24e11
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb10:a9297a370025101b479cfd4977f8f910814e03ab
       options: --user root
       env:
-        CABAL_VER: 3.6.2.0
+        CABAL_VER: 3.10.3.0
         BUILD_CONF_ARGS: ""
         HADRIAN_FLAVOUR: "default+native_bignum"
-        JSON_VERSION: "0.0.7"
+        JSON_VERSION: "0.0.8"
         GHC_VER: 9.6.2
         GHC_TARGET_VERSION: "9.6.2"
         ARCH: 64
