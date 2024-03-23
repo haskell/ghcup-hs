@@ -32,6 +32,7 @@ module GHCup.Brick.Common  (
   keyToWidget,
   separator,
   frontwardLayer,
+  enableScreenReader,
   zoom,
   defaultAppSettings,
   lr,
@@ -195,8 +196,12 @@ frontwardLayer layer_name =
       . Brick.withBorderStyle Border.unicode
       . Border.borderWithLabel (Brick.txt layer_name)
 
--- I refuse to give this a type signature.
+-- | puts a cursor at the line beginning so It can be read by screen readers
+enableScreenReader :: n -> Brick.Widget n -> Brick.Widget n
+enableScreenReader n = Brick.putCursor n (Brick.Location (0,0))
+--                     |- tip: when debugging, use Brick.showCursor instead
 
+-- I refuse to give this a type signature.
 -- | Given a lens, zoom on it. It is needed because Brick uses microlens but GHCup uses optics.
 zoom l = Brick.zoom (toLensVL l)
 

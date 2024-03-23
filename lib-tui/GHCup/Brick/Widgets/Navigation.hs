@@ -100,7 +100,8 @@ draw dimAttrs section_list
           | elem Latest lTag' && not lInstalled =
               Brick.withAttr Attributes.hoorayAttr
           | otherwise = id
-    in  hooray $ dim
+        active = if b then Common.enableScreenReader Common.AllTools else id
+    in  hooray $ active $ dim
           (   marks
           <+> Brick.padLeft (Pad 2)
                ( minHSize 6

@@ -157,7 +157,7 @@ drawField :: Formatter n -> Bool -> MenuField s n -> Widget n
 drawField amp focus (MenuField { fieldInput = FieldInput {..}, ..}) =
   let input = inputRender focus fieldStatus inputHelp inputState (amp focus)
     in if focus
-        then Brick.visible input
+        then Common.enableScreenReader fieldName $ Brick.visible input
         else input
 
 instance Brick.Named (MenuField s n) n where
