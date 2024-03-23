@@ -61,15 +61,15 @@ jobs:
     needs: "build"
     runs-on: [self-hosted, Linux, X64]
     container:
-      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb11:a9297a370025101b479cfd4977f8f910814e03ab
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:a9297a370025101b479cfd4977f8f910814e03ab
       options: --user root
       env:
         CABAL_VER: 3.10.3.0
         BUILD_CONF_ARGS: "--enable-unregisterised"
         HADRIAN_FLAVOUR: ""
         JSON_VERSION: "0.0.8"
-        GHC_VER: 8.10.6
-        GHC_TARGET_VERSION: "8.10.7"
+        GHC_VER: 9.6.2
+        GHC_TARGET_VERSION: "9.6.2"
         ARCH: 64
         DISTRO: Debian
         ARTIFACT: "x86_64-linux-ghcup"
@@ -101,7 +101,7 @@ jobs:
     needs: "build"
     runs-on: [self-hosted, Linux, X64]
     container:
-      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb11:a9297a370025101b479cfd4977f8f910814e03ab
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:a9297a370025101b479cfd4977f8f910814e03ab
       options: --user root
       env:
         CABAL_VER: 3.10.3.0
