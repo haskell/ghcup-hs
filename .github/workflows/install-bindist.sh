@@ -111,12 +111,21 @@ case $TOOL in
 		ghc --info
 		ghc -prof main.hs
 		[[ $(./main +RTS -s) -eq 2 ]]
-		ghcup_fun install cabal recommended
+		ghcup install cabal recommended
 		cabal --version
 		cabal update
-		cabal install --lib --package-env=. clock
-        # https://github.com/haskell/ghcup-hs/issues/966
-		cabal install --lib --package-env=. hashable
+		case "${CHANNEL}" in
+			Prerelease|prereleasee)
+				cabal install --lib --package-env=. --allow-newer clock
+				# https://github.com/haskell/ghcup-hs/issues/966
+				cabal install --lib --package-env=. --allow-newer --constraint='filepath <1.5' hashable
+				;;
+			*)
+				cabal install --lib --package-env=. clock
+				# https://github.com/haskell/ghcup-hs/issues/966
+				cabal install --lib --package-env=. hashable
+				;;
+		esac
 		case "$(uname -s)" in
 			MSYS_*|MINGW*)
 				;;
