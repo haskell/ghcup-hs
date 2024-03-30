@@ -7071,8 +7071,7 @@ ghcupDownloads:
               dlSubdir:
                 RegexDir: "stack-.*"
     2.13.1:
-      viTags:
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2131---2023-09-29
       viPostInstall: *stack-post
       viArch:
@@ -7209,6 +7208,7 @@ ghcupDownloads:
     2.15.5:
       viTags:
         - Latest
+        - Recommended
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2155---2024-03-28
       viPostInstall: *stack-post
       viArch:
