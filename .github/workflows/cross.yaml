@@ -94,6 +94,13 @@ jobs:
           sudo dpkg --add-architecture armhf
           sudo apt-get update -y
           sudo apt-get install -y libncurses-dev:armhf
+          # ld.bfd is broken on armv7: https://sourceware.org/bugzilla/show_bug.cgi?id=16177
+          update-alternatives --install "/usr/bin/x86_64-linux-gnu-ld" "ld" "/usr/bin/x86_64-linux-gnu-ld.gold" 20
+          update-alternatives --install "/usr/bin/x86_64-linux-gnu-ld" "ld" "/usr/bin/x86_64-linux-gnu-ld.bfd" 10
+          update-alternatives --set "ld" "/usr/bin/x86_64-linux-gnu-ld.gold"
+          update-alternatives --install "/usr/bin/arm-linux-gnueabihf-ld" "ld-arm" "/usr/bin/arm-linux-gnueabihf-ld.gold" 20
+          update-alternatives --install "/usr/bin/arm-linux-gnueabihf-ld" "ld-arm" "/usr/bin/arm-linux-gnueabihf-ld.bfd" 10
+          update-alternatives --set "ld-arm" "/usr/bin/arm-linux-gnueabihf-ld.gold"
           sh .github/scripts/cross.sh
 
   test-cross-js:
