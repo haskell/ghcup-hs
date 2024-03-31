@@ -126,6 +126,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
           S3_HOST: ${{ env.S3_HOST }}
+          LD: ld.gold
 
       - if: matrix.ARCH == 'ARM64'
         uses: docker://hasufell/arm64v8-debian-haskell:10
@@ -397,6 +398,7 @@ jobs:
           ARCH: ${{ matrix.ARCH }}
           GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: Ubuntu
+          LD: ld.gold
 
       - if: matrix.ARCH == 'ARM64'
         uses: docker://hasufell/arm64v8-debian-haskell:10
