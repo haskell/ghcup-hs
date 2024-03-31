@@ -68,8 +68,8 @@ jobs:
         BUILD_CONF_ARGS: "--enable-unregisterised"
         HADRIAN_FLAVOUR: ""
         JSON_VERSION: "0.0.8"
-        GHC_VER: 9.6.2
-        GHC_TARGET_VERSION: "9.6.2"
+        GHC_VER: 8.10.6
+        GHC_TARGET_VERSION: "8.10.7"
         ARCH: 64
         DISTRO: Debian
         ARTIFACT: "x86_64-linux-ghcup"
