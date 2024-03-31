@@ -439,44 +439,28 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
       liftE $ mergeGHCFileTree path inst tver forceInstall
   | otherwise = do
       PlatformRequest {..} <- lift getPlatformReq
+      Settings {..} <- lift getSettings
 
-      let ldOverride
-           | _tvVersion tver >= [vver|8.2.2|]
-           , _rPlatform `elem` [Linux Alpine, Darwin]
-           = ["--disable-ld-override"]
-           | otherwise
-           = []
+      addConfArgs' <- sanitizefGHCconfOptions (T.unpack <$> addConfArgs)
+      defGHCConfOptions' <- sanitizefGHCconfOptions defGHCConfOptions
 
       lift $ logInfo "Installing GHC (this may take a while)"
-      env <- case _rPlatform of
-               -- https://github.com/haskell/ghcup-hs/issues/967
-               Linux Alpine
-                 -- lets not touch LD for cross targets
-                 | Nothing <- _tvTarget tver -> do
-                     cEnv <- liftIO getEnvironment
-                     spaths <- liftIO getSearchPath
-                     has_ld_bfd <- isJust <$> liftIO (searchPath spaths "ld.bfd")
-                     let ldSet = isJust $ lookup "LD" cEnv
-                     -- only set LD if ld.bfd exists in PATH and LD is not set
-                     -- already
-                     if has_ld_bfd && not ldSet
-                     then do
-                       lift $ logInfo "Detected alpine linux... setting LD=ld.bfd"
-                       pure $ Just (("LD", "ld.bfd") : cEnv)
-                     else pure Nothing
-               _ -> pure Nothing
       lEM $ execLogged "sh"
                        ("./configure" : ("--prefix=" <> fromInstallDir inst)
-                        : (maybe mempty (\x -> ["--target=" <> T.unpack x]) (_tvTarget tver) <> ldOverride <> (T.unpack <$> addConfArgs))
+                        : (maybe mempty (\x -> ["--target=" <> T.unpack x]) (_tvTarget tver)
+                          <> ldOverride (_tvVersion tver)
+                          <> defGHCConfOptions'
+                          <> addConfArgs')
                        )
                        (Just $ fromGHCupPath path)
                        "ghc-configure"
-                       env
+                       Nothing
       tmpInstallDest <- lift withGHCupTmpDir
       lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "install"] (Just $ fromGHCupPath path)
       liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpInstallDest)
       liftE $ mergeGHCFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst)) inst tver forceInstall
       pure ()
+
 
 
 mergeGHCFileTree :: ( MonadReader env m
@@ -1313,6 +1297,8 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                 (_tvTarget tver)
       ++ ["--prefix=" <> ghcdir]
       ++ (if isWindows then ["--enable-tarballs-autodownload"] else [])
+      -- https://github.com/haskell/ghcup-hs/issues/1032
+      ++ ldOverride (_tvVersion tver)
       ++ fmap T.unpack aargs
       )
       (Just workdir)
@@ -1386,4 +1372,17 @@ postGHCInstall ver@GHCTargetVersion {..} = do
     $ getMajorMinorV _tvVersion
   forM_ v' $ \(mj, mi) -> lift (getGHCForPVP (PVP (fromIntegral mj :| [fromIntegral mi])) _tvTarget)
     >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY Nothing)
+
+
+ldOverride ::  Version -> [String]
+ldOverride ver
+  | ver >= [vver|8.2.2|]
+  = ["--disable-ld-override"]
+  | otherwise
+  = []
+
+sanitizefGHCconfOptions :: MonadFail m => [String] -> m [String]
+sanitizefGHCconfOptions args
+  | "--prefix" `elem` fmap (takeWhile (/= '=')) args = fail "Don't explicitly set --prefix ...aborting"
+  | otherwise = pure args
 

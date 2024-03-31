@@ -128,3 +128,12 @@ mirrors:
     authority:
       host: "mirror.sjtu.edu.cn"
 
+# Arguments to pass to the configure script of the prebuilt bindist.
+#
+# Do not pass '--prefix' here.
+#
+# GHCup by default passes '--disable-ld-override', so if you want to enable
+# the vanilla way, which aggressively favors 'ld.gold' linker, add the following:
+def-ghc-conf-options:
+  - "--enable-ld-override"
+

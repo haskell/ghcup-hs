@@ -379,24 +379,25 @@ data MetaMode = Strict
 instance NFData MetaMode
 
 data UserSettings = UserSettings
-  { uCache       :: Maybe Bool
-  , uMetaCache   :: Maybe Integer
-  , uMetaMode    :: Maybe MetaMode
-  , uNoVerify    :: Maybe Bool
-  , uVerbose     :: Maybe Bool
-  , uKeepDirs    :: Maybe KeepDirs
-  , uDownloader  :: Maybe Downloader
-  , uKeyBindings :: Maybe UserKeyBindings
-  , uUrlSource   :: Maybe URLSource
-  , uNoNetwork   :: Maybe Bool
-  , uGPGSetting  :: Maybe GPGSetting
-  , uPlatformOverride :: Maybe PlatformRequest
-  , uMirrors     :: Maybe DownloadMirrors
+  { uCache             :: Maybe Bool
+  , uMetaCache         :: Maybe Integer
+  , uMetaMode          :: Maybe MetaMode
+  , uNoVerify          :: Maybe Bool
+  , uVerbose           :: Maybe Bool
+  , uKeepDirs          :: Maybe KeepDirs
+  , uDownloader        :: Maybe Downloader
+  , uKeyBindings       :: Maybe UserKeyBindings
+  , uUrlSource         :: Maybe URLSource
+  , uNoNetwork         :: Maybe Bool
+  , uGPGSetting        :: Maybe GPGSetting
+  , uPlatformOverride  :: Maybe PlatformRequest
+  , uMirrors           :: Maybe DownloadMirrors
+  , uDefGHCConfOptions :: Maybe [String]
   }
   deriving (Show, GHC.Generic, Eq)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
@@ -414,6 +415,7 @@ fromSettings Settings{..} Nothing =
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
+    , uDefGHCConfOptions = Just defGHCConfOptions
   }
 fromSettings Settings{..} (Just KeyBindings{..}) =
   let ukb = UserKeyBindings
@@ -440,6 +442,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
+    , uDefGHCConfOptions = Just defGHCConfOptions
   }
 
 data UserKeyBindings = UserKeyBindings
@@ -512,19 +515,20 @@ instance NFData LeanAppState
 
 
 data Settings = Settings
-  { cache            :: Bool
-  , metaCache        :: Integer
-  , metaMode         :: MetaMode
-  , noVerify         :: Bool
-  , keepDirs         :: KeepDirs
-  , downloader       :: Downloader
-  , verbose          :: Bool
-  , urlSource        :: URLSource
-  , noNetwork        :: Bool
-  , gpgSetting       :: GPGSetting
-  , noColor          :: Bool -- this also exists in LoggerConfig
-  , platformOverride :: Maybe PlatformRequest
-  , mirrors          :: DownloadMirrors
+  { cache             :: Bool
+  , metaCache         :: Integer
+  , metaMode          :: MetaMode
+  , noVerify          :: Bool
+  , keepDirs          :: KeepDirs
+  , downloader        :: Downloader
+  , verbose           :: Bool
+  , urlSource         :: URLSource
+  , noNetwork         :: Bool
+  , gpgSetting        :: GPGSetting
+  , noColor           :: Bool -- this also exists in LoggerConfig
+  , platformOverride  :: Maybe PlatformRequest
+  , mirrors           :: DownloadMirrors
+  , defGHCConfOptions :: [String]
   }
   deriving (Show, GHC.Generic)
 
@@ -532,7 +536,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty)
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty) []
 
 instance NFData Settings
 
