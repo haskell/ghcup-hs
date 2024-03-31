@@ -89,11 +89,11 @@ jobs:
       - name: Run test (64 bit linux)
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
-          sudo apt-get install -y gcc-arm-linux-gnueabihf
+          sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip libstdc++-11-dev
+          sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
           sudo dpkg --add-architecture armhf
           sudo apt-get update -y
-          sudo apt-get install -y libncurses-dev:armhf
+          sudo apt-get install -y libncurses-dev:armhf libstdc++-11-dev:armhf
           # ld.bfd is broken on armv7: https://sourceware.org/bugzilla/show_bug.cgi?id=16177
           update-alternatives --install "/usr/bin/x86_64-linux-gnu-ld" "ld" "/usr/bin/x86_64-linux-gnu-ld.gold" 20
           update-alternatives --install "/usr/bin/x86_64-linux-gnu-ld" "ld" "/usr/bin/x86_64-linux-gnu-ld.bfd" 10
