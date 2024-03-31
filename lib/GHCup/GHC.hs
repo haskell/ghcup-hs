@@ -439,13 +439,18 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
       liftE $ mergeGHCFileTree path inst tver forceInstall
   | otherwise = do
       PlatformRequest {..} <- lift getPlatformReq
+      Settings {..} <- lift getSettings
+
+      addConfArgs' <- sanitizefGHCconfOptions (T.unpack <$> addConfArgs)
+      defGHCConfOptions' <- sanitizefGHCconfOptions defGHCConfOptions
 
       lift $ logInfo "Installing GHC (this may take a while)"
       lEM $ execLogged "sh"
                        ("./configure" : ("--prefix=" <> fromInstallDir inst)
                         : (maybe mempty (\x -> ["--target=" <> T.unpack x]) (_tvTarget tver)
                           <> ldOverride (_tvVersion tver)
-                          <> (T.unpack <$> addConfArgs))
+                          <> defGHCConfOptions'
+                          <> addConfArgs')
                        )
                        (Just $ fromGHCupPath path)
                        "ghc-configure"
@@ -1375,4 +1380,9 @@ ldOverride ver
   = ["--disable-ld-override"]
   | otherwise
   = []
+
+sanitizefGHCconfOptions :: MonadFail m => [String] -> m [String]
+sanitizefGHCconfOptions args
+  | "--prefix" `elem` fmap (takeWhile (/= '=')) args = fail "Don't explicitly set --prefix ...aborting"
+  | otherwise = pure args
 

@@ -360,6 +360,28 @@ mirrors:
 
 The configuration depends on the host of the mirror and they have to provide the correct configuration.
 
+## Linkers
+
+The GHC bindist configure script by default doesn't honour the system `ld` that is set, but instead
+probes for `ld.lld`, `ld.gold` and only then `ld` in order, see
+[find_ld.m4](https://gitlab.haskell.org/ghc/ghc/-/blob/master/m4/find_ld.m4?ref_type=heads).
+
+This is controlled by the configure switch `--enable-ld-override`/`--disable-ld-override`, which is enabled by default in GHC.
+GHCup however [has decided](https://github.com/haskell/ghcup-hs/issues/1032) **to disable this switch by default**,
+for reasons of stability and simplicity.
+
+That means, when `--disable-ld-override` is passed, the linker is picked simply by:
+
+* checking if `LD` env var is set, then use whatever is specified
+* otherwise use `ld` binary in PATH (system/distro default)
+
+You can restore the GHC vanilla default by adding this to your `~/.ghcup/config.yaml`:
+
+```yaml
+def-ghc-conf-options:
+  - "--enable-ld-override"
+```
+
 # More on installation
 
 ## Customisation of the installation scripts
