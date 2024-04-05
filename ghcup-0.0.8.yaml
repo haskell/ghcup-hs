@@ -3771,7 +3771,7 @@ ghcupDownloads:
               dlHash: 48d533c88ba2d852c50eaf98859a7779844512d05577f1ced17cc68cc63f4d03
               dlSubdir: ghc-9.6.1-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-deb10-linux.tar.xz
-            < 10:
+            < 10: &ghc-961-64-deb9
               dlHash: 3c727e93a82ff039fbedd6645518859849130a0fc93b7181cd69a41800aa639c
               dlSubdir: ghc-9.6.1-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-deb9-linux.tar.xz
@@ -3802,7 +3802,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-rocky8-linux.tar.xz
             unknown_versioning: *ghc-961-64-centos7
           Linux_Ubuntu:
-            ( >= 16 && < 19 ): *ghc-961-64-ubuntu1804
+            ( >= 16 && < 18 ): *ghc-961-64-deb9
+            ( >= 18 && < 19 ): *ghc-961-64-ubuntu1804
             unknown_versioning: *ghc-961-64-ubuntu2004
           Linux_UnknownLinux:
             unknown_versioning: *ghc-961-64-rocky8
@@ -3875,7 +3876,7 @@ ghcupDownloads:
               dlHash: 63d4bbcee19a343bcdb7bc7c6ca85b1f666a26c7a64fba9014d2160ec3d4ad20
               dlSubdir: ghc-9.6.2-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.2/ghc-9.6.2-x86_64-deb10-linux.tar.xz
-            < 10:
+            < 10: &ghc-962-64-deb9
               dlHash: c18946d886ee00710e44da9aeb07f2b025a686c76309fcf37c421f0f800d72ac
               dlSubdir: ghc-9.6.2-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.2/ghc-9.6.2-x86_64-deb9-linux.tar.xz
@@ -3902,7 +3903,8 @@ ghcupDownloads:
           Linux_RedHat:
             unknown_versioning: *ghc-962-64-centos7
           Linux_Ubuntu:
-            ( >= 16 && < 19 ): *ghc-962-64-ubuntu1804
+            ( >= 16 && < 18 ): *ghc-962-64-deb9
+            ( >= 18 && < 19 ): *ghc-962-64-ubuntu1804
             unknown_versioning: *ghc-962-64-ubuntu2004
           Linux_UnknownLinux:
             unknown_versioning:
@@ -3983,7 +3985,7 @@ ghcupDownloads:
               dlHash: 9ba0458c84efdbba69509c3c57497e22ad03743f816eb9c8b024abc13f7aacaa
               dlSubdir: ghc-9.6.3-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.3/ghc-9.6.3-x86_64-deb10-linux.tar.xz
-            < 10:
+            < 10: &ghc-963-64-deb9
               dlHash: ba11f4e91448a9d7243f07dde2a1bdf68288427ad454aa17854e56f59c5a5337
               dlSubdir: ghc-9.6.3-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.3/ghc-9.6.3-x86_64-deb9-linux.tar.xz
@@ -4010,7 +4012,8 @@ ghcupDownloads:
           Linux_RedHat:
             unknown_versioning: *ghc-963-64-centos7
           Linux_Ubuntu:
-            ( >= 16 && < 19 ): *ghc-963-64-ubuntu1804
+            ( >= 16 && < 18 ): *ghc-963-64-deb9
+            ( >= 18 && < 19 ): *ghc-963-64-ubuntu1804
             unknown_versioning: *ghc-963-64-ubuntu2004
           Linux_UnknownLinux:
             unknown_versioning:
@@ -4088,7 +4091,7 @@ ghcupDownloads:
               dlHash: 59885c43902110262cda168513dc6a9cc750e3e728dffb0cdb168e44929cb014
               dlSubdir: ghc-9.6.4-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.4/ghc-9.6.4-x86_64-deb10-linux.tar.xz
-            < 10:
+            < 10: &ghc-964-64-deb9
               dlHash: 972c1c7cbc276741ceb9e4efc58ad4727e163317d5dcbf350404b84470300271
               dlSubdir: ghc-9.6.4-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.4/ghc-9.6.4-x86_64-deb9-linux.tar.xz
@@ -4115,7 +4118,8 @@ ghcupDownloads:
           Linux_RedHat:
             unknown_versioning: *ghc-964-64-centos7
           Linux_Ubuntu:
-            ( >= 16 && < 19 ): *ghc-964-64-ubuntu1804
+            ( >= 16 && < 18 ): *ghc-964-64-deb9
+            ( >= 18 && < 19 ): *ghc-964-64-ubuntu1804
             unknown_versioning: *ghc-964-64-ubuntu2004
           Linux_Rocky:
             unknown_versioning: &ghc-964-64-rocky8
@@ -4201,7 +4205,7 @@ ghcupDownloads:
               dlOutput: ghc-9.8.1-x86_64-linux-deb10.tar.xz
               dlSubdir: ghc-9.8.1-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.8.1/ghc-9.8.1-x86_64-deb10-linux.tar.xz
-            < 10:
+            < 10: &ghc-981-64-deb9
               dlHash: 9bfd288e495488ac352de045cc8b3bab509070a5b818cc36b2dfe6097dd7c872
               dlOutput: ghc-9.8.1-x86_64-linux-deb9.tar.xz
               dlSubdir: ghc-9.8.1-x86_64-unknown-linux
@@ -4233,7 +4237,8 @@ ghcupDownloads:
           Linux_RedHat:
             unknown_versioning: *ghc981-x86_64-centos7
           Linux_Ubuntu:
-            ( >= 16 && < 19 ): *ghc981-x86_64-ubuntu18_04
+            ( >= 16 && < 18 ): *ghc-981-64-deb9
+            ( >= 18 && < 19 ): *ghc981-x86_64-ubuntu18_04
             unknown_versioning: *ghc981-x86_64-ubuntu20_04
           Linux_UnknownLinux:
             unknown_versioning:
@@ -4309,7 +4314,7 @@ ghcupDownloads:
               dlHash: 7449e1c8ef351ec326f36d9eba2885ba7b75d9900df35b2069c4d6fd151b09eb
               dlSubdir: ghc-9.8.2-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.8.2/ghc-9.8.2-x86_64-deb10-linux.tar.xz
-            < 10:
+            < 10: &ghc-982-64-deb9
               dlHash: 9ff735b0b9dcb0c48cc32d6df7826b6ee9b2fdf1f1e056f015bab9e79fc86c11
               dlSubdir: ghc-9.8.2-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.8.2/ghc-9.8.2-x86_64-deb9-linux.tar.xz
@@ -4336,7 +4341,8 @@ ghcupDownloads:
           Linux_RedHat:
             unknown_versioning: *ghc982-x86_64-centos7
           Linux_Ubuntu:
-            ( >= 16 && < 19 ): *ghc982-x86_64-ubuntu18_04
+            ( >= 16 && < 18 ): *ghc-982-64-deb9
+            ( >= 18 && < 19 ): *ghc982-x86_64-ubuntu18_04
             unknown_versioning: *ghc982-x86_64-ubuntu20_04
           Linux_UnknownLinux:
             unknown_versioning:
@@ -4722,7 +4728,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.1/cabal-install-3.6.2.1-x86_64-linux-deb11.tar.xz
               dlHash: 4b0040cee9c2a66d857c4e2ff592cfad8829bf634ca61726b1f3d9a153e2c31d
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &cabal-3621-64-ubuntu18
+            '( >= 16 && < 18 )': *cabal-3621-64-deb9
+            '( >= 18 && < 19 )': &cabal-3621-64-ubuntu18
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.1/cabal-install-3.6.2.1-x86_64-linux-ubuntu18.04.tar.xz
               dlHash: 14537deb62927e77735776609cad4453541c5e8435d7fc647387cc35378a65b9
             '( >= 20 && < 22 )': &cabal-3621-64-ubuntu20
@@ -4924,7 +4931,8 @@ ghcupDownloads:
               dlHash: 1e59dc1e1a1b33085a1789b8ddafb55026211454efe0b4e814c956ef86fe3ea5
             unknown_versioning: *cabal-31020-64-centos7
           Linux_Ubuntu:
-            '< 20': &cabal-31020-64-ubuntu18
+            '( >= 16 && < 18 )': *cabal-31020-64-debian
+            '( >= 18 && < 19 )': &cabal-31020-64-ubuntu18
               dlUri: https://downloads.haskell.org/cabal/cabal-install-3.10.2.0/cabal-install-3.10.2.0-x86_64-linux-ubuntu18_04.tar.xz
               dlHash: 7b0bb22c263ae0b43459de1995bf465560d412c12d47af011b2ac27b5d30c7aa
             '>= 20': &cabal-31020-64-ubuntu20
@@ -4998,7 +5006,8 @@ ghcupDownloads:
               dlHash: e0b1a349749632f8aeeab6a92a779d86e99715dcabdbd15289b7ed72e08c2a57
             unknown_versioning: *cabal-31021-64-deb9
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &cabal-31021-64-ubuntu18
+            '( >= 16 && < 18 )': *cabal-31021-64-deb9
+            '( >= 18 && < 19 )': &cabal-31021-64-ubuntu18
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.10.2.1/cabal-install-3.10.2.1-x86_64-linux-ubuntu18.04.tar.xz
               dlHash: 2a31fc80be11aaf57e94b7e5f45cc010acccaa090309792921210c4bf1debaf1
             '( >= 20 && < 22 )': &cabal-31021-64-ubuntu20
@@ -5107,7 +5116,8 @@ ghcupDownloads:
               dlHash: fa7e6e3a9aeb5e268faf90e1fc769936e730f2dc5217a5c79646b3bb3d5bfa3f
             unknown_versioning: *cabal-31030-64-deb9
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &cabal-31030-64-ubuntu18
+            '( >= 16 && < 18 )': *cabal-31030-64-deb9
+            '( >= 18 && < 19 )': &cabal-31030-64-ubuntu18
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/cabal/3.10.3.0/cabal-install-3.10.3.0-x86_64-linux-ubuntu18.04.tar.xz
               dlHash: 6f9c28518b07ffe7d304fb4b0e90322341b2815f3f85645d929a8b4deb22ba13
             '( >= 20 && < 22 )': &cabal-31030-64-ubuntu20
@@ -5629,7 +5639,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-ubuntu20.04.tar.xz
               dlSubdir: haskell-language-server-1.8.0.0
               dlHash: f431add1ca5881d04caef9d2cf834248d8b4c36c7884221e39152c1aecd1ce56
-            '( >= 16 && < 19 )': &hls-180-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-180-64-deb9
+            '( >= 18 && < 19 )': &hls-180-64-ubuntu18
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/1.8.0.0/haskell-language-server-1.8.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-1.8.0.0
               dlHash: 46e6c9309cfdf56746e659992ef1de9846b9abae9156bd96d51bc7e631074e2b
@@ -5698,7 +5709,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.9.0.0/haskell-language-server-1.9.0.0-x86_64-linux-ubuntu20.04.tar.xz
               dlSubdir: haskell-language-server-1.9.0.0
               dlHash: 6f83557bc11ba42dec56bd86e31002e2fb77159a6199c68e5ffeaf3f690a8530
-            '( >= 16 && < 19 )': &hls-190-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-190-64-deb9
+            '( >= 18 && < 19 )': &hls-190-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.9.0.0/haskell-language-server-1.9.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-1.9.0.0
               dlHash: edc1a02d2efa34ee48894c2e7309c8e8354954cfa7ae8c7bf45b25de98a03fb4
@@ -5765,7 +5777,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-1.9.1.0
               dlHash: 2f5aaf652dd826c3f71420d99e1b876ac7dc8009317410cbaf6f30883f11a708
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-191-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-191-64-deb9
+            '( >= 18 && < 19 )': &hls-191-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.9.1.0/haskell-language-server-1.9.1.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-1.9.1.0
               dlHash: a9cf2067fd2db3ea2982322fc57391cb375c86bdf5f5e78c5cad0eaa1f96fc7e
@@ -5856,7 +5869,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-1.10.0.0
               dlHash: 41cc2665933005c7821fb18bac8cfaeb28b1ac588e297199df63fcd34e8ce84d
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-1100-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-1100-64-deb9
+            '( >= 18 && < 19 )': &hls-1100-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-1.10.0.0/haskell-language-server-1.10.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-1.10.0.0
               dlHash: 189bc3d2c1493b5e1fbf49c176c92136ce1e91dd449fbf2ebc044a0292869f38
@@ -5950,7 +5964,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.0.0.0
               dlHash: 37d8337ad4804df586a381ede106e00673aabdcb10a70fcce2688d99eb1e377f
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2000-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-2000-64-deb9
+            '( >= 18 && < 19 )': &hls-2000-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-2.0.0.0/haskell-language-server-2.0.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.0.0.0
               dlHash: f3922765ca75753499443b870f411b3b36dc5e38e9bb20fce6c2e3b514cfa893
@@ -6044,7 +6059,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.0.0.1
               dlHash: 23bcec3019cebe7bf47ef84b4a9d118bb2b5b8584ae55e16b1d07e251125c4f7
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2001-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-2001-64-deb9
+            '( >= 18 && < 19 )': &hls-2001-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-2.0.0.1/haskell-language-server-2.0.0.1-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.0.0.1
               dlHash: bccccfee15649ab272bf02fd70395c3370cfa3a29eb9680cfbafae545d41e3ad
@@ -6138,7 +6154,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.1.0.0
               dlHash: 38574562c96fcefed6cc954c2ca1745c4b7ba46dbd3fe4c2673e79318bff59da
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2100-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-2100-64-deb9
+            '( >= 18 && < 19 )': &hls-2100-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-2.1.0.0/haskell-language-server-2.1.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.1.0.0
               dlHash: d3b59052c313826f3650e73cd3e4bba835092510df5ed62ef64c03db2a56cdce
@@ -6232,7 +6249,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.2.0.0
               dlHash: 099e55dfd89df6e53d793af416b5bbfd2e7c666a9e25798dc0e00c74f965743f
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2200-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-2200-64-deb9
+            '( >= 18 && < 19 )': &hls-2200-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-2.2.0.0/haskell-language-server-2.2.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.2.0.0
               dlHash: dc667e281ee1c8822ae42079aa231b5ab5c8f225979866c8f2ec18cddaa405a1
@@ -6326,7 +6344,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.3.0.0
               dlHash: f5e1738add49c408386b08a8c95c8e961a0b3bf7d5970dbd03f8e984c561b633
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2300-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-2300-64-deb9
+            '( >= 18 && < 19 )': &hls-2300-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-2.3.0.0/haskell-language-server-2.3.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.3.0.0
               dlHash: f04063a0d91863036bbc4dde8137f9e8a34c191e3f30458c2bbe688bafed09eb
@@ -6420,7 +6439,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.4.0.0
               dlHash: 9506fa48147f80edd3b1526d02ca99f242e84dd21619119b8d8e38872783296a
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2400-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-2400-64-deb9
+            '( >= 18 && < 19 )': &hls-2400-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-2.4.0.0/haskell-language-server-2.4.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.4.0.0
               dlHash: c2a369f3512e31ffad6791e91e75e96597137388c6bd6eb632f20bc862d4db00
@@ -6514,7 +6534,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.5.0.0
               dlHash: fe8e97dd6de79b6df1b0138ee2090d392b85cbf7df13d1efa8a3827091cfef48
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2500-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-2500-64-deb9
+            '( >= 18 && < 19 )': &hls-2500-64-ubuntu18
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-2.5.0.0/haskell-language-server-2.5.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.5.0.0
               dlHash: d43e4858ff798c147a7c12f5d92cf8ca1fa345e7da3f3c1f05acf7bd0f83ee26
@@ -6608,7 +6629,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.6.0.0
               dlHash: f2ea17feb2cbad67f6d0224e4c693edf253ba32550aa37f53d130e53d5b074f9
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2600-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-2600-64-deb9
+            '( >= 18 && < 19 )': &hls-2600-64-ubuntu18
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.6.0.0/haskell-language-server-2.6.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.6.0.0
               dlHash: ebe7d39a3c290e9dfffbbc8889600b5cc577fd94a20c08b42dfb530ac70b04d9
@@ -6714,7 +6736,8 @@ ghcupDownloads:
               dlHash: 58fd3e2e57986eb921de306a461647e5cdf4fc0b82087338c9e32f52d6f420aa
             unknown_versioning: *hls-2700-64-deb12
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2700-64-ubuntu18
+            '( >= 16 && < 18 )': *hls-2700-64-deb9
+            '( >= 18 && < 19 )': &hls-2700-64-ubuntu18
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.7.0.0/haskell-language-server-2.7.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.7.0.0
               dlHash: 9d9e4cbcc447c7dd6d8e4dd33f3c5decab580d67ca6cb5ccc3ea10452145eeeb
