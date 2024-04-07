@@ -150,7 +150,7 @@ executeOut' :: MonadIO m
             -> m CapturedProcess
 executeOut' path args chdir env' = do
   cp <- createProcessWithMingwPath ((proc path args){ cwd = chdir, env = env' })
-  (exit, out, err) <- liftIO $ readCreateProcessWithExitCodeBS cp ""
+  (exit, out, err) <- liftIO $ withRestorePath (env cp) $ readCreateProcessWithExitCodeBS cp ""
   pure $ CapturedProcess exit out err
 
 
@@ -166,20 +166,21 @@ execLogged :: ( MonadReader env m
            -> FilePath         -- ^ log filename (opened in append mode)
            -> Maybe [(String, String)] -- ^ optional environment
            -> m (Either ProcessError ())
-execLogged exe args chdir lfile env = do
+execLogged exe args chdir lfile env' = do
   Dirs {..} <- getDirs
   logDebug $ T.pack $ "Running " <> exe <> " with arguments " <> show args
   let stdoutLogfile = fromGHCupPath logsDir </> lfile <> ".stdout.log"
       stderrLogfile = fromGHCupPath logsDir </> lfile <> ".stderr.log"
   cp <- createProcessWithMingwPath ((proc exe args)
     { cwd = chdir
-    , env = env
+    , env = env'
     , std_in = CreatePipe
     , std_out = CreatePipe
     , std_err = CreatePipe
     })
   fmap (toProcessError exe args)
     $ liftIO
+    $ withRestorePath (env cp)
     $ withCreateProcess cp
     $ \_ mout merr ph ->
         case (mout, merr) of
@@ -213,16 +214,9 @@ exec :: MonadIO m
      -> Maybe FilePath   -- ^ optionally chdir into this
      -> Maybe [(String, String)] -- ^ optional environment
      -> m (Either ProcessError ())
-exec exe args chdir env = do
-  -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/375
-  forM_ (Map.fromList <$> env) $ \cEnv -> do
-    let paths = ["PATH", "Path"]
-        curPaths = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
-        newPath = intercalate [searchPathSeparator] curPaths
-    liftIO $ setEnv "PATH" ""
-    liftIO $ setEnv "Path" newPath
-  cp <- createProcessWithMingwPath ((proc exe args) { cwd = chdir, env = env })
-  exit_code <- liftIO $ withCreateProcess cp $ \_ _ _ p -> waitForProcess p
+exec exe args chdir env' = do
+  cp <- createProcessWithMingwPath ((proc exe args) { cwd = chdir, env = env' })
+  exit_code <- liftIO $ withRestorePath (env cp) $ withCreateProcess cp $ \_ _ _ p -> waitForProcess p
   pure $ toProcessError exe args exit_code
 
 -- | Like 'exec', except doesn't add msys2 stuff to PATH.
@@ -233,13 +227,6 @@ execNoMinGW :: MonadIO m
      -> Maybe [(String, String)] -- ^ optional environment
      -> m (Either ProcessError ())
 execNoMinGW exe args chdir env = do
-  -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/375
-  forM_ (Map.fromList <$> env) $ \cEnv -> do
-    let paths = ["PATH", "Path"]
-        curPaths = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
-        newPath = intercalate [searchPathSeparator] curPaths
-    liftIO $ setEnv "PATH" ""
-    liftIO $ setEnv "Path" newPath
   let cp = (proc exe args) { cwd = chdir, env = env }
   exit_code <- liftIO $ withCreateProcess cp $ \_ _ _ p -> waitForProcess p
   pure $ toProcessError exe args exit_code
@@ -270,7 +257,27 @@ createProcessWithMingwPath cp = do
       newPath = intercalate [searchPathSeparator] (mingWPaths ++ curPaths)
       envWithoutPath = foldr (\x y -> Map.delete x y) cEnv paths
       envWithNewPath = Map.insert "Path" newPath envWithoutPath
-  liftIO $ setEnv "Path" newPath
   pure $ cp { env = Just $ Map.toList envWithNewPath }
 
+
+withRestorePath :: MonadIO m => Maybe [(String, String)] -- ^ optional env we want to extract 'PATH' from
+                             -> m a                      -- ^ action to perform
+                             -> m a
+withRestorePath env action = do
+  -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/375
+  oldPATH <- liftIO $ lookupEnv "PATH"
+  oldPath <- liftIO $ lookupEnv "Path"
+
+  forM_ (Map.fromList <$> env) $ \cEnv -> do
+    let paths = ["PATH", "Path"]
+        curPaths = (\x -> maybe [] splitSearchPath (Map.lookup x cEnv)) =<< paths
+        newPath = intercalate [searchPathSeparator] curPaths
+    liftIO $ setEnv "PATH" ""
+    liftIO $ setEnv "Path" newPath
+    liftIO $ print newPath
+
+  r <- action
+  liftIO $ maybe (unsetEnv "PATH") (setEnv "PATH") oldPATH
+  liftIO $ maybe (unsetEnv "Path") (setEnv "Path") oldPath
+  pure r
 
