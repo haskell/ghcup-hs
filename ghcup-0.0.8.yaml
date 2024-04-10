@@ -43,6 +43,32 @@ toolRequirements:
           - libncurses6
           - libtinfo6
           notes: ''
+      Linux_Mint:
+        "( >= 20 && < 21 )":
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi7
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+        ">= 21": &linux-mint-req21
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi8
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+        unknown_versioning: *linux-mint-req21
       Linux_Ubuntu:
         "( >= 20.04 && < 20.10 )":
           distroPKGs:
@@ -68,7 +94,7 @@ toolRequirements:
           - libncurses5
           - libtinfo5
           notes: ''
-        ">= 23":
+        ">= 23": &linux-ubuntu-req23
           distroPKGs:
           - build-essential
           - curl
@@ -78,18 +104,32 @@ toolRequirements:
           - libgmp10
           - libncurses-dev
           notes: ''
-        unknown_versioning:
+        unknown_versioning: *linux-ubuntu-req23
+      Linux_Rocky:
+        '( >= 8 && < 9)':
           distroPKGs:
-          - build-essential
-          - curl
-          - libffi-dev
-          - libffi6
-          - libgmp-dev
-          - libgmp10
-          - libncurses-dev
-          - libncurses5
-          - libtinfo5
+          - gcc
+          - gcc-c++
+          - gmp
+          - gmp-devel
+          - make
+          - ncurses
+          - ncurses-compat-libs
+          - xz
+          - perl
           notes: ''
+        '>= 9': &linux-rocky-req9
+          distroPKGs:
+          - gcc
+          - gcc-c++
+          - gmp
+          - gmp-devel
+          - make
+          - ncurses
+          - xz
+          - perl
+          notes: ''
+        unknown_versioning: *linux-rocky-req9
       Linux_CentOS:
         '( >= 7 && < 8 )':
           distroPKGs:
@@ -144,6 +184,24 @@ toolRequirements:
           - tar
           - xz
           notes: ''
+      Linux_Void:
+        unknown_versioning:
+          distroPKGs:
+          - binutils
+          - curl
+          - gcc
+          - gmp-devel
+          - glibc-devel
+          - libffi-devel
+          - make
+          - ncurses-devel
+          - ncurses-libtinfo-libs
+          - perl
+          - tar
+          - xz
+          notes: |
+            These instructions are for glibc based Void. If you use musl flavor,
+            check out https://www.haskell.org/ghcup/install/#void-linux
       Linux_UnknownLinux:
         unknown_versioning:
           distroPKGs: []

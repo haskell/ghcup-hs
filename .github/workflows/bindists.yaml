@@ -90,6 +90,9 @@ jobs:
           - image: linuxmintd/mint21.3-amd64
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+          - image: ghcr.io/void-linux/void-glibc-full:latest
+            installCmd: xbps-install -Suy && xbps-install -y
+            toolRequirements: binutils curl gcc gmp-devel glibc-devel libffi-devel make ncurses-devel ncurses-libtinfo-libs perl tar xz
     container:
       image: ${{ matrix.image }}
     steps:
