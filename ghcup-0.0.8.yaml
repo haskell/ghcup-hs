@@ -199,9 +199,7 @@ toolRequirements:
           - perl
           - tar
           - xz
-          notes: |
-            These instructions are for glibc based Void. If you use musl flavor,
-            check out https://www.haskell.org/ghcup/install/#void-linux
+          notes: These instructions are for glibc based Void. If you use musl flavor, check out https://www.haskell.org/ghcup/install/#void-linux
       Linux_UnknownLinux:
         unknown_versioning:
           distroPKGs: []
