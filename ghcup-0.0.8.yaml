@@ -61,7 +61,7 @@ toolRequirements:
           - build-essential
           - curl
           - libffi-dev
-          - libffi8ubuntu1
+          - libffi8
           - libgmp-dev
           - libgmp10
           - libncurses-dev
@@ -73,7 +73,7 @@ toolRequirements:
           - build-essential
           - curl
           - libffi-dev
-          - libffi8ubuntu1
+          - libffi8
           - libgmp-dev
           - libgmp10
           - libncurses-dev
