@@ -5041,8 +5041,7 @@ ghcupDownloads:
             unknown_versioning: *cabal-31020-arm64
     3.10.2.1:
       viPostInstall: "cabal run is currently partially broken on Windows, please see https://github.com/haskell/cabal/issues/9334"
-      viTags:
-        - Recommended
+      viTags: []
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.2.0.md
       viArch:
         A_64:
@@ -5153,6 +5152,7 @@ ghcupDownloads:
     3.10.3.0:
       viTags:
         - Latest
+        - Recommended
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.3.0.md
       viArch:
         A_64:
