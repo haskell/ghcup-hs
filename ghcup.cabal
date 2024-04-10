@@ -357,7 +357,7 @@ library ghcup-tui
     -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
     -fwarn-incomplete-record-updates
 
-  build-depends:  
+  build-depends:
     , ghcup
     , ghcup-optparse
     , optics        ^>=0.4
@@ -376,7 +376,7 @@ library ghcup-tui
     cpp-options: -DIS_WINDOWS
 
   else
-    build-depends: unix ^>=2.7
+    build-depends:  unix ^>=2.7 || ^>=2.8
 
 executable ghcup
   import:             app-common-depends
