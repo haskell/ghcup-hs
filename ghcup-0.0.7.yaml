@@ -43,6 +43,32 @@ toolRequirements:
           - libncurses6
           - libtinfo6
           notes: ''
+      Linux_Mint:
+        "( >= 20 && < 21 )":
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi7
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+        ">= 21": &linux-mint-req21
+          distroPKGs:
+          - build-essential
+          - curl
+          - libffi-dev
+          - libffi8
+          - libgmp-dev
+          - libgmp10
+          - libncurses-dev
+          - libncurses5
+          - libtinfo5
+          notes: ''
+        unknown_versioning: *linux-mint-req21
       Linux_Ubuntu:
         "( >= 20.04 && < 20.10 )":
           distroPKGs:
@@ -68,7 +94,7 @@ toolRequirements:
           - libncurses5
           - libtinfo5
           notes: ''
-        ">= 23":
+        ">= 23": &linux-ubuntu-req23
           distroPKGs:
           - build-essential
           - curl
@@ -78,18 +104,7 @@ toolRequirements:
           - libgmp10
           - libncurses-dev
           notes: ''
-        unknown_versioning:
-          distroPKGs:
-          - build-essential
-          - curl
-          - libffi-dev
-          - libffi6
-          - libgmp-dev
-          - libgmp10
-          - libncurses-dev
-          - libncurses5
-          - libtinfo5
-          notes: ''
+        unknown_versioning: *linux-ubuntu-req23
       Linux_CentOS:
         '( >= 7 && < 8 )':
           distroPKGs:
