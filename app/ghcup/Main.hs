@@ -25,6 +25,7 @@ import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics      hiding ( toolRequirements )
 import           GHCup.Utils
+import           GHCup.Utils.Parsers (fromVersion)
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ

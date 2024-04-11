@@ -46,17 +46,13 @@ import qualified GHCup.Brick.Common as Common
 import GHCup.Types (KeyCombination, VersionPattern, ToolVersion)
 import URI.ByteString (URI)
 import qualified Data.Text as T
-import qualified Data.ByteString.UTF8 as UTF8
-import GHCup.Utils (parseURI)
 import Data.Bifunctor (Bifunctor(..))
 import Data.Function ((&))
 import Optics ((.~))
 import Data.Char (isSpace)
-import System.FilePath (isValid, isAbsolute, normalise)
 import Control.Applicative (Alternative((<|>)))
 import Text.Read (readEither)
-import GHCup.Prelude (stripNewlineEnd)
-import qualified GHCup.OptParse.Common as OptParse
+import qualified GHCup.Utils.Parsers as Utils
 
 data CompileHLSOptions = CompileHLSOptions
   { _jobs         :: Maybe Int
@@ -95,51 +91,42 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
     whenEmpty :: a -> (T.Text -> Either Menu.ErrorMessage a) -> T.Text -> Either Menu.ErrorMessage a
     whenEmpty emptyval f i = if not (emptyEditor i) then f i else Right emptyval
 
-    cabalProjectV :: T.Text -> Either Menu.ErrorMessage (Maybe (Either FilePath URI))
-    cabalProjectV i =
-      case not $ emptyEditor i of
-        True  ->
-          let readPath = Right . Left . stripNewlineEnd . T.unpack $ i
-           in bimap T.pack Just $ second Right (readUri i) <|> readPath
-        False -> Right Nothing
+    readUri :: T.Text -> Either Menu.ErrorMessage URI
+    readUri = first T.pack . Utils.uriParser . T.unpack
 
-    {- There is an unwanted dependency to ghcup-opt... Alternatives are
-    - copy-paste a bunch of code
-    - define a new common library
-    -}
+    cabalProjectV :: T.Text -> Either Menu.ErrorMessage (Maybe (Either FilePath URI))
+    cabalProjectV = whenEmpty Nothing parseFileOrUri
+      where
+        parseFileOrUri i =
+          let x = bimap T.unpack Right (readUri i)
+              y = Right . Left . T.unpack $ i
+           in bimap T.pack Just $ x <|> y
+
+    cabalProjectLocalV :: T.Text -> Either Menu.ErrorMessage (Maybe URI)
+    cabalProjectLocalV = whenEmpty Nothing (second Just . readUri)
+
     ghcVersionTagEither :: T.Text -> Either Menu.ErrorMessage [ToolVersion]
-    ghcVersionTagEither = first T.pack . traverse (OptParse.ghcVersionTagEither . T.unpack) . T.split isSpace
+    ghcVersionTagEither = whenEmpty [] $ first T.pack . traverse (Utils.ghcVersionTagEither . T.unpack) . T.split isSpace
 
     overWriteVersionParser :: T.Text -> Either Menu.ErrorMessage (Maybe [VersionPattern])
-    overWriteVersionParser = bimap T.pack Just . OptParse.overWriteVersionParser . T.unpack
+    overWriteVersionParser = whenEmpty Nothing $ bimap T.pack Just . Utils.overWriteVersionParser . T.unpack
 
     jobsV :: T.Text -> Either Menu.ErrorMessage (Maybe Int)
     jobsV =
       let parseInt = bimap (const "Invalid value. Must be an integer") Just . readEither @Int . T.unpack
        in whenEmpty Nothing parseInt
 
-    readUri :: T.Text -> Either String URI
-    readUri = first show . parseURI . UTF8.fromString . T.unpack
-
     patchesV :: T.Text -> Either Menu.ErrorMessage (Maybe (Either FilePath [URI]))
     patchesV = whenEmpty Nothing readPatches
       where
         readPatches j =
           let
-            x = (bimap T.unpack (fmap Left) $ filepathV j)
-            y = second (Just . Right) $ traverse readUri (T.split isSpace j)
+            x = second (Just . Left) $ Utils.absolutePathParser (T.unpack j)
+            y = second (Just . Right) $ traverse (Utils.uriParser . T.unpack) (T.split isSpace j)
           in first T.pack $ x <|> y
 
     filepathV :: T.Text -> Either Menu.ErrorMessage (Maybe FilePath)
-    filepathV i =
-      case not $ emptyEditor i of
-        True  -> absolutePathParser (T.unpack i)
-        False -> Right Nothing
-
-    absolutePathParser :: FilePath -> Either Menu.ErrorMessage (Maybe FilePath)
-    absolutePathParser f = case isValid f && isAbsolute f of
-                  True -> Right . Just . stripNewlineEnd . normalise $ f
-                  False -> Left "Please enter a valid absolute filepath."
+    filepathV = whenEmpty Nothing (bimap T.pack Just . Utils.isolateParser . T.unpack)
 
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace
@@ -148,7 +135,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
       [ Menu.createEditableField (Common.MenuElement Common.CabalProjectEditBox) cabalProjectV cabalProject
            & Menu.fieldLabelL .~ "cabal project"
            & Menu.fieldHelpMsgL .~ "If relative filepath, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. Otherwise expects a full URI with https/http/file scheme."
-      , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) (bimap T.pack Just . readUri) cabalProjectLocal
+      , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) cabalProjectLocalV cabalProjectLocal
           & Menu.fieldLabelL .~ "cabal project local"
           & Menu.fieldHelpMsgL .~ "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
       , Menu.createCheckBoxField (Common.MenuElement Common.UpdateCabalCheckBox) updateCabal

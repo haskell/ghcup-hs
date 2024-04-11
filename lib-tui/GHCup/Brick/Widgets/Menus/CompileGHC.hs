@@ -47,18 +47,15 @@ import GHCup.Types
     ( KeyCombination, BuildSystem(..), VersionPattern )
 import URI.ByteString (URI)
 import qualified Data.Text as T
-import qualified Data.ByteString.UTF8 as UTF8
-import GHCup.Utils (parseURI)
 import Data.Bifunctor (Bifunctor(..))
 import Data.Function ((&))
 import Optics ((.~))
 import Data.Char (isSpace)
 import Data.Versions (Version, version)
-import System.FilePath (isPathSeparator, isValid, isAbsolute, normalise)
+import System.FilePath (isPathSeparator)
 import Control.Applicative (Alternative((<|>)))
 import Text.Read (readEither)
-import GHCup.Prelude (stripNewlineEnd)
-import qualified GHCup.OptParse.Common as OptParse
+import qualified GHCup.Utils.Parsers as Utils
 
 data CompileGHCOptions = CompileGHCOptions
   { _bootstrapGhc :: Either Version FilePath
@@ -115,7 +112,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
         False -> Left "Invalid Empty value"
 
     versionV :: T.Text -> Either Menu.ErrorMessage (Maybe [VersionPattern])
-    versionV = whenEmpty Nothing (bimap T.pack Just . OptParse.overWriteVersionParser . T.unpack)
+    versionV = whenEmpty Nothing (bimap T.pack Just . Utils.overWriteVersionParser . T.unpack)
 
     jobsV :: T.Text -> Either Menu.ErrorMessage (Maybe Int)
     jobsV =
@@ -125,24 +122,14 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
     patchesV :: T.Text -> Either Menu.ErrorMessage (Maybe (Either FilePath [URI]))
     patchesV = whenEmpty Nothing readPatches
       where
-        readUri :: T.Text -> Either String URI
-        readUri = first show . parseURI . UTF8.fromString . T.unpack
         readPatches j =
           let
-            x = (bimap T.unpack (fmap Left) $ filepathV j)
-            y = second (Just . Right) $ traverse readUri (T.split isSpace j)
+            x = second (Just . Left) $ Utils.absolutePathParser (T.unpack j)
+            y = second (Just . Right) $ traverse (Utils.uriParser . T.unpack) (T.split isSpace j)
           in first T.pack $ x <|> y
 
     filepathV :: T.Text -> Either Menu.ErrorMessage (Maybe FilePath)
-    filepathV i =
-      case not $ emptyEditor i of
-        True  -> absolutePathParser (T.unpack i)
-        False -> Right Nothing
-
-    absolutePathParser :: FilePath -> Either Menu.ErrorMessage (Maybe FilePath)
-    absolutePathParser f = case isValid f && isAbsolute f of
-                  True -> Right . Just . stripNewlineEnd . normalise $ f
-                  False -> Left "Please enter a valid absolute filepath."
+    filepathV = whenEmpty Nothing (bimap T.pack Just . Utils.absolutePathParser . T.unpack)
 
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace

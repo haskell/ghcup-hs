@@ -14,6 +14,7 @@ module GHCup.OptParse.Prefetch where
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
+import           GHCup.Utils.Parsers (fromVersion)
 import           GHCup.Types.Optics
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger

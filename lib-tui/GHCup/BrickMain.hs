@@ -17,7 +17,7 @@ module GHCup.BrickMain where
 
 import GHCup.Types
     ( Settings(noColor),
-      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings (..), KeyCombination (KeyCombination) )
+      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyCombination (KeyCombination) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Common as Common

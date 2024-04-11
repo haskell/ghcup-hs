@@ -14,6 +14,7 @@ module GHCup.OptParse.Config where
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils
+import           GHCup.Utils.Parsers (parseNewUrlSource)
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ

@@ -12,15 +12,14 @@ module GHCup.OptParse.Common where
 
 import           GHCup
 import           GHCup.Download
-import           GHCup.Errors
 import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
+import qualified GHCup.Utils.Parsers as Parsers
 import           GHCup.Prelude
 import           GHCup.Prelude.Process
 import           GHCup.Prelude.Logger
-import           GHCup.Prelude.MegaParsec
 
 import           Control.DeepSeq
 import           Control.Concurrent
@@ -43,64 +42,25 @@ import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
 import           Data.Functor
-import           Data.List                      ( nub, sort, sortBy, isPrefixOf, stripPrefix )
+import           Data.List                      ( nub, isPrefixOf, stripPrefix )
 import           Data.Maybe
-import           Data.Text                      ( Text )
-import           Data.Time.Calendar             ( Day )
-import           Data.Time.Format               ( parseTimeM, defaultTimeLocale )
 import           Data.Versions
-import           Data.Void
 import qualified Data.Vector      as V
 import           GHC.IO.Exception
 import           Haskus.Utils.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
-import           Safe
+import           Safe (lastMay)
 import           System.Process                  ( readProcess )
 import           System.FilePath
 import           Text.HTML.TagSoup       hiding ( Tag )
-import           URI.ByteString          hiding (parseURI)
 
-import qualified Data.ByteString.UTF8          as UTF8
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
-import qualified Data.Text.Lazy.Encoding       as LE
-import qualified Data.Text.Lazy                as LT
-import qualified Text.Megaparsec               as MP
 import qualified System.FilePath.Posix         as FP
 import GHCup.Version
 import Control.Exception (evaluate)
 import qualified Cabal.Config            as CC
-
-
-    -------------
-    --[ Types ]--
-    -------------
-
--- a superset of ToolVersion
-data SetToolVersion = SetGHCVersion GHCTargetVersion
-                    | SetToolVersion Version
-                    | SetToolTag Tag
-                    | SetToolDay Day
-                    | SetRecommended
-                    | SetNext
-                    deriving (Eq, Show)
-
-prettyToolVer :: ToolVersion -> String
-prettyToolVer (GHCVersion v')  = T.unpack $ tVerToText v'
-prettyToolVer (ToolVersion v') = T.unpack $ prettyVer v'
-prettyToolVer (ToolTag t)      = show t
-prettyToolVer (ToolDay day)    = show day
-
-toSetToolVer :: Maybe ToolVersion -> SetToolVersion
-toSetToolVer (Just (GHCVersion v')) = SetGHCVersion v'
-toSetToolVer (Just (ToolVersion v')) = SetToolVersion v'
-toSetToolVer (Just (ToolTag t')) = SetToolTag t'
-toSetToolVer (Just (ToolDay d')) = SetToolDay d'
-toSetToolVer Nothing = SetRecommended
-
-
-
 
     --------------
     --[ Parser ]--
@@ -118,9 +78,9 @@ toolVersionTagArgument criteria tool =
   mv (Just HLS) = "HLS_VERSION|TAG|RELEASE_DATE"
   mv _          = "VERSION|TAG|RELEASE_DATE"
 
-  parser (Just GHC) = ghcVersionTagEither
-  parser Nothing    = ghcVersionTagEither
-  parser _          = toolVersionTagEither
+  parser (Just GHC) = Parsers.ghcVersionTagEither
+  parser Nothing    = Parsers.ghcVersionTagEither
+  parser _          = Parsers.toolVersionTagEither
 
 
 versionParser' :: [ListCriteria] -> Maybe Tool -> Parser Version
@@ -129,7 +89,7 @@ versionParser' criteria tool = argument
   (metavar "VERSION"  <> foldMap (completer . versionCompleter criteria) tool)
 
 ghcVersionArgument :: [ListCriteria] -> Maybe Tool -> Parser GHCTargetVersion
-ghcVersionArgument criteria tool = argument (eitherReader ghcVersionEither)
+ghcVersionArgument criteria tool = argument (eitherReader Parsers.ghcVersionEither)
                                             (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
 
 
@@ -674,149 +634,6 @@ toolDlCompleter tool = mkCompleter $ \case
 #endif
 
 
-
-
-
-
-    -----------------
-    --[ Utilities ]--
-    -----------------
-
-
-fromVersion :: ( HasLog env
-               , MonadFail m
-               , MonadReader env m
-               , HasGHCupInfo env
-               , HasDirs env
-               , MonadThrow m
-               , MonadIO m
-               , MonadCatch m
-               )
-            => Maybe ToolVersion
-            -> Tool
-            -> Excepts
-                 '[ TagNotFound
-                  , DayNotFound
-                  , NextVerNotFound
-                  , NoToolVersionSet
-                  ] m (GHCTargetVersion, Maybe VersionInfo)
-fromVersion tv = fromVersion' (toSetToolVer tv)
-
-fromVersion' :: ( HasLog env
-                , MonadFail m
-                , MonadReader env m
-                , HasGHCupInfo env
-                , HasDirs env
-                , MonadThrow m
-                , MonadIO m
-                , MonadCatch m
-                )
-             => SetToolVersion
-             -> Tool
-             -> Excepts
-                  '[ TagNotFound
-                   , DayNotFound
-                   , NextVerNotFound
-                   , NoToolVersionSet
-                   ] m (GHCTargetVersion, Maybe VersionInfo)
-fromVersion' SetRecommended tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  second Just <$> getRecommended dls tool
-    ?? TagNotFound Recommended tool
-fromVersion' (SetGHCVersion v) tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let vi = getVersionInfo v tool dls
-  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
-    Left _ -> pure (v, vi)
-    Right pvpIn ->
-      lift (getLatestToolFor tool (_tvTarget v) pvpIn dls) >>= \case
-        Just (pvp_, vi', mt) -> do
-          v' <- lift $ pvpToVersion pvp_ ""
-          when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
-          pure (GHCTargetVersion mt v', Just vi')
-        Nothing -> pure (v, vi)
-fromVersion' (SetToolVersion (mkTVer -> v)) tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let vi = getVersionInfo v tool dls
-  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
-    Left _ -> pure (v, vi)
-    Right pvpIn ->
-      lift (getLatestToolFor tool (_tvTarget v) pvpIn dls) >>= \case
-        Just (pvp_, vi', mt) -> do
-          v' <- lift $ pvpToVersion pvp_ ""
-          when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
-          pure (GHCTargetVersion mt v', Just vi')
-        Nothing -> pure (v, vi)
-fromVersion' (SetToolTag Latest) tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getLatest dls tool ?? TagNotFound Latest tool
-fromVersion' (SetToolDay day) tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> case getByReleaseDay dls tool day of
-                          Left ad -> throwE $ DayNotFound day tool ad
-                          Right v -> pure v
-fromVersion' (SetToolTag LatestPrerelease) tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
-fromVersion' (SetToolTag LatestNightly) tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getLatestNightly dls tool ?? TagNotFound LatestNightly tool
-fromVersion' (SetToolTag Recommended) tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getRecommended dls tool ?? TagNotFound Recommended tool
-fromVersion' (SetToolTag (Base pvp'')) GHC = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') GHC
-fromVersion' SetNext tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  next <- case tool of
-    GHC -> do
-      set <- fmap _tvVersion $ ghcSet Nothing !? NoToolVersionSet tool
-      ghcs <- rights <$> lift getInstalledGHCs
-      (headMay
-        . tail
-        . dropWhile (\GHCTargetVersion {..} -> _tvVersion /= set)
-        . cycle
-        . sortBy (\x y -> compare (_tvVersion x) (_tvVersion y))
-        . filter (\GHCTargetVersion {..} -> isNothing _tvTarget)
-        $ ghcs) ?? NoToolVersionSet tool
-    Cabal -> do
-      set <- cabalSet !? NoToolVersionSet tool
-      cabals <- rights <$> lift getInstalledCabals
-      (fmap (GHCTargetVersion Nothing)
-        . headMay
-        . tail
-        . dropWhile (/= set)
-        . cycle
-        . sort
-        $ cabals) ?? NoToolVersionSet tool
-    HLS -> do
-      set <- hlsSet !? NoToolVersionSet tool
-      hlses <- rights <$> lift getInstalledHLSs
-      (fmap (GHCTargetVersion Nothing)
-        . headMay
-        . tail
-        . dropWhile (/= set)
-        . cycle
-        . sort
-        $ hlses) ?? NoToolVersionSet tool
-    Stack -> do
-      set <- stackSet !? NoToolVersionSet tool
-      stacks <- rights <$> lift getInstalledStacks
-      (fmap (GHCTargetVersion Nothing)
-        . headMay
-        . tail
-        . dropWhile (/= set)
-        . cycle
-        . sort
-        $ stacks) ?? NoToolVersionSet tool
-    GHCup -> fail "GHCup cannot be set"
-  let vi = getVersionInfo next tool dls
-  pure (next, vi)
-fromVersion' (SetToolTag t') tool =
-  throwE $ TagNotFound t' tool
-
-
 checkForUpdates :: ( MonadReader env m
                    , HasGHCupInfo env
                    , HasDirs env
@@ -847,23 +664,9 @@ checkForUpdates = do
  where
   forMM a f = fmap join $ forM a f
 
-
 logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => GHCTargetVersion -> m ()
 logGHCPostRm ghcVer = do
   cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store or ~/.local/state/cabal/store")
     (runIdentity . CC.cfgStoreDir <$> CC.readConfig)
   let storeGhcDir = cabalStore </> ("ghc-" <> T.unpack (prettyVer $ _tvVersion ghcVer))
   logInfo $ T.pack $ "After removing GHC you might also want to clean up your cabal store at: " <> storeGhcDir
-
-parseUrlSource :: String -> Either String URLSource
-parseUrlSource "GHCupURL" = pure GHCupURL
-parseUrlSource "StackSetupURL" = pure StackSetupURL
-parseUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
-            <|> (fmap (OwnSource . (:[]) . Right) . first show . parseURI .UTF8.fromString $ s')
-
-parseNewUrlSource :: String -> Either String NewURLSource
-parseNewUrlSource "GHCupURL" = pure NewGHCupURL
-parseNewUrlSource "StackSetupURL" = pure NewStackSetupURL
-parseNewUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
-            <|> (fmap NewURI . first show . parseURI .UTF8.fromString $ s')
-

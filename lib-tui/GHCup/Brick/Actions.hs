@@ -14,10 +14,9 @@ module GHCup.Brick.Actions where
 import           GHCup
 import           GHCup.Download
 import           GHCup.Errors
-import           GHCup.Types.Optics ( getDirs, getPlatformReq )
+import           GHCup.Types.Optics ( getDirs, getPlatformReq, HasLog )
 import           GHCup.Types         hiding ( LeanAppState(..) )
 import           GHCup.Utils
-import           GHCup.OptParse.Common (logGHCPostRm)
 import           GHCup.Prelude ( decUTF8Safe, runBothE' )
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
@@ -45,6 +44,7 @@ import           Control.Monad.Trans.Resource
 import           Data.Bool
 import           Data.Functor
 import           Data.Function ( (&), on)
+import           Data.Functor.Identity
 import           Data.List
 import           Data.Maybe
 import           Data.IORef (IORef, readIORef, newIORef, modifyIORef)
@@ -78,8 +78,9 @@ import Optics ((^.), to)
 import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
 import Control.Concurrent (threadDelay)
 import qualified GHCup.GHC as GHC
-import qualified GHCup.OptParse.Common as OptParse
+import qualified GHCup.Utils.Parsers as Utils
 import qualified GHCup.HLS as HLS
+import qualified Cabal.Config as CC
 
 
 
@@ -409,6 +410,12 @@ set' input@(_, ListResult {..}) = do
 
             _ -> pure $ Left (prettyHFError e)
 
+logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => GHCTargetVersion -> m ()
+logGHCPostRm ghcVer = do
+  cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store or ~/.local/state/cabal/store")
+    (runIdentity . CC.cfgStoreDir <$> CC.readConfig)
+  let storeGhcDir = cabalStore </> ("ghc-" <> T.unpack (prettyVer $ _tvVersion ghcVer))
+  logInfo $ T.pack $ "After removing GHC you might also want to clean up your cabal store at: " <> storeGhcDir
 
 
 del' :: (MonadReader AppState m, MonadIO m, MonadFail m, MonadMask m, MonadUnliftIO m)
@@ -589,7 +596,7 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
 
       ghcs <-
         liftE $ forM (compopts ^. CompileHLS.targetGHCs)
-                     (\ghc -> fmap (_tvVersion . fst) . OptParse.fromVersion (Just ghc) $ GHC)
+                     (\ghc -> fmap (_tvVersion . fst) . Utils.fromVersion (Just ghc) $ GHC)
       targetVer <- liftE $ GHCup.compileHLS
                       (HLS.SourceDist lVer)
                       ghcs

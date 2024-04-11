@@ -17,6 +17,7 @@ import           GHCup.OptParse.Common
 import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
+import           GHCup.Utils.Parsers (SetToolVersion(..), tagEither, ghcVersionEither, toolVersionEither, fromVersion')
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 

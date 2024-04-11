@@ -40,14 +40,11 @@ import qualified GHCup.Brick.Common as Common
 import GHCup.Types (KeyCombination)
 import URI.ByteString (URI)
 import qualified Data.Text as T
-import qualified Data.ByteString.UTF8 as UTF8
-import GHCup.Utils (parseURI)
 import Data.Bifunctor (Bifunctor(..))
 import Data.Function ((&))
 import Optics ((.~))
 import Data.Char (isSpace)
-import System.FilePath (isValid, isAbsolute, normalise)
-import GHCup.Prelude (stripNewlineEnd)
+import qualified GHCup.Utils.Parsers as Utils
 
 data InstallOptions = InstallOptions
   { instBindist  :: Maybe URI
@@ -75,22 +72,15 @@ create k = Menu.createMenu AdvanceInstallBox initialState k [ok] fields
     -- Brick's internal editor representation is [mempty].
     emptyEditor i = T.null i || (i == "\n")
 
+    whenEmpty :: a -> (T.Text -> Either Menu.ErrorMessage a) -> T.Text -> Either Menu.ErrorMessage a
+    whenEmpty emptyval f i = if not (emptyEditor i) then f i else Right emptyval
+
     uriValidator :: T.Text -> Either Menu.ErrorMessage (Maybe URI)
-    uriValidator i =
-      case not $ emptyEditor i of
-        True  -> bimap (T.pack . show) Just . parseURI . UTF8.fromString . T.unpack $ i
-        False -> Right Nothing
+    uriValidator = whenEmpty Nothing (second Just . readUri)
+      where readUri = first T.pack . Utils.uriParser . T.unpack
 
     filepathValidator :: T.Text -> Either Menu.ErrorMessage (Maybe FilePath)
-    filepathValidator i =
-      case not $ emptyEditor i of
-        True  -> absolutePathParser (T.unpack i)
-        False -> Right Nothing
-
-    absolutePathParser :: FilePath -> Either Menu.ErrorMessage (Maybe FilePath)
-    absolutePathParser f = case isValid f && isAbsolute f of
-                  True -> Right . Just . stripNewlineEnd . normalise $ f
-                  False -> Left "Please enter a valid absolute filepath."
+    filepathValidator = whenEmpty Nothing (bimap T.pack Just . Utils.absolutePathParser . T.unpack)
 
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace
