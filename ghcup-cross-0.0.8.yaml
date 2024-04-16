@@ -27,6 +27,32 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.2/ghc-javascript-unknown-ghcjs-9.6.2-aarch64-apple-darwin.tar.xz
               dlHash: 0d65bb3940a820d95b4b33ea0cd61bf39670d48c4d8f747153ded01a7ef34821
               dlSubdir: ghc-9.6.2-javascript-unknown-ghcjs
+    javascript-unknown-ghcjs-9.10.0.20240413:
+      viTags:
+      - base-4.20.0.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.0.20240413/ghc-javascript-unknown-ghcjs-9.10.0.20240413-x86_64-linux-rocky-8.9-2024-04-16-dc318739.tar.xz
+              dlSubdir: ghc-9.10.0.20240413-javascript-unknown-ghcjs
+              dlHash: dc318739b1ec4f1051dd4b38793b5fbc8eb4dea56b6177d1fe212edcf9e28b30
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.0.20240413/ghc-javascript-unknown-ghcjs-9.10.0.20240413-x86_64-darwin-2024-04-16-a819da18.tar.xz
+              dlSubdir: ghc-9.10.0.20240413-javascript-unknown-ghcjs
+              dlHash: a819da1875e9763da5732c37dc7f36eb6e9eb6d33ddc6ea11894df9cfa18a6ee
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.0.20240413/ghc-javascript-unknown-ghcjs-9.10.0.20240413-aarch64-darwin-2024-04-16-c946719b.tar.xz
+              dlSubdir: ghc-9.10.0.20240413-javascript-unknown-ghcjs
+              dlHash: c946719b31f9249e899fdc15351b86a4297e66857ce4063743b1bcbd62cf9e0e
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.0.20240413/ghc-javascript-unknown-ghcjs-9.10.0.20240413-aarch64-linux-debian-12-2024-04-16-5f63452c.tar.xz
+              dlSubdir: ghc-9.10.0.20240413-javascript-unknown-ghcjs
+              dlHash: 5f63452c8bee2fcc1282645158bcd20bae7ff93181f3e5d5dc8b2aa8d15f4696
     wasm32-wasi-9.6.3.20230927:
       viTags:
       - base-4.18.1.0
