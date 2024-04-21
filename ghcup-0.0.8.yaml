@@ -18,6 +18,7 @@ toolRequirements:
           - libncurses-dev
           - libncurses5
           - libtinfo5
+          - pkg-config
           notes: ''
         ">= 12":
           distroPKGs:
@@ -30,6 +31,7 @@ toolRequirements:
           - libncurses-dev
           - libncurses5
           - libtinfo5
+          - pkg-config
           notes: ''
         unknown_versioning:
           distroPKGs:
@@ -42,6 +44,7 @@ toolRequirements:
           - libncurses-dev
           - libncurses6
           - libtinfo6
+          - pkg-config
           notes: ''
       Linux_Mint:
         "( >= 20 && < 21 )":
@@ -55,6 +58,7 @@ toolRequirements:
           - libncurses-dev
           - libncurses5
           - libtinfo5
+          - pkg-config
           notes: ''
         ">= 21": &linux-mint-req21
           distroPKGs:
@@ -67,6 +71,7 @@ toolRequirements:
           - libncurses-dev
           - libncurses5
           - libtinfo5
+          - pkg-config
           notes: ''
         unknown_versioning: *linux-mint-req21
       Linux_Ubuntu:
@@ -81,6 +86,7 @@ toolRequirements:
           - libncurses-dev
           - libncurses5
           - libtinfo5
+          - pkg-config
           notes: ''
         "( >= 20.10 && < 23 )":
           distroPKGs:
@@ -93,6 +99,7 @@ toolRequirements:
           - libncurses-dev
           - libncurses5
           - libtinfo5
+          - pkg-config
           notes: ''
         ">= 23": &linux-ubuntu-req23
           distroPKGs:
@@ -103,6 +110,7 @@ toolRequirements:
           - libgmp-dev
           - libgmp10
           - libncurses-dev
+          - pkg-config
           notes: ''
         unknown_versioning: *linux-ubuntu-req23
       Linux_Rocky:
@@ -117,6 +125,7 @@ toolRequirements:
           - ncurses-compat-libs
           - xz
           - perl
+          - pkg-config
           notes: ''
         '>= 9': &linux-rocky-req9
           distroPKGs:
@@ -128,6 +137,7 @@ toolRequirements:
           - ncurses
           - xz
           - perl
+          - pkg-config
           notes: ''
         unknown_versioning: *linux-rocky-req9
       Linux_CentOS:
@@ -141,6 +151,7 @@ toolRequirements:
           - ncurses
           - xz
           - perl
+          - pkgconfig
           notes: ''
         unknown_versioning:
           distroPKGs:
@@ -153,6 +164,7 @@ toolRequirements:
           - ncurses-compat-libs
           - xz
           - perl
+          - pkgconfig
           notes: ''
       Linux_Fedora:
         unknown_versioning:
@@ -166,6 +178,7 @@ toolRequirements:
           - ncurses-compat-libs
           - xz
           - perl
+          - pkg-config
           notes: ''
       Linux_Alpine:
         unknown_versioning:
@@ -181,6 +194,7 @@ toolRequirements:
           - musl-dev
           - ncurses-dev
           - perl
+          - pkgconfig
           - tar
           - xz
           notes: ''
@@ -197,6 +211,7 @@ toolRequirements:
           - ncurses-devel
           - ncurses-libtinfo-libs
           - perl
+          - pkg-config
           - tar
           - xz
           notes: These instructions are for glibc based Void. If you use musl flavor, check out https://www.haskell.org/ghcup/install/#void-linux
@@ -204,7 +219,7 @@ toolRequirements:
         unknown_versioning:
           distroPKGs: []
           notes: 'You need the following packages: curl g++ gcc gmp make ncurses realpath
-            xz-utils. Consult your distro documentation on the exact names of those
+            xz-utils pkg-config. Consult your distro documentation on the exact names of those
             packages.'
       Darwin:
         unknown_versioning:
@@ -224,6 +239,7 @@ toolRequirements:
           - gmake
           - ncurses
           - perl5
+          - pkg-confg
           - libffi
           - libiconv
           notes: ''
