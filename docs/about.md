@@ -66,7 +66,7 @@ the ownership of this project will be automatically transferred to the following
 
 They will be tasked with finding new maintainers in whatever way they see fit (be it appointing themselves or asking HF for help).
 
-The appointed owners my choose to stay owners after the transition period (whether it's in a passive or active capacity) or
+The appointed owners may choose to stay owners after the transition period (whether it's in a passive or active capacity) or
 fully transfer ownership to someone else or an organization.
 
 The community shall be informed about this process.
@@ -89,6 +89,27 @@ The following people (in addition to the owners) shall have full write access to
 
 Contributions to the metadata are expected to follow a review process. If that turns out to be impractical due to lack of engagement, a wait
 time of 2 days before merging shall be followed anyway, except for the `-vanilla` files, which may be merged at any time.
+
+#### Access
+
+The GHCup website, various scripts and unofficial bindists are hosted on haskell.org infrastructure. Contact the
+[Haskell.org committee](https://www.haskell.org/haskell-org-committee/) for access.
+
+The backup owners should already have admin rights on the GHCup repositories, which are hosted on the
+[Github haskell namespace](https://github.com/haskell). In case of issues contact one of the
+organization admins for access, e.g.:
+
+- [Andrew Lelechenko](https://github.com/orgs/haskell/people/Bodigrim)
+- [gbaz](https://github.com/orgs/haskell/people/gbaz)
+- [Hécate Moonlight](https://github.com/Kleidukos)
+- [davean](https://github.com/orgs/haskell/people/davean)
+- [chessai](https://github.com/orgs/haskell/people/chessai)
+
+#### Private runners
+
+Private runners maintained by Julian Ospald may cease to work. Moritz Angerman will have SSH access to the machines.
+However, no one will have access to the Hetzner account and billing information. As such, those runners will simply
+have to be replaced.
 
 ## How to help
 
