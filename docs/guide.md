@@ -151,7 +151,7 @@ of metadata files to understand their purpose. These can be combined.
 For example, if you want access to both prerelease and cross bindists, you'd do:
 
 ```sh
-ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml
+ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.8.yaml
 ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml
 ```
 
@@ -180,14 +180,13 @@ url-source:
 Also see [config.yaml](https://github.com/haskell/ghcup-hs/blob/master/data/config.yaml)
 for more options.
 
-You can also use an alternative metadata via one-shot cli option:
+You can also use an alternative metadata via the one-shot CLI option:
 
 ```sh
 ghcup --url-source=https://some-url/ghcup-0.0.8.yaml tui
 ```
 
 One main caveat of using URLs is that you might need to check whether there are new versions
-of the file (e.g. `ghcup-0.0.7.yaml` vs `ghcup-0.0.8.yaml`). Although old metadata files
 are supported for some time, they are not so indefinitely.
 
 ### Mirrors
@@ -207,7 +206,7 @@ Note that later versions of GHCup allow more sophisticated mirror support, see [
 1. [https://mirror.sjtu.edu.cn/docs/ghcup](https://mirror.sjtu.edu.cn/docs/ghcup)
 2. [https://mirrors.ustc.edu.cn/help/ghcup.html](https://mirrors.ustc.edu.cn/help/ghcup.html)
 
-### Git based metadata config
+### Git-based metadata config
 
 If you don't like the way ghcup updates its metadata with caching and fetching via curl, you can also do as follows:
 
