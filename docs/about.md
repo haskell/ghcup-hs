@@ -105,6 +105,9 @@ organization admins for access, e.g.:
 - [davean](https://github.com/orgs/haskell/people/davean)
 - [chessai](https://github.com/orgs/haskell/people/chessai)
 
+The owners should already have access to the [hackage package](https://hackage.haskell.org/package/ghcup/maintainers/).
+In case of issues contact the [hackage trustees](https://github.com/haskell-infra/hackage-trustees).
+
 #### Private runners
 
 Private runners maintained by Julian Ospald may cease to work. Moritz Angerman will have SSH access to the machines.
