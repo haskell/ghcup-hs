@@ -187,6 +187,7 @@ ghcup --url-source=https://some-url/ghcup-0.0.8.yaml tui
 ```
 
 One main caveat of using URLs is that you might need to check whether there are new versions
+of the file (e.g. `ghcup-0.0.7.yaml` vs `ghcup-0.0.8.yaml`). Although old metadata files
 are supported for some time, they are not so indefinitely.
 
 ### Mirrors
