@@ -146,8 +146,16 @@ a:hover {
   color: #996FC2;
 }
 
+#toc-collapse a.nav-link {
+  color: var(--link-pink);
+}
+
+#toc-collapse a:hover.nav-link {
+  color: #996FC2;
+}
+
 .col-md-9 img.main-logo {
-  border: 0px; 
+  border: 0px;
   padding: 0px;
   margin: 0px;
 }
