@@ -322,8 +322,24 @@ Stack metadata doesn't have a concept of those and we don't try to be smart when
 
 ### Windows
 
-On windows, you may find the following config options useful too:
-`skip-msys`, `extra-path`, `extra-include-dirs`, `extra-lib-dirs`.
+#### Using GHCup's MSYS2 installation
+
+Stack usually maintains its own msys2 installation. However, you can instruct it to use GHCup's MSYS2 or any other. E.g. if you
+had GHCup install msys2 into `C:\ghcup\msys64\`, then you would add the following config to stack's `config.yaml`
+(you can find its location via `stack path --stack-root`):
+
+```yaml
+skip-msys: true
+extra-lib-dirs:
+- C:\ghcup\msys64\mingw64\lib
+- C:\ghcup\msys64\mingw64\bin
+extra-path:
+- C:\ghcup\msys64\mingw64\bin
+- C:\ghcup\msys64\usr\bin
+- C:\ghcup\msys64\usr\local\bin
+extra-include-dirs:
+- C:\ghcup\msys64\mingw64\include
+```
 
 Also check out: [https://docs.haskellstack.org/en/stable/yaml_configuration](https://docs.haskellstack.org/en/stable/yaml_configuration)
 
