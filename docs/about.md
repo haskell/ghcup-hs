@@ -187,7 +187,7 @@ cabal-install/HLS/stack are installed in `~/.ghcup/bin/<tool>-<ver>` and have un
 ### Custom ghc version names
 
 When installing ghc bindists with custom version names as outlined in
-[installing custom bindists](#installing-custom-bindists), then cabal might
+[installing custom bindists](guide.md#installing-custom-bindists), then cabal might
 be unable to find the correct `ghc-pkg` (also see [#73](https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/73))
 if you use `cabal build --with-compiler=ghc-foo`. Instead, point it to the full path, such as:
 `cabal build --with-compiler=$HOME/.ghcup/ghc/<version-name>/bin/ghc` or set that GHC version

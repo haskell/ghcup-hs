@@ -1,7 +1,7 @@
 # Installation
 
 GHCup makes it easy to install specific versions of GHC on GNU/Linux,
-macOS (aka Darwin), FreeBSD and Windows and can also bootstrap a fresh [Haskell developer environment](./#supported-tools) from scratch.
+macOS (aka Darwin), FreeBSD and Windows and can also bootstrap a fresh [Haskell developer environment](#supported-tools) from scratch.
 It follows the UNIX philosophy of [do one thing and do it well](https://en.wikipedia.org/wiki/Unix_philosophy#Do_One_Thing_and_Do_It_Well). Similar in scope to [rustup](https://github.com/rust-lang-nursery/rustup.rs), [pyenv](https://github.com/pyenv/pyenv) and [jenv](http://www.jenv.be).
 
 ## How to install
@@ -32,7 +32,7 @@ GHCup has two main channels for every tool: **recommended** and **latest**. By d
 
 *latest* follows the latest release of every tool, while *recommended* is at the discretion of the GHCup maintainers and based on community adoption (hackage libraries, tools like HLS, stackage support, etc.) and known bugs.
 
-Also see [tags and shortcuts](../guide/#tags-and-shortcuts) for more information.
+Also see [tags and shortcuts](guide.md#tags-and-shortcuts) for more information.
 
 ## System requirements
 
@@ -121,9 +121,9 @@ On Windows, msys2 should already have been set up during the installation, so mo
 
 ## Next steps
 
-1. Follow the [First steps guide](../steps) on how to build a "Hello world" program, use `ghc`, run an interactive REPL and create a Haskell project
+1. Follow the [First steps guide](steps.md) on how to build a "Hello world" program, use `ghc`, run an interactive REPL and create a Haskell project
 2. To understand the difference and overlap of `stack` and `cabal`, read on [here](https://gist.github.com/merijn/8152d561fb8b011f9313c48d876ceb07)
-3. To learn Haskell proper check out the links at [How to learn Haskell proper](../steps#how-to-learn-haskell-proper)
+3. To learn Haskell proper check out the links at [How to learn Haskell proper](steps.md#how-to-learn-haskell-proper)
 4. To learn more about Haskell Toolchain management, check out the [ghcup user guide](./guide.md)
 
 ## Uninstallation
@@ -382,7 +382,7 @@ All set. You can run `cabal init` now in an empty directory to start a project.
 ### Void Linux
 
 Since void linux can be installed with glibc and musl, it's hard to support correctly with ghcup.
-One way to make ghcup work on **Void Linux musl** is to follow the [Overriding distro detection](../guide/#overriding-distro-detection)
+One way to make ghcup work on **Void Linux musl** is to follow the [Overriding distro detection](guide.md#overriding-distro-detection)
 section and tell it to consider Alpine bindists only. E.g.:
 
 ```sh

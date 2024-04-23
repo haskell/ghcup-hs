@@ -200,7 +200,7 @@ url-source:
   - https://mirror.sjtu.edu.cn/ghcup/yaml/ghcup/data/ghcup-0.0.6.yaml
 ```
 
-Note that later versions of GHCup allow more sophisticated mirror support, see [here](./#mirrors-proper).
+Note that later versions of GHCup allow more sophisticated mirror support, see [here](#mirrors-proper).
 
 #### Known mirrors
 

@@ -13,7 +13,7 @@ installed a Haskell toolchain:
 The Glorious Glasgow Haskell Compilation System, version 8.10.7
 ```
 
-If this fails, consult [the Getting started page](../install) for information on
+If this fails, consult [the Getting started page](install.md) for information on
 how to install Haskell on your computer.
 
 This guide is partly based on [Gil Mizrahi's blog](https://gilmi.me/blog/post/2021/08/14/hs-core-tools).
@@ -44,7 +44,7 @@ follow the [GHC user guide](https://downloads.haskell.org/ghc/latest/docs/html/u
 Now we run our program:
 
 ```sh
-➜ ./hello 
+➜ ./hello
 Hello, Haskell!
 ```
 
@@ -99,7 +99,7 @@ To enter the environment run the program `ghci`.
 ```sh
 ➜ ghci
 GHCi, version 9.0.2: https://www.haskell.org/ghc/  :? for help
-ghci> 
+ghci>
 ```
 
 It provides an interactive prompt where Haskell expressions can be written and
@@ -199,7 +199,7 @@ And the modules of the relevant packages will be available for import:
 
 ```sh
 GHCi, version 9.0.1: https://www.haskell.org/ghc/  :? for help
-ghci> import Control.Concurrent.Async 
+ghci> import Control.Concurrent.Async
 ghci> import Say
 ghci> concurrently_ (sayString "Hello") (sayString "World")
 Hello
