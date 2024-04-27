@@ -28,6 +28,9 @@ ghcupDownloads:
               dlHash: 0d65bb3940a820d95b4b33ea0cd61bf39670d48c4d8f747153ded01a7ef34821
               dlSubdir: ghc-9.6.2-javascript-unknown-ghcjs
     javascript-unknown-ghcjs-9.10.0.20240413:
+      viPreInstall: |
+        To use this bindist, you have to use emscripten version 3.1.57
+        Also see: https://www.haskell.org/ghcup/guide/#ghc-js-cross-bindists-experimental
       viTags:
       - base-4.20.0.0
       viArch:
