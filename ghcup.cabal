@@ -364,8 +364,7 @@ library ghcup-tui
     , optics        ^>=0.4
     , brick         ^>=2.1
     , transformers  ^>=0.5
-    , vty           ^>=6.0
-    , optics        ^>=0.4
+    , vty           ^>=6.0 || ^>=6.1 || ^>=6.2
 
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER
