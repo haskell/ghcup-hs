@@ -559,19 +559,24 @@ The next sections explain how to install each cross bindist.
 
 ### GHC JS cross bindists (experimental)
 
-You need the required emscripten JS toolchain:
+You need the required emscripten JS toolchain. GHC JS cross bindists might require you to install a specific
+version of emscripten. If that is the case, then ghcup will display the required emscripten version in the
+pre install message. You can use the following commands to install the emscripten toolchain on your system,
+substituting the required version for the bindist that you want to install.
+(Cf. [GHC-MR 10918](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/10918))
 
 ```sh
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
-./emsdk install latest
-./emsdk activate latest
+./emsdk install VERSION
+./emsdk activate VERSION
 source ./emsdk_env.sh
 ```
 
-Instructions are also here: [Download and install — Emscripten 3.1.43-git (dev) documentation](https://emscripten.org/docs/getting_started/downloads.html).
+Instructions are also here: [Download and install — Emscripten documentation](https://emscripten.org/docs/getting_started/downloads.html).
 
-To install we need to invoke ghcup like so:
+To install you can either use the tui interface by invoking `emconfigure ghcup tui` or
+you can install directly like so:
 
 ```sh
 emconfigure ghcup install ghc --set javascript-unknown-ghcjs-9.6.2
