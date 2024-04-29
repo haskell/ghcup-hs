@@ -15,10 +15,8 @@ Portability : POSIX
 -}
 module GHCup.Prelude.File.Posix where
 
-import           GHCup.Prelude.File.Posix.Traversals
-
+import           Conduit
 import           Control.Exception.Safe
-import           Control.Monad.Reader
 import           Foreign.C.String
 import           Foreign.C.Error
 import           Foreign.C.Types
@@ -26,7 +24,6 @@ import           System.IO                      ( hClose, hSetBinaryMode )
 import           System.IO.Error      hiding    ( catchIOError )
 import           System.FilePath
 import           System.Directory               ( removeFile, pathIsSymbolicLink, getSymbolicLinkTarget, doesPathExist )
-import           System.Posix.Directory
 import           System.Posix.Error             ( throwErrnoPathIfMinus1Retry )
 import           System.Posix.Internals         ( withFilePath )
 import           System.Posix.Files
@@ -37,18 +34,11 @@ import qualified System.Posix.Directory        as PD
 import qualified System.Posix.Files            as PF
 import qualified System.Posix.IO               as SPI
 import qualified System.Posix as Posix
-import qualified Streamly.FileSystem.Handle    as FH
-import qualified Streamly.Internal.FileSystem.Handle
-                                               as IFH
-import qualified Streamly.Prelude              as S
 import qualified GHCup.Prelude.File.Posix.Foreign as FD
-import qualified Streamly.Internal.Data.Stream.StreamD.Type
-                                               as D
-import           Streamly.Internal.Data.Unfold.Type
-import qualified Streamly.Internal.Data.Unfold as U
-import           Streamly.Internal.Control.Concurrent ( withRunInIO )
-import           Streamly.Internal.Data.IOFinalizer   ( newIOFinalizer, runIOFinalizer )
+import GHCup.Prelude.File.Posix.Traversals
 import GHC.IO.Exception (IOException(ioe_type), IOErrorType (..))
+
+import qualified Data.Conduit.Combinators as C
 
 
 -- | On unix, we can use symlinks, so we just get the
@@ -133,14 +123,12 @@ copyFile from to fail' = do
           $ \(_, tH) -> do
               hSetBinaryMode fH True
               hSetBinaryMode tH True
-              streamlyCopy (fH, tH)
+              runConduitRes $ sourceHandle fH .| sinkHandle tH
  where
   openFdHandle fp omode flags fM = do
     fd      <- openFd' fp omode flags fM
     handle' <- SPI.fdToHandle fd
     pure (fd, handle')
-  streamlyCopy (fH, tH) =
-    S.fold (FH.writeChunks tH) $ IFH.toChunksWithBufferOf (256 * 1024) fH
 
 foreign import capi unsafe "fcntl.h open"
    c_open :: CString -> CInt -> Posix.CMode -> IO CInt
@@ -276,60 +264,33 @@ catchErrno en a1 a2 =
 removeEmptyDirectory :: FilePath -> IO ()
 removeEmptyDirectory = PD.removeDirectory
 
+sourceDirectory' :: MonadResource m => FilePath -> ConduitT i (FD.DirType, FilePath) m ()
+sourceDirectory' dir =
+    bracketP (openDirStreamPortable dir) closeDirStreamPortable go
+  where
+    go ds =
+        loop
+      where
+        loop = do
+            (typ, e) <- liftIO $ readDirEntPortable ds
+            if
+              | null e    -> return ()
+              | "." == e  -> loop
+              | ".." == e -> loop
+              | otherwise -> do
+                  yield (typ, e)
+                  loop
 
--- | Create an 'Unfold' of directory contents.
-unfoldDirContents :: (MonadMask m, MonadIO m, S.MonadAsync m) => Unfold m FilePath (FD.DirType, FilePath)
-unfoldDirContents = U.bracket (liftIO . openDirStreamPortable) (liftIO . closeDirStreamPortable) (Unfold step return)
- where
-  {-# INLINE [0] step #-}
-  step dirstream = do
-    (typ, e) <- liftIO $ readDirEntPortable dirstream
-    return $ if
-      | null e    -> D.Stop
-      | "." == e  -> D.Skip dirstream
-      | ".." == e -> D.Skip dirstream
-      | otherwise -> D.Yield (typ, e) dirstream
-
-
-getDirectoryContentsRecursiveDFSUnsafe :: (MonadMask m, MonadIO m, S.MonadAsync m)
-                                       => FilePath
-                                       -> S.SerialT m FilePath
-getDirectoryContentsRecursiveDFSUnsafe fp = go ""
- where
-  go cd = flip S.concatMap (S.unfold unfoldDirContents (fp </> cd)) $ \(t, f) ->
-    if | t == FD.dtDir -> go (cd </> f)
-       | otherwise     -> pure (cd </> f)
-
-
-getDirectoryContentsRecursiveUnfold :: (MonadMask m, MonadIO m, S.MonadAsync m) => Unfold m FilePath FilePath
-getDirectoryContentsRecursiveUnfold = Unfold step (\s -> return (s, Nothing, [""]))
- where
-  {-# INLINE [0] step #-}
-  step (_, Nothing, []) = return D.Stop
-
-  step (topdir, Just (cdir, dirstream, finalizer), dirs) = flip onException (runIOFinalizer finalizer) $ do
-    (dt, f) <- liftIO $ readDirEntPortable dirstream
-    if | f == "" -> do
-           runIOFinalizer finalizer
-           return $ D.Skip (topdir, Nothing, dirs)
-       | f == "." || f == ".."
-                        -> return $ D.Skip               (topdir, Just (cdir, dirstream, finalizer), dirs)
-       | FD.dtDir == dt -> return $ D.Skip               (topdir, Just (cdir, dirstream, finalizer), (cdir </> f):dirs)
-       | otherwise      -> return $ D.Yield (cdir </> f) (topdir, Just (cdir, dirstream, finalizer), dirs)
-
-  step (topdir, Nothing, dir:dirs) = do
-    (s, f) <- acquire (topdir </> dir)
-    return $ D.Skip (topdir, Just (dir, s, f), dirs)
-
-  acquire dir =
-    withRunInIO $ \run -> mask_ $ run $ do
-        dirstream <- liftIO $ openDirStreamPortable dir
-        ref <- newIOFinalizer (liftIO $ closeDirStreamPortable dirstream)
-        return (dirstream, ref)
-
-getDirectoryContentsRecursiveBFSUnsafe :: (MonadMask m, MonadIO m, S.MonadAsync m)
-                                       => FilePath
-                                       -> S.SerialT m FilePath
-getDirectoryContentsRecursiveBFSUnsafe = S.unfold getDirectoryContentsRecursiveUnfold
-
+sourceDirectoryDeep' :: MonadResource m
+                     => FilePath -- ^ Root directory
+                     -> ConduitT i FilePath m ()
+sourceDirectoryDeep' fp' = start "" .| C.map snd
+  where
+    start :: MonadResource m => FilePath -> ConduitT i (FD.DirType, FilePath) m ()
+    start dir = sourceDirectory' (fp' </> dir) .| awaitForever go
+     where
+      go :: MonadResource m => (FD.DirType, FilePath) -> ConduitT (FD.DirType, FilePath) (FD.DirType, FilePath) m ()
+      go (typ, fp)
+        | FD.dtDir == typ = start (dir </> fp)
+        | otherwise       = yield (typ, dir </> fp)
 

@@ -16,8 +16,6 @@ module GHCup.Prelude.File.Windows where
 import           GHCup.Utils.Dirs
 import           GHCup.Prelude.Internal
 
-import           Control.Exception.Safe
-import           Control.Monad
 import           Control.Monad.Reader
 import           Data.List
 import qualified GHC.Unicode                  as U
@@ -27,15 +25,10 @@ import qualified System.IO.Error              as IOE
 import qualified System.Win32.Info             as WS
 import qualified System.Win32.File             as WS
 
-import qualified Streamly.Internal.Data.Stream.StreamD.Type
-                                               as D
-import           Streamly.Internal.Data.Unfold.Type hiding ( concatMap )
 import           Data.Bits ((.&.))
-import qualified Streamly.Prelude              as S
-import qualified Streamly.Internal.Data.Unfold as U
-import           Streamly.Internal.Control.Concurrent ( withRunInIO )
-import           Streamly.Internal.Data.IOFinalizer   ( newIOFinalizer, runIOFinalizer )
 
+import           Conduit
+import qualified Data.Conduit.Combinators as C
 
 
 -- | On unix, we can use symlinks, so we just get the
@@ -99,85 +92,6 @@ moveFilePortable = WS.moveFile
 
 removeEmptyDirectory :: FilePath -> IO ()
 removeEmptyDirectory = WS.removeDirectory
-
-
-unfoldDirContents :: (S.MonadAsync m, MonadIO m, MonadCatch m, MonadMask m) => Unfold m FilePath (WS.FileAttributeOrFlag, FilePath)
-unfoldDirContents = U.bracket alloc dealloc (Unfold step return)
- where
-  {-# INLINE [0] step #-}
-  step (_, False, _, _) = return D.Stop
-  step (topdir, True, h, fd) = flip onException (liftIO $ WS.findClose h) $ do
-    f <- liftIO $ WS.getFindDataFileName fd
-    more <- liftIO $ WS.findNextFile h fd
-
-    -- can't get file attribute from FindData yet (needs Win32 PR)
-    fattr <- liftIO $ WS.getFileAttributes (topdir </> f)
-
-    if | f == "." || f == ".." -> return $ D.Skip             (topdir, more, h, fd)
-       | otherwise             -> return $ D.Yield (fattr, f) (topdir, more, h, fd)
-
-  alloc topdir = do
-    query <- liftIO $ furnishPath (topdir </> "*")
-    (h, fd) <- liftIO $ WS.findFirstFile query
-    pure (topdir, True, h, fd)
-
-  dealloc (_, _, fd, _) = liftIO $ WS.findClose fd
-
-
-getDirectoryContentsRecursiveDFSUnsafe :: (MonadCatch m, S.MonadAsync m, MonadMask m, S.IsStream t)
-                                       => FilePath
-                                       -> t m FilePath
-getDirectoryContentsRecursiveDFSUnsafe fp = go ""
- where
-  isDir attrs = attrs .&. WS.fILE_ATTRIBUTE_DIRECTORY /= 0
-
-  go cd = flip S.concatMap (S.unfold unfoldDirContents (fp </> cd)) $ \(t, f) ->
-    if | isDir t   -> go (cd </> f)
-       | otherwise -> pure (cd </> f)
-
-
-getDirectoryContentsRecursiveUnfold :: (MonadCatch m, S.MonadAsync m, MonadMask m) => Unfold m FilePath FilePath
-getDirectoryContentsRecursiveUnfold = Unfold step init'
- where
-  {-# INLINE [0] step #-}
-  step (_, Nothing, []) = return D.Stop
-
-  step (topdir, state@(Just (cdir, (h, findData, ref))), dirs) = flip onException (runIOFinalizer ref) $ do
-    f <- liftIO $ WS.getFindDataFileName findData
-
-    more <- liftIO $ WS.findNextFile h findData
-    when (not more) $ runIOFinalizer ref
-    let nextState = if more then state else Nothing
-
-    -- can't get file attribute from FindData yet (needs Win32 PR)
-    fattr <- liftIO $ WS.getFileAttributes (topdir </> cdir </> f)
-
-    if | f == "." || f == ".." -> return $ D.Skip               (topdir, nextState, dirs)
-       | isDir fattr           -> return $ D.Skip               (topdir, nextState, (cdir </> f):dirs)
-       | otherwise             -> return $ D.Yield (cdir </> f) (topdir, nextState, dirs)
-
-  step (topdir, Nothing, dir:dirs) = do
-    (h, findData, ref) <- acquire (topdir </> dir)
-    return $ D.Skip (topdir, Just (dir, (h, findData, ref)), dirs)
-
-  init' topdir = do
-    (h, findData, ref) <- acquire topdir
-    return (topdir, Just ("", (h, findData, ref)), [])
-
-  isDir attrs = attrs .&. WS.fILE_ATTRIBUTE_DIRECTORY /= 0
-
-  acquire dir = do
-    query <- liftIO $ furnishPath (dir </> "*")
-    withRunInIO $ \run -> mask_ $ run $ do
-        (h, findData) <- liftIO $ WS.findFirstFile query
-        ref <- newIOFinalizer (liftIO $ WS.findClose h)
-        return (h, findData, ref)
-
-
-getDirectoryContentsRecursiveBFSUnsafe :: (MonadMask m, MonadIO m, S.MonadAsync m)
-                                       => FilePath
-                                       -> S.SerialT m FilePath
-getDirectoryContentsRecursiveBFSUnsafe = S.unfold getDirectoryContentsRecursiveUnfold
 
 
 
@@ -309,3 +223,49 @@ fromExtendedLengthPath ePath =
       not ('/' `elem` path ||
            "." `elem` splitDirectories path ||
            ".." `elem` splitDirectories path)
+
+
+sourceDirectory' :: MonadResource m => FilePath -> ConduitT i (WS.FileAttributeOrFlag, FilePath) m ()
+sourceDirectory' topdir =
+    bracketP alloc dealloc go
+  where
+    go (b, h, fd) =
+        loop b
+      where
+        loop False = return ()
+        loop True = do
+          f <- liftIO $ WS.getFindDataFileName fd
+          more <- liftIO $ WS.findNextFile h fd
+
+          -- can't get file attribute from FindData yet (needs Win32 PR)
+          fattr <- liftIO $ WS.getFileAttributes (topdir </> f)
+
+          if | f == "." || f == ".." -> loop more
+             | otherwise             -> do
+                                          yield (fattr, f)
+                                          loop more
+
+    alloc = do
+      query <- liftIO $ furnishPath (topdir </> "*")
+      (h, fd) <- liftIO $ WS.findFirstFile query
+      pure (True, h, fd)
+
+    dealloc (_, fd, _) = liftIO $ WS.findClose fd
+
+sourceDirectoryDeep' :: MonadResource m
+                     => FilePath -- ^ Root directory
+                     -> ConduitT i FilePath m ()
+sourceDirectoryDeep' fp' = start "" .| C.map snd
+  where
+    isDir attrs = attrs .&. WS.fILE_ATTRIBUTE_DIRECTORY /= 0
+
+    start :: MonadResource m => FilePath -> ConduitT i (WS.FileAttributeOrFlag, FilePath) m ()
+    start dir = sourceDirectory' (fp' </> dir) .| awaitForever go
+     where
+       go :: MonadResource m
+          => (WS.FileAttributeOrFlag, FilePath)
+          -> ConduitT (WS.FileAttributeOrFlag, FilePath) (WS.FileAttributeOrFlag, FilePath) m ()
+       go (typ, fp)
+         | isDir typ = start (dir </> fp)
+         | otherwise = yield (typ, dir </> fp)
+

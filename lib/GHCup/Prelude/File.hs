@@ -13,11 +13,7 @@ module GHCup.Prelude.File (
   copyFileE,
   findFilesDeep,
   getDirectoryContentsRecursive,
-  getDirectoryContentsRecursiveBFS,
-  getDirectoryContentsRecursiveDFS,
   getDirectoryContentsRecursiveUnsafe,
-  getDirectoryContentsRecursiveBFSUnsafe,
-  getDirectoryContentsRecursiveDFSUnsafe,
   recordedInstallationFile,
   module GHCup.Prelude.File.Search,
 
@@ -64,7 +60,8 @@ import           GHCup.Types
 import           GHCup.Types.Optics
 
 import           Text.Regex.Posix
-import           Control.Monad.IO.Unlift        ( MonadUnliftIO )
+import           Conduit
+import qualified Data.Conduit.Combinators as C
 import           Control.Exception.Safe
 import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
@@ -73,7 +70,6 @@ import           System.FilePath
 import           Text.PrettyPrint.HughesPJClass (prettyShow)
 
 import qualified Data.Text                     as T
-import qualified Streamly.Prelude              as S
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
 import GHC.IO.Exception
@@ -88,11 +84,12 @@ import System.IO.Error
 -- If any copy operation fails, the record file is deleted, as well
 -- as the partially installed files.
 mergeFileTree :: ( MonadMask m
-                 , S.MonadAsync m
                  , MonadReader env m
                  , HasDirs env
                  , HasLog env
                  , MonadCatch m
+                 , MonadIO m
+                 , MonadUnliftIO m
                  )
               => GHCupPath                       -- ^ source base directory from which to install findFiles
               -> InstallDirResolved              -- ^ destination base dir
@@ -127,11 +124,10 @@ mergeFileTree sourceBase destBase tool v' copyOp = do
   -- we want the cleanup action to leak through in case of exception
   onE_ (cleanupOnPartialInstall recFile) $ wrapInExcepts $ do
     logDebug "Starting merge"
-    lift $ flip S.mapM_ (getDirectoryContentsRecursive sourceBase) $ \f -> do
-      copy f
+    lift $ runConduitRes $ getDirectoryContentsRecursive sourceBase .| C.mapM_ (\f -> do
+      lift $ copy f
       logDebug $ T.pack "Recording installed file: " <> T.pack f
-      recordInstalledFile f recFile
-      pure f
+      recordInstalledFile f recFile)
 
  where
   wrapInExcepts = handleIO (\e -> throwE $ MergeFileTreeError e (fromGHCupPath sourceBase) (fromInstallDir destBase))
@@ -182,38 +178,20 @@ copyFileE :: (CopyError :< xs, MonadCatch m, MonadIO m) => FilePath -> FilePath 
 copyFileE from to = handleIO (throwE . CopyError . show) . liftIO . copyFile from to
 
 
--- | List all the files in a directory and all subdirectories.
---
--- The order places files in sub-directories after all the files in their
--- parent directories. The list is generated lazily so is not well defined if
--- the source directory structure changes before the list is used.
---
--- depth first
-getDirectoryContentsRecursiveDFS :: (MonadCatch m, S.MonadAsync m, MonadMask m)
-                                 => GHCupPath
-                                 -> S.SerialT m FilePath
-getDirectoryContentsRecursiveDFS (fromGHCupPath -> fp) = getDirectoryContentsRecursiveDFSUnsafe fp
-
--- breadth first
-getDirectoryContentsRecursiveBFS :: (MonadCatch m, S.MonadAsync m, MonadMask m)
-                                 => GHCupPath
-                                 -> S.SerialT m FilePath
-getDirectoryContentsRecursiveBFS (fromGHCupPath -> fp) = getDirectoryContentsRecursiveBFSUnsafe fp
-
-
-getDirectoryContentsRecursive :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+getDirectoryContentsRecursive :: (MonadResource m)
                               => GHCupPath
-                              -> S.SerialT m FilePath
-getDirectoryContentsRecursive = getDirectoryContentsRecursiveBFS
+                              -> ConduitT i FilePath m ()
+getDirectoryContentsRecursive (fromGHCupPath -> fp) = getDirectoryContentsRecursiveUnsafe fp
 
-getDirectoryContentsRecursiveUnsafe :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+getDirectoryContentsRecursiveUnsafe :: (MonadResource m)
                                     => FilePath
-                                    -> S.SerialT m FilePath
-getDirectoryContentsRecursiveUnsafe = getDirectoryContentsRecursiveBFSUnsafe
+                                    -> ConduitT i FilePath m ()
+getDirectoryContentsRecursiveUnsafe = sourceDirectoryDeep'
+
 
 findFilesDeep :: GHCupPath -> Regex -> IO [FilePath]
 findFilesDeep path regex =
-  S.toList $ S.filter (match regex) $ getDirectoryContentsRecursive path
+  runResourceT $ sourceToList $ getDirectoryContentsRecursive path .| C.filter (match regex)
 
 
 recordedInstallationFile :: ( MonadReader env m

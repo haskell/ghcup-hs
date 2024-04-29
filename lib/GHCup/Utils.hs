@@ -59,6 +59,7 @@ import           Control.Monad
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
+import           Conduit ((.|), runConduitRes)
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
                                          hiding ( throwM )
@@ -87,7 +88,7 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 import qualified Data.List.NonEmpty            as NE
-import qualified Streamly.Prelude              as S
+import qualified Data.Conduit.Combinators as C
 
 import Control.DeepSeq (force)
 import GHC.IO (evaluate)
@@ -1169,12 +1170,13 @@ ghcBinaryName (GHCTargetVersion Nothing  _) = T.unpack ("ghc" <> T.pack exeExt)
 installDestSanityCheck :: ( MonadIO m
                           , MonadCatch m
                           , MonadMask m
+                          , MonadUnliftIO m
                           ) =>
                           InstallDirResolved ->
                           Excepts '[DirNotEmpty] m ()
 installDestSanityCheck (IsolateDirResolved isoDir) = do
   hideErrorDef [doesNotExistErrorType] () $ do
-    empty' <- liftIO $ S.null $ getDirectoryContentsRecursiveUnsafe isoDir
+    empty' <- lift $ runConduitRes $ getDirectoryContentsRecursiveUnsafe isoDir .| C.null
     when (not empty') (throwE $ DirNotEmpty isoDir)
 installDestSanityCheck _ = pure ()
 

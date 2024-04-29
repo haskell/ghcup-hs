@@ -50,6 +50,7 @@ import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 import           GHCup.Version
 
+import           Conduit (sourceToList)
 import           Control.Applicative
 import           Control.Exception.Safe
 import           Control.Monad
@@ -77,7 +78,6 @@ import           System.IO.Temp
 import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
-import qualified Streamly.Prelude              as S
 
 
 
@@ -157,6 +157,7 @@ rmTool ListResult {lVer, lTool, lCross} = do
 rmGhcupDirs :: ( MonadReader env m
                , HasDirs env
                , MonadIO m
+               , MonadUnliftIO m
                , HasLog env
                , MonadCatch m
                , MonadMask m )
@@ -220,9 +221,9 @@ rmGhcupDirs = do
           when (not isXDGStyle) $
             removeDirIfEmptyOrIsSymlink binDir
 
-    reportRemainingFiles :: (MonadMask m, MonadIO m) => FilePath -> m [FilePath]
+    reportRemainingFiles :: (MonadMask m, MonadIO m, MonadUnliftIO m) => FilePath -> m [FilePath]
     reportRemainingFiles dir = do
-      remainingFiles <- liftIO $ S.toList (getDirectoryContentsRecursiveUnsafe dir)
+      remainingFiles <- runResourceT $ sourceToList $ getDirectoryContentsRecursiveUnsafe dir
       let normalizedFilePaths = fmap normalise remainingFiles
       let sortedByDepthRemainingFiles = sortBy (flip compareFn) normalizedFilePaths
       let remainingFilesAbsolute = fmap (dir </>) sortedByDepthRemainingFiles

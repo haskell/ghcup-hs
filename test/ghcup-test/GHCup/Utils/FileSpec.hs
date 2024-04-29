@@ -2,11 +2,11 @@ module GHCup.Utils.FileSpec where
 
 import           GHCup.Prelude.File
 
+import           Conduit
 import           Data.List
 import           System.Directory
 import           System.FilePath
 import           System.IO.Unsafe
-import qualified Streamly.Prelude              as S
 
 import           Test.Hspec
 
@@ -15,14 +15,8 @@ import           Test.Hspec
 spec :: Spec
 spec = do
   describe "GHCup.Utils.File" $ do
-    it "getDirectoryContentsRecursiveBFS" $ do
-      l1 <- sort <$> S.toList (getDirectoryContentsRecursiveBFSUnsafe "lib")
-      l2 <- sort <$> getDirectoryContentsRecursiveLazy "lib"
-      not (null l1) `shouldBe` True
-      not (null l2) `shouldBe` True
-      l1 `shouldBe` l2
-    it "getDirectoryContentsRecursiveDFS" $ do
-      l1 <- sort <$> S.toList (getDirectoryContentsRecursiveDFSUnsafe "lib")
+    it "getDirectoryContentsRecursiveUnsafe" $ do
+      l1 <- sort <$>  runResourceT (sourceToList $ getDirectoryContentsRecursiveUnsafe "lib")
       l2 <- sort <$> getDirectoryContentsRecursiveLazy "lib"
       not (null l1) `shouldBe` True
       not (null l2) `shouldBe` True
