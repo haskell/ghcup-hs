@@ -26,7 +26,6 @@ import           System.IO                      ( hClose, hSetBinaryMode )
 import           System.IO.Error      hiding    ( catchIOError )
 import           System.FilePath
 import           System.Directory               ( removeFile, pathIsSymbolicLink, getSymbolicLinkTarget, doesPathExist )
-import           System.Posix.Directory
 import           System.Posix.Error             ( throwErrnoPathIfMinus1Retry )
 import           System.Posix.Internals         ( withFilePath )
 import           System.Posix.Files
@@ -40,13 +39,13 @@ import qualified System.Posix as Posix
 import qualified Streamly.FileSystem.Handle    as FH
 import qualified Streamly.Internal.FileSystem.Handle
                                                as IFH
-import qualified Streamly.Prelude              as S
+import qualified Streamly.Data.Stream          as S
 import qualified GHCup.Prelude.File.Posix.Foreign as FD
-import qualified Streamly.Internal.Data.Stream.StreamD.Type
-                                               as D
-import           Streamly.Internal.Data.Unfold.Type
+import qualified Streamly.Internal.Data.Stream as D
+
+import Streamly.Internal.Data.Unfold (Unfold(..))
 import qualified Streamly.Internal.Data.Unfold as U
-import           Streamly.Internal.Control.Concurrent ( withRunInIO )
+
 import           Streamly.Internal.Data.IOFinalizer   ( newIOFinalizer, runIOFinalizer )
 import GHC.IO.Exception (IOException(ioe_type), IOErrorType (..))
 
@@ -140,7 +139,7 @@ copyFile from to fail' = do
     handle' <- SPI.fdToHandle fd
     pure (fd, handle')
   streamlyCopy (fH, tH) =
-    S.fold (FH.writeChunks tH) $ IFH.toChunksWithBufferOf (256 * 1024) fH
+    S.fold (FH.writeChunks tH) $ IFH.readChunksWith (256 * 1024) fH
 
 foreign import capi unsafe "fcntl.h open"
    c_open :: CString -> CInt -> Posix.CMode -> IO CInt
@@ -278,8 +277,8 @@ removeEmptyDirectory = PD.removeDirectory
 
 
 -- | Create an 'Unfold' of directory contents.
-unfoldDirContents :: (MonadMask m, MonadIO m, S.MonadAsync m) => Unfold m FilePath (FD.DirType, FilePath)
-unfoldDirContents = U.bracket (liftIO . openDirStreamPortable) (liftIO . closeDirStreamPortable) (Unfold step return)
+unfoldDirContents :: (MonadIO m, MonadCatch m) => Unfold m FilePath (FD.DirType, FilePath)
+unfoldDirContents = U.bracketIO openDirStreamPortable closeDirStreamPortable (Unfold step return)
  where
   {-# INLINE [0] step #-}
   step dirstream = do
@@ -291,17 +290,17 @@ unfoldDirContents = U.bracket (liftIO . openDirStreamPortable) (liftIO . closeDi
       | otherwise -> D.Yield (typ, e) dirstream
 
 
-getDirectoryContentsRecursiveDFSUnsafe :: (MonadMask m, MonadIO m, S.MonadAsync m)
+getDirectoryContentsRecursiveDFSUnsafe :: (MonadIO m, MonadCatch m)
                                        => FilePath
-                                       -> S.SerialT m FilePath
+                                       -> S.Stream m FilePath
 getDirectoryContentsRecursiveDFSUnsafe fp = go ""
  where
   go cd = flip S.concatMap (S.unfold unfoldDirContents (fp </> cd)) $ \(t, f) ->
     if | t == FD.dtDir -> go (cd </> f)
-       | otherwise     -> pure (cd </> f)
+       | otherwise     -> S.fromPure (cd </> f)
 
 
-getDirectoryContentsRecursiveUnfold :: (MonadMask m, MonadIO m, S.MonadAsync m) => Unfold m FilePath FilePath
+getDirectoryContentsRecursiveUnfold :: (MonadIO m, MonadMask m) => Unfold m FilePath FilePath
 getDirectoryContentsRecursiveUnfold = Unfold step (\s -> return (s, Nothing, [""]))
  where
   {-# INLINE [0] step #-}
@@ -321,15 +320,12 @@ getDirectoryContentsRecursiveUnfold = Unfold step (\s -> return (s, Nothing, [""
     (s, f) <- acquire (topdir </> dir)
     return $ D.Skip (topdir, Just (dir, s, f), dirs)
 
-  acquire dir =
-    withRunInIO $ \run -> mask_ $ run $ do
+  acquire dir = do
         dirstream <- liftIO $ openDirStreamPortable dir
         ref <- newIOFinalizer (liftIO $ closeDirStreamPortable dirstream)
         return (dirstream, ref)
 
-getDirectoryContentsRecursiveBFSUnsafe :: (MonadMask m, MonadIO m, S.MonadAsync m)
+getDirectoryContentsRecursiveBFSUnsafe :: (MonadIO m, MonadMask m)
                                        => FilePath
-                                       -> S.SerialT m FilePath
+                                       -> S.Stream m FilePath
 getDirectoryContentsRecursiveBFSUnsafe = S.unfold getDirectoryContentsRecursiveUnfold
-
-

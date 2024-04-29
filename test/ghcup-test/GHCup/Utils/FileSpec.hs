@@ -6,8 +6,7 @@ import           Data.List
 import           System.Directory
 import           System.FilePath
 import           System.IO.Unsafe
-import qualified Streamly.Prelude              as S
-
+import qualified Streamly.Data.Stream          as S
 import           Test.Hspec
 
 
@@ -54,5 +53,3 @@ getDirectoryContentsRecursiveLazy topdir = recurseDirectories [""]
         ignore ['.']      = True
         ignore ['.', '.'] = True
         ignore _          = False
-
-

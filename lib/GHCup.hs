@@ -77,7 +77,7 @@ import           System.IO.Temp
 import           Text.Regex.Posix
 
 import qualified Data.Text                     as T
-import qualified Streamly.Prelude              as S
+import qualified Streamly.Data.Stream          as S
 
 
 
@@ -673,5 +673,3 @@ rmTmp = do
   forM_ ghcup_dirs $ \f -> do
     logDebug $ "rm -rf " <> T.pack (fromGHCupPath f)
     rmPathForcibly f
-
-

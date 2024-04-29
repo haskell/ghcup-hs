@@ -87,7 +87,8 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as E
 import qualified Text.Megaparsec               as MP
 import qualified Data.List.NonEmpty            as NE
-import qualified Streamly.Prelude              as S
+import qualified Streamly.Data.Stream          as S
+import qualified Streamly.Data.Fold            as F
 
 import Control.DeepSeq (force)
 import GHC.IO (evaluate)
@@ -1174,7 +1175,7 @@ installDestSanityCheck :: ( MonadIO m
                           Excepts '[DirNotEmpty] m ()
 installDestSanityCheck (IsolateDirResolved isoDir) = do
   hideErrorDef [doesNotExistErrorType] () $ do
-    empty' <- liftIO $ S.null $ getDirectoryContentsRecursiveUnsafe isoDir
+    empty' <- liftIO $ S.fold F.null $ getDirectoryContentsRecursiveUnsafe isoDir
     when (not empty') (throwE $ DirNotEmpty isoDir)
 installDestSanityCheck _ = pure ()
 
@@ -1284,4 +1285,3 @@ expandVersionPattern cabalVer gitHashS gitHashL gitDescribe gitBranch
   go (GitDescribe:xs) = gitDescribe <> go xs
   go (GitBranchName:xs) = gitBranch <> go xs
   go (S str:xs) = str <> go xs
-

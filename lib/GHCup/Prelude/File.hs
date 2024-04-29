@@ -73,7 +73,8 @@ import           System.FilePath
 import           Text.PrettyPrint.HughesPJClass (prettyShow)
 
 import qualified Data.Text                     as T
-import qualified Streamly.Prelude              as S
+import qualified Streamly.Data.Stream          as S
+import qualified Streamly.Data.Fold            as F
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
 import GHC.IO.Exception
@@ -88,7 +89,7 @@ import System.IO.Error
 -- If any copy operation fails, the record file is deleted, as well
 -- as the partially installed files.
 mergeFileTree :: ( MonadMask m
-                 , S.MonadAsync m
+                 , MonadIO m
                  , MonadReader env m
                  , HasDirs env
                  , HasLog env
@@ -127,7 +128,7 @@ mergeFileTree sourceBase destBase tool v' copyOp = do
   -- we want the cleanup action to leak through in case of exception
   onE_ (cleanupOnPartialInstall recFile) $ wrapInExcepts $ do
     logDebug "Starting merge"
-    lift $ flip S.mapM_ (getDirectoryContentsRecursive sourceBase) $ \f -> do
+    lift $ flip S.fold (getDirectoryContentsRecursive sourceBase) $ F.drainMapM $ \f -> do
       copy f
       logDebug $ T.pack "Recording installed file: " <> T.pack f
       recordInstalledFile f recFile
@@ -189,26 +190,26 @@ copyFileE from to = handleIO (throwE . CopyError . show) . liftIO . copyFile fro
 -- the source directory structure changes before the list is used.
 --
 -- depth first
-getDirectoryContentsRecursiveDFS :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+getDirectoryContentsRecursiveDFS :: (MonadCatch m, MonadIO m, MonadMask m)
                                  => GHCupPath
-                                 -> S.SerialT m FilePath
+                                 -> S.Stream m FilePath
 getDirectoryContentsRecursiveDFS (fromGHCupPath -> fp) = getDirectoryContentsRecursiveDFSUnsafe fp
 
 -- breadth first
-getDirectoryContentsRecursiveBFS :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+getDirectoryContentsRecursiveBFS :: (MonadCatch m, MonadIO m, MonadMask m)
                                  => GHCupPath
-                                 -> S.SerialT m FilePath
+                                 -> S.Stream m FilePath
 getDirectoryContentsRecursiveBFS (fromGHCupPath -> fp) = getDirectoryContentsRecursiveBFSUnsafe fp
 
 
-getDirectoryContentsRecursive :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+getDirectoryContentsRecursive :: (MonadCatch m, MonadIO m, MonadMask m)
                               => GHCupPath
-                              -> S.SerialT m FilePath
+                              -> S.Stream m FilePath
 getDirectoryContentsRecursive = getDirectoryContentsRecursiveBFS
 
-getDirectoryContentsRecursiveUnsafe :: (MonadCatch m, S.MonadAsync m, MonadMask m)
+getDirectoryContentsRecursiveUnsafe :: (MonadCatch m, MonadIO m, MonadMask m)
                                     => FilePath
-                                    -> S.SerialT m FilePath
+                                    -> S.Stream m FilePath
 getDirectoryContentsRecursiveUnsafe = getDirectoryContentsRecursiveBFSUnsafe
 
 findFilesDeep :: GHCupPath -> Regex -> IO [FilePath]
