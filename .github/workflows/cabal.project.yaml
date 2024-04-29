@@ -19,8 +19,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-latest, macOS-11, windows-latest, ubuntu-latest]
+        os: [macOS-11, windows-latest, ubuntu-latest]
         ghc: ["8.10.7", "9.0.2", "9.2.8", "9.4.8"]
+        include:
+          - os: macOS-latest
+            ghc: "9.2.8"
+          - os: macOS-latest
+            ghc: "9.4.8"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,8 +35,10 @@ jobs:
       - name: Run build
         run: |
           env
+          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_MINIMAL=1 BOOTSTRAP_HASKELL_NONINTERACTIVE=1 sh
+          [ -e ~/.ghcup/env ] && source ~/.ghcup/env
           ghcup --version
-          ghcup run -i --cabal latest -- cabal update
+          ghcup run -i --cabal latest --ghc ${GHC_VER} -- cabal update
           ghcup run -i --cabal latest --ghc ${GHC_VER} -- cabal build --project-file=cabal.ghc${GHC_VER//./}.project
         env:
           GHC_VER: ${{ matrix.ghc }}
