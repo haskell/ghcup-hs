@@ -190,7 +190,7 @@ jobs:
           export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$HOME/.brew/opt/llvm@${{ env.LLVM_VER }}/bin:$PATH"
           export CC="$HOME/.brew/opt/llvm@${{ env.LLVM_VER }}/bin/clang"
           export CXX="$HOME/.brew/opt/llvm@${{ env.LLVM_VER }}/bin/clang++"
-          export LD=ld
+          export LD="$HOME/.brew/opt/llvm@${{ env.LLVM_VER }}/bin/lld"
           export AR="$HOME/.brew/opt/llvm@${{ env.LLVM_VER }}/bin/llvm-ar"
           export RANLIB="$HOME/.brew/opt/llvm@${{ env.LLVM_VER }}/bin/llvm-ranlib"
           bash .github/scripts/build.sh
