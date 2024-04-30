@@ -274,7 +274,6 @@ withRestorePath env action = do
         newPath = intercalate [searchPathSeparator] curPaths
     liftIO $ setEnv "PATH" ""
     liftIO $ setEnv "Path" newPath
-    liftIO $ print newPath
 
   r <- action
   liftIO $ maybe (unsetEnv "PATH") (setEnv "PATH") oldPATH
