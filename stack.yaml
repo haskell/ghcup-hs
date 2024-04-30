@@ -23,12 +23,10 @@ extra-deps:
   - haskus-utils-variant-3.3@sha256:3df3fa0a557d75c0e8f94fe9954f76a692eaf8d368c401e30ab028624d55386b,2198
   - language-c-0.9.3
   - libarchive-3.0.4.2
-  - libyaml-streamly-0.2.2@sha256:619b15826a4e221cae4f91cfc040f262cd19a4a81858b75e8270e4b009866969,2206
   - lzma-static-5.2.5.5@sha256:55ed074cda2b82008e020a51e2f8c22f2487a58a4989ab359bf04dd6c903b894,7431
   - megaparsec-9.2.2@sha256:c306a135ec25d91d252032c6128f03598a00e87ea12fcf5fc4878fdffc75c768,3219
   - os-release-1.0.2.1@sha256:2c3e8f7a9a0e17d5042d14d2036d52b42c8d5606e8d004697af462a95c87a9e2,2718
   - process-1.6.18.0@sha256:69fbbca4151e1a6d1a5da41a1e17c254871675a4f2aed5213bbdfb10b5e52742,3148
-  - streamly-0.8.3@sha256:c8f1eed7a99d02c902f0338d8c5f53579cf5cf421a5c886405f331bd948214d5,24141
   - strict-base-0.4.0.0@sha256:2ff4e43cb95eedf2995558d7fc34d19362846413dd39e6aa6a5b3ea8228fef9f,1248
   - time-1.11.1.2@sha256:a957467595420495c2dd440d9efa1f58c62277cf9438c7e7a515d7a4c65571ec,6287
   - unicode-data-0.3.1@sha256:ae3a3aca89a32b912ddde7a644c0c04eaf23ee42014c74fe3d6b9aaf36ce7ec9,5481
@@ -39,7 +37,6 @@ extra-deps:
   - vty-crossplatform-0.4.0.0@sha256:50593f91ad16777d921138475a8d2784d538fd206addd30664c620278d6c8544,3172
   - vty-unix-0.2.0.0@sha256:2af3d0bdae3c4b7b7e567ee374efe32c7439fabdf9096465ce011a6c6736e9ae,2932
   - vty-windows-0.2.0.2
-  - yaml-streamly-0.12.4@sha256:b5250c5dc71d668c43c42ed6f86f956d69125136ea960858527a4b2ff712d3d1,5165
   - github: hasufell/uri-bytestring
     commit: 4fb5ed14b500c192e6e7a97f6b2b1eb478806001
   - github: haskell/tar
@@ -53,7 +50,6 @@ allow-newer-deps:
   - ansi-terminal
   - mintty
   - process
-  - streamly
   - cabal-install-parsers
 
 flags:
@@ -72,12 +68,8 @@ flags:
   cabal-plan:
     exe: false
 
-  streamly:
-    use-unliftio: true
-
 ghc-options:
   "$locals": -O2
-  streamly: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16
   ghcup: -O2 -fspec-constr-recursive=16 -fmax-worker-args=16
 
 build:

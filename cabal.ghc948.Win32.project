@@ -50,12 +50,8 @@ package cabal-plan
 package aeson
   flags: +ordered-keymap
 
-package streamly
-  flags: +use-unliftio
-
 package *
   test-show-details: direct
 
-allow-newer: cabal-install-parsers:tar, streamly:Win32
-
+allow-newer: cabal-install-parsers:tar
 
