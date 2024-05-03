@@ -207,7 +207,7 @@ data Architecture = A_64
                   | A_Sparc64
                   | A_ARM
                   | A_ARM64
-  deriving (Eq, GHC.Generic, Ord, Show)
+  deriving (Eq, GHC.Generic, Ord, Show, Bounded, Enum)
 
 instance NFData Architecture
 
