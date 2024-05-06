@@ -182,7 +182,7 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
   Left  e -> Left $ errorBundlePretty e
  where
   archP :: MP.Parsec Void Text Architecture
-  archP = MP.try (MP.chunk "x86_64" $> A_64) <|> (MP.chunk "i386" $> A_32)
+  archP = choice' ((\x -> MP.chunk (T.pack $ archToString x) $> x) <$> ([minBound..maxBound] :: [Architecture]))
   platformP :: MP.Parsec Void Text PlatformRequest
   platformP = choice'
     [ (`PlatformRequest` FreeBSD)
@@ -208,6 +208,9 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
          )
         <* MP.chunk "-linux"
         )
+    , (\a -> PlatformRequest a Windows Nothing)
+    <$> ((archP <* MP.chunk "-")
+        <* (MP.chunk "unknown-mingw32" <|> MP.chunk "unknown-windows" <|> MP.chunk "windows"))
     ]
   distroP :: MP.Parsec Void Text LinuxDistro
   distroP = choice' ((\d -> MP.chunk (T.pack $ distroToString d) $> d) <$> allDistros)
