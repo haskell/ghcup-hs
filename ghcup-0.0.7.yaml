@@ -7079,7 +7079,8 @@ ghcupDownloads:
               dlHash: 999977fc0d1e81954a311da275ac2660b91427eaaed6ee0b063190f7837d68f7
             unknown_versioning: *hls-2800-64-deb12
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &hls-2800-64-ubuntu18
+            '< 18': *hls-2800-64-deb9
+            '( >= 18 && < 19 )': &hls-2800-64-ubuntu18
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.8.0.0/haskell-language-server-2.8.0.0-x86_64-linux-ubuntu18.04.tar.xz
               dlSubdir: haskell-language-server-2.8.0.0
               dlHash: 2c113ef56584fe5f7f153bfb268d2bcb23a4662232642a6f074cc320e213d4a5
