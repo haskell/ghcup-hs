@@ -176,7 +176,7 @@ opts =
           "GPG verification (default: none)"
           <> completer (listCompleter ["strict", "lax", "none"])
           ))
-    <*> invertableSwitch "stack-setup" (Just 's') False (help "Use stack's setup info for discovering and installing GHC versions")
+    <*> invertableSwitch "stack-setup" Nothing False (help "Use stack's setup info for discovering and installing GHC versions")
     <*> com
 
 
