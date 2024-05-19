@@ -4248,6 +4248,11 @@ ghcupDownloads:
             unknown_versioning: *ghc-965-32-deb9
           Linux_UnknownLinux:
             unknown_versioning: *ghc-965-32-deb9
+          Linux_Alpine:
+            unknown_versioning:
+              dlHash: 946b5f0b1d5b09eaeb253e5d80478d71e5fa9c153bb509e65cca8bafc89230c4
+              dlSubdir: ghc-9.6.5-i386-unknown-linux
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.6.5/ghc-9.6.5-i386-linux-alpine-3.17.7.tar.xz
         A_64:
           Darwin:
             unknown_versioning:
@@ -4468,6 +4473,11 @@ ghcupDownloads:
             unknown_versioning: *ghc-982-i386-deb10
           Linux_UnknownLinux:
             unknown_versioning: *ghc-982-i386-deb10
+          Linux_Alpine:
+            unknown_versioning:
+              dlHash: 9b3572135a8120a3644649d23e86957ea8adf842cbaa413c37531741000ecc34
+              dlSubdir: ghc-9.8.2-i386-unknown-linux
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.8.2/ghc-9.8.2-i386-linux-alpine-3.17.7.tar.xz
         A_64:
           Darwin:
             unknown_versioning:
@@ -4577,6 +4587,11 @@ ghcupDownloads:
             unknown_versioning: *ghc-9101-i386-deb10
           Linux_UnknownLinux:
             unknown_versioning: *ghc-9101-i386-deb10
+          Linux_Alpine:
+            unknown_versioning:
+              dlHash: bb5065869084a609b7ce302efb5e0bb085c584860fb6718c21be1dd26aeed299
+              dlSubdir: ghc-9.10.1-i386-unknown-linux
+              dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.10.1/ghc-9.10.1-i386-linux-alpine-3.17.7.tar.xz
         A_64:
           Darwin:
             unknown_versioning:
