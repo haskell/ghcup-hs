@@ -31,6 +31,7 @@ env:
   VERSION: ${{ github.event.inputs.version }}
   METADATA_FILE: ${{ github.event.inputs.metadataFile }}
   CHANNEL: ${{ github.event.inputs.channel }}
+
 jobs:
   bindist-install:
     name: linux-${{ matrix.image }}
@@ -105,6 +106,21 @@ jobs:
 
       - name: Install ghcup and bindist
         run: .github/workflows/install-bindist.sh
+
+  i386-alpine:
+    name: Build i386 alpine
+    runs-on: ubuntu-latest
+    container:
+      image: i386/alpine:latest
+    steps:
+    - name: Install requirements
+      run: |
+        apk update
+        apk add curl bash git binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
+      shell: sh
+    - uses: actions/checkout@v1 #This version must stay old enough to remain compatible with the container image
+    - name: Install ghcup and bindist
+      run: bash .github/workflows/install-bindist.sh
 
   bindist-install-mac-win:
     name: Build non-linux
