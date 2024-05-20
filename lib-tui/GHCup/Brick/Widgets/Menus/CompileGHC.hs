@@ -161,7 +161,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
           & Menu.fieldHelpMsgL .~ "Build cross-compiler for this platform"
       , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgs
           & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
-          & Menu.fieldHelpMsgL .~ "Additional arguments to bindist configure, prefix with '-- ' (longopts)"
+          & Menu.fieldHelpMsgL .~ "Additional arguments to compile configure"
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"

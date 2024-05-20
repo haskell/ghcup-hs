@@ -100,7 +100,7 @@ create k = Menu.createMenu AdvanceInstallBox initialState k [ok] fields
           & Menu.fieldHelpMsgL .~ "Force install (THIS IS UNSAFE, only use it in Dockerfiles or CI)"
       , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgsL
           & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
-          & Menu.fieldHelpMsgL .~ "Additional arguments to bindist configure, prefix with '-- ' (longopts)"
+          & Menu.fieldHelpMsgL .~ "Additional arguments to bindist configure"
       ]
 
     ok = Menu.createButtonField (Common.MenuElement Common.OkButton)

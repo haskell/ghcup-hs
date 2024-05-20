@@ -155,7 +155,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
       , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator cabalArgs
           & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
-          & Menu.fieldHelpMsgL .~ "Additional arguments to cabal install, prefix with '-- ' (longopts)"
+          & Menu.fieldHelpMsgL .~ "Additional arguments to cabal install"
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
