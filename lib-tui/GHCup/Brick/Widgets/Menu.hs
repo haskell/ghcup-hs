@@ -321,16 +321,15 @@ handlerMenu ev =
  where
   -- runs the Event with the inner handler of MenuField.
   updateFields :: n -> BrickEvent n () -> [MenuField s n] -> EventM n (Menu s n) [MenuField s n]
-  updateFields n e [] = pure []
-  updateFields n e (x@(MenuField {fieldInput = i@(FieldInput {..}) , ..}):xs) =
+  updateFields n e = traverse $ \x@(MenuField {fieldInput = FieldInput {..}, ..}) ->
     if Brick.getName x == n
       then do
        newb <- Brick.nestEventM' inputState (inputHandler e)
        let newField = MenuField {fieldInput = (FieldInput {inputState=newb, ..}) , ..}
        case inputValidator newb of
-        Left errmsg -> pure $ (newField & fieldStatusL .~ Invalid errmsg):xs
-        Right a     -> menuStateL % fieldAccesor .= a >> pure ((newField & fieldStatusL .~ Valid):xs)
-      else fmap (x:) (updateFields n e xs)
+        Left errmsg -> pure $ newField & fieldStatusL .~ Invalid errmsg
+        Right a     -> menuStateL % fieldAccesor .= a >> pure (newField & fieldStatusL .~ Valid)
+      else pure x
 
 
 drawMenu :: (Eq n, Ord n, Show n, Brick.Named (MenuField s n) n) => Menu s n -> Widget n
