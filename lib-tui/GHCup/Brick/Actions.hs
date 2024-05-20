@@ -713,11 +713,10 @@ keyHandlers KeyBindings {..} =
     case e of
       Nothing     -> pure ()
       Just (_, r) -> do
-        -- Create new menus
+        -- Create new ContextMenu, but maintain the state of Install/Compile
+        -- menus. This is especially useful in case the user made a typo and
+        -- would like to retry the action.
         contextMenu .= ContextMenu.create r exitKey
-        advanceInstallMenu .= AdvanceInstall.create exitKey
-        compileGHCMenu .= CompileGHC.create exitKey
-        compileHLSMenu .= CompileHLS.create exitKey
         -- Set mode to context
         mode           .= ContextPanel
     pure ()
