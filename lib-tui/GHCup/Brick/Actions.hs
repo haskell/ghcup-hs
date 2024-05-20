@@ -533,25 +533,21 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
         liftIO $ putStr (T.unpack $ tVerToText tv)
         pure $ Right ()
       VLeft (V (AlreadyInstalled _ v)) -> do
-        logWarn $
-          "GHC ver " <> prettyVer v <> " already installed, remove it first to reinstall"
-        pure $ Right ()
+        pure $ Left $
+          "GHC ver " <> T.unpack (prettyVer v) <> " already installed, remove it first to reinstall"
       VLeft (V (DirNotEmpty fp)) -> do
-        logError $
-          "Install directory " <> T.pack fp <> " is not empty."
-        pure $ Right ()
-      VLeft err@(V (BuildFailed tmpdir _)) -> do
+        pure $ Left $
+          "Install directory " <> fp <> " is not empty."
+      VLeft err@(V (BuildFailed tmpdir _)) -> pure $ Left $
         case keepDirs (appstate & settings) of
-          Never -> logError $ T.pack $ prettyHFError err
-          _ -> logError $ T.pack (prettyHFError err) <> "\n"
-            <> "Check the logs at " <> T.pack (fromGHCupPath $ appstate & dirs & logsDir)
+          Never -> prettyHFError err
+          _ -> prettyHFError err <> "\n"
+            <> "Check the logs at " <> (fromGHCupPath $ appstate & dirs & logsDir)
             <> " and the build directory "
-            <> T.pack tmpdir <> " for more clues." <> "\n"
-            <> "Make sure to clean up " <> T.pack tmpdir <> " afterwards."
-        pure $ Right ()
+            <> tmpdir <> " for more clues." <> "\n"
+            <> "Make sure to clean up " <> tmpdir <> " afterwards."
       VLeft e -> do
-        logError $ T.pack $ prettyHFError e
-        pure $ Right ()
+        pure $ Left $ prettyHFError e
 -- This is the case when the tool is not GHC... which should be impossible but,
 -- it exhaustes pattern matches
 compileGHC _ (_, ListResult{lTool = _}) = pure (Right ())
@@ -621,18 +617,16 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
         forM_ (_viPostInstall =<< vi) $ \msg -> logInfo msg
         liftIO $ putStr (T.unpack $ prettyVer tv)
         pure $ Right ()
-      VLeft err@(V (BuildFailed tmpdir _)) -> do
+      VLeft err@(V (BuildFailed tmpdir _)) -> pure $ Left $
         case keepDirs (appstate & settings) of
-          Never -> logError $ T.pack $ prettyHFError err
-          _ -> logError $ T.pack (prettyHFError err) <> "\n"
-            <> "Check the logs at " <> T.pack (fromGHCupPath $ appstate & dirs & logsDir)
+          Never -> prettyHFError err
+          _ -> prettyHFError err <> "\n"
+            <> "Check the logs at " <> (fromGHCupPath $ appstate & dirs & logsDir)
                <> " and the build directory "
-            <> T.pack tmpdir <> " for more clues." <> "\n"
-            <> "Make sure to clean up " <> T.pack tmpdir <> " afterwards."
-        pure $ Right ()
+            <> tmpdir <> " for more clues." <> "\n"
+            <> "Make sure to clean up " <> tmpdir <> " afterwards."
       VLeft e -> do
-        logError $ T.pack $ prettyHFError e
-        pure $ Right ()
+        pure $ Left $ prettyHFError e
 -- This is the case when the tool is not HLS... which should be impossible but,
 -- it exhaustes pattern matches
 compileHLS _ (_, ListResult{lTool = _}) = pure (Right ())
