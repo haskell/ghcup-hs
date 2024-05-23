@@ -61,7 +61,7 @@ hide:
     </a>
   </span>,
   <span>
-    <a href="https://discord.gg/pKYf3zDQU7">
+    <a href="https://discord.gg/WDqsWsnZfR">
       <img src="Discord-Logo-Black.svg" alt="" />
       Discord
     </a>

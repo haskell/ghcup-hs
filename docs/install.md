@@ -414,5 +414,5 @@ On Linux, some users have reported an issue when VSCode is not launched from a t
 * [Libera IRC chat on #haskell-ghcup or #haskell](https://kiwiirc.com/nextclient/irc.libera.chat/?nick=Guest%7C?#haskell,#haskell-ghcup)
 * [GHCup issue tracker](https://github.com/haskell/ghcup-hs/issues/new)
 * [Matrix](https://app.element.io/#/room/#haskell-tooling:matrix.org)
-* [Discord](https://discord.gg/pKYf3zDQU7)
+* [Discord](https://discord.gg/WDqsWsnZfR)
 
