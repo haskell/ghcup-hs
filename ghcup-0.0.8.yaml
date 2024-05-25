@@ -140,6 +140,32 @@ toolRequirements:
           - pkg-config
           notes: ''
         unknown_versioning: *linux-rocky-req9
+      Linux_RedHat:
+        '( >= 8 && < 9 )':
+          distroPKGs:
+          - gcc
+          - gcc-c++
+          - gmp
+          - gmp-devel
+          - make
+          - ncurses
+          - ncurses-compat-libs
+          - xz
+          - perl
+          - pkgconfig
+          notes: ''
+        unknown_versioning:
+          distroPKGs:
+          - gcc
+          - gcc-c++
+          - gmp
+          - gmp-devel
+          - make
+          - ncurses
+          - xz
+          - perl
+          - pkgconfig
+          notes: ''
       Linux_CentOS:
         '( >= 7 && < 8 )':
           distroPKGs:
@@ -4300,8 +4326,6 @@ ghcupDownloads:
               dlSubdir: ghc-9.6.5-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.6.5/ghc-9.6.5-x86_64-ubuntu20_04-linux.tar.xz
             unknown_versioning: *ghc-965-64-ubuntu2004
-          Linux_RedHat:
-            unknown_versioning: *ghc-965-64-centos7
           Linux_Ubuntu:
             ( >= 16 && < 18 ): *ghc-965-64-deb9
             ( >= 18 && < 19 ): *ghc-965-64-ubuntu1804
@@ -4311,6 +4335,8 @@ ghcupDownloads:
               dlHash: 5a5cfdaf8a6092aaf9f07b5d0c76f13701537afdbbe67eabb6963cc7c7da3057
               dlSubdir: ghc-9.6.5-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.6.5/ghc-9.6.5-x86_64-rocky8-linux.tar.xz
+          Linux_RedHat:
+            unknown_versioning: *ghc-965-64-rocky8
           Linux_UnknownLinux:
             unknown_versioning: *ghc-965-64-rocky8
           Windows:
@@ -4524,17 +4550,17 @@ ghcupDownloads:
               dlHash: a65a4726203c606b58a7f6b714a576e7d81390158c8afa0dece3841a4c602de2
               dlSubdir: ghc-9.8.2-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.8.2/ghc-9.8.2-x86_64-ubuntu20_04-linux.tar.xz
-          Linux_RedHat:
-            unknown_versioning: *ghc982-x86_64-centos7
           Linux_Ubuntu:
             ( >= 16 && < 18 ): *ghc-982-64-deb9
             ( >= 18 && < 19 ): *ghc982-x86_64-ubuntu18_04
             unknown_versioning: *ghc982-x86_64-ubuntu20_04
           Linux_UnknownLinux:
-            unknown_versioning:
+            unknown_versioning: &ghc-982-64-rocky8
               dlHash: 73b1b55f7ce7a93d25b7ba8729940bc8e90039dd402b333b1f903c25300f3409
               dlSubdir: ghc-9.8.2-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/ghc/9.8.2/ghc-9.8.2-x86_64-rocky8-linux.tar.xz
+          Linux_RedHat:
+            unknown_versioning: *ghc-982-64-rocky8
           FreeBSD:
             unknown_versioning:
               dlHash: 150468d0d4ece45bb913565a7f3fdd3f4c75af832d70198721083b65c9f863d6
@@ -4652,17 +4678,17 @@ ghcupDownloads:
               dlSubdir: ghc-9.10.1-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.10.1/ghc-9.10.1-x86_64-ubuntu20_04-linux.tar.xz
             unknown_versioning: *ghc-9101-x86_64-ubuntu20_04
-          Linux_RedHat:
-            unknown_versioning: *ghc-9101-x86_64-centos7
           Linux_Ubuntu:
             ( >= 16 && < 18 ): *ghc-9101-64-deb9
             ( >= 18 && < 19 ): *ghc-9101-x86_64-ubuntu18_04
             unknown_versioning: *ghc-9101-x86_64-ubuntu20_04
           Linux_UnknownLinux:
-            unknown_versioning:
+            unknown_versioning: &ghc-9101-64-rocky8
               dlHash: 853909835ea9de6db39a0db0d52c01e7f200c816e925895199a1e62ad7c5901f
               dlSubdir: ghc-9.10.1-x86_64-unknown-linux
               dlUri: https://downloads.haskell.org/~ghc/9.10.1/ghc-9.10.1-x86_64-rocky8-linux.tar.xz
+          Linux_RedHat:
+            unknown_versioning: *ghc-9101-64-rocky8
           FreeBSD:
             unknown_versioning:
               dlHash: f424d789e78185377a48d54c6d0c2ab8337252835b659d4c75b11a5959f6e34a

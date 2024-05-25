@@ -82,6 +82,12 @@ jobs:
           - image: rockylinux:9
             installCmd: dnf install -y --allowerasing
             toolRequirements: which findutils gcc gcc-c++ gmp gmp-devel make ncurses xz perl
+          - image: registry.access.redhat.com/ubi8/ubi
+            installCmd: dnf install -y --allowerasing
+            toolRequirements: gcc gcc-c++ gmp gmp-devel make ncurses ncurses-compat-libs xz perl pkgconfig
+          - image: registry.access.redhat.com/ubi9/ubi
+            installCmd: dnf install -y --allowerasing
+            toolRequirements: gcc gcc-c++ gmp gmp-devel make ncurses xz perl pkgconfig
           - image: linuxmintd/mint19.3-amd64
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libffi6 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5

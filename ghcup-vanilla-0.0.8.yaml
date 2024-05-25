@@ -140,6 +140,32 @@ toolRequirements:
           - pkg-config
           notes: ''
         unknown_versioning: *linux-rocky-req9
+      Linux_RedHat:
+        '( >= 8 && < 9 )':
+          distroPKGs:
+          - gcc
+          - gcc-c++
+          - gmp
+          - gmp-devel
+          - make
+          - ncurses
+          - ncurses-compat-libs
+          - xz
+          - perl
+          - pkgconfig
+          notes: ''
+        unknown_versioning:
+          distroPKGs:
+          - gcc
+          - gcc-c++
+          - gmp
+          - gmp-devel
+          - make
+          - ncurses
+          - xz
+          - perl
+          - pkgconfig
+          notes: ''
       Linux_CentOS:
         '( >= 7 && < 8 )':
           distroPKGs:
