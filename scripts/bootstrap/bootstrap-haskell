@@ -45,12 +45,45 @@ ghver="0.1.22.0"
 export GHCUP_SKIP_UPDATE_CHECK=yes
 : "${BOOTSTRAP_HASKELL_DOWNLOADER:=curl}"
 
+set_msys2_env_dir() {
+    case "${GHCUP_MSYS2_ENV}" in
+        "")
+            case "${arch}" in
+                x86_64|amd64)
+                    GHCUP_MSYS2_ENV_DIR="mingw64" ;;
+                i*86)
+                    GHCUP_MSYS2_ENV_DIR="mingw32" ;;
+                aarch64|arm64)
+                    GHCUP_MSYS2_ENV_DIR="clangarm64" ;;
+                *) die "Unknown architecture: ${arch}" ;;
+            esac
+            ;;
+        MSYS)
+            GHCUP_MSYS2_ENV_DIR="usr" ;;
+        UCRT64)
+            GHCUP_MSYS2_ENV_DIR="ucrt64" ;;
+        CLANG64)
+            GHCUP_MSYS2_ENV_DIR="clang64" ;;
+        CLANGARM64)
+            GHCUP_MSYS2_ENV_DIR="clangarm64" ;;
+        CLANG32)
+            GHCUP_MSYS2_ENV_DIR="clang32" ;;
+        MINGW64)
+            GHCUP_MSYS2_ENV_DIR="mingw64" ;;
+        MINGW32)
+            GHCUP_MSYS2_ENV_DIR="mingw32" ;;
+        *)
+            die "Invalid value for GHCUP_MSYS2_ENV. Valid values are: MSYS, UCRT64, CLANG64, CLANGARM64, CLANG32, MINGW64, MINGW32" ;;
+    esac
+}
+
 case "${plat}" in
         MSYS*|MINGW*|CYGWIN*)
 			: "${GHCUP_INSTALL_BASE_PREFIX:=/c}"
 			GHCUP_DIR=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup")
 			GHCUP_BIN=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin")
 			: "${GHCUP_MSYS2:=${GHCUP_DIR}/msys64}"
+			set_msys2_env_dir
 			;;
 		*)
 			: "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}"
@@ -63,36 +96,6 @@ case "${plat}" in
 				GHCUP_BIN=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/bin
 			fi
 			;;
-esac
-
-case "${GHCUP_MSYS2_ENV}" in
-    "")
-        case "${arch}" in
-            x86_64|amd64)
-                GHCUP_MSYS2_ENV_DIR="mingw64" ;;
-            i*86)
-                GHCUP_MSYS2_ENV_DIR="mingw32" ;;
-            aarch64|arm64)
-                GHCUP_MSYS2_ENV_DIR="clangarm64" ;;
-            *) die "Unknown architecture: ${arch}" ;;
-        esac
-        ;;
-    MSYS)
-        GHCUP_MSYS2_ENV_DIR="usr" ;;
-    UCRT64)
-        GHCUP_MSYS2_ENV_DIR="ucrt64" ;;
-    CLANG64)
-        GHCUP_MSYS2_ENV_DIR="clang64" ;;
-    CLANGARM64)
-        GHCUP_MSYS2_ENV_DIR="clangarm64" ;;
-    CLANG32)
-        GHCUP_MSYS2_ENV_DIR="clang32" ;;
-    MINGW64)
-        GHCUP_MSYS2_ENV_DIR="mingw64" ;;
-    MINGW32)
-        GHCUP_MSYS2_ENV_DIR="mingw32" ;;
-    *)
-        die "Invalid value for GHCUP_MSYS2_ENV. Valid values are: MSYS, UCRT64, CLANG64, CLANGARM64, CLANG32, MINGW64, MINGW32" ;;
 esac
 
 : "${BOOTSTRAP_HASKELL_GHC_VERSION:=recommended}"
