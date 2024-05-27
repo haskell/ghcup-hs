@@ -67,7 +67,7 @@ hide:
     </a>
   </span>,
   <span>
-    <a href="https://app.element.io/#/room/#haskell-tooling:matrix.org">
+    <a href="https://matrix.to/#/#ghcup:matrix.org">
       <img src="Matrix_logo.svg" alt=""/>
     </a>
   </span>
