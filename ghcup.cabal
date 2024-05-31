@@ -400,7 +400,6 @@ executable ghcup
   build-depends:
     , ghcup
     , ghcup-optparse
-    , ghcup-tui
 
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER
@@ -410,6 +409,7 @@ executable ghcup
     other-modules: BrickMain
     build-depends:
       , brick         ^>=2.1
+      , ghcup-tui
       , vty           ^>=6.0 || ^>=6.1 || ^>=6.2
 
   if os(windows)
