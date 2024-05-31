@@ -766,6 +766,44 @@ ghcup run --ghc 8.10.7 --cabal latest --hls latest --stack latest --install -- c
 
 This will execute vscode with GHC set to 8.10.7 and all other tools to their latest version.
 
+## Support multiple users on Windows
+
+On Windows, by default GHCup is installed in `C:\ghcup`, and not in the `C:\Users` directory.
+
+To allow all users of a Windows machine to make use of GHCup all you have to do is set the right global environment variables (and possibly file permissions).
+
+```sh
+$env:PATH += ";C:\ghcup\bin"
+```
+
+If the GHCup is not installed at the `C:\ghcup`, then additionally the following environment variables would also need adjustment
+
+* GHCUP_INSTALL_BASE_PREFIX (to e.g. D:\)
+* GHCUP_MSYS2 (to e.g. D:\ghcup\msys64)
+
+Note that if all users have read/write permissions to `C:\ghcup`, then anyone can install, remove, or set (the default) for all of the tools (ghc, cabal, hls, stack), and even remove GHCup completely via `ghcup nuke`.
+
+To avoid this the administrator can use the "isolate" install feature to install the tools at a shared location for multiple users.
+
+```sh
+ghcup install ghc 9.4.8 --isolate C:\shared-dir\haskell
+ghcup install cabal recommended --isolate C:\shared-dir\haskell\bin
+ghcup install hls recommended --isolate C:\shared-dir\haskell\bin
+```
+
+Then each user can access the installed tools by setting the PATH
+
+```sh
+$env:PATH += ";C:\shared-dir\haskell\bin"
+```
+
+If the users need msys2 C libraries, they will have to each adjust their `cabal.config` as [described here](https://cabal.readthedocs.io/en/latest/how-to-run-in-windows.html#ensure-that-cabal-can-use-system-libraries). Also make sure they [enable long path behavior](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry#enable-long-paths-in-windows-10-version-1607-and-later).
+
+Also check:
+
+* [GHCup: manual install on windows](https://www.haskell.org/ghcup/install/#windows_1)
+* [GHCup: common env variables](https://www.haskell.org/ghcup/guide/#env-variables)
+
 # Troubleshooting
 
 ## Script immediately exits on windows
