@@ -132,13 +132,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
     additionalValidator = Right . T.split isSpace
 
     fields =
-      [ Menu.createEditableField (Common.MenuElement Common.CabalProjectEditBox) cabalProjectV cabalProject
-           & Menu.fieldLabelL .~ "cabal project"
-           & Menu.fieldHelpMsgL .~ "If relative filepath, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. Otherwise expects a full URI with https/http/file scheme."
-      , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) cabalProjectLocalV cabalProjectLocal
-          & Menu.fieldLabelL .~ "cabal project local"
-          & Menu.fieldHelpMsgL .~ "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
-      , Menu.createCheckBoxField (Common.MenuElement Common.UpdateCabalCheckBox) updateCabal
+      [ Menu.createCheckBoxField (Common.MenuElement Common.UpdateCabalCheckBox) updateCabal
           & Menu.fieldLabelL .~ "cabal update"
           & Menu.fieldHelpMsgL .~ "Run 'cabal update' before the build"
       , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs
@@ -147,9 +141,6 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
       , Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs
           & Menu.fieldLabelL .~ "target GHC"
           & Menu.fieldHelpMsgL .~ "For which GHC version to compile for (can be specified multiple times)"
-      , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches
-          & Menu.fieldLabelL .~ "patches"
-          & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or Absolute path to patch directory"
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
@@ -162,6 +153,15 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
       , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) overWriteVersionParser overwriteVer
           & Menu.fieldLabelL .~ "overwrite version"
           & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
+      , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches
+          & Menu.fieldLabelL .~ "patches"
+          & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or Absolute path to patch directory"
+      , Menu.createEditableField (Common.MenuElement Common.CabalProjectEditBox) cabalProjectV cabalProject
+           & Menu.fieldLabelL .~ "cabal project"
+           & Menu.fieldHelpMsgL .~ "If relative filepath, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. Otherwise expects a full URI with https/http/file scheme."
+      , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) cabalProjectLocalV cabalProjectLocal
+          & Menu.fieldLabelL .~ "cabal project local"
+          & Menu.fieldHelpMsgL .~ "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
       ]
 
     buttons = [
