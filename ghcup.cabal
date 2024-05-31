@@ -365,11 +365,8 @@ library ghcup-tui
     , brick         ^>=2.1
     , vty           ^>=6.0 || ^>=6.1 || ^>=6.2
 
-  if flag(internal-downloader)
-    cpp-options: -DINTERNAL_DOWNLOADER
-
-  if flag(tui)
-    cpp-options:   -DBRICK
+  if !flag(tui)
+    buildable: False
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
