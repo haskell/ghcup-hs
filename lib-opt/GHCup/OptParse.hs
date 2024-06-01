@@ -23,6 +23,7 @@ module GHCup.OptParse (
   , module GHCup.OptParse.ChangeLog
   , module GHCup.OptParse.Prefetch
   , module GHCup.OptParse.GC
+  , module GHCup.OptParse.HealthCheck
   , module GHCup.OptParse.DInfo
   , module GHCup.OptParse.Nuke
   , module GHCup.OptParse.ToolRequirements
@@ -48,6 +49,7 @@ import           GHCup.OptParse.Upgrade
 import           GHCup.OptParse.ChangeLog
 import           GHCup.OptParse.Prefetch
 import           GHCup.OptParse.GC
+import           GHCup.OptParse.HealthCheck
 import           GHCup.OptParse.DInfo
 import           GHCup.OptParse.ToolRequirements
 import           GHCup.OptParse.Nuke
@@ -119,6 +121,7 @@ data Command
   | GC GCOptions
   | Run RunOptions
   | PrintAppErrors
+  | HealthCheckCommand HealtCheckOptions
 
 
 
@@ -314,6 +317,10 @@ com =
                    <> footerDoc ( Just $ text runFooter )
                    )
                )
+      <> command
+              "healthcheck"
+               (info ((HealthCheckCommand <$> hcP)<**> helper)
+                     (progDesc "Check health of GHCup"))
       <> commandGroup "Main commands:"
       )
     <|> subparser
