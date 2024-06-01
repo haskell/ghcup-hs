@@ -630,7 +630,7 @@ adjust_cabal_config() {
     else
         cabal_bin="$HOME/AppData/Roaming/cabal/bin"
     fi
-    ecabal user-config -a "extra-prog-path: $(cygpath -w "$GHCUP_BIN"), $(cygpath -w "$cabal_bin"), $(cygpath -w "$GHCUP_MSYS2"/${GHCUP_MSYS2_ENV_DIR}/bin), $(cygpath -w "$GHCUP_MSYS2"/usr/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2"/${GHCUP_MSYS2_ENV_DIR}/include)" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2"/${GHCUP_MSYS2_ENV_DIR}/lib)" -f init
+    ecabal user-config -a "extra-prog-path: $(cygpath -w "$GHCUP_BIN"), $(cygpath -w "$cabal_bin"), $(cygpath -w "$GHCUP_MSYS2/${GHCUP_MSYS2_ENV_DIR}/bin"), $(cygpath -w "$GHCUP_MSYS2"/usr/bin)" -a "extra-include-dirs: $(cygpath -w "$GHCUP_MSYS2/${GHCUP_MSYS2_ENV_DIR}/include")" -a "extra-lib-dirs: $(cygpath -w "$GHCUP_MSYS2/${GHCUP_MSYS2_ENV_DIR}/lib")" -f init
 }
 
 ask_cabal_config_init() {
