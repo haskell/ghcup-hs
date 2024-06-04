@@ -37,8 +37,8 @@ param (
     [string]$ExistingMsys2Dir,
     # Specify the cabal root directory (default: '$InstallDir\cabal')
     [string]$CabalDir,
-    # Whether to disable use of curl.exe
-    [switch]$DisableCurl,
+    # Whether to use curl.exe (default: false)
+    [switch]$UseCurl,
     # The Msys2 version to download (e.g. 20221216)
     [string]$Msys2Version,
     # The Msys2 sha256sum hash
@@ -504,7 +504,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     $msysUrl = ('https://downloads.haskell.org/ghcup/msys2/{0}' -f "$archive")
     $archivePath = ('{0}\{1}' -f ([IO.Path]::GetTempPath()), "$archive")
 
-    if ((Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue) -and !($DisableCurl)) {
+    if (($UseCurl) -and (Get-Command -Name 'curl.exe' -ErrorAction SilentlyContinue)) {
       Exec "curl.exe" '-o' "$archivePath" "$msysUrl"
     } else {
       Get-FileWCSynchronous -url "$msysUrl" -destinationFolder ([IO.Path]::GetTempPath()) -includeStats
@@ -681,7 +681,7 @@ if ($Minimal) {
   $MinimalExport = 'export BOOTSTRAP_HASKELL_MINIMAL=1 ;'
 }
 
-if ($DisableCurl) {
+if (!($UseCurl)) {
   $BootstrapDownloader = 'export BOOTSTRAP_HASKELL_DOWNLOADER=wget ;'
   $DownloadScript = 'wget -O /dev/stdout'
 } else {
