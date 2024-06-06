@@ -10,6 +10,7 @@ module GHCup.Prelude.File.Search (
 
 import           GHCup.Types(ProcessError(..), CapturedProcess(..))
 
+import           Control.Monad (forM)
 import           Control.Monad.Reader
 import           Data.Maybe
 import           Data.Text               ( Text )

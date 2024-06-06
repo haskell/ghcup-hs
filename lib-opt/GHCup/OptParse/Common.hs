@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE ViewPatterns      #-}
@@ -22,6 +23,7 @@ import           GHCup.Prelude.Process
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.MegaParsec
 
+import           Control.Monad (forM, when, join)
 import           Control.DeepSeq
 import           Control.Concurrent
 import           Control.Concurrent.Async
@@ -866,4 +868,12 @@ parseNewUrlSource "GHCupURL" = pure NewGHCupURL
 parseNewUrlSource "StackSetupURL" = pure NewStackSetupURL
 parseNewUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
             <|> (fmap NewURI . first show . parseURI .UTF8.fromString $ s')
+
+
+#if MIN_VERSION_transformers(0,6,0)
+instance Alternative (Either [a]) where
+    empty        = Left []
+    Left _ <|> n = n
+    m      <|> _ = m
+#endif
 

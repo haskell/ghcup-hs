@@ -55,7 +55,7 @@ import qualified System.Posix.Process          as SPP
 import qualified System.Console.Terminal.Size  as TP
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as BL
-import qualified "unix-bytestring" System.Posix.IO.ByteString
+import qualified System.Posix.IO.ByteString.Ext
                                                as SPIB
 
 

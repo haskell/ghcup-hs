@@ -34,8 +34,8 @@ import Brick
       AttrMap,
       EventM,
       Size(..),
-      Widget(..), 
-      ViewportType (Vertical), 
+      Widget(..),
+      ViewportType (Vertical),
       (<+>),
       (<=>))
 import qualified Brick
@@ -50,6 +50,7 @@ import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
+import           Control.Monad (when, forM_)
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Resource
@@ -60,7 +61,7 @@ import           Data.List
 import           Data.Maybe
 import           Data.IORef (IORef, readIORef, newIORef, writeIORef, modifyIORef)
 import           Data.Vector                    ( Vector
-                                                
+
                                                 )
 import           Data.Versions hiding (Lens')
 import           Haskus.Utils.Variant.Excepts
@@ -94,8 +95,8 @@ import           Optics.Lens (Lens', lens, toLensVL)
 It is a FocusRing over many list's. Each list contains the information for each tool. Each list has an internal name (for Brick's runtime)
 and a label which we can use in rendering. This data-structure helps to reuse Brick.Widget.List and to navegate easily across
 
-Consider this code as private. GenericSectionList should not be used directly as the FocusRing should be align with the Vector containing 
-the elements, otherwise you'd be focusing on a non-existent widget with unknown result (In theory the code is safe unless you have an empty section list). 
+Consider this code as private. GenericSectionList should not be used directly as the FocusRing should be align with the Vector containing
+the elements, otherwise you'd be focusing on a non-existent widget with unknown result (In theory the code is safe unless you have an empty section list).
 
 - To build a SectionList use the safe constructor sectionList
 - To access sections use the lens provider sectionL and the name of the section you'd like to access
@@ -116,8 +117,8 @@ makeLensesFor [("sectionListFocusRing", "sectionListFocusRingL"), ("sectionListE
 type SectionList n e = GenericSectionList n V.Vector e
 
 
--- | Build a SectionList from nonempty list. If empty we could not defined sectionL lenses. 
-sectionList :: Foldable t 
+-- | Build a SectionList from nonempty list. If empty we could not defined sectionL lenses.
+sectionList :: Foldable t
             => n                     -- The name of the section list
             -> [(n, t e)]            -- a list of tuples (section name, collection of elements)
             -> Int
@@ -129,14 +130,14 @@ sectionList name elements height
   , sectionListName = name
   }
 -- | This lens constructor, takes a name and looks if a section has such a name.
---   Used to dispatch events to sections. It is a partial function only meant to 
+--   Used to dispatch events to sections. It is a partial function only meant to
 --   be used with the FocusRing inside GenericSectionList
 sectionL :: Eq n => n -> Lens' (GenericSectionList n t e) (L.GenericList n t e)
 sectionL section_name = lens g s
     where is_section_name = (== section_name) . L.listName
           g section_list =
             let elms   = section_list ^. sectionListElementsL
-                zeroth = elms V.! 0 -- TODO: This crashes for empty vectors. 
+                zeroth = elms V.! 0 -- TODO: This crashes for empty vectors.
             in fromMaybe zeroth (V.find is_section_name elms)
           s gl@(GenericSectionList _ elms _) list =
             case V.findIndex is_section_name elms of
@@ -145,16 +146,16 @@ sectionL section_name = lens g s
                              in gl & sectionListElementsL .~ new_elms
 
 moveDown :: (L.Splittable t, Ord n, Foldable t) => EventM n (GenericSectionList n t e) ()
-moveDown = do 
+moveDown = do
     ring <- use sectionListFocusRingL
-    case F.focusGetCurrent ring of 
+    case F.focusGetCurrent ring of
         Nothing -> pure ()
         Just l  -> do      -- If it is the last element, move to the first element of the next focus; else, just handle regular list event.
             current_list <- use (sectionL l)
             let current_idx = L.listSelected current_list
                 list_length = current_list & length
             if current_idx == Just (list_length - 1)
-                then do 
+                then do
                     new_focus <- sectionListFocusRingL <%= F.focusNext
                     case F.focusGetCurrent new_focus of
                         Nothing -> pure () -- |- Optic.Zoom.zoom doesn't typecheck but Lens.Micro.Mtl.zoom does. It is re-exported by Brick
@@ -170,10 +171,10 @@ moveUp = do
             current_list <- use (sectionL l)
             let current_idx = L.listSelected current_list
             if current_idx == Just 0
-                then do 
+                then do
                     new_focus <- sectionListFocusRingL <%= F.focusPrev
                     case F.focusGetCurrent new_focus of
-                        Nothing -> pure ()  
+                        Nothing -> pure ()
                         Just new_l -> Brick.zoom (toLensVL $ sectionL new_l) (Brick.modify L.listMoveToEnd)
                 else Brick.zoom (toLensVL $ sectionL l) $ Brick.modify L.listMoveUp
 
@@ -236,9 +237,9 @@ renderSectionList renderElem sectionFocus ge@(GenericSectionList focus elms slNa
 -- | Equivalent to listSelectedElement
 sectionListSelectedElement :: (Eq n, L.Splittable t, Traversable t, Semigroup (t e)) => GenericSectionList n t e -> Maybe (Int, e)
 sectionListSelectedElement generic_section_list = do
-  current_focus <- generic_section_list ^. sectionListFocusRingL & F.focusGetCurrent 
+  current_focus <- generic_section_list ^. sectionListFocusRingL & F.focusGetCurrent
   let current_section = generic_section_list ^. sectionL current_focus
-  L.listSelectedElement current_section 
+  L.listSelectedElement current_section
 
 {- Brick app data structures.
 
@@ -313,7 +314,7 @@ app attrs dimAttrs =
 
 {- Drawing.
 
-The section for creating our widgets. 
+The section for creating our widgets.
 
 -}
 
@@ -349,7 +350,7 @@ drawNavigation dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
       <+> minHSize 15 (Brick.str "Version")
       <+> Brick.padLeft (Pad 1) (minHSize 25 $ Brick.str "Tags")
       <+> Brick.padLeft (Pad 5) (Brick.str "Notes")
-  renderList' bis = 
+  renderList' bis =
     let allElements = V.concatMap L.listElements $ sectionListElements bis
         minTagSize = V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) allElements
         minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (GHCTargetVersion lCross lVer)) allElements
@@ -420,7 +421,7 @@ drawNavigation dimAttrs BrickState{ _appSettings = as@BrickSettings{}, ..}
   minHSize s' = Brick.hLimit s' . Brick.vLimit 1 . (<+> Brick.fill ' ')
 
 drawTutorial :: Widget Name
-drawTutorial = 
+drawTutorial =
   let
     mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
     txt_separator = hBorder <+> Brick.str " o " <+> hBorder
@@ -429,7 +430,7 @@ drawTutorial =
       $ Brick.vLimitPercent 50
       $ Brick.withBorderStyle unicode
       $ borderWithLabel (Brick.txt "Tutorial")
-      $ Brick.vBox 
+      $ Brick.vBox
           (fmap center
             [ mkTextBox [Brick.txtWrap "GHCup is a distribution channel for Haskell's tools."]
             , txt_separator
@@ -468,7 +469,7 @@ drawTutorial =
                 ]
               , Brick.txtWrap "base-X.Y.Z.W tag is the minimun version of the base package admited in such ghc version"
               ]
-            , Brick.txt " "                            
+            , Brick.txt " "
             ])
         <=> Brick.padRight Brick.Max (Brick.txt "Press q to exit the tutorial")
 
@@ -520,7 +521,7 @@ drawKeyInfo KeyBindings {..} =
       <=> Brick.hBox [Brick.txt "Press q to return to Navigation" <+> Brick.padRight Brick.Max (Brick.txt " ") <+> Brick.txt "Press Enter to go to the Tutorial"]
 
 drawUI :: AttrMap -> BrickState -> [Widget Name]
-drawUI dimAttrs st = 
+drawUI dimAttrs st =
   let navg = drawNavigation dimAttrs st
   in case st ^. mode of
        Navigation -> [navg]
@@ -568,20 +569,20 @@ latestAttr, latestPrereleaseAttr, latestNightlyAttr, prereleaseAttr, nightlyAttr
 compiledAttr, strayAttr, dayAttr, helpAttr, hoorayAttr:: Brick.AttrName
 
 notInstalledAttr = Brick.attrName "not-installed"
-setAttr = Brick.attrName "set" 
-installedAttr = Brick.attrName "installed" 
-recommendedAttr = Brick.attrName "recommended" 
+setAttr = Brick.attrName "set"
+installedAttr = Brick.attrName "installed"
+recommendedAttr = Brick.attrName "recommended"
 hlsPoweredAttr = Brick.attrName "hls-powered"
-latestAttr = Brick.attrName "latest" 
+latestAttr = Brick.attrName "latest"
 latestPrereleaseAttr = Brick.attrName "latest-prerelease"
 latestNightlyAttr = Brick.attrName "latest-nightly"
-prereleaseAttr = Brick.attrName "prerelease" 
-nightlyAttr = Brick.attrName "nightly" 
-compiledAttr = Brick.attrName "compiled" 
-strayAttr = Brick.attrName "stray" 
-dayAttr = Brick.attrName "day" 
-helpAttr = Brick.attrName "help" 
-hoorayAttr = Brick.attrName "hooray" 
+prereleaseAttr = Brick.attrName "prerelease"
+nightlyAttr = Brick.attrName "nightly"
+compiledAttr = Brick.attrName "compiled"
+strayAttr = Brick.attrName "stray"
+dayAttr = Brick.attrName "day"
+helpAttr = Brick.attrName "help"
+hoorayAttr = Brick.attrName "hooray"
 
 dimAttributes :: Bool -> AttrMap
 dimAttributes no_color = Brick.attrMap
@@ -620,9 +621,9 @@ keyHandlers KeyBindings {..} =
   ]
  where
   --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
-  hideShowHandler' f = do 
+  hideShowHandler' f = do
     app_settings <- use appSettings
-    let 
+    let
       vers = f app_settings
       newAppSettings = app_settings & showAllVersions .~ vers
     ad <- use appData
@@ -632,7 +633,7 @@ keyHandlers KeyBindings {..} =
 
 
 tutorialHandler :: BrickEvent Name e -> EventM Name BrickState ()
-tutorialHandler ev = 
+tutorialHandler ev =
   case ev of
     VtyEvent (Vty.EvKey (Vty.KChar 'q') _ ) -> mode .= Navigation
     _ -> pure ()
@@ -663,7 +664,7 @@ eventHandler ev = do
     Navigation -> navigationHandler ev
 
 
-{- Core Logic. 
+{- Core Logic.
 
 This section defines the IO actions we can execute within the Brick App:
  - Install
@@ -721,7 +722,7 @@ constructList appD settings =
 selectBy :: Tool -> (ListResult -> Bool) -> BrickInternalState -> BrickInternalState
 selectBy tool predicate internal_state =
   let new_focus = F.focusSetCurrent (Singular tool) (view sectionListFocusRingL internal_state)
-      tool_lens = sectionL (Singular tool) 
+      tool_lens = sectionL (Singular tool)
    in internal_state
         & sectionListFocusRingL .~ new_focus
         & tool_lens %~ L.listMoveTo 0            -- We move to 0 first

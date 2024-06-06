@@ -19,8 +19,6 @@ constraints: http-io-streams -brotli,
              filepath == 1.4.101.0 || == 1.4.300.1 || >= 1.5.2.0,
              tar >= 0.6.2.0
 
-constraints: text -simdutf
-
 if os(mingw32)
   constraints: zlib +bundled-c-zlib,
                lzma +static,
@@ -48,8 +46,21 @@ package cabal-plan
 package aeson
   flags: +ordered-keymap
 
+<<<<<<< HEAD
 package *
   test-show-details: direct
 
 allow-newer: cabal-install-parsers:tar
+=======
+package streamly
+  flags: +use-unliftio -streamly-core
+
+package *
+  test-show-details: direct
+
+if impl(ghc >= 9.6)
+  allow-newer: streamly:Win32, streamly:ghc-prim, streamly:unicode-data, streamly:base, semigroupoids:base
+else
+  allow-newer: streamly:Win32
+>>>>>>> cb74721 (Support GHC-9.6 wrt #979)
 

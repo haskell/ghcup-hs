@@ -74,6 +74,7 @@ import Control.DeepSeq (force)
 import Control.Exception (evaluate)
 import GHC.IO.Exception
 import System.IO.Error
+import Control.Monad (when, forM_, filterM)
 
 
 -- | Merge one file tree to another given a copy operation.
