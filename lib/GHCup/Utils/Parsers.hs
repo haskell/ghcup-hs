@@ -86,7 +86,7 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
   Left  e -> Left $ errorBundlePretty e
  where
   archP :: MP.Parsec Void Text Architecture
-  archP = MP.try (MP.chunk "x86_64" $> A_64) <|> (MP.chunk "i386" $> A_32)
+  archP = choice' ((\x -> MP.chunk (T.pack $ archToString x) $> x) <$> ([minBound..maxBound] :: [Architecture]))
   platformP :: MP.Parsec Void Text PlatformRequest
   platformP = choice'
     [ (`PlatformRequest` FreeBSD)
@@ -112,6 +112,9 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
          )
         <* MP.chunk "-linux"
         )
+    , (\a -> PlatformRequest a Windows Nothing)
+    <$> ((archP <* MP.chunk "-")
+        <* (MP.chunk "unknown-mingw32" <|> MP.chunk "unknown-windows" <|> MP.chunk "windows"))
     ]
   distroP :: MP.Parsec Void Text LinuxDistro
   distroP = choice' ((\d -> MP.chunk (T.pack $ distroToString d) $> d) <$> allDistros)
@@ -387,34 +390,3 @@ parseNewUrlSource "GHCupURL" = pure NewGHCupURL
 parseNewUrlSource "StackSetupURL" = pure NewStackSetupURL
 parseNewUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
             <|> (fmap NewURI . first show . parseURI .UTF8.fromString $ s')
-
-
-checkForUpdates :: ( MonadReader env m
-                   , HasGHCupInfo env
-                   , HasDirs env
-                   , HasPlatformReq env
-                   , MonadCatch m
-                   , HasLog env
-                   , MonadThrow m
-                   , MonadIO m
-                   , MonadFail m
-                   )
-                => m [(Tool, GHCTargetVersion)]
-checkForUpdates = do
-  GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
-  lInstalled <- listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
-  let latestInstalled tool = (fmap (\lr -> GHCTargetVersion (lCross lr) (lVer lr)) . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
-
-  ghcup <- forMM (getLatest dls GHCup) $ \(GHCTargetVersion _ l, _) -> do
-    (Right ghcup_ver) <- pure $ version $ prettyPVP ghcUpVer
-    if (l > ghcup_ver) then pure $ Just (GHCup, mkTVer l) else pure Nothing
-
-  otherTools <- forM [GHC, Cabal, HLS, Stack] $ \t ->
-    forMM (getLatest dls t) $ \(l, _) -> do
-      let mver = latestInstalled t
-      forMM mver $ \ver ->
-        if (l > ver) then pure $ Just (t, l) else pure Nothing
-
-  pure $ catMaybes (ghcup:otherTools)
- where
-  forMM a f = fmap join $ forM a f
