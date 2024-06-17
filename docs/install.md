@@ -365,6 +365,10 @@ export PATH="$HOME/.cabal/bin:$HOME/.ghcup/bin:$PATH"
     - in the upper half, click on "New..."
     - enter `CABAL_DIR` under "Variable name" and based on the installation destination from step 1. enter the device directory + `cabal` subdir (default `C:\cabal`)
     - click "OK" at the bottom
+    - Optionnaly (if you need to go through an HTTP proxy)
+        - in the upper half, click on "New..."
+        - enter `HTTPS_PROXY` under "Variable name" and your proxy address (like : http://my-http-proxy:3128)
+        - click "OK" at the bottom
     - click "OK" at the bottom
     - click "OK" at the bottom
 3. Install tools
