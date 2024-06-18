@@ -4,6 +4,7 @@
 module SetTest where
 
 import GHCup.OptParse
+import GHCup.Utils.Parsers (SetToolVersion(..))
 import Test.Tasty
 import GHCup.Types
 import Data.Versions

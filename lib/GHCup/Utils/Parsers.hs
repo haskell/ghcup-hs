@@ -311,24 +311,24 @@ fromVersion' (SetToolVersion (mkTVer -> v)) tool = do
         Nothing -> pure (v, vi)
 fromVersion' (SetToolTag Latest) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getLatest dls tool ?? TagNotFound Latest tool
+  second Just <$> getLatest dls tool ?? TagNotFound Latest tool
 fromVersion' (SetToolDay day) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> case getByReleaseDay dls tool day of
+  second Just <$> case getByReleaseDay dls tool day of
                           Left ad -> throwE $ DayNotFound day tool ad
                           Right v -> pure v
 fromVersion' (SetToolTag LatestPrerelease) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
+  second Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
 fromVersion' (SetToolTag LatestNightly) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getLatestNightly dls tool ?? TagNotFound LatestNightly tool
+  second Just <$> getLatestNightly dls tool ?? TagNotFound LatestNightly tool
 fromVersion' (SetToolTag Recommended) tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getRecommended dls tool ?? TagNotFound Recommended tool
+  second Just <$> getRecommended dls tool ?? TagNotFound Recommended tool
 fromVersion' (SetToolTag (Base pvp'')) GHC = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  bimap id Just <$> getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') GHC
+  second Just <$> getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') GHC
 fromVersion' SetNext tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   next <- case tool of
