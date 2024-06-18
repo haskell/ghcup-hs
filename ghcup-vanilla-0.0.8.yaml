@@ -6681,11 +6681,6 @@ ghcupDownloads:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~hls/haskell-language-server-2.9.0.0/haskell-language-server-2.9.0.0-x86_64-mingw64.zip
               dlHash: 864df615bafd216b2dcc40078e8e83acacd90212e8607dee15d74dfdf90567be
-          FreeBSD:
-            unknown_versioning:
-              dlUri: https://downloads.haskell.org/~hls/haskell-language-server-2.9.0.0/haskell-language-server-2.9.0.0-x86_64-freebsd.tar.xz
-              dlSubdir: haskell-language-server-2.9.0.0
-              dlHash:
         A_ARM64:
           Linux_UnknownLinux:
             unknown_versioning:
