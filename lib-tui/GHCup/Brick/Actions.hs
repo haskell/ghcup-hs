@@ -65,9 +65,10 @@ import qualified Data.Vector                   as V
 import System.Environment (getExecutablePath)
 #if !IS_WINDOWS
 import           GHCup.Prelude.File
-import           System.FilePath
 import qualified System.Posix.Process          as SPP
 #endif
+
+import           System.FilePath
 
 import           Optics.State (use)
 import           Optics.State.Operators ( (.=))
