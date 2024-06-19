@@ -403,11 +403,8 @@ executable ghcup
 
   if flag(tui)
     cpp-options:   -DBRICK
-    other-modules: BrickMain
     build-depends:
-      , brick         ^>=2.1
       , ghcup-tui
-      , vty           ^>=6.0 || ^>=6.1 || ^>=6.2
 
   if os(windows)
     cpp-options: -DIS_WINDOWS

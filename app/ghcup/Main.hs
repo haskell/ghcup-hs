@@ -11,7 +11,6 @@
 module Main where
 
 #if defined(BRICK)
--- import           BrickMain                    ( brickMain )
 import           GHCup.BrickMain (brickMain)
 #endif
 
