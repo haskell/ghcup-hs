@@ -54,7 +54,7 @@ case $TOOL in
 		ghcup_fun install ghc --set recommended
 		cabal update
 
-		test_package="bytestring-0.11.1.0"
+		test_package="bytestring-0.11.5.3"
 		test_module="Data/ByteString.hs"
 
 		create_cradle() {
