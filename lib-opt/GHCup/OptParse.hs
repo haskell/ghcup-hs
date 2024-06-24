@@ -52,7 +52,7 @@ import           GHCup.OptParse.ToolRequirements
 import           GHCup.OptParse.Nuke
 
 import           GHCup.Types
-
+import           GHCup.Utils.Parsers (gpgParser, downloaderParser, keepOnParser, platformParser, parseUrlSource)
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif

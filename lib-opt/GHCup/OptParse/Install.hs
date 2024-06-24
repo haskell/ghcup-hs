@@ -20,6 +20,7 @@ import           GHCup
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils.Dirs
+import           GHCup.Utils.Parsers (fromVersion, isolateParser, uriParser)
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ

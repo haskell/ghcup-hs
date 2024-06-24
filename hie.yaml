@@ -2,6 +2,10 @@ cradle:
   cabal:
   - component: "ghcup:lib:ghcup"
     path: ./lib
+  - component: "ghcup:lib:ghcup-optparse"
+    path: ./lib-opt
+  - component: "ghcup:lib:ghcup-tui"
+    path: ./lib-tui
   - component: "ghcup:exe:ghcup"
     path: ./app/ghcup
   - component: "ghcup:lib:ghcup-optparse"

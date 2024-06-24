@@ -18,6 +18,7 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Types.Optics
 import           GHCup.Utils
+import           GHCup.Utils.Parsers (fromVersion, uriParser, ghcVersionTagEither, isolateParser, overWriteVersionParser)
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 import           GHCup.OptParse.Common

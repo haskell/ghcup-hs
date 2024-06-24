@@ -11,6 +11,7 @@ module GHCup.OptParse.Run where
 
 import           GHCup
 import           GHCup.Utils
+import           GHCup.Utils.Parsers (fromVersion, ghcVersionTagEither, isolateParser, toolVersionTagEither)
 import           GHCup.OptParse.Common
 import           GHCup.Errors
 import           GHCup.Types

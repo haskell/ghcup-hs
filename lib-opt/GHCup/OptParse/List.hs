@@ -14,6 +14,7 @@ module GHCup.OptParse.List where
 import           GHCup
 import           GHCup.Prelude
 import           GHCup.Types
+import           GHCup.Utils.Parsers (dayParser, toolParser, criteriaParser)
 import           GHCup.OptParse.Common
 import           GHCup.Prelude.String.QQ
 

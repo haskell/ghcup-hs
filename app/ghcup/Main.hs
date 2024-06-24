@@ -11,7 +11,7 @@
 module Main where
 
 #if defined(BRICK)
-import           BrickMain                    ( brickMain )
+import           GHCup.BrickMain (brickMain)
 #endif
 
 import qualified GHCup.GHC as GHC
@@ -24,6 +24,7 @@ import           GHCup.Platform
 import           GHCup.Types
 import           GHCup.Types.Optics      hiding ( toolRequirements )
 import           GHCup.Utils
+import           GHCup.Utils.Parsers (fromVersion)
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
