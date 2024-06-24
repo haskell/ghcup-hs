@@ -78,8 +78,8 @@ compileGhcCheckList = mapSecond CompileGHC
     )
   , (baseCmd <> "-j20", baseOptions{GHC.jobs = Just 20})
   , (baseCmd <> "--jobs 10", baseOptions{GHC.jobs = Just 10})
-  , (baseCmd <> "-c build.mk", baseOptions{GHC.buildConfig = Just "build.mk"})
-  , (baseCmd <> "--config build.mk", baseOptions{GHC.buildConfig = Just "build.mk"})
+  , (baseCmd <> "-c build.mk", baseOptions{GHC.buildConfig = Just "build.mk", GHC.buildSystem = Just Make})
+  , (baseCmd <> "--config build.mk", baseOptions{GHC.buildConfig = Just "build.mk", GHC.buildSystem = Just Make})
 #ifdef IS_WINDOWS
   , (baseCmd <> "--patch file:c:/example.patch", baseOptions{GHC.patches = Just $ Right [[uri|file:c:/example.patch|]]})
 #else

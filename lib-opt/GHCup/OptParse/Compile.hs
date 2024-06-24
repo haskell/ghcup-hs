@@ -164,7 +164,7 @@ Examples:
 
 ghcCompileOpts :: Parser GHCCompileOptions
 ghcCompileOpts =
-  GHCCompileOptions
+  (\targetGhc bootstrapGhc jobs patches crossTarget addConfArgs setCompile overwriteVer buildFlavour (buildSystem, buildConfig) isolateDir -> GHCCompileOptions {..})
     <$> ((GHC.SourceDist <$> option
           (eitherReader
             (first (const "Not a valid version") . version . T.pack)
@@ -214,14 +214,6 @@ ghcCompileOpts =
             (short 'j' <> long "jobs" <> metavar "JOBS" <> help
               "How many jobs to use for make"
               <> (completer $ listCompleter $ fmap show ([1..12] :: [Int]))
-            )
-          )
-    <*> optional
-          (option
-            str
-            (short 'c' <> long "config" <> metavar "CONFIG" <> help
-              "Absolute path to build config file"
-             <> completer (bashCompleter "file")
             )
           )
     <*> (optional
@@ -275,12 +267,28 @@ ghcCompileOpts =
             )
           )
     <*> (
-         (\b -> if b then Just Hadrian else Nothing) <$> switch
+         (\b -> (, Nothing) $ if b then Just Hadrian else Nothing) <$> switch
           (long "hadrian" <> help "Use the hadrian build system instead of make. Tries to detect by default."
           )
          <|>
-         (\b -> if b then Just Make else Nothing) <$> switch
+         ((\b c -> case (b, c) of
+                          -- --make specified
+                          (True, _) -> (Just Make, c)
+                          -- only --config specified... assume make
+                          (False, Just _) -> (Just Make, c)
+                          -- otherwise fall back to runtime detection of build
+                          -- system
+                          (False, _) -> (Nothing, c)) <$> switch
           (long "make" <> help "Use the make build system instead of hadrian. Tries to detect by default."
+          )
+          <*> optional
+            (option
+              str
+              (short 'c' <> long "config" <> metavar "CONFIG" <> help
+                "Absolute path to build config file (implies make)"
+               <> completer (bashCompleter "file")
+              )
+            )
           )
         )
     <*> optional
