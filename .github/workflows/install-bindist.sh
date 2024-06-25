@@ -97,6 +97,8 @@ case $TOOL in
 
         enter_test_package
         create_cradle
+		echo "packages: ."  >  cabal.project
+		echo "tests: False" >> cabal.project
 		case "$(uname -s)" in
 			MSYS_*|MINGW*)
 				test_all_hls "$(dirname "$(which ghcup)")"
