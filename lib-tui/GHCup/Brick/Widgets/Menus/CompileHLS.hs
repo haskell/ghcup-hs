@@ -72,7 +72,7 @@ makeLenses ''CompileHLSOptions
 type CompileHLSMenu = Menu CompileHLSOptions Name
 
 create :: KeyCombination -> CompileHLSMenu
-create k = Menu.createMenu CompileGHCBox initialState k buttons fields
+create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
   where
     initialState =
       CompileHLSOptions
@@ -86,6 +86,7 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
         Nothing
         []
         []
+    validator = const Nothing
     -- Brick's internal editor representation is [mempty].
     emptyEditor i = T.null i || (i == "\n")
     whenEmpty :: a -> (T.Text -> Either Menu.ErrorMessage a) -> T.Text -> Either Menu.ErrorMessage a

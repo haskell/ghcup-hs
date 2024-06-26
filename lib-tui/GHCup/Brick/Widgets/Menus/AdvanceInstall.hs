@@ -66,9 +66,10 @@ makeLensesFor [
 type AdvanceInstallMenu = Menu InstallOptions Name
 
 create :: KeyCombination -> AdvanceInstallMenu
-create k = Menu.createMenu AdvanceInstallBox initialState k [ok] fields
+create k = Menu.createMenu AdvanceInstallBox initialState validator k [ok] fields
   where
     initialState = InstallOptions Nothing False Nothing False []
+    validator = const Nothing
     -- Brick's internal editor representation is [mempty].
     emptyEditor i = T.null i || (i == "\n")
 
