@@ -91,7 +91,11 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
         Nothing
         Nothing
         Nothing
-    validator = const Nothing
+    validator CompileGHCOptions {..} = case (_setCompile, _isolateDir) of
+      (True, Just _) -> Just "Cannot set active when doing an isolated install"
+      _ -> case (_buildConfig, _buildSystem) of
+        (Just _, Just Hadrian) -> Just "Build config can be specified only for make build system"
+        _ -> Nothing
     -- Brick's internal editor representation is [mempty].
     emptyEditor i = T.null i || (i == "\n")
     whenEmpty :: a -> (T.Text -> Either Menu.ErrorMessage a) -> T.Text -> Either Menu.ErrorMessage a
