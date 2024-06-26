@@ -69,7 +69,9 @@ create :: KeyCombination -> AdvanceInstallMenu
 create k = Menu.createMenu AdvanceInstallBox initialState validator k [ok] fields
   where
     initialState = InstallOptions Nothing False Nothing False []
-    validator = const Nothing
+    validator InstallOptions {..} = case (instSet, isolateDir) of
+      (True, Just _) -> Just "Cannot set active when doing an isolated install"
+      _ -> Nothing
     -- Brick's internal editor representation is [mempty].
     emptyEditor i = T.null i || (i == "\n")
 
