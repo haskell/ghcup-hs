@@ -365,5 +365,3 @@ drawMenu menu =
        in fmap (\f b -> ((leftify (maxWidth + 10) . Border.border $ f b) <+>) ) buttonAsWidgets
     drawButtons = fmap drawField buttonAmplifiers
     buttonWidgets = zipWith (F.withFocusRing (menu ^. menuFocusRingL)) drawButtons (menu ^. menuButtonsL)
-
-
