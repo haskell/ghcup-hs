@@ -589,7 +589,7 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
                   ]
   compileResult <- run (do
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
-      let vi = getVersionInfo (mkTVer lVer) GHC dls
+      let vi = getVersionInfo (mkTVer lVer) HLS dls
       forM_ (_viPreCompile =<< vi) $ \msg -> do
         logInfo msg
         logInfo
