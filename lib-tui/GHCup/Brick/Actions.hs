@@ -589,18 +589,23 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
                   ]
   compileResult <- run (do
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
-      let vi = getVersionInfo (mkTVer lVer) HLS dls
-      forM_ (_viPreCompile =<< vi) $ \msg -> do
-        logInfo msg
-        logInfo
-          "...waiting for 5 seconds, you can still abort..."
-        liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
+      hlsVer <- case compopts ^. CompileHLS.gitRef of
+        Just ref -> pure (HLS.GitDist (GitBranch ref Nothing))
+        Nothing -> do
+          -- Compile the version user is pointing to in the tui
+          let vi = getVersionInfo (mkTVer lVer) HLS dls
+          forM_ (_viPreCompile =<< vi) $ \msg -> do
+            logInfo msg
+            logInfo
+              "...waiting for 5 seconds, you can still abort..."
+            liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
+          pure (HLS.SourceDist lVer)
 
       ghcs <-
         liftE $ forM (compopts ^. CompileHLS.targetGHCs)
                      (\ghc -> fmap (_tvVersion . fst) . Utils.fromVersion (Just ghc) $ GHC)
       targetVer <- liftE $ GHCup.compileHLS
-                      (HLS.SourceDist lVer)
+                      hlsVer
                       ghcs
                       (compopts ^. CompileHLS.jobs)
                       (compopts ^. CompileHLS.overwriteVer)

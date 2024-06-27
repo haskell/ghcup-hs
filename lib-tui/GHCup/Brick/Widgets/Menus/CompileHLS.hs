@@ -30,6 +30,7 @@ module GHCup.Brick.Widgets.Menus.CompileHLS (
   patches,
   targetGHCs,
   cabalArgs,
+  gitRef,
 )
 where
 
@@ -65,6 +66,7 @@ data CompileHLSOptions = CompileHLSOptions
   , _patches      :: Maybe (Either FilePath [URI])
   , _targetGHCs   :: [ToolVersion]
   , _cabalArgs    :: [T.Text]
+  , _gitRef       :: Maybe String
   } deriving (Eq, Show)
 
 makeLenses ''CompileHLSOptions
@@ -86,6 +88,8 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
         Nothing
         []
         []
+        Nothing
+
     validator CompileHLSOptions {..} = case (_setCompile, _isolateDir) of
       (True, Just _) -> Just "Cannot set active when doing an isolated install"
       _ -> if null _targetGHCs
@@ -167,6 +171,9 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
       , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) cabalProjectLocalV cabalProjectLocal
           & Menu.fieldLabelL .~ "cabal project local"
           & Menu.fieldHelpMsgL .~ "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
+      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef
+          & Menu.fieldLabelL .~ "git-ref"
+          & Menu.fieldHelpMsgL .~ "The git commit/branch/ref to build from"
       ]
 
     buttons = [
