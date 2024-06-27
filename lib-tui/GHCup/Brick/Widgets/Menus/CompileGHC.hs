@@ -155,6 +155,15 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
       , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"
+      , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
+          & Menu.fieldLabelL .~ "set"
+          & Menu.fieldHelpMsgL .~ "Set as active version after install"
+      , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour
+          & Menu.fieldLabelL .~ "flavour"
+          & Menu.fieldHelpMsgL .~ "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
+      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgs
+          & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
+          & Menu.fieldHelpMsgL .~ "Additional arguments to compile configure"
       , Menu.createEditableField (Common.MenuElement Common.BuildConfigEditBox) filepathV buildConfig
           & Menu.fieldLabelL .~ "build config"
           & Menu.fieldHelpMsgL .~ "Absolute path to build config file"
@@ -164,21 +173,12 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
       , Menu.createEditableField (Common.MenuElement Common.CrossTargetEditBox) (Right . Just) crossTarget
           & Menu.fieldLabelL .~ "cross target"
           & Menu.fieldHelpMsgL .~ "Build cross-compiler for this platform"
-      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgs
-          & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
-          & Menu.fieldHelpMsgL .~ "Additional arguments to compile configure"
-      , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
-          & Menu.fieldLabelL .~ "set"
-          & Menu.fieldHelpMsgL .~ "Set as active version after install"
-      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer
-          & Menu.fieldLabelL .~ "overwrite-version"
-          & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
       , Menu.createEditableField (Common.MenuElement Common.BuildSystemEditBox) systemV buildSystem
           & Menu.fieldLabelL .~ "build system"
           & Menu.fieldHelpMsgL .~ "either 'make' or 'hadrian'"
-      , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour
-          & Menu.fieldLabelL .~ "flavour"
-          & Menu.fieldHelpMsgL .~ "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
+      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer
+          & Menu.fieldLabelL .~ "overwrite-version"
+          & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
