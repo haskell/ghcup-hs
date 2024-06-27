@@ -166,7 +166,7 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
           & Menu.fieldHelpMsgL .~ "Additional arguments to compile configure"
       , Menu.createEditableField (Common.MenuElement Common.BuildConfigEditBox) filepathV buildConfig
           & Menu.fieldLabelL .~ "build config"
-          & Menu.fieldHelpMsgL .~ "Absolute path to build config file"
+          & Menu.fieldHelpMsgL .~ "Absolute path to build config file (make build system only)"
       , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches
           & Menu.fieldLabelL .~ "patches"
           & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or Absolute path to patch directory"
