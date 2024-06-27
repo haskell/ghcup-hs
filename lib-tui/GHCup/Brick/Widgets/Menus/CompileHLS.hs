@@ -144,8 +144,8 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"
       , Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs
-          & Menu.fieldLabelL .~ "target GHC"
-          & Menu.fieldHelpMsgL .~ "For which GHC version to compile for (can be specified multiple times)"
+          & Menu.fieldLabelL .~ "target GHC(s)"
+          & Menu.fieldHelpMsgL .~ "space separated list of GHC versions to compile for"
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
