@@ -31,6 +31,7 @@ module GHCup.Brick.Widgets.Menus.CompileGHC (
   buildFlavour,
   buildSystem,
   isolateDir,
+  gitRef,
 ) where
 
 import GHCup.Brick.Widgets.Menu (Menu)
@@ -69,6 +70,7 @@ data CompileGHCOptions = CompileGHCOptions
   , _buildFlavour :: Maybe String
   , _buildSystem  :: Maybe BuildSystem
   , _isolateDir   :: Maybe FilePath
+  , _gitRef       :: Maybe String
   } deriving (Eq, Show)
 
 makeLenses ''CompileGHCOptions
@@ -87,6 +89,7 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
         Nothing
         []
         False
+        Nothing
         Nothing
         Nothing
         Nothing
@@ -182,6 +185,9 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
+      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef
+          & Menu.fieldLabelL .~ "git-ref"
+          & Menu.fieldHelpMsgL .~ "The git commit/branch/ref to build from"
       ]
 
     buttons = [

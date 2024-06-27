@@ -501,15 +501,20 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
                   ]
   compileResult <- run (do
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
-      let vi = getVersionInfo (mkTVer lVer) GHC dls
-      forM_ (_viPreCompile =<< vi) $ \msg -> do
-        logInfo msg
-        logInfo
-          "...waiting for 5 seconds, you can still abort..."
-        liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
+      ghcVer <- case compopts ^. CompileGHC.gitRef of
+        Just ref -> pure (GHC.GitDist (GitBranch ref Nothing))
+        Nothing -> do
+          -- Compile the version user is pointing to in the tui
+          let vi = getVersionInfo (mkTVer lVer) GHC dls
+          forM_ (_viPreCompile =<< vi) $ \msg -> do
+            logInfo msg
+            logInfo
+              "...waiting for 5 seconds, you can still abort..."
+            liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
+          pure (GHC.SourceDist lVer)
 
       targetVer <- liftE $ GHCup.compileGHC
-                    (GHC.SourceDist lVer)
+                    ghcVer
                     (compopts ^. CompileGHC.crossTarget)
                     (compopts ^. CompileGHC.overwriteVer)
                     (compopts ^. CompileGHC.bootstrapGhc)
