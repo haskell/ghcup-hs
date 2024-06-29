@@ -5379,7 +5379,6 @@ ghcupDownloads:
               dlHash: 33a8e115714c95c0724aa3bbabc34fecd2d02868bf8a1af374fcab5868f896af
     3.10.3.0:
       viTags:
-        - Latest
         - Recommended
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.3.0.md
       viArch:
