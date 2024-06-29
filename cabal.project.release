@@ -54,6 +54,9 @@ package aeson
 package streamly
   flags: +use-unliftio
 
+package hashable
+  flags: -arch-native
+
 source-repository-package
   type: git
   location: https://github.com/haskell/tar.git
