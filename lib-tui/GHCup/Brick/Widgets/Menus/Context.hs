@@ -29,7 +29,7 @@ import Data.Foldable (foldl')
 type ContextMenu = Menu ListResult Name
 
 create :: ListResult -> KeyCombination -> ContextMenu
-create lr exit_key = Menu.createMenu Common.ContextBox lr exit_key buttons []
+create lr exit_key = Menu.createMenu Common.ContextBox lr validator exit_key buttons []
  where
   advInstallButton =
     Menu.createButtonField (MenuElement Common.AdvanceInstallButton)
@@ -48,6 +48,7 @@ create lr exit_key = Menu.createMenu Common.ContextBox lr exit_key buttons []
       GHC -> [advInstallButton, compileGhcButton]
       HLS -> [advInstallButton, compileHLSButton]
       _ -> [advInstallButton]
+  validator = const Nothing
 
 draw :: ContextMenu -> Widget Name
 draw menu =
