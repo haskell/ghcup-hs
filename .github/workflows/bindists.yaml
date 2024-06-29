@@ -135,7 +135,6 @@ jobs:
       matrix:
         include:
           - os: [self-hosted, macOS, ARM64]
-          - os: macos-11
           - os: macos-12
           - os: windows-latest
     runs-on: ${{ matrix.os }}
