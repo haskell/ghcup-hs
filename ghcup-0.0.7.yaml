@@ -5500,7 +5500,8 @@ ghcupDownloads:
               dlHash: f8371100bd35aa1bc471f3d952adfec8a3e7d33117f1f889271f9c4336389688
             unknown_versioning: *cabal-31210-64-deb12
           Linux_Ubuntu:
-            '( >= 16 && < 19 )': &cabal-31210-64-ubuntu18
+            '< 18': *cabal-31210-64-deb9
+            '( >= 18 && < 19 )': &cabal-31210-64-ubuntu18
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.12.1.0/cabal-install-3.12.1.0-x86_64-linux-ubuntu18.04.tar.xz
               dlHash: 9ad2b514bc61e60eae9bd8ca026cb27dd3d955a4ecb53291424241f598041ed1
             '( >= 20 && < 22 )': &cabal-31210-64-ubuntu20
