@@ -260,7 +260,6 @@ library
 
     exposed-modules:  GHCup.Prelude.File.Posix.Traversals
     include-dirs:     cbits
-    includes:         dirutils.h
     install-includes: dirutils.h
     c-sources:        cbits/dirutils.c
     build-depends:
