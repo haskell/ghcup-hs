@@ -257,6 +257,13 @@ renderAslabel t focus =
 leftify :: Int -> Brick.Widget n -> Brick.Widget n
 leftify i = Brick.hLimit i . Brick.padRight Brick.Max
 
+-- | Creates a right align column.
+-- Example:       |- col2 is align dispite the length of col1
+--         row1_col1   row1_col2
+--   row2_col1_large   row2_col2
+rightify :: Int -> Brick.Widget n -> Brick.Widget n
+rightify i = Brick.hLimit i . Brick.padLeft Brick.Max
+
 -- | center a line in three rows.
 centerV :: Widget n -> Widget n
 centerV = Brick.padTopBottom 1
