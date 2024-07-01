@@ -344,7 +344,7 @@ drawMenu menu =
   Brick.vBox
       [ Brick.vBox buttonWidgets
       , Common.separator
-      , Brick.withVScrollBars Brick.OnRight
+      , Brick.vLimit (length fieldLabels) $ Brick.withVScrollBars Brick.OnRight
           $ Brick.viewport (menu ^. menuNameL) Brick.Vertical
           $ Brick.vBox fieldWidgets
       , Brick.txt " "
