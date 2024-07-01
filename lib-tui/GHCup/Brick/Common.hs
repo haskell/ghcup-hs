@@ -191,8 +191,8 @@ separator = Border.hBorder <+> Brick.str " o " <+> Border.hBorder
 frontwardLayer :: T.Text -> Brick.Widget n -> Brick.Widget n
 frontwardLayer layer_name =
     Brick.centerLayer
-      . Brick.hLimitPercent 75
-      . Brick.vLimitPercent 50
+      . Brick.hLimitPercent 80
+      . Brick.vLimitPercent 75
       . Brick.withBorderStyle Border.unicode
       . Border.borderWithLabel (Brick.txt layer_name)
 
