@@ -10,7 +10,7 @@
 
 module Main where
 
-import           PlanJson
+import           GHCup.PlanJson
 
 #if defined(BRICK)
 import           GHCup.BrickMain (brickMain)

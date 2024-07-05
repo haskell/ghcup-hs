@@ -1,4 +1,4 @@
-module PlanJson where
+module GHCup.PlanJson where
 
 import Control.Monad (unless)
 import System.FilePath

@@ -70,7 +70,6 @@ common app-common-depends
     , async                  ^>=2.2.3
     , base                   >=4.12     && <5
     , bytestring             >=0.10     && <0.12
-    , cabal-install-parsers  >=0.4.5
     , containers             ^>=0.6
     , deepseq                ^>=1.4
     , directory              ^>=1.3.6.0
@@ -114,6 +113,7 @@ library
   exposed-modules:
     GHCup
     GHCup.Cabal
+    GHCup.CabalConfig
     GHCup.Download
     GHCup.Download.Utils
     GHCup.Errors
@@ -121,6 +121,7 @@ library
     GHCup.HLS
     GHCup.List
     GHCup.Platform
+    GHCup.PlanJson
     GHCup.Prelude
     GHCup.Prelude.File
     GHCup.Prelude.File.Search
@@ -180,6 +181,7 @@ library
     , bytestring            >=0.10       && <0.12
     , bz2                   ^>=1.0.1.1
     , Cabal                 ^>=3.0.0.0 || ^>=3.2.0.0 || ^>=3.4.0.0 || ^>=3.6.0.0 || ^>=3.8.0.0 || ^>= 3.10.0.0
+    , Cabal-syntax   ^>=3.6.0.0 || ^>=3.8.0.0 || ^>= 3.10.0.0 || ^>= 3.12.0.0
     , case-insensitive      ^>=1.2.1.0
     , casing                ^>=0.1.4.1
     , containers            ^>=0.6
@@ -197,6 +199,7 @@ library
     , megaparsec            >=8.0.0      && <9.3
     , mtl                   ^>=2.2
     , os-release            ^>=1.0.0
+    , parsec
     , pretty                ^>=1.1.3.1
     , pretty-terminal       ^>=0.1.0.0
     , regex-posix           ^>=0.96
@@ -377,7 +380,6 @@ executable ghcup
   main-is:            Main.hs
 
   hs-source-dirs:     app/ghcup
-  other-modules:      PlanJson
   default-language:   Haskell2010
   default-extensions:
     LambdaCase
