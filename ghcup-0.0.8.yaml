@@ -2882,6 +2882,7 @@ ghcupDownloads:
     9.2.7:
       viTags:
       - base-4.16.4.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.2.7/docs/html/users_guide/index.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.2.7/ghc-9.2.7-src.tar.xz
@@ -3344,6 +3345,7 @@ ghcupDownloads:
     9.4.4:
       viTags:
       - base-4.17.0.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.4.4/docs/users_guide/9.4.4-notes.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.4.4/ghc-9.4.4-src.tar.xz
@@ -3439,6 +3441,7 @@ ghcupDownloads:
     9.4.5:
       viTags:
       - base-4.17.1.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.4.5/docs/users_guide/9.4.5-notes.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.4.5/ghc-9.4.5-src.tar.xz
@@ -3538,6 +3541,7 @@ ghcupDownloads:
     9.4.6:
       viTags:
       - base-4.17.2.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.4.6/docs/users_guide/9.4.6-notes.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.4.6/ghc-9.4.6-src.tar.xz
@@ -3632,6 +3636,7 @@ ghcupDownloads:
     9.4.7:
       viTags:
       - base-4.17.2.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.4.7/docs/users_guide/9.4.7-notes.html
       viSourceDL:
         dlUri: https://downloads.haskell.org/~ghc/9.4.7/ghc-9.4.7-src.tar.xz
@@ -3933,6 +3938,7 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-src.tar.xz
       viTags:
       - base-4.18.0.0
+      - old
       viTestDL:
         dlHash: 8bfa74d102da570cb87fbbc3465c7f778a4e6dc76606fef80207de7e8b64114f
         dlSubdir: ghc-9.6.1/testsuite
@@ -4032,6 +4038,7 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.6.2/ghc-9.6.2-src.tar.xz
       viTags:
       - base-4.18.0.0
+      - old
       viTestDL:
         dlHash: e4ffbc2d6db720fba30f8e7e12214522c470d1cfc0ee69f7997782b0ae20abbf
         dlSubdir: ghc-9.6.2/testsuite
@@ -4141,6 +4148,7 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.6.3/ghc-9.6.3-src.tar.xz
       viTags:
       - base-4.18.1.0
+      - old
       viTestDL:
         dlHash: b0f92579288adf2320206627248d80d2abfe0e1b9ad2a22cf8f889bbe6806448
         dlSubdir: ghc-9.6.3/testsuite
@@ -4148,6 +4156,7 @@ ghcupDownloads:
     9.6.4:
       viTags:
       - base-4.18.2.0
+      - old
       viChangeLog: https://downloads.haskell.org/~ghc/9.6.4/docs/users_guide/9.6.4-notes.html
       viSourceDL:
         dlHash: 10bf25b8b07174fdd9868b5c0c56c17c0ef1edcb6247b4b864be933651bfd4c0
@@ -4590,6 +4599,7 @@ ghcupDownloads:
         dlUri: https://downloads.haskell.org/~ghc/9.8.1/ghc-9.8.1-src.tar.xz
       viTags:
       - base-4.19.0.0
+      - old
       viTestDL:
         dlHash: 2626f3bb974428cbb795c5433017e18088f0d8de8a66d5a23ff4776847a5bec3
         dlSubdir: ghc-9.8.1/testsuite
@@ -5114,7 +5124,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.0.0/cabal-install-3.6.0.0-armv7-linux.tar.xz
               dlHash: 11b5ca042a8bf45971224f2127a3e9d6b803f09210042ca80a254bea06f01a2e
     3.6.2.0:
-      viTags: []
+      viTags:
+        - old
       viPostInstall: *cabal-HSEC-2023-0015
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.6.2.0.md
       viArch:
@@ -5260,7 +5271,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.6.2.1/cabal-install-3.6.2.1-armv7-linux-deb10.tar.xz
               dlHash: 3d309b79c7dd5f0b578b2a297104c626b9c0e49c2c5a558b2d49564726f40c5b
     3.8.1.0:
-      viTags: []
+      viTags:
+        - old
       viPostInstall: *cabal-HSEC-2023-0015
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.8.1.0.md
       viArch:
@@ -5306,7 +5318,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/3.8.1.0/armv7-linux-cabal-3.8.1.0.tar.xz
               dlHash: 836d89aa1c98a3a848b8b691f9b99123f260dcd4cc1163cb77435a31559475fe
     3.10.1.0:
-      viTags: []
+      viTags:
+        - old
       viPostInstall: *cabal-HSEC-2023-0015
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.1.0.md
       viArch:
@@ -5440,7 +5453,8 @@ ghcupDownloads:
             unknown_versioning: *cabal-31020-arm64
     3.10.2.1:
       viPostInstall: "cabal run is currently partially broken on Windows, please see https://github.com/haskell/cabal/issues/9334"
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/cabal/blob/master/release-notes/cabal-install-3.10.2.0.md
       viArch:
         A_64:
@@ -6327,7 +6341,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-1.9.0.0
               dlHash: 4524c9e700a0a91670976f089dc2d7ed0d970420e93faf9ca1ad1246ec348011
     1.9.1.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -6419,7 +6434,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-1.9.1.0
               dlHash: 5cbcfa0903bd776168a11c8ec437e8231699cd701d7b44496e9a2a3766fa08e9
     1.10.0.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -6514,7 +6530,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-1.10.0.0
               dlHash: d2f46ec1ce923b74b575f8926f9b0992ab0f3ab8fa5d45590c641316f1e901af
     2.0.0.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -6609,7 +6626,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.0.0.0
               dlHash: 43a5b62b1bc4141d8a5ebc57cf8f5db09131f00ddbc3322a8356e27aff4cbfd7
     2.0.0.1:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -6704,7 +6722,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.0.0.1
               dlHash: efaecd6221d4e55350e86350acc505af2678388b8e0689712dc44529ca1bc7d4
     2.1.0.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -6799,7 +6818,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.1.0.0
               dlHash: dee63014af1ece4d49f88edcdd0396aaa03d1719966dc679118a725acd012060
     2.2.0.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -6894,7 +6914,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.2.0.0
               dlHash: 9e7af7aace18e6d0a42640fd50e3b8ca14c4b23cefa9c3422d9ce311d8554c5e
     2.3.0.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -6989,7 +7010,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.3.0.0
               dlHash: bb16e491117b7677742ca730b741b0d8154aa3222bbaa8578d487eda5152910a
     2.4.0.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -7084,7 +7106,8 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.4.0.0
               dlHash: 74cfa47f961ac5607055ca2f400b471a535e7b982e910e187c7c1303b048eeaf
     2.5.0.0:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -7840,7 +7863,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.3/stack-2.7.3-linux-armv7.tar.gz
               dlHash: 3e22c66ea38525ca2ee5b0d222c8aa193c50152a53ff2c80ae179a40592512fe
     2.7.5:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v275
       viPostInstall: *stack-post
       viArch:
@@ -7891,7 +7915,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-armv7.tar.gz
               dlHash: 8be2342deea5309a32e28a0c5eb341ea9557401f08484676036471250ca12e21
     2.9.1:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v291
       viPostInstall: *stack-post
       viArch:
@@ -7938,7 +7963,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.9.1/stack-2.9.1-linux-armv7.tar.gz
               dlHash: fa53c58d8d00a6d49ec26624aa7f817f5ece3c4df339fa6e4fccf1038b7f1fa5
     2.9.3:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v293
       viPostInstall: *stack-post
       viArch:
@@ -7986,7 +8012,8 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.9.3/stack-2.9.3-osx-aarch64.tar.gz
               dlHash: a56d2cd37611eccf00ab8df38c3718923cf5677f3aeacd250394e79b676dcb98
     2.11.1:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2111---2023-05-18
       viPostInstall: *stack-post
       viArch:
@@ -8029,7 +8056,8 @@ ghcupDownloads:
               dlSubdir:
                 RegexDir: "stack-.*"
     2.13.1:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2131---2023-09-29
       viPostInstall: *stack-post
       viArch:
@@ -8074,7 +8102,8 @@ ghcupDownloads:
               dlSubdir:
                 RegexDir: "stack-.*"
     2.15.1:
-      viTags: []
+      viTags:
+        - old
       viChangeLog: https://github.com/commercialhaskell/stack/blob/master/ChangeLog.md#v2151---2024-02-09
       viPostInstall: *stack-post
       viArch:
