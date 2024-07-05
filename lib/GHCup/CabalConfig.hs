@@ -7,7 +7,7 @@ module GHCup.CabalConfig (getStoreDir) where
 import Data.ByteString          (ByteString)
 import Data.List.NonEmpty       (NonEmpty)
 import Data.Map                 (Map)
-import System.Directory         (getAppUserDataDirectory)
+import System.Directory         (getAppUserDataDirectory, doesDirectoryExist, getXdgDirectory, XdgDirectory(XdgConfig))
 import System.Environment       (lookupEnv)
 import System.FilePath          ((</>))
 
@@ -52,7 +52,11 @@ findConfig = do
 findCabalDir :: IO FilePath
 findCabalDir = do
     cabalDirVar <- lookupEnv "CABAL_DIR"
-    maybe (getAppUserDataDirectory "cabal") return cabalDirVar
+    appDir <- getAppUserDataDirectory "cabal"
+    isXdg <- not <$> doesDirectoryExist appDir
+    if | Just dir <- cabalDirVar -> pure dir
+       | isXdg -> getXdgDirectory XdgConfig "cabal"
+       | otherwise -> pure appDir
 
 
 -------------------------------------------------------------------------------
