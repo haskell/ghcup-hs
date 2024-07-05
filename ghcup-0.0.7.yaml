@@ -7418,8 +7418,7 @@ ghcupDownloads:
               dlSubdir: haskell-language-server-2.8.0.0
               dlHash: f5306fe1fcc13f2e0d7df1fe38ecb22f60f6506350e58bfb255ee670e4af0fac
     2.9.0.0:
-      viTags:
-        - Latest
+      viTags: []
       viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
       viPostInstall: *hls-post-install
       viSourceDL:
@@ -7526,6 +7525,97 @@ ghcupDownloads:
               dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.0/haskell-language-server-2.9.0.0-aarch64-apple-darwin.tar.xz
               dlSubdir: haskell-language-server-2.9.0.0
               dlHash: 36339f20c12bf54aa4a55c2d0e706a0d41ebdc20780ab5a4b890ad8f019dae16
+    2.9.0.1:
+      viTags:
+        - Latest
+      viChangeLog: https://github.com/haskell/haskell-language-server/blob/master/ChangeLog.md
+      viPostInstall: *hls-post-install
+      viSourceDL:
+        dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-src.tar.gz
+        dlSubdir: haskell-language-server-2.9.0.1
+        dlHash: ae42a2e76ce6aa5346416b6448bbca1427b9b96f17195f5029eacc639825d6c3
+      viArch:
+        A_64:
+          Linux_Debian:
+            '< 11': &hls-2901-64-deb10
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-deb10.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: 9f0ad22ad450cdffbb32dd29b4773528f0b9380f110985a67d734aade4bb03e0
+            '(>= 11 && < 12)': &hls-2901-64-deb11
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-deb11.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: fbed3f5a792938e9e5359eb4e3eb2fc556adb5a65dc86a28fb82a2e3a9a1a1d8
+            '(>= 12 && < 13)': &hls-2901-64-deb12
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-deb12.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: 4169464a6ca82463e92eb0b196faaf827b20ab6e3d172f9e1a7fa1dc92bed865
+            unknown_versioning: *hls-2901-64-deb12
+          Linux_Ubuntu:
+            '< 22': &hls-2901-64-ubuntu20
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-ubuntu20.04.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: 5f3b6cb334197227a6f321f4f80a98d7aa941d1d38a9e065ed8b395e3f111de8
+            '( >= 22 && < 24 )': &hls-2901-64-ubuntu22
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-ubuntu22.04.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: 1107d761a685539ea88a904c7a55ea35eb6cc9bece90ec18d37d139f983f47f1
+            '( >= 24 && < 25 )': &hls-2901-64-ubuntu24
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-ubuntu24.04.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: e281036add3cb098f8c4e9408809128c86a82b96d5db3b219461f4345f5d9bec
+            unknown_versioning: *hls-2901-64-ubuntu22
+          Linux_Mint:
+            '< 21': &hls-2901-64-mint20
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-mint20.3.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: 770940af5d02dad858ed264e280504c011eaca7d041e006c829e0cf43a8ee310
+            '(>= 21 && < 22)': &hls-2901-64-mint21
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-mint21.3.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: dc1b3dab631489b735d932c8ca0e458f2afd9f15c01d1b09cab90dff3baf948b
+            unknown_versioning: *hls-2901-64-mint21
+          Linux_Fedora:
+            unknown_versioning: &hls-2901-64-fedora33
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-fedora33.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: 0626364dc2926f0a62919cfd4eee39c452197b8a794486240877f89010f701ed
+          Linux_RedHat:
+            unknown_versioning: &hls-2901-64-rocky8
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-rocky8.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: b6b3d51a483dc58f48055d15cb048843bd7b580e1d7262db04571a03c6adcb09
+          Linux_UnknownLinux:
+            unknown_versioning: *hls-2901-64-rocky8
+          Linux_Alpine:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-linux-alpine.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: f1a8d016a770a259c8dcc451a653e9c78e82d830f49bd773e9afb94e7b6c4a9c
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-apple-darwin.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: a7e2d7229fa50b592746214aa743c2bc93dec367cb397d40cf3e8165628ae7bf
+          Windows:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-mingw64.zip
+              dlHash: e1ed24a3fc50d211012989fb545182f858e37a194c51110ebdf422feccf9cfac
+          FreeBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-x86_64-portbld-freebsd.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: 059ed14ee5a11aeb3b04ebde3f3777f963a8993e21995fca9fa24f600e205f67
+        A_ARM64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-aarch64-linux-deb10.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: 6e347925fd3bdb0428b87b6b7084a39aa311f4202d6a22f360274785960f4678
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/2.9.0.1/haskell-language-server-2.9.0.1-aarch64-apple-darwin.tar.xz
+              dlSubdir: haskell-language-server-2.9.0.1
+              dlHash: 9e1208ca7facd003b15298bd05d4a132f57c3d9bfe8c888e83ce960343f7f1c0
   Stack:
     2.5.1:
       viTags:
