@@ -96,7 +96,7 @@ jobs:
         run: |
           ${{ matrix.installCmd }} curl bash git ${{ matrix.toolRequirements }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
       - name: Install ghcup and bindist
         run: .github/workflows/install-bindist.sh
@@ -112,7 +112,7 @@ jobs:
         apk update
         apk add curl bash git binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
       shell: sh
-    - uses: actions/checkout@v1 #This version must stay old enough to remain compatible with the container image
+    - uses: actions/checkout@af513c7a016048ae468971c52ed77d9562c7c819 # v1
     - name: Install ghcup and bindist
       run: bash .github/workflows/install-bindist.sh
 
@@ -128,7 +128,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
       - if: ${{ github.event_name == 'workflow_dispatch' }}
         name: Install ghcup and bindist
@@ -156,7 +156,7 @@ jobs:
           git config --global --get-all safe.directory | grep '^\*$' || git config --global --add safe.directory "*"
         shell: bash
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
       - if: matrix.ARCH == 'ARM'
         uses: docker://hasufell/arm32v7-ubuntu-haskell:focal
@@ -174,7 +174,7 @@ jobs:
     name: Install FreeBSD binary
     runs-on: [self-hosted, FreeBSD, X64]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
       - name: Run build
         run: .github/workflows/install-bindist.sh
@@ -208,7 +208,7 @@ jobs:
           export TZ=Asia/Singapore
           sudo apt-get update && sudo apt-get install -y curl bash git gnupg libarchive-dev
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
       - name: Cache Cabal
         uses: actions/cache@v2
@@ -245,7 +245,7 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y curl bash git gnupg
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
       - name: Test signatures
         run: .github/workflows/test-sigs.sh
