@@ -74,7 +74,7 @@ makeLenses ''CompileHLSOptions
 type CompileHLSMenu = Menu CompileHLSOptions Name
 
 create :: KeyCombination -> CompileHLSMenu
-create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
+create k = Menu.createMenu CompileGHCBox initialState "Compile HLS" validator k buttons fields
   where
     initialState =
       CompileHLSOptions
@@ -186,5 +186,5 @@ handler :: BrickEvent Name e -> EventM Name CompileHLSMenu ()
 handler = Menu.handlerMenu
 
 
-draw :: CompileHLSMenu -> Widget Name
-draw = Common.frontwardLayer "Compile HLS" . Menu.drawMenu
+draw :: CompileHLSMenu -> [Widget Name]
+draw = Menu.drawMenu

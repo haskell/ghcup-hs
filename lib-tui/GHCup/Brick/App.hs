@@ -94,9 +94,9 @@ drawUI dimAttrs st =
        Tutorial     -> [Tutorial.draw, navg]
        KeyInfo      -> [KeyInfo.draw (st ^. appKeys), navg]
        ContextPanel -> [ContextMenu.draw (st ^. contextMenu), navg]
-       AdvanceInstallPanel -> [AdvanceInstall.draw (st ^. advanceInstallMenu), navg]
-       CompileGHCPanel     -> [CompileGHC.draw (st ^. compileGHCMenu), navg]
-       CompileHLSPanel     -> [CompileHLS.draw (st ^. compileHLSMenu), navg]
+       AdvanceInstallPanel -> AdvanceInstall.draw (st ^. advanceInstallMenu) ++ [navg]
+       CompileGHCPanel     -> CompileGHC.draw (st ^. compileGHCMenu) ++ [navg]
+       CompileHLSPanel     -> CompileHLS.draw (st ^. compileHLSMenu) ++ [navg]
 
 -- | On q, go back to navigation.
 --   On Enter, to go to tutorial

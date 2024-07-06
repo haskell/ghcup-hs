@@ -66,7 +66,7 @@ makeLensesFor [
 type AdvanceInstallMenu = Menu InstallOptions Name
 
 create :: KeyCombination -> AdvanceInstallMenu
-create k = Menu.createMenu AdvanceInstallBox initialState validator k [ok] fields
+create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" validator k [ok] fields
   where
     initialState = InstallOptions Nothing False Nothing False []
     validator InstallOptions {..} = case (instSet, isolateDir) of
@@ -114,5 +114,5 @@ handler :: BrickEvent Name e -> EventM Name AdvanceInstallMenu ()
 handler = Menu.handlerMenu
 
 
-draw :: AdvanceInstallMenu -> Widget Name
-draw = Common.frontwardLayer "Advance Install" . Menu.drawMenu
+draw :: AdvanceInstallMenu -> [Widget Name]
+draw = Menu.drawMenu

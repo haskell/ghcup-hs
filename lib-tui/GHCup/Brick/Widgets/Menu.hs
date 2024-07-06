@@ -291,12 +291,14 @@ data Menu s n
     , menuFocusRing :: FocusRing n       -- ^ The focus ring with the resource name for each entry and each button, in the order you want to loop them.
     , menuExitKey   :: KeyCombination    -- ^ The key to exit the Menu
     , menuName      :: n                 -- ^ The resource Name.
+    , menuTitle     :: T.Text            -- ^ Menu title.
     }
 
 makeLensesFor
   [ ("menuFields", "menuFieldsL"), ("menuState", "menuStateL"), ("menuValidator", "menuValidatorL")
   , ("menuButtons", "menuButtonsL"), ("menuFocusRing", "menuFocusRingL")
   , ("menuExitKey", "menuExitKeyL"), ("menuName", "menuNameL")
+  , ("menuTitle", "menuTitleL")
   ]
   ''Menu
 
@@ -304,9 +306,9 @@ isValidMenu :: Menu s n -> Bool
 isValidMenu m = (all isValidField $ menuFields m)
   && (case (menuValidator m) (menuState m) of { Nothing -> True; _ -> False })
 
-createMenu :: n -> s -> (s -> Maybe ErrorMessage)
+createMenu :: n -> s -> T.Text -> (s -> Maybe ErrorMessage)
   -> KeyCombination -> [Button s n] -> [MenuField s n] -> Menu s n
-createMenu n initial validator exitK buttons fields = Menu fields initial validator buttons ring exitK n
+createMenu n initial title validator exitK buttons fields = Menu fields initial validator buttons ring exitK n title
   where ring = F.focusRing $ [field & fieldName | field <- fields] ++ [button & fieldName | button <- buttons]
 
 handlerMenu :: forall n e s. Eq n => BrickEvent n e -> EventM n (Menu s n) ()
@@ -346,9 +348,11 @@ handlerMenu ev =
       else pure x
 
 
-drawMenu :: (Eq n, Ord n, Show n, Brick.Named (MenuField s n) n) => Menu s n -> Widget n
+drawMenu :: (Eq n, Ord n, Show n, Brick.Named (MenuField s n) n) => Menu s n -> [Widget n]
 drawMenu menu =
-  Brick.vBox
+  [Common.frontwardLayer (menu ^. menuTitleL) mainLayer]
+  where
+    mainLayer = Brick.vBox
       [ Brick.vBox buttonWidgets
       , Common.separator
       , Brick.vLimit (length fieldLabels) $ Brick.withVScrollBars Brick.OnRight
@@ -360,7 +364,6 @@ drawMenu menu =
           <+> Common.keyToWidget (menu ^. menuExitKeyL)
           <+> Brick.txt " to go back"
       ]
-  where
     fieldLabels  = [field & fieldLabel | field <- menu ^. menuFieldsL]
     buttonLabels = [button & fieldLabel | button <- menu ^. menuButtonsL]
     allLabels    = fieldLabels ++ buttonLabels

@@ -80,7 +80,7 @@ makeLenses ''CompileGHCOptions
 type CompileGHCMenu = Menu CompileGHCOptions Name
 
 create :: KeyCombination -> CompileGHCMenu
-create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
+create k = Menu.createMenu CompileGHCBox initialState "Compile GHC" validator k buttons fields
   where
     initialState =
       CompileGHCOptions
@@ -215,5 +215,5 @@ handler :: BrickEvent Name e -> EventM Name CompileGHCMenu ()
 handler = Menu.handlerMenu
 
 
-draw :: CompileGHCMenu -> Widget Name
-draw = Common.frontwardLayer "Compile GHC" . Menu.drawMenu
+draw :: CompileGHCMenu -> [Widget Name]
+draw = Menu.drawMenu
