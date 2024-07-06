@@ -64,6 +64,7 @@ import qualified Brick.Focus as F
 import           Data.Function ( (&))
 import           Prelude             hiding ( appendFile )
 
+import           Data.Maybe
 import qualified Data.Text                     as T
 
 
@@ -75,7 +76,7 @@ import Optics.State (use)
 import GHCup.Types (KeyCombination)
 import Optics (Lens', to, lens)
 import Optics.Operators ( (^.), (.~) )
-import Data.Foldable (foldl')
+import Data.Foldable (find, foldl')
 
 
 -- | Just some type synonym to make things explicit
@@ -113,7 +114,7 @@ data FieldInput a b n =
                   -> HelpMessage
                   -> b
                   -> (Widget n -> Widget n)
-                  -> Widget n                             -- ^ How to draw the input, with focus a help message and input.
+                  -> (Widget n, Maybe (Widget n))         -- ^ How to draw the input and optionally an overlay, with focus a help message and input.
                                                           --   A extension function can be applied too
     , inputHandler :: BrickEvent n () -> EventM n b ()    -- ^ The handler
     }
@@ -155,10 +156,14 @@ fieldHelpMsgL = lens g s
 -- | How to draw a field given a formater
 drawField :: Formatter n -> Bool -> MenuField s n -> Widget n
 drawField amp focus (MenuField { fieldInput = FieldInput {..}, ..}) =
-  let input = inputRender focus fieldStatus inputHelp inputState (amp focus)
-    in if focus
-        then Common.enableScreenReader fieldName $ Brick.visible input
-        else input
+  let (input, overlay) = inputRender focus fieldStatus inputHelp inputState (amp focus)
+    in case (focus, overlay) of
+         (True, Nothing) -> Common.enableScreenReader fieldName $ Brick.visible input
+         _ -> input
+
+drawFieldOverlay :: MenuField s n -> Maybe (Widget n)
+drawFieldOverlay (MenuField { fieldInput = FieldInput {..}, ..}) =
+  snd $ inputRender True fieldStatus inputHelp inputState id
 
 instance Brick.Named (MenuField s n) n where
   getName :: MenuField s n -> n
@@ -179,7 +184,7 @@ createCheckBoxInput = FieldInput False Right "" checkBoxRender checkBoxHandler
         if b
           then border . Brick.withAttr Attributes.installedAttr    $ Brick.str Common.installedSign
           else border . Brick.withAttr Attributes.notInstalledAttr $ Brick.str Common.notInstalledSign
-    checkBoxRender focus _ help check f =
+    checkBoxRender focus _ help check f = (, Nothing) $
       let core = f $ drawBool check
       in if focus
         then core
@@ -200,7 +205,7 @@ type EditableField = MenuField
 createEditableInput :: (Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> FieldInput a (Edit.Editor T.Text n) n
 createEditableInput name validator = FieldInput initEdit validateEditContent "" drawEdit Edit.handleEditorEvent
   where
-    drawEdit focus errMsg help edi amp =
+    drawEdit focus errMsg help edi amp = (, Nothing) $
       let
         borderBox w = amp (Brick.vLimit 1 $ Border.vBorder <+> Brick.padRight Brick.Max w <+> Border.vBorder)
         editorRender = Edit.renderEditor (Brick.txt . T.unlines) focus edi
@@ -229,8 +234,8 @@ type Button = MenuField
 createButtonInput :: FieldInput () () n
 createButtonInput = FieldInput () Right "" drawButton (const $ pure ())
   where
-    drawButton True (Invalid err) _    _ amp = amp . centerV . renderAsErrMsg $ err
-    drawButton _    _             help _ amp = amp . centerV . renderAsHelpMsg $ help
+    drawButton True (Invalid err) _    _ amp = (amp . centerV . renderAsErrMsg $ err, Nothing)
+    drawButton _    _             help _ amp = (amp . centerV . renderAsHelpMsg $ help, Nothing)
 
 createButtonField :: n -> Button s n
 createButtonField = MenuField emptyLens createButtonInput "" Valid
@@ -312,16 +317,11 @@ createMenu n initial title validator exitK buttons fields = Menu fields initial 
   where ring = F.focusRing $ [field & fieldName | field <- fields] ++ [button & fieldName | button <- buttons]
 
 handlerMenu :: forall n e s. Eq n => BrickEvent n e -> EventM n (Menu s n) ()
-handlerMenu ev =
-  case ev of
-    VtyEvent (Vty.EvKey (Vty.KChar '\t') [])  -> menuFocusRingL %= F.focusNext
-    VtyEvent (Vty.EvKey Vty.KBackTab [])      -> menuFocusRingL %= F.focusPrev
-    VtyEvent (Vty.EvKey Vty.KDown [])         -> menuFocusRingL %= F.focusNext
-    VtyEvent (Vty.EvKey Vty.KUp [])           -> menuFocusRingL %= F.focusPrev
-    VtyEvent e -> do
-      focused <- use $ menuFocusRingL % to F.focusGetCurrent
-      fields  <- use menuFieldsL
-      case focused of
+handlerMenu ev = do
+  fields  <- use menuFieldsL
+  focused <- use $ menuFocusRingL % to F.focusGetCurrent
+  let focusedField = (\n -> find (\x -> Brick.getName x == n) fields) =<< focused
+      propagateEvent e = case focused of
         Nothing -> pure ()
         Just n  -> do
           updated_fields <- updateFields n (VtyEvent e) fields
@@ -333,7 +333,17 @@ handlerMenu ev =
               Just err -> menuButtonsL %= fmap (fieldStatusL .~ Invalid err)
             else menuButtonsL %= fmap (fieldStatusL .~ Invalid "Some fields are invalid")
           menuFieldsL .= updated_fields
-    _ -> pure ()
+  case (drawFieldOverlay =<< focusedField) of
+    Just _ -> case ev of
+      VtyEvent e -> propagateEvent e
+      _ -> pure ()
+    Nothing -> case ev of
+      VtyEvent (Vty.EvKey (Vty.KChar '\t') [])  -> menuFocusRingL %= F.focusNext
+      VtyEvent (Vty.EvKey Vty.KBackTab [])      -> menuFocusRingL %= F.focusPrev
+      VtyEvent (Vty.EvKey Vty.KDown [])         -> menuFocusRingL %= F.focusNext
+      VtyEvent (Vty.EvKey Vty.KUp [])           -> menuFocusRingL %= F.focusPrev
+      VtyEvent e -> propagateEvent e
+      _ -> pure ()
  where
   -- runs the Event with the inner handler of MenuField.
   updateFields :: n -> BrickEvent n () -> [MenuField s n] -> EventM n (Menu s n) [MenuField s n]
@@ -350,6 +360,7 @@ handlerMenu ev =
 
 drawMenu :: (Eq n, Ord n, Show n, Brick.Named (MenuField s n) n) => Menu s n -> [Widget n]
 drawMenu menu =
+  overlays ++
   [Common.frontwardLayer (menu ^. menuTitleL) mainLayer]
   where
     mainLayer = Brick.vBox
@@ -382,3 +393,5 @@ drawMenu menu =
        in fmap (\f b -> ((leftify (maxWidth + 2) . Border.border $ f b) <+>) ) buttonAsWidgets
     drawButtons = fmap drawField buttonAmplifiers
     buttonWidgets = zipWith (F.withFocusRing (menu ^. menuFocusRingL)) drawButtons (menu ^. menuButtonsL)
+
+    overlays = catMaybes $ fmap drawFieldOverlay (menu ^. menuFieldsL)
