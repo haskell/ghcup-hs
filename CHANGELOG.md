@@ -1,5 +1,23 @@
 # Revision history for ghcup
 
+## 0.1.30.0 -- 2024-07-07
+
+### New features
+
+* TUI: new context menus for advanced installation and compilation by @lsmor [#949](https://github.com/haskell/ghcup-hs/pull/949)
+* Add `def-ghc-conf-options` config option
+
+### Improvements and bug fixes
+
+* Fix TUI for screenreaders
+* Fix windows process creation [#1036](https://github.com/haskell/ghcup-hs/issues/1036)
+* Improve parsing of --platform values, fixes [#1057](https://github.com/haskell/ghcup-hs/issues/1057)
+* Avoid option clash on `-s`
+* Don't allow to specify --hadrian and --config wrt [#1082](https://github.com/haskell/ghcup-hs/issues/1082)
+* Point to correct store dir when XDG is used [#1089](https://github.com/haskell/ghcup-hs/issues/1089)
+* Fix boot GHC for `ghcup compile ghc` wrt [#1045](https://github.com/haskell/ghcup-hs/issues/1045)
+* Add hadrian-ghc flag wrt [#1044](https://github.com/haskell/ghcup-hs/issues/1044)
+
 ## 0.1.22.0 -- 2024-03-13
 
 ### New features
