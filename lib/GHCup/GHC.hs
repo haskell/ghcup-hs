@@ -876,7 +876,7 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                            execBlank
                            regex
             )
-          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
+          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
             (appendGHCupPath tmpUnpack (takeDirectory bootFile))
           pure (bootFile, tver)
 
@@ -933,7 +933,7 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
           liftE $ applyAnyPatch patches (fromGHCupPath tmpUnpack)
 
           -- bootstrap
-          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
+          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
             tmpUnpack
           liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
           lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
@@ -1042,10 +1042,10 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                , MonadThrow m
                )
             => GHCupPath
-            -> Excepts '[ProcessError, ParseError] m Version
+            -> Excepts '[ProcessError, ParseError, NotFoundInPATH] m Version
   getGHCVer tmpUnpack = do
     lEM $ execLogged "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap" Nothing
-    lEM $ configureWithGhcBoot Nothing [] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
+    liftE $ configureWithGhcBoot Nothing [] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
     let versionFile = fromGHCupPath tmpUnpack </> "VERSION"
     hasVersionFile <- liftIO $ doesFileExist versionFile
     if hasVersionFile
@@ -1291,7 +1291,7 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                         ()
   configureBindist tver workdir (fromInstallDir -> ghcdir) = do
     lift $ logInfo [s|configuring build|]
-    lEM $ configureWithGhcBoot (Just tver)
+    liftE $ configureWithGhcBoot (Just tver)
       (maybe mempty
                 (\x -> ["--target=" <> T.unpack x])
                 (_tvTarget tver)
@@ -1315,8 +1315,9 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                        -> [String]         -- ^ args for configure
                        -> Maybe FilePath   -- ^ optionally chdir into this
                        -> FilePath         -- ^ log filename (opened in append mode)
-                       -> m (Either ProcessError ())
+                       -> Excepts '[ProcessError, NotFoundInPATH] m ()
   configureWithGhcBoot mtver args dir logf = do
+    bghc <- liftE resolveBootstrapGHC
     let execNew = execLogged
                     "sh"
                     ("./configure" : ("GHC=" <> bghc) : args)
@@ -1330,13 +1331,19 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                    logf
                    Nothing
     if | Just tver <- mtver
-       , _tvVersion tver >= [vver|8.8.0|] -> execNew
-       | Nothing   <- mtver               -> execNew -- need some default for git checkouts where we don't know yet
-       | otherwise                        -> execOld
+       , _tvVersion tver >= [vver|8.8.0|] -> lEM execNew
+       | Nothing   <- mtver               -> lEM execNew -- need some default for git checkouts where we don't know yet
+       | otherwise                        -> lEM execOld
 
-  bghc = case bstrap of
-           Right g    -> g
-           Left  bver -> "ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt
+  resolveBootstrapGHC :: MonadIO m => Excepts '[NotFoundInPATH] m FilePath
+  resolveBootstrapGHC = case bstrap of
+           Right g    -> pure g
+           Left  bver -> do
+             -- https://gitlab.haskell.org/ghc/ghc/-/issues/24682
+             -- need absolute path
+             let ghc = "ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt
+             spaths <- liftIO getSearchPath
+             liftIO (searchPath spaths ghc) !? NotFoundInPATH ghc
 
 
 
