@@ -12,6 +12,7 @@
 module GHCup.Brick.Actions where
 
 import           GHCup
+import           GHCup.CabalConfig
 import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Types.Optics ( getDirs, getPlatformReq, HasLog )
@@ -44,7 +45,6 @@ import           Control.Monad.Trans.Resource
 import           Data.Bool
 import           Data.Functor
 import           Data.Function ( (&), on)
-import           Data.Functor.Identity
 import           Data.List
 import           Data.Maybe
 import           Data.IORef (IORef, readIORef, newIORef, modifyIORef)
@@ -81,7 +81,6 @@ import Control.Concurrent (threadDelay)
 import qualified GHCup.GHC as GHC
 import qualified GHCup.Utils.Parsers as Utils
 import qualified GHCup.HLS as HLS
-import qualified Cabal.Config as CC
 
 
 
@@ -414,7 +413,7 @@ set' input@(_, ListResult {..}) = do
 logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => GHCTargetVersion -> m ()
 logGHCPostRm ghcVer = do
   cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store or ~/.local/state/cabal/store")
-    (runIdentity . CC.cfgStoreDir <$> CC.readConfig)
+    getStoreDir
   let storeGhcDir = cabalStore </> ("ghc-" <> T.unpack (prettyVer $ _tvVersion ghcVer))
   logInfo $ T.pack $ "After removing GHC you might also want to clean up your cabal store at: " <> storeGhcDir
 

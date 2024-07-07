@@ -10,6 +10,8 @@
 
 module Main where
 
+import           GHCup.PlanJson
+
 #if defined(BRICK)
 import           GHCup.BrickMain (brickMain)
 #endif
@@ -30,7 +32,6 @@ import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 import           GHCup.Version
 
-import           Cabal.Plan ( findPlanJson, SearchPlanJson(..) )
 import           Control.Concurrent
 import           Control.Concurrent.Async
 import           Control.Exception.Safe
@@ -113,11 +114,10 @@ toSettings options = do
          }
 
 
-
 plan_json :: String
 plan_json = $( do
                 (fp, c) <- runIO (handleIO (\_ -> pure ("", "")) $ do
-                             fp <- findPlanJson (ProjectRelativeToDir ".")
+                             fp <- findPlanJson "."
                              c <- B.readFile fp
                              (Just res) <- pure $ decodeStrict' @Value c
                              pure (fp, T.unpack $ decUTF8Safe' $ encodePretty res))
