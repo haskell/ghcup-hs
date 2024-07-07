@@ -174,7 +174,7 @@ type CheckBoxField = MenuField
 createCheckBoxInput :: FieldInput Bool Bool n
 createCheckBoxInput = FieldInput False Right "" checkBoxRender checkBoxHandler
   where
-    border = Border.border . Brick.padRight (Brick.Pad 1) . Brick.padLeft (Brick.Pad 2)
+    border w = Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 2) w) <+> Brick.txt "]"
     drawBool b =
         if b
           then border . Brick.withAttr Attributes.installedAttr    $ Brick.str Common.installedSign
@@ -183,7 +183,7 @@ createCheckBoxInput = FieldInput False Right "" checkBoxRender checkBoxHandler
       let core = f $ drawBool check
       in if focus
         then core
-        else core <+> (Brick.padLeft (Brick.Pad 1) . centerV . renderAsHelpMsg $ help)
+        else core <+> (Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help)
     checkBoxHandler = \case
         VtyEvent (Vty.EvKey Vty.KEnter []) -> Brick.modify not
         _ -> pure ()
@@ -202,7 +202,7 @@ createEditableInput name validator = FieldInput initEdit validateEditContent "" 
   where
     drawEdit focus errMsg help edi amp =
       let
-        borderBox = amp . Border.border . Brick.padRight Brick.Max
+        borderBox w = amp (Brick.vLimit 1 $ Border.vBorder <+> Brick.padRight Brick.Max w <+> Border.vBorder)
         editorRender = Edit.renderEditor (Brick.txt . T.unlines) focus edi
         isEditorEmpty = Edit.getEditContents edi == [mempty]
       in case errMsg of
@@ -256,6 +256,13 @@ renderAslabel t focus =
 --   row2_col1_large   row2_col2
 leftify :: Int -> Brick.Widget n -> Brick.Widget n
 leftify i = Brick.hLimit i . Brick.padRight Brick.Max
+
+-- | Creates a right align column.
+-- Example:       |- col2 is align dispite the length of col1
+--         row1_col1   row1_col2
+--   row2_col1_large   row2_col2
+rightify :: Int -> Brick.Widget n -> Brick.Widget n
+rightify i = Brick.hLimit i . Brick.padLeft Brick.Max
 
 -- | center a line in three rows.
 centerV :: Widget n -> Widget n
@@ -337,7 +344,7 @@ drawMenu menu =
   Brick.vBox
       [ Brick.vBox buttonWidgets
       , Common.separator
-      , Brick.withVScrollBars Brick.OnRight
+      , Brick.vLimit (length fieldLabels) $ Brick.withVScrollBars Brick.OnRight
           $ Brick.viewport (menu ^. menuNameL) Brick.Vertical
           $ Brick.vBox fieldWidgets
       , Brick.txt " "
@@ -356,13 +363,13 @@ drawMenu menu =
     -- A list of functions which draw a highlighted label with right padding at the left of a widget.
     amplifiers =
       let labelsWidgets = fmap renderAslabel fieldLabels
-       in fmap (\f b -> ((centerV . leftify (maxWidth + 10) $ f b) <+>) ) labelsWidgets
+       in fmap (\f b -> ((rightify (maxWidth + 1) (f b <+> Brick.txt " ")) <+>) ) labelsWidgets
     drawFields = fmap drawField amplifiers
     fieldWidgets = zipWith (F.withFocusRing (menu ^. menuFocusRingL)) drawFields (menu ^. menuFieldsL)
 
     buttonAmplifiers =
       let buttonAsWidgets = fmap renderAslabel buttonLabels
-       in fmap (\f b -> ((leftify (maxWidth + 10) . Border.border $ f b) <+>) ) buttonAsWidgets
+       in fmap (\f b -> ((leftify (maxWidth + 2) . Border.border $ f b) <+>) ) buttonAsWidgets
     drawButtons = fmap drawField buttonAmplifiers
     buttonWidgets = zipWith (F.withFocusRing (menu ^. menuFocusRingL)) drawButtons (menu ^. menuButtonsL)
 
