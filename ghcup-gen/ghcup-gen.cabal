@@ -66,4 +66,4 @@ executable ghcup-gen
     , text                  ^>=2.0
     , transformers          ^>=0.5
     , versions              >=6.0.0
-    , yaml-streamly         ^>=0.12.0
+    , yaml                  ^>=0.11.11.2

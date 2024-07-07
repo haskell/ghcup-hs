@@ -7,7 +7,7 @@ package ghcup
 source-repository-package
   type: git
   location: https://github.com/haskell/ghcup-hs.git
-  tag: 91ef2c7666d118bc6bd7d2fc2eeb7754081a9f3d
+  tag: 0fd70d9797a655d64fa1c5531e5c3a2903518254
 
 constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0
@@ -24,5 +24,3 @@ package cabal-plan
 package aeson
   flags: +ordered-keymap
 
-package streamly
-  flags: +use-unliftio
