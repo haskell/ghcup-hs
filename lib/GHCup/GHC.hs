@@ -448,7 +448,7 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
       lEM $ execLogged "sh"
                        ("./configure" : ("--prefix=" <> fromInstallDir inst)
                         : (maybe mempty (\x -> ["--target=" <> T.unpack x]) (_tvTarget tver)
-                          <> ldOverride (_tvVersion tver)
+                          <> ldOverride (_tvVersion tver) _rPlatform
                           <> defGHCConfOptions'
                           <> addConfArgs')
                        )
@@ -1299,6 +1299,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                         m
                         ()
   configureBindist tver workdir (fromInstallDir -> ghcdir) = do
+    PlatformRequest { .. } <- lift getPlatformReq
     lift $ logInfo [s|configuring build|]
     liftE $ configureWithGhcBoot (Just tver)
       (maybe mempty
@@ -1307,7 +1308,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
       ++ ["--prefix=" <> ghcdir]
       ++ (if isWindows then ["--enable-tarballs-autodownload"] else [])
       -- https://github.com/haskell/ghcup-hs/issues/1032
-      ++ ldOverride (_tvVersion tver)
+      ++ ldOverride (_tvVersion tver) _rPlatform
       ++ fmap T.unpack aargs
       )
       (Just workdir)
@@ -1388,9 +1389,10 @@ postGHCInstall ver@GHCTargetVersion {..} = do
     >>= mapM_ (\v -> liftE $ setGHC v SetGHC_XY Nothing)
 
 
-ldOverride ::  Version -> [String]
-ldOverride ver
+ldOverride ::  Version -> Platform -> [String]
+ldOverride ver plat
   | ver >= [vver|8.2.2|]
+  , plat `elem` [Linux Alpine, Darwin]
   = ["--disable-ld-override"]
   | otherwise
   = []
