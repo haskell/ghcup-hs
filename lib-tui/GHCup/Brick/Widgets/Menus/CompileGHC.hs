@@ -21,6 +21,7 @@ module GHCup.Brick.Widgets.Menus.CompileGHC (
   handler,
   draw,
   bootstrapGhc,
+  hadrianGhc,
   jobs,
   buildConfig,
   patches,
@@ -60,6 +61,7 @@ import qualified GHCup.Utils.Parsers as Utils
 
 data CompileGHCOptions = CompileGHCOptions
   { _bootstrapGhc :: Either Version FilePath
+  , _hadrianGhc   :: Maybe (Either Version FilePath)
   , _jobs         :: Maybe Int
   , _buildConfig  :: Maybe FilePath
   , _patches      :: Maybe (Either FilePath [URI])
@@ -83,6 +85,7 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
     initialState =
       CompileGHCOptions
         (Right "")
+        Nothing
         Nothing
         Nothing
         Nothing
@@ -118,6 +121,14 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
                 then readPath
                 else readVersion
         False -> Left "Invalid Empty value"
+
+    hadrianstrapV :: T.Text -> Either Menu.ErrorMessage (Maybe (Either Version FilePath))
+    hadrianstrapV i' =
+        let readVersion = bimap (const "Not a valid version") (Just . Left) . version
+            readPath = bimap T.pack (Just . Right) . Utils.absolutePathParser . T.unpack
+         in if T.any isPathSeparator i'
+              then whenEmpty Nothing readPath i'
+              else whenEmpty Nothing readVersion i'
 
     versionV :: T.Text -> Either Menu.ErrorMessage (Maybe [VersionPattern])
     versionV = whenEmpty Nothing (bimap T.pack Just . Utils.overWriteVersionParser . T.unpack)
@@ -155,6 +166,9 @@ create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
            & Menu.fieldLabelL .~ "bootstrap-ghc"
            & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to bootstrap with (must be installed)"
            & Menu.fieldStatusL .~ Menu.Invalid "Invalid Empty value"
+      , Menu.createEditableField (Common.MenuElement Common.HadrianGhcEditBox) hadrianstrapV hadrianGhc
+           & Menu.fieldLabelL .~ "hadrian-ghc"
+           & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to GHC that will be used to compile hadrian (must be installed)"
       , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"

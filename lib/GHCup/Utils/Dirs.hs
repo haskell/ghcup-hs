@@ -143,6 +143,7 @@ import           System.Directory hiding ( removeDirectory
                                          , removeDirectoryRecursive
                                          , removePathForcibly
                                          , findFiles
+                                         , makeAbsolute
                                          )
 import qualified System.Directory              as SD
 

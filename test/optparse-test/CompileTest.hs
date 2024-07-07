@@ -31,6 +31,7 @@ mkDefaultGHCCompileOptions target boot =
     boot
     Nothing
     Nothing
+    Nothing
     (Just $ Right [])
     Nothing
     []
@@ -96,6 +97,7 @@ compileGhcCheckList = mapSecond CompileGHC
   , (baseCmd <> "-f make", baseOptions{GHC.buildFlavour = Just "make"})
   , (baseCmd <> "--flavour make", baseOptions{GHC.buildFlavour = Just "make"})
   , (baseCmd <> "--hadrian", baseOptions{GHC.buildSystem = Just Hadrian})
+  , (baseCmd <> "--hadrian --hadrian-ghc 9.2.8", baseOptions{GHC.buildSystem = Just Hadrian, GHC.hadrianGhc = Just (Left $(versionQ "9.2.8"))})
   , (baseCmd <> "--make", baseOptions{GHC.buildSystem = Just Make})
 #ifdef IS_WINDOWS
   , (baseCmd <> "-i C:\\\\tmp\\out_dir", baseOptions{GHC.isolateDir = Just "C:\\tmp\\out_dir"})

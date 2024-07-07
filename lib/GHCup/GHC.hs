@@ -792,7 +792,8 @@ compileGHC :: ( MonadMask m
            => GHCVer
            -> Maybe Text               -- ^ cross target
            -> Maybe [VersionPattern]
-           -> Either Version FilePath  -- ^ version to bootstrap with
+           -> Either Version FilePath  -- ^ GHC version to bootstrap with
+           -> Maybe (Either Version FilePath)  -- ^ GHC version to compile hadrian with
            -> Maybe Int                -- ^ jobs
            -> Maybe FilePath           -- ^ build config
            -> Maybe (Either FilePath [URI])  -- ^ patches
@@ -827,7 +828,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buildFlavour buildSystem installDir
+compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs buildFlavour buildSystem installDir
   = do
     pfreq@PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -876,7 +877,7 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                            execBlank
                            regex
             )
-          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
+          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
             (appendGHCupPath tmpUnpack (takeDirectory bootFile))
           pure (bootFile, tver)
 
@@ -933,7 +934,7 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
           liftE $ applyAnyPatch patches (fromGHCupPath tmpUnpack)
 
           -- bootstrap
-          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
+          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
             tmpUnpack
           liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
           lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
@@ -1042,10 +1043,10 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                , MonadThrow m
                )
             => GHCupPath
-            -> Excepts '[ProcessError, ParseError] m Version
+            -> Excepts '[ProcessError, ParseError, NotFoundInPATH] m Version
   getGHCVer tmpUnpack = do
     lEM $ execLogged "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap" Nothing
-    lEM $ configureWithGhcBoot Nothing [] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
+    liftE $ configureWithGhcBoot Nothing [] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
     let versionFile = fromGHCupPath tmpUnpack </> "VERSION"
     hasVersionFile <- liftIO $ doesFileExist versionFile
     if hasVersionFile
@@ -1096,13 +1097,21 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
 
     lift $ logInfo $ "Building GHC version " <> tVerToText tver <> " (this may take a while)..."
     hadrian_build <- liftE $ findHadrianFile workdir
+    hEnv <- case hghc of
+              Nothing -> pure Nothing
+              Just hghc' -> do
+                cEnv <- Map.fromList <$> liftIO getEnvironment
+                ghc <- liftE $ resolveGHC hghc'
+                pure . Just . Map.toList . Map.insert "GHC" ghc $ cEnv
+
+
     lEM $ execLogged hadrian_build
                           ( maybe [] (\j  -> ["-j" <> show j]         ) jobs
                          ++ maybe [] (\bf -> ["--flavour=" <> bf]) buildFlavour
                          ++ ["binary-dist"]
                           )
                           (Just workdir) "ghc-make"
-                          Nothing
+                          hEnv
     [tar] <- liftIO $ findFiles
       (workdir </> "_build" </> "bindist")
       (makeRegexOpts compExtended
@@ -1291,7 +1300,7 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                         ()
   configureBindist tver workdir (fromInstallDir -> ghcdir) = do
     lift $ logInfo [s|configuring build|]
-    lEM $ configureWithGhcBoot (Just tver)
+    liftE $ configureWithGhcBoot (Just tver)
       (maybe mempty
                 (\x -> ["--target=" <> T.unpack x])
                 (_tvTarget tver)
@@ -1315,8 +1324,9 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                        -> [String]         -- ^ args for configure
                        -> Maybe FilePath   -- ^ optionally chdir into this
                        -> FilePath         -- ^ log filename (opened in append mode)
-                       -> m (Either ProcessError ())
+                       -> Excepts '[ProcessError, NotFoundInPATH] m ()
   configureWithGhcBoot mtver args dir logf = do
+    bghc <- liftE $ resolveGHC bstrap
     let execNew = execLogged
                     "sh"
                     ("./configure" : ("GHC=" <> bghc) : args)
@@ -1330,13 +1340,17 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                    logf
                    Nothing
     if | Just tver <- mtver
-       , _tvVersion tver >= [vver|8.8.0|] -> execNew
-       | Nothing   <- mtver               -> execNew -- need some default for git checkouts where we don't know yet
-       | otherwise                        -> execOld
+       , _tvVersion tver >= [vver|8.8.0|] -> lEM execNew
+       | Nothing   <- mtver               -> lEM execNew -- need some default for git checkouts where we don't know yet
+       | otherwise                        -> lEM execOld
 
-  bghc = case bstrap of
-           Right g    -> g
-           Left  bver -> "ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt
+  resolveGHC :: MonadIO m => Either Version FilePath -> Excepts '[NotFoundInPATH] m FilePath
+  resolveGHC = \case
+           Right g    -> pure g
+           Left  bver -> do
+             let ghc = "ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt
+             -- https://gitlab.haskell.org/ghc/ghc/-/issues/24682
+             makeAbsolute ghc
 
 
 

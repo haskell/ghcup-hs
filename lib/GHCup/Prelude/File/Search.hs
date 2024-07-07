@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE DataKinds             #-}
 
 module GHCup.Prelude.File.Search (
   module GHCup.Prelude.File.Search
@@ -8,6 +9,7 @@ module GHCup.Prelude.File.Search (
   , CapturedProcess(..)
   ) where
 
+import           GHCup.Prelude.Internal ((!?))
 import           GHCup.Types(ProcessError(..), CapturedProcess(..))
 
 import           Control.Monad.Reader
@@ -19,6 +21,7 @@ import           System.Directory hiding ( removeDirectory
                                          , removeDirectoryRecursive
                                          , removePathForcibly
                                          , findFiles
+                                         , makeAbsolute
                                          )
 import           System.FilePath
 import           Text.Regex.Posix
@@ -28,7 +31,14 @@ import qualified Data.Text                     as T
 import qualified Text.Megaparsec               as MP
 import Control.Exception.Safe (handleIO)
 import System.Directory.Internal.Prelude (ioeGetErrorType)
+import Haskus.Utils.Variant.Excepts (Excepts)
+import GHCup.Errors (NotFoundInPATH(..))
 
+
+makeAbsolute :: MonadIO m => FilePath -> Excepts '[NotFoundInPATH] m FilePath
+makeAbsolute bin = do
+  spaths <- liftIO getSearchPath
+  liftIO (searchPath spaths bin) !? NotFoundInPATH bin
 
 
 -- | Search for a file in the search paths.
