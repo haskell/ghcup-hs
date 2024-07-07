@@ -30,6 +30,7 @@ module GHCup.Brick.Widgets.Menus.CompileHLS (
   patches,
   targetGHCs,
   cabalArgs,
+  gitRef,
 )
 where
 
@@ -65,6 +66,7 @@ data CompileHLSOptions = CompileHLSOptions
   , _patches      :: Maybe (Either FilePath [URI])
   , _targetGHCs   :: [ToolVersion]
   , _cabalArgs    :: [T.Text]
+  , _gitRef       :: Maybe String
   } deriving (Eq, Show)
 
 makeLenses ''CompileHLSOptions
@@ -72,7 +74,7 @@ makeLenses ''CompileHLSOptions
 type CompileHLSMenu = Menu CompileHLSOptions Name
 
 create :: KeyCombination -> CompileHLSMenu
-create k = Menu.createMenu CompileGHCBox initialState k buttons fields
+create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
   where
     initialState =
       CompileHLSOptions
@@ -86,6 +88,13 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
         Nothing
         []
         []
+        Nothing
+
+    validator CompileHLSOptions {..} = case (_setCompile, _isolateDir) of
+      (True, Just _) -> Just "Cannot set active when doing an isolated install"
+      _ -> if null _targetGHCs
+        then Just "Specify at least one valid target GHC"
+        else Nothing
     -- Brick's internal editor representation is [mempty].
     emptyEditor i = T.null i || (i == "\n")
     whenEmpty :: a -> (T.Text -> Either Menu.ErrorMessage a) -> T.Text -> Either Menu.ErrorMessage a
@@ -139,8 +148,8 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"
       , Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs
-          & Menu.fieldLabelL .~ "target GHC"
-          & Menu.fieldHelpMsgL .~ "For which GHC version to compile for (can be specified multiple times)"
+          & Menu.fieldLabelL .~ "target GHC(s)"
+          & Menu.fieldHelpMsgL .~ "space separated list of GHC versions to compile for"
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
@@ -162,6 +171,9 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
       , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) cabalProjectLocalV cabalProjectLocal
           & Menu.fieldLabelL .~ "cabal project local"
           & Menu.fieldHelpMsgL .~ "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
+      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef
+          & Menu.fieldLabelL .~ "git-ref"
+          & Menu.fieldHelpMsgL .~ "The git commit/branch/ref to build from"
       ]
 
     buttons = [

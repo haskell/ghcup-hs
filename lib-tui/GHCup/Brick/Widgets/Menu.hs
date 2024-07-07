@@ -286,6 +286,7 @@ data Menu s n
     = Menu
     { menuFields    :: [MenuField s n]   -- ^ The datatype representing the list of entries. Precisely, any array-like data type is highly unconvinient.
     , menuState     :: s
+    , menuValidator :: s -> Maybe ErrorMessage  -- ^ A validator function
     , menuButtons   :: [Button s n]      -- ^ The buttons. Commonly, the handlers for buttons are defined outside the menu handler.
     , menuFocusRing :: FocusRing n       -- ^ The focus ring with the resource name for each entry and each button, in the order you want to loop them.
     , menuExitKey   :: KeyCombination    -- ^ The key to exit the Menu
@@ -293,17 +294,19 @@ data Menu s n
     }
 
 makeLensesFor
-  [ ("menuFields", "menuFieldsL"), ("menuState", "menuStateL")
+  [ ("menuFields", "menuFieldsL"), ("menuState", "menuStateL"), ("menuValidator", "menuValidatorL")
   , ("menuButtons", "menuButtonsL"), ("menuFocusRing", "menuFocusRingL")
   , ("menuExitKey", "menuExitKeyL"), ("menuName", "menuNameL")
   ]
   ''Menu
 
 isValidMenu :: Menu s n -> Bool
-isValidMenu = all isValidField . menuFields
+isValidMenu m = (all isValidField $ menuFields m)
+  && (case (menuValidator m) (menuState m) of { Nothing -> True; _ -> False })
 
-createMenu :: n -> s -> KeyCombination -> [Button s n] -> [MenuField s n] -> Menu s n
-createMenu n initial exitK buttons fields = Menu fields initial buttons ring exitK n
+createMenu :: n -> s -> (s -> Maybe ErrorMessage)
+  -> KeyCombination -> [Button s n] -> [MenuField s n] -> Menu s n
+createMenu n initial validator exitK buttons fields = Menu fields initial validator buttons ring exitK n
   where ring = F.focusRing $ [field & fieldName | field <- fields] ++ [button & fieldName | button <- buttons]
 
 handlerMenu :: forall n e s. Eq n => BrickEvent n e -> EventM n (Menu s n) ()
@@ -320,8 +323,12 @@ handlerMenu ev =
         Nothing -> pure ()
         Just n  -> do
           updated_fields <- updateFields n (VtyEvent e) fields
+          validator  <- use menuValidatorL
+          state <- use menuStateL
           if all isValidField updated_fields
-            then menuButtonsL %= fmap (fieldStatusL .~ Valid)
+            then case validator state of
+              Nothing -> menuButtonsL %= fmap (fieldStatusL .~ Valid)
+              Just err -> menuButtonsL %= fmap (fieldStatusL .~ Invalid err)
             else menuButtonsL %= fmap (fieldStatusL .~ Invalid "Some fields are invalid")
           menuFieldsL .= updated_fields
     _ -> pure ()
@@ -372,5 +379,3 @@ drawMenu menu =
        in fmap (\f b -> ((leftify (maxWidth + 2) . Border.border $ f b) <+>) ) buttonAsWidgets
     drawButtons = fmap drawField buttonAmplifiers
     buttonWidgets = zipWith (F.withFocusRing (menu ^. menuFocusRingL)) drawButtons (menu ^. menuButtonsL)
-
-

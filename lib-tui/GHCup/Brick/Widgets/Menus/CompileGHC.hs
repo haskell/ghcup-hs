@@ -31,6 +31,7 @@ module GHCup.Brick.Widgets.Menus.CompileGHC (
   buildFlavour,
   buildSystem,
   isolateDir,
+  gitRef,
 ) where
 
 import GHCup.Brick.Widgets.Menu (Menu)
@@ -69,6 +70,7 @@ data CompileGHCOptions = CompileGHCOptions
   , _buildFlavour :: Maybe String
   , _buildSystem  :: Maybe BuildSystem
   , _isolateDir   :: Maybe FilePath
+  , _gitRef       :: Maybe String
   } deriving (Eq, Show)
 
 makeLenses ''CompileGHCOptions
@@ -76,7 +78,7 @@ makeLenses ''CompileGHCOptions
 type CompileGHCMenu = Menu CompileGHCOptions Name
 
 create :: KeyCombination -> CompileGHCMenu
-create k = Menu.createMenu CompileGHCBox initialState k buttons fields
+create k = Menu.createMenu CompileGHCBox initialState validator k buttons fields
   where
     initialState =
       CompileGHCOptions
@@ -91,6 +93,12 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
         Nothing
         Nothing
         Nothing
+        Nothing
+    validator CompileGHCOptions {..} = case (_setCompile, _isolateDir) of
+      (True, Just _) -> Just "Cannot set active when doing an isolated install"
+      _ -> case (_buildConfig, _buildSystem) of
+        (Just _, Just Hadrian) -> Just "Build config can be specified only for make build system"
+        _ -> Nothing
     -- Brick's internal editor representation is [mempty].
     emptyEditor i = T.null i || (i == "\n")
     whenEmpty :: a -> (T.Text -> Either Menu.ErrorMessage a) -> T.Text -> Either Menu.ErrorMessage a
@@ -150,33 +158,36 @@ create k = Menu.createMenu CompileGHCBox initialState k buttons fields
       , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"
+      , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
+          & Menu.fieldLabelL .~ "set"
+          & Menu.fieldHelpMsgL .~ "Set as active version after install"
+      , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour
+          & Menu.fieldLabelL .~ "flavour"
+          & Menu.fieldHelpMsgL .~ "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
+      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgs
+          & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
+          & Menu.fieldHelpMsgL .~ "Additional arguments to compile configure"
       , Menu.createEditableField (Common.MenuElement Common.BuildConfigEditBox) filepathV buildConfig
           & Menu.fieldLabelL .~ "build config"
-          & Menu.fieldHelpMsgL .~ "Absolute path to build config file"
+          & Menu.fieldHelpMsgL .~ "Absolute path to build config file (make build system only)"
       , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches
           & Menu.fieldLabelL .~ "patches"
           & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or Absolute path to patch directory"
       , Menu.createEditableField (Common.MenuElement Common.CrossTargetEditBox) (Right . Just) crossTarget
           & Menu.fieldLabelL .~ "cross target"
           & Menu.fieldHelpMsgL .~ "Build cross-compiler for this platform"
-      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgs
-          & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
-          & Menu.fieldHelpMsgL .~ "Additional arguments to compile configure"
-      , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
-          & Menu.fieldLabelL .~ "set"
-          & Menu.fieldHelpMsgL .~ "Set as active version after install"
-      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer
-          & Menu.fieldLabelL .~ "overwrite-version"
-          & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
       , Menu.createEditableField (Common.MenuElement Common.BuildSystemEditBox) systemV buildSystem
           & Menu.fieldLabelL .~ "build system"
           & Menu.fieldHelpMsgL .~ "either 'make' or 'hadrian'"
-      , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour
-          & Menu.fieldLabelL .~ "flavour"
-          & Menu.fieldHelpMsgL .~ "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
+      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer
+          & Menu.fieldLabelL .~ "overwrite-version"
+          & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
+      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef
+          & Menu.fieldLabelL .~ "git-ref"
+          & Menu.fieldHelpMsgL .~ "The git commit/branch/ref to build from"
       ]
 
     buttons = [
