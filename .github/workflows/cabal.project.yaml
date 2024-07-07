@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-11, windows-latest, ubuntu-latest]
+        os: [macOS-12, windows-latest, ubuntu-latest]
         ghc: ["8.10.7", "9.0.2", "9.2.8", "9.4.8"]
         include:
           - os: macOS-latest
