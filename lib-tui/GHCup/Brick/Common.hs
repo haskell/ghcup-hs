@@ -43,7 +43,7 @@ module GHCup.Brick.Common  (
   BrickSettings(..),
   ResourceId (
       UrlEditBox, SetCheckBox, IsolateEditBox, ForceCheckBox, AdditionalEditBox
-    , TargetGhcEditBox, BootstrapGhcEditBox, JobsEditBox, BuildConfigEditBox
+    , TargetGhcEditBox, BootstrapGhcEditBox, HadrianGhcEditBox, JobsEditBox, BuildConfigEditBox
     , PatchesEditBox, CrossTargetEditBox, AddConfArgsEditBox, OvewrwiteVerEditBox
     , BuildFlavourEditBox, BuildSystemEditBox, OkButton, AdvanceInstallButton
     , CompileGHCButton, CompileHLSButton, CabalProjectEditBox
@@ -97,6 +97,8 @@ pattern TargetGhcEditBox :: ResourceId
 pattern TargetGhcEditBox = ResourceId 6
 pattern BootstrapGhcEditBox :: ResourceId
 pattern BootstrapGhcEditBox = ResourceId 7
+pattern HadrianGhcEditBox :: ResourceId
+pattern HadrianGhcEditBox = ResourceId 17
 pattern JobsEditBox :: ResourceId
 pattern JobsEditBox = ResourceId 8
 pattern BuildConfigEditBox :: ResourceId

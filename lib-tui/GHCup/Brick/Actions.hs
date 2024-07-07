@@ -518,6 +518,7 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
                     (compopts ^. CompileGHC.crossTarget)
                     (compopts ^. CompileGHC.overwriteVer)
                     (compopts ^. CompileGHC.bootstrapGhc)
+                    (compopts ^. CompileGHC.hadrianGhc)
                     (compopts ^. CompileGHC.jobs)
                     (compopts ^. CompileGHC.buildConfig)
                     (compopts ^. CompileGHC.patches)

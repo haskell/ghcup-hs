@@ -792,7 +792,8 @@ compileGHC :: ( MonadMask m
            => GHCVer
            -> Maybe Text               -- ^ cross target
            -> Maybe [VersionPattern]
-           -> Either Version FilePath  -- ^ version to bootstrap with
+           -> Either Version FilePath  -- ^ GHC version to bootstrap with
+           -> Maybe (Either Version FilePath)  -- ^ GHC version to compile hadrian with
            -> Maybe Int                -- ^ jobs
            -> Maybe FilePath           -- ^ build config
            -> Maybe (Either FilePath [URI])  -- ^ patches
@@ -827,7 +828,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buildFlavour buildSystem installDir
+compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs buildFlavour buildSystem installDir
   = do
     pfreq@PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -1096,13 +1097,21 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
 
     lift $ logInfo $ "Building GHC version " <> tVerToText tver <> " (this may take a while)..."
     hadrian_build <- liftE $ findHadrianFile workdir
+    hEnv <- case hghc of
+              Nothing -> pure Nothing
+              Just hghc' -> do
+                cEnv <- Map.fromList <$> liftIO getEnvironment
+                ghc <- liftE $ resolveGHC hghc'
+                pure . Just . Map.toList . Map.insert "GHC" ghc $ cEnv
+
+
     lEM $ execLogged hadrian_build
                           ( maybe [] (\j  -> ["-j" <> show j]         ) jobs
                          ++ maybe [] (\bf -> ["--flavour=" <> bf]) buildFlavour
                          ++ ["binary-dist"]
                           )
                           (Just workdir) "ghc-make"
-                          Nothing
+                          hEnv
     [tar] <- liftIO $ findFiles
       (workdir </> "_build" </> "bindist")
       (makeRegexOpts compExtended
@@ -1317,7 +1326,7 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
                        -> FilePath         -- ^ log filename (opened in append mode)
                        -> Excepts '[ProcessError, NotFoundInPATH] m ()
   configureWithGhcBoot mtver args dir logf = do
-    bghc <- liftE resolveBootstrapGHC
+    bghc <- liftE $ resolveGHC bstrap
     let execNew = execLogged
                     "sh"
                     ("./configure" : ("GHC=" <> bghc) : args)
@@ -1335,15 +1344,13 @@ compileGHC targetGhc crossTarget vps bstrap jobs mbuildConfig patches aargs buil
        | Nothing   <- mtver               -> lEM execNew -- need some default for git checkouts where we don't know yet
        | otherwise                        -> lEM execOld
 
-  resolveBootstrapGHC :: MonadIO m => Excepts '[NotFoundInPATH] m FilePath
-  resolveBootstrapGHC = case bstrap of
+  resolveGHC :: MonadIO m => Either Version FilePath -> Excepts '[NotFoundInPATH] m FilePath
+  resolveGHC = \case
            Right g    -> pure g
            Left  bver -> do
-             -- https://gitlab.haskell.org/ghc/ghc/-/issues/24682
-             -- need absolute path
              let ghc = "ghc-" <> (T.unpack . prettyVer $ bver) <> exeExt
-             spaths <- liftIO getSearchPath
-             liftIO (searchPath spaths ghc) !? NotFoundInPATH ghc
+             -- https://gitlab.haskell.org/ghc/ghc/-/issues/24682
+             makeAbsolute ghc
 
 
 

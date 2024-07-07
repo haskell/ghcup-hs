@@ -69,6 +69,7 @@ data CompileCommand = CompileGHC GHCCompileOptions
 data GHCCompileOptions = GHCCompileOptions
   { targetGhc    :: GHC.GHCVer
   , bootstrapGhc :: Either Version FilePath
+  , hadrianGhc   :: Maybe (Either Version FilePath)
   , jobs         :: Maybe Int
   , buildConfig  :: Maybe FilePath
   , patches      :: Maybe (Either FilePath [URI])
@@ -164,7 +165,7 @@ Examples:
 
 ghcCompileOpts :: Parser GHCCompileOptions
 ghcCompileOpts =
-  (\targetGhc bootstrapGhc jobs patches crossTarget addConfArgs setCompile overwriteVer buildFlavour (buildSystem, buildConfig) isolateDir -> GHCCompileOptions {..})
+  (\targetGhc bootstrapGhc hadrianGhc jobs patches crossTarget addConfArgs setCompile overwriteVer buildFlavour (buildSystem, buildConfig) isolateDir -> GHCCompileOptions {..})
     <$> ((GHC.SourceDist <$> option
           (eitherReader
             (first (const "Not a valid version") . version . T.pack)
@@ -208,6 +209,18 @@ ghcCompileOpts =
                "The GHC version (or full path) to bootstrap with (must be installed)"
           <> (completer $ versionCompleter [] GHC)
           )
+    <*> optional (option
+          (eitherReader
+            (\x ->
+              (bimap (const "Not a valid version") Left . version . T.pack $ x) <|> (if isPathSeparator (head x) then pure $ Right x else Left "Not an absolute Path")
+            )
+          )
+          (  long "hadrian-ghc"
+          <> metavar "HADRIAN_GHC"
+          <> help
+               "The GHC version (or full path) to GHC that will be used to compile hadrian (must be installed)"
+          <> (completer $ versionCompleter [] GHC)
+          ))
     <*> optional
           (option
             (eitherReader (readEither @Int))
@@ -608,6 +621,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     crossTarget
                     overwriteVer
                     bootstrapGhc
+                    hadrianGhc
                     jobs
                     buildConfig
                     patches
