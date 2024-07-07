@@ -11,6 +11,7 @@
 
 * Fix TUI for screenreaders
 * Fix windows process creation [#1036](https://github.com/haskell/ghcup-hs/issues/1036)
+* Migrate from streamly to conduit to unbreak hackage releases, wrt [#1051](https://github.com/haskell/ghcup-hs/issues/1051)
 * Improve parsing of --platform values, fixes [#1057](https://github.com/haskell/ghcup-hs/issues/1057)
 * Avoid option clash on `-s`
 * Don't allow to specify --hadrian and --config wrt [#1082](https://github.com/haskell/ghcup-hs/issues/1082)
