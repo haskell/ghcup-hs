@@ -123,11 +123,16 @@ downloadInternal = go (5 :: Int)
 
     downloadStream r i' = do
       void setup
-      let size = case getHeader r "Content-Length" of
-            Just x' -> case decimal $ decUTF8Safe x' of
+      -- We can only do content length checks & progress bar when the stream is not encoded
+      let notEncoded = case mk <$> getHeader r "Content-Encoding" of
+            Nothing -> True
+            Just "identity" -> True
+            Just _ -> False
+          size = case (notEncoded, getHeader r "Content-Length") of
+            (True, Just x') -> case decimal $ decUTF8Safe x' of
               Left  _       -> Nothing
               Right (r', _) -> Just r'
-            Nothing -> Nothing
+            _ -> Nothing
 
       forM_ size $ \s -> forM_ eCSize $ \es -> when (es /= s) $ throwIO (ContentLengthError Nothing (Just s) es)
       let size' = eCSize <|> size
