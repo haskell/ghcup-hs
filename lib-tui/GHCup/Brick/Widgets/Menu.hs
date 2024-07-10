@@ -57,6 +57,8 @@ import Brick
       (<+>))
 import qualified Brick
 import qualified Brick.Widgets.Border as Border
+import qualified Brick.Widgets.Border.Style as Border
+import qualified Brick.Widgets.Center as Brick
 import qualified Brick.Widgets.List as L
 import qualified Brick.Widgets.Edit as Edit
 import           Brick.Focus (FocusRing)
@@ -73,10 +75,12 @@ import qualified Graphics.Vty as Vty
 import Optics.State.Operators ((%=), (.=))
 import Optics.Optic ((%))
 import Optics.State (use)
-import GHCup.Types (KeyCombination)
+import GHCup.Types (KeyCombination(..))
 import Optics (Lens', to, lens)
 import Optics.Operators ( (^.), (.~) )
 import Data.Foldable (find, foldl')
+import           Data.List.NonEmpty             ( NonEmpty (..) )
+import qualified Data.List.NonEmpty            as NE
 
 
 -- | Just some type synonym to make things explicit
@@ -146,6 +150,19 @@ makeLensesFor
   , ("fieldStatus", "fieldStatusL")
   ]
   ''MenuField
+
+data SelectState i = SelectState
+  { selectStateItems :: NonEmpty (Int, (i, Bool))         -- ^ All items along with their selected state
+  , selectStateFocusRing :: FocusRing Int                 -- ^ Focus ring using integeral values assigned to each item
+  , selectStateOverlayOpen :: Bool                        -- ^ Whether the select menu is open
+  }
+
+makeLensesFor
+  [ ("selectStateItems", "selectStateItemsL")
+  , ("selectStateFocusRing", "selectStateFocusRingL")
+  , ("selectStateOverlayOpen", "selectStateOverlayOpenL")
+  ]
+  ''SelectState
 
 -- | A fancy lens to the help message
 fieldHelpMsgL :: Lens' (MenuField s n) HelpMessage
@@ -241,6 +258,89 @@ createButtonField :: n -> Button s n
 createButtonField = MenuField emptyLens createButtonInput "" Valid
 
 {- *****************
+  Select widget
+***************** -}
+
+type SelectField = MenuField
+
+createSelectInput
+  :: NonEmpty i
+  -> (i -> T.Text)
+  -> (Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool)))
+  -> ([i] -> k)
+  -> Label
+  -> KeyCombination
+  -> FieldInput k (SelectState i) n
+createSelectInput items showItem updateSelection getSelection label exitKey@(KeyCombination {..})
+  = FieldInput initState (Right . getSelection . getSelectedItems) "" selectRender selectHandler
+  where
+    initState = SelectState
+      (NE.zip (1 NE.:| [2..]) $ fmap (,False) items)
+      (F.focusRing [1..(length items)])
+      False
+    getSelectedItems = fmap (fst . snd) . (filter (snd . snd)) . NE.toList . selectStateItems
+
+    border w = Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) w) <+> Brick.txt "]"
+    selectRender focus errMsg help s amp = (field, mOverlay)
+      where
+        field = amp $ case getSelectedItems s of
+          [] -> (Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help)
+          xs ->
+            let list = border $ Brick.hBox $ fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
+            in if focus
+              then list
+              else list <+> (Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help)
+        mOverlay = if selectStateOverlayOpen s
+          then Just (overlayLayer ("Select " <> label)  $ overlay s)
+          else Nothing
+    overlay (SelectState {..}) = Brick.vBox $
+      (NE.toList $ fmap (mkSelectRow focused) selectStateItems) ++
+      [ Brick.padRight Brick.Max $
+            Brick.txt "Press "
+            <+> Common.keyToWidget exitKey
+            <+> Brick.txt " to go back"
+      ]
+      where focused = fromMaybe 1 $ F.focusGetCurrent selectStateFocusRing
+    mkSelectRow focused (ix, (item, selected)) =
+      Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) m) <+> Brick.txt "] "
+        <+> (renderAslabel (showItem item) (focused == ix))
+      where m = if selected then Brick.txt "*" else Brick.txt " "
+
+    selectHandler ev = do
+      s <- Brick.get
+      if selectStateOverlayOpen s
+        then case ev of
+          VtyEvent (Vty.EvKey k m) | k == key && m == mods -> selectStateOverlayOpenL .= False
+          VtyEvent (Vty.EvKey (Vty.KChar '\t') [])  -> selectStateFocusRingL %= F.focusNext
+          VtyEvent (Vty.EvKey Vty.KBackTab [])      -> selectStateFocusRingL %= F.focusPrev
+          VtyEvent (Vty.EvKey Vty.KDown [])         -> selectStateFocusRingL %= F.focusNext
+          VtyEvent (Vty.EvKey Vty.KUp [])           -> selectStateFocusRingL %= F.focusPrev
+          VtyEvent (Vty.EvKey Vty.KEnter [])        -> do
+            focused <- use (selectStateFocusRingL % to F.focusGetCurrent)
+            selectStateItemsL %= updateSelection (fromMaybe 1 focused)
+          _ -> pure ()
+        else case ev of
+          VtyEvent (Vty.EvKey Vty.KEnter []) -> selectStateOverlayOpenL .= True
+          _ -> pure ()
+
+-- | Select Field with only single selection possible, aka radio button
+createSelectField :: n -> Lens' s (Maybe i) -> NonEmpty i -> (i -> T.Text) -> Label -> KeyCombination -> SelectField s n
+createSelectField name access items showItem label exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection label exitKey) label Valid name
+  where
+    singleSelect :: Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool))
+    singleSelect ix = fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False)))
+
+    getSelection = fmap NE.head . NE.nonEmpty
+
+-- | Select Field with multiple selections possible
+createMultiSelectField :: n -> Lens' s [i] -> NonEmpty i -> (i -> T.Text) -> Label -> KeyCombination -> SelectField s n
+createMultiSelectField name access items showItem label exitKey = MenuField access (createSelectInput items showItem multiSelect id label exitKey) label Valid name
+  where
+    multiSelect :: Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool))
+    multiSelect ix = fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, not b)) else (ix', (i, b)))
+
+
+{- *****************
   Utilities
 ***************** -}
 
@@ -280,6 +380,15 @@ renderAsHelpMsg = Brick.withAttr Attributes.helpMsgAttr . Brick.txt
 -- | render some Text using errMsgAttr
 renderAsErrMsg :: T.Text -> Widget n
 renderAsErrMsg = Brick.withAttr Attributes.errMsgAttr . Brick.txt
+
+-- | Used to create a layer on top of menu
+overlayLayer :: T.Text -> Brick.Widget n -> Brick.Widget n
+overlayLayer layer_name =
+    Brick.centerLayer
+      . Brick.hLimitPercent 70
+      . Brick.vLimitPercent 65
+      . Brick.withBorderStyle Border.unicode
+      . Border.borderWithLabel (Brick.txt layer_name)
 
 {- *****************
   Menu widget
