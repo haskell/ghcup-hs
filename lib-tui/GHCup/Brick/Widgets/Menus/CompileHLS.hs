@@ -48,12 +48,14 @@ import GHCup.Types (KeyCombination, VersionPattern, ToolVersion)
 import URI.ByteString (URI)
 import qualified Data.Text as T
 import Data.Bifunctor (Bifunctor(..))
+import qualified Data.List.NonEmpty            as NE
 import Data.Function ((&))
 import Optics ((.~))
 import Data.Char (isSpace)
 import Control.Applicative (Alternative((<|>)))
 import Text.Read (readEither)
 import qualified GHCup.Utils.Parsers as Utils
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 data CompileHLSOptions = CompileHLSOptions
   { _jobs         :: Maybe Int
@@ -73,8 +75,8 @@ makeLenses ''CompileHLSOptions
 
 type CompileHLSMenu = Menu CompileHLSOptions Name
 
-create :: KeyCombination -> CompileHLSMenu
-create k = Menu.createMenu CompileGHCBox initialState "Compile HLS" validator k buttons fields
+create :: KeyCombination -> [ToolVersion] -> CompileHLSMenu
+create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS" validator k buttons fields
   where
     initialState =
       CompileHLSOptions
@@ -140,6 +142,15 @@ create k = Menu.createMenu CompileGHCBox initialState "Compile HLS" validator k 
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace
 
+    targetGHCsField =
+      let label = "target GHC(s)"
+      in case NE.nonEmpty availableGHCs of
+        Just ne -> Menu.createMultiSelectField (Common.MenuElement Common.TargetGhcEditBox) targetGHCs ne (T.pack . prettyShow) label k
+            & Menu.fieldHelpMsgL .~ "GHC versions to compile for (Press Enter to edit)"
+        _ -> Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs
+            & Menu.fieldLabelL .~ label
+            & Menu.fieldHelpMsgL .~ "space separated list of GHC versions to compile for"
+
     fields =
       [ Menu.createCheckBoxField (Common.MenuElement Common.UpdateCabalCheckBox) updateCabal
           & Menu.fieldLabelL .~ "cabal update"
@@ -147,9 +158,7 @@ create k = Menu.createMenu CompileGHCBox initialState "Compile HLS" validator k 
       , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"
-      , Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs
-          & Menu.fieldLabelL .~ "target GHC(s)"
-          & Menu.fieldHelpMsgL .~ "space separated list of GHC versions to compile for"
+      , targetGHCsField
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
