@@ -15,8 +15,9 @@ This module contains the entrypoint for the brick application and nothing else.
 
 module GHCup.BrickMain where
 
+import GHCup.List ( ListResult (..))
 import GHCup.Types
-    ( Settings(noColor),
+    ( Settings(noColor), ToolVersion(..), Tool (GHC),
       AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyCombination (KeyCombination) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
@@ -62,6 +63,8 @@ brickMain s = do
                 BrickApp.app
                   (Attributes.defaultAttributes $ noColor $ settings s)
                   (Attributes.dimAttributes $ noColor $ settings s)
+              installedGHCs = fmap (ToolVersion . lVer) $
+                filter (\(ListResult {..}) -> lInstalled && lTool == GHC) (Common._lr ad)
               initstate =
                 AppState.BrickState ad
                       Common.defaultAppSettings
@@ -69,7 +72,7 @@ brickMain s = do
                       (ContextMenu.create e exit_key)
                       (AdvanceInstall.create exit_key)
                       (CompileGHC.create exit_key)
-                      (CompileHLS.create exit_key)
+                      (CompileHLS.create exit_key installedGHCs)
                       (keyBindings s)
                       Common.Navigation
           in Brick.defaultMain initapp initstate
