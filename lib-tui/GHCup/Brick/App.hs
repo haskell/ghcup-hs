@@ -170,11 +170,13 @@ compileHLSHandler :: BrickEvent Name e -> EventM Name BrickState ()
 compileHLSHandler ev = do
   ctx <- use compileHLSMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
+      focusedField = (\n -> find (\x -> Brick.getName x == n) $ ctx ^. Menu.menuFieldsL) =<< focusedElement
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
-  case (ev, focusedElement) of
-    (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n) | k == exitKey && m == mods -> mode .= ContextPanel
-    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
+  case (ev, focusedElement, Menu.drawFieldOverlay =<< focusedField) of
+    (_ , Nothing, _) -> pure ()
+    (_ , _, Just _) -> Common.zoom compileHLSMenu $ CompileHLS.handler ev
+    (VtyEvent (Vty.EvKey k m), Just n, _) | k == exitKey && m == mods -> mode .= ContextPanel
+    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton), _) -> do
         let iopts = ctx ^. Menu.menuStateL
         when (Menu.isValidMenu ctx)
           (Actions.withIOAction $ Actions.compileHLS iopts)
