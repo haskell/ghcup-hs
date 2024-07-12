@@ -17,7 +17,7 @@ module GHCup.BrickMain where
 
 import GHCup.List ( ListResult (..))
 import GHCup.Types
-    ( Settings(noColor), ToolVersion(..), Tool (GHC),
+    ( Settings(noColor), Tool (GHC),
       AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyCombination (KeyCombination) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
@@ -63,8 +63,8 @@ brickMain s = do
                 BrickApp.app
                   (Attributes.defaultAttributes $ noColor $ settings s)
                   (Attributes.dimAttributes $ noColor $ settings s)
-              installedGHCs = fmap (ToolVersion . lVer) $
-                filter (\(ListResult {..}) -> lInstalled && lTool == GHC) (Common._lr ad)
+              installedGHCs = fmap lVer $
+                filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) (Common._lr ad)
               initstate =
                 AppState.BrickState ad
                       Common.defaultAppSettings
