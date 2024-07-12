@@ -263,15 +263,16 @@ createButtonField = MenuField emptyLens createButtonInput "" Valid
 
 type SelectField = MenuField
 
-createSelectInput
-  :: NonEmpty i
+createSelectInput :: (Ord n, Show n)
+  => NonEmpty i
   -> (i -> T.Text)
   -> (Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool)))
   -> ([i] -> k)
   -> Label
+  -> n
   -> KeyCombination
   -> FieldInput k (SelectState i) n
-createSelectInput items showItem updateSelection getSelection label exitKey@(KeyCombination {..})
+createSelectInput items showItem updateSelection getSelection label fieldName exitKey@(KeyCombination {..})
   = FieldInput initState (Right . getSelection . getSelectedItems) "" selectRender selectHandler
   where
     initState = SelectState
@@ -294,14 +295,16 @@ createSelectInput items showItem updateSelection getSelection label exitKey@(Key
           then Just (overlayLayer ("Select " <> label)  $ overlay s)
           else Nothing
     overlay (SelectState {..}) = Brick.vBox $
-      (NE.toList $ fmap (mkSelectRow focused) selectStateItems) ++
       [ Brick.padRight Brick.Max $
             Brick.txt "Press "
             <+> Common.keyToWidget exitKey
             <+> Brick.txt " to go back"
+      , Brick.vLimit (length items) $ Brick.withVScrollBars Brick.OnRight
+          $ Brick.viewport fieldName Brick.Vertical
+          $ Brick.vBox $ (NE.toList $ fmap (mkSelectRow focused) selectStateItems)
       ]
       where focused = fromMaybe 1 $ F.focusGetCurrent selectStateFocusRing
-    mkSelectRow focused (ix, (item, selected)) =
+    mkSelectRow focused (ix, (item, selected)) = (if focused == ix then Brick.visible else id) $
       Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) m) <+> Brick.txt "] "
         <+> (renderAslabel (showItem item) (focused == ix))
       where m = if selected then Brick.txt "*" else Brick.txt " "
@@ -324,8 +327,8 @@ createSelectInput items showItem updateSelection getSelection label exitKey@(Key
           _ -> pure ()
 
 -- | Select Field with only single selection possible, aka radio button
-createSelectField :: n -> Lens' s (Maybe i) -> NonEmpty i -> (i -> T.Text) -> Label -> KeyCombination -> SelectField s n
-createSelectField name access items showItem label exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection label exitKey) label Valid name
+createSelectField :: (Ord n, Show n) => n -> Lens' s (Maybe i) -> NonEmpty i -> (i -> T.Text) -> Label -> KeyCombination -> SelectField s n
+createSelectField name access items showItem label exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection label name exitKey) label Valid name
   where
     singleSelect :: Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool))
     singleSelect ix = fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False)))
@@ -333,8 +336,8 @@ createSelectField name access items showItem label exitKey = MenuField access (c
     getSelection = fmap NE.head . NE.nonEmpty
 
 -- | Select Field with multiple selections possible
-createMultiSelectField :: n -> Lens' s [i] -> NonEmpty i -> (i -> T.Text) -> Label -> KeyCombination -> SelectField s n
-createMultiSelectField name access items showItem label exitKey = MenuField access (createSelectInput items showItem multiSelect id label exitKey) label Valid name
+createMultiSelectField :: (Ord n, Show n) => n -> Lens' s [i] -> NonEmpty i -> (i -> T.Text) -> Label -> KeyCombination -> SelectField s n
+createMultiSelectField name access items showItem label exitKey = MenuField access (createSelectInput items showItem multiSelect id label name exitKey) label Valid name
   where
     multiSelect :: Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool))
     multiSelect ix = fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, not b)) else (ix', (i, b)))
