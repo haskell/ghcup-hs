@@ -35,6 +35,7 @@ import qualified GHCup.Brick.Widgets.Tutorial as Tutorial
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 
+import GHCup.List (ListResult)
 import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination))
 
 import qualified Brick.Focus as F
@@ -48,7 +49,7 @@ import Brick (
  )
 import qualified Brick
 import Control.Monad.Reader (
-  MonadIO (liftIO),
+  MonadIO (liftIO), ReaderT,
   void,
  )
 import Data.IORef (readIORef)
@@ -59,6 +60,7 @@ import qualified Graphics.Vty as Vty
 
 import qualified Data.Text as T
 
+import Optics (Lens')
 import Optics.Getter (to)
 import Optics.Operators ((^.))
 import Optics.Optic ((%))
@@ -138,50 +140,36 @@ contextMenuHandler ev = do
     _ -> Common.zoom contextMenu $ ContextMenu.handler ev
 --
 advanceInstallHandler :: BrickEvent Name e -> EventM Name BrickState ()
-advanceInstallHandler ev = do
-  ctx <- use advanceInstallMenu
-  let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
-  case (ev, focusedElement) of
-    (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n) | k == exitKey && m == mods -> mode .= ContextPanel
-    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
-        let iopts = ctx ^. Menu.menuStateL
-        when (Menu.isValidMenu ctx) $
-          Actions.withIOAction $ Actions.installWithOptions iopts
-    _ -> Common.zoom advanceInstallMenu $ AdvanceInstall.handler ev
+advanceInstallHandler = menuWithOverlayHandler advanceInstallMenu Actions.installWithOptions AdvanceInstall.handler
 
 compileGHCHandler :: BrickEvent Name e -> EventM Name BrickState ()
-compileGHCHandler ev = do
-  ctx <- use compileGHCMenu
-  let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      focusedField = (\n -> find (\x -> Brick.getName x == n) $ ctx ^. Menu.menuFieldsL) =<< focusedElement
-      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
-  case (ev, focusedElement, Menu.drawFieldOverlay =<< focusedField) of
-    (_ , Nothing, _) -> pure ()
-    (_ , _, Just _) -> Common.zoom compileGHCMenu $ CompileGHC.handler ev
-    (VtyEvent (Vty.EvKey k m), Just n, _) | k == exitKey && m == mods -> mode .= ContextPanel
-    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton), _) -> do
-        let iopts = ctx ^. Menu.menuStateL
-        when (Menu.isValidMenu ctx)
-          (Actions.withIOAction $ Actions.compileGHC iopts)
-    _ -> Common.zoom compileGHCMenu $ CompileGHC.handler ev
+compileGHCHandler = menuWithOverlayHandler compileGHCMenu Actions.compileGHC CompileGHC.handler
 
 compileHLSHandler :: BrickEvent Name e -> EventM Name BrickState ()
-compileHLSHandler ev = do
-  ctx <- use compileHLSMenu
+compileHLSHandler = menuWithOverlayHandler compileHLSMenu Actions.compileHLS CompileHLS.handler
+
+-- | Passes all events to innerHandler if an overlay is opened
+-- else handles the exitKey and Enter key for the Menu's "OkButton"
+menuWithOverlayHandler
+  :: Lens' BrickState (Menu.Menu t Name)
+  -> (t -> ((Int, ListResult) -> ReaderT AppState IO (Either String a)))
+  -> (BrickEvent Name e -> EventM Name (Menu.Menu t Name) ())
+  -> BrickEvent Name e
+  -> EventM Name BrickState ()
+menuWithOverlayHandler accessor action innerHandler ev = do
+  ctx <- use accessor
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
       focusedField = (\n -> find (\x -> Brick.getName x == n) $ ctx ^. Menu.menuFieldsL) =<< focusedElement
       (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
   case (ev, focusedElement, Menu.drawFieldOverlay =<< focusedField) of
     (_ , Nothing, _) -> pure ()
-    (_ , _, Just _) -> Common.zoom compileHLSMenu $ CompileHLS.handler ev
+    (_ , _, Just _) -> Common.zoom accessor $ innerHandler ev
     (VtyEvent (Vty.EvKey k m), Just n, _) | k == exitKey && m == mods -> mode .= ContextPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton), _) -> do
         let iopts = ctx ^. Menu.menuStateL
         when (Menu.isValidMenu ctx)
-          (Actions.withIOAction $ Actions.compileHLS iopts)
-    _ -> Common.zoom compileHLSMenu $ CompileHLS.handler ev
+          (Actions.withIOAction $ action iopts)
+    _ -> Common.zoom accessor $ innerHandler ev
 
 eventHandler :: BrickEvent Name e -> EventM Name BrickState ()
 eventHandler ev = do
