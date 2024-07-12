@@ -164,6 +164,17 @@ makeLensesFor
   ]
   ''SelectState
 
+data EditState n = EditState
+  { editState :: Edit.Editor T.Text n
+  , editStateOverlayOpen :: Bool                        -- ^ Whether the edit menu is open
+  }
+
+makeLensesFor
+  [ ("editState", "editStateL")
+  , ("editStateOverlayOpen", "editStateOverlayOpenL")
+  ]
+  ''EditState
+
 -- | A fancy lens to the help message
 fieldHelpMsgL :: Lens' (MenuField s n) HelpMessage
 fieldHelpMsgL = lens g s
@@ -219,28 +230,50 @@ createCheckBoxField name access = MenuField access createCheckBoxInput "" Valid 
 
 type EditableField = MenuField
 
-createEditableInput :: (Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> FieldInput a (Edit.Editor T.Text n) n
-createEditableInput name validator = FieldInput initEdit validateEditContent "" drawEdit Edit.handleEditorEvent
+createEditableInput :: (Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> KeyCombination -> FieldInput a (EditState n) n
+createEditableInput name validator exitKey@(KeyCombination {..}) = FieldInput initEdit validateEditContent "" drawEdit handler
   where
-    drawEdit focus errMsg help edi amp = (, Nothing) $
-      let
-        borderBox w = amp (Brick.vLimit 1 $ Border.vBorder <+> Brick.padRight Brick.Max w <+> Border.vBorder)
-        editorRender = Edit.renderEditor (Brick.txt . T.unlines) focus edi
-        isEditorEmpty = Edit.getEditContents edi == [mempty]
-      in case errMsg of
-           Valid | isEditorEmpty -> borderBox $ renderAsHelpMsg help
-                 | otherwise -> borderBox editorRender
-           Invalid msg
-             | focus && isEditorEmpty -> borderBox $ renderAsHelpMsg help
-             | focus     -> borderBox editorRender
-             | otherwise -> borderBox $ renderAsErrMsg msg
-    validateEditContent = validator . T.init . T.unlines . Edit.getEditContents
-    initEdit = Edit.editorText name (Just 1) ""
+    drawEdit focus errMsg help (EditState edi overlayOpen) amp = (field, mOverlay)
+      where
+        field =
+          let
+            borderBox w = amp (Brick.vLimit 1 $ Border.vBorder <+> Brick.padRight Brick.Max w <+> Border.vBorder)
+            editorContents = Brick.txt $ T.unlines $ Edit.getEditContents edi
+            isEditorEmpty = Edit.getEditContents edi == [mempty]
+          in case errMsg of
+               Valid | isEditorEmpty -> borderBox $ renderAsHelpMsg help
+                     | otherwise -> borderBox editorContents
+               Invalid msg
+                 | focus && isEditorEmpty -> borderBox $ renderAsHelpMsg help
+                 | focus     -> borderBox editorContents
+                 | otherwise -> borderBox $ renderAsErrMsg msg
+        mOverlay = if overlayOpen
+          then Just (overlayLayer ("Edit") $ overlay)
+          else Nothing
+        overlay = Brick.vBox $
+          [ Edit.renderEditor (Brick.txt . T.unlines) focus edi
+          , Brick.txt " "
+          , Brick.padRight Brick.Max $
+              Brick.txt "Press "
+              <+> Common.keyToWidget exitKey
+              <+> Brick.txt " to go back"
+          ]
+    handler ev = do
+      (EditState edi overlayOpen) <- Brick.get
+      if overlayOpen
+        then case ev of
+          VtyEvent (Vty.EvKey k m) | k == key && m == mods -> editStateOverlayOpenL .= False
+          _ -> Common.zoom editStateL $ Edit.handleEditorEvent ev
+        else case ev of
+          VtyEvent (Vty.EvKey Vty.KEnter []) -> editStateOverlayOpenL .= True
+          _ -> pure ()
+    validateEditContent = validator . T.init . T.unlines . Edit.getEditContents . editState
+    initEdit = EditState (Edit.editorText name (Just 1) "") False
 
-createEditableField :: (Eq n, Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> Lens' s a  -> EditableField s n
-createEditableField name validator access = MenuField access input "" Valid name
+createEditableField :: (Eq n, Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> Lens' s a -> KeyCombination -> EditableField s n
+createEditableField name validator access exitKey = MenuField access input "" Valid name
   where
-    input = createEditableInput name validator
+    input = createEditableInput name validator exitKey
 
 {- *****************
   Button widget
