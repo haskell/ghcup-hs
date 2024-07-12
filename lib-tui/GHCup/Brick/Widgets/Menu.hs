@@ -116,6 +116,7 @@ data FieldInput a b n =
     , inputRender :: Bool
                   -> ErrorStatus
                   -> HelpMessage
+                  -> Label
                   -> b
                   -> (Widget n -> Widget n)
                   -> (Widget n, Maybe (Widget n))         -- ^ How to draw the input and optionally an overlay, with focus a help message and input.
@@ -184,14 +185,14 @@ fieldHelpMsgL = lens g s
 -- | How to draw a field given a formater
 drawField :: Formatter n -> Bool -> MenuField s n -> Widget n
 drawField amp focus (MenuField { fieldInput = FieldInput {..}, ..}) =
-  let (input, overlay) = inputRender focus fieldStatus inputHelp inputState (amp focus)
+  let (input, overlay) = inputRender focus fieldStatus inputHelp fieldLabel inputState (amp focus)
     in case (focus, overlay) of
          (True, Nothing) -> Common.enableScreenReader fieldName $ Brick.visible input
          _ -> input
 
 drawFieldOverlay :: MenuField s n -> Maybe (Widget n)
 drawFieldOverlay (MenuField { fieldInput = FieldInput {..}, ..}) =
-  snd $ inputRender True fieldStatus inputHelp inputState id
+  snd $ inputRender True fieldStatus inputHelp fieldLabel inputState id
 
 instance Brick.Named (MenuField s n) n where
   getName :: MenuField s n -> n
@@ -212,7 +213,7 @@ createCheckBoxInput = FieldInput False Right "" checkBoxRender checkBoxHandler
         if b
           then border . Brick.withAttr Attributes.installedAttr    $ Brick.str Common.installedSign
           else border . Brick.withAttr Attributes.notInstalledAttr $ Brick.str Common.notInstalledSign
-    checkBoxRender focus _ help check f = (, Nothing) $
+    checkBoxRender focus _ help _ check f = (, Nothing) $
       let core = f $ drawBool check
       in if focus
         then core
@@ -233,7 +234,7 @@ type EditableField = MenuField
 createEditableInput :: (Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> KeyCombination -> FieldInput a (EditState n) n
 createEditableInput name validator exitKey@(KeyCombination {..}) = FieldInput initEdit validateEditContent "" drawEdit handler
   where
-    drawEdit focus errMsg help (EditState edi overlayOpen) amp = (field, mOverlay)
+    drawEdit focus errMsg help label (EditState edi overlayOpen) amp = (field, mOverlay)
       where
         field =
           let
@@ -248,7 +249,7 @@ createEditableInput name validator exitKey@(KeyCombination {..}) = FieldInput in
                  | focus     -> borderBox editorContents
                  | otherwise -> borderBox $ renderAsErrMsg msg
         mOverlay = if overlayOpen
-          then Just (overlayLayer ("Edit") $ overlay)
+          then Just (overlayLayer ("Edit " <> label) $ overlay)
           else Nothing
         overlay = Brick.vBox $
           [ Edit.renderEditor (Brick.txt . T.unlines) focus edi
@@ -285,8 +286,8 @@ type Button = MenuField
 createButtonInput :: FieldInput () () n
 createButtonInput = FieldInput () Right "" drawButton (const $ pure ())
   where
-    drawButton True (Invalid err) _    _ amp = (amp . centerV . renderAsErrMsg $ err, Nothing)
-    drawButton _    _             help _ amp = (amp . centerV . renderAsHelpMsg $ help, Nothing)
+    drawButton True (Invalid err) _    _ _ amp = (amp . centerV . renderAsErrMsg $ err, Nothing)
+    drawButton _    _             help _ _ amp = (amp . centerV . renderAsHelpMsg $ help, Nothing)
 
 createButtonField :: n -> Button s n
 createButtonField = MenuField emptyLens createButtonInput "" Valid
@@ -316,7 +317,7 @@ createSelectInput items showItem updateSelection getSelection label fieldName ex
     getSelectedItems = fmap (fst . snd) . (filter (snd . snd)) . NE.toList . selectStateItems
 
     border w = Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) w) <+> Brick.txt "]"
-    selectRender focus errMsg help s amp = (field, mOverlay)
+    selectRender focus errMsg help label s amp = (field, mOverlay)
       where
         field = amp $ case getSelectedItems s of
           [] -> (Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help)
