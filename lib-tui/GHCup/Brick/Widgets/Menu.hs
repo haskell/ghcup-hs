@@ -303,11 +303,10 @@ createSelectInput :: (Ord n, Show n)
   -> (i -> T.Text)
   -> (Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool)))
   -> ([i] -> k)
-  -> Label
   -> n
   -> KeyCombination
   -> FieldInput k (SelectState i) n
-createSelectInput items showItem updateSelection getSelection label fieldName exitKey@(KeyCombination {..})
+createSelectInput items showItem updateSelection getSelection fieldName exitKey@(KeyCombination {..})
   = FieldInput initState (Right . getSelection . getSelectedItems) "" selectRender selectHandler
   where
     initState = SelectState
@@ -362,8 +361,8 @@ createSelectInput items showItem updateSelection getSelection label fieldName ex
           _ -> pure ()
 
 -- | Select Field with only single selection possible, aka radio button
-createSelectField :: (Ord n, Show n) => n -> Lens' s (Maybe i) -> NonEmpty i -> (i -> T.Text) -> Label -> KeyCombination -> SelectField s n
-createSelectField name access items showItem label exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection label name exitKey) label Valid name
+createSelectField :: (Ord n, Show n) => n -> Lens' s (Maybe i) -> NonEmpty i -> (i -> T.Text) -> KeyCombination -> SelectField s n
+createSelectField name access items showItem exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection name exitKey) "" Valid name
   where
     singleSelect :: Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool))
     singleSelect ix = fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False)))
@@ -371,8 +370,8 @@ createSelectField name access items showItem label exitKey = MenuField access (c
     getSelection = fmap NE.head . NE.nonEmpty
 
 -- | Select Field with multiple selections possible
-createMultiSelectField :: (Ord n, Show n) => n -> Lens' s [i] -> NonEmpty i -> (i -> T.Text) -> Label -> KeyCombination -> SelectField s n
-createMultiSelectField name access items showItem label exitKey = MenuField access (createSelectInput items showItem multiSelect id label name exitKey) label Valid name
+createMultiSelectField :: (Ord n, Show n) => n -> Lens' s [i] -> NonEmpty i -> (i -> T.Text) -> KeyCombination -> SelectField s n
+createMultiSelectField name access items showItem exitKey = MenuField access (createSelectInput items showItem multiSelect id name exitKey) "" Valid name
   where
     multiSelect :: Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool))
     multiSelect ix = fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, not b)) else (ix', (i, b)))
