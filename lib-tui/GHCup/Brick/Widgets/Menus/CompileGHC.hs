@@ -48,11 +48,13 @@ import qualified GHCup.Brick.Common as Common
 import GHCup.Types
     ( KeyCombination, BuildSystem(..), VersionPattern )
 import URI.ByteString (URI)
+import Control.Monad (join)
 import qualified Data.Text as T
 import Data.Bifunctor (Bifunctor(..))
 import Data.Function ((&))
-import Optics ((.~))
+import Optics ((.~), iso, (%))
 import Data.Char (isSpace)
+import Data.List.NonEmpty             ( NonEmpty (..) )
 import Data.Versions (Version, version)
 import System.FilePath (isPathSeparator)
 import Control.Applicative (Alternative((<|>)))
@@ -153,13 +155,11 @@ create k = Menu.createMenu CompileGHCBox initialState "Compile GHC" validator k 
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace
 
-    systemV :: T.Text -> Either Menu.ErrorMessage (Maybe BuildSystem)
-    systemV = whenEmpty Nothing readSys
-      where
-        readSys i
-          | T.toLower i == "hadrian" = Right $ Just Hadrian
-          | T.toLower i == "make"    = Right $ Just Make
-          | otherwise = Left "Not a valid Build System"
+    showMaybeBuildSystem :: Maybe BuildSystem -> T.Text
+    showMaybeBuildSystem  = \case
+      Nothing -> "Auto select (prefer hadrian if available, and build config is not specified)"
+      Just Hadrian -> "hadrian"
+      Just Make -> "make"
 
     fields =
       [ Menu.createEditableField (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapV bootstrapGhc
@@ -190,9 +190,9 @@ create k = Menu.createMenu CompileGHCBox initialState "Compile GHC" validator k 
       , Menu.createEditableField (Common.MenuElement Common.CrossTargetEditBox) (Right . Just) crossTarget
           & Menu.fieldLabelL .~ "cross target"
           & Menu.fieldHelpMsgL .~ "Build cross-compiler for this platform"
-      , Menu.createEditableField (Common.MenuElement Common.BuildSystemEditBox) systemV buildSystem
+      , Menu.createSelectField (Common.MenuElement Common.BuildSystemEditBox) (buildSystem % (iso Just join)) (Nothing :| [Just Hadrian, Just Make]) showMaybeBuildSystem  "" k
           & Menu.fieldLabelL .~ "build system"
-          & Menu.fieldHelpMsgL .~ "either 'make' or 'hadrian'"
+          & Menu.fieldHelpMsgL .~ "Select the build system"
       , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer
           & Menu.fieldLabelL .~ "overwrite-version"
           & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
