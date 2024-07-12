@@ -385,7 +385,7 @@ renderAsErrMsg = Brick.withAttr Attributes.errMsgAttr . Brick.txt
 overlayLayer :: T.Text -> Brick.Widget n -> Brick.Widget n
 overlayLayer layer_name =
     Brick.centerLayer
-      . Brick.hLimitPercent 70
+      . Brick.hLimitPercent 50
       . Brick.vLimitPercent 65
       . Brick.withBorderStyle Border.unicode
       . Border.borderWithLabel (Brick.txt layer_name)
