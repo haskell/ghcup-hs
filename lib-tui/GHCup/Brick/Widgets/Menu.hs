@@ -332,7 +332,7 @@ createSelectInput items showItem updateSelection getSelection fieldName exitKey@
       [ Brick.padRight Brick.Max $
             Brick.txt "Press "
             <+> Common.keyToWidget exitKey
-            <+> Brick.txt " to go back"
+            <+> Brick.txt " to go back, Press Enter to select"
       , Brick.vLimit (length items) $ Brick.withVScrollBars Brick.OnRight
           $ Brick.viewport fieldName Brick.Vertical
           $ Brick.vBox $ (NE.toList $ fmap (mkSelectRow focused) selectStateItems)
