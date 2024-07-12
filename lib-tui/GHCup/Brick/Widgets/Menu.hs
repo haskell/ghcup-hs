@@ -519,7 +519,7 @@ drawMenu menu =
       , Brick.padRight Brick.Max $
           Brick.txt "Press "
           <+> Common.keyToWidget (menu ^. menuExitKeyL)
-          <+> Brick.txt " to go back"
+          <+> Brick.txt " to go back, Press Enter to edit the highlighted field"
       ]
     fieldLabels  = [field & fieldLabel | field <- menu ^. menuFieldsL]
     buttonLabels = [button & fieldLabel | button <- menu ^. menuButtonsL]
