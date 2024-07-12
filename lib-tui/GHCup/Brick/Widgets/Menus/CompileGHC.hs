@@ -55,11 +55,13 @@ import Data.Function ((&))
 import Optics ((.~), iso, (%))
 import Data.Char (isSpace)
 import Data.List.NonEmpty             ( NonEmpty (..) )
+import qualified Data.List.NonEmpty            as NE
 import Data.Versions (Version, version)
 import System.FilePath (isPathSeparator)
 import Control.Applicative (Alternative((<|>)))
 import Text.Read (readEither)
 import qualified GHCup.Utils.Parsers as Utils
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 data CompileGHCOptions = CompileGHCOptions
   { _bootstrapGhc :: Either Version FilePath
@@ -81,8 +83,8 @@ makeLenses ''CompileGHCOptions
 
 type CompileGHCMenu = Menu CompileGHCOptions Name
 
-create :: KeyCombination -> CompileGHCMenu
-create k = Menu.createMenu CompileGHCBox initialState "Compile GHC" validator k buttons fields
+create :: KeyCombination -> [Version] -> CompileGHCMenu
+create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC" validator k buttons fields
   where
     initialState =
       CompileGHCOptions
@@ -161,11 +163,19 @@ create k = Menu.createMenu CompileGHCBox initialState "Compile GHC" validator k 
       Just Hadrian -> "hadrian"
       Just Make -> "make"
 
-    fields =
-      [ Menu.createEditableField (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapV bootstrapGhc k
+    bootstrapGHCField = case NE.nonEmpty availableGHCs of
+        Just ne ->
+          let bootstrapGhc' = bootstrapGhc % (iso (either Just (const Nothing)) (maybe (Right "") Left))
+          in Menu.createSelectField (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapGhc' ne (T.pack . prettyShow) k
+            & Menu.fieldLabelL .~ "bootstrap-ghc"
+            & Menu.fieldHelpMsgL .~ "The GHC version to bootstrap with"
+        _ -> Menu.createEditableField (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapV bootstrapGhc k
            & Menu.fieldLabelL .~ "bootstrap-ghc"
            & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to bootstrap with (must be installed)"
            & Menu.fieldStatusL .~ Menu.Invalid "Invalid Empty value"
+
+    fields =
+      [ bootstrapGHCField
       , Menu.createEditableField (Common.MenuElement Common.HadrianGhcEditBox) hadrianstrapV hadrianGhc k
            & Menu.fieldLabelL .~ "hadrian-ghc"
            & Menu.fieldHelpMsgL .~ "The GHC version (or full path) that will be used to compile hadrian (must be installed)"

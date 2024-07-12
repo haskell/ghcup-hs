@@ -71,7 +71,7 @@ brickMain s = do
                       initial_list
                       (ContextMenu.create e exit_key)
                       (AdvanceInstall.create exit_key)
-                      (CompileGHC.create exit_key)
+                      (CompileGHC.create exit_key installedGHCs)
                       (CompileHLS.create exit_key installedGHCs)
                       (keyBindings s)
                       Common.Navigation
