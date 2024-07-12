@@ -147,7 +147,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS
       in case NE.nonEmpty availableGHCs of
         Just ne -> Menu.createMultiSelectField (Common.MenuElement Common.TargetGhcEditBox) targetGHCs ne (T.pack . prettyShow) label k
             & Menu.fieldHelpMsgL .~ "GHC versions to compile for (Press Enter to edit)"
-        _ -> Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs
+        _ -> Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs k
             & Menu.fieldLabelL .~ label
             & Menu.fieldHelpMsgL .~ "space separated list of GHC versions to compile for"
 
@@ -155,32 +155,32 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS
       [ Menu.createCheckBoxField (Common.MenuElement Common.UpdateCabalCheckBox) updateCabal
           & Menu.fieldLabelL .~ "cabal update"
           & Menu.fieldHelpMsgL .~ "Run 'cabal update' before the build"
-      , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs
+      , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs k
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"
       , targetGHCsField
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
-      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator cabalArgs
+      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator cabalArgs k
           & Menu.fieldLabelL .~ "CABAL_ARGS"
           & Menu.fieldHelpMsgL .~ "Additional arguments to cabal install"
-      , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir
+      , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir k
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
-      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) overWriteVersionParser overwriteVer
+      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) overWriteVersionParser overwriteVer k
           & Menu.fieldLabelL .~ "overwrite version"
           & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
-      , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches
+      , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches k
           & Menu.fieldLabelL .~ "patches"
           & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or Absolute path to patch directory"
-      , Menu.createEditableField (Common.MenuElement Common.CabalProjectEditBox) cabalProjectV cabalProject
+      , Menu.createEditableField (Common.MenuElement Common.CabalProjectEditBox) cabalProjectV cabalProject k
            & Menu.fieldLabelL .~ "cabal project"
            & Menu.fieldHelpMsgL .~ "If relative filepath, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. Otherwise expects a full URI with https/http/file scheme."
-      , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) cabalProjectLocalV cabalProjectLocal
+      , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) cabalProjectLocalV cabalProjectLocal k
           & Menu.fieldLabelL .~ "cabal project local"
           & Menu.fieldHelpMsgL .~ "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
-      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef
+      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef k
           & Menu.fieldLabelL .~ "git-ref"
           & Menu.fieldHelpMsgL .~ "The git commit/branch/ref to build from"
       ]

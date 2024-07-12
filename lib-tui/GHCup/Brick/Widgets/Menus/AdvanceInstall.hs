@@ -89,19 +89,19 @@ create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" vali
     additionalValidator = Right . T.split isSpace
 
     fields =
-      [ Menu.createEditableField (Common.MenuElement Common.UrlEditBox) uriValidator instBindistL
+      [ Menu.createEditableField (Common.MenuElement Common.UrlEditBox) uriValidator instBindistL k
           & Menu.fieldLabelL .~ "url"
           & Menu.fieldHelpMsgL .~ "Install the specified version from this bindist"
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) instSetL
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
-      , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathValidator isolateDirL
+      , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathValidator isolateDirL k
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
       , Menu.createCheckBoxField (Common.MenuElement Common.ForceCheckBox) forceInstallL
           & Menu.fieldLabelL .~ "force"
           & Menu.fieldHelpMsgL .~ "Force install (THIS IS UNSAFE, only use it in Dockerfiles or CI)"
-      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgsL
+      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgsL k
           & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
           & Menu.fieldHelpMsgL .~ "Additional arguments to bindist configure"
       ]
