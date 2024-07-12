@@ -256,13 +256,14 @@ createEditableInput name validator exitKey@(KeyCombination {..}) = FieldInput in
           , Brick.padRight Brick.Max $
               Brick.txt "Press "
               <+> Common.keyToWidget exitKey
-              <+> Brick.txt " to go back"
+              <+> Brick.txt " or Enter to go back"
           ]
     handler ev = do
       (EditState edi overlayOpen) <- Brick.get
       if overlayOpen
         then case ev of
           VtyEvent (Vty.EvKey k m) | k == key && m == mods -> editStateOverlayOpenL .= False
+          VtyEvent (Vty.EvKey Vty.KEnter []) -> editStateOverlayOpenL .= False
           _ -> Common.zoom editStateL $ Edit.handleEditorEvent ev
         else case ev of
           VtyEvent (Vty.EvKey Vty.KEnter []) -> editStateOverlayOpenL .= True
