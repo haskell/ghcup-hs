@@ -168,7 +168,7 @@ create k = Menu.createMenu CompileGHCBox initialState "Compile GHC" validator k 
            & Menu.fieldStatusL .~ Menu.Invalid "Invalid Empty value"
       , Menu.createEditableField (Common.MenuElement Common.HadrianGhcEditBox) hadrianstrapV hadrianGhc
            & Menu.fieldLabelL .~ "hadrian-ghc"
-           & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to GHC that will be used to compile hadrian (must be installed)"
+           & Menu.fieldHelpMsgL .~ "The GHC version (or full path) that will be used to compile hadrian (must be installed)"
       , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"

@@ -218,7 +218,7 @@ ghcCompileOpts =
           (  long "hadrian-ghc"
           <> metavar "HADRIAN_GHC"
           <> help
-               "The GHC version (or full path) to GHC that will be used to compile hadrian (must be installed)"
+               "The GHC version (or full path) that will be used to compile hadrian (must be installed)"
           <> (completer $ versionCompleter [] GHC)
           ))
     <*> optional
