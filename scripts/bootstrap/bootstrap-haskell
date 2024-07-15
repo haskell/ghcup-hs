@@ -899,7 +899,7 @@ fi
 
 case $ask_hls_answer in
 	1)
-            (_eghcup --cache install hls "${BOOTSTRAP_HASKELL_HLS_VERSION}") || \
+            (_eghcup --cache install hls "${BOOTSTRAP_HASKELL_HLS_VERSION}") ||
 		warn "HLS installation failed, continuing anyway"
 		;;
 	*) ;;
@@ -907,11 +907,11 @@ esac
 
 case $ask_stack_answer in
 	1)
-            (_eghcup --cache install stack "${BOOTSTRAP_HASKELL_STACK_VERSION}") || \
+            (_eghcup --cache install stack "${BOOTSTRAP_HASKELL_STACK_VERSION}") ||
 		die "Stack installation failed"
 		;;
 	2)
-            (_eghcup --cache install stack "${BOOTSTRAP_HASKELL_STACK_VERSION}") || \
+            (_eghcup --cache install stack "${BOOTSTRAP_HASKELL_STACK_VERSION}") ||
 		die "Stack installation failed"
         stack_root="$(find_stack_root)"
         edo mkdir -p "${stack_root}"/hooks
