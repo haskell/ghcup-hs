@@ -55,6 +55,15 @@ jobs:
           - image: debian:unstable
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev  libgmp-dev libgmp10 libncurses-dev libncurses6 libtinfo6 libnuma-dev
+          - image: i386/debian:10
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 libnuma-dev
+          - image: i386/debian:11
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev  libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 libnuma-dev
+          - image: i386/debian:12
+            installCmd: apt-get update && apt-get install -y
+            toolRequirements: build-essential curl libffi-dev  libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 libnuma-dev
           - image: ubuntu:20.04
             installCmd: apt-get update && apt-get install -y
             toolRequirements: build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
