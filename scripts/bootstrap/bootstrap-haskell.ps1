@@ -192,8 +192,7 @@ function Exec
 # Only x86 32/64-bit is supported
 $SupportedArchitectures = 'AMD64', 'x86'
 if (!$SupportedArchitectures.contains($env:PROCESSOR_ARCHITECTURE)) {
-  Print-Msg -color Red -msg ("Unsupported processor architecture: {0}. Supported architectures: {1}." -f $env:PROCESSOR_ARCHITECTURE, ($SupportedArchitectures -join ", "))
-  Exit 1
+  throw ("Unsupported processor architecture: {0}. Supported architectures: {1}." -f $env:PROCESSOR_ARCHITECTURE, ($SupportedArchitectures -join ", "))
 }
 
 # set default Msys2Env if not set
@@ -222,8 +221,7 @@ if ($Msys2Env -eq 'MINGW32') {
 	$ShellType = '-clang64'
 	$PkgConf = 'mingw-w64-clang-x86_64-pkgconf'
 } else {
-  Print-Msg -color Red -msg ("Unsupported Msys2 environment: {0}. Supported environments are: MINGW64, MINGW32, MSYS, UCRT64, CLANG64" -f $Msys2Env)
-  Exit 1
+  throw ("Unsupported Msys2 environment: {0}. Supported environments are: MINGW64, MINGW32, MSYS, UCRT64, CLANG64" -f $Msys2Env)
 }
 
 $ErrorActionPreference = 'Stop'
@@ -245,7 +243,7 @@ elevated command prompt:
     , [System.Management.Automation.Host.ChoiceDescription[]] @('&Continue'
         '&Abort'), 0)
     if ($decision -eq 1) {
-      Exit 0
+      return
     }
   }
 }
@@ -271,8 +269,7 @@ if ($GhcupBasePrefixEnv) {
   if ($defaultGhcupBasePrefix) {
     Print-Msg -color Green -msg ("Picked {0} as default Install prefix!" -f $defaultGhcupBasePrefix)
   } else {
-    Print-Msg -color Red -msg "Couldn't find a writable partition with at least 5GB free disk space!"
-    Exit 1
+    throw "Couldn't find a writable partition with at least 5GB free disk space!"
   }
 }
 
@@ -281,11 +278,9 @@ if ($Silent -and !($InstallDir)) {
   $GhcupBasePrefix = $defaultGhcupBasePrefix
 } elseif ($InstallDir) {
   if (!(Test-Path -LiteralPath ('{0}' -f $InstallDir) -IsValid)) {
-    Print-Msg -color Red -msg "Not a valid directory! (InstallDir)"
-    Exit 1
+    throw "Not a valid directory! (InstallDir)"
   } elseif (!(Split-Path -IsAbsolute -Path "$InstallDir")) {
-    Print-Msg -color Red -msg "Non-absolute Path specified! (InstallDir)"
-    Exit 1
+    throw "Non-absolute Path specified! (InstallDir)"
   } else {
     $GhcupBasePrefix = $InstallDir
   }
@@ -338,11 +333,9 @@ $null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $Ghcu
 $GhcupDir = ('{0}\ghcup' -f $GhcupBasePrefix)
 if ($ExistingMsys2Dir) {
   if (!(Test-Path -LiteralPath ('{0}' -f $ExistingMsys2Dir) -IsValid)) {
-    Print-Msg -color Red -msg "Not a valid directory! (ExistingMsys2Dir)"
-    Exit 1
+    throw "Not a valid directory! (ExistingMsys2Dir)"
   } elseif (!(Split-Path -IsAbsolute -Path "$ExistingMsys2Dir")) {
-    Print-Msg -color Red -msg "Non-absolute Path specified! (ExistingMsys2Dir)"
-    Exit 1
+    throw "Non-absolute Path specified! (ExistingMsys2Dir)"
   } else {
 	$MsysDir = $ExistingMsys2Dir
   }
@@ -380,7 +373,7 @@ if (Test-Path -LiteralPath ('{0}' -f $GhcupDir)) {
   } elseif ($decision -eq 1) {
     Print-Msg -msg 'Continuing installation...'
   } elseif ($decision -eq 2) {
-    Exit 0
+    return
   }
 }
 
@@ -392,11 +385,9 @@ $null = New-Item -Path ('{0}' -f $GhcupDir) -Name 'bin' -ItemType 'directory' -E
 if ($CabalDir) {
   $CabDirEnv = $CabalDir
   if (!($CabDirEnv)) {
-    Print-Msg -color Red -msg "No directory specified!"
-    Exit 1
+    throw "No directory specified!"
   } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
-    Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
-    Exit 1
+    throw "Invalid/Non-absolute Path specified"
   }
 } elseif (!($Silent)) {
   while ($true) {
@@ -431,7 +422,7 @@ if (!($InstallHLS)) {
     if ($HLSdecision -eq 0) {
       $InstallHLS = $true
     } elseif ($HLSdecision -eq 2) {
-      Exit 0
+      return
     }
   }
 }
@@ -448,7 +439,7 @@ if (!($InstallStack)) {
     if ($StackDecision -eq 0) {
       $InstallStack = $true
     } elseif ($StackDecision -eq 2) {
-      Exit 0
+      return
     }
   }
 }
@@ -462,7 +453,7 @@ if ($Interactive) {
 	if ($DesktopDecision -eq 0) {
       $InstallDesktopShortcuts = $true
     } elseif ($DesktopDecision -eq 2) {
-      Exit 0
+      return
     }
 } else {
 	if ($Minimal) {
@@ -511,8 +502,7 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
     }
 	$Msys2HashChecked = Get-FileHash -Algorithm SHA256 "${archivePath}"
 	if (!($Msys2HashChecked.Hash -eq $Msys2Hash)) {
-		Print-Msg -color Red -msg ("Hashes don't match, got {0}, but expected {1}" -f $Msys2HashChecked, $Msys2Hash)
-		Exit 1
+		throw ("Hashes don't match, got {0}, but expected {1}" -f $Msys2HashChecked, $Msys2Hash)
 	}
 
     Print-Msg -msg 'Extracting Msys2 archive...'
@@ -586,7 +576,7 @@ $decision = $Host.UI.PromptForChoice('Uninstall Haskell'
     '&Abort'), 0)
 
 if ($decision -eq 1) {
-  Exit 0
+  return
 }
 
 Write-Host 'Removing ghcup toolchain' -ForegroundColor Green
@@ -727,10 +717,3 @@ if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBa
   # aED5Ujwyq3Qre+TGVRUqwkEauDhQiX2A008G00fRO6+di6yJRCRn5eaRAbdU3Xww
   # E5VhEwLBnwzWrvLKtdEclhgUCo5Tq87QMXVdgX4aRmunl4ZE+Q==
 # SIG # End signature block
-
-
-
-
-
-
-
