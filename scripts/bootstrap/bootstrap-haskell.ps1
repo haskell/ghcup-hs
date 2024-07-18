@@ -386,8 +386,10 @@ if ($CabalDir) {
   $CabDirEnv = $CabalDir
   if (!($CabDirEnv)) {
     throw "No directory specified!"
+  } elseif (!(Test-Path -LiteralPath ('{0}' -f $CabDirEnv) -IsValid)) {
+    throw "Not a valid directory! (CabalDir)"
   } elseif (!(Split-Path -IsAbsolute -Path "$CabDirEnv")) {
-    throw "Invalid/Non-absolute Path specified"
+    throw "Non-absolute Path specified! (CabalDir)"
   }
 } elseif (!($Silent)) {
   while ($true) {
