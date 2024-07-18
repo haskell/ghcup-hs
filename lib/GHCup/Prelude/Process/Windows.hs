@@ -32,6 +32,7 @@ import           System.Environment
 import           System.FilePath
 import           System.IO
 import           System.Process
+import           System.Win32.Info (getSystemDirectory, getWindowsDirectory)
 
 import qualified Control.Exception             as EX
 import qualified Data.ByteString               as BS
@@ -218,6 +219,28 @@ exec exe args chdir env' = do
   cp <- createProcessWithMingwPath ((proc exe args) { cwd = chdir, env = env' })
   exit_code <- liftIO $ withRestorePath (env cp) $ withCreateProcess cp $ \_ _ _ p -> waitForProcess p
   pure $ toProcessError exe args exit_code
+
+
+-- See:
+-- - https://github.com/haskell/ghcup-hs/issues/1106
+-- - https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/375#note_435793
+--
+-- We emulate the logic of 'CreateProcessW' described under the parameter
+-- 'lpApplicationName': https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw#parameters
+-- ...while NOT considering the directory from which the application is loaded (which is C:/ghcup/bin)
+resolveExecutable :: FilePath -> Bool -> IO (Maybe FilePath)
+resolveExecutable fp minGW
+  | length (splitPath fp) /= 1 = pure $ Just fp
+  | otherwise = do
+      system32Dir <- getSystemDirectory
+      windowsDir <- getWindowsDirectory
+      curDir <- getCurrentDirectory
+      let system16Dir = windowsDir </> "System"
+      mingWPaths <- if minGW then ghcupMsys2BinDirs' else pure []
+      path  <- getSearchPath
+      let withExtension = if hasExtension fp then fp else fp <.> "exe"
+      searchPath (curDir:system32Dir:system16Dir:windowsDir:(mingWPaths ++ path)) withExtension
+
 
 -- | Like 'exec', except doesn't add msys2 stuff to PATH.
 execNoMinGW :: MonadIO m
