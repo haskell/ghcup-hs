@@ -289,8 +289,10 @@ type Button = MenuField
 createButtonInput :: FieldInput () () n
 createButtonInput = FieldInput () Right "" drawButton (const $ pure ())
   where
-    drawButton True (Invalid err) _    _ _ amp = (amp . centerV . renderAsErrMsg $ err, Nothing)
-    drawButton _    _             help _ _ amp = (amp . centerV . renderAsHelpMsg $ help, Nothing)
+    drawButton True (Invalid err) _    _ _ amp = (amp . renderAsErrMsg $ err, Nothing)
+    drawButton _    _             help _ _ amp =
+      let pad = if length (T.lines help) == 1 then Brick.padTop (Brick.Pad 1) else id
+      in (amp . pad . renderAsHelpMsg $ help, Nothing)
 
 createButtonField :: n -> Button s n
 createButtonField = MenuField emptyLens createButtonInput "" Valid
@@ -408,10 +410,6 @@ leftify i = Brick.hLimit i . Brick.padRight Brick.Max
 --   row2_col1_large   row2_col2
 rightify :: Int -> Brick.Widget n -> Brick.Widget n
 rightify i = Brick.hLimit i . Brick.padLeft Brick.Max
-
--- | center a line in three rows.
-centerV :: Widget n -> Widget n
-centerV = Brick.padTopBottom 1
 
 -- | render some Text using helpMsgAttr
 renderAsHelpMsg :: T.Text -> Widget n
