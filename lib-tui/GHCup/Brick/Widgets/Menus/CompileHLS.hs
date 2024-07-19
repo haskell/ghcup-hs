@@ -154,13 +154,13 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS
             & Menu.fieldHelpMsgL .~ "space separated list of GHC versions to compile for"
 
     fields =
-      [ Menu.createCheckBoxField (Common.MenuElement Common.UpdateCabalCheckBox) updateCabal
+      [ targetGHCsField
+      , Menu.createCheckBoxField (Common.MenuElement Common.UpdateCabalCheckBox) updateCabal
           & Menu.fieldLabelL .~ "cabal update"
           & Menu.fieldHelpMsgL .~ "Run 'cabal update' before the build"
       , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs k
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"
-      , targetGHCsField
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
