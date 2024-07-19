@@ -252,7 +252,7 @@ createEditableInput name validator exitKey@(KeyCombination {..}) = FieldInput in
           then Just (overlayLayer ("Edit " <> label) $ overlay)
           else Nothing
         overlay = Brick.vBox $
-          [ Brick.txt help
+          [ Brick.txtWrap help
           , Border.border $ Edit.renderEditor (Brick.txt . T.unlines) focus edi
           , case errMsg of
               Invalid msg -> renderAsErrMsg msg
