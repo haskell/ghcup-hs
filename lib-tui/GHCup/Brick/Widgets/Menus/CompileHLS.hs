@@ -172,7 +172,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
       , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) overWriteVersionParser overwriteVer k
           & Menu.fieldLabelL .~ "overwrite version"
-          & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
+          & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one. Allows to specify patterns: %v (version), %b (branch name), %h (short commit hash), %H (long commit hash), %g ('git describe' output)"
       , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches k
           & Menu.fieldLabelL .~ "patches"
           & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or Absolute path to patch directory"

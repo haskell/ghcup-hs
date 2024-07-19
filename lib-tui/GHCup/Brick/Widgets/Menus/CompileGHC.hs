@@ -213,7 +213,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
           & Menu.fieldHelpMsgL .~ "Select the build system"
       , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer k
           & Menu.fieldLabelL .~ "overwrite-version"
-          & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one"
+          & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one. Allows to specify patterns: %v (version), %b (branch name), %h (short commit hash), %H (long commit hash), %g ('git describe' output)"
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir k
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
