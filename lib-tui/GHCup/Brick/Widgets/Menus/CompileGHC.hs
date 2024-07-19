@@ -225,7 +225,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
     buttons = [
        Menu.createButtonField (Common.MenuElement Common.OkButton)
            & Menu.fieldLabelL .~ "Compile"
-           & Menu.fieldHelpMsgL .~ "Compile GHC from source with options below"
+           & Menu.fieldHelpMsgL .~ "Compile GHC from source with options below\nRequired fields: bootstrap-ghc"
            & Menu.fieldStatusL .~ Menu.Invalid "bootstrap GHC is mandatory"
       ]
 

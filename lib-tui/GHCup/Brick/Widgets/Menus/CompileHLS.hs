@@ -190,7 +190,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS
     buttons = [
        Menu.createButtonField (Common.MenuElement Common.OkButton)
            & Menu.fieldLabelL .~ "Compile"
-           & Menu.fieldHelpMsgL .~ "Compile HLS from source with options below"
+           & Menu.fieldHelpMsgL .~ "Compile HLS from source with options below\nRequired fields: target GHC(s)"
       ]
 
 handler :: BrickEvent Name e -> EventM Name CompileHLSMenu ()
