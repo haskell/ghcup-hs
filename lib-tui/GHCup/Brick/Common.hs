@@ -98,7 +98,7 @@ pattern TargetGhcEditBox = ResourceId 6
 pattern BootstrapGhcEditBox :: ResourceId
 pattern BootstrapGhcEditBox = ResourceId 7
 pattern HadrianGhcEditBox :: ResourceId
-pattern HadrianGhcEditBox = ResourceId 17
+pattern HadrianGhcEditBox = ResourceId 20
 pattern JobsEditBox :: ResourceId
 pattern JobsEditBox = ResourceId 8
 pattern BuildConfigEditBox :: ResourceId
