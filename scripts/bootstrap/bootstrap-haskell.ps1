@@ -189,6 +189,8 @@ function Exec
     }
 }
 
+#### Gather system information and ask user questions ####
+
 # Only x86 32/64-bit is supported
 $SupportedArchitectures = 'AMD64', 'x86'
 if (!$SupportedArchitectures.contains($env:PROCESSOR_ARCHITECTURE)) {
@@ -351,6 +353,7 @@ $GhcupMsys2 = [System.Environment]::GetEnvironmentVariable('GHCUP_MSYS2', 'user'
 
 Print-Msg -msg 'Preparing for GHCup installation...'
 
+$ReinstallGHCup = $false
 # ask what to do in case ghcup is already installed
 if (Test-Path -LiteralPath ('{0}' -f $GhcupDir)) {
   Print-Msg -msg ('GHCup already installed at ''{0}''...' -f $GhcupDir)
@@ -367,9 +370,7 @@ if (Test-Path -LiteralPath ('{0}' -f $GhcupDir)) {
   }
 
   if ($decision -eq 0) {
-    $suffix = [IO.Path]::GetRandomFileName()
-    Print-Msg -msg ('Backing up {0} to {0}-{1} ...' -f $GhcupDir, $suffix)
-    Rename-Item -Path ('{0}' -f $GhcupDir) -NewName ('{0}-{1}' -f $GhcupDir, $suffix)
+	$ReinstallGHCup = $true
   } elseif ($decision -eq 1) {
     Print-Msg -msg 'Continuing installation...'
   } elseif ($decision -eq 2) {
@@ -468,8 +469,9 @@ if ($Interactive) {
 }
 
 # mingw foo
+$msys2Action = 1 # 0 = install, 1 = custom location, 2 = skip
 Print-Msg -msg 'First checking for Msys2...'
-if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
+if (($ReinstallGHCup) -or !(Test-Path -Path ('{0}' -f $MsysDir))) {
   if ($Silent) {
     $msys2Decision = 0
   } else {
@@ -480,10 +482,51 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
   }
 
   if ($msys2Decision -eq 0) {
-    Print-Msg -msg ('...Msys2 doesn''t exist, installing into {0}' -f $MsysDir)
+    $msys2Action = 0
 
-	Print-Msg -msg 'Starting installation in 5 seconds, this may take a while...'
-	Start-Sleep -s 5
+  } elseif ($msys2Decision -eq 1) {
+    $msys2Action = 1
+    Print-Msg -color Yellow -msg 'Skipping MSys2 installation.'
+    while ($true) {
+      if ($GhcupMsys2) {
+        $defaultMsys2Dir = $GhcupMsys2
+        Print-Msg -color Magenta -msg ('Input existing MSys2 toolchain directory.{1}Press enter to accept the default [{0}]:' -f $defaultMsys2Dir, "`n")
+        $MsysDirPrompt = Read-Host
+        $MsysDir = ($defaultMsys2Dir,$MsysDirPrompt)[[bool]$MsysDirPrompt]
+      } else {
+        Print-Msg -color Magenta -msg 'Input existing MSys2 toolchain directory:'
+        $MsysDir = Read-Host
+      }
+      $MsysDir = $MsysDir.TrimEnd().TrimStart()
+      if (!($MsysDir)) {
+        Print-Msg -color Red -msg "No directory specified!"
+      } elseif (!(Test-Path -LiteralPath ('{0}' -f $MsysDir))) {
+        Print-Msg -color Red -msg ('MSys2 installation at ''{0}'' could not be found!' -f $MsysDir)
+      } elseif (!(Split-Path -IsAbsolute -Path "$MsysDir")) {
+        Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
+      } else {
+        Break
+      }
+    }
+    $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
+  }
+} else {
+    $msys2Action = 2
+}
+
+#### Now actually execute ####
+
+Print-Msg -msg 'Starting installation in 5 seconds, this may take a while...'
+Start-Sleep -s 5
+
+if ($ReinstallGHCup) {
+    $suffix = [IO.Path]::GetRandomFileName()
+    Print-Msg -msg ('Backing up {0} to {0}-{1} ...' -f $GhcupDir, $suffix)
+    Rename-Item -Path ('{0}' -f $GhcupDir) -NewName ('{0}-{1}' -f $GhcupDir, $suffix)
+}
+
+if ($msys2Action -eq 0) {
+    Print-Msg -msg ('...Msys2 doesn''t exist, installing into {0}' -f $MsysDir)
 
     # Download the archive
 	if (!($Msys2Version)) {
@@ -532,39 +575,11 @@ if (!(Test-Path -Path ('{0}' -f $MsysDir))) {
 
     Print-Msg -msg 'Setting default home directory...'
     Exec "$Bash" '-lc' "sed -i -e 's/db_home:.*$/db_home: windows/' /etc/nsswitch.conf"
-
-  } elseif ($msys2Decision -eq 1) {
-    Print-Msg -color Yellow -msg 'Skipping MSys2 installation.'
-    while ($true) {
-      if ($GhcupMsys2) {
-        $defaultMsys2Dir = $GhcupMsys2
-        Print-Msg -color Magenta -msg ('Input existing MSys2 toolchain directory.{1}Press enter to accept the default [{0}]:' -f $defaultMsys2Dir, "`n")
-        $MsysDirPrompt = Read-Host
-        $MsysDir = ($defaultMsys2Dir,$MsysDirPrompt)[[bool]$MsysDirPrompt]
-      } else {
-        Print-Msg -color Magenta -msg 'Input existing MSys2 toolchain directory:'
-        $MsysDir = Read-Host
-      }
-      $MsysDir = $MsysDir.TrimEnd().TrimStart()
-      if (!($MsysDir)) {
-        Print-Msg -color Red -msg "No directory specified!"
-      } elseif (!(Test-Path -LiteralPath ('{0}' -f $MsysDir))) {
-        Print-Msg -color Red -msg ('MSys2 installation at ''{0}'' could not be found!' -f $MsysDir)
-      } elseif (!(Split-Path -IsAbsolute -Path "$MsysDir")) {
-        Print-Msg -color Red -msg "Invalid/Non-absolute Path specified"
-      } else {
-        Break
-      }
-    }
+} elseif ($msys2Action -eq 1) {
     Print-Msg -msg ('Setting GHCUP_MSYS2 env var to ''{0}''' -f $MsysDir)
     $null = [Environment]::SetEnvironmentVariable("GHCUP_MSYS2", $MsysDir, [System.EnvironmentVariableTarget]::User)
-    $Bash = ('{0}\usr\bin\bash' -f $MsysDir)
-  }
 } else {
     Print-Msg -msg ('...Msys2 found in {0} ...skipping Msys2 installation.' -f $MsysDir)
-
-	Print-Msg -msg 'Starting installation in 5 seconds, this may take a while...'
-	Start-Sleep -s 5
 }
 
 
