@@ -749,7 +749,7 @@ ask_stack() {
 		warn "Do you want to enable better integration of stack with GHCup?"
         warn "This means that stack won't install its own GHC versions, but uses GHCup's."
         warn "For more information see:"
-        warn "  https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation-experimental"
+        warn "  https://docs.haskellstack.org/en/stable/configure/customisation_scripts/#ghc-installation-customisation"
         warn "If you want to keep stacks vanilla behavior, answer 'No'."
 		warn ""
 		warn "[Y] Yes  [N] No  [?] Help (default is \"Y\")."

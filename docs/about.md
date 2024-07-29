@@ -273,7 +273,7 @@ You don't need to. However, some users seem to prefer to have a central tool tha
 at the same time. Additionally, it can allow better sharing of GHC installation across these tools.
 Also see:
 
-* https://docs.haskellstack.org/en/stable/yaml_configuration/#system-ghc
+* https://docs.haskellstack.org/en/stable/configure/yaml/non-project/#system-ghc
 * https://github.com/commercialhaskell/stack/pull/5585
 
 ### Why does ghcup not use stack code?

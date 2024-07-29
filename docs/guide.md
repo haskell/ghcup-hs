@@ -245,7 +245,8 @@ GHC versions there are two strategies.
 
 ### Strategy 1: Stack hooks (new, recommended)
 
-Since stack 2.9.1 you can customize the installation logic of GHC completely, see [https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation](https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation).
+Since stack 2.9.1 you can customize the installation logic of GHC completely, see
+[https://docs.haskellstack.org/en/stable/configure/customisation_scripts/#ghc-installation-customisation](https://docs.haskellstack.org/en/stable/configure/customisation_scripts/#ghc-installation-customisation).
 
 We can use this to simply invoke ghcup whenever stack is trying to install/discover a GHC versions. This
 is done via placing a shell script at `~/.stack/hooks/ghc-install.sh` and making it executable.
@@ -297,7 +298,9 @@ url-source:
   - StackSetupURL
 ```
 
-You can customize or add sections to the setup-info similar to how the [stack documentation](https://docs.haskellstack.org/en/stable/yaml_configuration/#setup-info) explains it. E.g. to change the 9.4.7 bindist, you might do:
+You can customize or add sections to the setup-info similar to how the
+[stack documentation](https://docs.haskellstack.org/en/stable/configure/yaml/non-project/#setup-info)
+explains it. E.g. to change the 9.4.7 bindist, you might do:
 
 ```yaml
 url-source:
@@ -341,7 +344,8 @@ extra-include-dirs:
 - C:\ghcup\msys64\mingw64\include
 ```
 
-Also check out: [https://docs.haskellstack.org/en/stable/yaml_configuration](https://docs.haskellstack.org/en/stable/yaml_configuration)
+Also check out:
+[https://docs.haskellstack.org/en/stable/configure/yaml/non-project](https://docs.haskellstack.org/en/stable/configure/yaml/non-project)
 
 ## Mirrors (proper)
 
