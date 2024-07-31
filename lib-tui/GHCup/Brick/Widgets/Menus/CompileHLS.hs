@@ -149,9 +149,11 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS
         Just ne -> Menu.createMultiSelectField (Common.MenuElement Common.TargetGhcEditBox) targetGHCs ne (T.pack . prettyShow) k
             & Menu.fieldLabelL .~ label
             & Menu.fieldHelpMsgL .~ "GHC versions to compile for (Press Enter to edit)"
+            & Menu.fieldStatusL .~ Menu.Invalid "No version selected"
         _ -> Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs k
             & Menu.fieldLabelL .~ label
             & Menu.fieldHelpMsgL .~ "space separated list of GHC versions to compile for"
+            & Menu.fieldStatusL .~ Menu.Invalid "Invalid empty value"
 
     fields =
       [ targetGHCsField
