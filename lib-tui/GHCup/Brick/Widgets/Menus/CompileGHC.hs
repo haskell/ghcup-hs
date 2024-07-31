@@ -119,12 +119,12 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
               readPath = do
                 mfilepath <- filepathV i
                 case mfilepath of
-                  Nothing -> Left "Invalid Empty value"
+                  Nothing -> Left "Invalid path"
                   Just f  -> Right (Right f)
            in if T.any isPathSeparator i
                 then readPath
                 else readVersion
-        False -> Left "Invalid Empty value"
+        False -> Left "No version selected / no path specified"
 
     hadrianstrapV :: T.Text -> Either Menu.ErrorMessage (Maybe (Either Version FilePath))
     hadrianstrapV i' =
@@ -165,30 +165,29 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
 
     bootstrapGHCFields = case NE.nonEmpty availableGHCs of
         Just ne ->
-          let bootstrapGhc' = bootstrapGhc % (iso (either Just (const Nothing)) (maybe (Right "") Left))
-          in [ Menu.createSelectField (Common.MenuElement Common.BootstrapGhcSelectBox) bootstrapGhc' ne (T.pack . prettyShow) k
-            & Menu.fieldLabelL .~ "bootstrap-ghc"
-            & Menu.fieldHelpMsgL .~ "The GHC version to bootstrap with"
-            , editableField]
-        _ -> [editableField]
-      where
-        editableField = Menu.createEditableField (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapV bootstrapGhc k
-           & Menu.fieldLabelL .~ "bootstrap-ghc-path"
-           & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to bootstrap with (must be installed)"
-           -- & Menu.fieldStatusL .~ Menu.Invalid "Invalid Empty value"
+          let bootstrapGhc' = bootstrapGhc % (iso (either (Left . Left) (Left . Right)) (either id Left))
+          in [ Menu.createSelectFieldWithEditable (Common.MenuElement Common.BootstrapGhcSelectBox) (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapGhc' bootstrapV ne (T.pack . prettyShow) k
+               & Menu.fieldLabelL .~ "bootstrap-ghc"
+               & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to bootstrap with (must be installed)"
+               & Menu.fieldStatusL .~ Menu.Invalid "No version selected / no path specified"
+             ]
+        _ -> [ Menu.createEditableField (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapV bootstrapGhc k
+               & Menu.fieldLabelL .~ "bootstrap-ghc"
+               & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to bootstrap with (must be installed)"
+               & Menu.fieldStatusL .~ Menu.Invalid "Invalid empty value"
+             ]
 
     hadrianGHCFields = case NE.nonEmpty availableGHCs of
         Just ne ->
-          let hadrianGhc' = hadrianGhc % (iso ((=<<) (either Just (const Nothing))) (fmap Left))
-          in [ Menu.createSelectField (Common.MenuElement Common.HadrianGhcSelectBox) hadrianGhc' ne (T.pack . prettyShow) k
-            & Menu.fieldLabelL .~ "hadrian-ghc"
-            & Menu.fieldHelpMsgL .~ "The GHC version that will be used to compile hadrian"
-            , editableField]
-        _ -> [editableField]
-      where
-        editableField = Menu.createEditableField (Common.MenuElement Common.HadrianGhcEditBox) hadrianstrapV hadrianGhc k
-           & Menu.fieldLabelL .~ "hadrian-ghc-path"
-           & Menu.fieldHelpMsgL .~ "The GHC version (or full path) that will be used to compile hadrian (must be installed)"
+          let hadrianGhc' = hadrianGhc % (iso Left (either id (Just . Left)))
+          in [ Menu.createSelectFieldWithEditable (Common.MenuElement Common.HadrianGhcSelectBox) (Common.MenuElement Common.HadrianGhcEditBox) hadrianGhc' hadrianstrapV ne (T.pack . prettyShow) k
+               & Menu.fieldLabelL .~ "hadrian-ghc"
+               & Menu.fieldHelpMsgL .~ "The GHC version (or full path) that will be used to compile hadrian (must be installed)"
+             ]
+        _ -> [ Menu.createEditableField (Common.MenuElement Common.HadrianGhcEditBox) hadrianstrapV hadrianGhc k
+               & Menu.fieldLabelL .~ "hadrian-ghc"
+               & Menu.fieldHelpMsgL .~ "The GHC version (or full path) that will be used to compile hadrian (must be installed)"
+             ]
 
     fields = bootstrapGHCFields ++ hadrianGHCFields ++
       [ Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs k
@@ -229,7 +228,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
     buttons = [
        Menu.createButtonField (Common.MenuElement Common.OkButton)
            & Menu.fieldLabelL .~ "Compile"
-           & Menu.fieldHelpMsgL .~ "Compile GHC from source with options below\nEither bootstrap-ghc or bootstrap-ghc-path must be specified\nAll other fields are optional. One of hadrian-ghc or hadrian-ghc-path can be specified"
+           & Menu.fieldHelpMsgL .~ "Compile GHC from source with options below\nRequired fields: bootstrap-ghc"
            & Menu.fieldStatusL .~ Menu.Invalid "bootstrap GHC is mandatory"
       ]
 
