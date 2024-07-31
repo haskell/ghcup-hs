@@ -74,9 +74,9 @@ import           Optics.TH (makeLensesFor)
 import qualified Graphics.Vty as Vty
 import Optics.State.Operators ((%=), (.=))
 import Optics.Optic ((%))
-import Optics.State (use)
+import Optics.State (use, assign)
 import GHCup.Types (KeyCombination(..))
-import Optics (Lens', to, lens)
+import Optics (Lens', to, lens, _1, over)
 import Optics.Operators ( (^.), (.~) )
 import Data.Foldable (find, foldl')
 import           Data.List.NonEmpty             ( NonEmpty (..) )
@@ -152,14 +152,17 @@ makeLensesFor
   ]
   ''MenuField
 
-data SelectState i = SelectState
-  { selectStateItems :: NonEmpty (Int, (i, Bool))         -- ^ All items along with their selected state
+data SelectState i n = SelectState
+  { selectStateItems :: (NonEmpty (Int, (i, Bool)), Bool) -- ^ All items along with their selected state
+                                                          -- And Bool to indicate if editable field is selected
+  , selectStateEditState :: Maybe (Edit.Editor T.Text n)  -- ^ Editable field's editor state
   , selectStateFocusRing :: FocusRing Int                 -- ^ Focus ring using integeral values assigned to each item
   , selectStateOverlayOpen :: Bool                        -- ^ Whether the select menu is open
   }
 
 makeLensesFor
   [ ("selectStateItems", "selectStateItemsL")
+  , ("selectStateEditState", "selectStateEditStateL")
   , ("selectStateFocusRing", "selectStateFocusRingL")
   , ("selectStateOverlayOpen", "selectStateOverlayOpenL")
   ]
@@ -306,46 +309,72 @@ type SelectField = MenuField
 createSelectInput :: (Ord n, Show n)
   => NonEmpty i
   -> (i -> T.Text)
-  -> (Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool)))
-  -> ([i] -> k)
+  -> (Int -> (NonEmpty (Int, (i, Bool)), Bool) -> ((NonEmpty (Int, (i, Bool))), Bool))
+  -> (([i], Maybe T.Text) -> Either ErrorMessage k)
   -> n
+  -> Maybe n
   -> KeyCombination
-  -> FieldInput k (SelectState i) n
-createSelectInput items showItem updateSelection getSelection fieldName exitKey@(KeyCombination {..})
-  = FieldInput initState (Right . getSelection . getSelectedItems) "" selectRender selectHandler
+  -> FieldInput k (SelectState i n) n
+createSelectInput items showItem updateSelection validator viewportFieldName mEditFieldName exitKey@(KeyCombination {..})
+  = FieldInput initState (validator . getSelectedItems) "" selectRender selectHandler
   where
+    totalRows = (if isJust mEditFieldName then (+) 1 else id) $ length items
     initState = SelectState
-      (NE.zip (1 NE.:| [2..]) $ fmap (,False) items)
-      (F.focusRing [1..(length items)])
+      (NE.zip (1 NE.:| [2..]) $ fmap (,False) items, False)
+      ((\n -> Edit.editorText n (Just 1) "") <$> mEditFieldName)
+      (F.focusRing [1.. totalRows])
       False
-    getSelectedItems = fmap (fst . snd) . (filter (snd . snd)) . NE.toList . selectStateItems
+    getSelectedItems (SelectState {..}) =
+      ( fmap (fst . snd) . (filter (snd . snd)) . NE.toList . fst $ selectStateItems
+      , if snd selectStateItems then (T.init . T.unlines . Edit.getEditContents <$> selectStateEditState) else Nothing)
 
     border w = Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) w) <+> Brick.txt "]"
     selectRender focus errMsg help label s amp = (field, mOverlay)
       where
-        field = amp $ case getSelectedItems s of
-          [] -> (Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help)
-          xs ->
-            let list = border $ Brick.hBox $ fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
-            in if focus
-              then list
-              else list <+> (Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help)
+        field =
+          let mContents = case getSelectedItems s of
+                ([], Nothing) -> Nothing
+                (xs, mTxt) -> Just $ fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
+                   ++ (case mTxt of Just t -> [Brick.txt t]; Nothing -> [])
+          in amp $ case (errMsg, mContents) of
+            (Valid, Nothing) -> (Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help)
+            (Valid, Just contents) -> border $ Brick.hBox contents
+            (Invalid msg, Nothing)
+              | focus -> Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help
+              | otherwise -> Brick.padLeft (Brick.Pad 1) $ renderAsErrMsg msg
+            (Invalid msg, Just contents)
+              | focus -> border $ Brick.hBox contents
+              | otherwise -> Brick.padLeft (Brick.Pad 1) $ renderAsErrMsg msg
+
         mOverlay = if selectStateOverlayOpen s
-          then Just (overlayLayer ("Select " <> label)  $ overlay s)
+          then Just (overlayLayer ("Select " <> label)  $ overlay s errMsg help)
           else Nothing
-    overlay (SelectState {..}) = Brick.vBox $
+    overlay (SelectState {..}) errMsg help = Brick.vBox $
       [ Brick.padRight Brick.Max $
             Brick.txt "Press "
             <+> Common.keyToWidget exitKey
             <+> Brick.txt " to go back, Press Enter to select"
-      , Brick.vLimit (length items) $ Brick.withVScrollBars Brick.OnRight
-          $ Brick.viewport fieldName Brick.Vertical
-          $ Brick.vBox $ (NE.toList $ fmap (mkSelectRow focused) selectStateItems)
+      , case errMsg of Invalid msg -> renderAsErrMsg msg; _ -> Brick.emptyWidget
+      , Brick.vLimit (totalRows) $ Brick.withVScrollBars Brick.OnRight
+          $ Brick.viewport viewportFieldName Brick.Vertical
+          $ Brick.vBox $ mEditableField ++ (NE.toList $ fmap (mkSelectRow focused) (fst selectStateItems))
       ]
       where focused = fromMaybe 1 $ F.focusGetCurrent selectStateFocusRing
+            txtFieldFocused = focused == totalRows
+            mEditableField = case selectStateEditState of
+              Just edi -> [ mkEditTextRow txtFieldFocused edi (snd selectStateItems) help ]
+              Nothing -> []
+
     mkSelectRow focused (ix, (item, selected)) = (if focused == ix then Brick.visible else id) $
       Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) m) <+> Brick.txt "] "
         <+> (renderAslabel (showItem item) (focused == ix))
+      where m = if selected then Brick.txt "*" else Brick.txt " "
+
+    mkEditTextRow focused edi selected help = (if focused then Brick.visible else id) $
+      Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) m) <+> Brick.txt "] "
+        <+> if not focused && Edit.getEditContents edi == [mempty]
+               then Brick.txt "(Specify custom text value)"
+               else Brick.vLimit 1 $ Border.vBorder <+> Brick.padRight Brick.Max (Edit.renderEditor (Brick.txt . T.unlines) focused edi) <+> Border.vBorder
       where m = if selected then Brick.txt "*" else Brick.txt " "
 
     selectHandler ev = do
@@ -360,26 +389,45 @@ createSelectInput items showItem updateSelection getSelection fieldName exitKey@
           VtyEvent (Vty.EvKey Vty.KEnter [])        -> do
             focused <- use (selectStateFocusRingL % to F.focusGetCurrent)
             selectStateItemsL %= updateSelection (fromMaybe 1 focused)
-          _ -> pure ()
+          _ -> do
+            focused <- use (selectStateFocusRingL % to F.focusGetCurrent)
+            mEditState <- use selectStateEditStateL
+            case (focused, mEditState) of
+              (Just ix, Just edi)
+                | ix == totalRows -> do
+                    newEdi <- Brick.nestEventM' edi $ Edit.handleEditorEvent ev
+                    assign selectStateEditStateL (Just newEdi)
+                    selectStateItemsL %= updateSelection ix
+              _ -> pure ()
         else case ev of
           VtyEvent (Vty.EvKey Vty.KEnter []) -> selectStateOverlayOpenL .= True
           _ -> pure ()
 
 -- | Select Field with only single selection possible, aka radio button
 createSelectField :: (Ord n, Show n) => n -> Lens' s (Maybe i) -> NonEmpty i -> (i -> T.Text) -> KeyCombination -> SelectField s n
-createSelectField name access items showItem exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection name exitKey) "" Valid name
+createSelectField name access items showItem exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection name Nothing exitKey) "" Valid name
   where
-    singleSelect :: Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool))
-    singleSelect ix = fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False)))
+    singleSelect :: Int -> (NonEmpty (Int, (i, Bool)), a) -> (NonEmpty (Int, (i, Bool)), a)
+    singleSelect ix = over _1 $ fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False)))
 
-    getSelection = fmap NE.head . NE.nonEmpty
+    getSelection = Right . fmap NE.head . NE.nonEmpty . fst
 
 -- | Select Field with multiple selections possible
 createMultiSelectField :: (Ord n, Show n) => n -> Lens' s [i] -> NonEmpty i -> (i -> T.Text) -> KeyCombination -> SelectField s n
-createMultiSelectField name access items showItem exitKey = MenuField access (createSelectInput items showItem multiSelect id name exitKey) "" Valid name
+createMultiSelectField name access items showItem exitKey = MenuField access (createSelectInput items showItem multiSelect (Right . fst) name Nothing exitKey) "" Valid name
   where
-    multiSelect :: Int -> NonEmpty (Int, (i, Bool)) -> NonEmpty (Int, (i, Bool))
-    multiSelect ix = fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, not b)) else (ix', (i, b)))
+    multiSelect :: Int -> (NonEmpty (Int, (i, Bool)), a) -> (NonEmpty (Int, (i, Bool)), a)
+    multiSelect ix = over _1 $ fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, not b)) else (ix', (i, b)))
+
+-- | Select Field with only single selection possible, along with an editable field
+createSelectFieldWithEditable :: (Ord n, Show n) => n -> n -> Lens' s (Either a i) -> (T.Text -> Either ErrorMessage a) -> NonEmpty i -> (i -> T.Text) -> KeyCombination -> SelectField s n
+createSelectFieldWithEditable name editFieldName access validator items showItem exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection name (Just editFieldName) exitKey) "" Valid name
+  where
+    singleSelect :: Int -> (NonEmpty (Int, (i, Bool)), Bool) -> (NonEmpty (Int, (i, Bool)), Bool)
+    singleSelect ix (ne, a) = (fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False))) ne, ix == length ne + 1)
+
+    getSelection (_, Just txt) = either Left (Right . Left) $ validator txt
+    getSelection (ls, _) = maybe (either Left (Right . Left) $ validator "") (Right . Right . NE.head) $ NE.nonEmpty ls
 
 
 {- *****************
