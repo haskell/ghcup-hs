@@ -103,10 +103,13 @@ drawUI dimAttrs st =
 -- | On q, go back to navigation.
 --   On Enter, to go to tutorial
 keyInfoHandler :: BrickEvent Name e -> EventM Name BrickState ()
-keyInfoHandler ev = case ev of
-  VtyEvent (Vty.EvKey (Vty.KChar 'c') [Vty.MCtrl]) -> mode .= Navigation
-  VtyEvent (Vty.EvKey Vty.KEnter _ )   -> mode .= Tutorial
-  _ -> pure ()
+keyInfoHandler ev = do
+  AppState { keyBindings = kb } <- liftIO $ readIORef Actions.settings'
+  case ev of
+    VtyEvent (Vty.EvKey Vty.KEnter _ )   -> mode .= Tutorial
+    VtyEvent (Vty.EvKey key mods)
+      | bQuit kb == KeyCombination key mods -> mode .= Navigation
+    _ -> pure ()
 
 -- | On q, go back to navigation. Else, do nothing
 tutorialHandler :: BrickEvent Name e -> EventM Name BrickState ()
