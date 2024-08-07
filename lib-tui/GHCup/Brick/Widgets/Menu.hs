@@ -347,8 +347,9 @@ createSelectInput items showItem updateSelection validator viewportFieldName mEd
           then Just (overlayLayer ("Select " <> label)  $ overlay s errMsg help)
           else Nothing
     overlay (SelectState {..}) errMsg help = Brick.vBox $
-      [ Brick.padRight Brick.Max $
-            Brick.txt "Press "
+      [ if txtFieldFocused
+          then Brick.txtWrap "Press Enter to finish editing and select custom value. Press Up/Down keys to navigate"
+          else Brick.txt "Press "
             <+> Common.keyToWidget exitKey
             <+> Brick.txt " to go back, Press Enter to select"
       , case errMsg of Invalid msg -> renderAsErrMsg msg; _ -> Brick.emptyWidget
@@ -377,24 +378,30 @@ createSelectInput items showItem updateSelection validator viewportFieldName mEd
     selectHandler ev = do
       s <- Brick.get
       if selectStateOverlayOpen s
-        then case ev of
-          VtyEvent (Vty.EvKey k m) | k == key && m == mods -> selectStateOverlayOpenL .= False
-          VtyEvent (Vty.EvKey (Vty.KChar '\t') [])  -> selectStateFocusRingL %= F.focusNext
-          VtyEvent (Vty.EvKey Vty.KBackTab [])      -> selectStateFocusRingL %= F.focusPrev
-          VtyEvent (Vty.EvKey Vty.KDown [])         -> selectStateFocusRingL %= F.focusNext
-          VtyEvent (Vty.EvKey Vty.KUp [])           -> selectStateFocusRingL %= F.focusPrev
-          VtyEvent (Vty.EvKey Vty.KEnter [])        -> do
-            focused <- use (selectStateFocusRingL % to F.focusGetCurrent)
-            selectStateItemsL %= updateSelection (fromMaybe 1 focused)
-          _ -> do
-            focused <- use (selectStateFocusRingL % to F.focusGetCurrent)
-            mEditState <- use selectStateEditStateL
-            case (focused, mEditState) of
-              (Just ix, Just edi)
-                | ix == totalRows -> do
-                    newEdi <- Brick.nestEventM' edi $ Edit.handleEditorEvent ev
-                    assign selectStateEditStateL (Just newEdi)
-                    selectStateItemsL %= updateSelection ix
+        then do
+          focused <- use (selectStateFocusRingL % to F.focusGetCurrent)
+          mEditState <- use selectStateEditStateL
+          case (focused, mEditState) of
+            (Just ix, Just edi)
+              | ix == totalRows -> case ev of
+              VtyEvent (Vty.EvKey Vty.KEnter []) -> do
+                selectStateItemsL %= updateSelection ix
+                selectStateFocusRingL %= F.focusNext
+              VtyEvent (Vty.EvKey Vty.KDown [])         -> selectStateFocusRingL %= F.focusNext
+              VtyEvent (Vty.EvKey Vty.KUp [])           -> selectStateFocusRingL %= F.focusPrev
+              _ -> do
+                newEdi <- Brick.nestEventM' edi $ Edit.handleEditorEvent ev
+                assign selectStateEditStateL (Just newEdi)
+                selectStateItemsL %= updateSelection ix
+            _ -> case ev of
+              VtyEvent (Vty.EvKey k m) | k == key && m == mods -> selectStateOverlayOpenL .= False
+              VtyEvent (Vty.EvKey (Vty.KChar '\t') [])  -> selectStateFocusRingL %= F.focusNext
+              VtyEvent (Vty.EvKey Vty.KBackTab [])      -> selectStateFocusRingL %= F.focusPrev
+              VtyEvent (Vty.EvKey Vty.KDown [])         -> selectStateFocusRingL %= F.focusNext
+              VtyEvent (Vty.EvKey Vty.KUp [])           -> selectStateFocusRingL %= F.focusPrev
+              VtyEvent (Vty.EvKey Vty.KEnter [])        -> do
+                focused <- use (selectStateFocusRingL % to F.focusGetCurrent)
+                selectStateItemsL %= updateSelection (fromMaybe 1 focused)
               _ -> pure ()
         else case ev of
           VtyEvent (Vty.EvKey Vty.KEnter []) -> selectStateOverlayOpenL .= True
