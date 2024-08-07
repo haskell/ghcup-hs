@@ -714,14 +714,13 @@ keyHandlers KeyBindings {..} =
  where
   createMenuforTool = do
     e <- use (appState % to sectionListSelectedElement)
-    let exitKey = KeyCombination (Vty.KChar 'c') [Vty.MCtrl]
     case e of
       Nothing     -> pure ()
       Just (_, r) -> do
         -- Create new ContextMenu, but maintain the state of Install/Compile
         -- menus. This is especially useful in case the user made a typo and
         -- would like to retry the action.
-        contextMenu .= ContextMenu.create r exitKey
+        contextMenu .= ContextMenu.create r bQuit
         -- Set mode to context
         mode           .= ContextPanel
     pure ()
