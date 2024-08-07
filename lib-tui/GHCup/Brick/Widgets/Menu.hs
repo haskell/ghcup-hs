@@ -234,8 +234,8 @@ createCheckBoxField name access = MenuField access createCheckBoxInput "" Valid 
 
 type EditableField = MenuField
 
-createEditableInput :: (Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> KeyCombination -> FieldInput a (EditState n) n
-createEditableInput name validator exitKey@(KeyCombination {..}) = FieldInput initEdit validateEditContent "" drawEdit handler
+createEditableInput :: (Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> FieldInput a (EditState n) n
+createEditableInput name validator = FieldInput initEdit validateEditContent "" drawEdit handler
   where
     drawEdit focus errMsg help label (EditState edi overlayOpen) amp = (field, mOverlay)
       where
@@ -261,15 +261,12 @@ createEditableInput name validator exitKey@(KeyCombination {..}) = FieldInput in
               Invalid msg -> renderAsErrMsg msg
               _ -> Brick.txt " "
           , Brick.padRight Brick.Max $
-              Brick.txt "Press "
-              <+> Common.keyToWidget exitKey
-              <+> Brick.txt " or Enter to go back"
+              Brick.txt "Press Enter to go back"
           ]
     handler ev = do
       (EditState edi overlayOpen) <- Brick.get
       if overlayOpen
         then case ev of
-          VtyEvent (Vty.EvKey k m) | k == key && m == mods -> editStateOverlayOpenL .= False
           VtyEvent (Vty.EvKey Vty.KEnter []) -> editStateOverlayOpenL .= False
           _ -> Common.zoom editStateL $ Edit.handleEditorEvent ev
         else case ev of
@@ -281,7 +278,7 @@ createEditableInput name validator exitKey@(KeyCombination {..}) = FieldInput in
 createEditableField :: (Eq n, Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> Lens' s a -> KeyCombination -> EditableField s n
 createEditableField name validator access exitKey = MenuField access input "" Valid name
   where
-    input = createEditableInput name validator exitKey
+    input = createEditableInput name validator
 
 {- *****************
   Button widget
