@@ -36,7 +36,7 @@ import qualified GHCup.Brick.Widgets.Menu as Menu
 import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 
 import GHCup.List (ListResult)
-import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination))
+import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination), KeyBindings (..))
 
 import qualified Brick.Focus as F
 import Brick (
@@ -93,7 +93,7 @@ drawUI dimAttrs st =
     navg = Navigation.draw dimAttrs (st ^. appState) <=> footer
   in case st ^. mode of
        Navigation   -> [navg]
-       Tutorial     -> [Tutorial.draw, navg]
+       Tutorial     -> [Tutorial.draw (bQuit $ st ^. appKeys), navg]
        KeyInfo      -> [KeyInfo.draw (st ^. appKeys), navg]
        ContextPanel -> [ContextMenu.draw (st ^. contextMenu), navg]
        AdvanceInstallPanel -> AdvanceInstall.draw (st ^. advanceInstallMenu) ++ [navg]
@@ -110,9 +110,11 @@ keyInfoHandler ev = case ev of
 
 -- | On q, go back to navigation. Else, do nothing
 tutorialHandler :: BrickEvent Name e -> EventM Name BrickState ()
-tutorialHandler ev =
+tutorialHandler ev = do
+  AppState { keyBindings = kb } <- liftIO $ readIORef Actions.settings'
   case ev of
-    VtyEvent (Vty.EvKey (Vty.KChar 'c') [Vty.MCtrl]) -> mode .= Navigation
+    VtyEvent (Vty.EvKey key mods)
+      | bQuit kb == KeyCombination key mods -> mode .= Navigation
     _ -> pure ()
 
 -- | Tab/Arrows to navigate.

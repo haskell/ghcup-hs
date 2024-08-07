@@ -16,19 +16,20 @@ module GHCup.Brick.Widgets.Tutorial (draw) where
 
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Attributes as Attributes
+import GHCup.Types (KeyCombination(..))
 
 import Brick
     ( Padding(Max),
       Widget(..),
-      (<=>))
+      (<=>), (<+>))
 import qualified Brick
 import           Brick.Widgets.Center ( center )
 import           Prelude                 hiding ( appendFile )
 
 
 
-draw :: Widget Common.Name
-draw =
+draw :: KeyCombination -> Widget Common.Name
+draw exitKey =
   let
     mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
 
@@ -74,4 +75,5 @@ draw =
               ]
             , Brick.txt " "
             ])
-        <=> Brick.padRight Brick.Max (Brick.txt "Press c+ctrl to exit the tutorial")
+        <=> (Brick.padRight Brick.Max $
+          Brick.txt "Press " <+> Common.keyToWidget exitKey <+> Brick.txt " to exit the tutorial")
