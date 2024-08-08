@@ -30,6 +30,7 @@ import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import           GHCup.Brick.Widgets.Navigation (BrickInternalState)
 import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
+import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
 
 import qualified Brick
 import qualified Brick.Widgets.List as L
@@ -720,7 +721,8 @@ keyHandlers KeyBindings {..} =
         -- Create new ContextMenu, but maintain the state of Install/Compile
         -- menus. This is especially useful in case the user made a typo and
         -- would like to retry the action.
-        contextMenu .= ContextMenu.create r bQuit
+        contextMenu .= ContextMenu.create r
+          (MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit})
         -- Set mode to context
         mode           .= ContextPanel
     pure ()

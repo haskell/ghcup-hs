@@ -35,7 +35,7 @@ module GHCup.Brick.Widgets.Menus.CompileGHC (
   gitRef,
 ) where
 
-import GHCup.Brick.Widgets.Menu (Menu)
+import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import           GHCup.Brick.Common(Name(..))
 import Brick
@@ -46,7 +46,7 @@ import           Prelude                 hiding ( appendFile )
 import           Optics.TH (makeLenses)
 import qualified GHCup.Brick.Common as Common
 import GHCup.Types
-    ( KeyCombination, BuildSystem(..), VersionPattern )
+    ( BuildSystem(..), VersionPattern )
 import URI.ByteString (URI)
 import Control.Monad (join)
 import qualified Data.Text as T
@@ -83,7 +83,7 @@ makeLenses ''CompileGHCOptions
 
 type CompileGHCMenu = Menu CompileGHCOptions Name
 
-create :: KeyCombination -> [Version] -> CompileGHCMenu
+create :: MenuKeyBindings -> [Version] -> CompileGHCMenu
 create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC" validator k buttons fields
   where
     initialState =
@@ -171,7 +171,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
                & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to bootstrap with (must be installed)"
                & Menu.fieldStatusL .~ Menu.Invalid "No version selected / no path specified"
              ]
-        _ -> [ Menu.createEditableField (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapV bootstrapGhc k
+        _ -> [ Menu.createEditableField (Common.MenuElement Common.BootstrapGhcEditBox) bootstrapV bootstrapGhc
                & Menu.fieldLabelL .~ "bootstrap-ghc"
                & Menu.fieldHelpMsgL .~ "The GHC version (or full path) to bootstrap with (must be installed)"
                & Menu.fieldStatusL .~ Menu.Invalid "Invalid empty value"
@@ -184,43 +184,43 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
                & Menu.fieldLabelL .~ "hadrian-ghc"
                & Menu.fieldHelpMsgL .~ "The GHC version (or full path) that will be used to compile hadrian (must be installed)"
              ]
-        _ -> [ Menu.createEditableField (Common.MenuElement Common.HadrianGhcEditBox) hadrianstrapV hadrianGhc k
+        _ -> [ Menu.createEditableField (Common.MenuElement Common.HadrianGhcEditBox) hadrianstrapV hadrianGhc
                & Menu.fieldLabelL .~ "hadrian-ghc"
                & Menu.fieldHelpMsgL .~ "The GHC version (or full path) that will be used to compile hadrian (must be installed)"
              ]
 
     fields = bootstrapGHCFields ++ hadrianGHCFields ++
-      [ Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs k
+      [ Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
-      , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour k
+      , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour
           & Menu.fieldLabelL .~ "flavour"
           & Menu.fieldHelpMsgL .~ "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
-      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgs k
+      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgs
           & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
           & Menu.fieldHelpMsgL .~ "Additional arguments to compile configure"
-      , Menu.createEditableField (Common.MenuElement Common.BuildConfigEditBox) filepathV buildConfig k
+      , Menu.createEditableField (Common.MenuElement Common.BuildConfigEditBox) filepathV buildConfig
           & Menu.fieldLabelL .~ "build config"
           & Menu.fieldHelpMsgL .~ "Absolute path to build config file (make build system only)"
-      , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches k
+      , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches
           & Menu.fieldLabelL .~ "patches"
           & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or Absolute path to patch directory"
-      , Menu.createEditableField (Common.MenuElement Common.CrossTargetEditBox) (Right . Just) crossTarget k
+      , Menu.createEditableField (Common.MenuElement Common.CrossTargetEditBox) (Right . Just) crossTarget
           & Menu.fieldLabelL .~ "cross target"
           & Menu.fieldHelpMsgL .~ "Build cross-compiler for this platform"
       , Menu.createSelectField (Common.MenuElement Common.BuildSystemEditBox) (buildSystem % (iso Just join)) (Nothing :| [Just Hadrian, Just Make]) showMaybeBuildSystem  k
           & Menu.fieldLabelL .~ "build system"
           & Menu.fieldHelpMsgL .~ "Select the build system"
-      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer k
+      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) versionV overwriteVer
           & Menu.fieldLabelL .~ "overwrite-version"
           & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one. Allows to specify patterns: %v (version), %b (branch name), %h (short commit hash), %H (long commit hash), %g ('git describe' output)"
-      , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir k
+      , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
-      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef k
+      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef
           & Menu.fieldLabelL .~ "git-ref"
           & Menu.fieldHelpMsgL .~ "The git commit/branch/ref to build from"
       ]

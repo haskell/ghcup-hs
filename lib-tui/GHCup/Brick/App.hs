@@ -135,7 +135,7 @@ contextMenuHandler :: BrickEvent Name e -> EventM Name BrickState ()
 contextMenuHandler ev = do
   ctx <- use contextMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
+      (KeyCombination exitKey mods) = ctx ^. Menu.menuKeyBindingsL % Menu.mKbQuitL
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
     (VtyEvent (Vty.EvKey k m), Just n) |  k == exitKey && m == mods -> mode .= Navigation
@@ -165,7 +165,7 @@ menuWithOverlayHandler accessor action innerHandler ev = do
   ctx <- use accessor
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
       focusedField = (\n -> find (\x -> Brick.getName x == n) $ ctx ^. Menu.menuFieldsL) =<< focusedElement
-      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
+      (KeyCombination exitKey mods) = ctx ^. Menu.menuKeyBindingsL % Menu.mKbQuitL
   case (ev, focusedElement, Menu.drawFieldOverlay =<< focusedField) of
     (_ , Nothing, _) -> pure ()
     (_ , _, Just _) -> Common.zoom accessor $ innerHandler ev

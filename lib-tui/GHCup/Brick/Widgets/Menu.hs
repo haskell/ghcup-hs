@@ -179,6 +179,20 @@ makeLensesFor
   ]
   ''EditState
 
+data MenuKeyBindings = MenuKeyBindings
+  { mKbUp              :: KeyCombination
+  , mKbDown            :: KeyCombination
+  , mKbQuit            :: KeyCombination
+  }
+  deriving (Show)
+
+makeLensesFor
+  [ ("mKbUp", "mKbUpL")
+  , ("mKbDown", "mKbDownL")
+  , ("mKbQuit", "mKbQuitL")
+  ]
+  ''MenuKeyBindings
+
 -- | A fancy lens to the help message
 fieldHelpMsgL :: Lens' (MenuField s n) HelpMessage
 fieldHelpMsgL = lens g s
@@ -275,8 +289,8 @@ createEditableInput name validator = FieldInput initEdit validateEditContent "" 
     validateEditContent = validator . T.init . T.unlines . Edit.getEditContents . editState
     initEdit = EditState (Edit.editorText name (Just 1) "") False
 
-createEditableField :: (Eq n, Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> Lens' s a -> KeyCombination -> EditableField s n
-createEditableField name validator access exitKey = MenuField access input "" Valid name
+createEditableField :: (Eq n, Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> Lens' s a -> EditableField s n
+createEditableField name validator access = MenuField access input "" Valid name
   where
     input = createEditableInput name validator
 
@@ -310,9 +324,9 @@ createSelectInput :: (Ord n, Show n)
   -> (([i], Maybe T.Text) -> Either ErrorMessage k)
   -> n
   -> Maybe n
-  -> KeyCombination
+  -> MenuKeyBindings
   -> FieldInput k (SelectState i n) n
-createSelectInput items showItem updateSelection validator viewportFieldName mEditFieldName exitKey@(KeyCombination {..})
+createSelectInput items showItem updateSelection validator viewportFieldName mEditFieldName kb
   = FieldInput initState (validator . getSelectedItems) "" selectRender selectHandler
   where
     totalRows = (if isJust mEditFieldName then (+) 1 else id) $ length items
@@ -350,7 +364,7 @@ createSelectInput items showItem updateSelection validator viewportFieldName mEd
       [ if txtFieldFocused
           then Brick.txtWrap "Press Enter to finish editing and select custom value. Press Up/Down keys to navigate"
           else Brick.txt "Press "
-            <+> Common.keyToWidget exitKey
+            <+> Common.keyToWidget (kb ^. mKbQuitL)
             <+> Brick.txt " to go back, Press Enter to select"
       , case errMsg of Invalid msg -> renderAsErrMsg msg; _ -> Brick.emptyWidget
       , Brick.vLimit (totalRows) $ Brick.withVScrollBars Brick.OnRight
@@ -394,13 +408,11 @@ createSelectInput items showItem updateSelection validator viewportFieldName mEd
                 assign selectStateEditStateL (Just newEdi)
                 selectStateItemsL %= updateSelection ix
             _ -> case ev of
-              VtyEvent (Vty.EvKey k m) | k == key && m == mods -> selectStateOverlayOpenL .= False
-              VtyEvent (Vty.EvKey (Vty.KChar '\t') [])  -> selectStateFocusRingL %= F.focusNext
-              VtyEvent (Vty.EvKey Vty.KBackTab [])      -> selectStateFocusRingL %= F.focusPrev
-              VtyEvent (Vty.EvKey Vty.KDown [])         -> selectStateFocusRingL %= F.focusNext
-              VtyEvent (Vty.EvKey Vty.KUp [])           -> selectStateFocusRingL %= F.focusPrev
+              VtyEvent (Vty.EvKey k m)
+                | KeyCombination k m == kb ^. mKbQuitL -> selectStateOverlayOpenL .= False
+                | KeyCombination k m == kb ^. mKbUpL   -> selectStateFocusRingL %= F.focusPrev
+                | KeyCombination k m == kb ^. mKbDownL -> selectStateFocusRingL %= F.focusNext
               VtyEvent (Vty.EvKey Vty.KEnter [])        -> do
-                focused <- use (selectStateFocusRingL % to F.focusGetCurrent)
                 selectStateItemsL %= updateSelection (fromMaybe 1 focused)
               _ -> pure ()
         else case ev of
@@ -408,8 +420,8 @@ createSelectInput items showItem updateSelection validator viewportFieldName mEd
           _ -> pure ()
 
 -- | Select Field with only single selection possible, aka radio button
-createSelectField :: (Ord n, Show n) => n -> Lens' s (Maybe i) -> NonEmpty i -> (i -> T.Text) -> KeyCombination -> SelectField s n
-createSelectField name access items showItem exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection name Nothing exitKey) "" Valid name
+createSelectField :: (Ord n, Show n) => n -> Lens' s (Maybe i) -> NonEmpty i -> (i -> T.Text) -> MenuKeyBindings -> SelectField s n
+createSelectField name access items showItem keyBindings = MenuField access (createSelectInput items showItem singleSelect getSelection name Nothing keyBindings) "" Valid name
   where
     singleSelect :: Int -> (NonEmpty (Int, (i, Bool)), a) -> (NonEmpty (Int, (i, Bool)), a)
     singleSelect ix = over _1 $ fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False)))
@@ -417,15 +429,15 @@ createSelectField name access items showItem exitKey = MenuField access (createS
     getSelection = Right . fmap NE.head . NE.nonEmpty . fst
 
 -- | Select Field with multiple selections possible
-createMultiSelectField :: (Ord n, Show n) => n -> Lens' s [i] -> NonEmpty i -> (i -> T.Text) -> KeyCombination -> SelectField s n
-createMultiSelectField name access items showItem exitKey = MenuField access (createSelectInput items showItem multiSelect (Right . fst) name Nothing exitKey) "" Valid name
+createMultiSelectField :: (Ord n, Show n) => n -> Lens' s [i] -> NonEmpty i -> (i -> T.Text) -> MenuKeyBindings -> SelectField s n
+createMultiSelectField name access items showItem keyBindings = MenuField access (createSelectInput items showItem multiSelect (Right . fst) name Nothing keyBindings) "" Valid name
   where
     multiSelect :: Int -> (NonEmpty (Int, (i, Bool)), a) -> (NonEmpty (Int, (i, Bool)), a)
     multiSelect ix = over _1 $ fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, not b)) else (ix', (i, b)))
 
 -- | Select Field with only single selection possible, along with an editable field
-createSelectFieldWithEditable :: (Ord n, Show n) => n -> n -> Lens' s (Either a i) -> (T.Text -> Either ErrorMessage a) -> NonEmpty i -> (i -> T.Text) -> KeyCombination -> SelectField s n
-createSelectFieldWithEditable name editFieldName access validator items showItem exitKey = MenuField access (createSelectInput items showItem singleSelect getSelection name (Just editFieldName) exitKey) "" Valid name
+createSelectFieldWithEditable :: (Ord n, Show n) => n -> n -> Lens' s (Either a i) -> (T.Text -> Either ErrorMessage a) -> NonEmpty i -> (i -> T.Text) -> MenuKeyBindings -> SelectField s n
+createSelectFieldWithEditable name editFieldName access validator items showItem keyBindings = MenuField access (createSelectInput items showItem singleSelect getSelection name (Just editFieldName) keyBindings) "" Valid name
   where
     singleSelect :: Int -> (NonEmpty (Int, (i, Bool)), Bool) -> (NonEmpty (Int, (i, Bool)), Bool)
     singleSelect ix (ne, a) = (fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False))) ne, ix == length ne + 1)
@@ -493,7 +505,7 @@ data Menu s n
     , menuValidator :: s -> Maybe ErrorMessage  -- ^ A validator function
     , menuButtons   :: [Button s n]      -- ^ The buttons. Commonly, the handlers for buttons are defined outside the menu handler.
     , menuFocusRing :: FocusRing n       -- ^ The focus ring with the resource name for each entry and each button, in the order you want to loop them.
-    , menuExitKey   :: KeyCombination    -- ^ The key to exit the Menu
+    , menuKeyBindings :: MenuKeyBindings   -- ^ KeyBindings for navigation
     , menuName      :: n                 -- ^ The resource Name.
     , menuTitle     :: T.Text            -- ^ Menu title.
     }
@@ -501,7 +513,7 @@ data Menu s n
 makeLensesFor
   [ ("menuFields", "menuFieldsL"), ("menuState", "menuStateL"), ("menuValidator", "menuValidatorL")
   , ("menuButtons", "menuButtonsL"), ("menuFocusRing", "menuFocusRingL")
-  , ("menuExitKey", "menuExitKeyL"), ("menuName", "menuNameL")
+  , ("menuKeyBindings", "menuKeyBindingsL"), ("menuName", "menuNameL")
   , ("menuTitle", "menuTitleL")
   ]
   ''Menu
@@ -511,13 +523,14 @@ isValidMenu m = (all isValidField $ menuFields m)
   && (case (menuValidator m) (menuState m) of { Nothing -> True; _ -> False })
 
 createMenu :: n -> s -> T.Text -> (s -> Maybe ErrorMessage)
-  -> KeyCombination -> [Button s n] -> [MenuField s n] -> Menu s n
-createMenu n initial title validator exitK buttons fields = Menu fields initial validator buttons ring exitK n title
+  -> MenuKeyBindings -> [Button s n] -> [MenuField s n] -> Menu s n
+createMenu n initial title validator keys buttons fields = Menu fields initial validator buttons ring keys n title
   where ring = F.focusRing $ [field & fieldName | field <- fields] ++ [button & fieldName | button <- buttons]
 
 handlerMenu :: forall n e s. Eq n => BrickEvent n e -> EventM n (Menu s n) ()
 handlerMenu ev = do
   fields  <- use menuFieldsL
+  kb  <- use menuKeyBindingsL
   focused <- use $ menuFocusRingL % to F.focusGetCurrent
   let focusedField = (\n -> find (\x -> Brick.getName x == n) fields) =<< focused
       propagateEvent e = case focused of
@@ -537,10 +550,9 @@ handlerMenu ev = do
       VtyEvent e -> propagateEvent e
       _ -> pure ()
     Nothing -> case ev of
-      VtyEvent (Vty.EvKey (Vty.KChar '\t') [])  -> menuFocusRingL %= F.focusNext
-      VtyEvent (Vty.EvKey Vty.KBackTab [])      -> menuFocusRingL %= F.focusPrev
-      VtyEvent (Vty.EvKey Vty.KDown [])         -> menuFocusRingL %= F.focusNext
-      VtyEvent (Vty.EvKey Vty.KUp [])           -> menuFocusRingL %= F.focusPrev
+      VtyEvent (Vty.EvKey k m)
+        | KeyCombination k m == kb ^. mKbUpL    -> menuFocusRingL %= F.focusPrev
+        | KeyCombination k m == kb ^. mKbDownL  -> menuFocusRingL %= F.focusNext
       VtyEvent e -> propagateEvent e
       _ -> pure ()
  where
@@ -571,7 +583,7 @@ drawMenu menu =
       , Brick.txt " "
       , Brick.padRight Brick.Max $
           Brick.txt "Press "
-          <+> Common.keyToWidget (menu ^. menuExitKeyL)
+          <+> Common.keyToWidget (menu ^. menuKeyBindingsL % mKbQuitL)
           <+> Brick.txt " to go back, Press Enter to edit the highlighted field"
       ]
     fieldLabels  = [field & fieldLabel | field <- menu ^. menuFieldsL]

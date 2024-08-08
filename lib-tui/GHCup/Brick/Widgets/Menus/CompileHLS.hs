@@ -34,7 +34,7 @@ module GHCup.Brick.Widgets.Menus.CompileHLS (
 )
 where
 
-import GHCup.Brick.Widgets.Menu (Menu)
+import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import           GHCup.Brick.Common(Name(..))
 import Brick
@@ -44,7 +44,7 @@ import Brick
 import           Prelude                 hiding ( appendFile )
 import           Optics.TH (makeLenses)
 import qualified GHCup.Brick.Common as Common
-import GHCup.Types (KeyCombination, VersionPattern, ToolVersion(..))
+import GHCup.Types (VersionPattern, ToolVersion(..))
 import URI.ByteString (URI)
 import qualified Data.Text as T
 import Data.Bifunctor (Bifunctor(..))
@@ -76,7 +76,7 @@ makeLenses ''CompileHLSOptions
 
 type CompileHLSMenu = Menu CompileHLSOptions Name
 
-create :: KeyCombination -> [Version] -> CompileHLSMenu
+create :: MenuKeyBindings -> [Version] -> CompileHLSMenu
 create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS" validator k buttons fields
   where
     initialState =
@@ -150,7 +150,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS
             & Menu.fieldLabelL .~ label
             & Menu.fieldHelpMsgL .~ "GHC versions to compile for (Press Enter to edit)"
             & Menu.fieldStatusL .~ Menu.Invalid "No version selected"
-        _ -> Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs k
+        _ -> Menu.createEditableField (Common.MenuElement Common.TargetGhcEditBox) ghcVersionTagEither targetGHCs
             & Menu.fieldLabelL .~ label
             & Menu.fieldHelpMsgL .~ "space separated list of GHC versions to compile for"
             & Menu.fieldStatusL .~ Menu.Invalid "Invalid empty value"
@@ -160,31 +160,31 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS
       , Menu.createCheckBoxField (Common.MenuElement Common.UpdateCabalCheckBox) updateCabal
           & Menu.fieldLabelL .~ "cabal update"
           & Menu.fieldHelpMsgL .~ "Run 'cabal update' before the build"
-      , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs k
+      , Menu.createEditableField (Common.MenuElement Common.JobsEditBox) jobsV jobs
           & Menu.fieldLabelL .~ "jobs"
           & Menu.fieldHelpMsgL .~ "How many jobs to use for make"
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) setCompile
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
-      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator cabalArgs k
+      , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator cabalArgs
           & Menu.fieldLabelL .~ "CABAL_ARGS"
           & Menu.fieldHelpMsgL .~ "Additional arguments to cabal install"
-      , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir k
+      , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
-      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) overWriteVersionParser overwriteVer k
+      , Menu.createEditableField (Common.MenuElement Common.OvewrwiteVerEditBox) overWriteVersionParser overwriteVer
           & Menu.fieldLabelL .~ "overwrite version"
           & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one. Allows to specify patterns: %v (version), %b (branch name), %h (short commit hash), %H (long commit hash), %g ('git describe' output)"
-      , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches k
+      , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches
           & Menu.fieldLabelL .~ "patches"
           & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or Absolute path to patch directory"
-      , Menu.createEditableField (Common.MenuElement Common.CabalProjectEditBox) cabalProjectV cabalProject k
+      , Menu.createEditableField (Common.MenuElement Common.CabalProjectEditBox) cabalProjectV cabalProject
            & Menu.fieldLabelL .~ "cabal project"
            & Menu.fieldHelpMsgL .~ "If relative filepath, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. Otherwise expects a full URI with https/http/file scheme."
-      , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) cabalProjectLocalV cabalProjectLocal k
+      , Menu.createEditableField (Common.MenuElement Common.CabalProjectLocalEditBox) cabalProjectLocalV cabalProjectLocal
           & Menu.fieldLabelL .~ "cabal project local"
           & Menu.fieldHelpMsgL .~ "URI (https/http/file) to a cabal.project.local to be used for the build. Will be copied over."
-      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef k
+      , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef
           & Menu.fieldLabelL .~ "git-ref"
           & Menu.fieldHelpMsgL .~ "The git commit/branch/ref to build from"
       ]
