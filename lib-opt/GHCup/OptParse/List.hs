@@ -107,7 +107,7 @@ listOpts =
             )
           )
     <*> switch
-          (short 'o' <> long "hide-old" <> help "Hide 'old' GHC versions (installed ones are always shown)"
+          (short 'o' <> long "hide-old" <> help "Hide 'old' tool versions (installed ones are always shown)"
           )
     <*> switch
           (short 'n' <> long "show-nightly" <> help "Show nightlies (installed ones are always shown)"
