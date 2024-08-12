@@ -38,6 +38,7 @@ import           System.Console.Pretty   hiding ( color )
 
 import qualified Data.Text                     as T
 import qualified System.Console.Pretty         as Pretty
+import qualified System.Console.Terminal.Size  as TP
 import Control.Exception.Safe (MonadMask)
 import GHCup.Types.Optics
 import GHCup.Prelude.Logger (logDebug)
@@ -200,8 +201,11 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
       padded  = fmap (\xs -> zipWith padTo xs lengths) rows
 
   let text = fmap unwords (if raw then rows else padded)
+  tp <- liftIO TP.size
   if | pList
      , not raw
+     , Just (TP.Window h _) <- tp
+     , length text > h - 2
      , Just cmd <- pCmd -> do
          r <- liftIO $ sendToPager cmd (T.pack <$> text)
          case r of

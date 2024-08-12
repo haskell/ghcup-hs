@@ -326,6 +326,7 @@ library ghcup-optparse
 
   else
     build-depends:  unix ^>=2.7 || ^>=2.8
+                  , terminal-size ^>=0.3.3
 
 library ghcup-tui
   import:             app-common-depends
