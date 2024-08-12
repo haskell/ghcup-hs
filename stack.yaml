@@ -47,10 +47,7 @@ allow-newer: true
 allow-newer-deps:
   - Cabal
   - Cabal-syntax
-  - ansi-terminal
-  - mintty
   - process
-  - cabal-install-parsers
 
 flags:
   http-io-streams:
@@ -67,6 +64,15 @@ flags:
 
   cabal-plan:
     exe: false
+
+  ghcup:
+    tar: true
+
+  mintty:
+    win32-2-13-1: true
+
+  ansi-terminal:
+    win32-2-13-1: true
 
 ghc-options:
   "$locals": -O2
