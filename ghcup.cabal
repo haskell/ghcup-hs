@@ -145,6 +145,7 @@ library
     GHCup.Utils.Tar
     GHCup.Utils.Tar.Types
     GHCup.Utils.URI
+    GHCup.Utils.Output
     GHCup.Utils.Pager
     GHCup.Utils.Parsers
     GHCup.Version
