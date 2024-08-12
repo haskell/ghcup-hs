@@ -27,6 +27,7 @@ import           GHCup.Types
 import           GHCup.Types.Optics      hiding ( toolRequirements )
 import           GHCup.Utils
 import           GHCup.Utils.Parsers (fromVersion)
+import           GHCup.Utils.Pager
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
@@ -55,6 +56,7 @@ import           Prelude                 hiding ( appendFile )
 import           System.Environment
 import           System.Exit
 import           System.IO               hiding ( appendFile )
+import           System.IO.Unsafe               ( unsafeInterleaveIO )
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.ByteString               as B
@@ -68,6 +70,7 @@ import qualified GHCup.Types                   as Types
 toSettings :: Options -> IO (Settings, KeyBindings, UserSettings)
 toSettings options = do
   noColor <- isJust <$> lookupEnv "NO_COLOR"
+  pagerCmd <- unsafeInterleaveIO getPager
   userConf <- runE @'[ JSONError ] ghcupConfigFile >>= \case
     VRight r -> pure r
     VLeft (V (JSONDecodeError e)) -> do
@@ -75,10 +78,10 @@ toSettings options = do
       pure defaultUserSettings
     _ -> do
       die "Unexpected error!"
-  pure $ (\(s', k) -> (s', k, userConf)) $ mergeConf options userConf noColor
+  pure $ (\(s', k) -> (s', k, userConf)) $ mergeConf options userConf noColor pagerCmd
  where
-   mergeConf :: Options -> UserSettings -> Bool -> (Settings, KeyBindings)
-   mergeConf Options{..} UserSettings{..} noColor =
+   mergeConf :: Options -> UserSettings -> Bool -> Maybe FilePath -> (Settings, KeyBindings)
+   mergeConf Options{..} UserSettings{..} noColor pagerCmd =
      let cache       = fromMaybe (fromMaybe (Types.cache defaultSettings) uCache) optCache
          metaCache   = fromMaybe (fromMaybe (Types.metaCache defaultSettings) uMetaCache) optMetaCache
          metaMode    = fromMaybe (fromMaybe (Types.metaMode defaultSettings) uMetaMode) optMetaMode
@@ -93,6 +96,9 @@ toSettings options = do
          platformOverride = optPlatform <|> (uPlatformOverride <|> Types.platformOverride defaultSettings)
          mirrors  = fromMaybe (Types.mirrors defaultSettings) uMirrors
          defGHCConfOptions  = fromMaybe (Types.defGHCConfOptions defaultSettings) uDefGHCConfOptions
+         pager = case fromMaybe (fromMaybe (Types.pager defaultSettings) uPager) (flip PagerConfig Nothing <$> optPager) of
+                   PagerConfig b Nothing -> PagerConfig b pagerCmd
+                   x -> x
      in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
@@ -299,7 +305,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             Test testCommand           -> test testCommand settings appState runLogger
             Set setCommand             -> set setCommand runAppState runLeanAppState runLogger
             UnSet unsetCommand         -> unset unsetCommand runLeanAppState runLogger
-            List lo                    -> list lo no_color runAppState
+            List lo                    -> list lo no_color (pager settings) runAppState
             Rm rmCommand               -> rm rmCommand runAppState runLogger
             DInfo                      -> dinfo runAppState runLogger
             Compile compileCommand     -> compile compileCommand settings dirs runAppState runLogger

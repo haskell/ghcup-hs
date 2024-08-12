@@ -17,6 +17,7 @@ import           GHCup.Types
 import           GHCup.Utils.Parsers (dayParser, toolParser, criteriaParser)
 import           GHCup.OptParse.Common
 import           GHCup.Prelude.String.QQ
+import           GHCup.Utils.Pager
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -139,8 +140,9 @@ Examples:
     -----------------
 
 
-printListResult :: Bool -> Bool -> [ListResult] -> IO ()
-printListResult no_color raw lr = do
+printListResult :: (HasLog env , MonadReader env m, MonadIO m)
+                => Bool -> PagerConfig -> Bool -> [ListResult] -> m ()
+printListResult no_color (PagerConfig pList pCmd) raw lr = do
 
   let
     color | raw || no_color = (\_ x -> x)
@@ -197,9 +199,13 @@ printListResult no_color raw lr = do
       lengths = fmap (maximum . fmap strWidth) cols
       padded  = fmap (\xs -> zipWith padTo xs lengths) rows
 
-  forM_ (if raw then rows else padded) $ \row -> putStrLn $ unwords row
+  let text = fmap unwords (if raw then rows else padded)
+  if | pList
+     , not raw
+     , Just cmd <- pCmd -> do
  where
 
+  padTo :: String -> Int -> String
   padTo str' x =
     let lstr = strWidth str'
         add' = x - lstr
@@ -287,6 +293,13 @@ printListResult no_color raw lr = do
       | c >= '\x1F300' && c <= '\x1F773' -> 1
       | c >= '\x20000' && c <= '\x3FFFD' -> 2
       | otherwise                        -> 1
+         r <- liftIO $ sendToPager cmd (T.pack <$> text)
+         case r of
+           Left e -> do
+             logDebug $ "Failed to send to pager '" <> T.pack cmd <> "': " <> T.pack (show e)
+             liftIO $ forM_ text putStrLn
+           Right _ -> pure ()
+     | otherwise -> liftIO $ forM_ text putStrLn
 
 
 
@@ -305,11 +318,12 @@ list :: ( Monad m
          )
       => ListOptions
       -> Bool
+      -> PagerConfig
       -> (ReaderT AppState m ExitCode -> m ExitCode)
       -> m ExitCode
-list ListOptions{..} no_color runAppState =
+list ListOptions{..} no_color pgc runAppState =
   runAppState (do
       l <- listVersions loTool (maybeToList lCriteria) lHideOld lShowNightly (lFrom, lTo)
-      liftIO $ printListResult no_color lRawFormat l
+      printListResult no_color pgc lRawFormat l
       pure ExitSuccess
     )

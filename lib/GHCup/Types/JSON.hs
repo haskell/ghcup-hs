@@ -434,6 +434,18 @@ instance FromJSON KeyCombination where
 instance ToJSON KeyCombination where
   toJSON (KeyCombination k m) = object ["Key" .= k, "Mods" .= m]
 
+instance FromJSON PagerConfig where
+  parseJSON v = p1 v <|> p2 v <|> p3 v
+   where
+    p2 = withBool "PagerConfig" $ \b -> pure $ PagerConfig b Nothing
+    p3 = withText "PagerConfig" $ \t -> pure $ allPagerConfig (T.unpack t)
+    p1 = withObject "PagerConfig" $ \o -> do
+       list <- o .:  "list"
+       cmd  <- o .:? "cmd"
+       pure $ PagerConfig list cmd
+
+
+deriveToJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "pager-") . T.pack . kebab $ str' } ''PagerConfig
 deriveToJSON defaultOptions { fieldLabelModifier = drop 2 . kebab } ''KeyBindings -- move under key-bindings key
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "u-") . T.pack . kebab $ str' } ''UserSettings

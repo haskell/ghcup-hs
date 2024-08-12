@@ -81,6 +81,7 @@ data Options = Options
   , optNoNetwork   :: Maybe Bool
   , optGpg         :: Maybe GPGSetting
   , optStackSetup  :: Maybe Bool
+  , optPager       :: Maybe Bool
   -- commands
   , optCommand     :: Command
   }
@@ -177,6 +178,7 @@ opts =
           <> completer (listCompleter ["strict", "lax", "none"])
           ))
     <*> invertableSwitch "stack-setup" Nothing False (help "Use stack's setup info for discovering and installing GHC versions")
+    <*> (invertableSwitch "paginate" Nothing False (help "Send output (e.g. from 'ghcup list') through pager (default: disabled)"))
     <*> com
 
 
