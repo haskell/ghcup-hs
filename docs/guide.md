@@ -54,6 +54,25 @@ Other tags include:
 For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man` provider, then issue `man ghc`. Manpages only work for the currently set ghc.
 `MANPATH` may be required to be unset.
 
+## Pager
+
+You can have `ghcup list` use a pager, similar to git. E.g. run:
+
+```sh
+ghcup --paginate list
+```
+
+To set a specific pager you can use either `GHCUP_PAGER` or `PAGER` environment variable.
+
+To make the changes permanent, you can add the following to your config:
+
+```yaml
+pager: most
+```
+
+Refer to the [config.yaml](https://github.com/haskell/ghcup-hs/blob/master/data/config.yaml) template for more fine-grained
+control.
+
 ## Shell-completion
 
 Shell completions are in [scripts/shell-completions](https://github.com/haskell/ghcup-hs/tree/master/scripts/shell-completions) directory of this repository.
