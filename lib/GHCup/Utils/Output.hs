@@ -9,9 +9,21 @@ import Data.Void
 import Data.Char
 import Control.Applicative
 
+import qualified Data.Text as T
 import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
+import qualified System.Console.Terminal.Size  as TP
 
+
+-- | Checks whether the given text lines fit in the terminal window.
+-- Returns 'Nothing' if the terminal size could not be determined (e.g. bc we're
+-- part of a pipe).
+fitsInTerminal :: [T.Text] -> IO (Maybe Bool)
+fitsInTerminal text = fmap (\(TP.Window h _) -> length text <= h - 2) <$> TP.size
+
+-- | Like 'fitsInTerminal', but takes a single text blob.
+fitsInTerminal' :: T.Text -> IO (Maybe Bool)
+fitsInTerminal' = fitsInTerminal . T.lines
 
 padTo :: String -> Int -> String
 padTo str x =

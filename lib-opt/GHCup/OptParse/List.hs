@@ -37,8 +37,8 @@ import           System.Exit
 import           System.Console.Pretty   hiding ( color )
 
 import qualified Data.Text                     as T
+import qualified Data.Text.IO                  as T
 import qualified System.Console.Pretty         as Pretty
-import qualified System.Console.Terminal.Size  as TP
 import Control.Exception.Safe (MonadMask)
 import GHCup.Types.Optics
 import GHCup.Prelude.Logger (logDebug)
@@ -200,20 +200,19 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
       lengths = fmap (maximum . fmap strWidth) cols
       padded  = fmap (\xs -> zipWith padTo xs lengths) rows
 
-  let text = fmap unwords (if raw then rows else padded)
-  tp <- liftIO TP.size
+  let text = fmap (T.pack . unwords) (if raw then rows else padded)
+  fits <- liftIO $ fitsInTerminal text
   if | pList
      , not raw
-     , Just (TP.Window h _) <- tp
-     , length text > h - 2
+     , Just False <- fits
      , Just cmd <- pCmd -> do
-         r <- liftIO $ sendToPager cmd (T.pack <$> text)
+         r <- liftIO $ sendToPager cmd text
          case r of
            Left e -> do
              logDebug $ "Failed to send to pager '" <> T.pack cmd <> "': " <> T.pack (show e)
-             liftIO $ forM_ text putStrLn
+             liftIO $ forM_ text T.putStrLn
            Right _ -> pure ()
-     | otherwise -> liftIO $ forM_ text putStrLn
+     | otherwise -> liftIO $ forM_ text T.putStrLn
 
 
 
