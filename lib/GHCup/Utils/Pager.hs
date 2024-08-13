@@ -8,7 +8,7 @@ module GHCup.Utils.Pager where
 import GHCup.Prelude
 import System.Environment
 import GHCup.Utils.Dirs (findExecutable)
-import Control.Applicative (asum)
+import Data.Foldable (asum)
 import System.Process
 import System.Exit
 import System.IO
