@@ -63,6 +63,12 @@ import           Data.Maybe
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
+import System.Exit
+import System.Environment (getProgName)
+import System.IO
+import GHCup.Utils.Pager
+import qualified Data.Text as T
+import Data.Function ((&))
 
 
 
@@ -360,3 +366,27 @@ com =
                      (progDesc ""))
            <> internal
           )
+
+-- | Handle `ParserResult`.
+handleParseResult' :: Maybe FilePath -> Bool -> ParserResult a -> IO a
+handleParseResult' _ _ (Success a) = return a
+handleParseResult' pagerCmd hasHelp (Failure failure) = do
+      progn <- getProgName
+      let (msg, exit) = renderFailure failure progn
+      case exit of
+        ExitSuccess
+          | hasHelp ->
+              void $ sendToPager' pagerCmd (T.lines $ T.pack msg)
+          | otherwise -> putStrLn msg
+        _           -> hPutStrLn stderr msg
+      exitWith exit
+handleParseResult' _ _ (CompletionInvoked compl) = do
+      progn <- getProgName
+      msg <- execCompletion compl progn
+      putStr msg
+      exitSuccess
+
+-- | Checks whether any non-longopts args are '--help'.
+argsHasHelp :: [String] -> Bool
+argsHasHelp args = takeWhile (/= "--") args & elem "--help"
+

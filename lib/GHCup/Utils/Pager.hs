@@ -16,6 +16,8 @@ import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Control.Monad (forM_)
 import Control.Exception (IOException, try)
+import GHCup.Utils.Output
+import qualified Data.Text as T
 
 
 getPager :: IO (Maybe FilePath)
@@ -47,4 +49,18 @@ sendToPager pager text = try @IOException
                fail (unlines [mappend "Pager exited with exit code " (show i)
                              ,errContents])
           _ -> pure ()
+
+
+sendToPager' :: Maybe FilePath -> [Text] -> IO (Either IOException ())
+sendToPager' (Just pager) text
+  | pager /= "" = do
+      fits <- fitsInTerminal text
+      case fits of
+        Just True -> do
+          T.putStr $ T.unlines text
+          pure $ Right ()
+        _ -> sendToPager pager text
+sendToPager' _ text = do
+  forM_ text T.putStrLn
+  pure $ Right ()
 

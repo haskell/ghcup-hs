@@ -20,6 +20,7 @@ import qualified GHCup.GHC as GHC
 import qualified GHCup.HLS as HLS
 import           GHCup.OptParse
 
+import           GHCup.Utils.Pager
 import           GHCup.Download
 import           GHCup.Errors
 import           GHCup.Platform
@@ -27,7 +28,6 @@ import           GHCup.Types
 import           GHCup.Types.Optics      hiding ( toolRequirements )
 import           GHCup.Utils
 import           GHCup.Utils.Parsers (fromVersion)
-import           GHCup.Utils.Pager
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
@@ -67,10 +67,9 @@ import qualified GHCup.Types                   as Types
 
 
 
-toSettings :: Options -> IO (Settings, KeyBindings, UserSettings)
-toSettings options = do
+toSettings :: Maybe FilePath -> Options -> IO (Settings, KeyBindings, UserSettings)
+toSettings pagerCmd options = do
   noColor <- isJust <$> lookupEnv "NO_COLOR"
-  pagerCmd <- unsafeInterleaveIO getPager
   userConf <- runE @'[ JSONError ] ghcupConfigFile >>= \case
     VRight r -> pure r
     VLeft (V (JSONDecodeError e)) -> do
@@ -78,10 +77,10 @@ toSettings options = do
       pure defaultUserSettings
     _ -> do
       die "Unexpected error!"
-  pure $ (\(s', k) -> (s', k, userConf)) $ mergeConf options userConf noColor pagerCmd
+  pure $ (\(s', k) -> (s', k, userConf)) $ mergeConf options userConf noColor
  where
-   mergeConf :: Options -> UserSettings -> Bool -> Maybe FilePath -> (Settings, KeyBindings)
-   mergeConf Options{..} UserSettings{..} noColor pagerCmd =
+   mergeConf :: Options -> UserSettings -> Bool -> (Settings, KeyBindings)
+   mergeConf Options{..} UserSettings{..} noColor =
      let cache       = fromMaybe (fromMaybe (Types.cache defaultSettings) uCache) optCache
          metaCache   = fromMaybe (fromMaybe (Types.metaCache defaultSettings) uMetaCache) optMetaCache
          metaMode    = fromMaybe (fromMaybe (Types.metaMode defaultSettings) uMetaMode) optMetaMode
@@ -172,18 +171,26 @@ ENV variables:
 
 Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
 
-  customExecParser
+  args <- getArgs
+  pagerCmd <- unsafeInterleaveIO getPager
+
+  let
+    parseArgsWith opts' = execParserPure
       (prefs showHelpOnError)
-      (info (opts <**> helper <**> versionHelp <**> numericVersionHelp <**> planJson <**> listCommands)
+      (info (opts' <**> helper <**> versionHelp <**> numericVersionHelp <**> planJson <**> listCommands)
             (footerDoc (Just $ text main_footer))
-      )
-    >>= \opt@Options {..} -> do
+      ) args
+
+
+  handleParseResult' pagerCmd (argsHasHelp args) (parseArgsWith opts) >>= \case
+      opt@Options {..} -> do
+
           dirs@Dirs{..} <- getAllDirs
 
           -- create ~/.ghcup dir
           ensureDirectories dirs
 
-          (settings, keybindings, userConf) <- toSettings opt
+          (settings, keybindings, userConf) <- toSettings pagerCmd opt
 
           -- logger interpreter
           logfile <- runReaderT initGHCupFileLogging dirs
