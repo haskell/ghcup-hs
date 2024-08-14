@@ -49,6 +49,7 @@ allow-newer-deps:
   - Cabal
   - Cabal-syntax
   - process
+  - terminal-size
 
 flags:
   http-io-streams:
