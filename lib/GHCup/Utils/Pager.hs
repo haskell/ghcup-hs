@@ -51,16 +51,16 @@ sendToPager pager text = try @IOException
           _ -> pure ()
 
 
-sendToPager' :: Maybe FilePath -> [Text] -> IO (Either IOException ())
-sendToPager' (Just pager) text
-  | pager /= "" = do
-      fits <- fitsInTerminal text
-      case fits of
-        Just True -> do
-          T.putStr $ T.unlines text
-          pure $ Right ()
-        _ -> sendToPager pager text
-sendToPager' _ text = do
+sendToPager' :: Maybe FilePath -> [Text] -> IO ()
+sendToPager' (Just pager) text = do
+  fits <- fitsInTerminal text
+  case fits of
+    Just True -> do
+      T.putStr $ T.unlines text
+    _ -> sendToPager pager text >>= \case
+      Right _ -> pure ()
+      Left _ -> do
+        T.putStrLn $ T.unlines text
+sendToPager' _ text =
   forM_ text T.putStrLn
-  pure $ Right ()
 

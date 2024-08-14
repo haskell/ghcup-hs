@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 
@@ -375,8 +376,7 @@ handleParseResult' pagerCmd hasHelp (Failure failure) = do
       let (msg, exit) = renderFailure failure progn
       case exit of
         ExitSuccess
-          | hasHelp ->
-              void $ sendToPager' pagerCmd (T.lines $ T.pack msg)
+          | hasHelp -> sendToPager' pagerCmd (T.lines $ T.pack msg)
           | otherwise -> putStrLn msg
         _           -> hPutStrLn stderr msg
       exitWith exit

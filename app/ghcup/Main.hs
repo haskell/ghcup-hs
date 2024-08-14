@@ -67,9 +67,8 @@ import qualified GHCup.Types                   as Types
 
 
 
-toSettings :: Maybe FilePath -> Options -> IO (Settings, KeyBindings, UserSettings)
-toSettings pagerCmd options = do
-  noColor <- isJust <$> lookupEnv "NO_COLOR"
+toSettings :: Bool -> Maybe FilePath -> Options -> IO (Settings, KeyBindings, UserSettings)
+toSettings noColor pagerCmd options = do
   userConf <- runE @'[ JSONError ] ghcupConfigFile >>= \case
     VRight r -> pure r
     VLeft (V (JSONDecodeError e)) -> do
@@ -77,10 +76,10 @@ toSettings pagerCmd options = do
       pure defaultUserSettings
     _ -> do
       die "Unexpected error!"
-  pure $ (\(s', k) -> (s', k, userConf)) $ mergeConf options userConf noColor
+  pure $ (\(s', k) -> (s', k, userConf)) $ mergeConf options userConf
  where
-   mergeConf :: Options -> UserSettings -> Bool -> (Settings, KeyBindings)
-   mergeConf Options{..} UserSettings{..} noColor =
+   mergeConf :: Options -> UserSettings -> (Settings, KeyBindings)
+   mergeConf Options{..} UserSettings{..} =
      let cache       = fromMaybe (fromMaybe (Types.cache defaultSettings) uCache) optCache
          metaCache   = fromMaybe (fromMaybe (Types.metaCache defaultSettings) uMetaCache) optMetaCache
          metaMode    = fromMaybe (fromMaybe (Types.metaMode defaultSettings) uMetaMode) optMetaMode
@@ -190,11 +189,11 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           -- create ~/.ghcup dir
           ensureDirectories dirs
 
-          (settings, keybindings, userConf) <- toSettings pagerCmd opt
+          no_color <- isJust <$> lookupEnv "NO_COLOR"
+          (settings, keybindings, userConf) <- toSettings no_color pagerCmd opt
 
           -- logger interpreter
           logfile <- runReaderT initGHCupFileLogging dirs
-          no_color <- isJust <$> lookupEnv "NO_COLOR"
           let loggerConfig = LoggerConfig
                 { lcPrintDebug = verbose settings
                 , consoleOutter  = T.hPutStr stderr
