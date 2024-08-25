@@ -55,7 +55,7 @@ import           Data.Time.Clock
 import           Data.Time.Format.ISO8601
 import           Data.Versions                hiding ( patch )
 import           GHC.IO.Exception
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Syntax     ( Quasi(qAddDependentFile) )
 import           Optics

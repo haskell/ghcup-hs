@@ -26,7 +26,7 @@ import           Data.ByteString                ( ByteString )
 import           Data.CaseInsensitive           ( CI )
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           Haskus.Utils.Variant
+import           Data.Variant
 import           System.FilePath
 import           Text.PrettyPrint               hiding ( (<>) )
 import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )

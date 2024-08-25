@@ -31,7 +31,7 @@ import           Data.Functor
 import           Data.Maybe
 import           Data.Versions
 import           GHC.Unicode
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )

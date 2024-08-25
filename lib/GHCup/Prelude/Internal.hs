@@ -34,8 +34,8 @@ import           Data.String
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           Data.Word8                  hiding ( isDigit )
-import           Haskus.Utils.Types.List
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Types
+import           Data.Variant.Excepts
 import           System.IO.Error
 
 import           Control.Retry

@@ -74,7 +74,7 @@ import           Data.Maybe
 import           Data.Text                      ( Text )
 import           Data.Versions         hiding   ( patch )
 import           GHC.IO.Exception
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Optics
 import           Safe
 import           System.FilePath
@@ -114,7 +114,7 @@ import Data.Time (Day(..), diffDays, addDays)
 -- >>> import GHCup.Prelude.Version.QQ
 -- >>> import qualified Data.Text.Encoding as E
 -- >>> import Control.Monad.Reader
--- >>> import Haskus.Utils.Variant.Excepts
+-- >>> import Data.Variant.Excepts
 -- >>> import Text.PrettyPrint.HughesPJClass ( prettyShow )
 -- >>> let lc = LoggerConfig { lcPrintDebug = False, consoleOutter = mempty, fileOutter = mempty, fancyColors = False }
 -- >>> dirs' <- getAllDirs

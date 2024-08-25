@@ -22,7 +22,7 @@ import           Data.CaseInsensitive           ( CI, original, mk )
 import           Data.IORef
 import           Data.Maybe
 import           Data.Text.Read
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Network.Http.Client     hiding ( URL )
 import           Prelude                 hiding ( abs
                                                 , readFile

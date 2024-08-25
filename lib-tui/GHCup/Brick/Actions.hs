@@ -49,7 +49,7 @@ import           Data.List
 import           Data.Maybe
 import           Data.IORef (IORef, readIORef, newIORef, modifyIORef)
 import           Data.Versions hiding (Lens')
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 import           System.IO.Unsafe

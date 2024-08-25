@@ -135,7 +135,7 @@ import           Data.Bifunctor
 import           Data.Maybe
 import           Data.Versions
 import           GHC.IO.Exception               ( IOErrorType(NoSuchThing) )
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Optics hiding ( uncons )
 import           Safe
 import           System.Info

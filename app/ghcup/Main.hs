@@ -46,7 +46,7 @@ import           Data.Functor
 import           Data.Versions (version)
 import           Data.Maybe
 import           GHC.IO.Encoding
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Syntax     ( Quasi(qAddDependentFile) )
 import           Options.Applicative     hiding ( style )

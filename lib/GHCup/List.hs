@@ -38,7 +38,7 @@ import           Data.Maybe
 import           Data.Text                      ( Text )
 import           Data.Time.Calendar             ( Day )
 import           Data.Versions                hiding ( patch )
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Optics
 import           Prelude                 hiding ( abs
                                                 , writeFile

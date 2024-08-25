@@ -35,7 +35,7 @@ import           Data.Maybe
 import           Data.Versions                  ( Version, prettyVer, version, pvp )
 import qualified Data.Versions as V
 import           Data.Text                      ( Text )
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text, vsep )
 import           Prelude                 hiding ( appendFile )
