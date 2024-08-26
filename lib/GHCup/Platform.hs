@@ -43,7 +43,7 @@ import           Data.Foldable
 import           Data.Maybe
 import           Data.Text                      ( Text )
 import           Data.Versions
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Prelude                 hiding ( abs
                                                 , readFile
                                                 , writeFile

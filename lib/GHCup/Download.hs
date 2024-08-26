@@ -63,7 +63,7 @@ import           Data.Time.Clock
 import           Data.Time.Clock.POSIX
 import           Data.Versions
 import           Data.Word8              hiding ( isSpace )
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 #if defined(INTERNAL_DOWNLOADER)
 import           Network.Http.Client     hiding ( URL )
 #endif

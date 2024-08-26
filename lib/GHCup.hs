@@ -66,7 +66,7 @@ import           Data.List
 import           Data.Maybe
 import           Data.Versions                hiding ( patch )
 import           GHC.IO.Exception
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Optics
 import           Prelude                 hiding ( abs
                                                 , writeFile

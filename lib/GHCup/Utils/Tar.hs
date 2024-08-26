@@ -23,7 +23,7 @@ import           GHCup.Types.Optics
 import           Control.Monad.Catch (MonadThrow)
 import           Control.Monad.Reader
 import           Data.List
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           System.FilePath
 
 #if defined(TAR)

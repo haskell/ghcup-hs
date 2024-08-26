@@ -39,7 +39,7 @@ import           Data.Time.Calendar             ( Day )
 import           Data.Time.Format               ( parseTimeM, defaultTimeLocale )
 import           Data.Versions
 import           Data.Void
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
 import           Safe
 import           System.FilePath

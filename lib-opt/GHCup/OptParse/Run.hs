@@ -34,7 +34,7 @@ import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Maybe (isNothing, fromMaybe)
 import           Data.List                      ( intercalate )
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.FilePath

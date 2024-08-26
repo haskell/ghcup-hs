@@ -40,7 +40,7 @@ import           Data.List
 import           Data.Ord
 import           Data.Maybe
 import           Data.Versions                hiding ( patch )
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Optics
 import           Prelude                 hiding ( abs
                                                 , writeFile
