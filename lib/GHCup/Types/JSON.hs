@@ -48,10 +48,30 @@ import qualified Data.Text.Encoding.Error      as E
 import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
 
+instance ToJSON LinuxDistro where
+  toJSON (OtherLinux x) = String (T.pack x)
+  toJSON x = String . T.pack . show $ x
+
+instance FromJSON LinuxDistro where
+  parseJSON = withText "LinuxDistro" $ \t -> case T.unpack (T.toLower t) of
+    "debian"   -> pure Debian
+    "ubuntu"   -> pure Ubuntu
+    "mint"     -> pure Mint
+    "fedora"   -> pure Fedora
+    "centos"   -> pure CentOS
+    "redhat"   -> pure RedHat
+    "alpine"   -> pure Alpine
+    "amazonlinux" -> pure AmazonLinux
+    "rocky"    -> pure Rocky
+    "void"     -> pure Void
+    "gentoo"   -> pure Gentoo
+    "exherbo"  -> pure Exherbo
+    "opensuse" -> pure OpenSUSE
+    "unknownlinux" -> pure UnknownLinux
+    _          -> pure (OtherLinux $ T.unpack t)
 
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''MetaMode
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Architecture
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''LinuxDistro
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VSep
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''MChunk
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Platform
@@ -121,6 +141,7 @@ instance ToJSONKey Platform where
   toJSONKey = toJSONKeyText $ \case
     Darwin  -> T.pack "Darwin"
     FreeBSD -> T.pack "FreeBSD"
+    Linux (OtherLinux s) -> T.pack ("Linux_" <> s)
     Linux d -> T.pack ("Linux_" <> show d)
     Windows -> T.pack "Windows"
 
