@@ -151,6 +151,7 @@ getLinuxDistro = do
         | hasWord name ["alpine"]  -> Alpine
         | hasWord name ["exherbo"] -> Exherbo
         | hasWord name ["gentoo"]  -> Gentoo
+        | hasWord name ["opensuse", "suse"]  -> OpenSUSE
         | hasWord name ["amazonlinux", "Amazon Linux"] -> AmazonLinux
         | hasWord name ["rocky", "Rocky Linux"] -> Rocky
         -- https://github.com/void-linux/void-packages/blob/master/srcpkgs/base-files/files/os-release

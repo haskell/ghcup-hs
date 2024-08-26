@@ -257,6 +257,7 @@ data LinuxDistro = Debian
                  -- rolling
                  | Gentoo
                  | Exherbo
+                 | OpenSUSE
                  -- not known
                  | UnknownLinux
                  -- ^ must exit
@@ -280,6 +281,7 @@ distroToString Rocky = "rocky"
 distroToString Void = "void"
 distroToString Gentoo = "gentoo"
 distroToString Exherbo = "exherbo"
+distroToString OpenSUSE = "opensuse"
 distroToString UnknownLinux = "unknown"
 
 instance Pretty LinuxDistro where
