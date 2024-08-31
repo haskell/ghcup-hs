@@ -272,13 +272,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                 pure s'
 
 
-#if defined(IS_WINDOWS)
-              -- FIXME: windows needs 'ensureGlobalTools', which requires
-              -- full appstate
-              runLeanAppState = runAppState
-#else
               runLeanAppState = flip runReaderT leanAppstate
-#endif
               runAppState action' = do
                 s' <- liftIO appState
                 runReaderT action' s'
@@ -312,6 +306,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             Nuke                       -> nuke appState runLogger
             Prefetch pfCom             -> prefetch pfCom runAppState runLogger
             GC gcOpts                  -> gc gcOpts runAppState runLogger
+            HealthCheckCommand hcOpts  -> hc hcOpts runLeanAppState runLogger
             Run runCommand             -> run runCommand appState leanAppstate runLogger
             PrintAppErrors             -> putStrLn allHFError >> pure ExitSuccess
 
