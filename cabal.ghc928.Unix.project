@@ -42,9 +42,6 @@ package libarchive
 package aeson-pretty
   flags: +lib-only
 
-package cabal-plan
-  flags: -exe
-
 package aeson
   flags: +ordered-keymap
 
@@ -53,6 +50,3 @@ package hashable
 
 package *
   test-show-details: direct
-
-allow-newer: cabal-install-parsers:tar
-
