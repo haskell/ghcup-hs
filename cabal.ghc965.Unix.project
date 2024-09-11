@@ -45,5 +45,8 @@ package aeson-pretty
 package aeson
   flags: +ordered-keymap
 
+package hashable
+  flags: -arch-native
+
 package *
   test-show-details: direct
