@@ -37,20 +37,12 @@ source-repository-package
 package libarchive
   flags: -system-libarchive
 
-package libyaml-streamly
-  flags: -system-libyaml
-
 package aeson-pretty
   flags: +lib-only
 
 package aeson
   flags: +ordered-keymap
 
-package streamly
-  flags: +use-unliftio
-
 package hashable
   flags: -arch-native
-
-allow-newer: streamly:Win32
 
