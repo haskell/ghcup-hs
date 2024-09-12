@@ -30,7 +30,7 @@ extra-source-files:
   test/ghcup-test/golden/unix/GHCupInfo.json
   test/ghcup-test/golden/windows/GHCupInfo.json
 
-tested-with: GHC==9.6.5
+tested-with: GHC==9.6.6
            , GHC==9.4.8
            , GHC==9.2.8
            , GHC==9.0.2
