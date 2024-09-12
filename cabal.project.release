@@ -2,12 +2,11 @@ import: cabal.project
 
 optimization: 2
 
-if impl(ghc < 9.0)
-    package ghcup
-        flags: +tui -tar
-else
-    package ghcup
-        flags: +tui +tar
+-- The release project file always wants to build with -tar.
+-- The tar flag is only there to circumvent complicated errors during
+-- development, which sometimes happens due to libarchive.
+package ghcup
+    flags: +tui -tar
 
 constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0,
