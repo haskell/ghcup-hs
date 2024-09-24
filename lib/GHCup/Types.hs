@@ -257,10 +257,49 @@ data LinuxDistro = Debian
                  -- rolling
                  | Gentoo
                  | Exherbo
+                 | OpenSUSE
                  -- not known
                  | UnknownLinux
                  -- ^ must exit
-  deriving (Eq, GHC.Generic, Ord, Show, Enum, Bounded)
+                 | OtherLinux String
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+instance Enum LinuxDistro where
+  toEnum 0 = Debian
+  toEnum 1 = Ubuntu
+  toEnum 2 = Mint
+  toEnum 3 = Fedora
+  toEnum 4 = CentOS
+  toEnum 5 = RedHat
+  toEnum 6 = Alpine
+  toEnum 7 = AmazonLinux
+  toEnum 8 = Rocky
+  toEnum 9 = Void
+  toEnum 10 = Gentoo
+  toEnum 11 = Exherbo
+  toEnum 12 = OpenSUSE
+  toEnum 13 = UnknownLinux
+  toEnum _ = error "toEnum: out of bounds"
+
+  fromEnum Debian = 0
+  fromEnum Ubuntu = 1
+  fromEnum Mint = 2
+  fromEnum Fedora = 3
+  fromEnum CentOS = 4
+  fromEnum RedHat = 5
+  fromEnum Alpine = 6
+  fromEnum AmazonLinux = 7
+  fromEnum Rocky = 8
+  fromEnum Void = 9
+  fromEnum Gentoo = 10
+  fromEnum Exherbo = 11
+  fromEnum OpenSUSE = 12
+  fromEnum UnknownLinux = 13
+  fromEnum (OtherLinux _) = error "fromEnum: OtherLinux"
+
+instance Bounded LinuxDistro where
+  minBound = Debian
+  maxBound = UnknownLinux
 
 allDistros :: [LinuxDistro]
 allDistros = enumFromTo minBound maxBound
@@ -280,7 +319,9 @@ distroToString Rocky = "rocky"
 distroToString Void = "void"
 distroToString Gentoo = "gentoo"
 distroToString Exherbo = "exherbo"
+distroToString OpenSUSE = "opensuse"
 distroToString UnknownLinux = "unknown"
+distroToString (OtherLinux str) = str
 
 instance Pretty LinuxDistro where
   pPrint = text . distroToString

@@ -49,7 +49,7 @@ import           Prelude                 hiding ( abs
                                                 , writeFile
                                                 )
 import           System.Info
-import           System.OsRelease
+import           System.OsRelease as OSR
 import           System.Exit
 import           System.FilePath
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
@@ -134,33 +134,34 @@ getLinuxDistro :: (Alternative m, MonadCatch m, MonadIO m, MonadFail m)
                => Excepts '[DistroNotFound] m (LinuxDistro, Maybe Versioning)
 getLinuxDistro = do
   -- TODO: don't do alternative on IO, because it hides bugs
-  (name, ver) <- handleIO (\_ -> throwE DistroNotFound) $ lift $ asum
+  (name, mid, ver) <- handleIO (\_ -> throwE DistroNotFound) $ lift $ asum
     [ liftIO try_os_release
     , try_lsb_release_cmd
     , liftIO try_redhat_release
     , liftIO try_debian_version
     ]
+  let hasWord xs = let f t = any (\x -> match (regex x) (T.unpack t)) xs
+                   in f name || maybe False f mid
   let parsedVer = ver >>= either (const Nothing) Just . versioning
       distro    = if
-        | hasWord name ["debian"]  -> Debian
-        | hasWord name ["ubuntu"]  -> Ubuntu
-        | hasWord name ["linuxmint", "Linux Mint"] -> Mint
-        | hasWord name ["fedora"]  -> Fedora
-        | hasWord name ["centos"]  -> CentOS
-        | hasWord name ["Red Hat"] -> RedHat
-        | hasWord name ["alpine"]  -> Alpine
-        | hasWord name ["exherbo"] -> Exherbo
-        | hasWord name ["gentoo"]  -> Gentoo
-        | hasWord name ["amazonlinux", "Amazon Linux"] -> AmazonLinux
-        | hasWord name ["rocky", "Rocky Linux"] -> Rocky
+        | hasWord ["debian"]  -> Debian
+        | hasWord ["ubuntu"]  -> Ubuntu
+        | hasWord ["linuxmint", "Linux Mint"] -> Mint
+        | hasWord ["fedora"]  -> Fedora
+        | hasWord ["centos"]  -> CentOS
+        | hasWord ["Red Hat"] -> RedHat
+        | hasWord ["alpine"]  -> Alpine
+        | hasWord ["exherbo"] -> Exherbo
+        | hasWord ["gentoo"]  -> Gentoo
+        | hasWord ["opensuse", "suse"]  -> OpenSUSE
+        | hasWord ["amazonlinux", "Amazon Linux"] -> AmazonLinux
+        | hasWord ["rocky", "Rocky Linux"] -> Rocky
         -- https://github.com/void-linux/void-packages/blob/master/srcpkgs/base-files/files/os-release
-        | hasWord name ["void", "Void Linux"] -> Void
-        | otherwise                -> UnknownLinux
+        | hasWord ["void", "Void Linux"] -> Void
+        | otherwise -> OtherLinux (T.unpack $ fromMaybe name mid)
   pure (distro, parsedVer)
  where
-  hasWord t = any (\x -> match (regex x) (T.unpack t))
-   where
-    regex x = makeRegexOpts compIgnoreCase execBlank ([s|\<|] ++ x ++ [s|\>|])
+  regex x = makeRegexOpts compIgnoreCase execBlank ([s|\<|] ++ x ++ [s|\>|])
 
   lsb_release_cmd :: FilePath
   lsb_release_cmd = "lsb-release"
@@ -169,21 +170,21 @@ getLinuxDistro = do
   debian_version :: FilePath
   debian_version = "/etc/debian_version"
 
-  try_os_release :: IO (Text, Maybe Text)
+  try_os_release :: IO (Text, Maybe Text, Maybe Text)
   try_os_release = do
-    Just OsRelease{ name = name, version_id = version_id } <-
+    Just OsRelease{ name = name, version_id = version_id, OSR.id = id' } <-
       fmap osRelease <$> parseOsRelease
-    pure (T.pack name, fmap T.pack version_id)
+    pure (T.pack name, Just (T.pack id'), fmap T.pack version_id)
 
   try_lsb_release_cmd :: (MonadFail m, MonadIO m)
-                      => m (Text, Maybe Text)
+                      => m (Text, Maybe Text, Maybe Text)
   try_lsb_release_cmd = do
     (Just _) <- liftIO $ findExecutable lsb_release_cmd
     name     <- fmap _stdOut $ executeOut lsb_release_cmd ["-si"] Nothing
     ver      <- fmap _stdOut $ executeOut lsb_release_cmd ["-sr"] Nothing
-    pure (decUTF8Safe' name, Just $ decUTF8Safe' ver)
+    pure (decUTF8Safe' name, Nothing, Just $ decUTF8Safe' ver)
 
-  try_redhat_release :: IO (Text, Maybe Text)
+  try_redhat_release :: IO (Text, Maybe Text, Maybe Text)
   try_redhat_release = do
     t <- T.readFile redhat_release
     let nameRegex n =
@@ -199,16 +200,16 @@ getLinuxDistro = do
         verRe = fromEmpty . match verRegex $ T.unpack t :: Maybe String
     (Just name) <- pure
       (nameRe "CentOS" <|> nameRe "Fedora" <|> nameRe "Red Hat")
-    pure (T.pack name, fmap T.pack verRe)
+    pure (T.pack name, Nothing, fmap T.pack verRe)
    where
     fromEmpty :: String -> Maybe String
     fromEmpty "" = Nothing
     fromEmpty s' = Just s'
 
-  try_debian_version :: IO (Text, Maybe Text)
+  try_debian_version :: IO (Text, Maybe Text, Maybe Text)
   try_debian_version = do
     ver <- T.readFile debian_version
-    pure (T.pack "debian", Just ver)
+    pure (T.pack "debian", Just (T.pack "debian"), Just ver)
 
 
 getStackGhcBuilds :: (MonadReader env m, HasLog env, MonadIO m)
