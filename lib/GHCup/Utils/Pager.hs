@@ -33,22 +33,20 @@ getPager = do
            . fmap (maybe (fail "could not find") pure <=< findExecutable)
            $ pagers
 
+-- 'more' reads from STDERR, and requires std_err to be 'Inherit'
 sendToPager :: FilePath -> [Text] -> IO (Either IOException ())
 sendToPager pager text = try @IOException
     $ withCreateProcess (shell pager) { std_in = CreatePipe
-                                      , std_err = CreatePipe
+                                      , std_err = Inherit
                                       , std_out = Inherit
                                       , delegate_ctlc = True
                                       }
-    $ \(Just stdinH) _ (Just stderrH) ph -> do
+    $ \(Just stdinH) _ _ ph -> do
         forM_ text $ T.hPutStrLn stdinH
         hClose stdinH
         exitCode <- waitForProcess ph
         case exitCode of
-          ExitFailure i ->
-            do errContents <- hGetContents stderrH
-               fail (unlines [mappend "Pager exited with exit code " (show i)
-                             ,errContents])
+          ExitFailure i -> fail ("Pager exited with exit code " <> show i)
           _ -> pure ()
 
 
