@@ -145,6 +145,8 @@ library
     GHCup.Utils.Tar
     GHCup.Utils.Tar.Types
     GHCup.Utils.URI
+    GHCup.Utils.Output
+    GHCup.Utils.Pager
     GHCup.Utils.Parsers
     GHCup.Version
 
@@ -185,6 +187,7 @@ library
     , casing                ^>=0.1.4.1
     , containers            ^>=0.6
     , conduit               ^>=1.3
+    , conduit-extra         ^>=1.3
     , cryptohash-sha256     ^>=0.11.101.0
     , deepseq               ^>=1.4.4.0
     , directory             ^>=1.3.6.0
@@ -209,6 +212,7 @@ library
     , strict-base           ^>=0.4
     , template-haskell       >=2.7      && <2.22
     , temporary             ^>=1.3
+    , terminal-size         ^>=0.3.3
     , text                  ^>=2.0
     , time                  >=1.9.3      && <1.12
     , unliftio-core         ^>=0.2.0.1
@@ -263,7 +267,6 @@ library
     install-includes: dirutils.h
     c-sources:        cbits/dirutils.c
     build-depends:
-      , terminal-size    ^>=0.3.3
       , unix             ^>=2.7 || ^>=2.8
       , unix-bytestring  ^>=0.3.7.3
 

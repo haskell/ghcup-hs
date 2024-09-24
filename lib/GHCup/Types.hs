@@ -393,11 +393,12 @@ data UserSettings = UserSettings
   , uPlatformOverride  :: Maybe PlatformRequest
   , uMirrors           :: Maybe DownloadMirrors
   , uDefGHCConfOptions :: Maybe [String]
+  , uPager             :: Maybe PagerConfig
   }
   deriving (Show, GHC.Generic, Eq)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
@@ -416,6 +417,7 @@ fromSettings Settings{..} Nothing =
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
     , uDefGHCConfOptions = Just defGHCConfOptions
+    , uPager = Just pager
   }
 fromSettings Settings{..} (Just KeyBindings{..}) =
   let ukb = UserKeyBindings
@@ -443,6 +445,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
     , uDefGHCConfOptions = Just defGHCConfOptions
+    , uPager = Just pager
   }
 
 data UserKeyBindings = UserKeyBindings
@@ -529,14 +532,29 @@ data Settings = Settings
   , platformOverride  :: Maybe PlatformRequest
   , mirrors           :: DownloadMirrors
   , defGHCConfOptions :: [String]
+  , pager             :: PagerConfig
   }
   deriving (Show, GHC.Generic)
+
+data PagerConfig = PagerConfig {
+    pagerList :: Bool
+  , pagerCmd  :: Maybe String
+  }
+  deriving (Show, GHC.Generic, Eq)
+
+instance NFData PagerConfig
+
+defaultPagerConfig :: PagerConfig
+defaultPagerConfig = PagerConfig False Nothing
+
+allPagerConfig :: String -> PagerConfig
+allPagerConfig cmd = PagerConfig True (Just cmd)
 
 defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty) []
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty) [] defaultPagerConfig
 
 instance NFData Settings
 

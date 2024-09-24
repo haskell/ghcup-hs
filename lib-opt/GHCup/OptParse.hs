@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 
@@ -63,6 +64,12 @@ import           Data.Maybe
 import           Options.Applicative     hiding ( style )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
+import System.Exit
+import System.Environment (getProgName)
+import System.IO
+import GHCup.Utils.Pager
+import qualified Data.Text as T
+import Data.Function ((&))
 
 
 
@@ -81,6 +88,7 @@ data Options = Options
   , optNoNetwork   :: Maybe Bool
   , optGpg         :: Maybe GPGSetting
   , optStackSetup  :: Maybe Bool
+  , optPager       :: Maybe Bool
   -- commands
   , optCommand     :: Command
   }
@@ -177,6 +185,7 @@ opts =
           <> completer (listCompleter ["strict", "lax", "none"])
           ))
     <*> invertableSwitch "stack-setup" Nothing False (help "Use stack's setup info for discovering and installing GHC versions")
+    <*> (invertableSwitch "paginate" Nothing False (help "Send output (e.g. from 'ghcup list') through pager (default: disabled)"))
     <*> com
 
 
@@ -358,3 +367,26 @@ com =
                      (progDesc ""))
            <> internal
           )
+
+-- | Handle `ParserResult`.
+handleParseResult' :: Maybe FilePath -> Bool -> ParserResult a -> IO a
+handleParseResult' _ _ (Success a) = return a
+handleParseResult' pagerCmd hasHelp (Failure failure) = do
+      progn <- getProgName
+      let (msg, exit) = renderFailure failure progn
+      case exit of
+        ExitSuccess
+          | hasHelp -> sendToPager' pagerCmd (T.lines $ T.pack msg)
+          | otherwise -> putStrLn msg
+        _           -> hPutStrLn stderr msg
+      exitWith exit
+handleParseResult' _ _ (CompletionInvoked compl) = do
+      progn <- getProgName
+      msg <- execCompletion compl progn
+      putStr msg
+      exitSuccess
+
+-- | Checks whether any non-longopts args are '--help'.
+argsHasHelp :: [String] -> Bool
+argsHasHelp args = takeWhile (/= "--") args & elem "--help"
+

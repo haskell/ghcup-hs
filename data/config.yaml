@@ -137,3 +137,15 @@ mirrors:
 def-ghc-conf-options:
   - "--enable-ld-override"
 
+# Use a pager for e.g. 'ghcup list' output. 'cmd' is optional (if omitted
+# will try to discover pager via GHCUP_PAGER/PAGER env vars or a predefined set of executables).
+#
+# You can also set only a boolean value:
+#   pager: true
+#
+# Or only a cmd (implies 'true' for all boolean values):
+#   pager: "less -R"
+pager:
+  list: true     # enabled for list action
+  cmd: "less -R" # the command
+
