@@ -155,8 +155,7 @@ compileHLSHandler = menuWithOverlayHandler compileHLSMenu Actions.compileHLS Com
 
 -- | Passes all events to innerHandler if an overlay is opened
 -- else handles the exitKey and Enter key for the Menu's "OkButton"
-menuWithOverlayHandler
-  :: Lens' BrickState (Menu.Menu t Name)
+menuWithOverlayHandler :: Lens' BrickState (Menu.Menu t Name)
   -> (t -> ((Int, ListResult) -> ReaderT AppState IO (Either String a)))
   -> (BrickEvent Name e -> EventM Name (Menu.Menu t Name) ())
   -> BrickEvent Name e
