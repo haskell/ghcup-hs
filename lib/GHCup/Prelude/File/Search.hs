@@ -31,7 +31,7 @@ import qualified Data.Text                     as T
 import qualified Text.Megaparsec               as MP
 import Control.Exception.Safe (handleIO)
 import System.Directory.Internal.Prelude (ioeGetErrorType)
-import Haskus.Utils.Variant.Excepts (Excepts)
+import Data.Variant.Excepts (Excepts)
 import GHCup.Errors (NotFoundInPATH(..))
 
 

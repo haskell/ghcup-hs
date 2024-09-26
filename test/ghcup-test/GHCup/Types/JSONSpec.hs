@@ -14,7 +14,8 @@ import           Test.Hspec
 
 spec :: Spec
 spec = do
-  roundtripAndGoldenSpecsWithSettings (defaultSettings { goldenDirectoryOption = CustomDirectoryName goldenDir }) (Proxy @GHCupInfo)
+  roundtripSpecs (Proxy @LinuxDistro)
+  roundtripAndGoldenSpecsWithSettings (defaultSettings { goldenDirectoryOption = CustomDirectoryName goldenDir, sampleSize = 2 }) (Proxy @GHCupInfo)
  where
   goldenDir
     | isWindows = "test/ghcup-test/golden/windows"

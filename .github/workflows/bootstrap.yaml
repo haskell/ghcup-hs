@@ -55,6 +55,5 @@ jobs:
           $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
           $curDir = Get-Location
           Write-Host "Current Working Directory: $curDir"
-          ./scripts/bootstrap/bootstrap-haskell.ps1 -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ("{0}/scripts/bootstrap/bootstrap-haskell" -f $curDir) -InBash -Msys2Env "MINGW64"
+          Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; try { & ([ScriptBlock]::Create((Invoke-WebRequest https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/scripts/bootstrap/bootstrap-haskell.ps1 -UseBasicParsing))) -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ("{0}/scripts/bootstrap/bootstrap-haskell" -f $curDir) -InBash -Msys2Env "MINGW64" } catch { Write-Error $_ }
         shell: pwsh
-

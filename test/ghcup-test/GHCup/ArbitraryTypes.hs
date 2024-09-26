@@ -136,8 +136,9 @@ instance Arbitrary DownloadInfo where
   shrink    = genericShrink
 
 instance Arbitrary LinuxDistro where
-  arbitrary = genericArbitrary
-  shrink    = genericShrink
+  arbitrary = do
+    let other = OtherLinux <$> listOf (elements ['a' .. 'z'])
+    oneof (other:(pure <$> allDistros))
 
 instance Arbitrary Platform where
   arbitrary = genericArbitrary

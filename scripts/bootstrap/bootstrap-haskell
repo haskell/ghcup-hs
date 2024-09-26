@@ -15,7 +15,9 @@
 #   * BOOTSTRAP_HASKELL_CABAL_XDG - don't disable the XDG logic (this doesn't force XDG though, because cabal is confusing)
 #   * BOOTSTRAP_HASKELL_INSTALL_NO_STACK - disable installation of stack
 #   * BOOTSTRAP_HASKELL_INSTALL_NO_STACK_HOOK - disable installation stack ghcup hook
-#   * BOOTSTRAP_HASKELL_INSTALL_HLS - whether to install latest hls
+#   * BOOTSTRAP_HASKELL_STACK_VERSION - the stack version to install
+#   * BOOTSTRAP_HASKELL_INSTALL_HLS - whether to install hls
+#   * BOOTSTRAP_HASKELL_HLS_VERSION - the hls version to install
 #   * BOOTSTRAP_HASKELL_ADJUST_BASHRC - whether to adjust PATH in bashrc (prepend)
 #   * BOOTSTRAP_HASKELL_ADJUST_CABAL_CONFIG - whether to adjust mingw paths in cabal.config on windows
 #   * BOOTSTRAP_HASKELL_DOWNLOADER - which downloader to use (default: curl)
@@ -100,8 +102,8 @@ esac
 
 : "${BOOTSTRAP_HASKELL_GHC_VERSION:=recommended}"
 : "${BOOTSTRAP_HASKELL_CABAL_VERSION:=recommended}"
-
-
+: "${BOOTSTRAP_HASKELL_STACK_VERSION:=recommended}"
+: "${BOOTSTRAP_HASKELL_HLS_VERSION:=recommended}"
 
 warn() {
     if [ -n "${NO_COLOR}" ] ; then
@@ -313,7 +315,8 @@ download_ghcup() {
 					if [ "$(getconf LONG_BIT)" = "32" ] ; then
 						_url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
 					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
-						_url=${GHCUP_BASE_URL}/${ghver}/aarch64-linux-ghcup-${ghver}
+						# TODO: rm 'static-'
+						_url=${GHCUP_BASE_URL}/${ghver}/aarch64-linux-static-ghcup-${ghver}
 					else
 						die "Unknown long bit size: $(getconf LONG_BIT)"
 					fi
@@ -747,7 +750,7 @@ ask_stack() {
 		warn "Do you want to enable better integration of stack with GHCup?"
         warn "This means that stack won't install its own GHC versions, but uses GHCup's."
         warn "For more information see:"
-        warn "  https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation-experimental"
+        warn "  https://docs.haskellstack.org/en/stable/configure/customisation_scripts/#ghc-installation-customisation"
         warn "If you want to keep stacks vanilla behavior, answer 'No'."
 		warn ""
 		warn "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
@@ -897,17 +900,20 @@ fi
 
 case $ask_hls_answer in
 	1)
-        (_eghcup --cache install hls) || warn "HLS installation failed, continuing anyway"
+            (_eghcup --cache install hls "${BOOTSTRAP_HASKELL_HLS_VERSION}") ||
+		warn "HLS installation failed, continuing anyway"
 		;;
 	*) ;;
 esac
 
 case $ask_stack_answer in
 	1)
-        (_eghcup --cache install stack) || die "Stack installation failed"
+            (_eghcup --cache install stack "${BOOTSTRAP_HASKELL_STACK_VERSION}") ||
+		die "Stack installation failed"
 		;;
 	2)
-        (_eghcup --cache install stack) || die "Stack installation failed"
+            (_eghcup --cache install stack "${BOOTSTRAP_HASKELL_STACK_VERSION}") ||
+		die "Stack installation failed"
         stack_root="$(find_stack_root)"
         edo mkdir -p "${stack_root}"/hooks
         hook_exe="${stack_root}"/hooks/ghc-install.sh

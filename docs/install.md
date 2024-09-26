@@ -19,7 +19,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 For Windows, run this in a PowerShell session:
 
 ```psh
-Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; try { Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true } catch { Write-Error $_ }
+Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; try { & ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -Interactive -DisableCurl } catch { Write-Error $_ }
 ```
 
 There's also a [youtube video](https://www.youtube.com/watch?v=bB4fmQiUYPw) explaining installation on windows.
@@ -421,7 +421,7 @@ The developers of the Haskell Language Server offer an [extension](https://githu
 1. Install GHCup. During installation, opt in to install the Haskell Language Server (HLS).
 2. Install the extension (from VSCode: Ctrl + P and then `ext install haskell.haskell`).
 3. Make sure your project uses the GHC version installed from GHCup (otherwise HLS is likely to fail on launch):
-    - instructions for [stack](https://docs.haskellstack.org/en/stable/yaml_configuration/#system-ghc)
+    - instructions for [stack](https://docs.haskellstack.org/en/stable/configure/yaml/non-project/#system-ghc)
 
 On Linux, some users have reported an issue when VSCode is not launched from a terminal ("cannot find ghc version"). A solution is to [let HLS know about your GHCup on $PATH](https://github.com/haskell/vscode-haskell#stackcabalghc-can-not-be-found).
 
@@ -431,4 +431,3 @@ On Linux, some users have reported an issue when VSCode is not launched from a t
 * [GHCup issue tracker](https://github.com/haskell/ghcup-hs/issues/new)
 * [Matrix](https://matrix.to/#/#ghcup:matrix.org)
 * [Discord](https://discord.gg/WDqsWsnZfR)
-

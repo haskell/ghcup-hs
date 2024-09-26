@@ -28,7 +28,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Maybe
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style, ParseError )
 import           Options.Applicative.Help.Pretty ( text )
 import           Prelude                 hiding ( appendFile )
@@ -135,7 +135,8 @@ updateSettings usl usr =
        platformOverride' = uPlatformOverride usl <|> uPlatformOverride usr
        mirrors' = uMirrors usl <|> uMirrors usr
        defGHCconfOptions' = uDefGHCConfOptions usl <|> uDefGHCConfOptions usr
-   in UserSettings cache' metaCache' metaMode' noVerify' verbose' keepDirs' downloader' (updateKeyBindings (uKeyBindings usl) (uKeyBindings usr)) urlSource' noNetwork' gpgSetting' platformOverride' mirrors' defGHCconfOptions'
+       pagerConfig' = uPager usl <|> uPager usr
+   in UserSettings cache' metaCache' metaMode' noVerify' verbose' keepDirs' downloader' (updateKeyBindings (uKeyBindings usl) (uKeyBindings usr)) urlSource' noNetwork' gpgSetting' platformOverride' mirrors' defGHCconfOptions' pagerConfig'
  where
   updateKeyBindings :: Maybe UserKeyBindings -> Maybe UserKeyBindings -> Maybe UserKeyBindings
   updateKeyBindings Nothing Nothing = Nothing

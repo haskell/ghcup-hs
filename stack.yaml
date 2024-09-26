@@ -32,6 +32,7 @@ extra-deps:
   - unicode-data-0.3.1@sha256:ae3a3aca89a32b912ddde7a644c0c04eaf23ee42014c74fe3d6b9aaf36ce7ec9,5481
   - unix-2.8.5.0@sha256:633f15ef0bd50a16a7b5c5e86e6659fee6e4e211e098cc8bd0029f452bfcfddc,9808
   - unix-bytestring-0.3.7.8@sha256:b8070935929a7654ce398fdecc9b5f90b02c455407db8ea7989256e821e33b1f,3053
+  - variant-1.0
   - versions-6.0.5
   - vty-6.2@sha256:3536dc83a3fee17d9a114baf58fe47b6f080c24987266f0cd0b7b4b1fcd9cf19,3520
   - vty-crossplatform-0.4.0.0@sha256:50593f91ad16777d921138475a8d2784d538fd206addd30664c620278d6c8544,3172
@@ -47,10 +48,8 @@ allow-newer: true
 allow-newer-deps:
   - Cabal
   - Cabal-syntax
-  - ansi-terminal
-  - mintty
   - process
-  - cabal-install-parsers
+  - terminal-size
 
 flags:
   http-io-streams:
@@ -67,6 +66,15 @@ flags:
 
   cabal-plan:
     exe: false
+
+  ghcup:
+    tar: true
+
+  mintty:
+    win32-2-13-1: true
+
+  ansi-terminal:
+    win32-2-13-1: true
 
 ghc-options:
   "$locals": -O2

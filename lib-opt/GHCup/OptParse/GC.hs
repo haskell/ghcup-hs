@@ -23,7 +23,7 @@ import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Functor
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit

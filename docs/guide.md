@@ -54,6 +54,25 @@ Other tags include:
 For man pages to work you need [man-db](http://man-db.nongnu.org/) as your `man` provider, then issue `man ghc`. Manpages only work for the currently set ghc.
 `MANPATH` may be required to be unset.
 
+## Pager
+
+You can have `ghcup list` use a pager, similar to git. E.g. run:
+
+```sh
+ghcup --paginate list
+```
+
+To set a specific pager you can use either `GHCUP_PAGER` or `PAGER` environment variable.
+
+To make the changes permanent, you can add the following to your config:
+
+```yaml
+pager: most
+```
+
+Refer to the [config.yaml](https://github.com/haskell/ghcup-hs/blob/master/data/config.yaml) template for more fine-grained
+control.
+
 ## Shell-completion
 
 Shell completions are in [scripts/shell-completions](https://github.com/haskell/ghcup-hs/tree/master/scripts/shell-completions) directory of this repository.
@@ -245,7 +264,8 @@ GHC versions there are two strategies.
 
 ### Strategy 1: Stack hooks (new, recommended)
 
-Since stack 2.9.1 you can customize the installation logic of GHC completely, see [https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation](https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation).
+Since stack 2.9.1 you can customize the installation logic of GHC completely, see
+[https://docs.haskellstack.org/en/stable/configure/customisation_scripts/#ghc-installation-customisation](https://docs.haskellstack.org/en/stable/configure/customisation_scripts/#ghc-installation-customisation).
 
 We can use this to simply invoke ghcup whenever stack is trying to install/discover a GHC versions. This
 is done via placing a shell script at `~/.stack/hooks/ghc-install.sh` and making it executable.
@@ -297,7 +317,9 @@ url-source:
   - StackSetupURL
 ```
 
-You can customize or add sections to the setup-info similar to how the [stack documentation](https://docs.haskellstack.org/en/stable/yaml_configuration/#setup-info) explains it. E.g. to change the 9.4.7 bindist, you might do:
+You can customize or add sections to the setup-info similar to how the
+[stack documentation](https://docs.haskellstack.org/en/stable/configure/yaml/non-project/#setup-info)
+explains it. E.g. to change the 9.4.7 bindist, you might do:
 
 ```yaml
 url-source:
@@ -341,7 +363,8 @@ extra-include-dirs:
 - C:\ghcup\msys64\mingw64\include
 ```
 
-Also check out: [https://docs.haskellstack.org/en/stable/yaml_configuration](https://docs.haskellstack.org/en/stable/yaml_configuration)
+Also check out:
+[https://docs.haskellstack.org/en/stable/configure/yaml/non-project](https://docs.haskellstack.org/en/stable/configure/yaml/non-project)
 
 ## Mirrors (proper)
 
@@ -660,7 +683,7 @@ non-interactively, as below. The parameters to the PowerShell script are
 specified positionally, after `-ArgumentList`:
 
 ```ps
-$ErrorActionPreference = 'Stop';Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;try { Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $false,$true,$true,$false,$false,$false,$false,"C:\" } catch { Write-Error $_ }
+$ErrorActionPreference = 'Stop';Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;try { & ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -Minimal -InBash -InstallDir "C:\" } catch { Write-Error $_ }
 ```
 
 `$ErrorActionPreference = 'Stop'` here acts like `set -e` and stops execution if ghcup installation fails.
@@ -810,7 +833,7 @@ manually added and trusted.
 
 On Windows, you can disable the use of `curl` like so:
 ~~~pwsh
-Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;try { Invoke-Command -ScriptBlock ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -ArgumentList $true,$false,$false,$false,$false,$false,$false,"","","","",$true } catch { Write-Error $_ }
+Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;try { & ([ScriptBlock]::Create((Invoke-WebRequest https://www.haskell.org/ghcup/sh/bootstrap-haskell.ps1 -UseBasicParsing))) -Interactive -DisableCurl } catch { Write-Error $_ }
 ~~~
 
 In some circumstances, an organisation may install their own CA certificates

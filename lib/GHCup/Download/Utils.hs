@@ -16,7 +16,7 @@ import           Control.Applicative
 import           Control.Monad
 import           Data.ByteString                ( ByteString )
 import           Data.Maybe
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Optics
 import           Prelude                 hiding ( abs
                                                 , readFile

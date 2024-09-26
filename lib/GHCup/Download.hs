@@ -63,7 +63,7 @@ import           Data.Time.Clock
 import           Data.Time.Clock.POSIX
 import           Data.Versions
 import           Data.Word8              hiding ( isSpace )
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 #if defined(INTERNAL_DOWNLOADER)
 import           Network.Http.Client     hiding ( URL )
 #endif
@@ -158,8 +158,8 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   dl' (NewSetupInfo si) = pure (Right si)
   dl' (NewURI uri)      = do
                             base <- liftE $ getBase uri
-                            catchE @JSONError (\(JSONDecodeError _) -> do
-                                logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: "
+                            catchE @JSONError (\(JSONDecodeError s) -> do
+                                logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: " <> T.pack s
                                 Right <$> decodeMetadata @Stack.SetupInfo base)
                               $ fmap Left (decodeMetadata @GHCupInfo base >>= \gI -> warnOnMetadataUpdate uri gI >> pure gI)
 

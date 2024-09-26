@@ -65,7 +65,7 @@ import qualified Data.Conduit.Combinators as C
 import           Control.Exception.Safe
 import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           System.FilePath
 import           Text.PrettyPrint.HughesPJClass (prettyShow)
 

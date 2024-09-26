@@ -2,7 +2,7 @@
 
 # !! KEEP THIS SCRIPT POSIX COMPLIANT !!
 
-# see https://docs.haskellstack.org/en/stable/yaml_configuration/#ghc-installation-customisation-experimental
+# see https://docs.haskellstack.org/en/stable/configure/customisation_scripts/#ghc-installation-customisation
 # for documentation about hooks
 
 set -eu

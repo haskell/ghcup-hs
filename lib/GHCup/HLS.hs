@@ -53,7 +53,7 @@ import           Distribution.Types.PackageDescription
 import           Distribution.Types.GenericPackageDescription
 import           Distribution.PackageDescription.Parsec
 import           GHC.IO.Exception
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Optics
 import           Prelude                 hiding ( abs
                                                 , writeFile

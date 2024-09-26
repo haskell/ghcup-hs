@@ -47,7 +47,7 @@ import           Data.Maybe
 import           Data.Versions
 import qualified Data.Vector      as V
 import           GHC.IO.Exception
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           Safe (lastMay)

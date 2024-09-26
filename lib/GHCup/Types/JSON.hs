@@ -48,10 +48,30 @@ import qualified Data.Text.Encoding.Error      as E
 import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
 
+instance ToJSON LinuxDistro where
+  toJSON (OtherLinux x) = String (T.pack x)
+  toJSON x = String . T.pack . show $ x
+
+instance FromJSON LinuxDistro where
+  parseJSON = withText "LinuxDistro" $ \t -> case T.unpack (T.toLower t) of
+    "debian"   -> pure Debian
+    "ubuntu"   -> pure Ubuntu
+    "mint"     -> pure Mint
+    "fedora"   -> pure Fedora
+    "centos"   -> pure CentOS
+    "redhat"   -> pure RedHat
+    "alpine"   -> pure Alpine
+    "amazonlinux" -> pure AmazonLinux
+    "rocky"    -> pure Rocky
+    "void"     -> pure Void
+    "gentoo"   -> pure Gentoo
+    "exherbo"  -> pure Exherbo
+    "opensuse" -> pure OpenSUSE
+    "unknownlinux" -> pure UnknownLinux
+    _          -> pure (OtherLinux $ T.unpack t)
 
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''MetaMode
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Architecture
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''LinuxDistro
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VSep
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''MChunk
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Platform
@@ -121,6 +141,7 @@ instance ToJSONKey Platform where
   toJSONKey = toJSONKeyText $ \case
     Darwin  -> T.pack "Darwin"
     FreeBSD -> T.pack "FreeBSD"
+    Linux (OtherLinux s) -> T.pack ("Linux_" <> s)
     Linux d -> T.pack ("Linux_" <> show d)
     Windows -> T.pack "Windows"
 
@@ -434,6 +455,18 @@ instance FromJSON KeyCombination where
 instance ToJSON KeyCombination where
   toJSON (KeyCombination k m) = object ["Key" .= k, "Mods" .= m]
 
+instance FromJSON PagerConfig where
+  parseJSON v = p1 v <|> p2 v <|> p3 v
+   where
+    p2 = withBool "PagerConfig" $ \b -> pure $ PagerConfig b Nothing
+    p3 = withText "PagerConfig" $ \t -> pure $ allPagerConfig (T.unpack t)
+    p1 = withObject "PagerConfig" $ \o -> do
+       list <- o .:  "list"
+       cmd  <- o .:? "cmd"
+       pure $ PagerConfig list cmd
+
+
+deriveToJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "pager-") . T.pack . kebab $ str' } ''PagerConfig
 deriveToJSON defaultOptions { fieldLabelModifier = drop 2 . kebab } ''KeyBindings -- move under key-bindings key
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "u-") . T.pack . kebab $ str' } ''UserSettings

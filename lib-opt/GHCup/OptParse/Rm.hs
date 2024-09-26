@@ -30,7 +30,7 @@ import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Maybe
 import           Data.Versions
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit

@@ -20,7 +20,7 @@ import           GHCup.Prelude
 import           GHCup.Prelude.File
 #ifdef IS_WINDOWS
 import           GHCup.Prelude.Process
-import           GHCup.Prelude.Process.Windows ( execNoMinGW )
+import           GHCup.Prelude.Process.Windows ( execNoMinGW, resolveExecutable )
 #endif
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
@@ -32,9 +32,9 @@ import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Functor
-import           Data.Maybe (isNothing)
+import           Data.Maybe (isNothing, fromMaybe)
 import           Data.List                      ( intercalate )
-import           Haskus.Utils.Variant.Excepts
+import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.FilePath
@@ -268,9 +268,10 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                void $ liftIO $ SPP.executeFile cmd True args (Just newEnv)
                pure ExitSuccess
 #else
+               resolvedCmd <- fmap (fromMaybe cmd) $ liftIO $ resolveExecutable cmd runMinGWPath
                r' <- if runMinGWPath
-                     then runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ exec cmd args Nothing (Just newEnv)
-                     else runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ execNoMinGW cmd args Nothing (Just newEnv)
+                     then runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ exec resolvedCmd args Nothing (Just newEnv)
+                     else runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ execNoMinGW resolvedCmd args Nothing (Just newEnv)
                case r' of
                  VRight _ -> pure ExitSuccess
                  VLeft e -> do
