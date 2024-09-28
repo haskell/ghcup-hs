@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE ViewPatterns      #-}
@@ -22,6 +23,7 @@ import           GHCup.Prelude
 import           GHCup.Prelude.Process
 import           GHCup.Prelude.Logger
 
+import           Control.Monad (forM, join)
 import           Control.DeepSeq
 import           Control.Concurrent
 import           Control.Concurrent.Async

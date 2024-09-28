@@ -37,6 +37,7 @@ import qualified Brick.Widgets.List as L
 import qualified Brick.Focus as F
 import           Control.Applicative
 import           Control.Exception.Safe
+import           Control.Monad (when, forM, forM_)
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif

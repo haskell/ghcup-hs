@@ -29,6 +29,7 @@ import           Control.Concurrent (threadDelay)
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
+import           Control.Monad (when, forM_)
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Either

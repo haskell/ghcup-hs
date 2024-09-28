@@ -50,7 +50,6 @@ import Brick (
 import qualified Brick
 import Control.Monad.Reader (
   MonadIO (liftIO), ReaderT,
-  void,
  )
 import Data.IORef (readIORef)
 import Data.List (find, intercalate)
@@ -68,7 +67,7 @@ import Optics.State (use)
 import Optics.State.Operators ((.=))
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
-import Control.Monad (when)
+import Control.Monad (void, when)
 
 app :: AttrMap -> AttrMap -> App BrickState () Name
 app attrs dimAttrs =

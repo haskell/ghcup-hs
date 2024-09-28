@@ -26,6 +26,7 @@ import           GHCup.OptParse.Common
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
+import           Control.Monad (when, forM_, forM)
 import           Control.Concurrent (threadDelay)
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
