@@ -7,21 +7,29 @@
 
 
 # Warnings currently triggered by your code
-- ignore: {name: "Redundant bang pattern"}
-- ignore: {name: "Use camelCase"}
-- ignore: {name: "Use if"}
-- ignore: {name: "Use newtype instead of data"}
-- ignore: {name: "Use <$>"}
-- ignore: {name: "Use mapMaybe"}
-- ignore: {name: "Use const"}
-- ignore: {name: "Use list comprehension"}
-- ignore: {name: "Redundant multi-way if"}
-- ignore: {name: "Redundant lambda"}
-- ignore: {name: "Avoid lambda"}
-- ignore: {name: "Use uncurry"}
-- ignore: {name: "Use replicateM"}
-- ignore: {name: "Use unless"}
-- ignore: {name: "Redundant irrefutable pattern"}
+- ignore: {name: "Avoid lambda"} # 13 hints
+- ignore: {name: "Avoid reverse"} # 3 hints
+- ignore: {name: "Empty single-line comment"} # 1 hint
+- ignore: {name: "Move brackets to avoid $"} # 17 hints
+- ignore: {name: "Redundant $"} # 1 hint
+- ignore: {name: "Redundant <$>"} # 1 hint
+- ignore: {name: "Redundant bracket"} # 11 hints
+- ignore: {name: "Redundant irrefutable pattern"} # 18 hints
+- ignore: {name: "Redundant lambda"} # 4 hints
+- ignore: {name: "Redundant multi-way if"} # 11 hints
+- ignore: {name: "Redundant pure"} # 1 hint
+- ignore: {name: "Unused LANGUAGE pragma"} # 11 hints
+- ignore: {name: "Use <$>"} # 40 hints
+- ignore: {name: "Use <=<"} # 1 hint
+- ignore: {name: "Use camelCase"} # 8 hints
+- ignore: {name: "Use const"} # 3 hints
+- ignore: {name: "Use fromRight"} # 1 hint
+- ignore: {name: "Use if"} # 8 hints
+- ignore: {name: "Use list comprehension"} # 5 hints
+- ignore: {name: "Use mapMaybe"} # 4 hints
+- ignore: {name: "Use newtype instead of data"} # 27 hints
+- ignore: {name: "Use uncurry"} # 1 hint
+- ignore: {name: "Use unless"} # 6 hints
 
 
 # Specify additional command line arguments
