@@ -22,7 +22,7 @@ jobs:
     - name: compile
       run: cl /O1 scoop-better-shimexe/shim.c
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: shim.exe
         path: shim.exe
