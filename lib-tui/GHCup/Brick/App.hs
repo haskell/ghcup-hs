@@ -35,7 +35,8 @@ import qualified GHCup.Brick.Widgets.Tutorial as Tutorial
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 
-import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination))
+import GHCup.List (ListResult)
+import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination), KeyBindings (..))
 
 import qualified Brick.Focus as F
 import Brick (
@@ -48,7 +49,7 @@ import Brick (
  )
 import qualified Brick
 import Control.Monad.Reader (
-  MonadIO (liftIO),
+  MonadIO (liftIO), ReaderT,
   void,
  )
 import Data.IORef (readIORef)
@@ -59,6 +60,7 @@ import qualified Graphics.Vty as Vty
 
 import qualified Data.Text as T
 
+import Optics (Lens')
 import Optics.Getter (to)
 import Optics.Operators ((^.))
 import Optics.Optic ((%))
@@ -91,26 +93,31 @@ drawUI dimAttrs st =
     navg = Navigation.draw dimAttrs (st ^. appState) <=> footer
   in case st ^. mode of
        Navigation   -> [navg]
-       Tutorial     -> [Tutorial.draw, navg]
+       Tutorial     -> [Tutorial.draw (bQuit $ st ^. appKeys), navg]
        KeyInfo      -> [KeyInfo.draw (st ^. appKeys), navg]
        ContextPanel -> [ContextMenu.draw (st ^. contextMenu), navg]
-       AdvanceInstallPanel -> [AdvanceInstall.draw (st ^. advanceInstallMenu), navg]
-       CompileGHCPanel     -> [CompileGHC.draw (st ^. compileGHCMenu), navg]
-       CompileHLSPanel     -> [CompileHLS.draw (st ^. compileHLSMenu), navg]
+       AdvanceInstallPanel -> AdvanceInstall.draw (st ^. advanceInstallMenu) ++ [navg]
+       CompileGHCPanel     -> CompileGHC.draw (st ^. compileGHCMenu) ++ [navg]
+       CompileHLSPanel     -> CompileHLS.draw (st ^. compileHLSMenu) ++ [navg]
 
 -- | On q, go back to navigation.
 --   On Enter, to go to tutorial
 keyInfoHandler :: BrickEvent Name e -> EventM Name BrickState ()
-keyInfoHandler ev = case ev of
-  VtyEvent (Vty.EvKey (Vty.KChar 'c') [Vty.MCtrl]) -> mode .= Navigation
-  VtyEvent (Vty.EvKey Vty.KEnter _ )   -> mode .= Tutorial
-  _ -> pure ()
+keyInfoHandler ev = do
+  AppState { keyBindings = kb } <- liftIO $ readIORef Actions.settings'
+  case ev of
+    VtyEvent (Vty.EvKey Vty.KEnter _ )   -> mode .= Tutorial
+    VtyEvent (Vty.EvKey key mods)
+      | bQuit kb == KeyCombination key mods -> mode .= Navigation
+    _ -> pure ()
 
 -- | On q, go back to navigation. Else, do nothing
 tutorialHandler :: BrickEvent Name e -> EventM Name BrickState ()
-tutorialHandler ev =
+tutorialHandler ev = do
+  AppState { keyBindings = kb } <- liftIO $ readIORef Actions.settings'
   case ev of
-    VtyEvent (Vty.EvKey (Vty.KChar 'c') [Vty.MCtrl]) -> mode .= Navigation
+    VtyEvent (Vty.EvKey key mods)
+      | bQuit kb == KeyCombination key mods -> mode .= Navigation
     _ -> pure ()
 
 -- | Tab/Arrows to navigate.
@@ -128,7 +135,7 @@ contextMenuHandler :: BrickEvent Name e -> EventM Name BrickState ()
 contextMenuHandler ev = do
   ctx <- use contextMenu
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
+      (KeyCombination exitKey mods) = ctx ^. Menu.menuKeyBindingsL % Menu.mKbQuitL
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
     (VtyEvent (Vty.EvKey k m), Just n) |  k == exitKey && m == mods -> mode .= Navigation
@@ -138,47 +145,35 @@ contextMenuHandler ev = do
     _ -> Common.zoom contextMenu $ ContextMenu.handler ev
 --
 advanceInstallHandler :: BrickEvent Name e -> EventM Name BrickState ()
-advanceInstallHandler ev = do
-  ctx <- use advanceInstallMenu
-  let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
-  case (ev, focusedElement) of
-    (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n) | k == exitKey && m == mods -> mode .= ContextPanel
-    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
-        let iopts = ctx ^. Menu.menuStateL
-        when (Menu.isValidMenu ctx) $
-          Actions.withIOAction $ Actions.installWithOptions iopts
-    _ -> Common.zoom advanceInstallMenu $ AdvanceInstall.handler ev
+advanceInstallHandler = menuWithOverlayHandler advanceInstallMenu Actions.installWithOptions AdvanceInstall.handler
 
 compileGHCHandler :: BrickEvent Name e -> EventM Name BrickState ()
-compileGHCHandler ev = do
-  ctx <- use compileGHCMenu
-  let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
-  case (ev, focusedElement) of
-    (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n) | k == exitKey && m == mods -> mode .= ContextPanel
-    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
-        let iopts = ctx ^. Menu.menuStateL
-        when (Menu.isValidMenu ctx)
-          (Actions.withIOAction $ Actions.compileGHC iopts)
-    _ -> Common.zoom compileGHCMenu $ CompileGHC.handler ev
-
+compileGHCHandler = menuWithOverlayHandler compileGHCMenu Actions.compileGHC CompileGHC.handler
 
 compileHLSHandler :: BrickEvent Name e -> EventM Name BrickState ()
-compileHLSHandler ev = do
-  ctx <- use compileHLSMenu
+compileHLSHandler = menuWithOverlayHandler compileHLSMenu Actions.compileHLS CompileHLS.handler
+
+-- | Passes all events to innerHandler if an overlay is opened
+-- else handles the exitKey and Enter key for the Menu's "OkButton"
+menuWithOverlayHandler :: Lens' BrickState (Menu.Menu t Name)
+  -> (t -> ((Int, ListResult) -> ReaderT AppState IO (Either String a)))
+  -> (BrickEvent Name e -> EventM Name (Menu.Menu t Name) ())
+  -> BrickEvent Name e
+  -> EventM Name BrickState ()
+menuWithOverlayHandler accessor action innerHandler ev = do
+  ctx <- use accessor
   let focusedElement = ctx ^. Menu.menuFocusRingL % to F.focusGetCurrent
-      (KeyCombination exitKey mods) = ctx ^. Menu.menuExitKeyL
-  case (ev, focusedElement) of
-    (_ , Nothing) -> pure ()
-    (VtyEvent (Vty.EvKey k m), Just n) | k == exitKey && m == mods -> mode .= ContextPanel
-    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton)) -> do
+      focusedField = (\n -> find (\x -> Brick.getName x == n) $ ctx ^. Menu.menuFieldsL) =<< focusedElement
+      (KeyCombination exitKey mods) = ctx ^. Menu.menuKeyBindingsL % Menu.mKbQuitL
+  case (ev, focusedElement, Menu.drawFieldOverlay =<< focusedField) of
+    (_ , Nothing, _) -> pure ()
+    (_ , _, Just _) -> Common.zoom accessor $ innerHandler ev
+    (VtyEvent (Vty.EvKey k m), Just n, _) | k == exitKey && m == mods -> mode .= ContextPanel
+    (VtyEvent (Vty.EvKey Vty.KEnter []), Just (MenuElement Common.OkButton), _) -> do
         let iopts = ctx ^. Menu.menuStateL
         when (Menu.isValidMenu ctx)
-          (Actions.withIOAction $ Actions.compileHLS iopts)
-    _ -> Common.zoom compileHLSMenu $ CompileHLS.handler ev
+          (Actions.withIOAction $ action iopts)
+    _ -> Common.zoom accessor $ innerHandler ev
 
 eventHandler :: BrickEvent Name e -> EventM Name BrickState ()
 eventHandler ev = do

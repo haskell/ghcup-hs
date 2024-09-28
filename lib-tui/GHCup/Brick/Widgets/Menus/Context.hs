@@ -10,12 +10,12 @@ import Prelude hiding (appendFile)
 
 import Data.Versions (prettyVer)
 import GHCup.List ( ListResult(..) )
-import GHCup.Types (KeyCombination, Tool (..))
+import GHCup.Types (Tool (..))
 
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import GHCup.Brick.Common (Name (..))
-import GHCup.Brick.Widgets.Menu (Menu)
+import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
 import qualified Brick.Widgets.Core as Brick
 import qualified Brick.Widgets.Border as Border
 import qualified Brick.Focus as F
@@ -28,8 +28,8 @@ import Data.Foldable (foldl')
 
 type ContextMenu = Menu ListResult Name
 
-create :: ListResult -> KeyCombination -> ContextMenu
-create lr exit_key = Menu.createMenu Common.ContextBox lr validator exit_key buttons []
+create :: ListResult -> MenuKeyBindings -> ContextMenu
+create lr keyBindings = Menu.createMenu Common.ContextBox lr "" validator keyBindings buttons []
  where
   advInstallButton =
     Menu.createButtonField (MenuElement Common.AdvanceInstallButton)
@@ -59,7 +59,7 @@ draw menu =
         , Brick.txt " "
         , Brick.padRight Brick.Max $
             Brick.txt "Press "
-            <+> Common.keyToWidget (menu ^. Menu.menuExitKeyL)
+            <+> Common.keyToWidget (menu ^. Menu.menuKeyBindingsL % Menu.mKbQuitL)
             <+> Brick.txt " to go back"
         ]
   where

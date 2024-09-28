@@ -15,9 +15,10 @@ This module contains the entrypoint for the brick application and nothing else.
 
 module GHCup.BrickMain where
 
+import GHCup.List ( ListResult (..))
 import GHCup.Types
-    ( Settings(noColor),
-      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyCombination (KeyCombination) )
+    ( Settings(noColor), Tool (GHC),
+      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings(..) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Common as Common
@@ -28,6 +29,7 @@ import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import qualified GHCup.Brick.Widgets.SectionList as Navigation
 import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
+import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
 import qualified Brick
 import qualified Graphics.Vty as Vty
 
@@ -52,7 +54,9 @@ brickMain s = do
     Right ad -> do
       let initial_list = Actions.constructList ad Common.defaultAppSettings Nothing
           current_element = Navigation.sectionListSelectedElement initial_list
-          exit_key = KeyCombination (Vty.KChar 'c') [Vty.MCtrl] -- bQuit . keyBindings $ s
+          exit_key =
+            let KeyBindings {..} = keyBindings s
+            in MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit}
       case current_element of
         Nothing -> do
           flip runReaderT s $ logError "Error building app state: empty ResultList"
@@ -62,14 +66,16 @@ brickMain s = do
                 BrickApp.app
                   (Attributes.defaultAttributes $ noColor $ settings s)
                   (Attributes.dimAttributes $ noColor $ settings s)
+              installedGHCs = fmap lVer $
+                filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) (Common._lr ad)
               initstate =
                 AppState.BrickState ad
                       Common.defaultAppSettings
                       initial_list
                       (ContextMenu.create e exit_key)
                       (AdvanceInstall.create exit_key)
-                      (CompileGHC.create exit_key)
-                      (CompileHLS.create exit_key)
+                      (CompileGHC.create exit_key installedGHCs)
+                      (CompileHLS.create exit_key installedGHCs)
                       (keyBindings s)
                       Common.Navigation
           in Brick.defaultMain initapp initstate

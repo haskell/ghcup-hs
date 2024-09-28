@@ -69,4 +69,4 @@ draw KeyBindings {..} =
             ]
           ]
         ]
-      <=> Brick.hBox [Brick.txt "Press c+ctrl to return to Navigation" <+> Brick.padRight Brick.Max (Brick.txt " ") <+> Brick.txt "Press Enter to go to the Tutorial"]
+      <=> Brick.hBox [Brick.txt "Press " <+> Common.keyToWidget bQuit <+> Brick.txt " to return to Navigation" <+> Brick.padRight Brick.Max (Brick.txt " ") <+> Brick.txt "Press Enter to go to the Tutorial"]

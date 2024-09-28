@@ -27,7 +27,7 @@ module GHCup.Brick.Widgets.Menus.AdvanceInstall (
   addConfArgsL,
 ) where
 
-import GHCup.Brick.Widgets.Menu (Menu)
+import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import           GHCup.Brick.Common(Name(..))
 import Brick
@@ -37,7 +37,6 @@ import Brick
 import           Prelude                 hiding ( appendFile )
 import           Optics.TH (makeLensesFor)
 import qualified GHCup.Brick.Common as Common
-import GHCup.Types (KeyCombination)
 import URI.ByteString (URI)
 import qualified Data.Text as T
 import Data.Bifunctor (Bifunctor(..))
@@ -65,8 +64,8 @@ makeLensesFor [
 
 type AdvanceInstallMenu = Menu InstallOptions Name
 
-create :: KeyCombination -> AdvanceInstallMenu
-create k = Menu.createMenu AdvanceInstallBox initialState validator k [ok] fields
+create :: MenuKeyBindings -> AdvanceInstallMenu
+create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" validator k [ok] fields
   where
     initialState = InstallOptions Nothing False Nothing False []
     validator InstallOptions {..} = case (instSet, isolateDir) of
@@ -114,5 +113,5 @@ handler :: BrickEvent Name e -> EventM Name AdvanceInstallMenu ()
 handler = Menu.handlerMenu
 
 
-draw :: AdvanceInstallMenu -> Widget Name
-draw = Common.frontwardLayer "Advance Install" . Menu.drawMenu
+draw :: AdvanceInstallMenu -> [Widget Name]
+draw = Menu.drawMenu
