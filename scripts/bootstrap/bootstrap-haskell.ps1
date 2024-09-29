@@ -49,7 +49,7 @@ param (
     [switch]$DontAdjustBashRc,
     # The msys2 environment to use, see https://www.msys2.org/docs/environments/ (defauts to MINGW64, MINGW32 or CLANGARM64, depending on the architecture)
     [string]$Msys2Env,
-    # Do a multi-user install (requires administrative previlidges to modify system PATH env)
+    # Do a multi-user install (requires administrative privileges to modify system PATH env)
     [switch]$MultiUserInstall
 )
 
