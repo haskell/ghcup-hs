@@ -675,6 +675,7 @@ if ($Host.Name -eq "ConsoleHost")
 $Container = 'User'
 if ($MultiUserInstall) {
   Print-Msg -msg ('Adding {0}\bin to System Path...' -f $GhcupDir)
+  Print-Msg -msg ('Other users that are currently signed in will have to sign out and login again to use ghcup')
   $Container = 'Machine'
 } else {
   Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
