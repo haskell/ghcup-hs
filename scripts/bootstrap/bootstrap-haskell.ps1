@@ -48,7 +48,9 @@ param (
     # Whether to disable adjusting bashrc (in msys2 env) with PATH
     [switch]$DontAdjustBashRc,
     # The msys2 environment to use, see https://www.msys2.org/docs/environments/ (defauts to MINGW64, MINGW32 or CLANGARM64, depending on the architecture)
-    [string]$Msys2Env
+    [string]$Msys2Env,
+    # Do a multi-user install (requires administrative previlidges to modify system PATH env)
+    [switch]$MultiUserInstall
 )
 
 $DefaultMsys2Version = "20221216"
@@ -86,6 +88,12 @@ function Create-Shortcut {
       Remove-Item -LiteralPath $FinalDest -Force
     }
     Move-Item -LiteralPath $TmpFile -Destination $FinalDest
+}
+
+function IsAdmin() {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
 function Add-EnvPath {
@@ -190,6 +198,10 @@ function Exec
 }
 
 #### Gather system information and ask user questions ####
+
+if ($MultiUserInstall -and -not (IsAdmin)) {
+    throw ('Administrative privileges are required for multi-user installation.')
+}
 
 # Only x86 32/64-bit is supported
 $SupportedArchitectures = 'AMD64', 'x86'
@@ -329,7 +341,11 @@ Press enter to accept the default [{0}]:
 }
 
 Print-Msg -msg ('Setting env variable GHCUP_INSTALL_BASE_PREFIX to ''{0}''' -f $GhcupBasePrefix)
-$null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $GhcupBasePrefix, [System.EnvironmentVariableTarget]::User)
+if ($MultiUserInstall) {
+  $null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $GhcupBasePrefix, [System.EnvironmentVariableTarget]::Machine)
+} else {
+  $null = [Environment]::SetEnvironmentVariable("GHCUP_INSTALL_BASE_PREFIX", $GhcupBasePrefix, [System.EnvironmentVariableTarget]::User)
+}
 
 
 $GhcupDir = ('{0}\ghcup' -f $GhcupBasePrefix)
@@ -656,8 +672,14 @@ if ($Host.Name -eq "ConsoleHost")
 	$null = New-Item -Path $DesktopDir -Name "Uninstall Haskell.ps1" -ItemType "file" -Force -Value $uninstallShortCut
 }
 
-Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
-Add-EnvPath -Path ('{0}\bin' -f ([System.IO.Path]::GetFullPath("$GhcupDir"))) -Container 'User'
+$Container = 'User'
+if ($MultiUserInstall) {
+  Print-Msg -msg ('Adding {0}\bin to System Path...' -f $GhcupDir)
+  $Container = 'Machine'
+} else {
+  Print-Msg -msg ('Adding {0}\bin to Users Path...' -f $GhcupDir)
+}
+Add-EnvPath -Path ('{0}\bin' -f ([System.IO.Path]::GetFullPath("$GhcupDir"))) -Container $Container
 
 
 
