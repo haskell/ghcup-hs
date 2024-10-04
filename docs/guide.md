@@ -769,35 +769,50 @@ This will execute vscode with GHC set to 8.10.7 and all other tools to their lat
 ## Support multiple users on Windows
 
 On Windows, by default GHCup is installed in `C:\ghcup`, and not in the `C:\Users` directory.
+All users who can access `C:\ghcup` can in principle run GHCup and the installed tools with the following steps.
 
-To allow all users of a Windows machine to make use of GHCup all you have to do is set the right global environment variables (and possibly file permissions).
+1. Set up permissions
 
-```sh
-$env:PATH += ";C:\ghcup\bin"
-```
+If you wish to allow multiple users to run GHCup, install the tools, modify "set" tool for all users, and even remove GHCup completely via `ghcup nuke`.
+Then the users must have write permissions to `C:\ghcup` and its subdirectories.
 
-If the GHCup is not installed at the `C:\ghcup`, then additionally the following environment variables would also need adjustment
+On the other hand to prevent users from installing or modify the installed/set tools, the system administrator should make `C:\ghcup` readonly for other users.
 
-* GHCUP_INSTALL_BASE_PREFIX (to e.g. D:\)
-* GHCUP_MSYS2 (to e.g. D:\ghcup\msys64)
+2. Set up environment variables globally
 
-Note that if all users have read/write permissions to `C:\ghcup`, then anyone can install, remove, or set (the default) for all of the tools (ghc, cabal, hls, stack), and even remove GHCup completely via `ghcup nuke`.
-
-To avoid this the administrator can use the "isolate" install feature to install the tools at a shared location for multiple users.
+- Append to PATH
 
 ```sh
-ghcup install ghc 9.4.8 --isolate C:\shared-dir\haskell
-ghcup install cabal recommended --isolate C:\shared-dir\haskell\bin
-ghcup install hls recommended --isolate C:\shared-dir\haskell\bin
+$sysPath = [Environment]::GetEnvironmentVariable('PATH', 'Machine')
+$combinedPath = $sysPath + ';C:\ghcup\bin'
+[System.Environment]::SetEnvironmentVariable('PATH', $combinedPath, [System.EnvironmentVariableTarget]::Machine)
 ```
 
-Then each user can access the installed tools by setting the PATH
+Note: if the GHCup is not installed at the default location of `C:\ghcup`, then additionally the following environment variables would also need to be specified.
 
+* GHCUP_INSTALL_BASE_PREFIX
+* GHCUP_MSYS2
+
+For example
 ```sh
-$env:PATH += ";C:\shared-dir\haskell\bin"
+[System.Environment]::SetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'C:\shared-dir\haskell\', [System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('GHCUP_MSYS2', 'C:\shared-dir\haskell\msys64' , [System.EnvironmentVariableTarget]::Machine)
 ```
+
+If there are other users already logged during the above setup of env variables, they will have to sign out and login again to make use of GHCup / tools.
+
+3. Set up cabal config
+
+Make sure the users don't have `CABAL_DIR` env set.
+This will ensure that `cabal` uses user's local dir (typically `$env:USERPROFILE\AppData\Roaming\cabal`)
 
 If the users need msys2 C libraries, they will have to each adjust their `cabal.config` as [described here](https://cabal.readthedocs.io/en/latest/how-to-run-in-windows.html#ensure-that-cabal-can-use-system-libraries). Also make sure they [enable long path behavior](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry#enable-long-paths-in-windows-10-version-1607-and-later).
+
+The `cabal.config` adjustment can be done by running the following command by each user
+
+```sh
+cabal user-config -a "extra-prog-path: C:\ghcup\bin, $env:USERPROFILE\AppData\Roaming\cabal\bin, C:\ghcup\msys64\mingw64\bin, C:\ghcup\msys64\usr\bin" -a "extra-include-dirs: C:\ghcup\msys64\mingw64\include" -a "extra-lib-dirs: C:\ghcup\msys64\mingw64\lib" -f init
+```
 
 Also check:
 
