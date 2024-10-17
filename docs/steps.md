@@ -81,7 +81,7 @@ While Haskell can infer
 the types of most expressions, it is recommended that top-level definitions
 are annotated with their types.
 
-Now our `hello.hs` source file should looks like this:
+Now our `hello.hs` source file should look like this:
 
 ```hs
 main :: IO ()
