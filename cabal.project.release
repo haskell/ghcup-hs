@@ -26,6 +26,9 @@ elif os(freebsd)
                zip +disable-zstd
   package *
     ghc-options: -split-sections
+else
+  package ghcup
+    flags: +tar
 
 constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0,
