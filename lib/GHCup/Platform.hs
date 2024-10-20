@@ -119,11 +119,17 @@ getPlatform = do
         either (const Nothing) Just . versioning . decUTF8Safe'
           <$> getFreeBSDVersion
       pure $ PlatformResult { _platform = FreeBSD, _distroVersion = ver }
+    "openbsd" -> do
+      ver <-
+        either (const Nothing) Just . versioning . decUTF8Safe'
+          <$> getOpenBSDVersion
+      pure $ PlatformResult { _platform = OpenBSD, _distroVersion = ver }
     "mingw32" -> pure PlatformResult { _platform = Windows, _distroVersion = Nothing }
     what -> throwE $ NoCompatiblePlatform what
   lift $ logDebug $ "Identified Platform as: " <> T.pack (prettyShow pfr)
   pure pfr
  where
+  getOpenBSDVersion = lift $ fmap _stdOut $ executeOut "uname" ["-r"] Nothing
   getFreeBSDVersion = lift $ fmap _stdOut $ executeOut "freebsd-version" [] Nothing
   getDarwinVersion = lift $ fmap _stdOut $ executeOut "sw_vers"
                                                         ["-productVersion"]
@@ -306,6 +312,7 @@ getStackGhcBuilds PlatformResult{..} = do
             [] -> []
             _ -> L.intercalate "-" c)
           libComponents
+      OpenBSD -> pure []
       FreeBSD ->
         case _distroVersion of
           Just fVer
@@ -343,6 +350,8 @@ getStackOSKey PlatformRequest { .. } =
     (A_64   , Darwin ) -> pure "macosx"
     (A_32   , FreeBSD) -> pure "freebsd32"
     (A_64   , FreeBSD) -> pure "freebsd64"
+    (A_32   , OpenBSD) -> pure "openbsd32"
+    (A_64   , OpenBSD) -> pure "openbsd64"
     (A_32   , Windows) -> pure "windows32"
     (A_64   , Windows) -> pure "windows64"
     (A_ARM  , Linux _) -> pure "linux-armv7"
@@ -350,6 +359,7 @@ getStackOSKey PlatformRequest { .. } =
     (A_Sparc, Linux _) -> pure "linux-sparc"
     (A_ARM64, Darwin ) -> pure "macosx-aarch64"
     (A_ARM64, FreeBSD) -> pure "freebsd-aarch64"
+    (A_ARM64, OpenBSD) -> pure "openbsd-aarch64"
     (arch', os') -> throwE $ UnsupportedSetupCombo arch' os'
 
 getStackPlatformKey :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)

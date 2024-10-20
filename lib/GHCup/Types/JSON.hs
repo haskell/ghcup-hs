@@ -144,12 +144,14 @@ instance ToJSONKey Platform where
     FreeBSD -> T.pack "FreeBSD"
     Linux (OtherLinux s) -> T.pack ("Linux_" <> s)
     Linux d -> T.pack ("Linux_" <> show d)
+    OpenBSD -> T.pack "OpenBSD"
     Windows -> T.pack "Windows"
 
 instance FromJSONKey Platform where
   fromJSONKey = FromJSONKeyTextParser $ \t -> if
     | T.pack "Darwin" == t -> pure Darwin
     | T.pack "FreeBSD" == t -> pure FreeBSD
+    | T.pack "OpenBSD" == t -> pure OpenBSD
     | T.pack "Windows" == t -> pure Windows
     | T.pack "Linux_" `T.isPrefixOf` t -> case
         T.stripPrefix (T.pack "Linux_") t

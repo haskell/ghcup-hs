@@ -227,6 +227,7 @@ data Platform = Linux LinuxDistro
               | Darwin
               -- ^ must exit
               | FreeBSD
+              | OpenBSD
               | Windows
               -- ^ must exit
   deriving (Eq, GHC.Generic, Ord, Show)
@@ -237,6 +238,7 @@ platformToString :: Platform -> String
 platformToString (Linux distro) = "linux-" ++ distroToString distro
 platformToString Darwin = "darwin"
 platformToString FreeBSD = "freebsd"
+platformToString OpenBSD = "openbsd"
 platformToString Windows = "windows"
 
 instance Pretty Platform where
