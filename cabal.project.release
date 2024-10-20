@@ -2,9 +2,10 @@ import: cabal.project.common
 
 optimization: 2
 
--- The release project file always wants to build with -tar.
--- The tar flag is only there to circumvent complicated errors during
--- development, which sometimes happens due to libarchive.
+-- The release project file always wants to build with -tar on the
+-- platforms it supports (which are those it provides config.h files
+-- for). The tar flag is only there to circumvent complicated errors
+-- during development, which sometimes happens due to libarchive.
 package ghcup
     flags: +tui
 
@@ -32,3 +33,6 @@ elif os(freebsd)
                xz -system-xz
   package *
     ghc-options: -split-sections
+else
+  package ghcup
+    flags: +tar
