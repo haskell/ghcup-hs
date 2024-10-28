@@ -143,6 +143,7 @@ instance ToJSONKey Platform where
     FreeBSD -> T.pack "FreeBSD"
     Linux (OtherLinux s) -> T.pack ("Linux_" <> s)
     Linux d -> T.pack ("Linux_" <> show d)
+    OpenBSD -> T.pack "OpenBSD"
     Windows -> T.pack "Windows"
 
 instance FromJSONKey Platform where

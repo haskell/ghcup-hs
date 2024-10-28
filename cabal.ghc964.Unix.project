@@ -25,7 +25,7 @@ if os(mingw32)
                lzma +static,
                vty-windows >=0.2.0.2
 
-  if impl(ghc >= 9.4)
+  if impl(ghc >= 9.6)
     constraints: language-c >= 0.9.3
 
 
