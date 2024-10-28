@@ -6,7 +6,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 {-|
@@ -39,7 +38,6 @@ import           Data.Time.Calendar             ( Day )
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           GHC.IO.Exception               ( ExitCode )
-import           Optics                         ( makeLenses )
 import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text)
 import           URI.ByteString
 #if defined(BRICK)
@@ -808,7 +806,6 @@ data CapturedProcess = CapturedProcess
   }
   deriving (Eq, Show)
 
-makeLenses ''CapturedProcess
 
 
 data InstallDir = IsolateDir FilePath
