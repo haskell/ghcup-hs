@@ -863,3 +863,6 @@ data VersionPattern = CabalVer
                     | S String
   deriving (Eq, Show)
 
+-- | Map with custom FromJSON instance which ignores unknown keys
+newtype MapIgnoreUnknownKeys k v = MapIgnoreUnknownKeys { unMapIgnoreUnknownKeys :: Map k v }
+  deriving (Eq, Show)

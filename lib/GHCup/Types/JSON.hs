@@ -42,7 +42,10 @@ import           Data.Void
 import           URI.ByteString hiding (parseURI)
 import           Text.Casing
 
+import qualified Data.Aeson.Key                as Key
+import qualified Data.Aeson.KeyMap             as KeyMap
 import qualified Data.List.NonEmpty            as NE
+import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding.Error      as E
 import qualified Text.Megaparsec               as MP
@@ -299,6 +302,25 @@ instance FromJSONKey (Maybe VersionRange)  where
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
+
+-- | Create a Map ignoring KeyValue pair which fail at parse of the key
+-- But if the key is parsed, the failures of parsing the value will not be ignored
+instance (Ord k, FromJSONKey k, FromJSON v) => FromJSON (MapIgnoreUnknownKeys k v) where
+  parseJSON = withObject "MapIgnoreUnknownKeys" $ \obj -> do
+    m <- case fromJSONKey of
+      FromJSONKeyTextParser f ->
+        let doParse k v m = case parseMaybe f (Key.toText k) of
+              Just k' -> Map.insert k' <$> parseJSON v <*> m
+              Nothing -> m
+        in KeyMap.foldrWithKey doParse (pure Map.empty) obj
+      FromJSONKeyValue f ->
+        let doParse k v m = case parseMaybe f (toJSON k) of
+              Just k' -> Map.insert k' <$> parseJSON v <*> m
+              Nothing -> m
+        in KeyMap.foldrWithKey doParse (pure Map.empty) obj
+      -- FromJSONKeyCoerce and FromJSONKeyText always parse to Success; hence use instance of Map
+      _ -> parseJSON (Object obj)
+    pure $ MapIgnoreUnknownKeys m
 
 instance FromJSON GHCupInfo where
   parseJSON = withObject "GHCupInfo" $ \o -> do
