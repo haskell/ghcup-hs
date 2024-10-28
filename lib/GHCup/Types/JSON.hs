@@ -9,6 +9,7 @@
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 {-|
 Module      : GHCup.Types.JSON
@@ -301,7 +302,15 @@ instance FromJSONKey (Maybe VersionRange)  where
 
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
+
+instance ToJSON VersionInfo where
+  toEncoding = genericToEncoding (defaultOptions { fieldLabelModifier = removeLensFieldLabel })
+
+instance FromJSON VersionInfo where
+  parseJSON = genericParseJSON (defaultOptions { fieldLabelModifier = removeLensFieldLabel })
+
+instance FromJSON VersionInfoForParse where
+  parseJSON = genericParseJSON (defaultOptions { fieldLabelModifier = removeLensFieldLabel })
 
 -- | Create a Map ignoring KeyValue pair which fail at parse of the key
 -- But if the key is parsed, the failures of parsing the value will not be ignored
@@ -322,14 +331,15 @@ instance (Ord k, FromJSONKey k, FromJSON v) => FromJSON (MapIgnoreUnknownKeys k 
       _ -> parseJSON (Object obj)
     pure $ MapIgnoreUnknownKeys m
 
-instance FromJSON GHCupInfo where
+instance (FromJSON (m Platform PlatformReqVersionSpec), FromJSON (VersionInfoT m)) => FromJSON (GHCupInfoT m) where
   parseJSON = withObject "GHCupInfo" $ \o -> do
     toolRequirements' <- o .:? "toolRequirements"
     metadataUpdate    <- o .:? "metadataUpdate"
     ghcupDownloads'   <- o .:  "ghcupDownloads"
     pure (GHCupInfo (fromMaybe mempty toolRequirements') ghcupDownloads' metadataUpdate)
 
-deriveToJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
+instance ToJSON GHCupInfo where
+  toEncoding = genericToEncoding (defaultOptions { fieldLabelModifier = removeLensFieldLabel })
 
 instance ToJSON NewURLSource where
   toJSON NewGHCupURL       = String "GHCupURL"
