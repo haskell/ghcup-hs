@@ -6,8 +6,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 {-|
 Module      : GHCup.Types
@@ -39,7 +39,6 @@ import           Data.Time.Calendar             ( Day )
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           GHC.IO.Exception               ( ExitCode )
-import           Optics                         ( makeLenses )
 import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text)
 import           URI.ByteString
 #if defined(BRICK)
@@ -72,28 +71,46 @@ data KeyCombination = KeyCombination { key :: Key, mods :: [Modifier] }
     --[ GHCInfo Tree ]--
     --------------------
 
+type GHCupInfo = GHCupInfoT Map
 
-data GHCupInfo = GHCupInfo
-  { _toolRequirements :: ToolRequirements
-  , _ghcupDownloads   :: GHCupDownloads
+-- | For parsing metadata; use MapIgnoreUnknownKeys to ignore unparseable keys
+-- This will ensure older ghcup is able to parse metadata containing a new variant in key type
+type GHCupInfoForParse = GHCupInfoT MapIgnoreUnknownKeys
+
+data GHCupInfoT mapType = GHCupInfo
+  { _toolRequirements :: ToolRequirementsT mapType
+  , _ghcupDownloads   :: GHCupDownloadsT mapType
   , _metadataUpdate   :: Maybe URI
   }
-  deriving (Show, GHC.Generic, Eq)
+  deriving (GHC.Generic)
 
 instance NFData GHCupInfo
 
+deriving instance Eq GHCupInfo
+deriving instance Show GHCupInfo
 
+toGHCupInfo :: GHCupInfoForParse -> GHCupInfo
+toGHCupInfo v = GHCupInfo
+  { _toolRequirements = fmap (fmap unMapIgnoreUnknownKeys) (_toolRequirements v)
+  , _ghcupDownloads = fmap (fmap doVersionInfo) (_ghcupDownloads v)
+  , _metadataUpdate = _metadataUpdate v
+  }
+  where
+    doVersionInfo (VersionInfo {..}) =
+      let _viArch' = fmap unMapIgnoreUnknownKeys $ unMapIgnoreUnknownKeys _viArch
+      in VersionInfo { _viArch = _viArch', ..}
 
     -------------------------
     --[ Requirements Tree ]--
     -------------------------
 
 
-type ToolRequirements = Map Tool ToolReqVersionSpec
-type ToolReqVersionSpec = Map (Maybe Version) PlatformReqSpec
-type PlatformReqSpec = Map Platform PlatformReqVersionSpec
-type PlatformReqVersionSpec = Map (Maybe VersionRange) Requirements
+type ToolRequirements = ToolRequirementsT Map
 
+type ToolRequirementsT mapType = Map Tool (ToolReqVersionSpec mapType)
+type ToolReqVersionSpec mapType = Map (Maybe Version) (PlatformReqSpec mapType)
+type PlatformReqSpec mapType = mapType Platform PlatformReqVersionSpec
+type PlatformReqVersionSpec = Map (Maybe VersionRange) Requirements
 
 data Requirements = Requirements
   { _distroPKGs :: [Text]
@@ -114,12 +131,13 @@ instance NFData Requirements
 
 -- | Description of all binary and source downloads. This is a tree
 -- of nested maps.
-type GHCupDownloads = Map Tool ToolVersionSpec
-type ToolVersionSpec = Map GHCTargetVersion VersionInfo
-type ArchitectureSpec = Map Architecture PlatformSpec
-type PlatformSpec = Map Platform PlatformVersionSpec
+type GHCupDownloadsT mapType = Map Tool (ToolVersionSpec mapType)
+type ToolVersionSpec mapType = Map GHCTargetVersion (VersionInfoT mapType)
+type ArchitectureSpec mapType = mapType Architecture (PlatformSpec mapType)
+type PlatformSpec mapType = mapType Platform PlatformVersionSpec
 type PlatformVersionSpec = Map (Maybe VersionRange) DownloadInfo
 
+type GHCupDownloads = GHCupDownloadsT Map
 
 -- | An installable tool.
 data Tool = GHC
@@ -138,25 +156,29 @@ instance Pretty Tool where
 
 instance NFData Tool
 
+type VersionInfo = VersionInfoT Map
+type VersionInfoForParse = VersionInfoT MapIgnoreUnknownKeys
 
 -- | All necessary information of a tool version, including
 -- source download and per-architecture downloads.
-data VersionInfo = VersionInfo
+data VersionInfoT mapType = VersionInfo
   { _viTags        :: [Tag]              -- ^ version specific tag
   , _viReleaseDay  :: Maybe Day
   , _viChangeLog   :: Maybe URI
   , _viSourceDL    :: Maybe DownloadInfo -- ^ source tarball
   , _viTestDL      :: Maybe DownloadInfo -- ^ test tarball
-  , _viArch        :: ArchitectureSpec   -- ^ descend for binary downloads per arch
+  , _viArch        :: ArchitectureSpec mapType -- ^ descend for binary downloads per arch
   -- informative messages
   , _viPreInstall  :: Maybe Text
   , _viPostInstall :: Maybe Text
   , _viPostRemove  :: Maybe Text
   , _viPreCompile  :: Maybe Text
-  }
-  deriving (Eq, GHC.Generic, Show)
+  } deriving (GHC.Generic)
 
-instance NFData VersionInfo
+deriving instance Eq (VersionInfoT Map)
+deriving instance Show (VersionInfoT Map)
+
+instance NFData (VersionInfoT Map)
 
 
 -- | A tag. These are currently attached to a version of a tool.
@@ -808,7 +830,6 @@ data CapturedProcess = CapturedProcess
   }
   deriving (Eq, Show)
 
-makeLenses ''CapturedProcess
 
 
 data InstallDir = IsolateDir FilePath
@@ -863,3 +884,6 @@ data VersionPattern = CabalVer
                     | S String
   deriving (Eq, Show)
 
+-- | Map with custom FromJSON instance which ignores unknown keys
+newtype MapIgnoreUnknownKeys k v = MapIgnoreUnknownKeys { unMapIgnoreUnknownKeys :: Map k v }
+  deriving (Eq, Show)

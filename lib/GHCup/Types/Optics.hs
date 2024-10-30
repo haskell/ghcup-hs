@@ -36,11 +36,13 @@ makePrisms ''Tag
 makeLenses ''PlatformResult
 makeLenses ''DownloadInfo
 makeLenses ''Tag
-makeLenses ''VersionInfo
+makeLenses ''VersionInfoT
 
 makeLenses ''GHCTargetVersion
 
-makeLenses ''GHCupInfo
+makeLenses ''GHCupInfoT
+
+makeLenses ''CapturedProcess
 
 uriSchemeL' :: Lens' (URIRef Absolute) Scheme
 uriSchemeL' = lensVL uriSchemeL

@@ -152,7 +152,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
       -> Excepts
            '[DownloadFailed, GPGError, DigestError, ContentLengthError, JSONError, FileDoesNotExistError]
            m (Either GHCupInfo Stack.SetupInfo)
-  dl' NewGHCupURL       = fmap Left $ liftE (getBase ghcupURL) >>= liftE . decodeMetadata @GHCupInfo
+  dl' NewGHCupURL       = fmap Left $ liftE (getBase ghcupURL) >>= liftE . fmap toGHCupInfo . decodeMetadata @GHCupInfoForParse
   dl' NewStackSetupURL  = fmap Right $ liftE (getBase stackSetupURL) >>= liftE . decodeMetadata @Stack.SetupInfo
   dl' (NewGHCupInfo gi) = pure (Left gi)
   dl' (NewSetupInfo si) = pure (Right si)
@@ -161,7 +161,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
                             catchE @JSONError (\(JSONDecodeError s) -> do
                                 logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: " <> T.pack s
                                 Right <$> decodeMetadata @Stack.SetupInfo base)
-                              $ fmap Left (decodeMetadata @GHCupInfo base >>= \gI -> warnOnMetadataUpdate uri gI >> pure gI)
+                              $ fmap Left (decodeMetadata @GHCupInfoForParse base >>= \gI' -> let gI = toGHCupInfo gI'; in (warnOnMetadataUpdate uri gI >> pure gI))
 
   fromStackSetupInfo :: MonadThrow m
                      => Stack.SetupInfo
