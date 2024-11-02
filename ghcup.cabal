@@ -30,7 +30,8 @@ extra-source-files:
   test/ghcup-test/golden/unix/GHCupInfo.json
   test/ghcup-test/golden/windows/GHCupInfo.json
 
-tested-with: GHC==9.4.8
+tested-with: GHC==9.6.6
+           , GHC==9.4.8
            , GHC==9.2.8
            , GHC==9.0.2
            , GHC==8.10.7
@@ -76,21 +77,21 @@ common app-common-depends
     , filepath               >=1.4.101.0
     , variant                ^>=1.0
     , megaparsec             >=8.0.0    && <9.3
-    , mtl                    ^>=2.2
+    , mtl                    ^>=2.2 || ^>=2.3
     , optics                ^>=0.4
     , optparse-applicative   >=0.15.1.0 && <0.18
     , pretty                 ^>=1.1.3.1
     , pretty-terminal        ^>=0.1.0.0
     , process                ^>=1.6.11.0
-    , resourcet              ^>=1.2.2
+    , resourcet              ^>=1.2.2 || ^>=1.3
     , safe                   ^>=0.3.18
     , safe-exceptions        ^>=0.1
     , tagsoup                ^>=0.14
+    , transformers           ^>=0.5 || ^>=0.6
     , template-haskell       >=2.7      && <2.22
     , temporary              ^>=1.3
     , text                   ^>=2.0
     , time                   >=1.9.3    && <1.12
-    , transformers          ^>=0.5
     , unordered-containers   ^>=0.2
     , uri-bytestring         ^>=0.3.2.2
     , utf8-string            ^>=1.0
@@ -198,13 +199,14 @@ library
     , variant                ^>=1.0
     , lzma-static           ^>=5.2.5.3
     , megaparsec            >=8.0.0      && <9.3
-    , mtl                   ^>=2.2
+    , mtl                   ^>=2.2 || ^>=2.3
+    , optics                ^>=0.4
     , os-release            ^>=1.0.0
     , parsec
     , pretty                ^>=1.1.3.1
     , pretty-terminal       ^>=0.1.0.0
     , regex-posix           ^>=0.96
-    , resourcet             ^>=1.2.2
+    , resourcet             ^>=1.2.2 || ^>=1.3
     , retry                 >=0.8.1.2    && <0.10
     , safe                  ^>=0.3.18
     , safe-exceptions       ^>=0.1
@@ -215,6 +217,7 @@ library
     , terminal-size         ^>=0.3.3
     , text                  ^>=2.0
     , time                  >=1.9.3      && <1.12
+    , transformers          ^>=0.5 || ^>=0.6
     , unliftio-core         ^>=0.2.0.1
     , unordered-containers  ^>=0.2.10.0
     , uri-bytestring        ^>=0.3.2.2
@@ -268,7 +271,7 @@ library
     c-sources:        cbits/dirutils.c
     build-depends:
       , unix             ^>=2.7 || ^>=2.8
-      , unix-bytestring  ^>=0.3.7.3
+      , unix-bytestring  ^>=0.4
 
   if flag(tui)
     cpp-options:   -DBRICK
@@ -407,6 +410,7 @@ executable ghcup
     cpp-options:   -DBRICK
     build-depends:
       , ghcup-tui
+      , transformers  ^>=0.5 || ^>=0.6
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
@@ -450,7 +454,7 @@ test-suite ghcup-test
     , filepath                  >=1.4.101.0
     , generic-arbitrary         >=0.1.0   && <0.2.1 || >=0.2.2 && <0.3
     , ghcup
-    , hspec                     >=2.7.10  && <2.11
+    , hspec                     >=2.7.10  && <2.12
     , hspec-golden-aeson        ^>=0.9
     , QuickCheck                ^>=2.14.1
     , quickcheck-arbitrary-adt  ^>=0.3.1.0

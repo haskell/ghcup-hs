@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ViewPatterns      #-}
@@ -17,7 +18,8 @@ import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.MegaParsec
 
-import           Control.Applicative ((<|>))
+import           Control.Applicative ((<|>), Alternative(..))
+import           Control.Monad (when)
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -390,3 +392,12 @@ parseNewUrlSource "GHCupURL" = pure NewGHCupURL
 parseNewUrlSource "StackSetupURL" = pure NewStackSetupURL
 parseNewUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
             <|> (fmap NewURI . first show . parseURI .UTF8.fromString $ s')
+
+
+#if MIN_VERSION_transformers(0,6,0)
+instance Alternative (Either [a]) where
+    empty        = Left []
+    Left _ <|> n = n
+    m      <|> _ = m
+#endif
+
