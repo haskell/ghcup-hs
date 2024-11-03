@@ -54,6 +54,13 @@ flag internal-downloader
   default:     False
   manual:      True
 
+flag strict-metadata-parsing
+  description:
+    Don't ignore unknown keys in metadata. Useful for metadata testing.
+
+  default:     False
+  manual:      True
+
 flag no-exe
   description: Don't build any executables
   default:     False
@@ -277,6 +284,9 @@ library
   if flag(tui)
     cpp-options:   -DBRICK
     build-depends: vty ^>=6.0 || ^>=6.1 || ^>=6.2
+
+  if (flag(strict-metadata-parsing))
+    cpp-options:     -DSTRICT_METADATA_PARSING
 
 library ghcup-optparse
   import:             app-common-depends
