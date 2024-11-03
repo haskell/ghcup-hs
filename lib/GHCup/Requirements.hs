@@ -44,7 +44,7 @@ getCommonRequirements pr tr =
 
   distro_preview f g =
     let platformVersionSpec =
-          preview (ix GHC % ix Nothing % ix (f pr)) tr
+          preview (ix GHC % ix Nothing % to unMapIgnoreUnknownKeys % ix (f pr)) tr
         mv' = g pr
     in  fmap snd
           .   find
