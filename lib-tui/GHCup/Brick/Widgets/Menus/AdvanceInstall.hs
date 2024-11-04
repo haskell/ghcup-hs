@@ -22,11 +22,13 @@ module GHCup.Brick.Widgets.Menus.AdvanceInstall (
   draw,
   instBindistL,
   instSetL,
+  instVersionL,
   isolateDirL,
   forceInstallL,
   addConfArgsL,
 ) where
 
+import GHCup.Types (GHCTargetVersion(..))
 import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import           GHCup.Brick.Common(Name(..))
@@ -48,6 +50,8 @@ import qualified GHCup.Utils.Parsers as Utils
 data InstallOptions = InstallOptions
   { instBindist  :: Maybe URI
   , instSet      :: Bool
+  , instVersion :: Maybe GHCTargetVersion
+  -- ^ User specified version to override default
   , isolateDir   :: Maybe FilePath
   , forceInstall :: Bool
   , addConfArgs  :: [T.Text]
@@ -56,6 +60,7 @@ data InstallOptions = InstallOptions
 makeLensesFor [
    ("instBindist", "instBindistL")
   , ("instSet", "instSetL")
+  , ("instVersion", "instVersionL")
   , ("isolateDir", "isolateDirL")
   , ("forceInstall", "forceInstallL")
   , ("addConfArgs", "addConfArgsL")
@@ -67,7 +72,7 @@ type AdvanceInstallMenu = Menu InstallOptions Name
 create :: MenuKeyBindings -> AdvanceInstallMenu
 create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" validator k [ok] fields
   where
-    initialState = InstallOptions Nothing False Nothing False []
+    initialState = InstallOptions Nothing False Nothing Nothing False []
     validator InstallOptions {..} = case (instSet, isolateDir) of
       (True, Just _) -> Just "Cannot set active when doing an isolated install"
       _ -> Nothing
@@ -84,6 +89,9 @@ create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" vali
     filepathValidator :: T.Text -> Either Menu.ErrorMessage (Maybe FilePath)
     filepathValidator = whenEmpty Nothing (bimap T.pack Just . Utils.absolutePathParser . T.unpack)
 
+    toolVersionValidator :: T.Text -> Either Menu.ErrorMessage (Maybe GHCTargetVersion)
+    toolVersionValidator = whenEmpty Nothing (bimap T.pack Just . Utils.ghcVersionEither . T.unpack)
+
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace
 
@@ -94,6 +102,9 @@ create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" vali
       , Menu.createCheckBoxField (Common.MenuElement Common.SetCheckBox) instSetL
           & Menu.fieldLabelL .~ "set"
           & Menu.fieldHelpMsgL .~ "Set as active version after install"
+      , Menu.createEditableField (Common.MenuElement Common.ToolVersionBox) toolVersionValidator instVersionL
+          & Menu.fieldLabelL .~ "version"
+          & Menu.fieldHelpMsgL .~ "Specify a custom version"
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathValidator isolateDirL
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
