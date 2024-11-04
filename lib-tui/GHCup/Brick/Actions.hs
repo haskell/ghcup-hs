@@ -226,6 +226,9 @@ installWithOptions opts (_, ListResult {..}) = do
               , InstallSetError
               ]
 
+      withNoVerify :: (MonadReader AppState m) => m a -> m a
+      withNoVerify = local (\s -> s { settings = (settings s) { noVerify = True}})
+
   run (do
       ce <- liftIO $ fmap (either (const Nothing) Just) $
         try @_ @SomeException $ getExecutablePath >>= canonicalizePath
@@ -243,7 +246,7 @@ installWithOptions opts (_, ListResult {..}) = do
             Just uri -> do
               liftE $
                 runBothE'
-                  (installGHCBindist
+                  (withNoVerify $ installGHCBindist
                       (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing)
                       v
                       shouldIsolate
@@ -264,7 +267,7 @@ installWithOptions opts (_, ListResult {..}) = do
             Just uri -> do
               liftE $
                 runBothE'
-                  (installCabalBindist (DownloadInfo uri Nothing "" Nothing Nothing) lVer shouldIsolate shouldForce)
+                  (withNoVerify $ installCabalBindist (DownloadInfo uri Nothing "" Nothing Nothing) lVer shouldIsolate shouldForce)
                   (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal lVer))
               pure (vi, dirs, ce)
 
@@ -283,7 +286,7 @@ installWithOptions opts (_, ListResult {..}) = do
             Just uri -> do
               liftE $
                 runBothE'
-                  (installHLSBindist
+                  (withNoVerify $ installHLSBindist
                     (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing)
                     lVer
                     shouldIsolate
@@ -303,7 +306,7 @@ installWithOptions opts (_, ListResult {..}) = do
             Just uri -> do
               liftE $
                 runBothE'
-                  (installStackBindist (DownloadInfo uri Nothing "" Nothing Nothing) lVer shouldIsolate shouldForce)
+                  (withNoVerify $ installStackBindist (DownloadInfo uri Nothing "" Nothing Nothing) lVer shouldIsolate shouldForce)
                   (when (shouldSet && isNothing misolated) (liftE $ void $ setStack lVer))
               pure (vi, dirs, ce)
 
