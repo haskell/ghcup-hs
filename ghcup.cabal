@@ -25,6 +25,13 @@ extra-source-files:
   cbits/dirutils.h
   data/build_mk/cross
   data/build_mk/default
+  scoop-better-shimexe/shim.c
+  scripts/bootstrap/bootstrap-haskell
+  scripts/bootstrap/bootstrap-haskell.ps1
+  scripts/hooks/stack/ghc-install.sh
+  scripts/shell-completions/bash
+  scripts/shell-completions/fish
+  scripts/shell-completions/zsh
   test/ghcup-test/data/dir/.keep
   test/ghcup-test/data/file
   test/ghcup-test/golden/unix/GHCupInfo.json
