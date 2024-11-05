@@ -23,6 +23,7 @@ module GHCup.Types.JSON where
 
 import           GHCup.Types
 import           GHCup.Types.Stack (SetupInfo)
+import           GHCup.Types.JSON.MapIgnoreUnknownKeys ()
 import           GHCup.Types.JSON.Utils
 import           GHCup.Types.JSON.Versions ()
 import           GHCup.Prelude.MegaParsec

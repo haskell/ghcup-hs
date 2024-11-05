@@ -196,6 +196,11 @@ instance {-# OVERLAPS #-} Arbitrary v => Arbitrary (M.Map (Maybe Version) v) whe
 instance {-# OVERLAPS #-} Arbitrary v => Arbitrary (M.Map Platform v) where
   arbitrary = resize 8 $ M.fromList <$> arbitrary
 
+instance {-# OVERLAPS #-} Arbitrary v => Arbitrary (MapIgnoreUnknownKeys Platform v) where
+  arbitrary = resize 8 $ MapIgnoreUnknownKeys . M.fromList <$> arbitrary
+
+instance {-# OVERLAPS #-} Arbitrary v => Arbitrary (MapIgnoreUnknownKeys Architecture v) where
+  arbitrary = resize 8 $ MapIgnoreUnknownKeys . M.fromList <$> arbitrary
+
 instance {-# OVERLAPS #-} Arbitrary v => Arbitrary (M.Map (Maybe Versioning) v) where
   arbitrary = resize 8 $ M.fromList <$> arbitrary
-

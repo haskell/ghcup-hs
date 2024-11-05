@@ -6,7 +6,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 {-|
@@ -39,7 +38,6 @@ import           Data.Time.Calendar             ( Day )
 import           Data.Text                      ( Text )
 import           Data.Versions
 import           GHC.IO.Exception               ( ExitCode )
-import           Optics                         ( makeLenses )
 import           Text.PrettyPrint.HughesPJClass (Pretty, pPrint, text)
 import           URI.ByteString
 #if defined(BRICK)
@@ -91,7 +89,7 @@ instance NFData GHCupInfo
 
 type ToolRequirements = Map Tool ToolReqVersionSpec
 type ToolReqVersionSpec = Map (Maybe Version) PlatformReqSpec
-type PlatformReqSpec = Map Platform PlatformReqVersionSpec
+type PlatformReqSpec = MapIgnoreUnknownKeys Platform PlatformReqVersionSpec
 type PlatformReqVersionSpec = Map (Maybe VersionRange) Requirements
 
 
@@ -116,8 +114,8 @@ instance NFData Requirements
 -- of nested maps.
 type GHCupDownloads = Map Tool ToolVersionSpec
 type ToolVersionSpec = Map GHCTargetVersion VersionInfo
-type ArchitectureSpec = Map Architecture PlatformSpec
-type PlatformSpec = Map Platform PlatformVersionSpec
+type ArchitectureSpec = MapIgnoreUnknownKeys Architecture PlatformSpec
+type PlatformSpec = MapIgnoreUnknownKeys Platform PlatformVersionSpec
 type PlatformVersionSpec = Map (Maybe VersionRange) DownloadInfo
 
 
@@ -808,7 +806,6 @@ data CapturedProcess = CapturedProcess
   }
   deriving (Eq, Show)
 
-makeLenses ''CapturedProcess
 
 
 data InstallDir = IsolateDir FilePath
@@ -863,3 +860,8 @@ data VersionPattern = CabalVer
                     | S String
   deriving (Eq, Show)
 
+-- | Map with custom FromJSON instance which ignores unknown keys
+newtype MapIgnoreUnknownKeys k v = MapIgnoreUnknownKeys { unMapIgnoreUnknownKeys :: Map k v }
+  deriving (Eq, Show, GHC.Generic)
+
+instance (NFData k, NFData v) => NFData (MapIgnoreUnknownKeys k v)

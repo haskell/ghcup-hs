@@ -42,6 +42,8 @@ makeLenses ''GHCTargetVersion
 
 makeLenses ''GHCupInfo
 
+makeLenses ''CapturedProcess
+
 uriSchemeL' :: Lens' (URIRef Absolute) Scheme
 uriSchemeL' = lensVL uriSchemeL
 
