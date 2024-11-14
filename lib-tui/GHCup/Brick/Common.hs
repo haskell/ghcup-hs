@@ -27,6 +27,7 @@ module GHCup.Brick.Common  (
   installedSign,
   setSign,
   notInstalledSign,
+  checkBoxSelectedSign,
   showKey,
   showMod,
   keyToWidget,
@@ -178,6 +179,13 @@ notInstalledSign :: String
 notInstalledSign = "X "
 #else
 notInstalledSign = "✗ "
+#endif
+
+checkBoxSelectedSign :: String
+#if IS_WINDOWS
+checkBoxSelectedSign = "Y "
+#else
+checkBoxSelectedSign = "✓ "
 #endif
 
 
