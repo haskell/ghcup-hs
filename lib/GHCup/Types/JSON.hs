@@ -43,6 +43,7 @@ import           Data.Void
 import           URI.ByteString hiding (parseURI)
 import           Text.Casing
 
+import qualified Data.Aeson.Key                as Key
 import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding.Error      as E
@@ -318,9 +319,20 @@ instance ToJSON NewURLSource where
   toJSON (NewGHCupInfo gi) = object [ "ghcup-info" .= gi ]
   toJSON (NewSetupInfo si) = object [ "setup-info" .= si ]
   toJSON (NewURI uri)      = toJSON uri
+  toJSON (NewChannelAlias c) = toJSON c
 
 instance ToJSON URLSource where
   toJSON = toJSON . fromURLSource
+
+instance ToJSON ChannelAlias where
+  toJSON = String . channelAliasText
+
+instance FromJSON ChannelAlias where
+  parseJSON = withText "ChannelAlias" $ \t ->
+    let aliases = map (\c -> (channelAliasText c, c)) [minBound..maxBound]
+    in case lookup t aliases of
+      Just c -> pure c
+      Nothing -> fail $ "Unexpected ChannelAlias: " <> T.unpack t
 
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Modifier
@@ -335,6 +347,7 @@ instance FromJSON URLSource where
   parseJSON v =
         parseGHCupURL v
     <|> parseStackURL v
+    <|> parseChannelAlias v
     <|> parseOwnSourceLegacy v
     <|> parseOwnSourceNew1 v
     <|> parseOwnSourceNew2 v
@@ -375,6 +388,17 @@ instance FromJSON URLSource where
     parseStackURL = withObject "URLSource" $ \o -> do
       _ :: [Value] <- o .: "StackSetupURL"
       pure StackSetupURL
+
+    parseChannelAlias = withObject "URLSource" $ \o -> do
+      let aliases = map (\c -> (channelAliasText c, c)) [minBound..maxBound]
+          checkAlias (aliasText, a) = do
+            v :: Maybe [Value] <- o .:! Key.fromText aliasText
+            pure (a <$ v)
+      maybes <- mapM checkAlias aliases
+      case catMaybes maybes of
+        [] -> fail "URLSource: valid channel alias not found"
+        (a:_) -> pure $ ChannelAlias a
+
     legacyParseAddSource = withObject "URLSource" $ \o -> do
       r :: Either GHCupInfo URI <- o .: "AddSource"
       pure (AddSource [convert'' r])
@@ -428,8 +452,9 @@ lenientInfoParser o = do
       pure $ Right r
 
 instance FromJSON NewURLSource where
-  parseJSON v = uri v <|> url v <|> gi v <|> si v
+  parseJSON v = uri v <|> url v <|> alias v <|> gi v <|> si v
    where
+    alias = withText "NewURLSource" $ \t -> NewChannelAlias <$> parseJSON (String t)
     uri = withText "NewURLSource" $ \t -> NewURI <$> parseJSON (String t)
     url = withText "NewURLSource" $ \t -> case T.unpack t of
                                             "GHCupURL" -> pure NewGHCupURL
