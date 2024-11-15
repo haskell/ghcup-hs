@@ -23,7 +23,6 @@ constraints: text -simdutf
 
 if os(mingw32)
   constraints: zlib +bundled-c-zlib,
-               lzma +static,
                text -simdutf,
                vty-windows >=0.2.0.2
 

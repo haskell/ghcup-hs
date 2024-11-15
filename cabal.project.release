@@ -14,7 +14,9 @@ if os(linux)
       ghc-options: -split-sections -optl-static
 elif os(darwin)
   constraints: zlib +bundled-c-zlib,
-               lzma +static
+               xz -system-xz
+elif os(mingw32)
+  constraints: xz -system-xz
 elif os(freebsd)
   constraints: zlib +bundled-c-zlib,
                zip +disable-zstd
