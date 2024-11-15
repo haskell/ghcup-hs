@@ -148,7 +148,7 @@ urlSourceCompleter = mkCompleter $ urlSourceCompleter' []
 
 urlSourceCompleter' :: [String] -> String -> IO [String]
 urlSourceCompleter' add str' = do
-  let static = ["GHCupURL", "StackSetupURL"]
+  let static = ["GHCupURL", "StackSetupURL", "cross", "prereleases", "vanilla"]
   file <- fileUri' add str'
   pure $ static ++ file
 
