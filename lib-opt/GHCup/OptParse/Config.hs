@@ -14,7 +14,7 @@ module GHCup.OptParse.Config where
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils
-import           GHCup.Utils.Parsers (parseNewUrlSource)
+import           GHCup.Utils.Parsers (parseNewUrlSourceWithChannelAlias)
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
@@ -75,8 +75,9 @@ configP = subparser
   showP = info (pure ShowConfig) (progDesc "Show current config (default)")
   setP  = info argsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
   argsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
-  addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing") <*> argument (eitherReader parseNewUrlSource) (metavar "URL_SOURCE" <> completer urlSourceCompleter))
-    (progDesc "Add a release channel, e.g. from a URI")
+  addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing")
+                <*> argument (eitherReader parseNewUrlSourceWithChannelAlias) (metavar "<URL_SOURCE|main|cross|prereleases|vanilla>" <> completer urlSourceCompleter))
+    (progDesc "Add a release channel, e.g. from a URI or using alias")
 
 
 
@@ -96,8 +97,10 @@ configFooter = [s|Examples:
   ghcup config init
 
   # set <key> <value> configuration pair
-  ghcup config set <key> <value>|]
+  ghcup config set <key> <value>
 
+  # add a release channel
+  ghcup config add-release-channel prereleases|]
 
 configSetFooter :: String
 configSetFooter = [s|Examples:

@@ -393,6 +393,24 @@ parseNewUrlSource "StackSetupURL" = pure NewStackSetupURL
 parseNewUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
             <|> (fmap NewURI . first show . parseURI .UTF8.fromString $ s')
 
+parseChannelAlias :: String -> Either String ChannelAlias
+parseChannelAlias "main" = pure MainChannel
+parseChannelAlias "cross" = pure CrossChannel
+parseChannelAlias "prereleases" = pure PrereleasesChannel
+parseChannelAlias "vanilla" = pure VanillaChannel
+parseChannelAlias _ = Left "Please enter a valid channel alias <main|cross|prereleases|vanilla>"
+
+parseUrlSourceWithChannelAlias :: String -> Either String URLSource
+parseUrlSourceWithChannelAlias s' = (fmap toURLSource . parseChannelAlias $ s')
+  <|> parseUrlSource s'
+  where toURLSource MainChannel = GHCupURL
+        toURLSource alias = (OwnSource . (:[]) . Right) (channelURL alias)
+
+parseNewUrlSourceWithChannelAlias :: String -> Either String NewURLSource
+parseNewUrlSourceWithChannelAlias s' = (fmap toNewURLSource . parseChannelAlias $ s')
+  <|> parseNewUrlSource s'
+  where toNewURLSource MainChannel = NewGHCupURL
+        toNewURLSource alias = NewURI (channelURL alias)
 
 #if MIN_VERSION_transformers(0,6,0)
 instance Alternative (Either [a]) where

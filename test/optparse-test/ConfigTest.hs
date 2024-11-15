@@ -32,6 +32,18 @@ checkList =
   , ("config add-release-channel StackSetupURL"
     , AddReleaseChannel False NewStackSetupURL
     )
+  , ("config add-release-channel main"
+    , AddReleaseChannel False NewGHCupURL
+    )
+  , ("config add-release-channel cross"
+    , AddReleaseChannel False (NewURI [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml|])
+    )
+  , ("config add-release-channel prereleases"
+    , AddReleaseChannel False (NewURI [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.8.yaml|])
+    )
+  , ("config add-release-channel vanilla"
+    , AddReleaseChannel False (NewURI [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.8.yaml|])
+    )
   , ("config set cache true", SetConfig "cache" (Just "true"))
   ]
 
