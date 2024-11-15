@@ -390,9 +390,21 @@ data NewURLSource = NewGHCupURL
                   | NewGHCupInfo     GHCupInfo
                   | NewSetupInfo     SetupInfo
                   | NewURI           URI
+                  | NewChannelAlias  ChannelAlias
                deriving (Eq, GHC.Generic, Show)
 
 instance NFData NewURLSource
+
+-- | Alias for ease of URLSource selection
+data ChannelAlias = CrossChannel
+                  | PrereleasesChannel
+                  | VanillaChannel
+                  deriving (Eq, GHC.Generic, Show, Enum, Bounded)
+
+channelAliasText :: ChannelAlias -> Text
+channelAliasText CrossChannel = "cross"
+channelAliasText PrereleasesChannel = "prereleases"
+channelAliasText VanillaChannel = "vanilla"
 
 fromURLSource :: URLSource -> [NewURLSource]
 fromURLSource GHCupURL              = [NewGHCupURL]
@@ -409,6 +421,7 @@ convert' (Left (Right si)) = NewSetupInfo si
 convert' (Right uri)       = NewURI uri
 
 instance NFData URLSource
+instance NFData ChannelAlias
 instance NFData (URIRef Absolute) where
   rnf (URI !_ !_ !_ !_ !_) = ()
 

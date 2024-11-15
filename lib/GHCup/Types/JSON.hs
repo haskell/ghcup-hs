@@ -318,9 +318,20 @@ instance ToJSON NewURLSource where
   toJSON (NewGHCupInfo gi) = object [ "ghcup-info" .= gi ]
   toJSON (NewSetupInfo si) = object [ "setup-info" .= si ]
   toJSON (NewURI uri)      = toJSON uri
+  toJSON (NewChannelAlias c) = toJSON c
 
 instance ToJSON URLSource where
   toJSON = toJSON . fromURLSource
+
+instance ToJSON ChannelAlias where
+  toJSON = String . channelAliasText
+
+instance FromJSON ChannelAlias where
+  parseJSON = withText "ChannelAlias" $ \t ->
+    let aliases = map (\c -> (channelAliasText c, c)) [minBound..maxBound]
+    in case lookup t aliases of
+      Just c -> pure c
+      Nothing -> fail $ "Unexpected ChannelAlias: " <> T.unpack t
 
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Modifier
@@ -428,8 +439,9 @@ lenientInfoParser o = do
       pure $ Right r
 
 instance FromJSON NewURLSource where
-  parseJSON v = uri v <|> url v <|> gi v <|> si v
+  parseJSON v = uri v <|> url v <|> alias v <|> gi v <|> si v
    where
+    alias = withText "NewURLSource" $ \t -> NewChannelAlias <$> parseJSON (String t)
     uri = withText "NewURLSource" $ \t -> NewURI <$> parseJSON (String t)
     url = withText "NewURLSource" $ \t -> case T.unpack t of
                                             "GHCupURL" -> pure NewGHCupURL
