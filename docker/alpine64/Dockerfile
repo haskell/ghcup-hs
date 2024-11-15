@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM alpine:3.20
 
 ENV LANG C.UTF-8
 
@@ -51,7 +51,7 @@ RUN gpg --batch --keyserver keys.openpgp.org --recv-keys $GPG_KEY && \
     sha256sum -c --ignore-missing SHA256SUMS && \
     mv x86_64-linux-ghcup-$GHCUP_VERSION /usr/bin/ghcup && \
     chmod +x /usr/bin/ghcup && \
-    rm -rf SHA256SUMS SHA256SUMS.sig
+    rm -rf SHA256SUMS SHA256SUMS.sig ~/.gnupg/public-keys.d/pubring.db.lock
 
 ARG GHC=9.4.8
 ARG CABAL_INSTALL=3.10.2.0
