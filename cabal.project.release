@@ -9,6 +9,7 @@ package ghcup
     flags: +tui
 
 if os(linux)
+  constraints: xz -system-xz
   if arch(x86_64) || arch(i386)
     flags: -tar
     package *
@@ -27,6 +28,7 @@ elif os(mingw32)
 elif os(freebsd)
   flags: -tar
   constraints: zlib +bundled-c-zlib,
-               zip +disable-zstd
+               zip +disable-zstd,
+			   xz -system-xz
   package *
     ghc-options: -split-sections

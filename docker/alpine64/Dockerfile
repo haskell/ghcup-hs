@@ -1,4 +1,4 @@
-FROM alpine:3.20
+FROM alpine:3.12
 
 ENV LANG C.UTF-8
 
@@ -35,7 +35,6 @@ RUN apk add --no-cache \
             openssl-libs-static \
             xz \
             xz-dev \
-            xz-static \
             ncurses-static
 
 ARG GHCUP_VERSION=0.1.20.0
