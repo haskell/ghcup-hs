@@ -6,18 +6,26 @@ optimization: 2
 -- The tar flag is only there to circumvent complicated errors during
 -- development, which sometimes happens due to libarchive.
 package ghcup
-    flags: +tui -tar
+    flags: +tui
 
 if os(linux)
   if arch(x86_64) || arch(i386)
+    flags: -tar
     package *
       ghc-options: -split-sections -optl-static
+  elif arch(arm)
+    flags: +tar
+  else
+    flags: -tar
 elif os(darwin)
+  flags: -tar
   constraints: zlib +bundled-c-zlib,
                xz -system-xz
 elif os(mingw32)
+  flags: -tar
   constraints: xz -system-xz
 elif os(freebsd)
+  flags: -tar
   constraints: zlib +bundled-c-zlib,
                zip +disable-zstd
   package *
