@@ -1,4 +1,4 @@
-import: cabal.project
+import: cabal.project.common
 
 optimization: 2
 
@@ -29,6 +29,6 @@ elif os(freebsd)
   flags: -tar
   constraints: zlib +bundled-c-zlib,
                zip +disable-zstd,
-			   xz -system-xz
+               xz -system-xz
   package *
     ghc-options: -split-sections
