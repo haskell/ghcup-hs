@@ -176,7 +176,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
     pure (GHCupInfo mempty ghcupDownloads' Nothing)
    where
     fromDownloadInfo :: DownloadInfo -> VersionInfo
-    fromDownloadInfo dli = let aspec = M.singleton arch (M.singleton plat (M.singleton Nothing dli))
+    fromDownloadInfo dli = let aspec = MapIgnoreUnknownKeys $ M.singleton arch (MapIgnoreUnknownKeys $ M.singleton plat (M.singleton Nothing dli))
                            in VersionInfo [] Nothing Nothing Nothing Nothing aspec Nothing Nothing Nothing Nothing
 
     fromStackDownloadInfo :: MonadThrow m => Stack.GHCDownloadInfo -> m DownloadInfo
@@ -403,7 +403,7 @@ getDownloadInfo' t v = do
 
   let distro_preview f g =
         let platformVersionSpec =
-              preview (ix t % ix v % viArch % ix a % ix (f p)) dls
+              preview (ix t % ix v % viArch % to unMapIgnoreUnknownKeys % ix a % to unMapIgnoreUnknownKeys % ix (f p)) dls
             mv' = g mv
         in  fmap snd
               .   find
@@ -889,4 +889,3 @@ applyMirrors (DM ms) uri@(URI { uriAuthority = Just (Authority { authorityHost =
     Just (DownloadMirror auth Nothing) ->
       uri { uriAuthority = Just auth }
 applyMirrors _ uri = uri
-
