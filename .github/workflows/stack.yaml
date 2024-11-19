@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-latest, macOS-12, windows-latest, ubuntu-latest]
+        os: [macOS-latest, macOS-13, windows-latest, ubuntu-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
