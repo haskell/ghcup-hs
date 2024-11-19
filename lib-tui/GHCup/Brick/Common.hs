@@ -137,6 +137,7 @@ pattern HadrianGhcSelectBox = ResourceId 22
 -- to have all of them defined, just in case
 data Name = AllTools                   -- ^ The main list widget
           | Singular Tool              -- ^ The particular list for each tool
+          | ListItem Tool Int          -- ^ An item in list
           | KeyInfoBox                 -- ^ The text box widget with action informacion
           | TutorialBox                -- ^ The tutorial widget
           | ContextBox                 -- ^ The resource for Context Menu

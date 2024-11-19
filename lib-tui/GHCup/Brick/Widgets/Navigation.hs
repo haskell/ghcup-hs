@@ -82,7 +82,7 @@ draw dimAttrs section_list
         minTagSize = V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) allElements
         minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (GHCTargetVersion lCross lVer)) allElements
     in Brick.withDefAttr L.listAttr $ SectionList.renderSectionList (renderItem minTagSize minVerSize) True bis
-  renderItem minTagSize minVerSize b listResult@ListResult{lTag = lTag', ..} =
+  renderItem minTagSize minVerSize listIx b listResult@ListResult{lTag = lTag', ..} =
     let marks = if
           | lSet       -> (Brick.withAttr Attributes.setAttr $ Brick.str Common.setSign)
           | lInstalled -> (Brick.withAttr Attributes.installedAttr $ Brick.str Common.installedSign)
@@ -100,8 +100,8 @@ draw dimAttrs section_list
           | elem Latest lTag' && not lInstalled =
               Brick.withAttr Attributes.hoorayAttr
           | otherwise = id
-        active = if b then Common.enableScreenReader Common.AllTools else id
-    in  hooray $ active $ dim
+        active = if b then Common.enableScreenReader (Common.ListItem lTool listIx) else id
+    in Brick.clickable (Common.ListItem lTool listIx) $ hooray $ active $ dim
           (   marks
           <+> Brick.padLeft (Pad 2)
                ( minHSize 6
@@ -147,3 +147,8 @@ draw dimAttrs section_list
             Just d  -> [Brick.withAttr Attributes.dayAttr $ Brick.str (show d)])
 
   minHSize s' = Brick.hLimit s' . Brick.vLimit 1 . (<+> Brick.fill ' ')
+
+instance SectionList.ListItemSectionNameIndex Common.Name where
+  getListItemSectionNameIndex = \case
+    Common.ListItem tool ix -> Just (Common.Singular tool, ix)
+    _ -> Nothing
