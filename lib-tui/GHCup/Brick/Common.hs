@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -53,6 +52,7 @@ module GHCup.Brick.Common  (
   ) ) where
 
 import           GHCup.List ( ListResult )
+import           GHCup.Prelude ( isWindows )
 import           GHCup.Types ( Tool, KeyCombination (KeyCombination) )
 import Data.List (intercalate)
 import           Prelude                 hiding ( appendFile )
@@ -161,32 +161,20 @@ data Mode = Navigation
           deriving (Eq, Show, Ord)
 
 installedSign :: String
-#if IS_WINDOWS
-installedSign = "I "
-#else
-installedSign = "✓ "
-#endif
+  | isWindows = "I "
+  | otherwise = "✓ "
 
 setSign :: String
-#if IS_WINDOWS
-setSign = "IS"
-#else
-setSign = "✔✔"
-#endif
+  | isWindows = "IS"
+  | otherwise = "✔✔"
 
 notInstalledSign :: String
-#if IS_WINDOWS
-notInstalledSign = "X "
-#else
-notInstalledSign = "✗ "
-#endif
+  | isWindows = "X "
+  | otherwise = "✗ "
 
 checkBoxSelectedSign :: String
-#if IS_WINDOWS
-checkBoxSelectedSign = "Y "
-#else
-checkBoxSelectedSign = "✓ "
-#endif
+  | isWindows = "Y "
+  | otherwise = "✓ "
 
 
 showKey :: Vty.Key -> String
