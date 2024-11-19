@@ -169,7 +169,7 @@ jobs:
             ARTIFACT: "aarch64-apple-darwin-ghcup"
             GHC_VER: 9.6.6
             ARCH: ARM64
-          - os: macOS-12
+          - os: macOS-13
             ARTIFACT: "x86_64-apple-darwin-ghcup"
             GHC_VER: 9.6.6
             ARCH: 64
@@ -431,7 +431,7 @@ jobs:
             GHC_VER: 9.6.6
             ARCH: ARM64
             DISTRO: na
-          - os: macOS-12
+          - os: macOS-13
             ARTIFACT: "x86_64-apple-darwin-ghcup"
             GHC_VER: 9.6.6
             ARCH: 64

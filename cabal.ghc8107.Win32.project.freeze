@@ -213,4 +213,4 @@ constraints: any.Cabal ==3.10.3.0,
              yaml +no-examples +no-exe,
              any.zlib ==0.6.3.0,
              zlib +bundled-c-zlib -non-blocking-ffi -pkg-config
-index-state: hackage.haskell.org 2024-08-27T01:59:55Z
+index-state: hackage.haskell.org 2024-11-15T05:14:10Z
