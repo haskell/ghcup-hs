@@ -50,7 +50,7 @@ import qualified Text.Megaparsec               as MP
 import qualified Text.Megaparsec.Char          as MPC
 
 instance ToJSON LinuxDistro where
-  toJSON x = String . T.pack . show $ x
+  toJSON = String . T.pack . show
 
 instance FromJSON LinuxDistro where
   parseJSON = withText "LinuxDistro" $ \t -> case T.unpack (T.toLower t) of
