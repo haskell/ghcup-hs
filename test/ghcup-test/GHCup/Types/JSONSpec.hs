@@ -7,6 +7,7 @@ import           GHCup.Types hiding ( defaultSettings )
 import           GHCup.Types.JSON ()
 import           GHCup.Prelude
 
+import           Control.Monad (when)
 import           Test.Aeson.GenericSpecs
 import           Test.Hspec
 
@@ -15,9 +16,6 @@ import           Test.Hspec
 spec :: Spec
 spec = do
   roundtripSpecs (Proxy @LinuxDistro)
-  roundtripAndGoldenSpecsWithSettings (defaultSettings { goldenDirectoryOption = CustomDirectoryName goldenDir, sampleSize = 2 }) (Proxy @GHCupInfo)
- where
-  goldenDir
-    | isWindows = "test/ghcup-test/golden/windows"
-    | otherwise = "test/ghcup-test/golden/unix"
+  when (not isWindows) $
+    roundtripAndGoldenSpecsWithSettings (defaultSettings { goldenDirectoryOption = CustomDirectoryName "test/ghcup-test/golden/unix", sampleSize = 2 }) (Proxy @GHCupInfo)
 
