@@ -158,7 +158,7 @@ getLinuxDistro = do
         | hasWord ["rocky", "Rocky Linux"] -> Rocky
         -- https://github.com/void-linux/void-packages/blob/master/srcpkgs/base-files/files/os-release
         | hasWord ["void", "Void Linux"] -> Void
-        | otherwise -> OtherLinux (T.unpack $ fromMaybe name mid)
+        | otherwise -> UnknownLinux
   pure (distro, parsedVer)
  where
   regex x = makeRegexOpts compIgnoreCase execBlank ([s|\<|] ++ x ++ [s|\>|])

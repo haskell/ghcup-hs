@@ -4335,63 +4335,6 @@
                                 "notes": "rfiwf"
                             }
                         },
-                        "Linux_dazt": {
-                            "( < 4.1.1 && >= 4.4.4 && > 2.3.3 && > 4.2.3 && == 3.4.4 && > 5.1.3 && < 2.4.1 )": {
-                                "distroPKGs": [
-                                    "eisz",
-                                    "abh",
-                                    "",
-                                    "quyvc"
-                                ],
-                                "notes": "lrghnn"
-                            },
-                            "( <= 2.3.4 && < 3.2.2 && == 5.4.2 ) || ( > 4.4.1 && < 1.2.2 && <= 1.1.1 && == 1.2.1 && <= 3.3.3 )": {
-                                "distroPKGs": [
-                                    "ztsizdt",
-                                    "vph",
-                                    "jlrzip",
-                                    "qnlpqz",
-                                    "fy"
-                                ],
-                                "notes": "dfscy"
-                            },
-                            "( <= 5.4.5 && > 5.1.3 && > 1.4.1 ) || ( == 3.3.2 && == 3.1.4 )": {
-                                "distroPKGs": [
-                                    "fzsz",
-                                    "ldrkfg",
-                                    "lae",
-                                    "weqtzc",
-                                    "uxs",
-                                    "jszlviv",
-                                    "pfw"
-                                ],
-                                "notes": ""
-                            },
-                            "( > 1.5.4 && > 4.6.4 && == 2.2.5 && > 2.1.5 )": {
-                                "distroPKGs": [
-                                    "zlthy",
-                                    "cdqww"
-                                ],
-                                "notes": ""
-                            },
-                            "( > 3.2.3 && > 1.2.1 && <= 5.5.1 )": {
-                                "distroPKGs": [
-                                    "",
-                                    "n",
-                                    "",
-                                    "qhyjus",
-                                    ""
-                                ],
-                                "notes": "zxe"
-                            },
-                            "unknown_versioning": {
-                                "distroPKGs": [
-                                    "fd",
-                                    "e"
-                                ],
-                                "notes": "veu"
-                            }
-                        },
                         "Windows": {
                             "( < 3.3.1 && < 5.1.3 && > 2.3.4 && > 3.3.2 ) || ( == 1.4.1 )": {
                                 "distroPKGs": [
