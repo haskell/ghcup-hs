@@ -258,8 +258,6 @@ data LinuxDistro = Debian
                  | OpenSUSE
                  -- not known
                  | UnknownLinux
-                 -- ^ must exit
-                 | OtherLinux String
   deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Enum LinuxDistro where
@@ -293,7 +291,6 @@ instance Enum LinuxDistro where
   fromEnum Exherbo = 11
   fromEnum OpenSUSE = 12
   fromEnum UnknownLinux = 13
-  fromEnum (OtherLinux _) = error "fromEnum: OtherLinux"
 
 instance Bounded LinuxDistro where
   minBound = Debian
@@ -319,7 +316,6 @@ distroToString Gentoo = "gentoo"
 distroToString Exherbo = "exherbo"
 distroToString OpenSUSE = "opensuse"
 distroToString UnknownLinux = "unknown"
-distroToString (OtherLinux str) = str
 
 instance Pretty LinuxDistro where
   pPrint = text . distroToString
