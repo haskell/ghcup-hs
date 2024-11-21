@@ -789,6 +789,57 @@ ghcup run --ghc 8.10.7 --cabal latest --hls latest --stack latest --install -- c
 
 This will execute vscode with GHC set to 8.10.7 and all other tools to their latest version.
 
+## Support multiple users on Windows
+
+On Windows, by default GHCup is installed in `C:\ghcup`, and not in the `C:\Users` directory.
+All users who can access `C:\ghcup` can in principle run GHCup and the installed tools with the following steps.
+
+1. Set up permissions
+
+   If you wish to allow multiple users to run GHCup, install the tools, modify "set" tool for all users, and even remove GHCup completely via `ghcup nuke`. Then the users must have write permissions to `C:\ghcup` and its subdirectories.
+
+   On the other hand to prevent users from installing or modify the installed/set tools, the system administrator should make `C:\ghcup` readonly for other users.
+
+2. Set up environment variables globally
+
+   Append bin dir to PATH
+
+   ```sh
+   $sysPath = [Environment]::GetEnvironmentVariable('PATH', 'Machine')
+   $combinedPath = $sysPath + ';C:\ghcup\bin'
+   [System.Environment]::SetEnvironmentVariable('PATH', $combinedPath, [System.EnvironmentVariableTarget]::Machine)
+   ```
+
+   Note: if the GHCup is not installed at the default location of `C:\ghcup`, then additionally the following environment variables would also need to be specified.
+
+   * GHCUP_INSTALL_BASE_PREFIX
+   * GHCUP_MSYS2
+
+   For example
+   ```sh
+   [System.Environment]::SetEnvironmentVariable('GHCUP_INSTALL_BASE_PREFIX', 'C:\shared-dir\haskell\', [System.EnvironmentVariableTarget]::Machine)
+   [System.Environment]::SetEnvironmentVariable('GHCUP_MSYS2', 'C:\shared-dir\haskell\msys64' , [System.EnvironmentVariableTarget]::Machine)
+   ```
+
+   If there are other users already logged during the above setup of env variables, they will have to sign out and login again to make use of GHCup / tools.
+
+3. Set up cabal config
+
+   Make sure the users don't have `CABAL_DIR` env set. This will ensure that `cabal` uses user's local dir (typically `$env:USERPROFILE\AppData\Roaming\cabal`)
+
+   If the users need msys2 C libraries, they will have to each adjust their `cabal.config` as [described here](https://cabal.readthedocs.io/en/latest/how-to-run-in-windows.html#ensure-that-cabal-can-use-system-libraries). Also make sure they [enable long path behavior](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry#enable-long-paths-in-windows-10-version-1607-and-later).
+
+   The `cabal.config` adjustment can be done by running the following command by each user
+
+   ```sh
+   cabal user-config -a "extra-prog-path: C:\ghcup\bin, $env:USERPROFILE\AppData\Roaming\cabal\bin, C:\ghcup\msys64\mingw64\bin, C:\ghcup\msys64\usr\bin" -a "extra-include-dirs: C:\ghcup\msys64\mingw64\include" -a "extra-lib-dirs: C:\ghcup\msys64\mingw64\lib" -f init
+   ```
+
+   Also check:
+
+   * [GHCup: manual install on windows](https://www.haskell.org/ghcup/install/#windows_1)
+   * [GHCup: common env variables](https://www.haskell.org/ghcup/guide/#env-variables)
+
 # Troubleshooting
 
 ## Script immediately exits on windows
