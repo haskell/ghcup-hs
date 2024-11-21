@@ -53,7 +53,7 @@ import           GHCup.OptParse.ToolRequirements
 import           GHCup.OptParse.Nuke
 
 import           GHCup.Types
-import           GHCup.Utils.Parsers (gpgParser, downloaderParser, keepOnParser, platformParser, parseUrlSource)
+import           GHCup.Utils.Parsers (gpgParser, downloaderParser, keepOnParser, platformParser, parseUrlSourceWithChannelAlias)
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
@@ -140,10 +140,10 @@ opts =
       )
     <*> optional
           (option
-            (eitherReader parseUrlSource)
+            (eitherReader parseUrlSourceWithChannelAlias)
             (  short 's'
             <> long "url-source"
-            <> metavar "URL_SOURCE"
+            <> metavar "<URL_SOURCE|main|cross|prereleases|vanilla>"
             <> help "Alternative ghcup download info"
             <> internal
             <> completer urlSourceCompleter
