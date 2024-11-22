@@ -247,7 +247,7 @@ installWithOptions opts (_, ListResult {..}) = do
               liftE $
                 runBothE'
                   (withNoVerify $ installGHCBindist
-                      (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing)
+                      (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing Nothing)
                       v
                       shouldIsolate
                       shouldForce
@@ -267,7 +267,7 @@ installWithOptions opts (_, ListResult {..}) = do
             Just uri -> do
               liftE $
                 runBothE'
-                  (withNoVerify $ installCabalBindist (DownloadInfo uri Nothing "" Nothing Nothing) lVer shouldIsolate shouldForce)
+                  (withNoVerify $ installCabalBindist (DownloadInfo uri Nothing "" Nothing Nothing Nothing) lVer shouldIsolate shouldForce)
                   (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal lVer))
               pure (vi, dirs, ce)
 
@@ -287,7 +287,7 @@ installWithOptions opts (_, ListResult {..}) = do
               liftE $
                 runBothE'
                   (withNoVerify $ installHLSBindist
-                    (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing)
+                    (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing Nothing)
                     lVer
                     shouldIsolate
                     shouldForce)
@@ -306,7 +306,7 @@ installWithOptions opts (_, ListResult {..}) = do
             Just uri -> do
               liftE $
                 runBothE'
-                  (withNoVerify $ installStackBindist (DownloadInfo uri Nothing "" Nothing Nothing) lVer shouldIsolate shouldForce)
+                  (withNoVerify $ installStackBindist (DownloadInfo uri Nothing "" Nothing Nothing Nothing) lVer shouldIsolate shouldForce)
                   (when (shouldSet && isNothing misolated) (liftE $ void $ setStack lVer))
               pure (vi, dirs, ce)
 

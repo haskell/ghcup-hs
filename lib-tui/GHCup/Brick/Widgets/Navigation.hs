@@ -130,6 +130,7 @@ draw dimAttrs section_list
   printTag Old            = Nothing
   printTag LatestPrerelease = Just $ Brick.withAttr Attributes.latestPrereleaseAttr $ Brick.str "latest-prerelease"
   printTag LatestNightly    = Just $ Brick.withAttr Attributes.latestNightlyAttr $ Brick.str "latest-nightly"
+  printTag Experimental     = Just $ Brick.withAttr Attributes.latestNightlyAttr $ Brick.str "experimental"
   printTag (UnknownTag t) = Just $ Brick.str t
 
   printTool Cabal = Brick.str "cabal"

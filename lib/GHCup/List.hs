@@ -331,18 +331,29 @@ listVersions lt' criteria hideOld showNightly days = do
     let v = _tvVersion tver
     case t of
       GHC -> do
-        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo' GHC tver
+        dli <- fmap veitherToEither $ runE @'[NoDownload] $ getDownloadInfo' GHC tver
+        let lNoBindist = isLeft dli
+        let bTags = either (const []) (fromMaybe [] . _dlTag) dli
         lSet       <- fmap (== Just tver) $ ghcSet (_tvTarget tver)
         lInstalled <- ghcInstalled tver
         hlsPowered <- fmap (elem tver) (fmap mkTVer <$> hlsGHCVersions)
-        pure ListResult { lVer = _tvVersion tver , lCross = _tvTarget tver , lTag = _viTags, lTool = t, lStray = False, lReleaseDay = _viReleaseDay, .. }
+        pure ListResult { lVer = _tvVersion tver
+                        , lCross = _tvTarget tver
+                        , lTag = _viTags <> bTags
+                        , lTool = t
+                        , lStray = False
+                        , lReleaseDay = _viReleaseDay
+                        , ..
+                        }
       Cabal -> do
-        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo Cabal v
+        dli <- fmap veitherToEither $ runE @'[NoDownload] $ getDownloadInfo Cabal v
+        let lNoBindist = isLeft dli
+        let bTags = either (const []) (fromMaybe [] . _dlTag) dli
         let lSet = cSet == Just v
         let lInstalled = elem v $ rights cabals
         pure ListResult { lVer    = v
                         , lCross  = Nothing
-                        , lTag    = _viTags
+                        , lTag    = _viTags <> bTags
                         , lTool   = t
                         , lStray  = False
                         , hlsPowered = False
@@ -363,12 +374,14 @@ listVersions lt' criteria hideOld showNightly days = do
                         , ..
                         }
       HLS -> do
-        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo HLS v
+        dli <- fmap veitherToEither $ runE @'[NoDownload] $ getDownloadInfo HLS v
+        let lNoBindist = isLeft dli
+        let bTags = either (const []) (fromMaybe [] . _dlTag) dli
         let lSet = hlsSet' == Just v
         let lInstalled = elem v $ rights hlses
         pure ListResult { lVer    = v
                         , lCross  = Nothing
-                        , lTag    = _viTags
+                        , lTag    = _viTags <> bTags
                         , lTool   = t
                         , lStray  = False
                         , hlsPowered = False
@@ -376,12 +389,14 @@ listVersions lt' criteria hideOld showNightly days = do
                         , ..
                         }
       Stack -> do
-        lNoBindist <- fmap (isLeft . veitherToEither) $ runE @'[NoDownload] $ getDownloadInfo Stack v
+        dli <- fmap veitherToEither $ runE @'[NoDownload] $ getDownloadInfo Stack v
+        let lNoBindist = isLeft dli
+        let bTags = either (const []) (fromMaybe [] . _dlTag) dli
         let lSet = stackSet' == Just v
         let lInstalled = elem v $ rights stacks
         pure ListResult { lVer    = v
                         , lCross  = Nothing
-                        , lTag    = _viTags
+                        , lTag    = _viTags <> bTags
                         , lTool   = t
                         , lStray  = False
                         , hlsPowered = False

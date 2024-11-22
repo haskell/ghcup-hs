@@ -170,6 +170,7 @@ data Tag = Latest             -- ^ the latest version of a tool (unique per tool
          | LatestNightly      -- ^ the latest nightly (unique per tool)
          | Base PVP           -- ^ the base version shipped with GHC
          | Old                -- ^ old versions are hidden by default in TUI
+         | Experimental       -- ^ an experiemntal version/bindist
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, GHC.Generic, Show) -- FIXME: manual JSON instance
 
@@ -184,6 +185,7 @@ tagToString (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
 tagToString (UnknownTag t    ) = t
 tagToString LatestPrerelease   = "latest-prerelease"
 tagToString LatestNightly      = "latest-nightly"
+tagToString Experimental       = "experimental"
 tagToString Old                = ""
 
 instance Pretty Tag where
@@ -195,6 +197,7 @@ instance Pretty Tag where
   pPrint (UnknownTag t    ) = text t
   pPrint LatestPrerelease   = text "latest-prerelease"
   pPrint LatestNightly      = text "latest-prerelease"
+  pPrint Experimental       = text "experimental"
   pPrint Old                = mempty
 
 data Architecture = A_64
@@ -329,6 +332,7 @@ data DownloadInfo = DownloadInfo
   , _dlHash   :: Text
   , _dlCSize  :: Maybe Integer
   , _dlOutput :: Maybe FilePath
+  , _dlTag    :: Maybe [Tag]
   }
   deriving (Eq, Ord, GHC.Generic, Show)
 
