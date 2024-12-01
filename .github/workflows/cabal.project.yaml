@@ -43,7 +43,7 @@ jobs:
           [ -e ~/.ghcup/env ] && source ~/.ghcup/env
           ghcup --version
           ghcup run -i --cabal latest --ghc ${GHC_VER} -- cabal update
-          ghcup run -i --cabal latest --ghc ${GHC_VER} -- cabal build --project-file=cabal.ghc${GHC_VER//./}.project
+          ghcup run -i --cabal latest --ghc ${GHC_VER} -- cabal build -w ghc-${GHC_VER}
         env:
           GHC_VER: ${{ matrix.ghc }}
         shell: bash

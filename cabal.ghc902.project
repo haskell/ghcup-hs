@@ -1,8 +1,0 @@
-if os(mingw32)
-  import: cabal.ghc902.Win32.project
-  import: cabal.ghc902.Win32.project.freeze
-else
-  import: cabal.ghc902.Unix.project
-  import: cabal.ghc902.Unix.project.freeze
-
-with-compiler: ghc-9.0.2
