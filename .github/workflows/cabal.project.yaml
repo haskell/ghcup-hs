@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macOS-13, windows-latest, ubuntu-latest]
-        ghc: ["8.10.7", "9.0.2", "9.2.8", "9.4.8", "9.6.6"]
+        ghc: ["8.10.7", "9.0.2", "9.2.8", "9.4.8", "9.6.6", "9.8.4"]
         include:
           - os: macOS-latest
             ghc: "9.2.8"
@@ -28,6 +28,8 @@ jobs:
             ghc: "9.4.8"
           - os: macOS-latest
             ghc: "9.6.6"
+          - os: macOS-latest
+            ghc: "9.8.4"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

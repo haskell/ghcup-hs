@@ -68,7 +68,7 @@ import           Data.Char                      ( isHexDigit )
 import           Data.ByteString                ( ByteString )
 import           Data.Either
 import           Data.Foldable
-import           Data.List
+import           Data.List                      ( sort, stripPrefix, isPrefixOf, nub, isInfixOf, isSuffixOf, groupBy, sortBy )
 import           Data.List.NonEmpty             ( NonEmpty( (:|) ))
 import           Data.Maybe
 import           Data.Text                      ( Text )
