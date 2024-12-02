@@ -1,8 +1,0 @@
-if os(mingw32)
-  import: cabal.ghc8107.Win32.project
-  import: cabal.ghc8107.Win32.project.freeze
-else
-  import: cabal.ghc8107.Unix.project
-  import: cabal.ghc8107.Unix.project.freeze
-
-with-compiler: ghc-8.10.7
