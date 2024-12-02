@@ -67,6 +67,10 @@ makeLensesFor [("sectionListFocusRing", "sectionListFocusRingL"), ("sectionListE
 
 type SectionList n e = GenericSectionList n V.Vector e
 
+-- | To support selection by mouse click we need to obtain section name and item
+-- index from the name of the item that got clicked. This helper class is to get that
+class ListItemSectionNameIndex n where
+  getListItemSectionNameIndex :: n -> Maybe (n, Int)
 
 -- | Build a SectionList from nonempty list. If empty we could not defined sectionL lenses.
 sectionList :: Foldable t
@@ -129,6 +133,13 @@ moveUp = do
                         Just new_l -> Common.zoom (sectionL new_l) (Brick.modify L.listMoveToEnd)
                 else Common.zoom (sectionL l) $ Brick.modify L.listMoveUp
 
+sectionListSelectItem :: (L.Splittable t, Eq n, ListItemSectionNameIndex n, Foldable t) => n -> EventM n (GenericSectionList n t e) ()
+sectionListSelectItem selectedItem = case getListItemSectionNameIndex selectedItem of
+  Nothing -> pure ()
+  Just (secName, ix) -> do
+    sectionListFocusRingL %= F.focusSetCurrent secName
+    Common.zoom (sectionL secName) (Brick.modify $ L.listMoveTo ix)
+
 -- | Handle events for list cursor movement.  Events handled are:
 --
 -- * Up (up arrow key). If first element of section, then jump prev section
@@ -137,12 +148,14 @@ moveUp = do
 -- * Page Down (PgDown)
 -- * Go to next section (Tab)
 -- * Go to prev section (BackTab)
-handleGenericListEvent :: (Foldable t, L.Splittable t, Ord n)
+-- * Select an element via Mouse left click
+handleGenericListEvent :: (Foldable t, L.Splittable t, Ord n, ListItemSectionNameIndex n)
                        => BrickEvent n a
                        -> EventM n (GenericSectionList n t e) ()
 handleGenericListEvent (VtyEvent (Vty.EvResize _ _))              = pure ()
 handleGenericListEvent (VtyEvent (Vty.EvKey (Vty.KChar '\t') [])) = sectionListFocusRingL %= F.focusNext
 handleGenericListEvent (VtyEvent (Vty.EvKey Vty.KBackTab []))     = sectionListFocusRingL %= F.focusPrev
+handleGenericListEvent (MouseDown n Vty.BLeft _ _)                = sectionListSelectItem n
 handleGenericListEvent (MouseDown _ Vty.BScrollDown _ _)          = moveDown
 handleGenericListEvent (MouseDown _ Vty.BScrollUp _ _)            = moveUp
 handleGenericListEvent (VtyEvent (Vty.EvKey Vty.KDown []))        = moveDown
@@ -156,7 +169,7 @@ handleGenericListEvent _ = pure ()
 
 -- This re-uses Brick.Widget.List.renderList
 renderSectionList :: forall n t e . (Traversable t, Ord n, Show n, Eq n, L.Splittable t, Semigroup (t e))
-                  => (Bool -> e -> Widget n)             -- ^ Rendering function of the list element, True for the selected element
+                  => (Int -> Bool -> e -> Widget n)      -- ^ Rendering function of the list element, True for the selected element
                   -> Bool                                -- ^ Whether the section list has focus
                   -> GenericSectionList n t e            -- ^ The section list to render
                   -> Widget n
@@ -177,7 +190,7 @@ renderSectionList renderElem sectionFocus ge@(GenericSectionList focus elms slNa
   sectionIsFocused l = sectionFocus && (Just (L.listName l) == F.focusGetCurrent focus)
 
   renderInnerList :: Bool -> L.GenericList n t e -> Widget n
-  renderInnerList hasFocus l = Brick.vLimit (length l) $ L.renderList (\b -> renderElem (b && hasFocus)) hasFocus l
+  renderInnerList hasFocus l = Brick.vLimit (length l) $ L.renderListWithIndex (\i b -> renderElem i (b && hasFocus)) hasFocus l
 
   -- compute the location to focus on within the active section
   (c, r) :: (Int, Int) = case sectionListSelectedElement ge of

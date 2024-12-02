@@ -73,10 +73,18 @@ app :: AttrMap -> AttrMap -> App BrickState () Name
 app attrs dimAttrs =
   App { appDraw         = drawUI dimAttrs
       , appHandleEvent  = eventHandler
-      , appStartEvent   = return ()
+      , appStartEvent   = setupVtyMode
       , appAttrMap      = const attrs
       , appChooseCursor = Brick.showFirstCursor
       }
+
+-- | Enable mouse mode if supported by the terminal
+setupVtyMode :: EventM Name BrickState ()
+setupVtyMode = do
+  vty <- Brick.getVtyHandle
+  let output = Vty.outputIface vty
+  when (Vty.supportsMode output Vty.Mouse) $
+      liftIO $ Vty.setMode output Vty.Mouse True
 
 drawUI :: AttrMap -> BrickState -> [Widget Name]
 drawUI dimAttrs st =
