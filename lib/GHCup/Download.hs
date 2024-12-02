@@ -183,7 +183,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
     fromStackDownloadInfo (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do
       url <- either (\e -> throwM $ ParseError (show e)) pure $ parseURI . E.encodeUtf8 $ downloadInfoUrl
       sha256 <- maybe (throwM $ DigestMissing url) (pure . E.decodeUtf8) downloadInfoSha256
-      pure $ DownloadInfo url (Just $ RegexDir "ghc-.*") sha256 Nothing Nothing
+      pure $ DownloadInfo url (Just $ RegexDir "ghc-.*") sha256 Nothing Nothing Nothing
 
 
   mergeGhcupInfo :: MonadFail m

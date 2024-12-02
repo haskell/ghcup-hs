@@ -352,7 +352,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                "...waiting for 5 seconds, you can still abort..."
              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
            liftE $ runBothE' (installGHCBindist
-                       (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing)
+                       (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing Nothing)
                        v
                        (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
@@ -432,7 +432,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                "...waiting for 5 seconds, you can still abort..."
              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
            liftE $ runBothE' (installCabalBindist
-                                      (DownloadInfo uri Nothing "" Nothing Nothing)
+                                      (DownloadInfo uri Nothing "" Nothing Nothing Nothing)
                                       v
                                       (maybe GHCupInternal IsolateDir isolateDir)
                                       forceInstall
@@ -492,7 +492,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
            -- TODO: support legacy
            liftE $ runBothE' (installHLSBindist
-                                      (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing)
+                                      (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing Nothing)
                                       v
                                       (maybe GHCupInternal IsolateDir isolateDir)
                                       forceInstall
@@ -551,7 +551,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- give the user a sec to intervene
             liftE $ runBothE' (installStackBindist
-                                       (DownloadInfo uri Nothing "" Nothing Nothing)
+                                       (DownloadInfo uri Nothing "" Nothing Nothing Nothing)
                                        v
                                        (maybe GHCupInternal IsolateDir isolateDir)
                                        forceInstall

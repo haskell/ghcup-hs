@@ -1123,7 +1123,7 @@ ensureShimGen :: ( MonadMask m
 ensureShimGen
   | isWindows = do
       dirs <- lift getDirs
-      let shimDownload = DownloadInfo shimGenURL Nothing shimGenSHA Nothing Nothing
+      let shimDownload = DownloadInfo shimGenURL Nothing shimGenSHA Nothing Nothing Nothing
       let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
       void $ (\DigestError{} -> do
           lift $ logWarn "Digest doesn't match, redownloading gs.exe..."

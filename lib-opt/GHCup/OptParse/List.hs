@@ -159,6 +159,7 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
     printTag (UnknownTag t    ) = t
     printTag LatestPrerelease   = color Red "latest-prerelease"
     printTag LatestNightly      = color Red "latest-nightly"
+    printTag Experimental       = color Red "experimental"
     printTag Old                = ""
 
   let
