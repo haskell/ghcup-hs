@@ -228,7 +228,7 @@ createCheckBoxInput = FieldInput False Right "" checkBoxRender checkBoxHandler
     border w = Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 2) w) <+> Brick.txt "]"
     drawBool b =
         if b
-          then border . Brick.withAttr Attributes.installedAttr    $ Brick.str Common.installedSign
+          then border . Brick.withAttr Attributes.installedAttr    $ Brick.str Common.checkBoxSelectedSign
           else border . Brick.withAttr Attributes.notInstalledAttr $ Brick.str Common.notInstalledSign
     checkBoxRender focus _ help _ check f = (, Nothing) $
       let core = f $ drawBool check
