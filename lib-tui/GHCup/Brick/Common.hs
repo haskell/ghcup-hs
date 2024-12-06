@@ -48,7 +48,7 @@ module GHCup.Brick.Common  (
     , BuildFlavourEditBox, BuildSystemEditBox, OkButton, AdvanceInstallButton
     , CompileGHCButton, CompileHLSButton, CabalProjectEditBox
     , CabalProjectLocalEditBox, UpdateCabalCheckBox, GitRefEditBox
-    , BootstrapGhcSelectBox, HadrianGhcSelectBox
+    , BootstrapGhcSelectBox, HadrianGhcSelectBox, ToolVersionBox
   ) ) where
 
 import           GHCup.List ( ListResult )
@@ -132,6 +132,9 @@ pattern BootstrapGhcSelectBox :: ResourceId
 pattern BootstrapGhcSelectBox = ResourceId 21
 pattern HadrianGhcSelectBox :: ResourceId
 pattern HadrianGhcSelectBox = ResourceId 22
+
+pattern ToolVersionBox :: ResourceId
+pattern ToolVersionBox = ResourceId 23
 
 -- | Name data type. Uniquely identifies each widget in the TUI.
 -- some constructors might end up unused, but still is a good practise
