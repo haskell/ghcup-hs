@@ -868,20 +868,23 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
         tmpDownload <- lift withGHCupTmpDir
         tmpUnpack <- lift mkGhcupTmpDir
         tar <- liftE $ download uri Nothing Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
-        (bf, tver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError] tmpUnpack $ do
+        (workdir, tver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError, PatchFailed, DownloadFailed, DigestError, ContentLengthError, GPGError] tmpUnpack $ do
           liftE $ unpackToDir (fromGHCupPath tmpUnpack) tar
-          let regex = [s|^(.*/)*boot$|] :: B.ByteString
-          [bootFile] <- liftIO $ findFilesDeep
-            tmpUnpack
-            (makeRegexOpts compExtended
-                           execBlank
-                           regex
-            )
-          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
-            (appendGHCupPath tmpUnpack (takeDirectory bootFile))
-          pure (bootFile, tver)
 
-        let workdir = appendGHCupPath tmpUnpack (takeDirectory bf)
+          -- bootstrapped ghc renames boot to boot.source
+          let regex = [s|^(.*/)*boot(.source)*$|] :: B.ByteString
+          (boot:_) <- liftIO $ findFilesDeep
+            tmpUnpack
+            (makeRegexOpts compExtended execBlank regex)
+
+          let workdir = appendGHCupPath tmpUnpack (takeDirectory boot)
+
+          lift $ logDebug $ "GHC compile workdir: " <> T.pack (fromGHCupPath workdir)
+
+          liftE $ applyAnyPatch patches (fromGHCupPath workdir)
+
+          tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer workdir
+          pure (workdir, tver)
 
         ov <- case vps of
                 Just vps' -> fmap Just $ expandVersionPattern tver "" "" "" "" vps'
