@@ -868,8 +868,11 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
         tmpDownload <- lift withGHCupTmpDir
         tmpUnpack <- lift mkGhcupTmpDir
         tar <- liftE $ download uri Nothing Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
-        (bf, tver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError] tmpUnpack $ do
+        (bf, tver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError, PatchFailed, DownloadFailed, DigestError, ContentLengthError, GPGError] tmpUnpack $ do
           liftE $ unpackToDir (fromGHCupPath tmpUnpack) tar
+
+          liftE $ applyAnyPatch patches (fromGHCupPath tmpUnpack)
+
           let regex = [s|^(.*/)*boot$|] :: B.ByteString
           [bootFile] <- liftIO $ findFilesDeep
             tmpUnpack
