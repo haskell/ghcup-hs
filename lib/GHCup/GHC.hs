@@ -868,7 +868,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
         tmpDownload <- lift withGHCupTmpDir
         tmpUnpack <- lift mkGhcupTmpDir
         tar <- liftE $ download uri Nothing Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
-        (workdir, tver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError, PatchFailed, DownloadFailed, DigestError, ContentLengthError, GPGError] tmpUnpack $ do
+        (workdir, tver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError, PatchFailed, DownloadFailed, DigestError, ContentLengthError, GPGError, NotFoundInPATH] tmpUnpack $ do
           liftE $ unpackToDir (fromGHCupPath tmpUnpack) tar
 
           let regex = [s|^(.*/)*compiler/ghc.cabal.in$|] :: B.ByteString
@@ -881,6 +881,9 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
           lift $ logDebug $ "GHC compile workdir: " <> T.pack (fromGHCupPath workdir)
 
           liftE $ applyAnyPatch patches (fromGHCupPath workdir)
+
+          -- bootstrap, if necessary
+          liftE $ bootAndConfigure workdir
 
           tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer workdir
           pure (workdir, tver)
@@ -936,6 +939,8 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
           liftE $ applyAnyPatch patches (fromGHCupPath tmpUnpack)
 
           -- bootstrap
+          liftE $ bootAndConfigure tmpUnpack
+
           tver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
             tmpUnpack
           liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
@@ -1037,6 +1042,24 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
     pure installVer
 
  where
+  bootAndConfigure :: ( MonadReader env m
+                      , HasSettings env
+                      , HasDirs env
+                      , HasLog env
+                      , MonadIO m
+                      , MonadThrow m
+                      )
+                   => GHCupPath
+                   -> Excepts '[ProcessError, NotFoundInPATH] m ()
+  bootAndConfigure tmpUnpack = do
+    let bootFile = fromGHCupPath tmpUnpack </> "boot"
+    hasBootFile <- liftIO $ doesFileExist bootFile
+    when hasBootFile $ do
+      lift $ logDebug "Doing ghc-bootstrap"
+      python3 <- liftE $ makeAbsolute "python3"
+      lEM $ execLogged python3 ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap" Nothing
+      liftE $ configureWithGhcBoot Nothing [] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
+
   getGHCVer :: ( MonadReader env m
                , HasSettings env
                , HasDirs env
@@ -1047,8 +1070,6 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
             => GHCupPath
             -> Excepts '[ProcessError, ParseError, NotFoundInPATH] m Version
   getGHCVer tmpUnpack = do
-    lEM $ execLogged "python3" ["./boot"] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap" Nothing
-    liftE $ configureWithGhcBoot Nothing [] (Just $ fromGHCupPath tmpUnpack) "ghc-bootstrap"
     let versionFile = fromGHCupPath tmpUnpack </> "VERSION"
     hasVersionFile <- liftIO $ doesFileExist versionFile
     if hasVersionFile
