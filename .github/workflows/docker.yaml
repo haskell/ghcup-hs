@@ -110,6 +110,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Build and push (Alpine)
+        uses: docker/build-push-action@v3
+        with:
+          context: ./docker/arm64v8/alpine
+          push: true
+          tags: hasufell/arm64v8-alpine-haskell:3.20
+          platforms: linux/arm64
+
       - name: Build and push (debian buster)
         uses: docker/build-push-action@v3
         with:
