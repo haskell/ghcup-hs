@@ -153,7 +153,7 @@ jobs:
         uses: docker://hasufell/arm64v8-alpine-haskell:3.20
         name: Run build (aarch64 linux)
         with:
-          args: sh -c ".github/scripts/build.sh '--ghc-options=-split-sections -optl-static'"
+          args: sh -c ".github/scripts/build.sh '--ghc-options=-split-sections' '--enable-executable-static'"
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
