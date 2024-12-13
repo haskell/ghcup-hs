@@ -395,7 +395,7 @@ jobs:
             DISTRO: Debian
           - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-alpine-ghcup"
-            GHC_VER: 9.6.6
+            GHC_VER: 9.8.4
             ARCH: ARM64
             DISTRO: Alpine
 

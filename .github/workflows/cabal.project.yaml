@@ -38,6 +38,12 @@ jobs:
         with:
           submodules: 'true'
 
+      - if: runner.os == 'Linux'
+        name: Install prerequisites
+        run: |
+          sudo apt update
+          sudo apt install -y libbz2-dev
+
       - name: Run build
         run: |
           env
