@@ -21,7 +21,7 @@ GHC="ghc-${GHC_VER}"
 
 # build
 ecabal update
-build_with_cache --project-file=cabal.project.release -w "${GHC}" --enable-tests
+build_with_cache --project-file=cabal.project.release -w "${GHC}" --enable-tests "$@"
 
 # set up artifacts
 mkdir -p out

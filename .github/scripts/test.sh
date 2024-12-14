@@ -105,6 +105,9 @@ if [ "${OS}" = "macOS" ] && [ "${ARCH}" = "ARM64" ] ; then
 elif [ "${OS}" = "FreeBSD" ] ; then
 	# not enough space
 	echo
+elif [ "${OS}" = "Linux" ] && [ "${ARCH}" = "ARM64" ] && [ "${DISTRO}" = "Alpine" ]; then
+	# missing bindists
+	echo
 else
 	# test installing new ghc doesn't mess with currently set GHC
 	# https://gitlab.haskell.org/haskell/ghcup-hs/issues/7
