@@ -431,7 +431,7 @@ jobs:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
           GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: Ubuntu
+          DISTRO: ${{ matrix.DISTRO }}
 
       - if: matrix.ARCH == 'ARM64' && matrix.DISTRO == 'Alpine'
         uses: docker://hasufell/arm64v8-alpine-haskell:3.20
@@ -442,7 +442,7 @@ jobs:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
           GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: Ubuntu
+          DISTRO: ${{ matrix.DISTRO }}
 
       - if: failure()
         name: Upload artifact
