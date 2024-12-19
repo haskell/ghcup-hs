@@ -394,6 +394,13 @@ data NewURLSource = NewGHCupURL
 
 instance NFData NewURLSource
 
+-- | Alias for ease of URLSource selection
+data ChannelAlias = MainChannel
+                  | CrossChannel
+                  | PrereleasesChannel
+                  | VanillaChannel
+                  deriving (Eq, GHC.Generic, Show)
+
 fromURLSource :: URLSource -> [NewURLSource]
 fromURLSource GHCupURL              = [NewGHCupURL]
 fromURLSource StackSetupURL         = [NewStackSetupURL]
