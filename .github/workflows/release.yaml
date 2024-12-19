@@ -282,10 +282,10 @@ jobs:
 
       - name: Run build
         run: |
-          sed -i.bak -e 's/quarterly/latest/' /etc/pkg/FreeBSD.conf
-          pkg install -y ghc hs-cabal-install git bash misc/compat10x misc/compat11x misc/compat12x gmake llvm14 libiconv
-          tzsetup Etc/GMT
-          adjkerntz -a
+          sudo sed -i.bak -e 's/quarterly/latest/' /etc/pkg/FreeBSD.conf
+          sudo pkg install -y ghc hs-cabal-install git bash misc/compat10x misc/compat11x misc/compat12x llvm14 libiconv curl gcc gmp gmake ncurses perl5 pkgconf libffi
+          sudo tzsetup Etc/GMT
+          sudo adjkerntz -a
           bash .github/scripts/build.sh
       - if: always()
         name: Upload artifact
