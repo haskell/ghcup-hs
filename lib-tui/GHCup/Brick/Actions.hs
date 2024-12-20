@@ -193,7 +193,8 @@ installWithOptions opts (_, ListResult {..}) = do
     shouldForce   = opts ^. AdvanceInstall.forceInstallL
     shouldSet     = opts ^. AdvanceInstall.instSetL
     extraArgs     = opts ^. AdvanceInstall.addConfArgsL
-    v = GHCTargetVersion lCross lVer
+    v = fromMaybe (GHCTargetVersion lCross lVer) (opts ^. AdvanceInstall.instVersionL)
+    toolV = _tvVersion v
   let run =
         runResourceT
           . runE
@@ -261,14 +262,14 @@ installWithOptions opts (_, ListResult {..}) = do
             Nothing -> do
               liftE $
                 runBothE'
-                  (installCabalBin lVer shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal lVer))
+                  (installCabalBin toolV shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal toolV))
               pure (vi, dirs, ce)
             Just uri -> do
               liftE $
                 runBothE'
-                  (withNoVerify $ installCabalBindist (DownloadInfo uri Nothing "" Nothing Nothing Nothing) lVer shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal lVer))
+                  (withNoVerify $ installCabalBindist (DownloadInfo uri Nothing "" Nothing Nothing Nothing) toolV shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal toolV))
               pure (vi, dirs, ce)
 
         GHCup -> do
@@ -280,18 +281,18 @@ installWithOptions opts (_, ListResult {..}) = do
             Nothing -> do
               liftE $
                 runBothE'
-                  (installHLSBin lVer shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setHLS lVer SetHLSOnly Nothing))
+                  (installHLSBin toolV shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setHLS toolV SetHLSOnly Nothing))
               pure (vi, dirs, ce)
             Just uri -> do
               liftE $
                 runBothE'
                   (withNoVerify $ installHLSBindist
                     (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing Nothing)
-                    lVer
+                    toolV
                     shouldIsolate
                     shouldForce)
-                  (when (shouldSet && isNothing misolated)  (liftE $ void $ setHLS lVer SetHLSOnly Nothing))
+                  (when (shouldSet && isNothing misolated)  (liftE $ void $ setHLS toolV SetHLSOnly Nothing))
               pure (vi, dirs, ce)
 
         Stack -> do
@@ -300,14 +301,14 @@ installWithOptions opts (_, ListResult {..}) = do
             Nothing -> do
               liftE $
                 runBothE'
-                  (installStackBin lVer shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setStack lVer))
+                  (installStackBin toolV shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setStack toolV))
               pure (vi, dirs, ce)
             Just uri -> do
               liftE $
                 runBothE'
-                  (withNoVerify $ installStackBindist (DownloadInfo uri Nothing "" Nothing Nothing Nothing) lVer shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setStack lVer))
+                  (withNoVerify $ installStackBindist (DownloadInfo uri Nothing "" Nothing Nothing Nothing) toolV shouldIsolate shouldForce)
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setStack toolV))
               pure (vi, dirs, ce)
 
     )
@@ -338,7 +339,7 @@ installWithOptions opts (_, ListResult {..}) = do
 
 install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
          => (Int, ListResult) -> m (Either String ())
-install' = installWithOptions (AdvanceInstall.InstallOptions Nothing False Nothing False [])
+install' = installWithOptions (AdvanceInstall.InstallOptions Nothing False Nothing Nothing False [])
 
 set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
      => (Int, ListResult)
