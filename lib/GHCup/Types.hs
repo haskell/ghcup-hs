@@ -379,6 +379,7 @@ instance Pretty TarDir where
 -- | Where to fetch GHCupDownloads from.
 data URLSource = GHCupURL
                | StackSetupURL
+               | ChannelAlias  ChannelAlias
                | OwnSource     [Either (Either GHCupInfo SetupInfo) URI] -- ^ complete source list
                | OwnSpec               (Either GHCupInfo SetupInfo)
                | AddSource     [Either (Either GHCupInfo SetupInfo) URI] -- ^ merge with GHCupURL
@@ -390,13 +391,26 @@ data NewURLSource = NewGHCupURL
                   | NewGHCupInfo     GHCupInfo
                   | NewSetupInfo     SetupInfo
                   | NewURI           URI
+                  | NewChannelAlias  ChannelAlias
                deriving (Eq, GHC.Generic, Show)
 
 instance NFData NewURLSource
 
+-- | Alias for ease of URLSource selection
+data ChannelAlias = CrossChannel
+                  | PrereleasesChannel
+                  | VanillaChannel
+                  deriving (Eq, GHC.Generic, Show, Enum, Bounded)
+
+channelAliasText :: ChannelAlias -> Text
+channelAliasText CrossChannel = "cross"
+channelAliasText PrereleasesChannel = "prereleases"
+channelAliasText VanillaChannel = "vanilla"
+
 fromURLSource :: URLSource -> [NewURLSource]
 fromURLSource GHCupURL              = [NewGHCupURL]
 fromURLSource StackSetupURL         = [NewStackSetupURL]
+fromURLSource (ChannelAlias c)      = [NewChannelAlias c]
 fromURLSource (OwnSource arr)       = convert' <$> arr
 fromURLSource (AddSource arr)       = NewGHCupURL:(convert' <$> arr)
 fromURLSource (SimpleList arr)      = arr
@@ -409,6 +423,7 @@ convert' (Left (Right si)) = NewSetupInfo si
 convert' (Right uri)       = NewURI uri
 
 instance NFData URLSource
+instance NFData ChannelAlias
 instance NFData (URIRef Absolute) where
   rnf (URI !_ !_ !_ !_ !_) = ()
 
