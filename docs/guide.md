@@ -170,8 +170,8 @@ of metadata files to understand their purpose. These can be combined.
 For example, if you want access to both prerelease and cross bindists, you'd do:
 
 ```sh
-ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.8.yaml
-ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml
+ghcup config add-release-channel prereleases
+ghcup config add-release-channel cross
 ```
 
 This results in the following configuration in `~/.ghcup/config.yaml`:
@@ -180,10 +180,9 @@ This results in the following configuration in `~/.ghcup/config.yaml`:
 url-source:
 # the base url that contains all the release bindists
 - GHCupURL
-# prereleases
-- https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.8.yaml
+- prereleases
 # cross bindists
-- https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml
+- cross
 ```
 
 You can add as many channels as you like. They are combined under *Last*, so versions from the prerelease channel
@@ -575,7 +574,7 @@ If you run into bugs or missing behavior, join the dev chat at https://matrix.to
 First, add the cross release channel:
 
 ```sh
-ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/develop/ghcup-cross-0.0.8.yaml
+ghcup config add-release-channel cross
 ```
 
 The next sections explain how to install each cross bindist.
