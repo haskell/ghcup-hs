@@ -25,7 +25,7 @@ jobs:
         with:
           context: ./docker/alpine32
           push: true
-          tags: hasufell/i386-alpine-haskell:3.12
+          tags: hasufell/i386-alpine-haskell:3.20
           platforms: |
             linux/i386
             linux/amd64
