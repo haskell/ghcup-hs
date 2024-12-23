@@ -61,11 +61,11 @@ url-source:
   # - StackSetupURL
 
   ## Add pre-release channel
-  # - https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml
+  # - prereleases
   ## Add nightly channel
   # - https://ghc.gitlab.haskell.org/ghcup-metadata/ghcup-nightlies-0.0.7.yaml
   ## Add cross compiler channel
-  # - https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml
+  # - cross
 
   ## Use dwarf bindist for 9.4.7 for ghcup metadata
   # - ghcup-info:
