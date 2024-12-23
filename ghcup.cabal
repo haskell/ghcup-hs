@@ -316,6 +316,7 @@ library ghcup-optparse
     GHCup.OptParse.UnSet
     GHCup.OptParse.Upgrade
     GHCup.OptParse.Whereis
+    Options.Applicative.Pretty.Shim
 
   hs-source-dirs:     lib-opt
   default-language:   Haskell2010
