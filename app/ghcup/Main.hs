@@ -52,7 +52,7 @@ import           Data.Variant.Excepts
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Syntax     ( Quasi(qAddDependentFile) )
 import           Options.Applicative     hiding ( style )
-import           Options.Applicative.Help.Pretty ( text )
+import           Options.Applicative.Pretty.Shim ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Environment
 import           System.Exit

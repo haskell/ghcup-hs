@@ -33,7 +33,7 @@ import           Data.Functor
 import           Data.Maybe
 import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
-import           Options.Applicative.Help.Pretty ( text )
+import           Options.Applicative.Pretty.Shim ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 import           URI.ByteString          hiding ( uriParser )

@@ -38,7 +38,7 @@ import qualified Data.Versions as V
 import           Data.Text                      ( Text )
 import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
-import           Options.Applicative.Help.Pretty ( text, vsep )
+import           Options.Applicative.Pretty.Shim ( text, vsep )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 
