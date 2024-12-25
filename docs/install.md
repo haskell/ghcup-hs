@@ -119,6 +119,12 @@ The following distro packages are required: `curl gcc gmp gmake ncurses perl5 li
 
 On Windows, msys2 should already have been set up during the installation, so most users should just proceed. If you are installing manually, make sure to have a working mingw64 toolchain and shell.
 
+### WSL2
+
+#### Generic
+
+Follow instructions for your Linux distro.
+
 ## Next steps
 
 1. Follow the [First steps guide](steps.md) on how to build a "Hello world" program, use `ghc`, run an interactive REPL and create a Haskell project
