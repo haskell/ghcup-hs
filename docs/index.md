@@ -21,6 +21,7 @@ hide:
 
     <div class="ghcup-os-container" id="ghcup-instructions-unix">
       <h3>To install on Linux, macOS, FreeBSD or <a href="https://docs.microsoft.com/en-us/windows/wsl/"> WSL2</a></h3>
+      <p>You can find the system requirements for your distro on the <a href="https://www.haskell.org/ghcup/install/">installation page</a></p>
       <p>run the following in a terminal (as a non-root user):<p>
       <div class="command-button">
 	    <pre>
