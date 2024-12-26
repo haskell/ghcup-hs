@@ -112,7 +112,10 @@ configSetFooter = [s|Examples:
   ghcup config set downloader Wget
 
   # set vanilla channel as default
-  ghcup config set '{url-source: vanilla}'
+  ghcup config set url-source vanilla
+
+  # use the default GHCup channel
+  ghcup config set url-source GHCupURL
 
   # set mirror for ghcup metadata
   ghcup config set '{url-source: { OwnSource: "<url>"}}'|]
