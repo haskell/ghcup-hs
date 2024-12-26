@@ -226,7 +226,7 @@ config configCommand settings userConf keybindings runLogger = case configComman
 
   AddReleaseChannel force new -> do
     r <- runE @'[DuplicateReleaseChannel] $ do
-      let oldSources = fromURLSource (urlSource settings)
+      let oldSources = urlSource settings
       let merged = oldSources ++ [new]
       case checkDuplicate (aliasToURI <$> oldSources) (aliasToURI new) of
         Duplicate

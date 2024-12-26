@@ -81,7 +81,7 @@ data Options = Options
   , optMetaCache   :: Maybe Integer
   , optMetaMode    :: Maybe MetaMode
   , optPlatform    :: Maybe PlatformRequest
-  , optUrlSource   :: Maybe URLSource
+  , optUrlSource   :: Maybe [NewURLSource]
   , optNoVerify    :: Maybe Bool
   , optKeepDirs    :: Maybe KeepDirs
   , optsDownloader :: Maybe Downloader

@@ -124,8 +124,7 @@ getDownloadsF :: ( FromJSONKey Tool
                    GHCupInfo
 getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   Settings { urlSource } <- lift getSettings
-  let newUrlSources = fromURLSource urlSource
-  infos <- liftE $ mapM dl' newUrlSources
+  infos <- liftE $ mapM dl' urlSource
   keys <- if any isRight infos
           then liftE . reThrowAll @_ @_ @'[StackPlatformDetectError] StackPlatformDetectError $ getStackPlatformKey pfreq
           else pure []

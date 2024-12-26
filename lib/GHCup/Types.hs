@@ -466,7 +466,7 @@ fromSettings Settings{..} Nothing =
     , uDownloader = Just downloader
     , uNoNetwork = Just noNetwork
     , uKeyBindings = Nothing
-    , uUrlSource = Just urlSource
+    , uUrlSource = Just (SimpleList urlSource)
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
@@ -494,7 +494,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uDownloader = Just downloader
     , uNoNetwork = Just noNetwork
     , uKeyBindings = Just ukb
-    , uUrlSource = Just urlSource
+    , uUrlSource = Just (SimpleList urlSource)
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
@@ -579,7 +579,7 @@ data Settings = Settings
   , keepDirs          :: KeepDirs
   , downloader        :: Downloader
   , verbose           :: Bool
-  , urlSource         :: URLSource
+  , urlSource         :: [NewURLSource]
   , noNetwork         :: Bool
   , gpgSetting        :: GPGSetting
   , noColor           :: Bool -- this also exists in LoggerConfig
@@ -608,7 +608,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty) [] defaultPagerConfig
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl False [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig
 
 instance NFData Settings
 

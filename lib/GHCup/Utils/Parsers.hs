@@ -381,10 +381,13 @@ fromVersion' (SetToolTag t') tool =
   throwE $ TagNotFound t' tool
 
 
-parseUrlSource :: String -> Either String URLSource
-parseUrlSource "GHCupURL" = pure GHCupURL
-parseUrlSource "StackSetupURL" = pure StackSetupURL
-parseUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
+parseUrlSource :: String -> Either String [NewURLSource]
+parseUrlSource s = (fromURLSource <$> parseUrlSource' s) <|> ((:[]) <$> parseNewUrlSource s)
+
+parseUrlSource' :: String -> Either String URLSource
+parseUrlSource' "GHCupURL" = pure GHCupURL
+parseUrlSource' "StackSetupURL" = pure StackSetupURL
+parseUrlSource' s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
             <|> (fmap (OwnSource . (:[]) . Right) . first show . parseURI .UTF8.fromString $ s')
 
 parseNewUrlSource :: String -> Either String NewURLSource
