@@ -6,9 +6,6 @@ set -eux
 
 git_describe
 
-# ensure ghcup
-install_ghcup
-
 # ensure cabal-cache
 download_cabal_cache "$HOME/.local/bin/cabal-cache"
 
