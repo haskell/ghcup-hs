@@ -82,6 +82,7 @@ common app-common-depends
     , aeson                  >=1.4
     , aeson-pretty           ^>=0.8.8
     , async                  ^>=2.2.3
+    , attoparsec             ^>= 0.14
     , base                   >=4.12     && <5
     , bytestring             >=0.10     && <0.13
     , containers             ^>=0.6
@@ -136,6 +137,7 @@ library
     GHCup.Platform
     GHCup.PlanJson
     GHCup.Prelude
+    GHCup.Prelude.Attoparsec
     GHCup.Prelude.File
     GHCup.Prelude.File.Search
     GHCup.Prelude.Internal
@@ -191,6 +193,7 @@ library
   build-depends:
     , aeson                 >=1.4
     , async                 >=0.8        && <2.3
+    , attoparsec            ^>= 0.14
     , base                  >=4.12       && <5
     , base16-bytestring     >=0.1.1.6    && <1.1
     , binary                ^>=0.8.6.0

@@ -130,6 +130,9 @@ skip f = void $ MP.satisfy f
 skipSpace :: MP.Parsec Void Text ()
 skipSpace = void $ MP.satisfy isSpace
 
+skipSpaces :: MP.Parsec Void Text ()
+skipSpaces = void $ many skipSpace
+
 isSpace :: Char -> Bool
 isSpace c = (c == ' ') || ('\t' <= c && c <= '\r')
 {-# INLINE isSpace #-}

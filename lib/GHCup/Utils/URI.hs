@@ -15,11 +15,13 @@ URI handling.
 -}
 module GHCup.Utils.URI where
 
+import           Data.Bifunctor (first)
+import           Control.Applicative
+import           Data.Attoparsec.ByteString
 import           Data.ByteString
 import           URI.ByteString hiding (parseURI)
 import           System.URI.File
 
-import qualified URI.ByteString                as URI
 
 
     -----------
@@ -28,22 +30,25 @@ import qualified URI.ByteString                as URI
 
 
 parseURI :: ByteString -> Either URIParseError (URIRef Absolute)
-parseURI bs = case parseFile bs of
-                Left _ -> case URI.parseURI strictURIParserOptions bs of
-                            Right (URI { uriScheme = (Scheme "file") }) ->
+parseURI = first OtherError . parseOnly parseURI'
+
+parseURI' :: Parser (URIRef Absolute)
+parseURI' = do
+  ref <- (Right <$> parseFile) <|> (Left <$> uriParser laxURIParserOptions)
+  case ref of
+    Left (URI { uriScheme = (Scheme "file") }) ->
 #if defined(IS_WINDOWS)
-                              Left (OtherError "Invalid file URI. File URIs must be absolute (start with a drive letter or UNC path) and not contain backslashes.")
+      fail "Invalid file URI. File URIs must be absolute (start with a drive letter or UNC path) and not contain backslashes."
 #else
-                              Left (OtherError "Invalid file URI. File URIs must be absolute.")
+      fail "Invalid file URI. File URIs must be absolute."
 #endif
-                            o -> o
-                Right (FileURI (Just _) _) -> Left $ OtherError "File URIs with auth part are not supported!"
-                Right (FileURI _ fp) -> Right $ URI (Scheme "file") Nothing fp (Query []) Nothing
+    Left o -> pure o
+    Right (FileURI (Just _) _) -> fail "File URIs with auth part are not supported!"
+    Right (FileURI _ fp) -> pure $ URI (Scheme "file") Nothing fp (Query []) Nothing
  where
   parseFile
 #if defined(IS_WINDOWS)
-    = parseFileURI ExtendedWindows
+    = fileURIExtendedWindowsP
 #else
-    = parseFileURI ExtendedPosix
+    = fileURIExtendedPosixP
 #endif
-

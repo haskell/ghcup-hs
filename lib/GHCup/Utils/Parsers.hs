@@ -16,7 +16,8 @@ import           GHCup.List
 import           GHCup.Utils
 import           GHCup.Prelude
 import           GHCup.Prelude.Logger
-import           GHCup.Prelude.MegaParsec
+import           GHCup.Prelude.Attoparsec as AP
+import           GHCup.Prelude.MegaParsec as MP
 
 import           Control.Applicative ((<|>), Alternative(..))
 import           Control.Monad (when)
@@ -26,12 +27,13 @@ import           Control.Monad.Fail             ( MonadFail )
 #endif
 import           Control.Monad.Reader
 import           Data.Aeson
+import qualified Data.Attoparsec.ByteString as AP
 #if MIN_VERSION_aeson(2,0,0)
 #else
 import qualified Data.HashMap.Strict as KM
 #endif
 import           Data.Bifunctor
-import           Data.Char
+import           Data.Char               as C
 import           Data.Either
 import           Data.Functor
 import           Data.List                      ( sort, sortBy )
@@ -382,20 +384,34 @@ fromVersion' (SetToolTag t') tool =
 
 
 parseUrlSource :: String -> Either String [NewURLSource]
-parseUrlSource s = (fromURLSource <$> parseUrlSource' s) <|> ((:[]) <$> parseNewUrlSource s)
+parseUrlSource s = (fromURLSource <$> parseUrlSource' s) <|> ((:[]) <$> parseNewUrlSource s) <|> (parseNewUrlSources s)
 
 parseUrlSource' :: String -> Either String URLSource
 parseUrlSource' "GHCupURL" = pure GHCupURL
 parseUrlSource' "StackSetupURL" = pure StackSetupURL
 parseUrlSource' s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
-            <|> (fmap (OwnSource . (:[]) . Right) . first show . parseURI .UTF8.fromString $ s')
+            <|> (fmap (OwnSource . (:[]) . Right) . first show . parseURI . UTF8.fromString $ s')
 
 parseNewUrlSource :: String -> Either String NewURLSource
 parseNewUrlSource "GHCupURL" = pure NewGHCupURL
 parseNewUrlSource "StackSetupURL" = pure NewStackSetupURL
 parseNewUrlSource s' = (fmap NewChannelAlias . parseChannelAlias $ s')
             <|> (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
-            <|> (fmap NewURI . first show . parseURI .UTF8.fromString $ s')
+            <|> (fmap NewURI . first show . parseURI . UTF8.fromString $ s')
+
+parseNewUrlSources :: String -> Either String [NewURLSource]
+parseNewUrlSources s = case AP.parseOnly
+                              (AP.parseList' <* AP.skipSpaces <* AP.endOfInput)
+                              (UTF8.fromString s) of
+  Right bs ->
+    forM bs $ \b -> AP.parseOnly (parse <* AP.skipSpaces <* AP.endOfInput) b
+  Left  e -> Left e
+ where
+  parse :: AP.Parser NewURLSource
+  parse = (NewGHCupURL <$ AP.string "GHCupURL")
+      <|> (NewStackSetupURL <$ AP.string "StackSetupURL")
+      <|> AP.choice ((\x -> AP.string (UTF8.fromString . T.unpack . channelAliasText $ x) $> NewChannelAlias x) <$> ([minBound..maxBound] :: [ChannelAlias]))
+      <|> (NewURI <$> parseURI')
 
 parseChannelAlias :: String -> Either String ChannelAlias
 parseChannelAlias s =
