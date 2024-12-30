@@ -5,7 +5,7 @@ module ConfigTest where
 import Test.Tasty
 import Test.Tasty.HUnit
 import GHCup.OptParse
-import GHCup.Types (NewURLSource(..))
+import GHCup.Types (NewURLSource(..), ChannelAlias(..))
 import Utils
 import Control.Monad.IO.Class
 import URI.ByteString.QQ
@@ -31,6 +31,15 @@ checkList =
     )
   , ("config add-release-channel StackSetupURL"
     , AddReleaseChannel False NewStackSetupURL
+    )
+  , ("config add-release-channel cross"
+    , AddReleaseChannel False (NewChannelAlias CrossChannel)
+    )
+  , ("config add-release-channel prereleases"
+    , AddReleaseChannel False (NewChannelAlias PrereleasesChannel)
+    )
+  , ("config add-release-channel vanilla"
+    , AddReleaseChannel False (NewChannelAlias VanillaChannel)
     )
   , ("config set cache true", SetConfig "cache" (Just "true"))
   ]

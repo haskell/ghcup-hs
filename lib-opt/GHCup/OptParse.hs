@@ -81,7 +81,7 @@ data Options = Options
   , optMetaCache   :: Maybe Integer
   , optMetaMode    :: Maybe MetaMode
   , optPlatform    :: Maybe PlatformRequest
-  , optUrlSource   :: Maybe URLSource
+  , optUrlSource   :: Maybe [NewURLSource]
   , optNoVerify    :: Maybe Bool
   , optKeepDirs    :: Maybe KeepDirs
   , optsDownloader :: Maybe Downloader
@@ -143,7 +143,7 @@ opts =
             (eitherReader parseUrlSource)
             (  short 's'
             <> long "url-source"
-            <> metavar "URL_SOURCE"
+            <> metavar "<URL_SOURCE|cross|prereleases|vanilla>"
             <> help "Alternative ghcup download info"
             <> internal
             <> completer urlSourceCompleter

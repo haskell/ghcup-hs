@@ -170,6 +170,9 @@ Examples:
   # install GHC 8.10.2
   ghcup install ghc 8.10.2
 
+  # install GHC 8.10.2 from vanilla channel
+  ghcup -s vanilla install ghc 8.10.2
+
   # install GHC head fedora bindist
   ghcup install ghc -u 'https://gitlab.haskell.org/ghc/ghc/-/jobs/artifacts/master/raw/ghc-x86_64-linux-fedora33-release.tar.xz?job=x86_64-linux-fedora33-release' head|]
 

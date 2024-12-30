@@ -381,18 +381,28 @@ fromVersion' (SetToolTag t') tool =
   throwE $ TagNotFound t' tool
 
 
-parseUrlSource :: String -> Either String URLSource
-parseUrlSource "GHCupURL" = pure GHCupURL
-parseUrlSource "StackSetupURL" = pure StackSetupURL
-parseUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
+parseUrlSource :: String -> Either String [NewURLSource]
+parseUrlSource s = (fromURLSource <$> parseUrlSource' s) <|> ((:[]) <$> parseNewUrlSource s)
+
+parseUrlSource' :: String -> Either String URLSource
+parseUrlSource' "GHCupURL" = pure GHCupURL
+parseUrlSource' "StackSetupURL" = pure StackSetupURL
+parseUrlSource' s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
             <|> (fmap (OwnSource . (:[]) . Right) . first show . parseURI .UTF8.fromString $ s')
 
 parseNewUrlSource :: String -> Either String NewURLSource
 parseNewUrlSource "GHCupURL" = pure NewGHCupURL
 parseNewUrlSource "StackSetupURL" = pure NewStackSetupURL
-parseNewUrlSource s' = (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
+parseNewUrlSource s' = (fmap NewChannelAlias . parseChannelAlias $ s')
+            <|> (eitherDecode . LE.encodeUtf8 . LT.pack $ s')
             <|> (fmap NewURI . first show . parseURI .UTF8.fromString $ s')
 
+parseChannelAlias :: String -> Either String ChannelAlias
+parseChannelAlias s =
+  let aliases = map (\c -> (T.unpack (channelAliasText c), c)) [minBound..maxBound]
+  in case lookup s aliases of
+    Just c -> Right c
+    Nothing -> Left $ "Unexpected ChannelAlias: " <> s
 
 #if MIN_VERSION_transformers(0,6,0)
 instance Alternative (Either [a]) where

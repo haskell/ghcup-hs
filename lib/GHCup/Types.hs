@@ -390,9 +390,21 @@ data NewURLSource = NewGHCupURL
                   | NewGHCupInfo     GHCupInfo
                   | NewSetupInfo     SetupInfo
                   | NewURI           URI
+                  | NewChannelAlias  ChannelAlias
                deriving (Eq, GHC.Generic, Show)
 
 instance NFData NewURLSource
+
+-- | Alias for ease of URLSource selection
+data ChannelAlias = CrossChannel
+                  | PrereleasesChannel
+                  | VanillaChannel
+                  deriving (Eq, GHC.Generic, Show, Enum, Bounded)
+
+channelAliasText :: ChannelAlias -> Text
+channelAliasText CrossChannel = "cross"
+channelAliasText PrereleasesChannel = "prereleases"
+channelAliasText VanillaChannel = "vanilla"
 
 fromURLSource :: URLSource -> [NewURLSource]
 fromURLSource GHCupURL              = [NewGHCupURL]
@@ -409,6 +421,7 @@ convert' (Left (Right si)) = NewSetupInfo si
 convert' (Right uri)       = NewURI uri
 
 instance NFData URLSource
+instance NFData ChannelAlias
 instance NFData (URIRef Absolute) where
   rnf (URI !_ !_ !_ !_ !_) = ()
 
@@ -453,7 +466,7 @@ fromSettings Settings{..} Nothing =
     , uDownloader = Just downloader
     , uNoNetwork = Just noNetwork
     , uKeyBindings = Nothing
-    , uUrlSource = Just urlSource
+    , uUrlSource = Just (SimpleList urlSource)
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
@@ -481,7 +494,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uDownloader = Just downloader
     , uNoNetwork = Just noNetwork
     , uKeyBindings = Just ukb
-    , uUrlSource = Just urlSource
+    , uUrlSource = Just (SimpleList urlSource)
     , uGPGSetting = Just gpgSetting
     , uPlatformOverride = platformOverride
     , uMirrors = Just mirrors
@@ -566,7 +579,7 @@ data Settings = Settings
   , keepDirs          :: KeepDirs
   , downloader        :: Downloader
   , verbose           :: Bool
-  , urlSource         :: URLSource
+  , urlSource         :: [NewURLSource]
   , noNetwork         :: Bool
   , gpgSetting        :: GPGSetting
   , noColor           :: Bool -- this also exists in LoggerConfig
@@ -595,7 +608,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl False GHCupURL False GPGNone False Nothing (DM mempty) [] defaultPagerConfig
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl False [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig
 
 instance NFData Settings
 

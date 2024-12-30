@@ -19,6 +19,7 @@ import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 import           GHCup.OptParse.Common
+import           GHCup.Version
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -75,8 +76,9 @@ configP = subparser
   showP = info (pure ShowConfig) (progDesc "Show current config (default)")
   setP  = info argsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
   argsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
-  addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing") <*> argument (eitherReader parseNewUrlSource) (metavar "URL_SOURCE" <> completer urlSourceCompleter))
-    (progDesc "Add a release channel, e.g. from a URI")
+  addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing")
+                <*> argument (eitherReader parseNewUrlSource) (metavar "<URL_SOURCE|cross|prereleases|vanilla>" <> completer urlSourceCompleter))
+    (progDesc "Add a release channel, e.g. from a URI or using alias")
 
 
 
@@ -96,8 +98,10 @@ configFooter = [s|Examples:
   ghcup config init
 
   # set <key> <value> configuration pair
-  ghcup config set <key> <value>|]
+  ghcup config set <key> <value>
 
+  # add a release channel
+  ghcup config add-release-channel prereleases|]
 
 configSetFooter :: String
 configSetFooter = [s|Examples:
@@ -106,6 +110,12 @@ configSetFooter = [s|Examples:
 
   # switch downloader to wget
   ghcup config set downloader Wget
+
+  # set vanilla channel as default
+  ghcup config set url-source vanilla
+
+  # use the default GHCup channel
+  ghcup config set url-source GHCupURL
 
   # set mirror for ghcup metadata
   ghcup config set '{url-source: { OwnSource: "<url>"}}'|]
@@ -216,9 +226,9 @@ config configCommand settings userConf keybindings runLogger = case configComman
 
   AddReleaseChannel force new -> do
     r <- runE @'[DuplicateReleaseChannel] $ do
-      let oldSources = fromURLSource (urlSource settings)
+      let oldSources = urlSource settings
       let merged = oldSources ++ [new]
-      case checkDuplicate oldSources new of
+      case checkDuplicate (aliasToURI <$> oldSources) (aliasToURI new) of
         Duplicate
           | not force -> throwE (DuplicateReleaseChannel new)
         DuplicateLast -> pure ()
@@ -236,6 +246,10 @@ config configCommand settings userConf keybindings runLogger = case configComman
     | last xs == a = DuplicateLast
     | a `elem` xs  = Duplicate
     | otherwise    = NoDuplicate
+
+  aliasToURI :: NewURLSource -> NewURLSource
+  aliasToURI (NewChannelAlias a) = NewURI (channelURL a)
+  aliasToURI v = v
 
   doConfig :: MonadIO m => UserSettings -> m ()
   doConfig usersettings = do
