@@ -20,7 +20,7 @@ import           GHCup.Prelude.Attoparsec as AP
 import           GHCup.Prelude.MegaParsec as MP
 
 import           Control.Applicative ((<|>), Alternative(..))
-import           Control.Monad (when)
+import           Control.Monad (forM, when)
 import           Control.Exception.Safe
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
