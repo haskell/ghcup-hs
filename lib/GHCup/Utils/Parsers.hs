@@ -384,7 +384,9 @@ fromVersion' (SetToolTag t') tool =
 
 
 parseUrlSource :: String -> Either String [NewURLSource]
-parseUrlSource s = (fromURLSource <$> parseUrlSource' s) <|> ((:[]) <$> parseNewUrlSource s) <|> (parseNewUrlSources s)
+parseUrlSource s = (fromURLSource <$> parseUrlSource' s)
+               <|> ((:[]) <$> parseNewUrlSource s)
+               <|> parseNewUrlSources s
 
 parseUrlSource' :: String -> Either String URLSource
 parseUrlSource' "GHCupURL" = pure GHCupURL
