@@ -21,7 +21,7 @@ jobs:
     name: Build linux binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.3.0
+      CABAL_VER: 3.12.1.0
       JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -85,13 +85,12 @@ jobs:
     name: Build ARM binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.3.0
+      CABAL_VER: 3.12.1.0
       JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
     strategy:
-      fail-fast: true
       matrix:
         include:
           - os: [self-hosted, Linux, ARM64, maerwald]
@@ -101,11 +100,6 @@ jobs:
             DISTRO: Debian
           - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.6.6
-            ARCH: ARM64
-            DISTRO: Debian
-          - os: [self-hosted, Linux, ARM64, maerwald]
-            ARTIFACT: "aarch64-linux-alpine-ghcup"
             GHC_VER: 9.8.4
             ARCH: ARM64
             DISTRO: Alpine
@@ -135,21 +129,7 @@ jobs:
           S3_HOST: ${{ env.S3_HOST }}
           LD: ld.gold
 
-      - if: matrix.ARCH == 'ARM64' && matrix.DISTRO == 'Debian'
-        uses: docker://hasufell/arm64v8-debian-haskell:10
-        name: Run build (aarch64 linux)
-        with:
-          args: sh .github/scripts/build.sh
-        env:
-          ARTIFACT: ${{ matrix.ARTIFACT }}
-          ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: ${{ matrix.DISTRO }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          S3_HOST: ${{ env.S3_HOST }}
-
-      - if: matrix.ARCH == 'ARM64' && matrix.DISTRO == 'Alpine'
+      - if: matrix.ARCH == 'ARM64'
         uses: docker://hasufell/arm64v8-alpine-haskell:3.20
         name: Run build (aarch64 linux)
         with:
@@ -175,7 +155,7 @@ jobs:
     name: Build binary (Mac/Win)
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.3.0
+      CABAL_VER: 3.12.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
       JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -266,7 +246,7 @@ jobs:
     name: Build binary (FreeBSD)
     runs-on: [self-hosted, FreeBSD, X64]
     env:
-      CABAL_VER: 3.10.3.0
+      CABAL_VER: 3.12.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
       JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -309,7 +289,7 @@ jobs:
     needs: "build-linux"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.3.0
+      CABAL_VER: 3.12.1.0
       JSON_VERSION: "0.0.8"
     strategy:
       matrix:
@@ -387,7 +367,7 @@ jobs:
     needs: "build-arm"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.3.0
+      CABAL_VER: 3.12.1.0
       JSON_VERSION: "0.0.8"
     strategy:
       matrix:
@@ -399,11 +379,6 @@ jobs:
             DISTRO: Debian
           - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.6.6
-            ARCH: ARM64
-            DISTRO: Debian
-          - os: [self-hosted, Linux, ARM64, maerwald]
-            ARTIFACT: "aarch64-linux-alpine-ghcup"
             GHC_VER: 9.8.4
             ARCH: ARM64
             DISTRO: Alpine
@@ -431,18 +406,7 @@ jobs:
           DISTRO: ${{ matrix.DISTRO }}
           LD: ld.gold
 
-      - if: matrix.ARCH == 'ARM64' && matrix.DISTRO == 'Debian'
-        uses: docker://hasufell/arm64v8-debian-haskell:10
-        name: Run test (aarch64 linux)
-        with:
-          args: sh .github/scripts/test.sh
-        env:
-          ARTIFACT: ${{ matrix.ARTIFACT }}
-          ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: ${{ matrix.DISTRO }}
-
-      - if: matrix.ARCH == 'ARM64' && matrix.DISTRO == 'Alpine'
+      - if: matrix.ARCH == 'ARM64'
         uses: docker://hasufell/arm64v8-alpine-haskell:3.20
         name: Run test (aarch64 alpine)
         with:
@@ -466,7 +430,7 @@ jobs:
     needs: "build-macwin"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.10.3.0
+      CABAL_VER: 3.12.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
       JSON_VERSION: "0.0.8"
     strategy:
@@ -545,7 +509,7 @@ jobs:
     needs: "build-freebsd"
     runs-on: [self-hosted, FreeBSD, X64]
     env:
-      CABAL_VER: 3.10.3.0
+      CABAL_VER: 3.12.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
       JSON_VERSION: "0.0.8"
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
