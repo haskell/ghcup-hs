@@ -34,7 +34,7 @@ import Data.Void (Void)
 -- Note that when updating this, CI requires that the file exists AND the same file exists at
 -- 'https://www.haskell.org/ghcup/exp/ghcup-<ver>.yaml' with some newlines added.
 ghcupURL :: URI
-ghcupURL = [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.0.8.yaml|]
+ghcupURL = [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.0.9.yaml|]
 
 stackSetupURL :: URI
 stackSetupURL = [uri|https://raw.githubusercontent.com/commercialhaskell/stackage-content/master/stack/stack-setup-2.yaml|]
@@ -89,6 +89,6 @@ pvpFromList = V.PVP . NE.fromList . fmap fromIntegral
 
 channelURL :: ChannelAlias -> URI
 channelURL = \case
-  CrossChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.8.yaml|]
-  PrereleasesChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.8.yaml|]
-  VanillaChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.8.yaml|]
+  CrossChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.9.yaml|]
+  PrereleasesChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.9.yaml|]
+  VanillaChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.9.yaml|]

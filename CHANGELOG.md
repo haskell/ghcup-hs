@@ -1,5 +1,30 @@
 # Revision history for ghcup
 
+## 0.1.40.0 -- 2025-01-01
+
+### New features
+
+* Introduction of "channel aliases" wrt [#1155](https://github.com/haskell/ghcup-hs/pull/1155)
+  * as of now: `prereleases`, `cross` and `vanilla`
+  * use via e.g. `ghcup config add-release-channel cross`
+* Implement pager support wrt [#1118](https://github.com/haskell/ghcup-hs/pull/1118)
+* Add explicit support for OpenSUSE wrt [#1124](https://github.com/haskell/ghcup-hs/pull/1124)
+* Add explicit support for OpenBSD wrt [#1138](https://github.com/haskell/ghcup-hs/pull/1138) (still WIP)
+* Support tui list item selection via mouse click [#1158](https://github.com/haskell/ghcup-hs/pull/1158)
+* proper aarch64 Alpine support
+
+### Improvements and bug fixes
+
+* Context Menu improvements wrt [#1102](https://github.com/haskell/ghcup-hs/pull/1102)
+  * GHC(s) can be selected from a list of installed GHCs in bootstrap-ghc, hadrian-ghc, and HLS target-ghcs
+  * Build system can be selected from choices
+  * All the text edit inputs require opening an edit box by pressing "Enter"
+  * The help message an error message are also shown as the user types.
+* Fix 'ghcup run' on windows, wrt [#1106](https://github.com/haskell/ghcup-hs/pull/1106)
+* Print aeson decoding error when metadata decoding fails wrt [#1113]((https://github.com/haskell/ghcup-hs/pull/1113)
+* laxer forward compatible metadata parsing (e.g. on unknown distros)
+
+
 ## 0.1.30.0 -- 2024-07-07
 
 ### New features
