@@ -379,11 +379,6 @@ jobs:
             DISTRO: Debian
           - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.6.6
-            ARCH: ARM64
-            DISTRO: Debian
-          - os: [self-hosted, Linux, ARM64, maerwald]
-            ARTIFACT: "aarch64-linux-alpine-ghcup"
             GHC_VER: 9.8.4
             ARCH: ARM64
             DISTRO: Alpine
@@ -411,18 +406,7 @@ jobs:
           DISTRO: ${{ matrix.DISTRO }}
           LD: ld.gold
 
-      - if: matrix.ARCH == 'ARM64' && matrix.DISTRO == 'Debian'
-        uses: docker://hasufell/arm64v8-debian-haskell:10
-        name: Run test (aarch64 linux)
-        with:
-          args: sh .github/scripts/test.sh
-        env:
-          ARTIFACT: ${{ matrix.ARTIFACT }}
-          ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: ${{ matrix.DISTRO }}
-
-      - if: matrix.ARCH == 'ARM64' && matrix.DISTRO == 'Alpine'
+      - if: matrix.ARCH == 'ARM64'
         uses: docker://hasufell/arm64v8-alpine-haskell:3.20
         name: Run test (aarch64 alpine)
         with:
