@@ -51,9 +51,11 @@ cat <<EOF > /dev/stdout
             unknown_versioning: *ghcup-32
         A_ARM64:
           Linux_UnknownLinux:
-            unknown_versioning:
+            unknown_versioning: &ghcup-aarch64
               dlUri: https://downloads.haskell.org/~ghcup/${RELEASE}/aarch64-linux-ghcup-${RELEASE}
               dlHash: $(get_sha "aarch64-linux-ghcup-${RELEASE}")
+          Linux_Alpine:
+            unknown_versioning: *ghcup-aarch64
           Darwin:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/${RELEASE}/aarch64-apple-darwin-ghcup-${RELEASE}
