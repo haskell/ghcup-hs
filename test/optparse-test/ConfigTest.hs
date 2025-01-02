@@ -32,6 +32,12 @@ checkList =
   , ("config add-release-channel StackSetupURL"
     , AddReleaseChannel False NewStackSetupURL
     )
+  , ("config add-release-channel default"
+    , AddReleaseChannel False (NewChannelAlias DefaultChannel)
+    )
+  , ("config add-release-channel stack"
+    , AddReleaseChannel False (NewChannelAlias StackChannel)
+    )
   , ("config add-release-channel cross"
     , AddReleaseChannel False (NewChannelAlias CrossChannel)
     )

@@ -396,12 +396,16 @@ data NewURLSource = NewGHCupURL
 instance NFData NewURLSource
 
 -- | Alias for ease of URLSource selection
-data ChannelAlias = CrossChannel
+data ChannelAlias = DefaultChannel
+                  | StackChannel
+                  | CrossChannel
                   | PrereleasesChannel
                   | VanillaChannel
                   deriving (Eq, GHC.Generic, Show, Enum, Bounded)
 
 channelAliasText :: ChannelAlias -> Text
+channelAliasText DefaultChannel = "default"
+channelAliasText StackChannel = "stack"
 channelAliasText CrossChannel = "cross"
 channelAliasText PrereleasesChannel = "prereleases"
 channelAliasText VanillaChannel = "vanilla"
