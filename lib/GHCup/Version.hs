@@ -89,6 +89,8 @@ pvpFromList = V.PVP . NE.fromList . fmap fromIntegral
 
 channelURL :: ChannelAlias -> URI
 channelURL = \case
+  DefaultChannel -> ghcupURL
+  StackChannel -> stackSetupURL
   CrossChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.9.yaml|]
   PrereleasesChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.9.yaml|]
   VanillaChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.9.yaml|]

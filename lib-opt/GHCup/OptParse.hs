@@ -143,7 +143,7 @@ opts =
             (eitherReader parseUrlSource)
             (  short 's'
             <> long "url-source"
-            <> metavar "<URL_SOURCE|cross|prereleases|vanilla>"
+            <> metavar "<URL_SOURCE|cross|prereleases|vanilla|default>"
             <> help "Alternative ghcup download info"
             <> internal
             <> completer urlSourceCompleter

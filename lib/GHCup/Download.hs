@@ -153,6 +153,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
            m (Either GHCupInfo Stack.SetupInfo)
   dl' NewGHCupURL       = fmap Left $ liftE (getBase ghcupURL) >>= liftE . decodeMetadata @GHCupInfo
   dl' NewStackSetupURL  = fmap Right $ liftE (getBase stackSetupURL) >>= liftE . decodeMetadata @Stack.SetupInfo
+  dl' (NewChannelAlias StackChannel) = fmap Right $ liftE (getBase $ channelURL StackChannel) >>= liftE . decodeMetadata @Stack.SetupInfo
   dl' (NewChannelAlias c) = fmap Left $ liftE (getBase $ channelURL c) >>= liftE . decodeMetadata @GHCupInfo
   dl' (NewGHCupInfo gi) = pure (Left gi)
   dl' (NewSetupInfo si) = pure (Right si)
