@@ -47,6 +47,8 @@ put x86_64-linux-ghcup.plan.json
 put x86_64-mingw64-ghcup-${ver}.exe
 put x86_64-mingw64-ghcup-${ver}.exe.sig
 put x86_64-mingw64-ghcup.plan.json
+put ghcup-${ver}-src.tar.xz
+put ghcup-${ver}-src.tar.xz.sig
 EOF
 
 curl -X PURGE https://downloads.haskell.org/~ghcup/${ver}/
