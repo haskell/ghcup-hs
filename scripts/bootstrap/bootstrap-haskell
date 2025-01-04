@@ -315,8 +315,7 @@ download_ghcup() {
 					if [ "$(getconf LONG_BIT)" = "32" ] ; then
 						_url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
 					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
-						# TODO: rm 'static-'
-						_url=${GHCUP_BASE_URL}/${ghver}/aarch64-linux-static-ghcup-${ghver}
+						_url=${GHCUP_BASE_URL}/${ghver}/aarch64-linux-ghcup-${ghver}
 					else
 						die "Unknown long bit size: $(getconf LONG_BIT)"
 					fi
