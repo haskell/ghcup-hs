@@ -15,6 +15,7 @@ on:
 env:
   CABAL_CACHE_DISABLE: ${{ vars.CABAL_CACHE_DISABLE }}
   CABAL_CACHE_NONFATAL: yes
+  JSON_VERSION: "0.0.9"
 
 jobs:
   build-linux:
@@ -22,7 +23,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CABAL_VER: 3.12.1.0
-      JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -86,7 +86,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CABAL_VER: 3.12.1.0
-      JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -157,7 +156,6 @@ jobs:
     env:
       CABAL_VER: 3.12.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
-      JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -248,7 +246,6 @@ jobs:
     env:
       CABAL_VER: 3.12.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
-      JSON_VERSION: "0.0.8"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -290,7 +287,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CABAL_VER: 3.12.1.0
-      JSON_VERSION: "0.0.8"
     strategy:
       matrix:
         include:
@@ -368,7 +364,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CABAL_VER: 3.12.1.0
-      JSON_VERSION: "0.0.8"
     strategy:
       matrix:
         include:
@@ -432,7 +427,6 @@ jobs:
     env:
       CABAL_VER: 3.12.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
-      JSON_VERSION: "0.0.8"
     strategy:
       matrix:
         include:
@@ -511,7 +505,6 @@ jobs:
     env:
       CABAL_VER: 3.12.1.0
       MACOSX_DEPLOYMENT_TARGET: 10.13
-      JSON_VERSION: "0.0.8"
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
       GHC_VER: 9.6.6
       ARCH: 64
@@ -554,7 +547,6 @@ jobs:
       GHC_VERSION: "8.10.7"
       HLS_TARGET_VERSION: "1.8.0.0"
       CABAL_VERSION: "3.8.1.0"
-      JSON_VERSION: "0.0.8"
       ARTIFACT: "x86_64-linux-ghcup"
       DISTRO: Ubuntu
       ARCH: 64
