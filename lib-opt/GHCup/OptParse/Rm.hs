@@ -35,6 +35,7 @@ import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
@@ -176,8 +177,8 @@ rm rmCommand runAppState runLogger = case rmCommand of
       )
       >>= \case
             VRight vi -> do
+              postRmLog (tVerToText ghcVer) GHC vi
               runLogger $ logGHCPostRm ghcVer
-              postRmLog vi
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyHFError e
@@ -192,7 +193,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
       )
       >>= \case
             VRight vi -> do
-              postRmLog vi
+              postRmLog (prettyVer tv) Cabal vi
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyHFError e
@@ -207,7 +208,7 @@ rm rmCommand runAppState runLogger = case rmCommand of
       )
       >>= \case
             VRight vi -> do
-              postRmLog vi
+              postRmLog (prettyVer tv) HLS vi
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyHFError e
@@ -222,12 +223,12 @@ rm rmCommand runAppState runLogger = case rmCommand of
       )
       >>= \case
             VRight vi -> do
-              postRmLog vi
+              postRmLog (prettyVer tv) Stack vi
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 15
 
-  postRmLog vi =
-    forM_ (_viPostRemove =<< vi) $ \msg ->
-      runLogger $ logInfo msg
+  postRmLog tv tool vi = runLogger $ do
+    logInfo $ "Successfuly removed " <> T.pack (prettyShow tool) <> " " <> tv
+    forM_ (_viPostRemove =<< vi) logInfo
