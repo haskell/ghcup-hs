@@ -433,9 +433,9 @@ del' (_, ListResult {..}) = do
   let run = runE @'[NotInstalled, UninstallFailed]
 
   run (do
-      let vi = getVersionInfo (GHCTargetVersion lCross lVer) lTool dls
+      let vi = getVersionInfo crossVer lTool dls
       case lTool of
-        GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer) $> vi
+        GHC   -> liftE $ rmGHCVer crossVer $> vi
         Cabal -> liftE $ rmCabalVer lVer $> vi
         HLS   -> liftE $ rmHLSVer lVer $> vi
         Stack -> liftE $ rmStackVer lVer $> vi
@@ -443,11 +443,14 @@ del' (_, ListResult {..}) = do
     )
     >>= \case
           VRight vi -> do
-            when (lTool == GHC) $ logGHCPostRm (mkTVer lVer)
+            when (lTool == GHC) $ logGHCPostRm crossVer
+            logInfo $ "Successfuly removed " <> T.pack (prettyShow lTool) <> " " <> (if lTool == GHC then tVerToText crossVer else prettyVer lVer)
             forM_ (_viPostRemove =<< vi) $ \msg ->
               logInfo msg
             pure $ Right ()
           VLeft  e -> pure $ Left (prettyHFError e)
+ where
+  crossVer = GHCTargetVersion lCross lVer
 
 
 changelog' :: (MonadReader AppState m, MonadIO m)
