@@ -203,7 +203,7 @@ library
     , Cabal-syntax   ^>=3.6.0.0 || ^>=3.8.0.0 || ^>= 3.10.0.0 || ^>= 3.12.0.0
     , case-insensitive      ^>=1.2.1.0
     , casing                ^>=0.1.4.1
-    , containers            ^>=0.6
+    , containers            ^>=0.6 || ^>=0.7
     , conduit               ^>=1.3
     , conduit-extra         ^>=1.3
     , cryptohash-sha256     ^>=0.11.101.0
