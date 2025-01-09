@@ -464,7 +464,7 @@ test-suite ghcup-test
 
   ghc-options:
     -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates
+    -fwarn-incomplete-record-updates -fconstraint-solver-iterations=0
 
   build-depends:
     , base                      >=4.12    && <5
