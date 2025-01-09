@@ -199,11 +199,11 @@ library
     , binary                ^>=0.8.6.0 || ^>=0.9 || ^>=0.10
     , bytestring            >=0.10       && <0.13
     , bz2                   ^>=1.0.1.1
-    , Cabal                 ^>=3.0.0.0 || ^>=3.2.0.0 || ^>=3.4.0.0 || ^>=3.6.0.0 || ^>=3.8.0.0 || ^>= 3.10.0.0
-    , Cabal-syntax   ^>=3.6.0.0 || ^>=3.8.0.0 || ^>= 3.10.0.0 || ^>= 3.12.0.0
+    , Cabal                 ^>=3.0.0.0 || ^>=3.2.0.0 || ^>=3.4.0.0 || ^>=3.6.0.0 || ^>=3.8.0.0 || ^>= 3.10.0.0 || ^>= 3.12.0.0 || ^>= 3.14.0.0
+    , Cabal-syntax          ^>=3.6.0.0 || ^>=3.8.0.0 || ^>= 3.10.0.0 || ^>= 3.12.0.0 || ^>= 3.14.0.0
     , case-insensitive      ^>=1.2.1.0
     , casing                ^>=0.1.4.1
-    , containers            ^>=0.6
+    , containers            ^>=0.6 || ^>=0.7
     , conduit               ^>=1.3
     , conduit-extra         ^>=1.3
     , cryptohash-sha256     ^>=0.11.101.0
@@ -464,7 +464,7 @@ test-suite ghcup-test
 
   ghc-options:
     -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates
+    -fwarn-incomplete-record-updates -fconstraint-solver-iterations=0
 
   build-depends:
     , base                      >=4.12    && <5
