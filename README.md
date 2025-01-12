@@ -15,4 +15,5 @@ Visit the [documentation](https://www.haskell.org/ghcup/) for installation instr
 * [the metadata YAML files](https://github.com/haskell/ghcup-metadata)
 * [homepage and documentation](https://github.com/haskell/ghcup-www)
 * [docker images](https://github.com/haskell/ghcup-docker)
+* [github action](https://github.com/haskell/ghcup-setup)
 
