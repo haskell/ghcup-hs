@@ -79,9 +79,9 @@ prettyDebugInfo DebugInfo { diDirs = Dirs { .. }, ..} =
   "logs: " <> fromGHCupPath logsDir <> "\n" <>
   "config: " <> fromGHCupPath confDir <> "\n" <>
   "db: " <> fromGHCupPath dbDir <> "\n" <>
-  "recycle: " <> fromGHCupPath recycleDir <> "\n" <>
+  (if isWindows then ("recycle: " <> fromGHCupPath recycleDir <> "\n") else mempty) <>
   "temp: " <> fromGHCupPath tmpDir <> "\n" <>
-  "msys2: " <> msys2Dir <> "\n" <>
+  (if isWindows then ("msys2: " <> msys2Dir <> "\n") else mempty) <>
   "\n===== Metadata ======\n" <>
   intercalate "\n" ((\(c, u) -> (T.unpack . channelAliasText) c <> ": " <> (T.unpack . decUTF8Safe . serializeURIRef') u) <$> diChannels)
 
