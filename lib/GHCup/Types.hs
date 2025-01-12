@@ -666,12 +666,11 @@ data GPGSetting = GPGStrict
 instance NFData GPGSetting
 
 data DebugInfo = DebugInfo
-  { diBaseDir  :: FilePath
-  , diBinDir   :: FilePath
-  , diGHCDir   :: FilePath
-  , diCacheDir :: FilePath
-  , diArch     :: Architecture
-  , diPlatform :: PlatformResult
+  { diDirs       :: Dirs
+  , diArch       :: Architecture
+  , diPlatform   :: PlatformResult
+  , diChannels   :: [(ChannelAlias, URI)]
+  , diShimGenURL :: URI
   }
   deriving Show
 
