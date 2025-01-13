@@ -67,23 +67,32 @@ describe_result = $( LitE . StringL <$>
 
 prettyDebugInfo :: DebugInfo -> String
 prettyDebugInfo DebugInfo { diDirs = Dirs { .. }, ..} =
-  "===== Main ======" <> "\n" <>
-  "Architecture: " <> prettyShow diArch <> "\n" <>
-  "Platform: " <> prettyShow diPlatform <> "\n" <>
-  "GHCup Version: " <> describe_result <> "\n" <>
-  "===== Directories ======" <> "\n" <>
-  "base: " <> fromGHCupPath baseDir <> "\n" <>
-  "bin: " <> binDir <> "\n" <>
-  "GHCs: " <> (fromGHCupPath baseDir </> "ghc") <> "\n" <>
-  "cache: " <> fromGHCupPath cacheDir <> "\n" <>
-  "logs: " <> fromGHCupPath logsDir <> "\n" <>
-  "config: " <> fromGHCupPath confDir <> "\n" <>
-  "db: " <> fromGHCupPath dbDir <> "\n" <>
-  (if isWindows then ("recycle: " <> fromGHCupPath recycleDir <> "\n") else mempty) <>
-  "temp: " <> fromGHCupPath tmpDir <> "\n" <>
-  (if isWindows then ("msys2: " <> msys2Dir <> "\n") else mempty) <>
+  "===== Main ======"                              <> "\n"  <>
+  "Architecture:  "   <> prettyShow diArch         <> "\n"  <>
+  "Platform:      "   <> prettyShow diPlatform     <> "\n"  <>
+  "GHCup Version: "   <> describe_result           <> "\n"  <>
+  "===== Directories ======"                       <> "\n"  <>
+  "base:    " <> fromGHCupPath baseDir             <> "\n"  <>
+  "bin:     " <> binDir                            <> "\n"  <>
+  "GHCs:    " <> (fromGHCupPath baseDir </> "ghc") <> "\n"  <>
+  "cache:   " <> fromGHCupPath cacheDir            <> "\n"  <>
+  "logs:    " <> fromGHCupPath logsDir             <> "\n"  <>
+  "config:  " <> fromGHCupPath confDir             <> "\n"  <>
+  "db:      " <> fromGHCupPath dbDir               <> "\n"  <>
+  whenWin ("recycle: " <> fromGHCupPath recycleDir <> "\n") <>
+  "temp:    " <> fromGHCupPath tmpDir              <> "\n"  <>
+  whenWin ("msys2:   " <> msys2Dir                 <> "\n") <>
   "\n===== Metadata ======\n" <>
-  intercalate "\n" ((\(c, u) -> (T.unpack . channelAliasText) c <> ": " <> (T.unpack . decUTF8Safe . serializeURIRef') u) <$> diChannels)
+  intercalate "\n" ((\(c, u) -> pad (c <> ":") <> " " <> u) <$> channels)
+ where
+  pad xs
+    | xl < maxLength = xs <> replicate (maxLength - xl) ' '
+    | otherwise = xs
+   where
+    xl = length xs
+  channels = (\(c, u) -> (T.unpack . channelAliasText $ c, T.unpack . decUTF8Safe . serializeURIRef'$ u)) <$> diChannels
+  maxLength = (+1) . maximum . fmap (length . fst) $ channels
+  whenWin x = if isWindows then x else mempty
 
 
 
