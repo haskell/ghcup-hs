@@ -258,11 +258,9 @@ getDebugInfo :: ( Alternative m
                   m
                   DebugInfo
 getDebugInfo = do
-  Dirs {..} <- lift getDirs
-  let diBaseDir  = fromGHCupPath baseDir
-  let diBinDir   = binDir
-  diGHCDir       <- fromGHCupPath <$> lift ghcupGHCBaseDir
-  let diCacheDir = fromGHCupPath cacheDir
+  diDirs <- lift getDirs
+  let diChannels = fmap (\c -> (c, channelURL c)) [minBound..maxBound]
+  let diShimGenURL = shimGenURL
   diArch         <- lE getArchitecture
   diPlatform     <- liftE getPlatform
   pure $ DebugInfo { .. }

@@ -29,11 +29,14 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Maybe
+import           Data.List                      ( intercalate )
 import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
+import           System.FilePath
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
+import           URI.ByteString (serializeURIRef')
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
@@ -63,15 +66,25 @@ describe_result = $( LitE . StringL <$>
 
 
 prettyDebugInfo :: DebugInfo -> String
-prettyDebugInfo DebugInfo {..} = "Debug Info" <> "\n" <>
-  "==========" <> "\n" <>
-  "GHCup base dir: " <> diBaseDir <> "\n" <>
-  "GHCup bin dir: " <> diBinDir <> "\n" <>
-  "GHCup GHC directory: " <> diGHCDir <> "\n" <>
-  "GHCup cache directory: " <> diCacheDir <> "\n" <>
+prettyDebugInfo DebugInfo { diDirs = Dirs { .. }, ..} =
+  "===== Main ======" <> "\n" <>
   "Architecture: " <> prettyShow diArch <> "\n" <>
   "Platform: " <> prettyShow diPlatform <> "\n" <>
-  "Version: " <> describe_result
+  "GHCup Version: " <> describe_result <> "\n" <>
+  "===== Directories ======" <> "\n" <>
+  "base: " <> fromGHCupPath baseDir <> "\n" <>
+  "bin: " <> binDir <> "\n" <>
+  "GHCs: " <> (fromGHCupPath baseDir </> "ghc") <> "\n" <>
+  "cache: " <> fromGHCupPath cacheDir <> "\n" <>
+  "logs: " <> fromGHCupPath logsDir <> "\n" <>
+  "config: " <> fromGHCupPath confDir <> "\n" <>
+  "db: " <> fromGHCupPath dbDir <> "\n" <>
+  (if isWindows then ("recycle: " <> fromGHCupPath recycleDir <> "\n") else mempty) <>
+  "temp: " <> fromGHCupPath tmpDir <> "\n" <>
+  (if isWindows then ("msys2: " <> msys2Dir <> "\n") else mempty) <>
+  "\n===== Metadata ======\n" <>
+  intercalate "\n" ((\(c, u) -> (T.unpack . channelAliasText) c <> ": " <> (T.unpack . decUTF8Safe . serializeURIRef') u) <$> diChannels)
+
 
 
 
