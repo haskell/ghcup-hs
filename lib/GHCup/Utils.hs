@@ -1119,18 +1119,18 @@ ensureShimGen :: ( MonadMask m
                  , MonadUnliftIO m
                  , MonadFail m
                  )
-              => Excepts '[GPGError, DigestError, ContentLengthError, DownloadFailed, NoDownload] m ()
+              => Excepts '[URIParseError, GPGError, DigestError, ContentLengthError, DownloadFailed, NoDownload] m ()
 ensureShimGen
   | isWindows = do
       dirs <- lift getDirs
-      let shimDownload = DownloadInfo shimGenURL Nothing shimGenSHA Nothing Nothing Nothing
+      let shimDownload = DownloadInfo (decUTF8Safe . serializeURIRef' $ shimGenURL) Nothing shimGenSHA Nothing Nothing Nothing
       let dl = downloadCached' shimDownload (Just "gs.exe") Nothing
       void $ (\DigestError{} -> do
           lift $ logWarn "Digest doesn't match, redownloading gs.exe..."
           lift $ logDebug ("rm -f " <> T.pack (fromGHCupPath (cacheDir dirs) </> "gs.exe"))
           lift $ hideError doesNotExistErrorType $ recycleFile (fromGHCupPath (cacheDir dirs) </> "gs.exe")
-          liftE @'[GPGError, DigestError, ContentLengthError, DownloadFailed] $ dl
-        ) `catchE` liftE @'[GPGError, DigestError, ContentLengthError, DownloadFailed] dl
+          liftE @'[URIParseError, GPGError, DigestError, ContentLengthError, DownloadFailed] $ dl
+        ) `catchE` liftE @'[URIParseError, GPGError, DigestError, ContentLengthError, DownloadFailed] dl
   | otherwise = pure ()
 
 

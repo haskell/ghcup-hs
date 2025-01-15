@@ -89,6 +89,7 @@ installCabalBindist :: ( MonadMask m
                           , TarDirDoesNotExist
                           , ArchiveResult
                           , FileAlreadyExistsError
+                          , URIParseError
                           ]
                          m
                          ()
@@ -193,6 +194,7 @@ installCabalBin :: ( MonadMask m
                       , TarDirDoesNotExist
                       , ArchiveResult
                       , FileAlreadyExistsError
+                      , URIParseError
                       ]
                      m
                      ()

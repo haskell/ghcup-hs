@@ -118,6 +118,7 @@ testGHCVer :: ( MonadFail m
                  , TarDirDoesNotExist
                  , UnknownArchive
                  , TestFailed
+                 , URIParseError
                  ]
                 m
                 ()
@@ -158,6 +159,7 @@ testGHCBindist :: ( MonadFail m
                      , TarDirDoesNotExist
                      , UnknownArchive
                      , TestFailed
+                     , URIParseError
                      ]
                     m
                     ()
@@ -256,6 +258,7 @@ fetchGHCSrc :: ( MonadFail m
                   , GPGError
                   , DownloadFailed
                   , NoDownload
+                  , URIParseError
                   ]
                  m
                  FilePath
@@ -308,6 +311,7 @@ installGHCBindist :: ( MonadFail m
                         , ProcessError
                         , UninstallFailed
                         , MergeFileTreeError
+                        , URIParseError
                         ]
                        m
                        ()
@@ -542,6 +546,7 @@ installGHCBin :: ( MonadFail m
                     , UnsupportedSetupCombo
                     , DistroNotFound
                     , NoCompatibleArch
+                    , URIParseError
                     ]
                    m
                    ()
@@ -825,6 +830,7 @@ compileGHC :: ( MonadMask m
                  , BuildFailed
                  , UninstallFailed
                  , MergeFileTreeError
+                 , URIParseError
                  ]
                 m
                 GHCTargetVersion

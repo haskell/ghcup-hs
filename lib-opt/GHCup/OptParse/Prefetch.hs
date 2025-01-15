@@ -162,6 +162,7 @@ type PrefetchEffects = '[ TagNotFound
                         , JSONError
                         , FileDoesNotExistError
                         , StackPlatformDetectError
+                        , URIParseError
                         ]
 
 

@@ -97,6 +97,7 @@ type UpgradeEffects = '[ DigestError
                        , CopyError
                        , DownloadFailed
                        , ToolShadowed
+                       , URIParseError
                        ]
 
 

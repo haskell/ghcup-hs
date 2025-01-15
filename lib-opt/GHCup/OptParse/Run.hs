@@ -193,6 +193,7 @@ type RunEffects = '[ AlreadyInstalled
                    , UnsupportedSetupCombo
                    , DistroNotFound
                    , NoCompatibleArch
+                   , URIParseError
                    ]
 
 runLeanRUN :: (MonadUnliftIO m, MonadIO m)
@@ -370,6 +371,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                               , UnsupportedSetupCombo
                               , DistroNotFound
                               , NoCompatibleArch
+                              , URIParseError
                               ] (ResourceT (ReaderT AppState m)) ()
    installToolChainFull Toolchain{..} tmp = do
          case ghcVer of

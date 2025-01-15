@@ -21,6 +21,7 @@ import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Utils.Dirs
 import           GHCup.Utils.Parsers (fromVersion, uriParser)
+import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 
@@ -142,6 +143,7 @@ type TestGHCEffects = [ DigestError
                       , TagNotFound
                       , DayNotFound
                       , NoToolVersionSet
+                      , URIParseError
                       ]
 
 runTestGHC :: AppState
@@ -174,7 +176,7 @@ test testCommand settings getAppState' runLogger = case testCommand of
        Just uri -> do
          runTestGHC s'{ settings = settings {noVerify = True}} $ do
            (v, vi) <- liftE $ fromVersion testVer GHC
-           liftE $ testGHCBindist (DownloadInfo uri (Just $ RegexDir ".*/.*") "" Nothing Nothing Nothing) v addMakeArgs
+           liftE $ testGHCBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir ".*/.*") "" Nothing Nothing Nothing) v addMakeArgs
            pure vi
       )
         >>= \case
