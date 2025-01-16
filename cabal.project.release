@@ -7,9 +7,11 @@ optimization: 2
 -- for). The tar flag is only there to circumvent complicated errors
 -- during development, which sometimes happens due to libarchive.
 package ghcup
-    flags: +tui +yaml-streamly
+    flags: +tui
 
 if os(linux)
+  package ghcup
+      flags: +yaml-streamly
   constraints: xz -system-xz
   if arch(x86_64) || arch(i386)
     flags: -tar
@@ -20,10 +22,14 @@ if os(linux)
   else
     flags: -tar
 elif os(darwin)
+  package ghcup
+      flags: +yaml-streamly
   flags: -tar
   constraints: zlib +bundled-c-zlib,
                xz -system-xz
 elif os(mingw32)
+  package ghcup
+      flags: +yaml-streamly
   flags: -tar
   constraints: xz -system-xz
 elif os(freebsd)
