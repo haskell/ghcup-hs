@@ -7,7 +7,7 @@ optimization: 2
 -- for). The tar flag is only there to circumvent complicated errors
 -- during development, which sometimes happens due to libarchive.
 package ghcup
-    flags: +tui
+    flags: +tui +yaml-streamly
 
 if os(linux)
   constraints: xz -system-xz
