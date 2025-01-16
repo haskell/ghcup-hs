@@ -451,6 +451,7 @@ test-suite ghcup-test
     GHCup.Prelude.File.Posix.TraversalsSpec
     GHCup.Types.JSONSpec
     GHCup.Utils.FileSpec
+    GHCup.ParserSpec
     Spec
 
   default-language:   Haskell2010
@@ -477,6 +478,7 @@ test-suite ghcup-test
     , ghcup
     , hspec                     >=2.7.10  && <2.12
     , hspec-golden-aeson        ^>=0.9
+    , megaparsec                >=8.0.0    && <9.8
     , QuickCheck                ^>=2.14.1 || ^>=2.15
     , quickcheck-arbitrary-adt  ^>=0.3.1.0
     , text                      ^>=2.0 || ^>=2.1

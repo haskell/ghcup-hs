@@ -220,23 +220,16 @@ versionCmpToText (VR_lteq ver') = "<= " <> prettyV ver'
 versionCmpToText (VR_eq   ver') = "== " <> prettyV ver'
 
 versionCmpP :: MP.Parsec Void T.Text VersionCmp
-versionCmpP =
-  fmap VR_gt (MP.try $ MPC.space *> MP.chunk ">" *> MPC.space *> versioningEnd)
-    <|> fmap
-          VR_gteq
-          (MP.try $ MPC.space *> MP.chunk ">=" *> MPC.space *> versioningEnd)
-    <|> fmap
-          VR_lt
-          (MP.try $ MPC.space *> MP.chunk "<" *> MPC.space *> versioningEnd)
-    <|> fmap
-          VR_lteq
-          (MP.try $ MPC.space *> MP.chunk "<=" *> MPC.space *> versioningEnd)
-    <|> fmap
-          VR_eq
-          (MP.try $ MPC.space *> MP.chunk "==" *> MPC.space *> versioningEnd)
-    <|> fmap
-          VR_eq
-          (MP.try $ MPC.space *> versioningEnd)
+versionCmpP = either (fail . T.unpack) pure =<< (translate <$> (MPC.space *> MP.try (MP.takeWhileP Nothing (`elem` ['>', '<', '=']))) <*> (MPC.space *> versioningEnd))
+ where
+   translate ">" v  = Right $ VR_gt v
+   translate ">=" v = Right $ VR_gteq v
+   translate "<" v  = Right $ VR_lt v
+   translate "<=" v = Right $ VR_lteq v
+   translate "==" v = Right $ VR_eq v
+   translate "" v   = Right $ VR_eq v
+   translate c  _   = Left $ "unexpected comparator: " <> c
+
 
 instance ToJSON VersionRange where
   toJSON = String . verRangeToText
