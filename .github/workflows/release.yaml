@@ -32,7 +32,7 @@ jobs:
         include:
           - os: ubuntu-latest
             ARTIFACT: "i386-linux-ghcup"
-            GHC_VER: 8.10.7
+            GHC_VER: 9.8.4
             ARCH: 32
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
@@ -46,7 +46,7 @@ jobs:
 
       - if: matrix.ARCH == '32'
         name: Run build (32 bit linux)
-        uses: docker://hasufell/i386-alpine-haskell:3.12
+        uses: docker://hasufell/i386-alpine-haskell:3.20
         with:
           args: sh .github/scripts/build.sh
         env:
