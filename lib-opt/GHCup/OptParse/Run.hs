@@ -382,6 +382,7 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                GHCupInternal
                False
                []
+               (T.pack "install")
              setGHC' v tmp
            _ -> pure ()
          case cabalVer of

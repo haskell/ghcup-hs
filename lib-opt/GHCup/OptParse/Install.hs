@@ -71,6 +71,7 @@ data InstallOptions = InstallOptions
   , instSet      :: Bool
   , isolateDir   :: Maybe FilePath
   , forceInstall :: Bool
+  , installTargets :: T.Text
   , addConfArgs  :: [T.Text]
   } deriving (Eq, Show)
 
@@ -207,6 +208,13 @@ installOpts tool =
           )
     <*> switch
           (short 'f' <> long "force" <> help "Force install (THIS IS UNSAFE, only use it in Dockerfiles or CI)")
+    <*> strOption
+           (  long "install-targets"
+           <> metavar "TARGETS"
+           <> help "Space separated list of install targets (default: install)"
+           <> completer (listCompleter ["install", "install_bin", "install_lib", "install_extra", "install_man", "install_docs", "install_data", "update_package_db"])
+           <> value "install"
+           )
     <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to bindist configure, prefix with '-- ' (longopts)"))
  where
   setDefault = case tool of
@@ -345,6 +353,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                      (maybe GHCupInternal IsolateDir isolateDir)
                      forceInstall
                      addConfArgs
+                     installTargets
                    )
                    $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setGHC v SetGHCOnly Nothing
          pure vi
@@ -362,6 +371,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
                        (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
                        addConfArgs
+                       installTargets
                      )
                      $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setGHC v SetGHCOnly Nothing
            pure vi

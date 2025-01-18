@@ -248,8 +248,8 @@ createCheckBoxField name access = MenuField access createCheckBoxInput "" Valid 
 
 type EditableField = MenuField
 
-createEditableInput :: (Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> FieldInput a (EditState n) n
-createEditableInput name validator = FieldInput initEdit validateEditContent "" drawEdit handler
+createEditableInput :: (Ord n, Show n) => T.Text -> n -> (T.Text -> Either ErrorMessage a) -> FieldInput a (EditState n) n
+createEditableInput initText name validator = FieldInput initEdit validateEditContent "" drawEdit handler
   where
     drawEdit focus errMsg help label (EditState edi overlayOpen) amp = (field, mOverlay)
       where
@@ -258,6 +258,8 @@ createEditableInput name validator = FieldInput initEdit validateEditContent "" 
             borderBox w = amp (Brick.vLimit 1 $ Border.vBorder <+> Brick.padRight Brick.Max w <+> Border.vBorder)
             editorContents = Brick.txt $ T.unlines $ Edit.getEditContents edi
             isEditorEmpty = Edit.getEditContents edi == [mempty]
+                          || Edit.getEditContents edi == [initText]
+
           in case errMsg of
                Valid | isEditorEmpty -> borderBox $ renderAsHelpMsg help
                      | otherwise -> borderBox editorContents
@@ -287,12 +289,15 @@ createEditableInput name validator = FieldInput initEdit validateEditContent "" 
           VtyEvent (Vty.EvKey Vty.KEnter []) -> editStateOverlayOpenL .= True
           _ -> pure ()
     validateEditContent = validator . T.init . T.unlines . Edit.getEditContents . editState
-    initEdit = EditState (Edit.editorText name (Just 1) "") False
+    initEdit = EditState (Edit.editorText name (Just 1) initText) False
+
+createEditableField' :: (Eq n, Ord n, Show n) => T.Text -> n -> (T.Text -> Either ErrorMessage a) -> Lens' s a -> EditableField s n
+createEditableField' initText name validator access = MenuField access input "" Valid name
+  where
+    input = createEditableInput initText name validator
 
 createEditableField :: (Eq n, Ord n, Show n) => n -> (T.Text -> Either ErrorMessage a) -> Lens' s a -> EditableField s n
-createEditableField name validator access = MenuField access input "" Valid name
-  where
-    input = createEditableInput name validator
+createEditableField = createEditableField' ""
 
 {- *****************
   Button widget

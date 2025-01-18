@@ -26,6 +26,7 @@ module GHCup.Brick.Widgets.Menus.AdvanceInstall (
   isolateDirL,
   forceInstallL,
   addConfArgsL,
+  installTargetsL,
 ) where
 
 import GHCup.Types (GHCTargetVersion(..))
@@ -55,6 +56,7 @@ data InstallOptions = InstallOptions
   , isolateDir   :: Maybe FilePath
   , forceInstall :: Bool
   , addConfArgs  :: [T.Text]
+  , installTargets :: T.Text
   } deriving (Eq, Show)
 
 makeLensesFor [
@@ -64,6 +66,7 @@ makeLensesFor [
   , ("isolateDir", "isolateDirL")
   , ("forceInstall", "forceInstallL")
   , ("addConfArgs", "addConfArgsL")
+  , ("installTargets", "installTargetsL")
   ]
   ''InstallOptions
 
@@ -72,7 +75,8 @@ type AdvanceInstallMenu = Menu InstallOptions Name
 create :: MenuKeyBindings -> AdvanceInstallMenu
 create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" validator k [ok] fields
   where
-    initialState = InstallOptions Nothing False Nothing Nothing False []
+    initialInstallTargets = "install"
+    initialState = InstallOptions Nothing False Nothing Nothing False [] initialInstallTargets
     validator InstallOptions {..} = case (instSet, isolateDir) of
       (True, Just _) -> Just "Cannot set active when doing an isolated install"
       _ -> Nothing
@@ -105,6 +109,9 @@ create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" vali
       , Menu.createEditableField (Common.MenuElement Common.ToolVersionBox) toolVersionValidator instVersionL
           & Menu.fieldLabelL .~ "version"
           & Menu.fieldHelpMsgL .~ "Specify a custom version"
+      , Menu.createEditableField' initialInstallTargets (Common.MenuElement Common.GHCInstallTargets) Right installTargetsL
+          & Menu.fieldLabelL .~ "install-targets"
+          & Menu.fieldHelpMsgL .~ "Specify space separated list of make install targets"
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathValidator isolateDirL
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"

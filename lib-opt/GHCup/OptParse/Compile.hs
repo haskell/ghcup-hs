@@ -81,6 +81,7 @@ data GHCCompileOptions = GHCCompileOptions
   , buildFlavour :: Maybe String
   , buildSystem  :: Maybe BuildSystem
   , isolateDir   :: Maybe FilePath
+  , installTargets :: T.Text
   } deriving (Eq, Show)
 
 
@@ -166,7 +167,7 @@ Examples:
 
 ghcCompileOpts :: Parser GHCCompileOptions
 ghcCompileOpts =
-  (\targetGhc bootstrapGhc hadrianGhc jobs patches crossTarget addConfArgs setCompile overwriteVer buildFlavour (buildSystem, buildConfig) isolateDir -> GHCCompileOptions {..})
+  (\targetGhc bootstrapGhc hadrianGhc jobs patches crossTarget addConfArgs setCompile overwriteVer buildFlavour (buildSystem, buildConfig) isolateDir installTargets -> GHCCompileOptions {..})
     <$> ((GHC.SourceDist <$> option
           (eitherReader
             (first (const "Not a valid version") . version . T.pack)
@@ -314,6 +315,13 @@ ghcCompileOpts =
             <> help "install in an isolated absolute directory instead of the default one, no symlinks to this installation will be made"
             <> completer (bashCompleter "directory")
             )
+           )
+    <*> strOption
+           (  long "install-targets"
+           <> metavar "TARGETS"
+           <> help "Space separated list of install targets (default: install)"
+           <> completer (listCompleter ["install", "install_bin", "install_lib", "install_extra", "install_man", "install_docs", "install_data", "update_package_db"])
+           <> value "install"
            )
 
 hlsCompileOpts :: Parser HLSCompileOptions
@@ -632,6 +640,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     buildFlavour
                     buildSystem
                     (maybe GHCupInternal IsolateDir isolateDir)
+                    installTargets
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
         let vi = getVersionInfo targetVer GHC dls
         when setCompile $ void $ liftE $
