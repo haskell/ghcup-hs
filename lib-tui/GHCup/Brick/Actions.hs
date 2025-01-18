@@ -468,6 +468,7 @@ changelog' (_, ListResult {..}) = do
             Darwin  -> exec "open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
             Linux _ -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
             FreeBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+            OpenBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
             Windows -> do
               let args = "start \"\" " ++ (T.unpack $ decUTF8Safe $ serializeURIRef' uri)
               c <- liftIO $ system $ args
