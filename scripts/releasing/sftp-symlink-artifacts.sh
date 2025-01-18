@@ -16,7 +16,6 @@ cd ghcup
 
 rm aarch64-apple-darwin-ghcup
 rm aarch64-linux-ghcup
-rm armv7-linux-ghcup
 rm i386-linux-ghcup
 rm x86_64-apple-darwin-ghcup
 rm x86_64-linux-ghcup
@@ -25,7 +24,6 @@ rm x86_64-portbld-freebsd-ghcup
 
 symlink ${ver}/aarch64-apple-darwin-ghcup-${ver} aarch64-apple-darwin-ghcup
 symlink ${ver}/aarch64-linux-ghcup-${ver} aarch64-linux-ghcup
-symlink ${ver}/armv7-linux-ghcup-${ver} armv7-linux-ghcup
 symlink ${ver}/i386-linux-ghcup-${ver} i386-linux-ghcup
 symlink ${ver}/x86_64-apple-darwin-ghcup-${ver} x86_64-apple-darwin-ghcup
 symlink ${ver}/x86_64-portbld-freebsd-ghcup-${ver} x86_64-portbld-freebsd-ghcup

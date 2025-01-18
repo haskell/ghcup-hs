@@ -118,6 +118,7 @@ installHLSBindist :: ( MonadMask m
                         , DirNotEmpty
                         , UninstallFailed
                         , MergeFileTreeError
+                        , URIParseError
                         ]
                        m
                        ()
@@ -311,6 +312,7 @@ installHLSBin :: ( MonadMask m
                     , DirNotEmpty
                     , UninstallFailed
                     , MergeFileTreeError
+                    , URIParseError
                     ]
                    m
                    ()
@@ -352,6 +354,7 @@ compileHLS :: ( MonadMask m
                        , ArchiveResult
                        , BuildFailed
                        , NotInstalled
+                       , URIParseError
                        ] m Version
 compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal updateCabal patches cabalArgs = do
   pfreq@PlatformRequest { .. } <- lift getPlatformReq

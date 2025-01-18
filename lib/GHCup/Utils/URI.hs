@@ -15,12 +15,16 @@ URI handling.
 -}
 module GHCup.Utils.URI where
 
+import           GHCup.Prelude.Internal
+
 import           Data.Bifunctor (first)
+import           Data.Text                      ( Text )
 import           Control.Applicative
 import           Data.Attoparsec.ByteString
 import           Data.ByteString
 import           URI.ByteString hiding (parseURI)
 import           System.URI.File
+import qualified Data.Text.Encoding            as E
 
 
 
@@ -30,10 +34,13 @@ import           System.URI.File
 
 
 parseURI :: ByteString -> Either URIParseError (URIRef Absolute)
-parseURI = first OtherError . parseOnly parseURI'
+parseURI = first OtherError . parseOnly parseURIP
 
-parseURI' :: Parser (URIRef Absolute)
-parseURI' = do
+parseURI' :: Text -> Either URIParseError (URIRef Absolute)
+parseURI' = first OtherError . parseOnly parseURIP . E.encodeUtf8
+
+parseURIP :: Parser (URIRef Absolute)
+parseURIP = do
   ref <- (Right <$> parseFile) <|> (Left <$> uriParser laxURIParserOptions)
   case ref of
     Left (URI { uriScheme = (Scheme "file") }) ->

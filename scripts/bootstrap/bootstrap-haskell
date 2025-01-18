@@ -307,13 +307,15 @@ download_ghcup() {
 					_url=${GHCUP_BASE_URL}/${ghver}/i386-linux-ghcup-${ghver}
 					;;
 				armv7*|*armv8l*)
-					_url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
+                    # later versions don't support armv7 anymore
+					_url=${GHCUP_BASE_URL}/0.1.40.0/armv7-linux-ghcup-0.1.40.0
 					;;
 				aarch64|arm64)
 					# we could be in a 32bit docker container, in which
 					# case uname doesn't give us what we want
 					if [ "$(getconf LONG_BIT)" = "32" ] ; then
-						_url=${GHCUP_BASE_URL}/${ghver}/armv7-linux-ghcup-${ghver}
+                        # later versions don't support armv7 anymore
+						_url=${GHCUP_BASE_URL}/0.1.40.0/armv7-linux-ghcup-0.1.40.0
 					elif [ "$(getconf LONG_BIT)" = "64" ] ; then
 						_url=${GHCUP_BASE_URL}/${ghver}/aarch64-linux-ghcup-${ghver}
 					else

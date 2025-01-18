@@ -109,6 +109,7 @@ fetchToolBindist :: ( MonadFail m
                        , GPGError
                        , DownloadFailed
                        , NoDownload
+                       , URIParseError
                        ]
                       m
                       FilePath
@@ -302,6 +303,7 @@ upgradeGHCup :: ( MonadMask m
                    , NoDownload
                    , NoUpdate
                    , ToolShadowed
+                   , URIParseError
                    ]
                   m
                   Version
@@ -342,6 +344,7 @@ upgradeGHCup' :: ( MonadMask m
                     , NoDownload
                     , NoUpdate
                     , ToolShadowed
+                    , URIParseError
                     ]
                    m
                    Version
@@ -353,7 +356,8 @@ upgradeGHCup' mtarget force' fatal latestVer = do
   dli   <- liftE $ getDownloadInfo GHCup latestVer
   tmp   <- fromGHCupPath <$> lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt
-  p <- liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) tmp (Just fn) False
+  dlu <- lE $ parseURI' (_dlUri dli)
+  p <- liftE $ download dlu Nothing (Just (_dlHash dli)) (_dlCSize dli) tmp (Just fn) False
   let destDir = takeDirectory destFile
       destFile = fromMaybe (binDir </> fn) mtarget
   lift $ logDebug $ "mkdir -p " <> T.pack destDir

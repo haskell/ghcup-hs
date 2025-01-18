@@ -329,7 +329,7 @@ instance Pretty LinuxDistro where
 -- | An encapsulation of a download. This can be used
 -- to download, extract and install a tool.
 data DownloadInfo = DownloadInfo
-  { _dlUri    :: URI
+  { _dlUri    :: Text
   , _dlSubdir :: Maybe TarDir
   , _dlHash   :: Text
   , _dlCSize  :: Maybe Integer

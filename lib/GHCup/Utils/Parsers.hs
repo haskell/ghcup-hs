@@ -413,7 +413,7 @@ parseNewUrlSources s = case AP.parseOnly
   parse = (NewGHCupURL <$ AP.string "GHCupURL")
       <|> (NewStackSetupURL <$ AP.string "StackSetupURL")
       <|> AP.choice ((\x -> AP.string (UTF8.fromString . T.unpack . channelAliasText $ x) $> NewChannelAlias x) <$> ([minBound..maxBound] :: [ChannelAlias]))
-      <|> (NewURI <$> parseURI')
+      <|> (NewURI <$> parseURIP)
 
 parseChannelAlias :: String -> Either String ChannelAlias
 parseChannelAlias s =

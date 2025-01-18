@@ -182,9 +182,8 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
 
     fromStackDownloadInfo :: MonadThrow m => Stack.GHCDownloadInfo -> m DownloadInfo
     fromStackDownloadInfo (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do
-      url <- either (\e -> throwM $ ParseError (show e)) pure $ parseURI . E.encodeUtf8 $ downloadInfoUrl
-      sha256 <- maybe (throwM $ DigestMissing url) (pure . E.decodeUtf8) downloadInfoSha256
-      pure $ DownloadInfo url (Just $ RegexDir "ghc-.*") sha256 Nothing Nothing Nothing
+      sha256 <- maybe (throwM $ DigestMissing downloadInfoUrl) (pure . E.decodeUtf8) downloadInfoSha256
+      pure $ DownloadInfo downloadInfoUrl (Just $ RegexDir "ghc-.*") sha256 Nothing Nothing Nothing
 
 
   mergeGhcupInfo :: MonadFail m
@@ -742,14 +741,15 @@ downloadCached :: ( MonadReader env m
                   )
                => DownloadInfo
                -> Maybe FilePath  -- ^ optional filename
-               -> Excepts '[DigestError, ContentLengthError, DownloadFailed, GPGError] m FilePath
+               -> Excepts '[URIParseError, DigestError, ContentLengthError, DownloadFailed, GPGError] m FilePath
 downloadCached dli mfn = do
   Settings{ cache } <- lift getSettings
   case cache of
     True -> downloadCached' dli mfn Nothing
     False -> do
+      dlu <- lE $ parseURI' (_dlUri dli)
       tmp <- lift withGHCupTmpDir
-      liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) (fromGHCupPath tmp) outputFileName False
+      liftE $ download dlu Nothing (Just (_dlHash dli)) (_dlCSize dli) (fromGHCupPath tmp) outputFileName False
  where
   outputFileName = mfn <|> _dlOutput dli
 
@@ -766,11 +766,12 @@ downloadCached' :: ( MonadReader env m
                 => DownloadInfo
                 -> Maybe FilePath  -- ^ optional filename
                 -> Maybe FilePath  -- ^ optional destination dir (default: cacheDir)
-                -> Excepts '[DigestError, ContentLengthError, DownloadFailed, GPGError] m FilePath
+                -> Excepts '[URIParseError, DigestError, ContentLengthError, DownloadFailed, GPGError] m FilePath
 downloadCached' dli mfn mDestDir = do
   Dirs { cacheDir } <- lift getDirs
+  dlu <- lE $ parseURI' (_dlUri dli)
   let destDir = fromMaybe (fromGHCupPath cacheDir) mDestDir
-  let fn = fromMaybe ((T.unpack . decUTF8Safe) $ urlBaseName $ view (dlUri % pathL') dli) outputFileName
+  let fn = fromMaybe ((T.unpack . decUTF8Safe) $ urlBaseName $ view pathL' dlu) outputFileName
   let cachfile = destDir </> fn
   fileExists <- liftIO $ doesFileExist cachfile
   if
@@ -778,7 +779,7 @@ downloadCached' dli mfn mDestDir = do
       forM_ (view dlCSize dli) $ \s -> liftE $ checkCSize s cachfile
       liftE $ checkDigest (view dlHash dli) cachfile
       pure cachfile
-    | otherwise -> liftE $ download (_dlUri dli) Nothing (Just (_dlHash dli)) (_dlCSize dli) destDir outputFileName False
+    | otherwise -> liftE $ download dlu Nothing (Just (_dlHash dli)) (_dlCSize dli) destDir outputFileName False
  where
   outputFileName = mfn <|> _dlOutput dli
 

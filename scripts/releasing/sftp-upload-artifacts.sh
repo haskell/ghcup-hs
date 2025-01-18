@@ -29,9 +29,6 @@ put aarch64-apple-darwin-ghcup.plan.json
 put aarch64-linux-ghcup-${ver}
 put aarch64-linux-ghcup-${ver}.sig
 put aarch64-linux-ghcup.plan.json
-put armv7-linux-ghcup-${ver}
-put armv7-linux-ghcup-${ver}.sig
-put armv7-linux-ghcup.plan.json
 put i386-linux-ghcup-${ver}
 put i386-linux-ghcup-${ver}.sig
 put i386-linux-ghcup.plan.json

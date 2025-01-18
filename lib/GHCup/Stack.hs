@@ -90,6 +90,7 @@ installStackBin :: ( MonadMask m
                       , TarDirDoesNotExist
                       , ArchiveResult
                       , FileAlreadyExistsError
+                      , URIParseError
                       ]
                      m
                      ()
@@ -129,6 +130,7 @@ installStackBindist :: ( MonadMask m
                           , TarDirDoesNotExist
                           , ArchiveResult
                           , FileAlreadyExistsError
+                          , URIParseError
                           ]
                          m
                          ()

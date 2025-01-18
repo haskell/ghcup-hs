@@ -60,10 +60,5 @@ cat <<EOF > /dev/stdout
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/${RELEASE}/aarch64-apple-darwin-ghcup-${RELEASE}
               dlHash: $(get_sha "aarch64-apple-darwin-ghcup-${RELEASE}")
-        A_ARM:
-          Linux_UnknownLinux:
-            unknown_versioning:
-              dlUri: https://downloads.haskell.org/~ghcup/${RELEASE}/armv7-linux-ghcup-${RELEASE}
-              dlHash: $(get_sha "armv7-linux-ghcup-${RELEASE}")
 EOF
 

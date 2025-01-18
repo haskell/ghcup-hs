@@ -225,6 +225,7 @@ installWithOptions opts (_, ListResult {..}) = do
               , DistroNotFound
               , NoCompatibleArch
               , InstallSetError
+              , URIParseError
               ]
 
       withNoVerify :: (MonadReader AppState m) => m a -> m a
@@ -248,7 +249,7 @@ installWithOptions opts (_, ListResult {..}) = do
               liftE $
                 runBothE'
                   (withNoVerify $ installGHCBindist
-                      (DownloadInfo uri (Just $ RegexDir "ghc-.*") "" Nothing Nothing Nothing)
+                      (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir "ghc-.*") "" Nothing Nothing Nothing)
                       v
                       shouldIsolate
                       shouldForce
@@ -268,7 +269,7 @@ installWithOptions opts (_, ListResult {..}) = do
             Just uri -> do
               liftE $
                 runBothE'
-                  (withNoVerify $ installCabalBindist (DownloadInfo uri Nothing "" Nothing Nothing Nothing) toolV shouldIsolate shouldForce)
+                  (withNoVerify $ installCabalBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) Nothing "" Nothing Nothing Nothing) toolV shouldIsolate shouldForce)
                   (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal toolV))
               pure (vi, dirs, ce)
 
@@ -288,7 +289,7 @@ installWithOptions opts (_, ListResult {..}) = do
               liftE $
                 runBothE'
                   (withNoVerify $ installHLSBindist
-                    (DownloadInfo uri (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing Nothing)
+                    (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing Nothing)
                     toolV
                     shouldIsolate
                     shouldForce)
@@ -307,7 +308,7 @@ installWithOptions opts (_, ListResult {..}) = do
             Just uri -> do
               liftE $
                 runBothE'
-                  (withNoVerify $ installStackBindist (DownloadInfo uri Nothing "" Nothing Nothing Nothing) toolV shouldIsolate shouldForce)
+                  (withNoVerify $ installStackBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) Nothing "" Nothing Nothing Nothing) toolV shouldIsolate shouldForce)
                   (when (shouldSet && isNothing misolated) (liftE $ void $ setStack toolV))
               pure (vi, dirs, ce)
 
@@ -377,6 +378,7 @@ set' input@(_, ListResult {..}) = do
               , UnsupportedSetupCombo
               , DistroNotFound
               , NoCompatibleArch
+              , URIParseError
               ]
 
   run (do
@@ -506,6 +508,7 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
                   , BuildFailed
                   , UninstallFailed
                   , MergeFileTreeError
+                  , URIParseError
                   ]
   compileResult <- run (do
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
@@ -595,6 +598,7 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
                   , ArchiveResult
                   , UninstallFailed
                   , MergeFileTreeError
+                  , URIParseError
                   ]
   compileResult <- run (do
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask

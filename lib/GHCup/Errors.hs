@@ -17,7 +17,7 @@ Maintainer  : hasufell@hasufell.de
 Stability   : experimental
 Portability : portable
 -}
-module GHCup.Errors where
+module GHCup.Errors ( module GHCup.Errors, URIParseError ) where
 
 import           GHCup.Types
 
@@ -34,8 +34,6 @@ import           URI.ByteString
 
 import qualified Data.Map.Strict               as M
 import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as E
-import qualified Data.Text.Encoding.Error      as E
 import           Data.Data (Proxy(..))
 import Data.Time (Day)
 
@@ -849,12 +847,12 @@ instance HFErrorProject NoUrlBase where
   eBase _ = 520
   eDesc _ = "URL does not have a base filename."
 
-data DigestMissing = DigestMissing URI
+data DigestMissing = DigestMissing Text
   deriving Show
 
 instance Pretty DigestMissing where
   pPrint (DigestMissing uri) =
-    text "Digest missing for:" <+> (text . T.unpack . E.decodeUtf8With E.lenientDecode . serializeURIRef') uri
+    text "Digest missing for:" <+> text (T.unpack uri)
 
 instance Exception DigestMissing
 

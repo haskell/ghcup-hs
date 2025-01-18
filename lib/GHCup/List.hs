@@ -117,16 +117,17 @@ listVersions lt' criteria hideOld showNightly days = do
   hlses <- getInstalledHLSs
   sSet <- stackSet
   stacks <- getInstalledStacks
+  hlsGHCVs <- fmap mkTVer <$> hlsGHCVersions
 
-  go lt' cSet cabals hlsSet' hlses sSet stacks
+  go lt' hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
  where
-  go lt cSet cabals hlsSet' hlses sSet stacks = do
+  go lt hlsGHCVs cSet cabals hlsSet' hlses sSet stacks = do
     case lt of
       Just t -> do
         GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
         -- get versions from GHCupDownloads
         let avTools = availableToolVersions dls t
-        lr <- filter' <$> forM (Map.toList avTools) (toListResult t cSet cabals hlsSet' hlses sSet stacks)
+        lr <- filter' <$> forM (Map.toList avTools) (toListResult t hlsGHCVs cSet cabals hlsSet' hlses sSet stacks)
 
         case t of
           GHC -> do
@@ -145,11 +146,11 @@ listVersions lt' criteria hideOld showNightly days = do
             let cg = maybeToList $ currentGHCup avTools
             pure (sort (cg ++ lr))
       Nothing -> do
-        ghcvers   <- go (Just GHC) cSet cabals hlsSet' hlses sSet stacks
-        cabalvers <- go (Just Cabal) cSet cabals hlsSet' hlses sSet stacks
-        hlsvers   <- go (Just HLS) cSet cabals hlsSet' hlses sSet stacks
-        ghcupvers <- go (Just GHCup) cSet cabals hlsSet' hlses sSet stacks
-        stackvers <- go (Just Stack) cSet cabals hlsSet' hlses sSet stacks
+        ghcvers   <- go (Just GHC) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
+        cabalvers <- go (Just Cabal) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
+        hlsvers   <- go (Just HLS) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
+        ghcupvers <- go (Just GHCup) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
+        stackvers <- go (Just Stack) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
         pure (ghcvers <> cabalvers <> hlsvers <> stackvers <> ghcupvers)
   strayGHCs :: ( MonadCatch m
                , MonadReader env m
@@ -319,6 +320,7 @@ listVersions lt' criteria hideOld showNightly days = do
                   , MonadCatch m
                   )
                => Tool
+               -> [GHCTargetVersion]
                -> Maybe Version
                -> [Either FilePath Version]
                -> Maybe Version
@@ -327,7 +329,7 @@ listVersions lt' criteria hideOld showNightly days = do
                -> [Either FilePath Version]
                -> (GHCTargetVersion, VersionInfo)
                -> m ListResult
-  toListResult t cSet cabals hlsSet' hlses stackSet' stacks (tver, VersionInfo{..}) = do
+  toListResult t hlsGHCVs cSet cabals hlsSet' hlses stackSet' stacks (tver, VersionInfo{..}) = do
     let v = _tvVersion tver
     case t of
       GHC -> do
@@ -336,7 +338,7 @@ listVersions lt' criteria hideOld showNightly days = do
         let bTags = either (const []) (fromMaybe [] . _dlTag) dli
         lSet       <- fmap (== Just tver) $ ghcSet (_tvTarget tver)
         lInstalled <- ghcInstalled tver
-        hlsPowered <- fmap (elem tver) (fmap mkTVer <$> hlsGHCVersions)
+        let hlsPowered = tver `elem` hlsGHCVs
         pure ListResult { lVer = _tvVersion tver
                         , lCross = _tvTarget tver
                         , lTag = _viTags <> bTags
