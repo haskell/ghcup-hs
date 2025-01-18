@@ -82,7 +82,14 @@ flag yaml-streamly
   default:     False
   manual:      True
 
+common common-ghc-options
+  ghc-options:
+    -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
+    -fwarn-incomplete-record-updates -Werror=incomplete-patterns
+
 common app-common-depends
+  import: common-ghc-options
+
   build-depends:
     , aeson                  >=1.4
     , aeson-pretty           ^>=0.8.8
@@ -196,10 +203,6 @@ library
     TypeApplications
     TypeFamilies
     ViewPatterns
-
-  ghc-options:
-    -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates
 
   build-depends:
     , aeson                 >=1.4
@@ -350,10 +353,6 @@ library ghcup-optparse
     StrictData
     TupleSections
 
-  ghc-options:
-    -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates
-
   build-depends:      ghcup
 
   if flag(internal-downloader)
@@ -399,10 +398,6 @@ library ghcup-tui
     StrictData
     TupleSections
 
-  ghc-options:
-    -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates
-
   build-depends:
     , ghcup
     , brick         >=2.1 && <2.8
@@ -434,8 +429,7 @@ executable ghcup
     TupleSections
 
   ghc-options:
-    -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates -threaded
+    -threaded
 
   build-depends:
     , ghcup
@@ -459,6 +453,7 @@ executable ghcup
     buildable: False
 
 test-suite ghcup-test
+  import: common-ghc-options
   type:               exitcode-stdio-1.0
   main-is:            Main.hs
   build-tool-depends: hspec-discover:hspec-discover -any
@@ -481,8 +476,7 @@ test-suite ghcup-test
     TupleSections
 
   ghc-options:
-    -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
-    -fwarn-incomplete-record-updates -fconstraint-solver-iterations=0
+    -fconstraint-solver-iterations=0
 
   build-depends:
     , base                      >=4.12    && <5
@@ -510,6 +504,7 @@ test-suite ghcup-test
     build-depends: unix ^>=2.7 || ^>=2.8
 
 test-suite ghcup-optparse-test
+  import: common-ghc-options
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test/optparse-test
   main-is:          Main.hs
@@ -533,7 +528,6 @@ test-suite ghcup-optparse-test
     cpp-options: -DIS_WINDOWS
 
   default-language: Haskell2010
-  ghc-options:      -Wall
   build-depends:
     , base
     , ghcup
