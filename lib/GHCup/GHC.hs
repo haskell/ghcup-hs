@@ -295,6 +295,7 @@ installGHCBindist :: ( MonadFail m
                   -> InstallDir
                   -> Bool            -- ^ Force install
                   -> [T.Text]        -- ^ additional configure args for bindist
+                  -> T.Text
                   -> Excepts
                        '[ AlreadyInstalled
                         , BuildFailed
@@ -315,7 +316,7 @@ installGHCBindist :: ( MonadFail m
                         ]
                        m
                        ()
-installGHCBindist dlinfo tver installDir forceInstall addConfArgs = do
+installGHCBindist dlinfo tver installDir forceInstall addConfArgs installTargets = do
   lift $ logDebug $ "Requested to install GHC with " <> tVerToText tver
 
   regularGHCInstalled <- lift $ ghcInstalled tver
@@ -343,12 +344,12 @@ installGHCBindist dlinfo tver installDir forceInstall addConfArgs = do
   case installDir of
     IsolateDir isoDir -> do                        -- isolated install
       lift $ logInfo $ "isolated installing GHC to " <> T.pack isoDir
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (IsolateDirResolved isoDir) tver forceInstall addConfArgs
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (IsolateDirResolved isoDir) tver forceInstall addConfArgs installTargets
     GHCupInternal -> do                            -- regular install
       -- prepare paths
       ghcdir <- lift $ ghcupGHCDir tver
 
-      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (GHCupDir ghcdir) tver forceInstall addConfArgs
+      liftE $ installPackedGHC dl (view dlSubdir dlinfo) (GHCupDir ghcdir) tver forceInstall addConfArgs installTargets
 
       -- make symlinks & stuff when regular install,
       liftE $ postGHCInstall tver
@@ -385,6 +386,7 @@ installPackedGHC :: ( MonadMask m
                  -> GHCTargetVersion  -- ^ The GHC version
                  -> Bool              -- ^ Force install
                  -> [T.Text]          -- ^ additional configure args for bindist
+                 -> T.Text
                  -> Excepts
                       '[ BuildFailed
                        , UnknownArchive
@@ -394,7 +396,7 @@ installPackedGHC :: ( MonadMask m
                        , ProcessError
                        , MergeFileTreeError
                        ] m ()
-installPackedGHC dl msubdir inst ver forceInstall addConfArgs = do
+installPackedGHC dl msubdir inst ver forceInstall addConfArgs installTargets = do
   PlatformRequest {..} <- lift getPlatformReq
 
   unless forceInstall
@@ -411,7 +413,7 @@ installPackedGHC dl msubdir inst ver forceInstall addConfArgs = do
                    msubdir
 
   liftE $ runBuildAction tmpUnpack
-                         (installUnpackedGHC workdir inst ver forceInstall addConfArgs)
+                         (installUnpackedGHC workdir inst ver forceInstall addConfArgs installTargets)
 
 
 -- | Install an unpacked GHC distribution. This only deals with the GHC
@@ -433,8 +435,9 @@ installUnpackedGHC :: ( MonadReader env m
                    -> GHCTargetVersion    -- ^ The GHC version
                    -> Bool                -- ^ Force install
                    -> [T.Text]          -- ^ additional configure args for bindist
+                   -> T.Text
                    -> Excepts '[ProcessError, MergeFileTreeError] m ()
-installUnpackedGHC path inst tver forceInstall addConfArgs
+installUnpackedGHC path inst tver forceInstall addConfArgs installTargets
   | isWindows = do
       lift $ logInfo "Installing GHC (this may take a while)"
       -- Windows bindists are relocatable and don't need
@@ -460,7 +463,7 @@ installUnpackedGHC path inst tver forceInstall addConfArgs
                        "ghc-configure"
                        Nothing
       tmpInstallDest <- lift withGHCupTmpDir
-      lEM $ make ["DESTDIR=" <> fromGHCupPath tmpInstallDest, "install"] (Just $ fromGHCupPath path)
+      lEM $ make (["DESTDIR=" <> fromGHCupPath tmpInstallDest] <> (words . T.unpack $ installTargets)) (Just $ fromGHCupPath path)
       liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpInstallDest)
       liftE $ mergeGHCFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst)) inst tver forceInstall
       pure ()
@@ -525,6 +528,7 @@ installGHCBin :: ( MonadFail m
               -> InstallDir
               -> Bool            -- ^ force install
               -> [T.Text]        -- ^ additional configure args for bindist
+              -> T.Text
               -> Excepts
                    '[ AlreadyInstalled
                     , BuildFailed
@@ -550,9 +554,9 @@ installGHCBin :: ( MonadFail m
                     ]
                    m
                    ()
-installGHCBin tver installDir forceInstall addConfArgs = do
+installGHCBin tver installDir forceInstall addConfArgs installTargets = do
   dlinfo <- liftE $ getDownloadInfo' GHC tver
-  liftE $ installGHCBindist dlinfo tver installDir forceInstall addConfArgs
+  liftE $ installGHCBindist dlinfo tver installDir forceInstall addConfArgs installTargets
 
 
 
@@ -806,6 +810,7 @@ compileGHC :: ( MonadMask m
            -> Maybe String             -- ^ build flavour
            -> Maybe BuildSystem
            -> InstallDir
+           -> T.Text
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
@@ -834,7 +839,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 GHCTargetVersion
-compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs buildFlavour buildSystem installDir
+compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs buildFlavour buildSystem installDir installTargets
   = do
     pfreq@PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -1028,6 +1033,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                                installVer
                                False       -- not a force install, since we already overwrite when compiling.
                                []
+                               installTargets
 
     case installDir of
       -- set and make symlinks for regular (non-isolated) installs

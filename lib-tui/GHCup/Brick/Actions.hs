@@ -193,6 +193,7 @@ installWithOptions opts (_, ListResult {..}) = do
     shouldForce   = opts ^. AdvanceInstall.forceInstallL
     shouldSet     = opts ^. AdvanceInstall.instSetL
     extraArgs     = opts ^. AdvanceInstall.addConfArgsL
+    installTargets = opts ^. AdvanceInstall.installTargetsL
     v = fromMaybe (GHCTargetVersion lCross lVer) (opts ^. AdvanceInstall.instVersionL)
     toolV = _tvVersion v
   let run =
@@ -242,7 +243,7 @@ installWithOptions opts (_, ListResult {..}) = do
             Nothing -> do
               liftE $
                 runBothE'
-                  (installGHCBin v shouldIsolate shouldForce  extraArgs)
+                  (installGHCBin v shouldIsolate shouldForce extraArgs installTargets)
                   (when (shouldSet && isNothing misolated) (liftE $ void $ setGHC v SetGHCOnly Nothing))
               pure (vi, dirs, ce)
             Just uri -> do
@@ -253,7 +254,9 @@ installWithOptions opts (_, ListResult {..}) = do
                       v
                       shouldIsolate
                       shouldForce
-                      extraArgs)
+                      extraArgs
+                      installTargets
+                      )
                   (when (shouldSet && isNothing misolated) (liftE $ void $ setGHC v SetGHCOnly Nothing))
               pure (vi, dirs, ce)
 
@@ -340,7 +343,7 @@ installWithOptions opts (_, ListResult {..}) = do
 
 install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
          => (Int, ListResult) -> m (Either String ())
-install' = installWithOptions (AdvanceInstall.InstallOptions Nothing False Nothing Nothing False [])
+install' = installWithOptions (AdvanceInstall.InstallOptions Nothing False Nothing Nothing False [] "install")
 
 set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
      => (Int, ListResult)
@@ -538,6 +541,7 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
                     (compopts ^. CompileGHC.buildFlavour)
                     (compopts ^. CompileGHC.buildSystem)
                     (maybe GHCupInternal IsolateDir $ compopts ^. CompileGHC.isolateDir)
+                    (compopts ^. CompileGHC.installTargets)
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls2 }} <- ask
       let vi2 = getVersionInfo targetVer GHC dls2
       when

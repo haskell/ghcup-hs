@@ -33,6 +33,7 @@ module GHCup.Brick.Widgets.Menus.CompileGHC (
   buildSystem,
   isolateDir,
   gitRef,
+  installTargets,
 ) where
 
 import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
@@ -77,6 +78,7 @@ data CompileGHCOptions = CompileGHCOptions
   , _buildSystem  :: Maybe BuildSystem
   , _isolateDir   :: Maybe FilePath
   , _gitRef       :: Maybe String
+  , _installTargets :: T.Text
   } deriving (Eq, Show)
 
 makeLenses ''CompileGHCOptions
@@ -86,6 +88,7 @@ type CompileGHCMenu = Menu CompileGHCOptions Name
 create :: MenuKeyBindings -> [Version] -> CompileGHCMenu
 create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC" validator k buttons fields
   where
+    initialInstallTargets = "install"
     initialState =
       CompileGHCOptions
         (Right "")
@@ -101,6 +104,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
         Nothing
         Nothing
         Nothing
+        initialInstallTargets
     validator CompileGHCOptions {..} = case (_setCompile, _isolateDir) of
       (True, Just _) -> Just "Cannot set active when doing an isolated install"
       _ -> case (_buildConfig, _buildSystem) of
@@ -223,6 +227,9 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
       , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef
           & Menu.fieldLabelL .~ "git-ref"
           & Menu.fieldHelpMsgL .~ "The git commit/branch/ref to build from"
+      , Menu.createEditableField' initialInstallTargets (Common.MenuElement Common.GHCInstallTargets) Right installTargets
+          & Menu.fieldLabelL .~ "install-targets"
+          & Menu.fieldHelpMsgL .~ "Specify space separated list of make install targets"
       ]
 
     buttons = [

@@ -32,15 +32,15 @@ installTests = testGroup "install"
       ]
 
 defaultOptions :: InstallOptions
-defaultOptions = InstallOptions Nothing Nothing False Nothing False []
+defaultOptions = InstallOptions Nothing Nothing False Nothing False "install" []
 
 -- | Don't set as active version
 mkInstallOptions :: ToolVersion -> InstallOptions
-mkInstallOptions ver = InstallOptions (Just ver) Nothing False Nothing False []
+mkInstallOptions ver = InstallOptions (Just ver) Nothing False Nothing False "install" []
 
 -- | Set as active version
 mkInstallOptions' :: ToolVersion -> InstallOptions
-mkInstallOptions' ver = InstallOptions (Just ver) Nothing True Nothing False []
+mkInstallOptions' ver = InstallOptions (Just ver) Nothing True Nothing False "install" []
 
 oldStyleCheckList :: [(String, Either InstallCommand InstallOptions)]
 oldStyleCheckList =
