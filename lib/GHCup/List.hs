@@ -183,7 +183,7 @@ listVersions lt' criteria hideOld showNightly days = do
               }
       Left e -> do
         logWarn
-          $ "Could not parse version of stray directory" <> T.pack e
+          $ "Could not parse version of stray directory " <> T.pack e
         pure Nothing
 
   strayCabals :: ( MonadReader env m
@@ -218,7 +218,7 @@ listVersions lt' criteria hideOld showNightly days = do
               }
       Left e -> do
         logWarn
-          $ "Could not parse version of stray directory" <> T.pack e
+          $ "Could not parse version of stray directory " <> T.pack e
         pure Nothing
 
   strayHLS :: ( MonadReader env m
@@ -252,7 +252,7 @@ listVersions lt' criteria hideOld showNightly days = do
               }
       Left e -> do
         logWarn
-          $ "Could not parse version of stray directory" <> T.pack e
+          $ "Could not parse version of stray directory " <> T.pack e
         pure Nothing
 
   strayStacks :: ( MonadReader env m
@@ -287,7 +287,7 @@ listVersions lt' criteria hideOld showNightly days = do
               }
       Left e -> do
         logWarn
-          $ "Could not parse version of stray directory" <> T.pack e
+          $ "Could not parse version of stray directory " <> T.pack e
         pure Nothing
 
   currentGHCup :: Map.Map GHCTargetVersion VersionInfo -> Maybe ListResult
