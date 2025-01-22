@@ -13,9 +13,8 @@ extra-deps:
   - variant-1.0@sha256:a3c819560424f59285a09f3ebd762f3a328163d109b5da55c4c54b6626f58c97,2180
   - xz-5.6.3
   - zlib-0.6.3.0@sha256:96d388c95a98d6db94b74053130c00aea3c8c8ee041b5594bbe09242f1714356,5465
+  - uri-bytestring-0.4.0.0
   - xz-clib-5.6.3
-  - github: hasufell/uri-bytestring
-    commit: 4fb5ed14b500c192e6e7a97f6b2b1eb478806001
 
 allow-newer: true
 
