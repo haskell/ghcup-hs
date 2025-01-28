@@ -15,8 +15,9 @@ if os(linux)
   constraints: xz -system-xz
   if arch(x86_64) || arch(i386)
     flags: -tar
+    executable-static: True
     package *
-      ghc-options: -split-sections -optl-static
+      ghc-options: -split-sections
   elif arch(arm)
     flags: +tar
   else

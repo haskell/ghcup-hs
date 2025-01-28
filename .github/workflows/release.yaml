@@ -22,7 +22,7 @@ jobs:
     name: Build linux binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.12.1.0
+      CABAL_VER: 3.14.1.1
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -46,7 +46,7 @@ jobs:
 
       - if: matrix.ARCH == '32'
         name: Run build (32 bit linux)
-        uses: docker://hasufell/i386-alpine-haskell:3.12
+        uses: docker://hasufell/i386-alpine-haskell:3.21
         with:
           args: sh .github/scripts/build.sh
         env:
@@ -60,7 +60,7 @@ jobs:
 
       - if: matrix.ARCH == '64'
         name: Run build (64 bit linux)
-        uses: docker://hasufell/alpine-haskell:3.12
+        uses: docker://hasufell/alpine-haskell:3.21
         with:
           args: sh .github/scripts/build.sh
         env:
@@ -74,9 +74,9 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.ARTIFACT }}
           path: |
             ./out/*
 
@@ -85,7 +85,7 @@ jobs:
     name: Build ARM binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.12.1.0
+      CABAL_VER: 3.14.1.1
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -109,7 +109,7 @@ jobs:
           submodules: 'true'
 
       - if: matrix.ARCH == 'ARM64'
-        uses: docker://hasufell/arm64v8-alpine-haskell:3.20
+        uses: docker://hasufell/arm64v8-alpine-haskell:3.21
         name: Run build (aarch64 linux)
         with:
           args: sh -c ".github/scripts/build.sh '--ghc-options=-split-sections' '--enable-executable-static'"
@@ -124,9 +124,9 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.ARTIFACT }}
           path: |
             ./out/*
 
@@ -134,7 +134,7 @@ jobs:
     name: Build binary (Mac/Win)
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.12.1.0
+      CABAL_VER: 3.14.1.1
       MACOSX_DEPLOYMENT_TARGET: 10.13
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -214,9 +214,9 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.ARTIFACT }}
           path: |
             ./out/*
 
@@ -224,7 +224,7 @@ jobs:
     name: Build binary (FreeBSD)
     runs-on: [self-hosted, FreeBSD, X64]
     env:
-      CABAL_VER: 3.12.1.0
+      CABAL_VER: 3.14.1.1
       MACOSX_DEPLOYMENT_TARGET: 10.13
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -255,9 +255,9 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.ARTIFACT }}
           path: |
             ./out/*
 
@@ -266,7 +266,7 @@ jobs:
     needs: "build-linux"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.12.1.0
+      CABAL_VER: 3.14.1.1
     strategy:
       matrix:
         include:
@@ -292,14 +292,15 @@ jobs:
         with:
           submodules: 'true'
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: artifacts-*
+          merge-multiple: true
           path: ./out
 
       - if: matrix.ARCH == '32' && matrix.DISTRO == 'Alpine'
         name: Run test (32 bit linux Alpine)
-        uses: docker://hasufell/i386-alpine-haskell:3.12
+        uses: docker://hasufell/i386-alpine-haskell:3.21
         with:
           args: sh .github/scripts/test.sh
         env:
@@ -310,7 +311,7 @@ jobs:
 
       - if: matrix.ARCH == '64' && matrix.DISTRO == 'Alpine'
         name: Run test (64 bit linux Alpine)
-        uses: docker://hasufell/alpine-haskell:3.12
+        uses: docker://hasufell/alpine-haskell:3.21
         with:
           args: sh .github/scripts/test.sh
         env:
@@ -332,9 +333,9 @@ jobs:
 
       - if: failure()
         name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: testfiles
+          name: testfiles-${{ matrix.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
 
@@ -343,7 +344,7 @@ jobs:
     needs: "build-arm"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.12.1.0
+      CABAL_VER: 3.14.1.1
     strategy:
       matrix:
         include:
@@ -359,13 +360,14 @@ jobs:
         with:
           submodules: 'true'
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: artifacts-*
+          merge-multiple: true
           path: ./out
 
       - if: matrix.ARCH == 'ARM64'
-        uses: docker://hasufell/arm64v8-alpine-haskell:3.20
+        uses: docker://hasufell/arm64v8-alpine-haskell:3.21
         name: Run test (aarch64 alpine)
         with:
           args: sh .github/scripts/test.sh
@@ -377,9 +379,9 @@ jobs:
 
       - if: failure()
         name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: testfiles
+          name: testfiles-${{ matrix.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
 
@@ -388,7 +390,7 @@ jobs:
     needs: "build-macwin"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.12.1.0
+      CABAL_VER: 3.14.1.1
       MACOSX_DEPLOYMENT_TARGET: 10.13
     strategy:
       matrix:
@@ -418,9 +420,10 @@ jobs:
       - name: Install GHCup
         uses: haskell/ghcup-setup@v1
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: artifacts-*
+          merge-multiple: true
           path: ./out
 
       - if: runner.os == 'macOS'
@@ -448,17 +451,17 @@ jobs:
 
       - if: failure() && runner.os == 'Windows'
         name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: testfiles
+          name: testfiles-${{ matrix.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/windows/GHCupInfo*json
 
       - if: failure() && runner.os != 'Windows'
         name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: testfiles
+          name: testfiles-${{ matrix.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
   test-freebsd:
@@ -466,7 +469,7 @@ jobs:
     needs: "build-freebsd"
     runs-on: [self-hosted, FreeBSD, X64]
     env:
-      CABAL_VER: 3.12.1.0
+      CABAL_VER: 3.14.1.1
       MACOSX_DEPLOYMENT_TARGET: 10.13
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
       GHC_VER: 9.6.6
@@ -486,9 +489,10 @@ jobs:
           sudo tzsetup Etc/GMT
           sudo adjkerntz -a
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: artifacts-*
+          merge-multiple: true
           path: ./out
 
       - name: Run test
@@ -497,9 +501,9 @@ jobs:
 
       - if: failure()
         name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: testfiles
+          name: testfiles-${{ matrix.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
   hls:
@@ -522,9 +526,10 @@ jobs:
         with:
           submodules: 'true'
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: artifacts-*
+          merge-multiple: true
           path: ./out
 
       - name: Run hls build
@@ -539,9 +544,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: artifacts-*
+          merge-multiple: true
           path: ./out
 
       - name: Release
@@ -550,3 +556,4 @@ jobs:
           draft: true
           files: |
             ./out/*
+
