@@ -137,3 +137,26 @@ isSpace :: Char -> Bool
 isSpace c = (c == ' ') || ('\t' <= c && c <= '\r')
 {-# INLINE isSpace #-}
 
+-- Obtain the version from the link or shim path
+-- ../ghc/<ver>/bin/ghc
+-- ../ghc/<ver>/bin/ghc-<ver>
+ghcVersionFromPath :: MP.Parsec Void Text GHCTargetVersion
+ghcVersionFromPath =
+  (do
+     beforeBin <- parseUntil1 binDir
+     rest  <- MP.getInput
+     MP.setInput beforeBin
+     _ <- parseTillLastPathSep
+     x <- ghcTargetVerP
+     MP.setInput rest
+     pure x
+   )
+  <* MP.some pathSep
+  <* MP.takeRest
+  <* MP.eof
+  where
+     binDir = MP.some pathSep <* MP.chunk "bin" *> MP.some pathSep <* MP.chunk "ghc"
+     parseTillLastPathSep = MP.manyTill MP.anySingle (MP.try $ do
+       _ <- MP.some pathSep
+       _ <- MP.lookAhead (MP.many MP.anySingle)
+       MP.notFollowedBy (MP.manyTill MP.anySingle (MP.some pathSep)))
