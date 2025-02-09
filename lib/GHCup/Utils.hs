@@ -305,23 +305,7 @@ ghcSet mtarget = do
     Just <$> ghcLinkVersion link
  where
   ghcLinkVersion :: MonadThrow m => FilePath -> m GHCTargetVersion
-  ghcLinkVersion (T.pack . dropSuffix exeExt -> t) = throwEither $ MP.parse parser "ghcLinkVersion" t
-   where
-    parser =
-        (do
-           _    <- parseUntil1 ghcSubPath
-           _    <- ghcSubPath
-           r    <- parseUntil1 pathSep
-           rest <- MP.getInput
-           MP.setInput r
-           x <- ghcTargetVerP
-           MP.setInput rest
-           pure x
-         )
-        <* MP.some pathSep
-        <* MP.takeRest
-        <* MP.eof
-    ghcSubPath = MP.some pathSep <* MP.chunk "ghc" *> MP.some pathSep
+  ghcLinkVersion (T.pack . dropSuffix exeExt -> t) = throwEither $ MP.parse ghcVersionFromPath "ghcLinkVersion" t
 
 -- | Get all installed GHCs by reading ~/.ghcup/ghc/<dir>.
 -- If a dir cannot be parsed, returns left.
@@ -1286,4 +1270,3 @@ expandVersionPattern cabalVer gitHashS gitHashL gitDescribe gitBranch
   go (GitDescribe:xs) = gitDescribe <> go xs
   go (GitBranchName:xs) = gitBranch <> go xs
   go (S str:xs) = str <> go xs
-
