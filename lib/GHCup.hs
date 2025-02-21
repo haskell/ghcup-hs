@@ -264,6 +264,10 @@ getDebugInfo = do
   let diShimGenURL = shimGenURL
   diArch         <- lE getArchitecture
   diPlatform     <- liftE getPlatform
+  let expectedPrefix = "https://downloads.haskell.org/ghcup/"
+  forM_ diChannels $ \(channel, url) ->
+    unless (expectedPrefix `isPrefixOf` show url) $
+      logWarn $ "Warning: The channel " <> T.pack (show channel) <> " uses a non-ghcup URL: " <> T.pack (show url)
   pure $ DebugInfo { .. }
 
 
