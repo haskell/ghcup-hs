@@ -150,6 +150,7 @@ library
     GHCup.Download.Utils
     GHCup.Errors
     GHCup.GHC
+    GHCup.HealthCheck
     GHCup.HLS
     GHCup.List
     GHCup.Platform
@@ -327,6 +328,7 @@ library ghcup-optparse
     GHCup.OptParse.Config
     GHCup.OptParse.DInfo
     GHCup.OptParse.GC
+    GHCup.OptParse.HealthCheck
     GHCup.OptParse.Install
     GHCup.OptParse.List
     GHCup.OptParse.Nuke
