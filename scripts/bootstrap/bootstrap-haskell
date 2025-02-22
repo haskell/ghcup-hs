@@ -475,7 +475,7 @@ ask_base_channel() {
     echo "-------------------------------------------------------------------------------"
     warn ""
     warn "GHCup provides different binary distribution \"channels\". These are collections of tools"
-    warn "and my differ in purpose and philosophy. First, we select the base channel."
+    warn "and may differ in purpose and philosophy. First, we select the base channel."
     warn ""
 	while true; do
 
@@ -500,9 +500,9 @@ ask_base_channel() {
 				echo "[S]kip    - Do nothing and leave GHCup config as is"
                 echo "[D]efault - The default channel maintained by GHCup developers"
                 echo "            (receives QA and support from GHCup and may provide"
-                echo "            unofficial bindists for lesser platforms)"
+                echo "            unofficial bindists for lesser supported platforms)"
 				echo "[V]anilla - Only contains unchanged upstream binary distributions"
-                echo "            (faster, since it receives no GHCup QA)"
+                echo "            (is updated with newer releases faster since it receives no GHCup QA)"
 				echo
 				echo "Selecting Default or Vanilla will overwrite any pre-existing channel"
                 echo "config you might have (if you've previously installed GHCup)."
@@ -523,7 +523,7 @@ ask_prerelease_channel() {
 
     warn ""
     warn "Do you also want to enable the pre-releases channel, getting acces to."
-    warn "alpha, betas and release candiates?"
+    warn "alpha, betas and release candidates?"
     warn ""
     warn "[N] No  [Y] Yes  [?] Help (default is \"N\")."
 	while true; do
