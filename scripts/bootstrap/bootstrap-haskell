@@ -468,6 +468,127 @@ find_shell() {
 	esac
 }
 
+ask_base_channel() {
+    if [ -n "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+        return 0
+    fi
+    echo "-------------------------------------------------------------------------------"
+    warn ""
+    warn "GHCup provides different binary distribution \"channels\". These are collections of tools"
+    warn "and my differ in purpose and philosophy. First, we select the base channel."
+    warn ""
+	while true; do
+
+        warn "[S] Skip  [D] Default (GHCup maintained)  [V] Vanilla (Upstream maintained)  [?] Help (default is \"Skip\")."
+        warn ""
+
+		read -r bashrc_answer </dev/tty
+
+		case $bashrc_answer in
+			[Ss]* | "")
+				return 0
+				;;
+			[Dd]*)
+				return 1
+				;;
+			[Vv]*)
+				return 2
+				;;
+			*)
+				echo "Possible choices are:"
+				echo
+				echo "[S]kip    - Do nothing and leave GHCup config as is"
+                echo "[D]efault - The default channel maintained by GHCup developers"
+                echo "            (receives QA and support from GHCup and may provide"
+                echo "            unofficial bindists for lesser platforms)"
+				echo "[V]anilla - Only contains unchanged upstream binary distributions"
+                echo "            (faster, since it receives no GHCup QA)"
+				echo
+				echo "Selecting Default or Vanilla will overwrite any pre-existing channel"
+                echo "config you might have (if you've previously installed GHCup)."
+				echo
+                echo "Please make your choice and press ENTER."
+				;;
+		esac
+	done
+
+	unset bashrc_answer
+}
+
+ask_prerelease_channel() {
+    if [ -n "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+        return 0
+    fi
+    echo "-------------------------------------------------------------------------------"
+
+    warn ""
+    warn "Do you also want to enable the pre-releases channel, getting acces to."
+    warn "alpha, betas and release candiates?"
+    warn ""
+    warn "[N] No  [Y] Yes  [?] Help (default is \"N\")."
+	while true; do
+
+		read -r bashrc_answer </dev/tty
+
+		case $bashrc_answer in
+			[Nn]* | "")
+				return 0
+				;;
+			[Yy]*)
+				return 1
+				;;
+			*)
+				echo "Possible choices are:"
+				echo
+                echo "N - No, don't enable prereleases (default)"
+				echo "Y - Yes, enable prereleases"
+				echo
+				echo "Please make your choice and press ENTER."
+				;;
+		esac
+	done
+
+	unset bashrc_answer
+}
+
+ask_cross_channel() {
+    if [ -n "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+        return 0
+    fi
+	while true; do
+		echo "-------------------------------------------------------------------------------"
+
+		warn ""
+        warn "Do you also want to enable the cross channel, getting acces to"
+        warn "experimental GHCJS, WASM, etc.?"
+        warn ""
+        warn "[N] No  [Y] Yes  [?] Help (default is \"N\")."
+        warn ""
+
+		read -r bashrc_answer </dev/tty
+
+		case $bashrc_answer in
+			[Nn]* | "")
+				return 0
+				;;
+			[Yy]*)
+				return 1
+				;;
+			*)
+				echo "Possible choices are:"
+				echo
+                echo "N - No, don't enable cross (default)"
+				echo "Y - Yes, enable prereleases"
+				echo
+				echo "Please make your choice and press ENTER."
+				;;
+		esac
+	done
+
+	unset bashrc_answer
+}
+
+
 # Ask user if they want to adjust the bashrc.
 ask_bashrc() {
 	if [ -n "${BOOTSTRAP_HASKELL_ADJUST_BASHRC}" ] ; then
@@ -830,6 +951,16 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
     read -r answer </dev/tty
 fi
 
+if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
+    ask_base_channel
+    ask_base_channel_answer=$?
+    if [ $ask_base_channel_answer != 0 ] ; then
+        ask_prerelease_channel
+        ask_prerelease_channel_answer=$?
+        ask_cross_channel
+        ask_cross_channel_answer=$?
+    fi
+fi
 ask_bashrc
 ask_bashrc_answer=$?
 ask_cabal_config_init
@@ -864,6 +995,30 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
     # shellcheck disable=SC2034
     read -r answer </dev/tty
 fi
+
+case $ask_base_channel_answer in
+	1)
+        _eghcup config set url-source GHCupURL
+        ;;
+    2)
+        _eghcup config set url-source vanilla
+        ;;
+    *) ;;
+esac
+
+case $ask_prerelease_channel_answer in
+    1)
+        _eghcup config add-release-channel prereleases
+        ;;
+    *) ;;
+esac
+
+case $ask_cross_channel_answer in
+    1)
+        _eghcup config add-release-channel cross
+        ;;
+    *) ;;
+esac
 
 if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
 	eghcup --cache install ghc "${BOOTSTRAP_HASKELL_GHC_VERSION}"
