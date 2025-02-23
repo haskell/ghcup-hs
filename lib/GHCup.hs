@@ -76,6 +76,10 @@ import           System.FilePath
 import           System.IO.Error
 import           System.IO.Temp
 import           Text.Regex.Posix
+import qualified URI.ByteString as URI
+import qualified Data.ByteString.Lazy.Char8 as BL8
+import qualified Data.Text.Encoding as TE
+import Data.ByteString.Builder (toLazyByteString)
 
 import qualified Data.Text                     as T
 
@@ -250,6 +254,7 @@ getDebugInfo :: ( Alternative m
                 , MonadFail m
                 , MonadReader env m
                 , HasDirs env
+                , HasSettings env
                 , HasLog env
                 , MonadCatch m
                 , MonadIO m
@@ -260,10 +265,28 @@ getDebugInfo :: ( Alternative m
                   DebugInfo
 getDebugInfo = do
   diDirs <- lift getDirs
-  let diChannels = fmap (\c -> (c, channelURL c)) [minBound..maxBound]
+  settings <- lift getSettings
+  let diChannels = fmap (\c -> (c, GHCup.Version.channelURL c)) [minBound..maxBound]
   let diShimGenURL = shimGenURL
   diArch         <- lE getArchitecture
   diPlatform     <- liftE getPlatform
+
+  let officialPrefix = "https://raw.githubusercontent.com/haskell/ghcup-metadata/"
+  let isOfficial url = officialPrefix `T.isPrefixOf` T.pack url
+  let maybeMetadataURL = case settings of
+        _ -> Nothing  
+
+  case maybeMetadataURL of
+    Just url | not (isOfficial url) ->
+      logWarn $ "Warning: Using non-official metadata URL: " <> T.pack url
+    _ -> pure ()
+
+  forM_ diChannels $ \(channel, url) -> do
+    let urlText = TE.decodeUtf8 $ BL8.toStrict $ toLazyByteString $ URI.serializeURI url
+    unless (isOfficial (T.unpack urlText)) $
+      logWarn $ "Warning: The channel " <> T.pack (show channel)
+             <> " uses a non-official URL: " <> urlText
+
   pure $ DebugInfo { .. }
 
 
