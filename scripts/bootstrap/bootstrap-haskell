@@ -500,7 +500,7 @@ ask_base_channel() {
 				echo "[S]kip    - Do nothing and leave GHCup config as is"
                 echo "[D]efault - The default channel maintained by GHCup developers"
                 echo "            (receives QA and support from GHCup and may provide"
-                echo "            unofficial bindists for lesser supported platforms)"
+                echo "            unofficial bindists for less supported platforms)"
 				echo "[V]anilla - Only contains unchanged upstream binary distributions"
                 echo "            (is updated with newer releases faster since it receives no GHCup QA)"
 				echo
