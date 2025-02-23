@@ -49,7 +49,12 @@ spec = do
       MP.parse ghcVersionFromPath "" "c:/ghcup/ghc/mytag9.4.8/bin/ghc" `shouldBe` Right ghcMytag
       MP.parse ghcVersionFromPath "" "c:/ghcup/ghc/mytag9.4.8/bin/ghc-9.4.8" `shouldBe` Right ghcMytag
 
+      -- With Target
+      MP.parse ghcVersionFromPath "" "../ghc/javascript-unknown-ghcjs-9.6.2/bin/javascript-unknown-ghcjs-ghc-9.6.2" `shouldBe` Right ghcjs962
+      MP.parse ghcVersionFromPath "" "c:/ghc/bin/ghcup/ghc/javascript-unknown-ghcjs-9.6.2/bin/javascript-unknown-ghcjs-ghc-9.6.2" `shouldBe` Right ghcjs962
+
   where
     ghc8107 = GHCTargetVersion {_tvTarget = Nothing, _tvVersion = Version {_vEpoch = Nothing, _vChunks = Chunks (Numeric 8 :| [Numeric 10,Numeric 7]), _vRel = Nothing, _vMeta = Nothing}}
     ghc948rc2 = GHCTargetVersion {_tvTarget = Nothing, _tvVersion = Version {_vEpoch = Nothing, _vChunks = Chunks (Numeric 9 :| [Numeric 4,Numeric 8]), _vRel = Just (Release (Alphanum "rc2" :| [])), _vMeta = Nothing}}
     ghcMytag = GHCTargetVersion {_tvTarget = Nothing, _tvVersion = Version {_vEpoch = Nothing, _vChunks = Chunks (Alphanum "mytag9" :| [Numeric 4,Numeric 8]), _vRel = Nothing, _vMeta = Nothing}}
+    ghcjs962 = GHCTargetVersion {_tvTarget = Just "javascript-unknown-ghcjs", _tvVersion = Version { _vEpoch = Nothing, _vChunks = Chunks (Numeric 9 :| [Numeric 6,Numeric 2]), _vRel = Nothing, _vMeta = Nothing}}
