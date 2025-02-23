@@ -148,5 +148,5 @@ ghcVersionFromPath =
      _ <- parseTillLastPathSep
      ghcTargetVerP
   where
-     binDir = MP.some pathSep <* MP.chunk "bin" *> MP.some pathSep <* MP.chunk "ghc"
+     binDir = MP.some pathSep <* MP.chunk "bin" *> MP.some pathSep <* MP.takeWhile1P Nothing (not . isPathSeparator) <* MP.eof
      parseTillLastPathSep = (MP.try (parseUntil1 pathSep *> MP.some pathSep) *> parseTillLastPathSep) <|> pure ()
