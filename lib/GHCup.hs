@@ -677,4 +677,3 @@ rmTmp = do
     logDebug $ "rm -rf " <> T.pack (fromGHCupPath f)
     rmPathForcibly f
 
-

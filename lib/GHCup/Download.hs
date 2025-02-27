@@ -89,6 +89,9 @@ import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
 import qualified Data.Yaml.Aeson               as Y
+import Data.List (isPrefixOf)
+import Control.Monad.IO.Class (liftIO)
+import System.Log.Logger (warningM)
 
 
 
@@ -103,7 +106,47 @@ import qualified Data.Yaml.Aeson               as Y
 
 
 
+officialPrefixes :: [String]
+officialPrefixes = 
+  [ "https://raw.githubusercontent.com/haskell/ghcup-metadata/"
+  , "https://mirror.sjtu.edu.cn/ghcup/yaml/haskell/ghcup-metadata/"  -- Add your mirror pattern
+  ]
+
+checkUrlPrefix :: String -> IO ()
+checkUrlPrefix url
+  | any (`isPrefixOf` url) officialPrefixes = return ()
+  | otherwise = liftIO $ warningM "ghcup" $ "Warning: The URL " ++ url ++ " is not an official GHCup metadata source and may not be maintained or QA'd by GHCup."
+
 -- | Downloads the download information! But only if we need to ;P
+isDefaultURL :: NewURLSource -> Bool
+isDefaultURL NewGHCupURL = True
+isDefaultURL NewStackSetupURL = True
+isDefaultURL (NewChannelAlias StackChannel) = True
+isDefaultURL (NewChannelAlias _) = True
+isDefaultURL (NewGHCupInfo _) = False  -- Custom GHCupInfo is not a default source
+isDefaultURL (NewSetupInfo _) = False  -- Custom SetupInfo is not a default source
+isDefaultURL (NewURI uri) = show uri `elem` defaultURLs
+
+-- List of default/known URLs
+defaultURLs :: [String]
+defaultURLs =
+  [ "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.0.9.yaml"
+  , "https://raw.githubusercontent.com/commercialhaskell/stackage-content/master/stack/stack-setup-2.yaml"
+  , "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.9.yaml"
+  , "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.9.yaml"
+  , "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.9.yaml"
+  ]
+
+-- Extract URL string from NewURLSource if possible, for checking
+getUrlStringFromSource :: NewURLSource -> Maybe String
+getUrlStringFromSource NewGHCupURL = Just $ show ghcupURL
+getUrlStringFromSource NewStackSetupURL = Just $ show stackSetupURL
+getUrlStringFromSource (NewChannelAlias c) = Just $ show $ channelURL c
+getUrlStringFromSource (NewGHCupInfo _) = Nothing
+getUrlStringFromSource (NewSetupInfo _) = Nothing
+getUrlStringFromSource (NewURI uri) = Just $ show uri
+
+-- Modified getDownloadsF to include URL prefix check
 getDownloadsF :: ( FromJSONKey Tool
                  , FromJSONKey Version
                  , FromJSON VersionInfo
@@ -124,6 +167,23 @@ getDownloadsF :: ( FromJSONKey Tool
                    GHCupInfo
 getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   Settings { urlSource } <- lift getSettings
+
+  -- Log all URL sources
+  logDebug $ "URL sources in config: " <> T.pack (show urlSource)
+
+  -- Check for custom URL sources that aren't in the default list
+  forM_ urlSource $ \src -> 
+    case src of
+      NewURI uri -> do
+        let url = show uri
+        logDebug $ "Checking URI: " <> T.pack url
+        unless (url `elem` defaultURLs) $ liftIO $ checkUrlPrefix url
+      NewGHCupInfo _ -> 
+        liftIO $ warningM "ghcup" "Warning: Using custom GHCupInfo which is not an official GHCup metadata source"
+      NewSetupInfo _ -> 
+        liftIO $ warningM "ghcup" "Warning: Using custom SetupInfo which is not an official GHCup metadata source"
+      _ -> pure () -- Default sources don't need checking
+
   infos <- liftE $ mapM dl' urlSource
   keys <- if any isRight infos
           then liftE . reThrowAll @_ @_ @'[StackPlatformDetectError] StackPlatformDetectError $ getStackPlatformKey pfreq
@@ -133,7 +193,17 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
     Right si -> pure $ fromStackSetupInfo si keys
   mergeGhcupInfo ghcupInfos
  where
-
+  -- Default URLs that are known to be official
+  defaultURLs :: [String]
+  defaultURLs =
+    [ "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.0.9.yaml"
+    , "https://raw.githubusercontent.com/commercialhaskell/stackage-content/master/stack/stack-setup-2.yaml"
+    , "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.9.yaml"
+    , "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.9.yaml"
+    , "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.9.yaml"
+    , "https://ghc.gitlab.haskell.org/ghcup-metadata/ghcup-nightlies-0.0.7.yaml" -- Nightly channel mentioned in config example
+    ]
+  
   dl' :: ( FromJSONKey Tool
          , FromJSONKey Version
          , FromJSON VersionInfo
@@ -163,6 +233,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
                                 logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: " <> T.pack s
                                 Right <$> decodeMetadata @Stack.SetupInfo base)
                               $ fmap Left (decodeMetadata @GHCupInfo base >>= \gI -> warnOnMetadataUpdate uri gI >> pure gI)
+
 
   fromStackSetupInfo :: MonadThrow m
                      => Stack.SetupInfo
