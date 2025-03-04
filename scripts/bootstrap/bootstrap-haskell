@@ -522,7 +522,7 @@ ask_prerelease_channel() {
     echo "-------------------------------------------------------------------------------"
 
     warn ""
-    warn "Do you also want to enable the pre-releases channel, getting acces to."
+    warn "Do you also want to enable the pre-releases channel, getting access to."
     warn "alpha, betas and release candidates?"
     warn ""
     warn "[N] No  [Y] Yes  [?] Help (default is \"N\")."
@@ -559,7 +559,7 @@ ask_cross_channel() {
 		echo "-------------------------------------------------------------------------------"
 
 		warn ""
-        warn "Do you also want to enable the cross channel, getting acces to"
+        warn "Do you also want to enable the cross channel, getting access to"
         warn "experimental GHCJS, WASM, etc.?"
         warn ""
         warn "[N] No  [Y] Yes  [?] Help (default is \"N\")."
