@@ -174,6 +174,7 @@ toolParser s' | t == T.pack "ghc"   = Right GHC
               | t == T.pack "cabal" = Right Cabal
               | t == T.pack "hls"   = Right HLS
               | t == T.pack "stack" = Right Stack
+              | t == T.pack "ghcup" = Right GHCup
               | otherwise           = Left ("Unknown tool: " <> s')
   where t = T.toLower (T.pack s')
 

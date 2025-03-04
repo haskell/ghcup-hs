@@ -103,7 +103,7 @@ listVersions :: ( MonadCatch m
                              , HasPlatformReq env
                              , HasGHCupInfo env
                              )
-                          => Maybe Tool
+                          => [Tool]
                           -> [ListCriteria]
                           -> Bool
                           -> Bool
@@ -119,17 +119,16 @@ listVersions lt' criteria hideOld showNightly days = do
   stacks <- getInstalledStacks
   hlsGHCVs <- fmap mkTVer <$> hlsGHCVersions
 
-  go lt' hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
+  go (if null lt' then [GHC, Cabal, HLS, Stack, GHCup] else lt') hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
  where
-  go lt hlsGHCVs cSet cabals hlsSet' hlses sSet stacks = do
-    case lt of
-      Just t -> do
-        GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
-        -- get versions from GHCupDownloads
-        let avTools = availableToolVersions dls t
-        lr <- filter' <$> forM (Map.toList avTools) (toListResult t hlsGHCVs cSet cabals hlsSet' hlses sSet stacks)
+  go [] _hlsGHCVs _cSet _cabals _hlsSet' _hlses _sSet _stacks = pure []
+  go (lt:lts) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks = do
+    GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
+    -- get versions from GHCupDownloads
+    let avTools = availableToolVersions dls lt
+    lr <- filter' <$> forM (Map.toList avTools) (toListResult lt hlsGHCVs cSet cabals hlsSet' hlses sSet stacks)
 
-        case t of
+    r <- case lt of
           GHC -> do
             slr <- strayGHCs avTools
             pure (sort (slr ++ lr))
@@ -145,13 +144,8 @@ listVersions lt' criteria hideOld showNightly days = do
           GHCup -> do
             let cg = maybeToList $ currentGHCup avTools
             pure (sort (cg ++ lr))
-      Nothing -> do
-        ghcvers   <- go (Just GHC) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
-        cabalvers <- go (Just Cabal) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
-        hlsvers   <- go (Just HLS) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
-        ghcupvers <- go (Just GHCup) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
-        stackvers <- go (Just Stack) hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
-        pure (ghcvers <> cabalvers <> hlsvers <> stackvers <> ghcupvers)
+    rn <- go lts hlsGHCVs cSet cabals hlsSet' hlses sSet stacks
+    pure (r <> rn)
   strayGHCs :: ( MonadCatch m
                , MonadReader env m
                , HasDirs env
