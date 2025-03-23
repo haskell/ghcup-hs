@@ -239,6 +239,11 @@ installWithOptions opts (_, ListResult {..}) = do
       case lTool of
         GHC   -> do
           let vi = getVersionInfo v GHC dls
+          forM_ (_viPreInstall =<< vi) $ \msg -> do
+            lift $ logWarn msg
+            lift $ logWarn
+              "...waiting for 5 seconds, you can still abort..."
+            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           case opts ^. AdvanceInstall.instBindistL of
             Nothing -> do
               liftE $
@@ -262,6 +267,11 @@ installWithOptions opts (_, ListResult {..}) = do
 
         Cabal -> do
           let vi = getVersionInfo v Cabal dls
+          forM_ (_viPreInstall =<< vi) $ \msg -> do
+            lift $ logWarn msg
+            lift $ logWarn
+              "...waiting for 5 seconds, you can still abort..."
+            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           case opts ^. AdvanceInstall.instBindistL of
             Nothing -> do
               liftE $
@@ -278,9 +288,19 @@ installWithOptions opts (_, ListResult {..}) = do
 
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
+          forM_ (_viPreInstall =<< vi) $ \msg -> do
+            lift $ logWarn msg
+            lift $ logWarn
+              "...waiting for 5 seconds, you can still abort..."
+            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           liftE $ upgradeGHCup Nothing False False $> (vi, dirs, ce)
         HLS   -> do
           let vi = getVersionInfo v HLS dls
+          forM_ (_viPreInstall =<< vi) $ \msg -> do
+            lift $ logWarn msg
+            lift $ logWarn
+              "...waiting for 5 seconds, you can still abort..."
+            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           case opts ^. AdvanceInstall.instBindistL of
             Nothing -> do
               liftE $
@@ -521,6 +541,11 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
         Nothing -> do
           -- Compile the version user is pointing to in the tui
           let vi = getVersionInfo (mkTVer lVer) GHC dls
+          forM_ (_viPreInstall =<< vi) $ \msg -> do
+            lift $ logWarn msg
+            lift $ logWarn
+              "...waiting for 5 seconds, you can still abort..."
+            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           forM_ (_viPreCompile =<< vi) $ \msg -> do
             logInfo msg
             logInfo
@@ -612,6 +637,11 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
         Nothing -> do
           -- Compile the version user is pointing to in the tui
           let vi = getVersionInfo (mkTVer lVer) HLS dls
+          forM_ (_viPreInstall =<< vi) $ \msg -> do
+            lift $ logWarn msg
+            lift $ logWarn
+              "...waiting for 5 seconds, you can still abort..."
+            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           forM_ (_viPreCompile =<< vi) $ \msg -> do
             logInfo msg
             logInfo
