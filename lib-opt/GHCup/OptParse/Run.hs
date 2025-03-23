@@ -236,11 +236,12 @@ run :: forall m .
        , Alternative m
        )
    => RunOptions
+   -> Settings
    -> IO AppState
    -> LeanAppState
    -> (ReaderT LeanAppState m () -> m ())
    -> m ExitCode
-run RunOptions{..} runAppState leanAppstate runLogger = do
+run RunOptions{..} settings runAppState leanAppstate runLogger = do
    r <- if not runQuick
         then runRUN runAppState $ do
          toolchain <- liftE resolveToolchainFull
@@ -286,6 +287,8 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
 
   where
 
+   guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
+
    -- TODO: doesn't work for cross
    resolveToolchainFull :: ( MonadFail m
                            , MonadThrow m
@@ -300,16 +303,16 @@ run RunOptions{..} runAppState leanAppstate runLogger = do
                               ] (ResourceT (ReaderT AppState m)) Toolchain
    resolveToolchainFull = do
          ghcVer <- forM runGHCVer $ \ver -> do
-           (v, _) <- liftE $ fromVersion (Just ver) GHC
+           (v, _) <- liftE $ fromVersion (Just ver) guessMode GHC
            pure v
          cabalVer <- forM runCabalVer $ \ver -> do
-           (v, _) <- liftE $ fromVersion (Just ver) Cabal
+           (v, _) <- liftE $ fromVersion (Just ver) guessMode Cabal
            pure (_tvVersion v)
          hlsVer <- forM runHLSVer $ \ver -> do
-           (v, _) <- liftE $ fromVersion (Just ver) HLS
+           (v, _) <- liftE $ fromVersion (Just ver) guessMode HLS
            pure (_tvVersion v)
          stackVer <- forM runStackVer $ \ver -> do
-           (v, _) <- liftE $ fromVersion (Just ver) Stack
+           (v, _) <- liftE $ fromVersion (Just ver) guessMode Stack
            pure (_tvVersion v)
          pure Toolchain{..}
 

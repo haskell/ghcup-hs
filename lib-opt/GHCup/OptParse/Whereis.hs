@@ -264,11 +264,12 @@ whereis :: ( Monad m
          )
       => WhereisCommand
       -> WhereisOptions
+      -> Settings
       -> (forall a. ReaderT AppState m (VEither WhereisEffects a) -> m (VEither WhereisEffects a))
       -> LeanAppState
       -> (ReaderT LeanAppState m () -> m ())
       -> m ExitCode
-whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
+whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogger = do
   Dirs{ .. }  <- runReaderT getDirs leanAppstate
   case (whereisCommand, whereisOptions) of
     (WhereisTool GHCup _, WhereisOptions{..}) -> do
@@ -309,7 +310,7 @@ whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
 
     (WhereisTool tool whereVer, WhereisOptions{..}) -> do
       runWhereIs runAppState (do
-        (v, _) <- liftE $ fromVersion whereVer tool
+        (v, _) <- liftE $ fromVersion whereVer guessMode tool
         loc <- liftE $ whereIsTool tool v
         if directory
         then pure $ takeDirectory loc
@@ -342,3 +343,5 @@ whereis whereisCommand whereisOptions runAppState leanAppstate runLogger = do
     (WhereisConfDir, _) -> do
       liftIO $ putStr $ fromGHCupPath confDir
       pure ExitSuccess
+ where
+  guessMode = if guessVersion settings then GLaxWithInstalled else GStrict

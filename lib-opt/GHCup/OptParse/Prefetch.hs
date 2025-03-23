@@ -190,30 +190,31 @@ prefetch :: ( Monad m
             , MonadFail m
             )
          => PrefetchCommand
+         -> Settings
          -> (forall a. ReaderT AppState m (VEither PrefetchEffects a) -> m (VEither PrefetchEffects a))
          -> (ReaderT LeanAppState m () -> m ())
          -> m ExitCode
-prefetch prefetchCommand runAppState runLogger =
+prefetch prefetchCommand settings runAppState runLogger =
   runPrefetch runAppState (do
     case prefetchCommand of
       PrefetchGHC
         (PrefetchGHCOptions pfGHCSrc pfCacheDir) mt -> do
           forM_ pfCacheDir (liftIO . createDirRecursive')
-          (v, _) <- liftE $ fromVersion mt GHC
+          (v, _) <- liftE $ fromVersion mt guessMode GHC
           if pfGHCSrc
           then liftE $ fetchGHCSrc v pfCacheDir
           else liftE $ fetchToolBindist v GHC pfCacheDir
       PrefetchCabal PrefetchOptions {pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt Cabal
+        (v, _) <- liftE $ fromVersion mt guessMode Cabal
         liftE $ fetchToolBindist v Cabal pfCacheDir
       PrefetchHLS PrefetchOptions {pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt HLS
+        (v, _) <- liftE $ fromVersion mt guessMode HLS
         liftE $ fetchToolBindist v HLS pfCacheDir
       PrefetchStack PrefetchOptions {pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt Stack
+        (v, _) <- liftE $ fromVersion mt guessMode Stack
         liftE $ fetchToolBindist v Stack pfCacheDir
       PrefetchMetadata -> do
         pfreq <- lift getPlatformReq
@@ -225,3 +226,6 @@ prefetch prefetchCommand runAppState runLogger =
                 VLeft e -> do
                   runLogger $ logError $ T.pack $ prettyHFError e
                   pure $ ExitFailure 15
+
+ where
+   guessMode = if guessVersion settings then GLaxWithInstalled else GStrict

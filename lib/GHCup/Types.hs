@@ -452,11 +452,12 @@ data UserSettings = UserSettings
   , uMirrors           :: Maybe DownloadMirrors
   , uDefGHCConfOptions :: Maybe [String]
   , uPager             :: Maybe PagerConfig
+  , uGuessVersion      :: Maybe Bool
   }
   deriving (Show, GHC.Generic, Eq)
 
 defaultUserSettings :: UserSettings
-defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+defaultUserSettings = UserSettings Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 fromSettings :: Settings -> Maybe KeyBindings -> UserSettings
 fromSettings Settings{..} Nothing =
@@ -476,6 +477,7 @@ fromSettings Settings{..} Nothing =
     , uMirrors = Just mirrors
     , uDefGHCConfOptions = Just defGHCConfOptions
     , uPager = Just pager
+    , uGuessVersion = Just guessVersion
   }
 fromSettings Settings{..} (Just KeyBindings{..}) =
   let ukb = UserKeyBindings
@@ -504,6 +506,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
     , uMirrors = Just mirrors
     , uDefGHCConfOptions = Just defGHCConfOptions
     , uPager = Just pager
+    , uGuessVersion = Just guessVersion
   }
 
 data UserKeyBindings = UserKeyBindings
@@ -591,6 +594,7 @@ data Settings = Settings
   , mirrors           :: DownloadMirrors
   , defGHCConfOptions :: [String]
   , pager             :: PagerConfig
+  , guessVersion      :: Bool
   }
   deriving (Show, GHC.Generic)
 
@@ -612,7 +616,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl False [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl False [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig True
 
 instance NFData Settings
 
@@ -883,3 +887,11 @@ newtype MapIgnoreUnknownKeys k v = MapIgnoreUnknownKeys { unMapIgnoreUnknownKeys
   deriving (Eq, Show, GHC.Generic)
 
 instance (NFData k, NFData v) => NFData (MapIgnoreUnknownKeys k v)
+
+-- | Type representing our guessing modes when e.g. "incomplete" PVP version
+-- is specified, such as @ghcup set ghc 9.12@.
+data GuessMode = GStrict            -- ^ don't guess the proper tool version
+               | GLax               -- ^ guess by using the metadata
+               | GLaxWithInstalled  -- ^ guess by using metadata and installed versions
+  deriving (Eq, Show)
+

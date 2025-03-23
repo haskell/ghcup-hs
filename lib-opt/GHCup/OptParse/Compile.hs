@@ -573,7 +573,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
           _ -> pure ()
-        ghcs <- liftE $ forM targetGHCs (\ghc -> fmap (_tvVersion . fst) . fromVersion (Just ghc) $ GHC)
+        ghcs <- liftE $ forM targetGHCs (\ghc -> fmap (_tvVersion . fst) . fromVersion (Just ghc) guessMode $ GHC)
         targetVer <- liftE $ compileHLS
                     targetHLS
                     ghcs
@@ -674,3 +674,6 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
               VLeft e -> do
                 runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 9
+ where
+  guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
+

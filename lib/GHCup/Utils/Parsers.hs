@@ -44,6 +44,7 @@ import           Data.Time.Format               ( parseTimeM, defaultTimeLocale 
 import           Data.Versions
 import           Data.Void
 import           Data.Variant.Excepts
+import           Optics                  hiding ( set )
 import           Prelude                 hiding ( appendFile )
 import           Safe
 import           System.FilePath
@@ -259,6 +260,7 @@ fromVersion :: ( HasLog env
                , MonadCatch m
                )
             => Maybe ToolVersion
+            -> GuessMode
             -> Tool
             -> Excepts
                  '[ TagNotFound
@@ -278,6 +280,7 @@ fromVersion' :: ( HasLog env
                 , MonadCatch m
                 )
              => SetToolVersion
+             -> GuessMode
              -> Tool
              -> Excepts
                   '[ TagNotFound
@@ -285,55 +288,33 @@ fromVersion' :: ( HasLog env
                    , NextVerNotFound
                    , NoToolVersionSet
                    ] m (GHCTargetVersion, Maybe VersionInfo)
-fromVersion' SetRecommended tool = do
+fromVersion' SetRecommended _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getRecommended dls tool
     ?? TagNotFound Recommended tool
-fromVersion' (SetGHCVersion v) tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let vi = getVersionInfo v tool dls
-  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
-    Left _ -> pure (v, vi)
-    Right pvpIn ->
-      lift (getLatestToolFor tool (_tvTarget v) pvpIn dls) >>= \case
-        Just (pvp_, vi', mt) -> do
-          v' <- lift $ pvpToVersion pvp_ ""
-          when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
-          pure (GHCTargetVersion mt v', Just vi')
-        Nothing -> pure (v, vi)
-fromVersion' (SetToolVersion (mkTVer -> v)) tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let vi = getVersionInfo v tool dls
-  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
-    Left _ -> pure (v, vi)
-    Right pvpIn ->
-      lift (getLatestToolFor tool (_tvTarget v) pvpIn dls) >>= \case
-        Just (pvp_, vi', mt) -> do
-          v' <- lift $ pvpToVersion pvp_ ""
-          when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
-          pure (GHCTargetVersion mt v', Just vi')
-        Nothing -> pure (v, vi)
-fromVersion' (SetToolTag Latest) tool = do
+fromVersion' (SetGHCVersion v) guessMode tool = lift $ guessFullVersion v tool guessMode
+fromVersion' (SetToolVersion (mkTVer -> v)) guessMode tool = lift $ guessFullVersion v tool guessMode
+fromVersion' (SetToolTag Latest) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getLatest dls tool ?? TagNotFound Latest tool
-fromVersion' (SetToolDay day) tool = do
+fromVersion' (SetToolDay day) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> case getByReleaseDay dls tool day of
                           Left ad -> throwE $ DayNotFound day tool ad
                           Right v -> pure v
-fromVersion' (SetToolTag LatestPrerelease) tool = do
+fromVersion' (SetToolTag LatestPrerelease) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
-fromVersion' (SetToolTag LatestNightly) tool = do
+fromVersion' (SetToolTag LatestNightly) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getLatestNightly dls tool ?? TagNotFound LatestNightly tool
-fromVersion' (SetToolTag Recommended) tool = do
+fromVersion' (SetToolTag Recommended) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getRecommended dls tool ?? TagNotFound Recommended tool
-fromVersion' (SetToolTag (Base pvp'')) GHC = do
+fromVersion' (SetToolTag (Base pvp'')) _ GHC = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') GHC
-fromVersion' SetNext tool = do
+fromVersion' SetNext _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   next <- case tool of
     GHC -> do
@@ -379,8 +360,39 @@ fromVersion' SetNext tool = do
     GHCup -> fail "GHCup cannot be set"
   let vi = getVersionInfo next tool dls
   pure (next, vi)
-fromVersion' (SetToolTag t') tool =
+fromVersion' (SetToolTag t') _ tool =
   throwE $ TagNotFound t' tool
+
+guessFullVersion :: ( HasLog env
+                    , MonadFail m
+                    , MonadReader env m
+                    , HasGHCupInfo env
+                    , HasDirs env
+                    , MonadThrow m
+                    , MonadIO m
+                    , MonadCatch m
+                    )
+                 => GHCTargetVersion
+                 -> Tool
+                 -> GuessMode
+                 -> m (GHCTargetVersion, Maybe VersionInfo)
+guessFullVersion v tool guessMode = do
+  GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
+  let vi = getVersionInfo v tool dls
+  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
+    Left _ -> pure (v, vi)
+    Right pvpIn
+      | (guessMode /= GStrict) && hasn't (ix tool % ix v) dls -> do
+          ghcs <- if guessMode == GLaxWithInstalled then fmap rights getInstalledGHCs else pure []
+          if v `notElem` ghcs
+          then getLatestToolFor tool (_tvTarget v) pvpIn dls >>= \case
+                 Just (pvp_, vi', mt) -> do
+                   v' <- pvpToVersion pvp_ ""
+                   when (v' /= _tvVersion v) $ logWarn ("Assuming you meant version " <> prettyVer v')
+                   pure (GHCTargetVersion mt v', Just vi')
+                 Nothing -> pure (v, vi)
+          else pure (v, vi)
+    _ -> pure (v, vi)
 
 
 parseUrlSource :: String -> Either String [NewURLSource]

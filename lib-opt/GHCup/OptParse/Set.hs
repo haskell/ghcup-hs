@@ -259,13 +259,14 @@ set :: forall m env.
        , HasLog env
        )
     => Either SetCommand SetOptions
+    -> Settings
     -> (forall eff . ReaderT AppState m (VEither eff GHCTargetVersion)
         -> m (VEither eff GHCTargetVersion))
     -> (forall eff. ReaderT env m (VEither eff GHCTargetVersion)
         -> m (VEither eff GHCTargetVersion))
     -> (ReaderT LeanAppState m () -> m ())
     -> m ExitCode
-set setCommand runAppState _ runLogger = case setCommand of
+set setCommand settings runAppState _ runLogger = case setCommand of
   (Right sopts) -> do
     runLogger (logWarn "This is an old-style command for setting GHC. Use 'ghcup set ghc' instead.")
     setGHC' sopts
@@ -275,10 +276,12 @@ set setCommand runAppState _ runLogger = case setCommand of
   (Left (SetStack sopts)) -> setStack' sopts
 
  where
+  guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
+
   setGHC' :: SetOptions
           -> m ExitCode
   setGHC' SetOptions{ sToolVer } = runSetGHC runAppState (do
-          v <- liftE $ fst <$> fromVersion' sToolVer GHC
+          v <- liftE $ fst <$> fromVersion' sToolVer guessMode GHC
           liftE $ setGHC v SetGHCOnly Nothing
         )
       >>= \case
@@ -295,7 +298,7 @@ set setCommand runAppState _ runLogger = case setCommand of
   setCabal' :: SetOptions
             -> m ExitCode
   setCabal' SetOptions{ sToolVer } = runSetCabal runAppState (do
-          v <- liftE $ fst <$> fromVersion' sToolVer Cabal
+          v <- liftE $ fst <$> fromVersion' sToolVer guessMode Cabal
           liftE $ setCabal (_tvVersion v)
           pure v
         )
@@ -312,7 +315,7 @@ set setCommand runAppState _ runLogger = case setCommand of
   setHLS' :: SetOptions
           -> m ExitCode
   setHLS' SetOptions{ sToolVer } = runSetHLS runAppState (do
-          v <- liftE $ fst <$> fromVersion' sToolVer HLS
+          v <- liftE $ fst <$> fromVersion' sToolVer guessMode HLS
           liftE $ setHLS (_tvVersion v) SetHLSOnly Nothing
           pure v
         )
@@ -330,7 +333,7 @@ set setCommand runAppState _ runLogger = case setCommand of
   setStack' :: SetOptions
             -> m ExitCode
   setStack' SetOptions{ sToolVer } = runSetStack runAppState (do
-            v <- liftE $ fst <$> fromVersion' sToolVer Stack
+            v <- liftE $ fst <$> fromVersion' sToolVer guessMode Stack
             liftE $ setStack (_tvVersion v)
             pure v
           )
