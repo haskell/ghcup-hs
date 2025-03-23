@@ -337,12 +337,13 @@ install installCommand settings getAppState' runLogger = case installCommand of
   (Left (InstallHLS iopts))    -> installHLS iopts
   (Left (InstallStack iopts))  -> installStack iopts
  where
+  guessMode = if guessVersion settings then GLax else GStrict
   installGHC :: InstallOptions -> IO ExitCode
   installGHC InstallOptions{..} = do
     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
     (case instBindist of
        Nothing -> runInstGHC s' $ do
-         (v, vi) <- liftE $ fromVersion instVer GHC
+         (v, vi) <- liftE $ fromVersion instVer guessMode GHC
          forM_ (_viPreInstall =<< vi) $ \msg -> do
            lift $ logWarn msg
            lift $ logWarn
@@ -359,7 +360,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
          pure vi
        Just uri -> do
          runInstGHC s'{ settings = settings {noVerify = True}} $ do
-           (v, vi) <- liftE $ fromVersion instVer GHC
+           (v, vi) <- liftE $ fromVersion instVer guessMode GHC
            forM_ (_viPreInstall =<< vi) $ \msg -> do
              lift $ logWarn msg
              lift $ logWarn
@@ -426,7 +427,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
     (case instBindist of
        Nothing -> runInstTool s' $ do
-         (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
+         (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode Cabal
          forM_ (_viPreInstall =<< vi) $ \msg -> do
            lift $ logWarn msg
            lift $ logWarn
@@ -440,7 +441,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
          pure vi
        Just uri -> do
          runInstTool s'{ settings = settings { noVerify = True}} $ do
-           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Cabal
+           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode Cabal
            forM_ (_viPreInstall =<< vi) $ \msg -> do
              lift $ logWarn msg
              lift $ logWarn
@@ -485,7 +486,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
      s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
      (case instBindist of
        Nothing -> runInstTool s' $ do
-         (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
+         (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode HLS
          forM_ (_viPreInstall =<< vi) $ \msg -> do
            lift $ logWarn msg
            lift $ logWarn
@@ -499,7 +500,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
          pure vi
        Just uri -> do
          runInstTool s'{ settings = settings { noVerify = True}} $ do
-           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer HLS
+           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode HLS
            forM_ (_viPreInstall =<< vi) $ \msg -> do
              lift $ logWarn msg
              lift $ logWarn
@@ -545,7 +546,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
      s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
      (case instBindist of
         Nothing -> runInstTool s' $ do
-          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
+          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode Stack
           forM_ (_viPreInstall =<< vi) $ \msg -> do
             lift $ logWarn msg
             lift $ logWarn
@@ -559,7 +560,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
           pure vi
         Just uri -> do
           runInstTool s'{ settings = settings { noVerify = True}} $ do
-            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer Stack
+            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode Stack
             forM_ (_viPreInstall =<< vi) $ \msg -> do
               lift $ logWarn msg
               lift $ logWarn

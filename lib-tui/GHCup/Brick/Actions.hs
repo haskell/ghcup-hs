@@ -621,7 +621,7 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
 
       ghcs <-
         liftE $ forM (compopts ^. CompileHLS.targetGHCs)
-                     (\ghc -> fmap (_tvVersion . fst) . Utils.fromVersion (Just ghc) $ GHC)
+                     (\ghc -> fmap (_tvVersion . fst) . Utils.fromVersion (Just ghc) GStrict $ GHC)
       targetVer <- liftE $ GHCup.compileHLS
                       hlsVer
                       ghcs

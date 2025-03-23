@@ -147,7 +147,8 @@ updateSettings usl usr =
        mirrors' = uMirrors usl <|> uMirrors usr
        defGHCconfOptions' = uDefGHCConfOptions usl <|> uDefGHCConfOptions usr
        pagerConfig' = uPager usl <|> uPager usr
-   in UserSettings cache' metaCache' metaMode' noVerify' verbose' keepDirs' downloader' (updateKeyBindings (uKeyBindings usl) (uKeyBindings usr)) urlSource' noNetwork' gpgSetting' platformOverride' mirrors' defGHCconfOptions' pagerConfig'
+       guessVersion' = uGuessVersion usl <|> uGuessVersion usr
+   in UserSettings cache' metaCache' metaMode' noVerify' verbose' keepDirs' downloader' (updateKeyBindings (uKeyBindings usl) (uKeyBindings usr)) urlSource' noNetwork' gpgSetting' platformOverride' mirrors' defGHCconfOptions' pagerConfig' guessVersion'
  where
   updateKeyBindings :: Maybe UserKeyBindings -> Maybe UserKeyBindings -> Maybe UserKeyBindings
   updateKeyBindings Nothing Nothing = Nothing

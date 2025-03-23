@@ -89,6 +89,7 @@ data Options = Options
   , optGpg         :: Maybe GPGSetting
   , optStackSetup  :: Maybe Bool
   , optPager       :: Maybe Bool
+  , optGuessVersion :: Maybe Bool
   -- commands
   , optCommand     :: Command
   }
@@ -186,6 +187,7 @@ opts =
           ))
     <*> invertableSwitch "stack-setup" Nothing False (help "Use stack's setup info for discovering and installing GHC versions")
     <*> (invertableSwitch "paginate" Nothing False (help "Send output (e.g. from 'ghcup list') through pager (default: disabled)"))
+    <*> invertableSwitch "guess-version" Nothing True (help "Whether to guess the full version from an incomplete tool version, e.g. GHC '9.12' resolving to '9.12.2'")
     <*> com
 
 

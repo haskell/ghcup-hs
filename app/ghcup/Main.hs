@@ -98,6 +98,7 @@ toSettings noColor pagerCmd options = do
          pager = case fromMaybe (fromMaybe (Types.pager defaultSettings) uPager) (flip PagerConfig Nothing <$> optPager) of
                    PagerConfig b Nothing -> PagerConfig b pagerCmd
                    x -> x
+         guessVersion = fromMaybe (fromMaybe (Types.guessVersion defaultSettings) uGuessVersion) optGuessVersion
      in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
@@ -310,7 +311,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             Install installCommand     -> install installCommand settings appState runLogger
             InstallCabalLegacy iopts   -> install (Left (InstallCabal iopts)) settings appState runLogger
             Test testCommand           -> test testCommand settings appState runLogger
-            Set setCommand             -> set setCommand runAppState runLeanAppState runLogger
+            Set setCommand             -> set setCommand settings runAppState runLeanAppState runLogger
             UnSet unsetCommand         -> unset unsetCommand runLeanAppState runLogger
             List lo                    -> list lo no_color (pager settings) runAppState
             Rm rmCommand               -> rm rmCommand runAppState runLogger
@@ -318,14 +319,14 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             Compile compileCommand     -> compile compileCommand settings dirs runAppState runLogger
             Config configCommand       -> config configCommand settings userConf keybindings runLogger
             Whereis whereisOptions
-                    whereisCommand     -> whereis whereisCommand whereisOptions runAppState leanAppstate runLogger
+                    whereisCommand     -> whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogger
             Upgrade uOpts force' fatal -> upgrade uOpts force' fatal dirs runAppState runLogger
             ToolRequirements topts     -> toolRequirements topts runAppState runLogger
             ChangeLog changelogOpts    -> changelog changelogOpts runAppState runLogger
             Nuke                       -> nuke appState runLogger
-            Prefetch pfCom             -> prefetch pfCom runAppState runLogger
+            Prefetch pfCom             -> prefetch pfCom settings runAppState runLogger
             GC gcOpts                  -> gc gcOpts runAppState runLogger
-            Run runCommand             -> run runCommand appState leanAppstate runLogger
+            Run runCommand             -> run runCommand settings appState leanAppstate runLogger
             PrintAppErrors             -> putStrLn allHFError >> pure ExitSuccess
 
           case res of
@@ -391,6 +392,6 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
              , NoToolVersionSet
              ] m Bool
   cmp' tool instVer ver = do
-    (v, _) <- liftE $ fromVersion instVer tool
+    (v, _) <- liftE $ fromVersion instVer GLax tool
     pure (v == ver)
 

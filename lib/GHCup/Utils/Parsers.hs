@@ -44,6 +44,7 @@ import           Data.Time.Format               ( parseTimeM, defaultTimeLocale 
 import           Data.Versions
 import           Data.Void
 import           Data.Variant.Excepts
+import           Optics                  hiding ( set )
 import           Prelude                 hiding ( appendFile )
 import           Safe
 import           System.FilePath
@@ -55,6 +56,42 @@ import qualified Data.Text.Lazy.Encoding       as LE
 import qualified Data.Text.Lazy                as LT
 import qualified Text.Megaparsec               as MP
 import GHCup.Version
+
+-- $setup
+-- >>> :set -XOverloadedStrings
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeApplications
+-- >>> :set -XQuasiQuotes
+-- >>> import System.Directory
+-- >>> import URI.ByteString
+-- >>> import qualified Data.Text as T
+-- >>> import GHCup.Prelude
+-- >>> import GHCup.Download
+-- >>> import GHCup.Version
+-- >>> import GHCup.Errors
+-- >>> import GHCup.Types
+-- >>> import GHCup.Utils.Dirs
+-- >>> import GHCup.Types.Optics
+-- >>> import Data.Versions
+-- >>> import Optics
+-- >>> import GHCup.Prelude.Version.QQ
+-- >>> import qualified Data.Text.Encoding as E
+-- >>> import qualified Data.Map.Strict               as M
+-- >>> import Control.Monad.Reader
+-- >>> import Data.Variant.Excepts
+-- >>> import Text.PrettyPrint.HughesPJClass ( prettyShow )
+-- >>> let lc = LoggerConfig { lcPrintDebug = False, consoleOutter = mempty, fileOutter = mempty, fancyColors = False }
+-- >>> dirs' <- getAllDirs
+-- >>> let installedVersions = [ ([pver|8.10.7|], "-debug+lol", Nothing), ([pver|8.10.4|], "", Nothing), ([pver|8.8.4|], "", Nothing), ([pver|8.8.3|], "", Nothing) ]
+-- >>> let settings = defaultSettings { cache = True, metaCache = 0, noNetwork = True }
+-- >>> let leanAppState = LeanAppState settings dirs' defaultKeyBindings lc
+-- >>> cwd <- getCurrentDirectory
+-- >>> (Right ref) <- pure $ GHCup.Utils.parseURI $ "file://" <> E.encodeUtf8 (T.pack cwd) <> "/data/metadata/" <> (urlBaseName . view pathL' $ ghcupURL)
+-- >>> (Right ref') <- pure $ GHCup.Utils.parseURI $ "file://" <> E.encodeUtf8 (T.pack cwd) <> "/data/metadata/" <> (urlBaseName . view pathL' $ channelURL PrereleasesChannel)
+-- >>> (VRight r) <- (fmap . fmap) _ghcupDownloads $ flip runReaderT leanAppState . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, ContentLengthError] $ liftE (getBase ref) >>= liftE . decodeMetadata @GHCupInfo
+-- >>> (VRight r') <- (fmap . fmap) _ghcupDownloads $ flip runReaderT leanAppState . runE @'[DigestError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, ContentLengthError] $ liftE (getBase ref') >>= liftE . decodeMetadata @GHCupInfo
+-- >>> let rr = M.unionsWith (M.unionWith (\_ b2 -> b2)) [r, r']
+-- >>> let go = flip runReaderT leanAppState . fmap (tVerToText . fst)
 
 
     -------------
@@ -259,6 +296,7 @@ fromVersion :: ( HasLog env
                , MonadCatch m
                )
             => Maybe ToolVersion
+            -> GuessMode
             -> Tool
             -> Excepts
                  '[ TagNotFound
@@ -278,6 +316,7 @@ fromVersion' :: ( HasLog env
                 , MonadCatch m
                 )
              => SetToolVersion
+             -> GuessMode
              -> Tool
              -> Excepts
                   '[ TagNotFound
@@ -285,55 +324,37 @@ fromVersion' :: ( HasLog env
                    , NextVerNotFound
                    , NoToolVersionSet
                    ] m (GHCTargetVersion, Maybe VersionInfo)
-fromVersion' SetRecommended tool = do
+fromVersion' SetRecommended _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getRecommended dls tool
     ?? TagNotFound Recommended tool
-fromVersion' (SetGHCVersion v) tool = do
+fromVersion' (SetGHCVersion v) guessMode tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let vi = getVersionInfo v tool dls
-  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
-    Left _ -> pure (v, vi)
-    Right pvpIn ->
-      lift (getLatestToolFor tool (_tvTarget v) pvpIn dls) >>= \case
-        Just (pvp_, vi', mt) -> do
-          v' <- lift $ pvpToVersion pvp_ ""
-          when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
-          pure (GHCTargetVersion mt v', Just vi')
-        Nothing -> pure (v, vi)
-fromVersion' (SetToolVersion (mkTVer -> v)) tool = do
+  lift $ guessFullVersion dls v tool guessMode
+fromVersion' (SetToolVersion (mkTVer -> v)) guessMode tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let vi = getVersionInfo v tool dls
-  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
-    Left _ -> pure (v, vi)
-    Right pvpIn ->
-      lift (getLatestToolFor tool (_tvTarget v) pvpIn dls) >>= \case
-        Just (pvp_, vi', mt) -> do
-          v' <- lift $ pvpToVersion pvp_ ""
-          when (v' /= _tvVersion v) $ lift $ logWarn ("Assuming you meant version " <> prettyVer v')
-          pure (GHCTargetVersion mt v', Just vi')
-        Nothing -> pure (v, vi)
-fromVersion' (SetToolTag Latest) tool = do
+  lift $ guessFullVersion dls v tool guessMode
+fromVersion' (SetToolTag Latest) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getLatest dls tool ?? TagNotFound Latest tool
-fromVersion' (SetToolDay day) tool = do
+fromVersion' (SetToolDay day) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> case getByReleaseDay dls tool day of
                           Left ad -> throwE $ DayNotFound day tool ad
                           Right v -> pure v
-fromVersion' (SetToolTag LatestPrerelease) tool = do
+fromVersion' (SetToolTag LatestPrerelease) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
-fromVersion' (SetToolTag LatestNightly) tool = do
+fromVersion' (SetToolTag LatestNightly) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getLatestNightly dls tool ?? TagNotFound LatestNightly tool
-fromVersion' (SetToolTag Recommended) tool = do
+fromVersion' (SetToolTag Recommended) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getRecommended dls tool ?? TagNotFound Recommended tool
-fromVersion' (SetToolTag (Base pvp'')) GHC = do
+fromVersion' (SetToolTag (Base pvp'')) _ GHC = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') GHC
-fromVersion' SetNext tool = do
+fromVersion' SetNext _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   next <- case tool of
     GHC -> do
@@ -379,8 +400,56 @@ fromVersion' SetNext tool = do
     GHCup -> fail "GHCup cannot be set"
   let vi = getVersionInfo next tool dls
   pure (next, vi)
-fromVersion' (SetToolTag t') tool =
+fromVersion' (SetToolTag t') _ tool =
   throwE $ TagNotFound t' tool
+
+-- | Guess the full version from an input version, by possibly
+-- examining the metadata and the installed versions.
+--
+-- >>> go $ guessFullVersion rr (mkTVer [vver|8|]) GHC GLax
+-- "8.10.7"
+-- >>> go $ guessFullVersion rr (mkTVer [vver|8.10|]) GHC GLax
+-- "8.10.7"
+-- >>> go $ guessFullVersion rr (mkTVer [vver|8.10.7|]) GHC GLax
+-- "8.10.7"
+-- >>> go $ guessFullVersion rr (mkTVer [vver|9.12.1|]) GHC GLax
+-- "9.12.1"
+guessFullVersion :: ( HasLog env
+                    , MonadFail m
+                    , MonadReader env m
+                    , HasDirs env
+                    , MonadThrow m
+                    , MonadIO m
+                    , MonadCatch m
+                    )
+                 => GHCupDownloads
+                 -> GHCTargetVersion
+                 -> Tool
+                 -> GuessMode
+                 -> m (GHCTargetVersion, Maybe VersionInfo)
+guessFullVersion dls v tool guessMode = do
+  let vi = getVersionInfo v tool dls
+  case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
+    Left _ -> pure (v, vi)
+    Right pvpIn
+      | (guessMode /= GStrict) && hasn't (ix tool % ix v) dls -> do
+          ghcs <- if guessMode == GLaxWithInstalled then fmap rights getInstalledTools else pure []
+          if v `notElem` ghcs
+          then getLatestToolFor tool (_tvTarget v) pvpIn dls >>= \case
+                 Just (pvp_, vi', mt) -> do
+                   v' <- pvpToVersion pvp_ ""
+                   when (v' /= _tvVersion v) $ logWarn ("Assuming you meant version " <> prettyVer v')
+                   pure (GHCTargetVersion mt v', Just vi')
+                 Nothing -> pure (v, vi)
+          else pure (v, vi)
+    _ -> pure (v, vi)
+ where
+  getInstalledTools = case tool of
+                        GHC -> getInstalledGHCs
+                        Cabal -> (fmap . fmap) mkTVer <$> getInstalledCabals
+                        HLS -> (fmap . fmap) mkTVer <$> getInstalledHLSs
+                        Stack -> (fmap . fmap) mkTVer <$> getInstalledStacks
+                        GHCup -> pure []
 
 
 parseUrlSource :: String -> Either String [NewURLSource]

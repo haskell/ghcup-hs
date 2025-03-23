@@ -165,17 +165,19 @@ test :: TestCommand -> Settings -> IO AppState -> (ReaderT LeanAppState IO () ->
 test testCommand settings getAppState' runLogger = case testCommand of
   (TestGHC iopts) -> go iopts
  where
+  guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
+
   go :: TestOptions -> IO ExitCode
   go TestOptions{..} = do
     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
     (case testBindist of
        Nothing -> runTestGHC s' $ do
-         (v, vi) <- liftE $ fromVersion testVer GHC
+         (v, vi) <- liftE $ fromVersion testVer guessMode GHC
          liftE $ testGHCVer v addMakeArgs
          pure vi
        Just uri -> do
          runTestGHC s'{ settings = settings {noVerify = True}} $ do
-           (v, vi) <- liftE $ fromVersion testVer GHC
+           (v, vi) <- liftE $ fromVersion testVer guessMode GHC
            liftE $ testGHCBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir ".*/.*") "" Nothing Nothing Nothing) v addMakeArgs
            pure vi
       )
