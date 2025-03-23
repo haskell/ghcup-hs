@@ -607,7 +607,7 @@ data PagerConfig = PagerConfig {
 instance NFData PagerConfig
 
 defaultPagerConfig :: PagerConfig
-defaultPagerConfig = PagerConfig False Nothing
+defaultPagerConfig = PagerConfig True Nothing
 
 allPagerConfig :: String -> PagerConfig
 allPagerConfig cmd = PagerConfig True (Just cmd)
