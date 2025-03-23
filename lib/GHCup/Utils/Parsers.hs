@@ -414,6 +414,8 @@ fromVersion' (SetToolTag t') _ tool =
 -- "8.10.7"
 -- >>> go $ guessFullVersion rr (mkTVer [vver|9.12.1|]) GHC GLax
 -- "9.12.1"
+-- >>> go $ guessFullVersion rr (mkTVer [vver|8|]) GHC GStrict
+-- "8"
 guessFullVersion :: ( HasLog env
                     , MonadFail m
                     , MonadReader env m
