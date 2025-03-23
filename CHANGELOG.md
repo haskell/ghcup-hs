@@ -3,10 +3,11 @@
 ## 0.1.50.0 -- 2025-03-23
 
 * Fix logic when guessing incomplete PVP versions, fixes [#1243](https://github.com/haskell/ghcup-hs/pull/1243)
-* Add `default` channel alias wrt [#1196](https://github.com/haskell/ghcup-hs/pull/1196)
-* Print post rm messages in TUI wrt [#1202](https://github.com/haskell/ghcup-hs/pull/1202)
 * Speed up metadata parsing significantly wrt [#1213](https://github.com/haskell/ghcup-hs/issues/1213)
 * Implement "install targets", fixes [#1210](https://github.com/haskell/ghcup-hs/issues/1210)
+* Add `default` channel alias wrt [#1196](https://github.com/haskell/ghcup-hs/pull/1196)
+* Print post rm messages in TUI wrt [#1202](https://github.com/haskell/ghcup-hs/pull/1202)
+* Print pre install messages in TUI wrt [#1241](https://github.com/haskell/ghcup-hs/issues/1241)
 * Fix handling of 'ghc' subdir in parser for obtaining set ghc version wrt [#1215](https://github.com/haskell/ghcup-hs/issues/1215)
 
 ## 0.1.40.0 -- 2025-01-01
