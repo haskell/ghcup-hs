@@ -9,6 +9,12 @@ optimization: 2
 package ghcup
     flags: +tui
 
+package libyaml-streamly
+  flags: -system-libyaml
+
+package libyaml
+  flags: -system-libyaml
+
 if os(linux)
   package ghcup
       flags: +yaml-streamly
