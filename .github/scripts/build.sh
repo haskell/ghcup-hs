@@ -27,6 +27,11 @@ binary_test=$(cabal --project-file=cabal.project.release list-bin ghcup-test)
 binary_opttest=$(cabal --project-file=cabal.project.release list-bin ghcup-optparse-test)
 ver=$("${binary}" --numeric-version)
 strip_binary "${binary}"
+
+if [ "${OS}" = "macOS" ] ; then
+  otool -L "${binary}" | grep libyaml && { echo "undesired libyaml linking" ; exit 5 ; }
+fi
+
 cp "${binary}" "out/${ARTIFACT}-${ver}${ext}"
 cp "${binary_test}" "out/test-${ARTIFACT}-${ver}${ext}"
 cp "${binary_opttest}" "out/test-optparse-${ARTIFACT}-${ver}${ext}"
