@@ -15,8 +15,8 @@ jobs:
     name: bootstrap
     runs-on: ${{ matrix.os }}
     env:
-      BOOTSTRAP_HASKELL_CABAL_VERSION: 3.6.2.0
-      BOOTSTRAP_HASKELL_GHC_VERSION: 8.10.7
+      BOOTSTRAP_HASKELL_CABAL_VERSION: 3.12.1.0
+      BOOTSTRAP_HASKELL_GHC_VERSION: 9.6.7
       BOOTSTRAP_HASKELL_NONINTERACTIVE: yes
       ARCH: 64
       JSON_VERSION: "0.0.7"
