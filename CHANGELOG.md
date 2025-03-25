@@ -1,5 +1,9 @@
 # Revision history for ghcup
 
+## 0.1.50.1 -- 2025-03-25
+
+* fix unwanted dynamic linking to libyaml on macOS, fixes [#1246](https://github.com/haskell/ghcup-hs/issues/1246)
+
 ## 0.1.50.0 -- 2025-03-23
 
 * Fix logic when guessing incomplete PVP versions, fixes [#1243](https://github.com/haskell/ghcup-hs/pull/1243)
