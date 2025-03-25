@@ -146,15 +146,15 @@ jobs:
         include:
           - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.6.6
+            GHC_VER: 9.6.7
             ARCH: ARM64
           - os: macOS-13
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.6.6
+            GHC_VER: 9.6.7
             ARCH: 64
           - os: windows-latest
             ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 9.6.6
+            GHC_VER: 9.6.7
             ARCH: 64
     steps:
       - name: Checkout code
@@ -230,7 +230,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
-      GHC_VER: 9.6.6
+      GHC_VER: 9.6.7
       ARCH: 64
       DISTRO: na
       RUNNER_OS: FreeBSD
@@ -277,12 +277,12 @@ jobs:
             DISTRO: Alpine
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 9.6.6
+            GHC_VER: 9.6.7
             ARCH: 64
             DISTRO: Alpine
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 9.6.6
+            GHC_VER: 9.6.7
             ARCH: 64
             DISTRO: Ubuntu
 
@@ -397,17 +397,17 @@ jobs:
         include:
           - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.6.6
+            GHC_VER: 9.6.7
             ARCH: ARM64
             DISTRO: na
           - os: macOS-13
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.6.6
+            GHC_VER: 9.6.7
             ARCH: 64
             DISTRO: na
           - os: windows-latest
             ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 9.6.6
+            GHC_VER: 9.6.7
             ARCH: 64
             DISTRO: na
 
@@ -472,7 +472,7 @@ jobs:
       CABAL_VER: 3.14.1.1
       MACOSX_DEPLOYMENT_TARGET: 10.13
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
-      GHC_VER: 9.6.6
+      GHC_VER: 9.6.7
       ARCH: 64
       DISTRO: na
       RUNNER_OS: FreeBSD
