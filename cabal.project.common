@@ -8,7 +8,13 @@ constraints: http-io-streams -brotli,
              bzlib >= 0.5.2.0,
              directory >= 1.3.8.3,
              filepath == 1.4.101.0 || == 1.4.300.2 || >= 1.5.2.0,
-             tar >= 0.6.2.0
+             tar >= 0.6.2.0,
+             xz-clib >= 5.8.0,
+             xz -system-xz
+
+
+package xz
+  flags: -system-xz
 
 -- https://github.com/haskell/ghcup-hs/issues/1107
 -- https://github.com/haskell/unix/pull/318
