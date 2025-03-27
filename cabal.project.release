@@ -2,7 +2,7 @@ import: cabal.project.common
 
 optimization: 2
 
-constraints: xz-clib >= 5.8.0,
+constraints: xz-clib >= 5.8.0.1,
              xz -system-xz
 
 package xz
