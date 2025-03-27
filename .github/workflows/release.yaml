@@ -36,7 +36,7 @@ jobs:
             ARCH: 32
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 9.8.4
+            GHC_VER: 9.6.7
             ARCH: 64
     steps:
       - name: Checkout code
@@ -94,7 +94,7 @@ jobs:
         include:
           - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.8.4
+            GHC_VER: 9.6.7
             ARCH: ARM64
             DISTRO: Alpine
     steps:
@@ -350,7 +350,7 @@ jobs:
         include:
           - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.8.4
+            GHC_VER: 9.6.7
             ARCH: ARM64
             DISTRO: Alpine
 
