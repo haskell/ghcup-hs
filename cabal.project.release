@@ -2,11 +2,12 @@ import: cabal.project.common
 
 optimization: 2
 
-constraints: xz-clib >= 5.8.0.1,
-             xz -system-xz
+constraints: xz-clib >= 5.8.0.1
 
-package xz
-  flags: -system-xz
+if !arch(i386)
+  constraints: xz -system-xz
+  package xz
+    flags: -system-xz
 
 -- The release project file always wants to build with -tar on the
 -- platforms it supports (which are those it provides config.h files
