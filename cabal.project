@@ -9,5 +9,9 @@ else
     package ghcup
         flags: +tui +tar
 
+-- unknown bug during linking
+if impl(ghc == 9.8.4)
+    constraints: xz-clib < 5.8.0
+
 package *
   test-show-details: direct

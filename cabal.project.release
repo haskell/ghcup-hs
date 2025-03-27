@@ -2,6 +2,12 @@ import: cabal.project.common
 
 optimization: 2
 
+constraints: xz-clib >= 5.8.0,
+             xz -system-xz
+
+package xz
+  flags: -system-xz
+
 -- The release project file always wants to build with -tar on the
 -- platforms it supports (which are those it provides config.h files
 -- for). The tar flag is only there to circumvent complicated errors
@@ -18,7 +24,6 @@ package libyaml
 if os(linux)
   package ghcup
       flags: +yaml-streamly
-  constraints: xz -system-xz
   if arch(x86_64) || arch(i386)
     flags: -tar
     executable-static: True
@@ -32,18 +37,15 @@ elif os(darwin)
   package ghcup
       flags: +yaml-streamly
   flags: -tar
-  constraints: zlib +bundled-c-zlib,
-               xz -system-xz
+  constraints: zlib +bundled-c-zlib
 elif os(mingw32)
   package ghcup
       flags: +yaml-streamly
   flags: -tar
-  constraints: xz -system-xz
 elif os(freebsd)
   flags: -tar
   constraints: zlib +bundled-c-zlib,
-               zip +disable-zstd,
-               xz -system-xz
+               zip +disable-zstd
   package *
     ghc-options: -split-sections
 else
