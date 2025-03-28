@@ -78,7 +78,7 @@ nuke appState runLogger = do
        lift $ logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
        lift $ logInfo "Nuking in 3...2...1"
 
-       lInstalled <- lift $ listVersions Nothing [ListInstalled True] False True (Nothing, Nothing)
+       lInstalled <- lift $ listVersions [] [ListInstalled True] False True (Nothing, Nothing)
 
        forM_ lInstalled (liftE . rmTool)
 
