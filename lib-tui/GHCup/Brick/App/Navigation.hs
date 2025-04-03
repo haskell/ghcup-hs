@@ -7,8 +7,8 @@ module GHCup.Brick.App.Navigation where
 
 import GHCup.Brick.Actions
 import qualified GHCup.Brick.Common as Common
+import qualified GHCup.Brick.App.Common as Common
 import GHCup.Brick.Widgets.BaseWidget
-import qualified GHCup.Brick.Widgets.SectionList as SectionList
 import qualified GHCup.Brick.Widgets.SectionList as SectionList
 
 import GHCup.List ( ListResult(..) )
