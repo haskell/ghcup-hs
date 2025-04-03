@@ -27,7 +27,6 @@ import qualified GHCup.Brick.Common as Common
 import           GHCup.Brick.BrickState
 import           GHCup.Brick.Widgets.SectionList
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
-import           GHCup.Brick.Widgets.Navigation (BrickInternalState)
 import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
@@ -84,6 +83,7 @@ import qualified GHCup.GHC as GHC
 import qualified GHCup.Utils.Parsers as Utils
 import qualified GHCup.HLS as HLS
 
+type NavigationList = SectionList Common.Name ListResult
 
 
 {- Core Logic.
@@ -97,7 +97,7 @@ This module defines the IO actions we can execute within the Brick App:
 -}
 
 -- | Update app data and list internal state based on new evidence.
--- This synchronises @BrickInternalState@ with @BrickData@
+-- This synchronises @NavigationList@ with @BrickData@
 -- and @BrickSettings@.
 updateList :: BrickData -> BrickState -> BrickState
 updateList appD bst =
@@ -109,14 +109,14 @@ updateList appD bst =
 
 constructList :: BrickData
               -> BrickSettings
-              -> Maybe BrickInternalState
-              -> BrickInternalState
+              -> Maybe NavigationList
+              -> NavigationList
 constructList appD settings =
   replaceLR (filterVisible (_showAllVersions settings))
             (_lr appD)
 
 -- | Focus on the tool section and the predicate which matches. If no result matches, focus on index 0
-selectBy :: Tool -> (ListResult -> Bool) -> BrickInternalState -> BrickInternalState
+selectBy :: Tool -> (ListResult -> Bool) -> NavigationList -> NavigationList
 selectBy tool predicate internal_state =
   let new_focus = F.focusSetCurrent (Singular tool) (view sectionListFocusRingL internal_state)
       tool_lens = sectionL (Singular tool)
@@ -126,7 +126,7 @@ selectBy tool predicate internal_state =
         & tool_lens %~ L.listFindBy predicate    -- The lookup by the predicate.
 
 -- | Select the latests GHC tool
-selectLatest :: BrickInternalState -> BrickInternalState
+selectLatest :: NavigationList -> NavigationList
 selectLatest = selectBy GHC (elem Latest . lTag)
 
 
@@ -135,8 +135,8 @@ selectLatest = selectBy GHC (elem Latest . lTag)
 -- When passed an existing @appState@, tries to keep the selected element.
 replaceLR :: (ListResult -> Bool)
           -> [ListResult]
-          -> Maybe BrickInternalState
-          -> BrickInternalState
+          -> Maybe NavigationList
+          -> NavigationList
 replaceLR filterF list_result s =
   let oldElem = s >>= sectionListSelectedElement -- Maybe (Int, e)
       newVec  =  [(Singular $ lTool (head g), V.fromList g) | g <- groupBy ((==) `on` lTool ) (filter filterF list_result)]
