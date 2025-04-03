@@ -21,7 +21,7 @@ import GHCup.Types
       AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings(..) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
-import qualified GHCup.Brick.Common as Common
+import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.App as BrickApp
 import qualified GHCup.Brick.Attributes as Attributes
 import qualified GHCup.Brick.BrickState as AppState

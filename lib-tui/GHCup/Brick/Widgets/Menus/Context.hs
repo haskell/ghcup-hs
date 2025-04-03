@@ -13,8 +13,9 @@ import GHCup.List ( ListResult(..) )
 import GHCup.Types (Tool (..))
 
 import qualified GHCup.Brick.Common as Common
+import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.Widgets.Menu as Menu
-import GHCup.Brick.Common (Name (..))
+import GHCup.Brick.App.Common (Name (..))
 import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
 import qualified Brick.Widgets.Core as Brick
 import qualified Brick.Widgets.Border as Border

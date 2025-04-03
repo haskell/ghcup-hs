@@ -22,7 +22,8 @@ import           GHCup.Prelude ( decUTF8Safe, runBothE' )
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
 import           GHCup.Prompts
-import           GHCup.Brick.Common (BrickData(..), BrickSettings(..), Name(..), Mode(..))
+import           GHCup.Brick.App.Common (BrickData(..), BrickSettings(..), Name(..), Mode(..))
+import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.Common as Common
 import           GHCup.Brick.BrickState
 import           GHCup.Brick.Widgets.SectionList

@@ -14,6 +14,7 @@ A very simple information-only widget with no handler.
 
 module GHCup.Brick.Widgets.Tutorial (draw) where
 
+import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Attributes as Attributes
 import GHCup.Types (KeyCombination(..))

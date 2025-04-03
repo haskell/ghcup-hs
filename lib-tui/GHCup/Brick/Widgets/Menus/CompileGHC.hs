@@ -38,14 +38,14 @@ module GHCup.Brick.Widgets.Menus.CompileGHC (
 
 import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
 import qualified GHCup.Brick.Widgets.Menu as Menu
-import           GHCup.Brick.Common(Name(..))
+import           GHCup.Brick.App.Common(Name(..))
 import Brick
     ( BrickEvent(..),
       EventM,
       Widget(..))
 import           Prelude                 hiding ( appendFile )
 import           Optics.TH (makeLenses)
-import qualified GHCup.Brick.Common as Common
+import qualified GHCup.Brick.App.Common as Common
 import GHCup.Types
     ( BuildSystem(..), VersionPattern )
 import URI.ByteString (URI)

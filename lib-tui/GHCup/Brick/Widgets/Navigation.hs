@@ -24,6 +24,7 @@ import GHCup.Types
       Tag(..),
       tVerToText,
       tagToString )
+import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Attributes as Attributes
 import qualified GHCup.Brick.Widgets.SectionList as SectionList
@@ -148,8 +149,3 @@ draw dimAttrs section_list
             Just d  -> [Brick.withAttr Attributes.dayAttr $ Brick.str (show d)])
 
   minHSize s' = Brick.hLimit s' . Brick.vLimit 1 . (<+> Brick.fill ' ')
-
-instance SectionList.ListItemSectionNameIndex Common.Name where
-  getListItemSectionNameIndex = \case
-    Common.ListItem tool ix -> Just (Common.Singular tool, ix)
-    _ -> Nothing

@@ -26,8 +26,12 @@ module GHCup.Brick.App where
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Attributes as Attributes
 import GHCup.Brick.BrickState (BrickState (..), advanceInstallMenu, appKeys, appSettings, appState, contextMenu, mode, compileGHCMenu, compileHLSMenu)
-import GHCup.Brick.Common (Mode (..), Name (..))
+import GHCup.Brick.App.Common (Mode (..), Name (..))
+import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.Common as Common
+import qualified GHCup.Brick.Widgets.BaseWidget as BaseWidget
+import qualified GHCup.Brick.Widgets.BasicOverlay as BasicOverlay
+import qualified GHCup.Brick.App.Navigation
 import qualified GHCup.Brick.Widgets.KeyInfo as KeyInfo
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import qualified GHCup.Brick.Widgets.Navigation as Navigation

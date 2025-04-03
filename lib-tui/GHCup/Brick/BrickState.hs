@@ -29,7 +29,7 @@ The linear relation above breaks if BrickState is defined in Common.
 module GHCup.Brick.BrickState where
 
 import GHCup.Types                    ( KeyBindings )
-import GHCup.Brick.Common             ( BrickData(..), BrickSettings(..), Mode(..))
+import GHCup.Brick.App.Common             ( BrickData(..), BrickSettings(..), Mode(..))
 import GHCup.Brick.Widgets.Navigation ( BrickInternalState)
 import GHCup.Brick.Widgets.Menus.Context (ContextMenu)
 import GHCup.Brick.Widgets.Menus.AdvanceInstall (AdvanceInstallMenu)
