@@ -17,12 +17,14 @@
 module GHCup.Brick.Common where
 
 import           GHCup.Prelude ( isWindows )
+import qualified GHCup.Brick.Attributes as Attributes
 import           GHCup.Types ( Tool, KeyCombination (KeyCombination), KeyBindings(..) )
 import Data.List (intercalate)
 import           Prelude                 hiding ( appendFile )
 import qualified Graphics.Vty                  as Vty
 import           Optics.Lens (toLensVL)
 import qualified Brick
+import qualified Brick.Widgets.List as L
 import qualified Brick.Widgets.Border as Border
 import Brick ((<+>))
 import qualified Data.Text as T
@@ -93,3 +95,36 @@ makeLenses ''MenuKeyBindings
 
 toMenuKeyBindings :: KeyBindings -> MenuKeyBindings
 toMenuKeyBindings KeyBindings {..} = MenuKeyBindings { _mKbUp = bUp, _mKbDown = bDown, _mKbQuit = bQuit}
+
+-- | highlights a widget (using List.listSelectedFocusedAttr)
+highlighted :: Brick.Widget n -> Brick.Widget n
+highlighted = Brick.withAttr L.listSelectedFocusedAttr
+
+-- | Given a text, crates a highlighted label on focus. An amplifier can be passed
+renderAslabel :: T.Text -> Bool -> Brick.Widget n
+renderAslabel t focus =
+  if focus
+    then highlighted $ Brick.txt t
+    else Brick.txt t
+
+-- | Creates a left align column.
+-- Example:       |- col2 is align dispite the length of col1
+--   row1_col1         row1_col2
+--   row2_col1_large   row2_col2
+leftify :: Int -> Brick.Widget n -> Brick.Widget n
+leftify i = Brick.hLimit i . Brick.padRight Brick.Max
+
+-- | Creates a right align column.
+-- Example:       |- col2 is align dispite the length of col1
+--         row1_col1   row1_col2
+--   row2_col1_large   row2_col2
+rightify :: Int -> Brick.Widget n -> Brick.Widget n
+rightify i = Brick.hLimit i . Brick.padLeft Brick.Max
+
+-- | render some Text using helpMsgAttr
+renderAsHelpMsg :: T.Text -> Brick.Widget n
+renderAsHelpMsg = Brick.withAttr Attributes.helpMsgAttr . Brick.txt
+
+-- | render some Text using errMsgAttr
+renderAsErrMsg :: T.Text -> Brick.Widget n
+renderAsErrMsg = Brick.withAttr Attributes.errMsgAttr . Brick.txt
