@@ -53,6 +53,8 @@ import           Data.Maybe ( mapMaybe )
 import           Data.Vector ( Vector)
 import           Data.Versions ( prettyPVP, prettyVer )
 import           Prelude                 hiding ( appendFile )
+import           Data.List.NonEmpty             ( NonEmpty (..) )
+import qualified Data.List.NonEmpty            as NE
 import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
 
@@ -70,13 +72,14 @@ makeLenses ''Navigation
 
 -- | How to create a navigation widget
 create :: Common.Name -- The name of the section list
-       -> [ListResult]
+       -> NonEmpty ListResult
        -> AttrMap
        -> KeyBindings
        -> Navigation
-create name lr dimAttrs kb =
+create name lr' dimAttrs kb =
   let showAllVersions = False
       keyInfo = KeyInfo.create kb
+      lr = NE.toList lr'
   in Navigation
     { _sectionList = replaceLR (filterVisible showAllVersions) lr Nothing
     , _listResult = lr

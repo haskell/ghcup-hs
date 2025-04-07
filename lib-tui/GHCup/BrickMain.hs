@@ -32,6 +32,7 @@ import qualified Graphics.Vty as Vty
 
 import Control.Monad.Reader ( ReaderT(runReaderT) )
 import Data.Functor ( ($>) )
+import           Data.List.NonEmpty             ( NonEmpty (..) )
 import           Data.IORef (writeIORef)
 import           Prelude                 hiding ( appendFile )
 import System.Exit ( ExitCode(ExitFailure), exitWith )
@@ -47,25 +48,22 @@ brickMain s = do
 
   eAppData <- Actions.getAppData (Just $ ghcupInfo s)
   case eAppData of
-    Right ad -> do
-      let nav_widget = Navigation.create Common.AllTools ad
+    Left e -> do
+      flip runReaderT s $ logError $ "Error building app state: " <> T.pack (show e)
+      exitWith $ ExitFailure 2
+    Right [] -> do
+      flip runReaderT s $ logError "Error building app state: empty ResultList"
+      exitWith $ ExitFailure 2
+    Right (x:xs) -> do
+      let nav_widget = Navigation.create Common.AllTools (x :| xs)
                   (Attributes.dimAttributes $ noColor $ settings s) (keyBindings s)
           current_element = SectionList.sectionListSelectedElement (Navigation._sectionList nav_widget)
           menu_kb =
             let KeyBindings {..} = keyBindings s
             in MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit}
-      case current_element of
-        Nothing -> do
-          flip runReaderT s $ logError "Error building app state: empty ResultList"
-          exitWith $ ExitFailure 2
-        Just (_, e) ->
-          let initapp =
-                BrickApp.app
-                  (Attributes.defaultAttributes $ noColor $ settings s)
-              -- installedGHCs = fmap lVer $
-              --   filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) (Common._lr ad)
-          in Brick.defaultMain initapp nav_widget
-          $> ()
-    Left e -> do
-      flip runReaderT s $ logError $ "Error building app state: " <> T.pack (show e)
-      exitWith $ ExitFailure 2
+      let initapp =
+            BrickApp.app
+              (Attributes.defaultAttributes $ noColor $ settings s)
+          -- installedGHCs = fmap lVer $
+          --   filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) (Common._lr ad)
+      Brick.defaultMain initapp nav_widget $> ()
