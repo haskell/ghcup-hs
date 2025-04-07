@@ -16,6 +16,7 @@ import qualified Brick
 
 import Control.Monad
 import Control.Monad.Reader
+import           Data.List (find)
 import Data.Some
 import qualified Graphics.Vty as Vty
 import Optics (Lens', (^.), (%))
@@ -23,7 +24,7 @@ import Optics.TH (makeLenses)
 
 data BasicOverlay n a = BasicOverlay
   { _innerWidget :: a
-  , _quitKey :: KeyCombination
+  , _quitKey :: [KeyCombination]
   , _overlayLayer :: Brick.Widget n -> Brick.Widget n
   }
 
@@ -34,8 +35,10 @@ instance (BaseWidget n a) => BaseWidget n (BasicOverlay n a) where
   handleEvent ev = do
     (BasicOverlay { .. }) <- Brick.get
     case ev of
-      VtyEvent (Vty.EvKey k m)
-        | KeyCombination k m == _quitKey -> pure $ Just CloseOverlay
+      VtyEvent (Vty.EvKey key mods) ->
+        case find ((==) $ KeyCombination key mods) _quitKey of
+          Just _ -> pure $ Just CloseOverlay
+          _ -> Common.zoom innerWidget $ handleEvent ev
       _ -> Common.zoom innerWidget $ handleEvent ev
   hasOverlay (BasicOverlay { .. }) = case hasOverlay _innerWidget of
     Nothing -> Nothing

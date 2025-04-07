@@ -9,7 +9,9 @@ module GHCup.Brick.App.Navigation where
 import GHCup.Brick.Actions
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.App.Common as Common
+import qualified GHCup.Brick.App.KeyInfo as KeyInfo
 import GHCup.Brick.Widgets.BaseWidget
+import GHCup.Brick.Widgets.BasicOverlay
 import qualified GHCup.Brick.Attributes as Attributes
 import qualified GHCup.Brick.Widgets.SectionList as SectionList
 
@@ -44,7 +46,7 @@ import Data.Vector ( Vector )
 import qualified Graphics.Vty as Vty
 import Optics (Lens', use, (^.), (%))
 import Optics.TH (makeLenses)
-import Optics.State.Operators ((.=))
+import Optics.State.Operators ((.=), (?=))
 
 import           Data.List ( intercalate, sort, find )
 import           Data.Maybe ( mapMaybe )
@@ -60,6 +62,8 @@ data Navigation = Navigation
   , _showAllVersions :: Bool
   , _attrMap :: AttrMap
   , _appKeys :: KeyBindings
+  , _overlay :: Maybe (Some (IsSubWidget Common.Name Navigation))
+  , _keyInfo :: BasicOverlay Common.Name KeyInfo.KeyInfo
   }
 
 makeLenses ''Navigation
@@ -72,12 +76,15 @@ create :: Common.Name -- The name of the section list
        -> Navigation
 create name lr dimAttrs kb =
   let showAllVersions = False
+      keyInfo = KeyInfo.create kb
   in Navigation
     { _sectionList = replaceLR (filterVisible showAllVersions) lr Nothing
     , _listResult = lr
     , _showAllVersions = showAllVersions
     , _attrMap = dimAttrs
     , _appKeys = kb
+    , _overlay = Nothing
+    , _keyInfo = (BasicOverlay keyInfo [bQuit kb] (Common.frontwardLayer "Key Actions"))
     }
 
 instance BaseWidget Common.Name Navigation where
@@ -103,6 +110,9 @@ instance BaseWidget Common.Name Navigation where
           Nothing -> listHandler
       _ -> listHandler
     pure Nothing
+
+  hasOverlay = _overlay
+  closeOverlay = overlay .= Nothing
 
 
 -- | How to draw the navigation widget
@@ -211,7 +221,7 @@ keyHandlers KeyBindings {..} =
     )
   , (bUp, const "Up", Common.zoom sectionList SectionList.moveUp)
   , (bDown, const "Down", Common.zoom sectionList SectionList.moveDown)
-  -- , (KeyCombination (Vty.KChar 'h') [], const "help", mode .= KeyInfo)
+  , (KeyCombination (Vty.KChar 'h') [], const "help", overlay ?= Some (IsSubWidget keyInfo))
   , (KeyCombination Vty.KEnter [], const "advance options", pure () )
   ]
  where

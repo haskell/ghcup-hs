@@ -374,8 +374,6 @@ library ghcup-tui
     GHCup.Brick.Widgets.BaseWidget
     GHCup.Brick.Widgets.BasicOverlay
     GHCup.Brick.Widgets.Navigation
-    GHCup.Brick.Widgets.Tutorial
-    GHCup.Brick.Widgets.KeyInfo
     GHCup.Brick.Widgets.SectionList
     GHCup.Brick.Widgets.Menu
     GHCup.Brick.Widgets.Menus.Context
@@ -385,6 +383,9 @@ library ghcup-tui
     GHCup.Brick.Actions
     GHCup.Brick.App
     GHCup.Brick.App.Common
+    GHCup.Brick.App.Navigation
+    GHCup.Brick.App.KeyInfo
+    GHCup.Brick.App.Tutorial
     GHCup.Brick.BrickState
     GHCup.Brick.Attributes
     GHCup.Brick.Common

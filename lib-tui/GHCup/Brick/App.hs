@@ -32,9 +32,7 @@ import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Widgets.BaseWidget as BaseWidget
 import qualified GHCup.Brick.Widgets.BasicOverlay as BasicOverlay
 import qualified GHCup.Brick.App.Navigation as Navigation
-import qualified GHCup.Brick.Widgets.KeyInfo as KeyInfo
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
-import qualified GHCup.Brick.Widgets.Tutorial as Tutorial
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
 
