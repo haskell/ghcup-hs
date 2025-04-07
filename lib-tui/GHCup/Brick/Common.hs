@@ -28,6 +28,7 @@ import Brick ((<+>))
 import qualified Data.Text as T
 import qualified Brick.Widgets.Center as Brick
 import qualified Brick.Widgets.Border.Style as Border
+import Optics.TH (makeLenses)
 
 installedSign :: String
   | isWindows = "I "
@@ -80,3 +81,12 @@ enableScreenReader n = Brick.putCursor n (Brick.Location (0,0))
 -- I refuse to give this a type signature.
 -- | Given a lens, zoom on it. It is needed because Brick uses microlens but GHCup uses optics.
 zoom l = Brick.zoom (toLensVL l)
+
+data MenuKeyBindings = MenuKeyBindings
+  { _mKbUp              :: KeyCombination
+  , _mKbDown            :: KeyCombination
+  , _mKbQuit            :: KeyCombination
+  }
+  deriving (Show)
+
+makeLenses ''MenuKeyBindings
