@@ -17,7 +17,7 @@
 module GHCup.Brick.Common where
 
 import           GHCup.Prelude ( isWindows )
-import           GHCup.Types ( Tool, KeyCombination (KeyCombination) )
+import           GHCup.Types ( Tool, KeyCombination (KeyCombination), KeyBindings(..) )
 import Data.List (intercalate)
 import           Prelude                 hiding ( appendFile )
 import qualified Graphics.Vty                  as Vty
@@ -90,3 +90,6 @@ data MenuKeyBindings = MenuKeyBindings
   deriving (Show)
 
 makeLenses ''MenuKeyBindings
+
+toMenuKeyBindings :: KeyBindings -> MenuKeyBindings
+toMenuKeyBindings KeyBindings {..} = MenuKeyBindings { _mKbUp = bUp, _mKbDown = bDown, _mKbQuit = bQuit}

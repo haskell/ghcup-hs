@@ -10,6 +10,7 @@ import GHCup.Brick.Actions
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.App.KeyInfo as KeyInfo
+import qualified GHCup.Brick.App.ContextMenu as ContextMenu
 import GHCup.Brick.Widgets.BaseWidget
 import GHCup.Brick.Widgets.BasicOverlay
 import qualified GHCup.Brick.Attributes as Attributes
@@ -44,7 +45,7 @@ import Control.Monad.Reader
 import Data.Some
 import Data.Vector ( Vector )
 import qualified Graphics.Vty as Vty
-import Optics (Lens', use, (^.), (%))
+import Optics (Lens', use, to, (^.), (%))
 import Optics.TH (makeLenses)
 import Optics.State.Operators ((.=), (?=))
 
@@ -66,6 +67,7 @@ data Navigation = Navigation
   , _appKeys :: KeyBindings
   , _overlay :: Maybe (Some (IsSubWidget Common.Name Navigation))
   , _keyInfo :: BasicOverlay Common.Name KeyInfo.KeyInfo
+  , _contextMenu :: BasicOverlay Common.Name ContextMenu.ContextMenu
   }
 
 makeLenses ''Navigation
@@ -78,16 +80,21 @@ create :: Common.Name -- The name of the section list
        -> Navigation
 create name lr' dimAttrs kb =
   let showAllVersions = False
+      secList = replaceLR (filterVisible showAllVersions) lr Nothing
       keyInfo = KeyInfo.create kb
+      cmenu = ContextMenu.create kb current_element
+      cmenuTitle = ContextMenu.mkTitle current_element
+      Just (_, current_element) = SectionList.sectionListSelectedElement secList
       lr = NE.toList lr'
   in Navigation
-    { _sectionList = replaceLR (filterVisible showAllVersions) lr Nothing
+    { _sectionList = secList
     , _listResult = lr
     , _showAllVersions = showAllVersions
     , _attrMap = dimAttrs
     , _appKeys = kb
     , _overlay = Nothing
     , _keyInfo = (BasicOverlay keyInfo [bQuit kb] (Common.frontwardLayer "Key Actions"))
+    , _contextMenu = BasicOverlay cmenu [bQuit kb] (Common.frontwardLayer cmenuTitle)
     }
 
 instance BaseWidget Common.Name Navigation where
@@ -225,26 +232,24 @@ keyHandlers KeyBindings {..} =
   , (bUp, const "Up", Common.zoom sectionList SectionList.moveUp)
   , (bDown, const "Down", Common.zoom sectionList SectionList.moveDown)
   , (KeyCombination (Vty.KChar 'h') [], const "help", overlay ?= Some (IsSubWidget keyInfo))
-  , (KeyCombination Vty.KEnter [], const "advance options", pure () )
+  , (KeyCombination Vty.KEnter [], const "advance options", openContextMenuforTool )
   ]
  where
   withIOAction' m = do
     mLr <- Common.zoom sectionList (withIOAction m)
     mapM_ (\lr -> listResult .= lr) mLr
 
-  -- createMenuforTool = do
-  --   e <- use (appState % to sectionListSelectedElement)
-  --   case e of
-  --     Nothing     -> pure ()
-  --     Just (_, r) -> do
-  --       -- Create new ContextMenu, but maintain the state of Install/Compile
-  --       -- menus. This is especially useful in case the user made a typo and
-  --       -- would like to retry the action.
-  --       contextMenu .= ContextMenu.create r
-  --         (MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit})
-  --       -- Set mode to context
-  --       mode           .= ContextPanel
-  --   pure ()
+  openContextMenuforTool = do
+    e <- use (sectionList % to SectionList.sectionListSelectedElement)
+    case e of
+      Nothing     -> pure ()
+      Just (_, r) -> do
+        -- Update the ListResult of ContextMenu, but maintain the state of Install/Compile
+        -- menus. This is especially useful in case the user made a typo and
+        -- would like to retry the action.
+        contextMenu % overlayLayer .= Common.frontwardLayer (ContextMenu.mkTitle r)
+        contextMenu % innerWidget % ContextMenu.listResult .= r
+        overlay ?= Some (IsSubWidget contextMenu)
 
   hideShowHandler = do
     Common.zoom showAllVersions $ Brick.modify not

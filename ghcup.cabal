@@ -383,6 +383,7 @@ library ghcup-tui
     GHCup.Brick.Actions
     GHCup.Brick.App
     GHCup.Brick.App.Common
+    GHCup.Brick.App.ContextMenu
     GHCup.Brick.App.Navigation
     GHCup.Brick.App.KeyInfo
     GHCup.Brick.App.Tutorial
