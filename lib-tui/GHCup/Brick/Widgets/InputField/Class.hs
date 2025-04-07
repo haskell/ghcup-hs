@@ -23,20 +23,22 @@ import GHC.Generics ((:*:)(..), K1(..), M1(..), from, to, Generic, Rep)
 
 -- | An error message
 type ErrorMessage = T.Text
+type HelpMessage = T.Text
 
 class (BaseWidget n a) => InputField n a | a -> n where
+  drawInputField :: Bool -> (Widget n -> Widget n) -> a -> Widget n
   getLabel :: a -> (n, T.Text)
 
 class GInputFields n a | a -> n where
   getLabels :: a p -> [(n, T.Text)]
-  gDraw :: a p -> [Widget n]
+  gDrawInputFields :: n -> (Bool -> Widget n -> Widget n) -> a p -> [Widget n]
   gHandleEvent :: n -> a p -> BrickEvent n () -> EventM n (a p) (a p, Maybe HandleEventResult)
   gHasOverlay :: a p -> Maybe (Some (IsSubWidget n (a p)))
   gCloseOverlay :: EventM n (a p) (a p)
 
 instance (GInputFields n f, GInputFields n g, Eq n) => GInputFields n (f :*: g) where
   getLabels (x :*: y) = getLabels x ++ getLabels y
-  gDraw (x :*: y) = gDraw x ++ gDraw y
+  gDrawInputFields n f (x :*: y) = gDrawInputFields n f x ++ gDrawInputFields n f y
   gHandleEvent n (x :*: y) ev = do
     (_, (x', res1)) <- Brick.nestEventM x $ gHandleEvent n x ev
     (_, (y', res2)) <- Brick.nestEventM y $ gHandleEvent n y ev
@@ -54,7 +56,9 @@ instance (GInputFields n f, GInputFields n g, Eq n) => GInputFields n (f :*: g) 
 
 instance (InputField n a, Eq n) => GInputFields n (K1 i a) where
   getLabels (K1 x) = [getLabel x]
-  gDraw (K1 x) = [draw x]
+  gDrawInputFields n f (K1 x) =
+    let focused = n == fst (getLabel x)
+    in [drawInputField focused (f focused) x]
   gHandleEvent n (K1 x) ev = if fst (getLabel x) == n
     then do
       (x', res) <- Brick.nestEventM x $ handleEvent ev
@@ -70,7 +74,7 @@ instance (InputField n a, Eq n) => GInputFields n (K1 i a) where
 
 instance (GInputFields n a, Eq n) => GInputFields n (M1 i t a) where
   getLabels (M1 x) = getLabels x
-  gDraw (M1 x) = gDraw x
+  gDrawInputFields n f (M1 x) = gDrawInputFields n f x
   gHandleEvent n (M1 x) ev = do
     (_, (x', res)) <- Brick.nestEventM x $ gHandleEvent n x ev
     pure (M1 x', res)
