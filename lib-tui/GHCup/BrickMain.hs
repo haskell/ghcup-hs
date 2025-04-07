@@ -23,12 +23,9 @@ import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.App as BrickApp
+import qualified GHCup.Brick.App.Navigation as Navigation
+import qualified GHCup.Brick.Widgets.SectionList as SectionList
 import qualified GHCup.Brick.Attributes as Attributes
-import qualified GHCup.Brick.BrickState as AppState
-import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
-import qualified GHCup.Brick.Widgets.SectionList as Navigation
-import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
-import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
 import qualified Brick
 import qualified Graphics.Vty as Vty
@@ -40,7 +37,6 @@ import           Prelude                 hiding ( appendFile )
 import System.Exit ( ExitCode(ExitFailure), exitWith )
 
 import qualified Data.Text                     as T
-import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
 
 
 
@@ -52,9 +48,10 @@ brickMain s = do
   eAppData <- Actions.getAppData (Just $ ghcupInfo s)
   case eAppData of
     Right ad -> do
-      let initial_list = Actions.constructList ad Common.defaultAppSettings Nothing
-          current_element = Navigation.sectionListSelectedElement initial_list
-          exit_key =
+      let nav_widget = Navigation.create Common.AllTools ad
+                  (Attributes.dimAttributes $ noColor $ settings s) (keyBindings s)
+          current_element = SectionList.sectionListSelectedElement (Navigation._sectionList nav_widget)
+          menu_kb =
             let KeyBindings {..} = keyBindings s
             in MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit}
       case current_element of
@@ -65,20 +62,9 @@ brickMain s = do
           let initapp =
                 BrickApp.app
                   (Attributes.defaultAttributes $ noColor $ settings s)
-                  (Attributes.dimAttributes $ noColor $ settings s)
-              installedGHCs = fmap lVer $
-                filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) (Common._lr ad)
-              initstate =
-                AppState.BrickState ad
-                      Common.defaultAppSettings
-                      initial_list
-                      (ContextMenu.create e exit_key)
-                      (AdvanceInstall.create exit_key)
-                      (CompileGHC.create exit_key installedGHCs)
-                      (CompileHLS.create exit_key installedGHCs)
-                      (keyBindings s)
-                      Common.Navigation
-          in Brick.defaultMain initapp initstate
+              -- installedGHCs = fmap lVer $
+              --   filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) (Common._lr ad)
+          in Brick.defaultMain initapp nav_widget
           $> ()
     Left e -> do
       flip runReaderT s $ logError $ "Error building app state: " <> T.pack (show e)

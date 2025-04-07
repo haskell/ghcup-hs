@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module GHCup.Brick.App.Navigation where
@@ -17,6 +18,7 @@ import GHCup.Types
     ( GHCTargetVersion(GHCTargetVersion),
       Tool(..),
       Tag(..),
+      KeyBindings(..),
       KeyCombination (KeyCombination),
       tVerToText,
       tagToString )
@@ -40,10 +42,11 @@ import Control.Monad.Reader
 import Data.Some
 import Data.Vector ( Vector )
 import qualified Graphics.Vty as Vty
-import Optics (Lens', (^.), (%))
+import Optics (Lens', use, (^.), (%))
 import Optics.TH (makeLenses)
+import Optics.State.Operators ((.=))
 
-import           Data.List ( intercalate, sort )
+import           Data.List ( intercalate, sort, find )
 import           Data.Maybe ( mapMaybe )
 import           Data.Vector ( Vector)
 import           Data.Versions ( prettyPVP, prettyVer )
@@ -56,29 +59,49 @@ data Navigation = Navigation
   , _listResult    :: [ListResult]
   , _showAllVersions :: Bool
   , _attrMap :: AttrMap
+  , _appKeys :: KeyBindings
   }
 
 makeLenses ''Navigation
 
 -- | How to create a navigation widget
-create :: Common.Name                         -- The name of the section list
-       -> [(Common.Name, Vector ListResult)]  -- a list of tuples (section name, collection of elements)
-       -> Int                                 -- The height of each item in a list. Commonly 1
+create :: Common.Name -- The name of the section list
+       -> [ListResult]
        -> AttrMap
+       -> KeyBindings
        -> Navigation
-create name elements height dimAttrs =
-  let
+create name lr dimAttrs kb =
+  let showAllVersions = False
   in Navigation
-    { _sectionList = SectionList.sectionList name elements height
-    , _listResult = []
-    , _showAllVersions = False
+    { _sectionList = replaceLR (filterVisible showAllVersions) lr Nothing
+    , _listResult = lr
+    , _showAllVersions = showAllVersions
     , _attrMap = dimAttrs
+    , _appKeys = kb
     }
 
 instance BaseWidget Common.Name Navigation where
-  draw (Navigation {..}) = drawNav _attrMap _sectionList
+  draw (Navigation {..}) =
+    let
+      footer = Brick.withAttr Attributes.helpAttr
+        . Brick.txtWrap
+        . T.pack
+        . foldr1 (\x y -> x <> "  " <> y)
+        . fmap (\(KeyCombination key mods, pretty_setting, _)
+                    -> intercalate "+" (Common.showKey key : (Common.showMod <$> mods)) <> ":" <> pretty_setting _showAllVersions
+               )
+        $ keyHandlers (_appKeys)
+    in drawNav _attrMap _sectionList <=> footer
 
   handleEvent ev = do
+    kb <- use appKeys
+    let listHandler = Common.zoom sectionList $ SectionList.handleGenericListEvent ev
+    case ev of
+      (VtyEvent (Vty.EvKey key mods)) ->
+        case find (\(key', _, _) -> key' == KeyCombination key mods) (keyHandlers kb) of
+          Just (_, _, handler) -> handler
+          Nothing -> listHandler
+      _ -> listHandler
     pure Nothing
 
 
@@ -168,3 +191,50 @@ drawNav dimAttrs section_list
             Just d  -> [Brick.withAttr Attributes.dayAttr $ Brick.str (show d)])
 
   minHSize s' = Brick.hLimit s' . Brick.vLimit 1 . (<+> Brick.fill ' ')
+
+keyHandlers :: KeyBindings
+            -> [ ( KeyCombination
+                 , Bool -> String
+                 , Brick.EventM Common.Name Navigation ()
+                 )
+               ]
+keyHandlers KeyBindings {..} =
+  [ (bQuit, const "Quit"     , Brick.halt)
+  , (bInstall, const "Install"  , withIOAction' install')
+  , (bUninstall, const "Uninstall", withIOAction' del')
+  , (bSet, const "Set"      , withIOAction' set')
+  , (bChangelog, const "ChangeLog", withIOAction' changelog')
+  , ( bShowAllVersions
+    , \showAllVersions ->
+       if showAllVersions then "Don't show all versions" else "Show all versions"
+    , hideShowHandler
+    )
+  , (bUp, const "Up", Common.zoom sectionList SectionList.moveUp)
+  , (bDown, const "Down", Common.zoom sectionList SectionList.moveDown)
+  -- , (KeyCombination (Vty.KChar 'h') [], const "help", mode .= KeyInfo)
+  , (KeyCombination Vty.KEnter [], const "advance options", pure () )
+  ]
+ where
+  withIOAction' m = do
+    mLr <- Common.zoom sectionList (withIOAction m)
+    mapM_ (\lr -> listResult .= lr) mLr
+
+  -- createMenuforTool = do
+  --   e <- use (appState % to sectionListSelectedElement)
+  --   case e of
+  --     Nothing     -> pure ()
+  --     Just (_, r) -> do
+  --       -- Create new ContextMenu, but maintain the state of Install/Compile
+  --       -- menus. This is especially useful in case the user made a typo and
+  --       -- would like to retry the action.
+  --       contextMenu .= ContextMenu.create r
+  --         (MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit})
+  --       -- Set mode to context
+  --       mode           .= ContextPanel
+  --   pure ()
+
+  hideShowHandler = do
+    Common.zoom showAllVersions $ Brick.modify not
+    b <- use showAllVersions
+    lr <- use listResult
+    Common.zoom sectionList $ Brick.modify (replaceLR (filterVisible b) lr . Just)

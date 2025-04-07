@@ -97,16 +97,16 @@ This module defines the IO actions we can execute within the Brick App:
 
 -}
 
--- | Update app data and list internal state based on new evidence.
--- This synchronises @NavigationList@ with @BrickData@
--- and @BrickSettings@.
-updateList :: BrickData -> BrickState -> BrickState
-updateList appD bst =
-  let newInternalState = constructList appD (bst ^. appSettings) (Just (bst ^. appState))
-  in  bst
-        & appState .~ newInternalState
-        & appData .~ appD
-        & mode .~ Navigation
+-- -- | Update app data and list internal state based on new evidence.
+-- -- This synchronises @NavigationList@ with @BrickData@
+-- -- and @BrickSettings@.
+-- updateList :: BrickData -> BrickState -> BrickState
+-- updateList appD bst =
+--   let newInternalState = constructList appD (bst ^. appSettings) (Just (bst ^. appState))
+--   in  bst
+--         & appState .~ newInternalState
+--         & appData .~ appD
+--         & mode .~ Navigation
 
 constructList :: BrickData
               -> BrickSettings
@@ -164,13 +164,13 @@ filterVisible v e | lInstalled e = True
 -- IO action returns a Left value, then it's thrown as userError.
 withIOAction :: (Ord n, Eq n)
              => ( (Int, ListResult) -> ReaderT AppState IO (Either String a))
-             -> Brick.EventM n BrickState ()
+             -> Brick.EventM n NavigationList (Maybe [ListResult])
 withIOAction action = do
-  as <- Brick.get
-  case sectionListSelectedElement (view appState as) of
-    Nothing      -> pure ()
+  nl <- Brick.get
+  case sectionListSelectedElement nl of
+    Nothing      -> pure Nothing
     Just (curr_ix, e) -> do
-      Brick.suspendAndResume $ do
+      Brick.suspendAndResume' $ do
         settings <- readIORef settings'
         flip runReaderT settings $ action (curr_ix, e) >>= \case
           Left  err -> liftIO $ putStrLn ("Error: " <> err)
@@ -179,7 +179,7 @@ withIOAction action = do
           Right data' -> do
             putStrLn "Press enter to continue"
             _ <- getLine
-            pure (updateList data' as)
+            pure $ Just data'
           Left err -> throwIO $ userError err
 
 installWithOptions :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
@@ -728,7 +728,7 @@ getGHCupInfo = do
 
 
 getAppData :: Maybe GHCupInfo
-           -> IO (Either String BrickData)
+           -> IO (Either String [ListResult])
 getAppData mgi = runExceptT $ do
   r <- ExceptT $ maybe getGHCupInfo (pure . Right) mgi
   liftIO $ modifyIORef settings' (\s -> s { ghcupInfo = r })
@@ -736,54 +736,6 @@ getAppData mgi = runExceptT $ do
 
   flip runReaderT settings $ do
     lV <- listVersions Nothing [] False True (Nothing, Nothing)
-    pure $ BrickData (reverse lV)
+    pure $ reverse lV
 
 --
-
-keyHandlers :: KeyBindings
-            -> [ ( KeyCombination
-                 , BrickSettings -> String
-                 , Brick.EventM Name BrickState ()
-                 )
-               ]
-keyHandlers KeyBindings {..} =
-  [ (bQuit, const "Quit"     , Brick.halt)
-  , (bInstall, const "Install"  , withIOAction install')
-  , (bUninstall, const "Uninstall", withIOAction del')
-  , (bSet, const "Set"      , withIOAction set')
-  , (bChangelog, const "ChangeLog", withIOAction changelog')
-  , ( bShowAllVersions
-    , \BrickSettings {..} ->
-       if _showAllVersions then "Don't show all versions" else "Show all versions"
-    , hideShowHandler' (not . _showAllVersions)
-    )
-  , (bUp, const "Up", Common.zoom appState moveUp)
-  , (bDown, const "Down", Common.zoom appState moveDown)
-  , (KeyCombination (Vty.KChar 'h') [], const "help", mode .= KeyInfo)
-  , (KeyCombination Vty.KEnter [], const "advance options", createMenuforTool )
-  ]
- where
-  createMenuforTool = do
-    e <- use (appState % to sectionListSelectedElement)
-    case e of
-      Nothing     -> pure ()
-      Just (_, r) -> do
-        -- Create new ContextMenu, but maintain the state of Install/Compile
-        -- menus. This is especially useful in case the user made a typo and
-        -- would like to retry the action.
-        contextMenu .= ContextMenu.create r
-          (MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit})
-        -- Set mode to context
-        mode           .= ContextPanel
-    pure ()
-
-  --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
-  hideShowHandler' f = do
-    app_settings <- use appSettings
-    let
-      vers = f app_settings
-      newAppSettings = app_settings & Common.showAllVersions .~ vers
-    ad <- use appData
-    current_app_state <- use appState
-    appSettings .= newAppSettings
-    appState    .= constructList ad newAppSettings (Just current_app_state)
