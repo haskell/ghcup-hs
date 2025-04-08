@@ -71,7 +71,21 @@ instance (Ord n, Show n) => BaseWidget n (EditInput n a) where
 
 instance (Ord n, Show n) => InputField n (EditInput n a) where
   getLabel e = (_name e, _label e)
-  drawInputField focus f e = Brick.txt $ T.unlines $ Edit.getEditContents $ _editor $ _innerWidget $ _editInputOverlay e
+  drawInputField focus f (EditInput {..}) =
+    let
+      borderBox w = f (Brick.vLimit 1 $ Border.vBorder <+> Brick.padRight Brick.Max w <+> Border.vBorder)
+      editorContents = T.unlines $ Edit.getEditContents edi
+      edi = _editor $ _innerWidget _editInputOverlay
+      isEditorEmpty = Edit.getEditContents edi == [mempty]
+      help = (_helpMessage $ _innerWidget _editInputOverlay)
+    in borderBox $ case (_validator $ _innerWidget _editInputOverlay) editorContents of
+      Right _
+        | isEditorEmpty -> Common.renderAsHelpMsg help
+        | otherwise -> Brick.txt $ editorContents
+      Left errMsg
+        | focus && isEditorEmpty -> Common.renderAsHelpMsg help
+        | focus -> Brick.txt $ editorContents
+        | otherwise -> Common.renderAsErrMsg errMsg
 
 instance (Ord n, Show n) => BaseWidget n (EditInputOverlay n a) where
   draw e = Brick.vBox $
