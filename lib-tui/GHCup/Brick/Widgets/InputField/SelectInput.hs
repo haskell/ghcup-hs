@@ -45,12 +45,12 @@ data SelectInput n i a = SelectInput
   }
 
 data SelectInputOverlay n i a = SelectInputOverlay
-  { _items :: (NonEmpty (Int, (i, Bool)), Bool) -- ^ All items along with their selected state
+  { _items :: ([(Int, (i, Bool))], Bool) -- ^ All items along with their selected state
                                                           -- And Bool to indicate if editable field is selected
   , _editInput :: Maybe (EditInput.EditInput n a)  -- ^ Editable field
   , _focusRing :: F.FocusRing Int                 -- ^ Focus ring using integeral values assigned to each item
   , _showItem :: (i -> T.Text)
-  , _update :: (Int -> (NonEmpty (Int, (i, Bool)), Bool) -> ((NonEmpty (Int, (i, Bool))), Bool))
+  , _update :: (Int -> ([(Int, (i, Bool))], Bool) -> (([(Int, (i, Bool))]), Bool))
   , _menuKeys :: Common.MenuKeyBindings
   , _viewportName :: n
   }
@@ -73,9 +73,9 @@ createSelectInput name label items showItem title helpMsg kb =
   where
     overlay = SelectInputOverlay initState Nothing (F.focusRing [1.. totalRows]) showItem singleSelect kb name
     totalRows = length items
-    initState = (NE.zip (1 NE.:| [2..]) $ fmap (,False) items, False)
+    initState = (zip [1..] $ fmap (,False) $ NE.toList items, False)
 
-    singleSelect :: Int -> (NonEmpty (Int, (i, Bool)), a) -> (NonEmpty (Int, (i, Bool)), a)
+    singleSelect :: Int -> ([(Int, (i, Bool))], a) -> ([(Int, (i, Bool))], a)
     singleSelect ix = over _1 $ fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False)))
 
 createMultiSelectInput :: (Eq n, Show n)
@@ -94,16 +94,16 @@ createMultiSelectInput name label items showItem title helpMsg kb =
   where
     overlay = SelectInputOverlay initState Nothing (F.focusRing [1.. totalRows]) showItem multiSelect kb name
     totalRows = length items
-    initState = (NE.zip (1 NE.:| [2..]) $ fmap (,False) items, False)
+    initState = (zip [1..] $ fmap (,False) $ NE.toList items, False)
 
-    multiSelect :: Int -> (NonEmpty (Int, (i, Bool)), a) -> (NonEmpty (Int, (i, Bool)), a)
+    multiSelect :: Int -> ([(Int, (i, Bool))], a) -> ([(Int, (i, Bool))], a)
     multiSelect ix = over _1 $ fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, not b)) else (ix', (i, b)))
 
 createSelectInputWithEditable :: (Eq n, Show n)
   => n
   -> n
   -> T.Text
-  -> NonEmpty i
+  -> [i]
   -> (i -> T.Text)
   -> (T.Text -> Either T.Text a)
   -> T.Text
@@ -117,11 +117,11 @@ createSelectInputWithEditable name editName label items showItem validator title
   where
     overlay = SelectInputOverlay initState (Just editInp) (F.focusRing [1..totalRows]) showItem singleSelect kb name
     totalRows = length items + 1
-    initState = (NE.zip (1 NE.:| [2..]) $ fmap (,False) items, False)
+    initState = (zip [1..] $ fmap (,False) $ items, False)
 
     editInp = EditInput.create editName label helpMsg validator ""
 
-    singleSelect :: Int -> (NonEmpty (Int, (i, Bool)), Bool) -> (NonEmpty (Int, (i, Bool)), Bool)
+    singleSelect :: Int -> ([(Int, (i, Bool))], Bool) -> ([(Int, (i, Bool))], Bool)
     singleSelect ix (ne, a) = (fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False))) ne, ix == length ne + 1)
 
 instance (Ord n, Show n) => BaseWidget n (SelectInput n i a) where
@@ -155,7 +155,7 @@ instance (Ord n, Show n) => BaseWidget n (SelectInputOverlay n i a) where
       -- , case errMsg of Invalid msg -> renderAsErrMsg msg; _ -> Brick.emptyWidget
       , Brick.vLimit (totalRows) $ Brick.withVScrollBars Brick.OnRight
           $ Brick.viewport _viewportName Brick.Vertical
-          $ Brick.vBox $ mEditableField ++ (NE.toList $ fmap (mkSelectRow focused) (fst _items))
+          $ Brick.vBox $ mEditableField ++ (fmap (mkSelectRow focused) (fst _items))
       ]
     where
       focused = fromMaybe 1 $ F.focusGetCurrent _focusRing
@@ -212,7 +212,7 @@ selectInputOverlayEditInputJust = editInput % lens (\(Just v) -> v) (\_ v -> Jus
 
 getSelection :: SelectInputOverlay n i a -> ([i], Maybe (Either ErrorMessage T.Text))
 getSelection (SelectInputOverlay {..}) =
-  (map fst . filter snd . map snd . NE.toList $ fst _items
+  (map fst . filter snd . map snd $ fst _items
   , f (snd _items,  _editInput))
   where
     f (True, Just edi) = Just $ EditInput.editInputText edi
