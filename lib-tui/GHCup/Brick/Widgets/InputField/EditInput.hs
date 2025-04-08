@@ -46,16 +46,21 @@ data EditInputOverlay n a = EditInputOverlay
 
 concat <$> mapM makeLenses [''EditInputOverlay, ''EditInput]
 
-createEditInput :: (Eq n, Show n)
+create :: (Eq n, Show n)
   => n
   -> T.Text
   -> HelpMessage
   -> (T.Text -> Either T.Text a)
   -> T.Text
   -> EditInput n a
-createEditInput name label helpMsg validator initVal =
+create name label helpMsg validator initVal =
   EditInput name label Nothing
     (BasicOverlay (EditInputOverlay (Edit.editor name (Just 1) initVal) validator helpMsg) [KeyCombination Vty.KEnter []] (Common.frontwardLayer label))
+
+editInputText :: EditInput n a -> Either ErrorMessage T.Text
+editInputText e' = either Left (const $ Right editorContents) $ _validator e editorContents
+  where editorContents = T.unlines $ Edit.getEditContents $ _editor e
+        e = _innerWidget $ _editInputOverlay e'
 
 instance (Ord n, Show n) => BaseWidget n (EditInput n a) where
   draw = const $ Brick.txt "EditInput"
