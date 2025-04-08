@@ -60,13 +60,13 @@ concat <$> mapM makeLenses [''SelectInputOverlay, ''SelectInput]
 createSelectInput :: (Eq n, Show n)
   => n
   -> T.Text
+  -> HelpMessage
   -> NonEmpty i
   -> (i -> T.Text)
   -> T.Text
-  -> HelpMessage
   -> Common.MenuKeyBindings
   -> SelectInput n i ()
-createSelectInput name label items showItem title helpMsg kb =
+createSelectInput name label helpMsg items showItem title kb =
   SelectInput name Nothing
   (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer title))
   title helpMsg
@@ -81,13 +81,13 @@ createSelectInput name label items showItem title helpMsg kb =
 createMultiSelectInput :: (Eq n, Show n)
   => n
   -> T.Text
+  -> HelpMessage
   -> NonEmpty i
   -> (i -> T.Text)
   -> T.Text
-  -> HelpMessage
   -> Common.MenuKeyBindings
   -> SelectInput n i ()
-createMultiSelectInput name label items showItem title helpMsg kb =
+createMultiSelectInput name label helpMsg items showItem title kb =
   SelectInput name Nothing
   (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer title))
   title helpMsg
@@ -103,14 +103,14 @@ createSelectInputWithEditable :: (Eq n, Show n)
   => n
   -> n
   -> T.Text
+  -> HelpMessage
   -> [i]
   -> (i -> T.Text)
-  -> (T.Text -> Either T.Text a)
+  -> (T.Text -> Either ErrorMessage a)
   -> T.Text
-  -> HelpMessage
   -> Common.MenuKeyBindings
   -> SelectInput n i a
-createSelectInputWithEditable name editName label items showItem validator title helpMsg kb =
+createSelectInputWithEditable name editName label helpMsg items showItem validator title kb =
   SelectInput name Nothing
   (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer title))
   title helpMsg
@@ -125,15 +125,7 @@ createSelectInputWithEditable name editName label items showItem validator title
     singleSelect ix (ne, a) = (fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False))) ne, ix == length ne + 1)
 
 instance (Ord n, Show n) => BaseWidget n (SelectInput n i a) where
-  draw (SelectInput {..}) =
-    let showItem = _showItem $ _innerWidget $ _selectInputOverlay
-    in case getSelection (_innerWidget $ _selectInputOverlay) of
-         ([], Nothing) -> (Brick.padLeft (Brick.Pad 1) . Common.renderAsHelpMsg $ _helpMessage)
-         (_, Just (Left msg)) -> Brick.padLeft (Brick.Pad 1) $ Common.renderAsErrMsg msg
-         (xs, Just (Right txt)) -> Brick.hBox $
-           fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
-             ++ [Brick.txt txt]
-         (xs, Nothing) -> Brick.hBox $ fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
+  draw = const $ Brick.txt "SelectInput"
 
   handleEvent ev = do
     case ev of
@@ -146,13 +138,21 @@ instance (Ord n, Show n) => BaseWidget n (SelectInput n i a) where
 
 instance (Ord n, Show n) => InputField n (SelectInput n i a) where
   getLabel e = (_name e, _title e)
+  drawInputField focus f (SelectInput {..}) =
+    let showItem = _showItem $ _innerWidget $ _selectInputOverlay
+    in f $ case getSelection (_innerWidget $ _selectInputOverlay) of
+         ([], Nothing) -> (Brick.padLeft (Brick.Pad 1) . Common.renderAsHelpMsg $ _helpMessage)
+         (_, Just (Left msg)) -> Brick.padLeft (Brick.Pad 1) $ Common.renderAsErrMsg msg
+         (xs, Just (Right txt)) -> Brick.hBox $
+           fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
+             ++ [Brick.txt txt]
+         (xs, Nothing) -> Brick.hBox $ fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
 
 instance (Ord n, Show n) => BaseWidget n (SelectInputOverlay n i a) where
   draw (SelectInputOverlay {..}) = Brick.vBox $
       [ Brick.txt "Press "
         <+> Common.keyToWidget (_menuKeys ^. Common.mKbQuit)
         <+> Brick.txt " to go back, Press Enter to select"
-      -- , case errMsg of Invalid msg -> renderAsErrMsg msg; _ -> Brick.emptyWidget
       , Brick.vLimit (totalRows) $ Brick.withVScrollBars Brick.OnRight
           $ Brick.viewport _viewportName Brick.Vertical
           $ Brick.vBox $ mEditableField ++ (fmap (mkSelectRow focused) (fst _items))
