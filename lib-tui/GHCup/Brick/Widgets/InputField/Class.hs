@@ -31,7 +31,7 @@ class (BaseWidget n a) => InputField n a | a -> n where
 
 class GInputFields n a | a -> n where
   getLabels :: a p -> [(n, T.Text)]
-  gDrawInputFields :: n -> (Bool -> Widget n -> Widget n) -> a p -> [Widget n]
+  gDrawInputFields :: n -> (n -> Bool -> Widget n -> Widget n) -> a p -> [Widget n]
   gHandleEvent :: n -> a p -> BrickEvent n () -> EventM n (a p) (a p, Maybe HandleEventResult)
   gHasOverlay :: a p -> Maybe (Some (IsSubWidget n (a p)))
   gCloseOverlay :: EventM n (a p) (a p)
@@ -57,8 +57,9 @@ instance (GInputFields n f, GInputFields n g, Eq n) => GInputFields n (f :*: g) 
 instance (InputField n a, Eq n) => GInputFields n (K1 i a) where
   getLabels (K1 x) = [getLabel x]
   gDrawInputFields n f (K1 x) =
-    let focused = n == fst (getLabel x)
-    in [drawInputField focused (f focused) x]
+    let focused = n == name
+        name = fst (getLabel x)
+    in [drawInputField focused (f name focused) x]
   gHandleEvent n (K1 x) ev = if fst (getLabel x) == n
     then do
       (x', res) <- Brick.nestEventM x $ handleEvent ev
