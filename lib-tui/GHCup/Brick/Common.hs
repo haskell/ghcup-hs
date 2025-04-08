@@ -75,6 +75,14 @@ frontwardLayer layer_name =
       . Brick.withBorderStyle Border.unicode
       . Border.borderWithLabel (Brick.txt layer_name)
 
+smallerOverlayLayer :: T.Text -> Brick.Widget n -> Brick.Widget n
+smallerOverlayLayer layer_name =
+    Brick.centerLayer
+      . Brick.hLimitPercent 50
+      . Brick.vLimitPercent 65
+      . Brick.withBorderStyle Border.unicode
+      . Border.borderWithLabel (Brick.txt layer_name)
+
 -- | puts a cursor at the line beginning so It can be read by screen readers
 enableScreenReader :: n -> Brick.Widget n -> Brick.Widget n
 enableScreenReader n = Brick.putCursor n (Brick.Location (0,0))
