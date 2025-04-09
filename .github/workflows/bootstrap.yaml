@@ -38,6 +38,7 @@ jobs:
       - if: runner.os == 'Linux'
         name: Run bootstrap
         run: |
+          sudo apt-get update -y
           sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
           sh ./.github/scripts/bootstrap.sh
         env:

@@ -41,7 +41,7 @@ jobs:
       - if: runner.os == 'Linux'
         name: Install prerequisites
         run: |
-          sudo apt update
+          sudo apt update -y
           sudo apt install -y libbz2-dev
 
       - name: Install GHCup
