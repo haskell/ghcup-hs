@@ -18,12 +18,20 @@ package libyaml
 if os(linux)
   package ghcup
       flags: +yaml-streamly
-  constraints: xz -system-xz
-  if arch(x86_64) || arch(i386)
+  if arch(x86_64)
+    constraints: xz -system-xz
     flags: -tar
     executable-static: True
     package *
       ghc-options: -split-sections
+  elif arch(i386)
+    constraints: xz +system-xz
+    flags: -tar
+    executable-static: True
+    package *
+      ghc-options: -split-sections
+  elif arch(aarch64)
+    constraints: xz -system-xz
   elif arch(arm)
     flags: +tar
   else
