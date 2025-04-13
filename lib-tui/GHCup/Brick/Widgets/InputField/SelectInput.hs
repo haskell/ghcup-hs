@@ -140,10 +140,10 @@ instance (Ord n, Show n) => InputField n (SelectInput n i a) where
   getLabel e = (_name e, _title e)
   drawInputField focus f (SelectInput {..}) =
     let showItem = _showItem $ _innerWidget $ _selectInputOverlay
-    in f $ case getSelection (_innerWidget $ _selectInputOverlay) of
+    in f $ case getSelection' (_innerWidget $ _selectInputOverlay) of
          ([], Nothing) -> (Brick.padLeft (Brick.Pad 1) . Common.renderAsHelpMsg $ _helpMessage)
          (_, Just (Left msg)) -> Brick.padLeft (Brick.Pad 1) $ Common.renderAsErrMsg msg
-         (xs, Just (Right txt)) -> Brick.hBox $
+         (xs, Just (Right (_, txt))) -> Brick.hBox $
            fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
              ++ [Brick.txt txt]
          (xs, Nothing) -> Brick.hBox $ fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
@@ -210,10 +210,13 @@ instance (Ord n, Show n) => BaseWidget n (SelectInputOverlay n i a) where
 
 selectInputOverlayEditInputJust = editInput % lens (\(Just v) -> v) (\_ v -> Just v)
 
-getSelection :: SelectInputOverlay n i a -> ([i], Maybe (Either ErrorMessage T.Text))
-getSelection (SelectInputOverlay {..}) =
+getSelection :: SelectInput n i a -> ([i], Maybe (Either ErrorMessage (a, T.Text)))
+getSelection = getSelection' . _innerWidget . _selectInputOverlay
+
+getSelection' :: SelectInputOverlay n i a -> ([i], Maybe (Either ErrorMessage (a, T.Text)))
+getSelection' (SelectInputOverlay {..}) =
   (map fst . filter snd . map snd $ fst _items
   , f (snd _items,  _editInput))
   where
-    f (True, Just edi) = Just $ EditInput.editInputText edi
+    f (True, Just edi) = Just $ EditInput.editInputTextAndValue edi
     f _ = Nothing

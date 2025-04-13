@@ -57,10 +57,16 @@ create name label helpMsg validator initVal =
   EditInput name label Nothing
     (BasicOverlay (EditInputOverlay (Edit.editor name (Just 1) initVal) validator helpMsg) [KeyCombination Vty.KEnter []] (Common.frontwardLayer label))
 
-editInputText :: EditInput n a -> Either ErrorMessage T.Text
-editInputText e' = either Left (const $ Right editorContents) $ _validator e editorContents
+editInputTextAndValue :: EditInput n a -> Either ErrorMessage (a, T.Text)
+editInputTextAndValue e' = either Left (\a -> Right (a, editorContents)) $ _validator e editorContents
   where editorContents = T.unlines $ Edit.getEditContents $ _editor e
         e = _innerWidget $ _editInputOverlay e'
+
+editInputText :: EditInput n a -> Either ErrorMessage T.Text
+editInputText e = snd <$> editInputTextAndValue e
+
+editInputValue :: EditInput n a -> Either ErrorMessage a
+editInputValue e = fst <$> editInputTextAndValue e
 
 instance (Ord n, Show n) => BaseWidget n (EditInput n a) where
   draw = const $ Brick.txt "EditInput"
