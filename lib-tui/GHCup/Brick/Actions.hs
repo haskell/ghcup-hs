@@ -411,7 +411,9 @@ set' input@(_, ListResult {..}) = do
         HLS   -> liftE $ setHLS lVer SetHLSOnly Nothing $> ()
         Stack -> liftE $ setStack lVer $> ()
         GHCup -> do
-          promptAnswer <- getUserPromptResponse "Switching GHCup versions is not supported.\nDo you want to install the latest version? [Y/N]: "
+          promptAnswer <- getUserPromptResponse
+            "Switching GHCup versions is not supported.\nDo you want to install the latest version? [Y/n]: "
+            PromptYes
           case promptAnswer of
                 PromptYes -> do
                   void $ liftE $ upgradeGHCup Nothing False False
@@ -421,7 +423,7 @@ set' input@(_, ListResult {..}) = do
           VRight _ -> pure $ Right ()
           VLeft  e -> case e of
             (V (NotInstalled tool _)) -> do
-              promptAnswer <- getUserPromptResponse userPrompt
+              promptAnswer <- getUserPromptResponse userPrompt PromptYes
               case promptAnswer of
                 PromptYes -> do
                   res <- install' input
@@ -437,7 +439,7 @@ set' input@(_, ListResult {..}) = do
                   "This Version of "
                   <> show tool
                   <> " you are trying to set is not installed.\n"
-                  <> "Would you like to install it first? [Y/N]: "
+                  <> "Would you like to install it first? [Y/n]: "
 
             _ -> pure $ Left (prettyHFError e)
 
