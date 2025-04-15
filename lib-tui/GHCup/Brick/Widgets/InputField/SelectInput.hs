@@ -124,6 +124,31 @@ createSelectInputWithEditable name editName label helpMsg items showItem validat
     singleSelect :: Int -> ([(Int, (i, Bool))], Bool) -> ([(Int, (i, Bool))], Bool)
     singleSelect ix (ne, a) = (fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False))) ne, ix == length ne + 1)
 
+createMultiSelectInputWithEditable :: (Eq n, Show n)
+  => n
+  -> n
+  -> T.Text
+  -> HelpMessage
+  -> [i]
+  -> (i -> T.Text)
+  -> (T.Text -> Either ErrorMessage a)
+  -> T.Text
+  -> Common.MenuKeyBindings
+  -> SelectInput n i a
+createMultiSelectInputWithEditable name editName label helpMsg items showItem validator title kb =
+  SelectInput name Nothing
+  (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer title))
+  title helpMsg
+  where
+    overlay = SelectInputOverlay initState (Just editInp) (F.focusRing [1..totalRows]) showItem multiSelect kb name
+    totalRows = length items + 1
+    initState = (zip [1..] $ fmap (,False) $ items, False)
+
+    editInp = EditInput.create editName label helpMsg validator ""
+
+    multiSelect :: Int -> ([(Int, (i, Bool))], Bool) -> ([(Int, (i, Bool))], Bool)
+    multiSelect ix (ne, a) = (fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, b))) ne, ix == length ne + 1)
+
 instance (Ord n, Show n) => BaseWidget n (SelectInput n i a) where
   draw = const $ Brick.txt "SelectInput"
 
