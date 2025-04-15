@@ -9,6 +9,7 @@ module GHCup.Prompts
 where
 
 import Control.Monad.Reader
+import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import GHCup.Prelude.Logger
 import GHCup.Types.Optics
@@ -18,11 +19,14 @@ getUserPromptResponse :: ( HasLog env
                          , MonadReader env m
                          , MonadIO m)
                       => PromptQuestion
+                      -> PromptResponse -- ^ Default reponse to use if user doesn't type explicit response (e.g. just presses Return)
                       -> m PromptResponse
-
-getUserPromptResponse prompt = do
+getUserPromptResponse prompt defaultResponse = do
   logInfo prompt
   resp <- liftIO TIO.getLine
-  if resp `elem` ["YES", "yes", "y", "Y"]
-    then pure PromptYes
-    else pure PromptNo
+  pure $
+    if T.null resp
+      then defaultResponse
+      else if resp `elem` ["YES", "yes", "y", "Y"]
+        then PromptYes
+        else PromptNo
