@@ -2,9 +2,13 @@ import: cabal.project.common
 
 optimization: 2
 
-constraints: xz-clib >= 5.8.0.1
+constraints: xz-clib >= 5.8.1
 
-if !arch(i386)
+if arch(i386)
+  constraints: xz +system-xz
+  package xz
+    flags: +system-xz
+else
   constraints: xz -system-xz
   package xz
     flags: -system-xz
