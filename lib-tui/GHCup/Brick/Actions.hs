@@ -169,18 +169,24 @@ withIOAction action = do
   nl <- Brick.get
   case sectionListSelectedElement nl of
     Nothing      -> pure Nothing
-    Just (curr_ix, e) -> do
-      Brick.suspendAndResume' $ do
-        settings <- readIORef settings'
-        flip runReaderT settings $ action (curr_ix, e) >>= \case
-          Left  err -> liftIO $ putStrLn ("Error: " <> err)
-          Right _   -> liftIO $ putStrLn "Success"
-        getAppData Nothing >>= \case
-          Right data' -> do
-            putStrLn "Press enter to continue"
-            _ <- getLine
-            pure $ Just data'
-          Left err -> throwIO $ userError err
+    Just (curr_ix, e) -> suspendBrickAndRunAction $ action (curr_ix, e)
+
+suspendBrickAndRunAction :: (Ord n)
+  => ReaderT AppState IO (Either String a)
+  -> Brick.EventM n s (Maybe [ListResult])
+suspendBrickAndRunAction action = do
+  Brick.suspendAndResume' $ do
+    settings <- readIORef settings'
+    flip runReaderT settings $ action >>= \case
+      Left  err -> liftIO $ putStrLn ("Error: " <> err)
+      Right _   -> liftIO $ putStrLn "Success"
+    getAppData Nothing >>= \case
+      Right data' -> do
+        putStrLn "Press enter to continue"
+        _ <- getLine
+        pure $ Just data'
+      Left err -> throwIO $ userError err
+
 
 installWithOptions :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
          => AdvanceInstall.InstallOptions
