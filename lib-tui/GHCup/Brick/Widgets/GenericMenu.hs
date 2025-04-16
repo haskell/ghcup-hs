@@ -36,12 +36,13 @@ import Optics.State.Operators ((%=), (.=), (?=))
 import Optics.TH (makeLenses)
 
 
-data GenericMenu n fs a = GenericMenu
+data GenericMenu n fs s a = GenericMenu
   { _fields :: fs n
   , _focusRing :: F.FocusRing n
   , _getOutput :: fs n -> Either ErrorMessage a
   , _menuKeys :: Common.MenuKeyBindings
-  , _submitAction :: a -> EventM n (GenericMenu n fs a) ()
+  , _state :: s
+  , _submitAction :: s -> a -> EventM n (GenericMenu n fs s a) ()
   , _submitButton :: Button n
   , _name :: n
   , _title :: T.Text
@@ -59,16 +60,18 @@ mkGenericMenu :: (Generic (fs n), GInputFields n (Rep (fs n)))
   => n
   -> fs n
   -> (fs n -> Either ErrorMessage a)
-  -> (a -> EventM n (GenericMenu n fs a) ())
+  -> s
+  -> (s -> a -> EventM n (GenericMenu n fs s a) ())
   -> Common.MenuKeyBindings
   -> T.Text
   -> Button n
-  -> GenericMenu n fs a
-mkGenericMenu n fs getOutput action kb title submitButton = GenericMenu
+  -> GenericMenu n fs s a
+mkGenericMenu n fs getOutput initState action kb title submitButton = GenericMenu
   { _fields = fs
   , _focusRing = F.focusRing $ (_buttonName submitButton) : (map fst $ getLabels $ GHC.Generics.from fs)
   , _getOutput = getOutput
   , _menuKeys = kb
+  , _state = initState
   , _submitAction = action
   , _submitButton = submitButton
   , _name = n
@@ -76,7 +79,7 @@ mkGenericMenu n fs getOutput action kb title submitButton = GenericMenu
   }
 
 
-instance (Generic (fs n), GInputFields n (Rep (fs n)), Ord n, Show n) => BaseWidget n (GenericMenu n fs a) where
+instance (Generic (fs n), GInputFields n (Rep (fs n)), Ord n, Show n) => BaseWidget n (GenericMenu n fs s a) where
   draw (GenericMenu { .. }) = Brick.vBox
       [ Brick.vBox buttonWidgets
       , Common.separator
@@ -129,7 +132,7 @@ instance (Generic (fs n), GInputFields n (Rep (fs n)), Ord n, Show n) => BaseWid
             pure Nothing
       VtyEvent (Vty.EvKey Vty.KEnter [])
         | currentFocus == submitButtonName -> case _getOutput _fields of
-            Right v -> _submitAction v >> pure (Just CloseAllOverlays)
+            Right v -> _submitAction _state v >> pure (Just CloseAllOverlays)
             Left _ -> pure Nothing
       _ -> do
         (_, (newFields, res)) <- Brick.nestEventM gFields $ gHandleEvent currentFocus gFields ev
