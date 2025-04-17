@@ -179,6 +179,7 @@ instance (Ord n, Show n) => BaseWidget n (SelectInputOverlay n i a) where
       [ Brick.txt "Press "
         <+> Common.keyToWidget (_menuKeys ^. Common.mKbQuit)
         <+> Brick.txt " to go back, Press Enter to select"
+        <+> Brick.txt (if txtFieldFocused then ", Press e to edit" else "")
       , Brick.vLimit (totalRows) $ Brick.withVScrollBars Brick.OnRight
           $ Brick.viewport _viewportName Brick.Vertical
           $ Brick.vBox $ mEditableField ++ (fmap (mkSelectRow focused) (fst _items))
@@ -199,13 +200,14 @@ instance (Ord n, Show n) => BaseWidget n (SelectInputOverlay n i a) where
 
       mkEditTextRow focused e selected = (if focused then Brick.visible else id) $
         Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) m) <+> Brick.txt "] "
-          <+> if focused
-                 then Brick.txt "(Press e to edit, Enter to select)"
-                 else if Edit.getEditContents edi == [mempty]
-                   then Brick.txt "(Specify custom text value)"
-                   else draw e
-        where m = if selected then Brick.txt "*" else Brick.txt " "
-              edi = EditInput._editor $ _innerWidget $ EditInput._editInputOverlay e
+          <+> if Edit.getEditContents edi == [mempty]
+                then Common.renderAslabel "(Specify custom text value)" focused
+                else case EditInput.editInputText e of
+                     Left err -> Common.renderAsErrMsg err
+                     Right v -> Common.renderAslabel v focused
+        where
+          m = if selected then Brick.txt "*" else Brick.txt " "
+          edi = EditInput._editor $ _innerWidget $ EditInput._editInputOverlay e
 
   handleEvent ev = do
     focused <- use (focusRing % Optics.to F.focusGetCurrent)
@@ -232,7 +234,11 @@ instance (Ord n, Show n) => BaseWidget n (SelectInputOverlay n i a) where
     (SelectInputOverlay {..}) <- Brick.get
     case _editInput of
       Nothing -> pure ()
-      Just edi -> Common.zoom selectInputOverlayEditInputJust closeOverlay
+      Just edi -> do
+        Common.zoom selectInputOverlayEditInputJust closeOverlay
+        -- Also select the text field entry
+        let txtFieldRow = length (fst _items) + 1
+        items %= _update txtFieldRow
 
 -- Useful lens when we know the editInput is a Just value
 selectInputOverlayEditInputJust = editInput % lens (\(Just v) -> v) (\_ v -> Just v)
