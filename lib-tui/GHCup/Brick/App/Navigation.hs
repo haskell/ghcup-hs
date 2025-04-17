@@ -40,14 +40,15 @@ import           Brick.Widgets.Border.Style ( unicode )
 import           Brick.Widgets.Center ( center )
 import qualified Brick.Widgets.List as L
 
+import           Control.Exception.Safe (throwIO)
 import Control.Monad
 import Control.Monad.Reader
 import Data.Some
 import Data.Vector ( Vector )
 import qualified Graphics.Vty as Vty
-import Optics (Lens', use, to, (^.), (%))
+import Optics (Lens', use, to, (^.), (%), (&), (%~), (.~))
 import Optics.TH (makeLenses)
-import Optics.State.Operators ((.=), (?=))
+import Optics.State.Operators ((.=), (?=), (%=))
 
 import           Data.List ( intercalate, sort, find )
 import           Data.Maybe ( mapMaybe )
@@ -82,10 +83,12 @@ create name lr' dimAttrs kb =
   let showAllVersions = False
       secList = replaceLR (filterVisible showAllVersions) lr Nothing
       keyInfo = KeyInfo.create kb
-      cmenu = ContextMenu.create kb current_element
+      cmenu = ContextMenu.create kb current_element availableGHCs
       cmenuTitle = ContextMenu.mkTitle current_element
       Just (_, current_element) = SectionList.sectionListSelectedElement secList
       lr = NE.toList lr'
+      availableGHCs = fmap lVer $
+        filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) lr
   in Navigation
     { _sectionList = secList
     , _listResult = lr
@@ -96,6 +99,15 @@ create name lr' dimAttrs kb =
     , _keyInfo = (BasicOverlay keyInfo [bQuit kb] (Common.frontwardLayer "Key Actions"))
     , _contextMenu = BasicOverlay cmenu [bQuit kb] (Common.frontwardLayer cmenuTitle)
     }
+
+updateLR :: [ListResult] -> Navigation -> Navigation
+updateLR lr nav = nav
+  & sectionList %~ replaceLR (filterVisible $ _showAllVersions nav) lr . Just
+  & listResult .~ lr
+  & contextMenu % innerWidget %~ ContextMenu.updateAvailableGHCs availableGHCs
+  where
+      availableGHCs = fmap lVer $
+        filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) lr
 
 instance BaseWidget Common.Name Navigation where
   draw (Navigation {..}) =
@@ -122,7 +134,16 @@ instance BaseWidget Common.Name Navigation where
     pure Nothing
 
   hasOverlay = _overlay
-  closeOverlay = overlay .= Nothing
+  closeOverlay = do
+    -- Doing this everytime the overlay is closed is not ideal, but doing this
+    -- here avoids fair bit of complexity related to update of listResult after
+    -- some action inside an overlay
+    newLR <- liftIO $ (getAppData Nothing >>= \case
+      Right data' -> pure data'
+      Left err -> throwIO $ userError err)
+
+    Brick.modify (updateLR newLR)
+    overlay .= Nothing
 
 
 -- | How to draw the navigation widget
@@ -237,7 +258,7 @@ keyHandlers KeyBindings {..} =
  where
   withIOAction' m = do
     mLr <- Common.zoom sectionList (withIOAction m)
-    mapM_ (\lr -> listResult .= lr) mLr
+    mapM_ (Brick.modify . updateLR) mLr
 
   openContextMenuforTool = do
     e <- use (sectionList % to SectionList.sectionListSelectedElement)
@@ -248,7 +269,7 @@ keyHandlers KeyBindings {..} =
         -- menus. This is especially useful in case the user made a typo and
         -- would like to retry the action.
         contextMenu % overlayLayer .= Common.frontwardLayer (ContextMenu.mkTitle r)
-        contextMenu % innerWidget % ContextMenu.listResult .= r
+        contextMenu % innerWidget %= ContextMenu.updateListResult r
         overlay ?= Some (IsSubWidget contextMenu)
 
   hideShowHandler = do
