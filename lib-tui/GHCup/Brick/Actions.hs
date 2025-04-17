@@ -26,11 +26,7 @@ import           GHCup.Brick.App.Common (BrickData(..), BrickSettings(..), Name(
 import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.App.AdvanceInstallOptions as AdvanceInstall
 import qualified GHCup.Brick.Common as Common
-import           GHCup.Brick.BrickState
 import           GHCup.Brick.Widgets.SectionList
-import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
-import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
-import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
 
 import qualified Brick
 import qualified Brick.Widgets.List as L
@@ -78,7 +74,6 @@ import           Optics.Operators ((.~),(%~))
 import           Optics.Getter (view)
 import Optics.Optic ((%))
 import Optics ((^.), to)
-import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
 import Control.Concurrent (threadDelay)
 import qualified GHCup.GHC as GHC
 import qualified GHCup.Utils.Parsers as Utils
@@ -96,17 +91,6 @@ This module defines the IO actions we can execute within the Brick App:
  - Launch the Changelog
 
 -}
-
--- -- | Update app data and list internal state based on new evidence.
--- -- This synchronises @NavigationList@ with @BrickData@
--- -- and @BrickSettings@.
--- updateList :: BrickData -> BrickState -> BrickState
--- updateList appD bst =
---   let newInternalState = constructList appD (bst ^. appSettings) (Just (bst ^. appState))
---   in  bst
---         & appState .~ newInternalState
---         & appData .~ appD
---         & mode .~ Navigation
 
 constructList :: BrickData
               -> BrickSettings

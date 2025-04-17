@@ -25,7 +25,6 @@ import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.App.Navigation as Navigation
 import qualified GHCup.Brick.Widgets.BaseWidget as BaseWidget
 import qualified GHCup.Brick.Attributes as Attributes
-import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
 import qualified Brick
 import qualified Graphics.Vty as Vty
 
@@ -57,9 +56,6 @@ brickMain s = do
     Right (x:xs) -> do
       let nav_widget = Navigation.create Common.AllTools (x :| xs)
                   (Attributes.dimAttributes $ noColor $ settings s) (keyBindings s)
-          menu_kb =
-            let KeyBindings {..} = keyBindings s
-            in MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit}
       let initapp = brickApp (Attributes.defaultAttributes $ noColor $ settings s)
       Brick.defaultMain initapp nav_widget $> ()
 
