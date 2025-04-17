@@ -386,7 +386,6 @@ library ghcup-tui
     GHCup.Brick.Widgets.InputField.EditInput
     GHCup.Brick.Widgets.InputField.SelectInput
     GHCup.Brick.Actions
-    GHCup.Brick.App
     GHCup.Brick.App.Common
     GHCup.Brick.App.AdvanceInstallOptions
     GHCup.Brick.App.AdvanceInstallMenu

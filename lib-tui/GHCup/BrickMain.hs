@@ -22,15 +22,15 @@ import GHCup.Types
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.App.Common as Common
-import qualified GHCup.Brick.App as BrickApp
 import qualified GHCup.Brick.App.Navigation as Navigation
-import qualified GHCup.Brick.Widgets.SectionList as SectionList
+import qualified GHCup.Brick.Widgets.BaseWidget as BaseWidget
 import qualified GHCup.Brick.Attributes as Attributes
 import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
 import qualified Brick
 import qualified Graphics.Vty as Vty
 
-import Control.Monad.Reader ( ReaderT(runReaderT) )
+import Control.Monad
+import Control.Monad.Reader ( ReaderT(runReaderT), liftIO )
 import Data.Functor ( ($>) )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
 import           Data.IORef (writeIORef)
@@ -57,13 +57,25 @@ brickMain s = do
     Right (x:xs) -> do
       let nav_widget = Navigation.create Common.AllTools (x :| xs)
                   (Attributes.dimAttributes $ noColor $ settings s) (keyBindings s)
-          current_element = SectionList.sectionListSelectedElement (Navigation._sectionList nav_widget)
           menu_kb =
             let KeyBindings {..} = keyBindings s
             in MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit}
-      let initapp =
-            BrickApp.app
-              (Attributes.defaultAttributes $ noColor $ settings s)
-          -- installedGHCs = fmap lVer $
-          --   filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) (Common._lr ad)
+      let initapp = brickApp (Attributes.defaultAttributes $ noColor $ settings s)
       Brick.defaultMain initapp nav_widget $> ()
+
+brickApp :: Brick.AttrMap -> Brick.App Navigation.Navigation () Common.Name
+brickApp attrs =
+  Brick.App { appDraw         = BaseWidget.drawBaseWidget
+            , appHandleEvent  = void . BaseWidget.handleEventBaseWidget
+            , appStartEvent   = setupVtyMode
+            , appAttrMap      = const attrs
+            , appChooseCursor = Brick.showFirstCursor
+            }
+
+-- | Enable mouse mode if supported by the terminal
+setupVtyMode :: Brick.EventM Common.Name s ()
+setupVtyMode = do
+  vty <- Brick.getVtyHandle
+  let output = Vty.outputIface vty
+  when (Vty.supportsMode output Vty.Mouse) $
+      liftIO $ Vty.setMode output Vty.Mouse True
