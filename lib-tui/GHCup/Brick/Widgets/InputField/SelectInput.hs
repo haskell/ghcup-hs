@@ -26,13 +26,14 @@ import qualified Brick.Widgets.Border as Border
 import qualified Brick.Widgets.Edit as Edit
 
 import           Data.Maybe
+import           Data.List (find)
 import           Data.List.NonEmpty             ( NonEmpty (..) )
 import qualified Data.List.NonEmpty            as NE
 import Data.Some
 import qualified Data.Text                     as T
 
 import qualified Graphics.Vty as Vty
-import Optics (Lens', lens, to, over, use, _1, (^.), (%))
+import Optics (Lens', lens, to, over, use, _1, (^.), (%), (&), (%~), (.~))
 import Optics.State.Operators ((%=), (.=), (?=))
 import Optics.TH (makeLenses)
 
@@ -233,6 +234,7 @@ instance (Ord n, Show n) => BaseWidget n (SelectInputOverlay n i a) where
       Nothing -> pure ()
       Just edi -> Common.zoom selectInputOverlayEditInputJust closeOverlay
 
+-- Useful lens when we know the editInput is a Just value
 selectInputOverlayEditInputJust = editInput % lens (\(Just v) -> v) (\_ v -> Just v)
 
 getSelection :: SelectInput n i a -> ([i], Maybe (Either ErrorMessage (a, T.Text)))
@@ -245,3 +247,14 @@ getSelection' (SelectInputOverlay {..}) =
   where
     f (True, Just edi) = Just $ EditInput.editInputTextAndValue edi
     f _ = Nothing
+
+updateItems :: forall n i a . (Eq i) => [i] -> SelectInput n i a -> SelectInput n i a
+updateItems new s = s
+  & selectInputOverlay % innerWidget % items % _1 %~ selectFromOld
+  & selectInputOverlay % innerWidget % focusRing .~ F.focusRing [1..totalRows]
+  where
+    selectFromOld :: [(Int, (i, Bool))] -> [(Int, (i, Bool))]
+    selectFromOld old = zip [1..] $ fmap (\i -> (i, isSelected i)) new
+      where isSelected i = fromMaybe False $ fmap (snd . snd) $ find (\(_,(i', b)) -> i == i') old
+
+    totalRows = length new + (if isJust (s ^. selectInputOverlay % innerWidget % editInput) then 1 else 0)
