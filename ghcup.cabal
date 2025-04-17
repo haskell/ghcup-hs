@@ -380,9 +380,18 @@ library ghcup-tui
     GHCup.Brick.Widgets.Menus.AdvanceInstall
     GHCup.Brick.Widgets.Menus.CompileGHC
     GHCup.Brick.Widgets.Menus.CompileHLS
+    GHCup.Brick.Widgets.GenericMenu
+    GHCup.Brick.Widgets.InputField.Class
+    GHCup.Brick.Widgets.InputField.CheckBox
+    GHCup.Brick.Widgets.InputField.EditInput
+    GHCup.Brick.Widgets.InputField.SelectInput
     GHCup.Brick.Actions
     GHCup.Brick.App
     GHCup.Brick.App.Common
+    GHCup.Brick.App.AdvanceInstallOptions
+    GHCup.Brick.App.AdvanceInstallMenu
+    GHCup.Brick.App.CompileGHCMenu
+    GHCup.Brick.App.CompileHLSMenu
     GHCup.Brick.App.ContextMenu
     GHCup.Brick.App.Navigation
     GHCup.Brick.App.KeyInfo
