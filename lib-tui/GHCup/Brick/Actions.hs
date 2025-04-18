@@ -22,10 +22,8 @@ import           GHCup.Prelude ( decUTF8Safe, runBothE' )
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.Process
 import           GHCup.Prompts
-import           GHCup.Brick.App.Common (BrickData(..), BrickSettings(..), Name(..), Mode(..))
 import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.App.AdvanceInstallOptions as AdvanceInstall
-import qualified GHCup.Brick.Common as Common
 import           GHCup.Brick.Widgets.SectionList
 
 import qualified Brick
@@ -91,19 +89,11 @@ This module defines the IO actions we can execute within the Brick App:
 
 -}
 
-constructList :: BrickData
-              -> BrickSettings
-              -> Maybe NavigationList
-              -> NavigationList
-constructList appD settings =
-  replaceLR (filterVisible (_showAllVersions settings))
-            (_lr appD)
-
 -- | Focus on the tool section and the predicate which matches. If no result matches, focus on index 0
 selectBy :: Tool -> (ListResult -> Bool) -> NavigationList -> NavigationList
 selectBy tool predicate internal_state =
-  let new_focus = F.focusSetCurrent (Singular tool) (view sectionListFocusRingL internal_state)
-      tool_lens = sectionL (Singular tool)
+  let new_focus = F.focusSetCurrent (Common.Singular tool) (view sectionListFocusRingL internal_state)
+      tool_lens = sectionL (Common.Singular tool)
    in internal_state
         & sectionListFocusRingL .~ new_focus
         & tool_lens %~ L.listMoveTo 0            -- We move to 0 first
@@ -123,8 +113,8 @@ replaceLR :: (ListResult -> Bool)
           -> NavigationList
 replaceLR filterF list_result s =
   let oldElem = s >>= sectionListSelectedElement -- Maybe (Int, e)
-      newVec  =  [(Singular $ lTool (head g), V.fromList g) | g <- groupBy ((==) `on` lTool ) (filter filterF list_result)]
-      newSectionList = sectionList AllTools newVec 1
+      newVec  =  [(Common.Singular $ lTool (head g), V.fromList g) | g <- groupBy ((==) `on` lTool ) (filter filterF list_result)]
+      newSectionList = sectionList Common.AllTools newVec 1
   in case oldElem of
       Just (_, el) -> selectBy (lTool el) (toolEqual el) newSectionList
       Nothing -> selectLatest newSectionList

@@ -112,28 +112,3 @@ instance SectionList.ListItemSectionNameIndex Name where
   getListItemSectionNameIndex = \case
     ListItem tool ix -> Just (Singular tool, ix)
     _ -> Nothing
-
--- | Mode type. It helps to dispatch events to different handlers.
-data Mode = Navigation
-          | KeyInfo
-          | Tutorial
-          | ContextPanel
-          | AdvanceInstallPanel
-          | CompileGHCPanel
-          | CompileHLSPanel
-          deriving (Eq, Show, Ord)
-
-data BrickData = BrickData
-  { _lr    :: [ListResult]
-  }
-  deriving Show
-
-makeLenses ''BrickData
-
-data BrickSettings = BrickSettings { _showAllVersions :: Bool}
-  --deriving Show
-
-makeLenses ''BrickSettings
-
-defaultAppSettings :: BrickSettings
-defaultAppSettings = BrickSettings False
