@@ -19,6 +19,7 @@ import qualified GHCup.Brick.Widgets.SectionList as SectionList
 import GHCup.List ( ListResult(..) )
 import GHCup.Types
     ( GHCTargetVersion(GHCTargetVersion),
+      AppState(..),
       Tool(..),
       Tag(..),
       KeyBindings(..),
@@ -63,6 +64,7 @@ import qualified Data.Vector                   as V
 data Navigation = Navigation
   { _sectionList :: NavigationList
   , _listResult    :: [ListResult]
+  , _appState :: AppState
   , _showAllVersions :: Bool
   , _attrMap :: AttrMap
   , _appKeys :: KeyBindings
@@ -78,12 +80,13 @@ create :: Common.Name -- The name of the section list
        -> NonEmpty ListResult
        -> AttrMap
        -> KeyBindings
+       -> AppState
        -> Navigation
-create name lr' dimAttrs kb =
+create name lr' dimAttrs kb s =
   let showAllVersions = False
       secList = replaceLR (filterVisible showAllVersions) lr Nothing
       keyInfo = KeyInfo.create kb
-      cmenu = ContextMenu.create kb current_element availableGHCs
+      cmenu = ContextMenu.create kb current_element s availableGHCs
       cmenuTitle = ContextMenu.mkTitle current_element
       Just (_, current_element) = SectionList.sectionListSelectedElement secList
       lr = NE.toList lr'
@@ -92,6 +95,7 @@ create name lr' dimAttrs kb =
   in Navigation
     { _sectionList = secList
     , _listResult = lr
+    , _appState = s
     , _showAllVersions = showAllVersions
     , _attrMap = dimAttrs
     , _appKeys = kb
@@ -100,14 +104,28 @@ create name lr' dimAttrs kb =
     , _contextMenu = BasicOverlay cmenu [bQuit kb] (Common.frontwardLayer cmenuTitle)
     }
 
-updateLR :: [ListResult] -> Navigation -> Navigation
-updateLR lr nav = nav
-  & sectionList %~ replaceLR (filterVisible $ _showAllVersions nav) lr . Just
-  & listResult .~ lr
-  & contextMenu % innerWidget %~ ContextMenu.updateAvailableGHCs availableGHCs
+-- | This will parse the GHCupInfo again and recreate the list of tools
+-- This is necessary after an action like install, set, uninstall, compile etc
+updateNavigation :: Brick.EventM n Navigation ()
+updateNavigation = do
+  old <- Brick.get
+  new <- liftIO (updateAppState old)
+  Brick.put new
   where
-      availableGHCs = fmap lVer $
-        filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) lr
+  updateAppState :: Navigation -> IO Navigation
+  updateAppState nav = do
+    (newState, lr) <- ((liftIO (getUpdatedAppState (_appState nav))) >>= \case
+                    Left err -> throwIO $ userError err
+                    Right s -> pure s)
+
+    let availableGHCs = fmap lVer $
+          filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) lr
+
+    pure $ nav
+      & appState .~ newState
+      & sectionList %~ replaceLR (filterVisible $ _showAllVersions nav) lr . Just
+      & listResult .~ lr
+      & contextMenu % innerWidget %~ ContextMenu.updateStateAndAvailableGHCs newState availableGHCs
 
 instance BaseWidget Common.Name Navigation where
   draw (Navigation {..}) =
@@ -138,11 +156,7 @@ instance BaseWidget Common.Name Navigation where
     -- Doing this everytime the overlay is closed is not ideal, but doing this
     -- here avoids fair bit of complexity related to update of listResult after
     -- some action inside an overlay
-    newLR <- liftIO $ (getAppData Nothing >>= \case
-      Right data' -> pure data'
-      Left err -> throwIO $ userError err)
-
-    Brick.modify (updateLR newLR)
+    updateNavigation
     overlay .= Nothing
 
 
@@ -256,9 +270,13 @@ keyHandlers KeyBindings {..} =
   , (KeyCombination Vty.KEnter [], const "advance options", openContextMenuforTool )
   ]
  where
-  withIOAction' m = do
-    mLr <- Common.zoom sectionList (withIOAction m)
-    mapM_ (Brick.modify . updateLR) mLr
+  withIOAction' action = do
+    Navigation {..} <- Brick.get
+    case SectionList.sectionListSelectedElement _sectionList of
+      Nothing      -> pure ()
+      Just (curr_ix, e) -> do
+        suspendBrickAndRunAction _appState $ action (curr_ix, e)
+    updateNavigation
 
   openContextMenuforTool = do
     e <- use (sectionList % to SectionList.sectionListSelectedElement)

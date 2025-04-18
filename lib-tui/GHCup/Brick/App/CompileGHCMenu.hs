@@ -98,15 +98,15 @@ data CompileGHCOptions = CompileGHCOptions
 
 concat <$> mapM makeLenses [''CompileGHCMenuFields, ''CompileGHCOptions]
 
-type CompileGHCMenu = GenericMenu Common.Name CompileGHCMenuFields ListResult CompileGHCOptions
+type CompileGHCMenu = GenericMenu Common.Name CompileGHCMenuFields (AppState, ListResult) CompileGHCOptions
 
-create :: KeyBindings -> ListResult -> [Version] -> CompileGHCMenu
-create kb lr availableGHCs = mkGenericMenu
+create :: KeyBindings -> ListResult -> AppState -> [Version] -> CompileGHCMenu
+create kb lr s availableGHCs = mkGenericMenu
   Common.CompileGHCBox
   menuFields
   validateInputs
-  lr
-  (\lr opts -> void $ Actions.suspendBrickAndRunAction $ compileGHC opts lr)
+  (s, lr)
+  (\(s, lr) opts -> void $ Actions.suspendBrickAndRunAction s $ compileGHC opts lr)
   (Common.toMenuKeyBindings kb)
   "Compile GHC"
   (Button (Common.MenuElement Common.OkButton)

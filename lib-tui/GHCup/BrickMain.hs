@@ -15,10 +15,9 @@ This module contains the entrypoint for the brick application and nothing else.
 
 module GHCup.BrickMain where
 
-import GHCup.List ( ListResult (..))
 import GHCup.Types
-    ( Settings(noColor), Tool (GHC),
-      AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings(..) )
+    ( Settings(noColor),
+      AppState(settings, keyBindings, loggerConfig) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.App.Common as Common
@@ -32,30 +31,21 @@ import Control.Monad
 import Control.Monad.Reader ( ReaderT(runReaderT), liftIO )
 import Data.Functor ( ($>) )
 import           Data.List.NonEmpty             ( NonEmpty (..) )
-import           Data.IORef (writeIORef)
-import           Prelude                 hiding ( appendFile )
 import System.Exit ( ExitCode(ExitFailure), exitWith )
-
-import qualified Data.Text                     as T
-
 
 
 brickMain :: AppState
           -> IO ()
 brickMain s = do
-  writeIORef Actions.settings' s
-
-  eAppData <- Actions.getAppData (Just $ ghcupInfo s)
-  case eAppData of
-    Left e -> do
-      flip runReaderT s $ logError $ "Error building app state: " <> T.pack (show e)
+  ls <- Actions.getListResults s
+  case ls of
+    [] -> do
+      flip runReaderT s $ logError "Error building app state: empty [ListResult]"
       exitWith $ ExitFailure 2
-    Right [] -> do
-      flip runReaderT s $ logError "Error building app state: empty ResultList"
-      exitWith $ ExitFailure 2
-    Right (x:xs) -> do
+    (x:xs) -> do
       let nav_widget = Navigation.create Common.AllTools (x :| xs)
-                  (Attributes.dimAttributes $ noColor $ settings s) (keyBindings s)
+                       (Attributes.dimAttributes $ noColor $ settings s)
+                       (keyBindings s) s
       let initapp = brickApp (Attributes.defaultAttributes $ noColor $ settings s)
       Brick.defaultMain initapp nav_widget $> ()
 

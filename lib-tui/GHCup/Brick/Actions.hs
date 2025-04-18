@@ -45,7 +45,6 @@ import           Data.Functor
 import           Data.Function ( (&), on)
 import           Data.List
 import           Data.Maybe
-import           Data.IORef (IORef, readIORef, newIORef, modifyIORef)
 import           Data.Versions hiding (Lens')
 import           Data.Variant.Excepts
 import           Prelude                 hiding ( appendFile )
@@ -145,31 +144,16 @@ filterVisible v e | lInstalled e = True
                                   (Nightly `notElem` lTag e)
 
 -- | Suspend the current UI and run an IO action in terminal. If the
--- IO action returns a Left value, then it's thrown as userError.
-withIOAction :: (Ord n, Eq n)
-             => ( (Int, ListResult) -> ReaderT AppState IO (Either String a))
-             -> Brick.EventM n NavigationList (Maybe [ListResult])
-withIOAction action = do
-  nl <- Brick.get
-  case sectionListSelectedElement nl of
-    Nothing      -> pure Nothing
-    Just (curr_ix, e) -> suspendBrickAndRunAction $ action (curr_ix, e)
-
+-- IO action returns a Left value, then it is printed.
 suspendBrickAndRunAction :: (Ord n)
-  => ReaderT AppState IO (Either String a)
-  -> Brick.EventM n s (Maybe [ListResult])
-suspendBrickAndRunAction action = do
+  => AppState
+  -> ReaderT AppState IO (Either String a)
+  -> Brick.EventM n s ()
+suspendBrickAndRunAction s action = do
   Brick.suspendAndResume' $ do
-    settings <- readIORef settings'
-    flip runReaderT settings $ action >>= \case
+    flip runReaderT s $ action >>= \case
       Left  err -> liftIO $ putStrLn ("Error: " <> err)
       Right _   -> liftIO $ putStrLn "Success"
-    getAppData Nothing >>= \case
-      Right data' -> do
-        putStrLn "Press enter to continue"
-        _ <- getLine
-        pure $ Just data'
-      Left err -> throwIO $ userError err
 
 
 installWithOptions :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
@@ -360,7 +344,7 @@ set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask
      => (Int, ListResult)
      -> m (Either String ())
 set' input@(_, ListResult {..}) = do
-  settings <- liftIO $ readIORef settings'
+  settings <- ask
 
   let run =
         flip runReaderT settings
@@ -496,47 +480,31 @@ changelog' (_, ListResult {..}) = do
         Right _ -> pure $ Right ()
         Left  e -> pure $ Left $ prettyHFError e
 
-settings' :: IORef AppState
-{-# NOINLINE settings' #-}
-settings' = unsafePerformIO $ do
-  dirs <- getAllDirs
-  let loggerConfig = LoggerConfig { lcPrintDebug  = False
-                                  , consoleOutter = \_ -> pure ()
-                                  , fileOutter    = \_ -> pure ()
-                                  , fancyColors   = True
-                                  }
-  newIORef $ AppState defaultSettings
-                      dirs
-                      defaultKeyBindings
-                      (GHCupInfo mempty mempty Nothing)
-                      (PlatformRequest A_64 Darwin Nothing)
-                      loggerConfig
+getUpdatedAppState :: AppState -> IO (Either String (AppState, [ListResult]))
+getUpdatedAppState s = runExceptT $ do
+  r <- ExceptT $ getGHCupInfo s
+  let newS = s { ghcupInfo = r }
+  ls <- liftIO $ getListResults newS
+  pure (newS, ls)
+
+  where
+  getGHCupInfo :: AppState -> IO (Either String GHCupInfo)
+  getGHCupInfo settings = do
+    r <-
+      flip runReaderT settings
+      . runE @'[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError]
+      $ do
+        pfreq <- lift getPlatformReq
+        liftE $ getDownloadsF pfreq
+
+    case r of
+      VRight a -> pure $ Right a
+      VLeft  e -> pure $ Left (prettyHFError e)
 
 
-getGHCupInfo :: IO (Either String GHCupInfo)
-getGHCupInfo = do
-  settings <- readIORef settings'
-
-  r <-
-    flip runReaderT settings
-    . runE @'[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError]
-    $ do
-      pfreq <- lift getPlatformReq
-      liftE $ getDownloadsF pfreq
-
-  case r of
-    VRight a -> pure $ Right a
-    VLeft  e -> pure $ Left (prettyHFError e)
-
-
-getAppData :: Maybe GHCupInfo
-           -> IO (Either String [ListResult])
-getAppData mgi = runExceptT $ do
-  r <- ExceptT $ maybe getGHCupInfo (pure . Right) mgi
-  liftIO $ modifyIORef settings' (\s -> s { ghcupInfo = r })
-  settings <- liftIO $ readIORef settings'
-
-  flip runReaderT settings $ do
+getListResults :: AppState -> IO [ListResult]
+getListResults s =
+  flip runReaderT s $ do
     lV <- listVersions Nothing [] False True (Nothing, Nothing)
     pure $ reverse lV
 

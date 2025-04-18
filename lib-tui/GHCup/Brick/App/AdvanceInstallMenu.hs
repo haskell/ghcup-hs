@@ -7,7 +7,7 @@
 module GHCup.Brick.App.AdvanceInstallMenu where
 
 import GHCup.List ( ListResult (..))
-import GHCup.Types (GHCTargetVersion(..), KeyBindings)
+import GHCup.Types (GHCTargetVersion(..), KeyBindings, AppState)
 import GHCup.Brick.Widgets.BaseWidget
 import GHCup.Brick.Widgets.BasicOverlay
 import GHCup.Brick.Widgets.InputField.Class
@@ -53,15 +53,15 @@ data AdvanceInstallMenuFields n = AdvanceInstallMenuFields
 
 makeLenses ''AdvanceInstallMenuFields
 
-type AdvanceInstallMenu = GenericMenu Common.Name AdvanceInstallMenuFields ListResult InstallOptions
+type AdvanceInstallMenu = GenericMenu Common.Name AdvanceInstallMenuFields (AppState, ListResult) InstallOptions
 
-create :: KeyBindings -> ListResult -> AdvanceInstallMenu
-create kb lr = mkGenericMenu
+create :: KeyBindings -> ListResult -> AppState -> AdvanceInstallMenu
+create kb lr s = mkGenericMenu
   Common.AdvanceInstallBox
   menuFields
   validateInputs
-  lr
-  (\lr opts -> void $ Actions.suspendBrickAndRunAction $ Actions.installWithOptions opts lr)
+  (s, lr)
+  (\(s, lr) opts -> void $ Actions.suspendBrickAndRunAction s $ Actions.installWithOptions opts lr)
   (Common.toMenuKeyBindings kb)
   "Advance Install"
   (Button (Common.MenuElement Common.OkButton)
