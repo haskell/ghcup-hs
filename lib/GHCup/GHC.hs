@@ -463,10 +463,21 @@ installUnpackedGHC path inst tver forceInstall addConfArgs installTargets
                        "ghc-configure"
                        Nothing
       tmpInstallDest <- lift withGHCupTmpDir
-      lEM $ make (["DESTDIR=" <> fromGHCupPath tmpInstallDest] <> (words . T.unpack $ installTargets)) (Just $ fromGHCupPath path)
+      lEM $ make (["DESTDIR=" <> fromGHCupPath tmpInstallDest] <> (T.unpack <$> withStripTarget (_tvVersion tver) _rPlatform)) (Just $ fromGHCupPath path)
       liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpInstallDest)
       liftE $ mergeGHCFileTree (tmpInstallDest `appendGHCupPath` dropDrive (fromInstallDir inst)) inst tver forceInstall
       pure ()
+ where
+  installTargets' = T.words installTargets
+
+  -- https://github.com/haskell/ghcup-hs/issues/319
+  withStripTarget ver plat
+    | ver >= [vver|7.10.0|]
+    , ver <  [vver|8.3.0|]
+    , Linux _ <- plat
+    = "STRIP_CMD=true":installTargets'
+    | otherwise
+    = installTargets'
 
 
 
