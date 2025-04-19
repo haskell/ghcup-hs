@@ -557,7 +557,7 @@ rmUnsetTools :: ( MonadReader env m
                 )
              => Excepts '[NotInstalled, UninstallFailed] m ()
 rmUnsetTools = do
-  vers <- lift $ listVersions Nothing [ListInstalled True, ListSet False] False True (Nothing, Nothing)
+  vers <- lift $ listVersions [] [ListInstalled True, ListSet False] False True (Nothing, Nothing)
   forM_ vers $ \ListResult{..} -> case lTool of
     GHC   -> liftE $ rmGHCVer (GHCTargetVersion lCross lVer)
     HLS   -> liftE $ rmHLSVer lVer
