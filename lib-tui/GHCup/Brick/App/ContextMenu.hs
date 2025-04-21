@@ -68,6 +68,7 @@ updateStateAndAvailableGHCs s availableGHCs v = v
   & compileHLSMenu % innerWidget %~ CompileHLSMenu.updateAvailableGHCs availableGHCs
   & compileGHCMenu % innerWidget % state % _1 .~ s
   & compileHLSMenu % innerWidget % state % _1 .~ s
+  & advanceInstallMenu % innerWidget % state % _1 .~ s
 
 mkFocusRing :: ListResult -> F.FocusRing Common.Name
 mkFocusRing (ListResult {..}) = F.focusRing $
