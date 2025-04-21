@@ -43,7 +43,7 @@ brickMain s = do
       flip runReaderT s $ logError "Error building app state: empty [ListResult]"
       exitWith $ ExitFailure 2
     (x:xs) -> do
-      let nav_widget = Navigation.create Common.AllTools (x :| xs)
+      let nav_widget = Navigation.create (x :| xs)
                        (Attributes.dimAttributes $ noColor $ settings s)
                        (keyBindings s) s
       let initapp = brickApp (Attributes.defaultAttributes $ noColor $ settings s)

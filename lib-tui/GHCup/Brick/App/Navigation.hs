@@ -76,18 +76,18 @@ data Navigation = Navigation
 makeLenses ''Navigation
 
 -- | How to create a navigation widget
-create :: Common.Name -- The name of the section list
-       -> NonEmpty ListResult
+create :: NonEmpty ListResult
        -> AttrMap
        -> KeyBindings
        -> AppState
        -> Navigation
-create name lr' dimAttrs kb s =
+create lr' dimAttrs kb s =
   let showAllVersions = False
       secList = replaceLR (filterVisible showAllVersions) lr Nothing
       keyInfo = KeyInfo.create kb
       cmenu = ContextMenu.create kb current_element s availableGHCs
       cmenuTitle = ContextMenu.mkTitle current_element
+      -- As we have a NonEmpty list, this will always be Just
       Just (_, current_element) = SectionList.sectionListSelectedElement secList
       lr = NE.toList lr'
       availableGHCs = fmap lVer $
