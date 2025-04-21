@@ -35,7 +35,8 @@ data CheckBoxInput n a = CheckBoxInput
 makeLenses ''CheckBoxInput
 
 instance (Ord n, Show n) => BaseWidget n (CheckBoxInput n Bool) where
-  draw = const $ Brick.txt "CheckBoxInput"
+  -- This is not used. See drawInputField
+  draw = const $ Brick.txt "CheckBoxInput draw"
 
   handleEvent ev = do
     case ev of
@@ -44,6 +45,7 @@ instance (Ord n, Show n) => BaseWidget n (CheckBoxInput n Bool) where
     pure Nothing
 
 instance (Ord n, Show n) => InputField n (CheckBoxInput n Bool) where
+  getLabel e = (_name e, _label e)
   drawInputField focus f (CheckBoxInput {..}) = if focus
       then core
       else core <+> (Brick.padLeft (Brick.Pad 1) . Common.renderAsHelpMsg $ _helpMessage)
@@ -54,5 +56,3 @@ instance (Ord n, Show n) => InputField n (CheckBoxInput n Bool) where
         if b
           then border . Brick.withAttr Attributes.installedAttr    $ Brick.str Common.checkBoxSelectedSign
           else border . Brick.withAttr Attributes.notInstalledAttr $ Brick.str Common.notInstalledSign
-
-  getLabel e = (_name e, _label e)

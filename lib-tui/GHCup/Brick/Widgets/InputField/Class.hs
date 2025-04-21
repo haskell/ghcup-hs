@@ -25,10 +25,19 @@ import GHC.Generics ((:*:)(..), K1(..), M1(..), from, to, Generic, Rep)
 type ErrorMessage = T.Text
 type HelpMessage = T.Text
 
+-- | This is a specialized class designed for use of input fields in GenericMenu
 class (BaseWidget n a) => InputField n a | a -> n where
-  drawInputField :: Bool -> (Widget n -> Widget n) -> a -> Widget n
+  -- | Draw the field, which is rendered on the right side of the generic menu
+  drawInputField :: Bool -- ^ Is focused
+    -> (Widget n -> Widget n) -- ^ a modifier / amplifier
+    -> a
+    -> Widget n
+
   getLabel :: a -> (n, T.Text)
 
+-- | A collection of APIs for use in GenericMenu,
+-- The input fields are part of a "product" data type, and this allows us to make use of
+-- Generics to do various operations of the BaseWidget
 class GInputFields n a | a -> n where
   getLabels :: a p -> [(n, T.Text)]
   gDrawInputFields :: n -> (n -> Bool -> Widget n -> Widget n) -> a p -> [Widget n]

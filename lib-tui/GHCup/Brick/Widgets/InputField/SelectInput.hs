@@ -46,11 +46,15 @@ data SelectInput n i a = SelectInput
   }
 
 data SelectInputOverlay n i a = SelectInputOverlay
-  { _items :: ([(Int, (i, Bool))], Bool) -- ^ All items along with their selected state
-                                                          -- And Bool to indicate if editable field is selected
-  , _editInput :: Maybe (EditInput.EditInput n a)  -- ^ Editable field
-  , _focusRing :: F.FocusRing Int                 -- ^ Focus ring using integeral values assigned to each item
+  { -- | All items along with their selected state
+    -- And Bool to indicate if editable field is selected
+    _items :: ([(Int, (i, Bool))], Bool)
+    -- | Editable text field
+  , _editInput :: Maybe (EditInput.EditInput n a)
+  -- | Focus ring using integral values assigned to each item, text field is always last
+  , _focusRing :: F.FocusRing Int
   , _showItem :: (i -> T.Text)
+  -- | Update the selection; Int value is the focus ring's value when user pressed 'Enter'
   , _update :: (Int -> ([(Int, (i, Bool))], Bool) -> (([(Int, (i, Bool))]), Bool))
   , _menuKeys :: Common.MenuKeyBindings
   , _viewportName :: n
@@ -151,7 +155,8 @@ createMultiSelectInputWithEditable name editName label helpMsg items showItem va
     multiSelect ix (ne, a) = (fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, b))) ne, ix == length ne + 1)
 
 instance (Ord n, Show n) => BaseWidget n (SelectInput n i a) where
-  draw = const $ Brick.txt "SelectInput"
+  -- This is not used. See drawInputField
+  draw = const $ Brick.txt "SelectInput draw"
 
   handleEvent ev = do
     case ev of
@@ -254,6 +259,7 @@ getSelection' (SelectInputOverlay {..}) =
     f (True, Just edi) = Just $ EditInput.editInputTextAndValue edi
     f _ = Nothing
 
+-- | Replaces the list of items with the new one, while maintaining the selection from the old
 updateItems :: forall n i a . (Eq i) => [i] -> SelectInput n i a -> SelectInput n i a
 updateItems new s = s
   & selectInputOverlay % innerWidget % items % _1 %~ selectFromOld

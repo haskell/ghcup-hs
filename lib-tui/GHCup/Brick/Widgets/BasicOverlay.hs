@@ -22,6 +22,7 @@ import qualified Graphics.Vty as Vty
 import Optics (Lens', (^.), (%))
 import Optics.TH (makeLenses)
 
+-- | This does the boilerplate of `quitKey` event handling
 data BasicOverlay n a = BasicOverlay
   { _innerWidget :: a
   , _quitKey :: [KeyCombination]

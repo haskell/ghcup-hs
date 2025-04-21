@@ -69,7 +69,9 @@ editInputValue :: EditInput n a -> Either ErrorMessage a
 editInputValue e = fst <$> editInputTextAndValue e
 
 instance (Ord n, Show n) => BaseWidget n (EditInput n a) where
-  draw = const $ Brick.txt "EditInput"
+  -- This is not used. See drawInputField
+  draw = const $ Brick.txt "EditInput draw"
+
   handleEvent ev = do
     (EditInput {..}) <- Brick.get
     case ev of
