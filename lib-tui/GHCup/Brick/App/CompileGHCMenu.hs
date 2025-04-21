@@ -176,7 +176,6 @@ create kb lr s availableGHCs = mkGenericMenu
       availableGHCs
       (T.pack . prettyShow)
       filepathV
-      "bootstrap-ghc"
       (Common.toMenuKeyBindings kb)
 
     hadrianGhcField = SelectInput.createSelectInputWithEditable
@@ -187,7 +186,6 @@ create kb lr s availableGHCs = mkGenericMenu
       availableGHCs
       (T.pack . prettyShow)
       filepathV
-      "hadrian-ghc"
       (Common.toMenuKeyBindings kb)
 
     jobsField = EditInput.create
@@ -247,7 +245,6 @@ create kb lr s availableGHCs = mkGenericMenu
         Nothing -> "Auto select (prefer hadrian if available, and build config is not specified)"
         Just Hadrian -> "hadrian"
         Just Make -> "make")
-      "build system"
       (Common.toMenuKeyBindings kb)
 
     overwriteVerField = EditInput.create

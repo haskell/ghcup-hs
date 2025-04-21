@@ -153,7 +153,6 @@ create kb lr s availableGHCs = mkGenericMenu
       (fmap ToolVersion availableGHCs)
       (T.pack . prettyShow)
       ghcVersionTagEither
-      "target GHC(s)"
       (Common.toMenuKeyBindings kb)
 
     cabalArgsField = EditInput.create

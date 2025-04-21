@@ -41,7 +41,7 @@ data SelectInput n i a = SelectInput
   { _name :: n
   , _overlay :: Maybe (Some (IsSubWidget n (SelectInput n i a)))
   , _selectInputOverlay :: BasicOverlay n (SelectInputOverlay n i a)
-  , _title :: T.Text
+  , _label :: T.Text
   , _helpMessage :: HelpMessage
   }
 
@@ -68,13 +68,12 @@ createSelectInput :: (Eq n, Show n)
   -> HelpMessage
   -> NonEmpty i
   -> (i -> T.Text)
-  -> T.Text
   -> Common.MenuKeyBindings
   -> SelectInput n i ()
-createSelectInput name label helpMsg items showItem title kb =
+createSelectInput name label helpMsg items showItem kb =
   SelectInput name Nothing
-  (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer title))
-  title helpMsg
+  (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer label))
+  label helpMsg
   where
     overlay = SelectInputOverlay initState Nothing (F.focusRing [1.. totalRows]) showItem singleSelect kb name
     totalRows = length items
@@ -89,13 +88,12 @@ createMultiSelectInput :: (Eq n, Show n)
   -> HelpMessage
   -> NonEmpty i
   -> (i -> T.Text)
-  -> T.Text
   -> Common.MenuKeyBindings
   -> SelectInput n i ()
-createMultiSelectInput name label helpMsg items showItem title kb =
+createMultiSelectInput name label helpMsg items showItem kb =
   SelectInput name Nothing
-  (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer title))
-  title helpMsg
+  (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer label))
+  label helpMsg
   where
     overlay = SelectInputOverlay initState Nothing (F.focusRing [1.. totalRows]) showItem multiSelect kb name
     totalRows = length items
@@ -112,13 +110,12 @@ createSelectInputWithEditable :: (Eq n, Show n)
   -> [i]
   -> (i -> T.Text)
   -> (T.Text -> Either ErrorMessage a)
-  -> T.Text
   -> Common.MenuKeyBindings
   -> SelectInput n i a
-createSelectInputWithEditable name editName label helpMsg items showItem validator title kb =
+createSelectInputWithEditable name editName label helpMsg items showItem validator kb =
   SelectInput name Nothing
-  (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer title))
-  title helpMsg
+  (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer label))
+  label helpMsg
   where
     overlay = SelectInputOverlay initState (Just editInp) (F.focusRing [1..totalRows]) showItem singleSelect kb name
     totalRows = length items + 1
@@ -137,13 +134,12 @@ createMultiSelectInputWithEditable :: (Eq n, Show n)
   -> [i]
   -> (i -> T.Text)
   -> (T.Text -> Either ErrorMessage a)
-  -> T.Text
   -> Common.MenuKeyBindings
   -> SelectInput n i a
-createMultiSelectInputWithEditable name editName label helpMsg items showItem validator title kb =
+createMultiSelectInputWithEditable name editName label helpMsg items showItem validator kb =
   SelectInput name Nothing
-  (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer title))
-  title helpMsg
+  (BasicOverlay overlay [kb ^. Common.mKbQuit] (Common.smallerOverlayLayer label))
+  label helpMsg
   where
     overlay = SelectInputOverlay initState (Just editInp) (F.focusRing [1..totalRows]) showItem multiSelect kb name
     totalRows = length items + 1
@@ -168,7 +164,7 @@ instance (Ord n, Show n) => BaseWidget n (SelectInput n i a) where
   closeOverlay = overlay .= Nothing
 
 instance (Ord n, Show n) => InputField n (SelectInput n i a) where
-  getLabel e = (_name e, _title e)
+  getLabel e = (_name e, _label e)
   drawInputField focus f (SelectInput {..}) =
     let showItem = _showItem $ _innerWidget $ _selectInputOverlay
     in f $ case getSelection' (_innerWidget $ _selectInputOverlay) of
