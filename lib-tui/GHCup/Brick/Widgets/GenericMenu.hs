@@ -24,7 +24,7 @@ import qualified Brick.Focus as F
 import Control.Monad
 import Control.Monad.Reader
 import           Data.Maybe
-import           Data.List (find)
+import           Data.List (find, foldl')
 import Data.Some
 import qualified Data.Text                     as T
 
