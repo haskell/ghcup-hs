@@ -142,6 +142,27 @@ suspendBrickAndRunAction s action = do
       Right _   -> liftIO $ putStrLn "Success"
 
 
+getPreInstallMessage :: AppState -> GHCTargetVersion -> Tool -> Maybe T.Text
+getPreInstallMessage s v lTool =
+  let
+    dls = _ghcupDownloads $ ghcupInfo s
+  in case lTool of
+    GHC   -> do
+      let vi = getVersionInfo v GHC dls
+      (_viPreInstall =<< vi)
+    Cabal -> do
+      let vi = getVersionInfo v Cabal dls
+      (_viPreInstall =<< vi)
+    GHCup -> do
+      let vi = snd <$> getLatest dls GHCup
+      (_viPreInstall =<< vi)
+    HLS   -> do
+      let vi = getVersionInfo v HLS dls
+      (_viPreInstall =<< vi)
+    Stack -> do
+      let vi = getVersionInfo v Stack dls
+      (_viPreInstall =<< vi)
+
 installWithOptions :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
          => AdvanceInstall.InstallOptions
          -> ListResult
@@ -200,11 +221,6 @@ installWithOptions opts ListResult {..} = do
       case lTool of
         GHC   -> do
           let vi = getVersionInfo v GHC dls
-          forM_ (_viPreInstall =<< vi) $ \msg -> do
-            lift $ logWarn msg
-            lift $ logWarn
-              "...waiting for 5 seconds, you can still abort..."
-            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           case opts ^. AdvanceInstall.instBindist of
             Nothing -> do
               liftE $
@@ -228,11 +244,6 @@ installWithOptions opts ListResult {..} = do
 
         Cabal -> do
           let vi = getVersionInfo v Cabal dls
-          forM_ (_viPreInstall =<< vi) $ \msg -> do
-            lift $ logWarn msg
-            lift $ logWarn
-              "...waiting for 5 seconds, you can still abort..."
-            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           case opts ^. AdvanceInstall.instBindist of
             Nothing -> do
               liftE $
@@ -249,19 +260,9 @@ installWithOptions opts ListResult {..} = do
 
         GHCup -> do
           let vi = snd <$> getLatest dls GHCup
-          forM_ (_viPreInstall =<< vi) $ \msg -> do
-            lift $ logWarn msg
-            lift $ logWarn
-              "...waiting for 5 seconds, you can still abort..."
-            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           liftE $ upgradeGHCup Nothing False False $> (vi, dirs, ce)
         HLS   -> do
           let vi = getVersionInfo v HLS dls
-          forM_ (_viPreInstall =<< vi) $ \msg -> do
-            lift $ logWarn msg
-            lift $ logWarn
-              "...waiting for 5 seconds, you can still abort..."
-            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           case opts ^. AdvanceInstall.instBindist of
             Nothing -> do
               liftE $

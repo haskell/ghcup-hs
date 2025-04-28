@@ -7,13 +7,14 @@
 module GHCup.Brick.App.AdvanceInstallMenu where
 
 import GHCup.List ( ListResult (..))
-import GHCup.Types (GHCTargetVersion(..), KeyBindings, AppState)
+import GHCup.Types (GHCTargetVersion(..), KeyBindings, AppState, bQuit)
 import GHCup.Brick.Widgets.BaseWidget
 import GHCup.Brick.Widgets.BasicOverlay
 import GHCup.Brick.Widgets.InputField.Class
 import GHCup.Brick.Widgets.InputField.CheckBox
 import GHCup.Brick.Widgets.InputField.EditInput as EditInput
-import GHCup.Brick.Widgets.GenericMenu
+import GHCup.Brick.Widgets.GenericMenu as GenericMenu
+import qualified GHCup.Brick.Widgets.ConfirmationPrompt as ConfirmationPrompt
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.App.Common as Common
 import GHCup.Brick.App.AdvanceInstallOptions
@@ -32,11 +33,13 @@ import           Control.Monad (when, forM, forM_, void)
 import Data.Bifunctor (Bifunctor(..))
 import Data.Char (isSpace)
 import Data.List.NonEmpty             ( NonEmpty (..) )
+import           Data.Maybe
 import Data.Some
 import qualified Data.Text                     as T
 import GHC.Generics (Generic)
 import           Prelude                 hiding ( appendFile )
 import qualified Graphics.Vty as Vty
+import Optics (lens, (^.))
 import Optics.State.Operators ((.=), (?=))
 import Optics.TH (makeLenses)
 import URI.ByteString (URI)
@@ -61,7 +64,16 @@ create kb lr s = mkGenericMenu
   menuFields
   validateInputs
   (s, lr)
-  (\(s, lr) opts -> (Just CloseAllOverlays) <$ (Actions.suspendBrickAndRunAction s $ Actions.installWithOptions opts lr))
+  (\(s, lr) opts -> do
+      let action = (Just CloseAllOverlays) <$ (Actions.suspendBrickAndRunAction s $ Actions.installWithOptions opts lr)
+          v = fromMaybe (GHCTargetVersion (lCross lr) (lVer lr)) (opts ^. instVersion)
+      case Actions.getPreInstallMessage s v (lTool lr) of
+        Nothing -> action
+        Just msg -> do
+          let prompt = ConfirmationPrompt.create "Warning" msg action (bQuit kb)
+          GenericMenu.overlay ?= Some (IsSubWidget $ lens (const prompt) (\s _ -> s))
+          pure Nothing
+  )
   (Common.toMenuKeyBindings kb)
   "Advance Install"
   (Button (Common.MenuElement Common.OkButton)

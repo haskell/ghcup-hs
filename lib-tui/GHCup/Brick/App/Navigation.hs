@@ -14,6 +14,7 @@ import qualified GHCup.Brick.App.ContextMenu as ContextMenu
 import GHCup.Brick.Widgets.BaseWidget
 import GHCup.Brick.Widgets.BasicOverlay
 import qualified GHCup.Brick.Attributes as Attributes
+import qualified GHCup.Brick.Widgets.ConfirmationPrompt as ConfirmationPrompt
 import qualified GHCup.Brick.Widgets.SectionList as SectionList
 
 import GHCup.List ( ListResult(..) )
@@ -47,7 +48,7 @@ import Control.Monad.Reader
 import Data.Some
 import Data.Vector ( Vector )
 import qualified Graphics.Vty as Vty
-import Optics (Lens', use, to, (^.), (%), (&), (%~), (.~))
+import Optics (Lens', lens, use, to, (^.), (%), (&), (%~), (.~))
 import Optics.TH (makeLenses)
 import Optics.State.Operators ((.=), (?=), (%=))
 
@@ -255,7 +256,7 @@ keyHandlers :: KeyBindings
                ]
 keyHandlers KeyBindings {..} =
   [ (bQuit, const "Quit"     , Brick.halt)
-  , (bInstall, const "Install"  , withIOAction' install')
+  , (bInstall, const "Install"  , installAfterPreInstallPrompt)
   , (bUninstall, const "Uninstall", withIOAction' del')
   , (bSet, const "Set"      , withIOAction' set')
   , (bChangelog, const "ChangeLog", withIOAction' changelog')
@@ -277,6 +278,22 @@ keyHandlers KeyBindings {..} =
       Just (curr_ix, e) -> do
         suspendBrickAndRunAction _appState $ action (curr_ix, e)
     updateNavigation
+
+  installAfterPreInstallPrompt = do
+    Navigation {..} <- Brick.get
+    case SectionList.sectionListSelectedElement _sectionList of
+      Nothing      -> pure ()
+      Just (curr_ix, lr) -> do
+        let action = (Just CloseAllOverlays) <$ suspendBrickAndRunAction _appState (install' (curr_ix, lr))
+            v = GHCTargetVersion (lCross lr) (lVer lr)
+        case getPreInstallMessage _appState v (lTool lr) of
+          Nothing -> do
+            action
+            updateNavigation
+          Just msg -> do
+            let prompt = ConfirmationPrompt.create "Warning" msg action bQuit
+            -- updateNavigation will happen after the prompt is closed
+            overlay ?= Some (IsSubWidget $ lens (const prompt) (\s _ -> s))
 
   openContextMenuforTool = do
     e <- use (sectionList % to SectionList.sectionListSelectedElement)
