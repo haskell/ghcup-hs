@@ -106,7 +106,7 @@ create kb lr s availableGHCs = mkGenericMenu
   menuFields
   validateInputs
   (s, lr)
-  (\(s, lr) opts -> void $ Actions.suspendBrickAndRunAction s $ compileGHC opts lr)
+  (\(s, lr) opts -> (Just CloseAllOverlays) <$ (Actions.suspendBrickAndRunAction s $ compileGHC opts lr))
   (Common.toMenuKeyBindings kb)
   "Compile GHC"
   (Button (Common.MenuElement Common.OkButton)

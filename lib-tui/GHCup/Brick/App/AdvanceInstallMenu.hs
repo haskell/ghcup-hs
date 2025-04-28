@@ -61,7 +61,7 @@ create kb lr s = mkGenericMenu
   menuFields
   validateInputs
   (s, lr)
-  (\(s, lr) opts -> void $ Actions.suspendBrickAndRunAction s $ Actions.installWithOptions opts lr)
+  (\(s, lr) opts -> (Just CloseAllOverlays) <$ (Actions.suspendBrickAndRunAction s $ Actions.installWithOptions opts lr))
   (Common.toMenuKeyBindings kb)
   "Advance Install"
   (Button (Common.MenuElement Common.OkButton)

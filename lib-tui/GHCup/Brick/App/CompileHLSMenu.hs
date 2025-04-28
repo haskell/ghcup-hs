@@ -99,7 +99,7 @@ create kb lr s availableGHCs = mkGenericMenu
   menuFields
   validateInputs
   (s, lr)
-  (\(s, lr) opts -> void $ Actions.suspendBrickAndRunAction s $ compileHLS opts lr)
+  (\(s, lr) opts -> (Just CloseAllOverlays) <$ (Actions.suspendBrickAndRunAction s $ compileHLS opts lr))
   (Common.toMenuKeyBindings kb)
   "Compile HLS"
   (Button (Common.MenuElement Common.OkButton)

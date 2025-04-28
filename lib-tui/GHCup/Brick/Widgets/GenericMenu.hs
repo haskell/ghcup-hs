@@ -42,7 +42,7 @@ data GenericMenu n fs s a = GenericMenu
   , _getOutput :: fs n -> Either ErrorMessage a
   , _menuKeys :: Common.MenuKeyBindings
   , _state :: s
-  , _submitAction :: s -> a -> EventM n (GenericMenu n fs s a) ()
+  , _submitAction :: s -> a -> EventM n (GenericMenu n fs s a) (Maybe HandleEventResult)
   , _submitButton :: Button n
   , _name :: n
   , _title :: T.Text
@@ -62,7 +62,7 @@ mkGenericMenu :: (Generic (fs n), GInputFields n (Rep (fs n)))
   -> fs n
   -> (fs n -> Either ErrorMessage a)
   -> s
-  -> (s -> a -> EventM n (GenericMenu n fs s a) ())
+  -> (s -> a -> EventM n (GenericMenu n fs s a) (Maybe HandleEventResult))
   -> Common.MenuKeyBindings
   -> T.Text
   -> Button n
@@ -134,7 +134,7 @@ instance (Generic (fs n), GInputFields n (Rep (fs n)), Ord n, Show n) => BaseWid
             pure Nothing
       VtyEvent (Vty.EvKey Vty.KEnter [])
         | currentFocus == submitButtonName -> case _getOutput _fields of
-            Right v -> _submitAction _state v >> pure (Just CloseAllOverlays)
+            Right v -> _submitAction _state v
             Left _ -> pure Nothing
       _ -> do
         (_, (newFields, res)) <- Brick.nestEventM gFields $ gHandleEvent currentFocus gFields ev
