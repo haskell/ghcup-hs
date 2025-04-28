@@ -46,6 +46,7 @@ data GenericMenu n fs s a = GenericMenu
   , _submitButton :: Button n
   , _name :: n
   , _title :: T.Text
+  , _overlay :: Maybe (Some (IsSubWidget n (GenericMenu n fs s a)))
   }
 
 data Button n = Button
@@ -76,6 +77,7 @@ mkGenericMenu n fs getOutput initState action kb title submitButton = GenericMen
   , _submitButton = submitButton
   , _name = n
   , _title = title
+  , _overlay = Nothing
   }
 
 
@@ -140,11 +142,12 @@ instance (Generic (fs n), GInputFields n (Rep (fs n)), Ord n, Show n) => BaseWid
         pure Nothing
 
   hasOverlay (GenericMenu { .. }) = case gHasOverlay (GHC.Generics.from _fields) of
-    Nothing -> Nothing
+    Nothing -> _overlay
     Just (Some (IsSubWidget accessor)) -> Just (Some (IsSubWidget $ fields % lens GHC.Generics.from (const GHC.Generics.to) % accessor))
 
   closeOverlay = do
     (GenericMenu { .. }) <- Brick.get
     (_, newFields) <- Brick.nestEventM (GHC.Generics.from _fields) $ gCloseOverlay
     Brick.modify $ \s -> s { _fields = GHC.Generics.to newFields }
+    overlay .= Nothing
     pure ()
