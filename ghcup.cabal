@@ -373,6 +373,7 @@ library ghcup-tui
     GHCup.BrickMain
     GHCup.Brick.Widgets.BaseWidget
     GHCup.Brick.Widgets.BasicOverlay
+    GHCup.Brick.Widgets.ConfirmationPrompt
     GHCup.Brick.Widgets.SectionList
     GHCup.Brick.Widgets.GenericMenu
     GHCup.Brick.Widgets.InputField.Class
