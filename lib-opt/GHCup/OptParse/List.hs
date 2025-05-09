@@ -55,8 +55,8 @@ import GHCup.Prelude.Logger (logDebug)
 
 
 data ListOptions = ListOptions
-  { loTool     :: Maybe Tool
-  , lCriteria  :: Maybe ListCriteria
+  { loTool     :: [Tool]
+  , lCriteria  :: [ListCriteria]
   , lFrom      :: Maybe Day
   , lTo        :: Maybe Day
   , lHideOld   :: Bool
@@ -74,15 +74,15 @@ data ListOptions = ListOptions
 listOpts :: Parser ListOptions
 listOpts =
   ListOptions
-    <$> optional
+    <$> many
           (option
             (eitherReader toolParser)
-            (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|stack>" <> help
+            (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|stack|ghcup>" <> help
               "Tool to list versions for. Default is all"
               <> completer toolCompleter
             )
           )
-    <*> optional
+    <*> many
           (option
             (eitherReader criteriaParser)
             (  short 'c'
@@ -238,7 +238,7 @@ list :: ( Monad m
       -> m ExitCode
 list ListOptions{..} no_color pgc runAppState =
   runAppState (do
-      l <- listVersions loTool (maybeToList lCriteria) lHideOld lShowNightly (lFrom, lTo)
+      l <- listVersions loTool lCriteria lHideOld lShowNightly (lFrom, lTo)
       printListResult no_color pgc lRawFormat l
       pure ExitSuccess
     )
