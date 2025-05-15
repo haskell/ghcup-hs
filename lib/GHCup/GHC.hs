@@ -1415,7 +1415,6 @@ postGHCInstall ver@GHCTargetVersion {..} = do
 ldOverride ::  Version -> Platform -> [String]
 ldOverride ver plat
   | ver >= [vver|8.2.2|]
-  , plat `elem` [Linux Alpine, Darwin]
   = ["--disable-ld-override"]
   | otherwise
   = []
