@@ -1,5 +1,10 @@
 # Revision history for ghcup
 
+## 0.1.50.2 -- 2025-05-17
+
+* Respect system `ld` on all platforms and disable GHCs aggressive selection of `ld.gold`, fixes [#1032](https://github.com/haskell/ghcup-hs/issues/1032)
+* TUI: allow responding to prompts with Return (defaulting to Yes response) by Jan Hrček wrt [#1253](https://github.com/haskell/ghcup-hs/pull/1253)
+
 ## 0.1.50.1 -- 2025-03-25
 
 * fix unwanted dynamic linking to libyaml on macOS, fixes [#1246](https://github.com/haskell/ghcup-hs/issues/1246)
