@@ -89,6 +89,8 @@ import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified Data.Text.Encoding            as E
 import qualified Data.Yaml.Aeson               as Y
+import Data.List (isPrefixOf)
+import Control.Monad.IO.Class (liftIO)
 
 
 
@@ -102,6 +104,33 @@ import qualified Data.Yaml.Aeson               as Y
     ------------------
 
 
+formatURI :: URI -> T.Text
+formatURI uri = 
+  let scheme = E.decodeUtf8 $ schemeBS $ uriScheme uri
+      auth = case uriAuthority uri of
+               Just a -> "//" <> E.decodeUtf8 (hostBS $ authorityHost a)
+               Nothing -> ""
+      path = E.decodeUtf8 $ uriPath uri
+  in scheme <> ":" <> auth <> path
+
+-- | Logic to check if it is an Official Channel
+isOfficialURI :: URI -> Bool
+isOfficialURI uri = any (`isURIPrefix` uri) officialURIs
+  where
+    officialURIs = [isGitHubMetadata]    
+    isGitHubMetadata uri' = 
+      schemeBS (uriScheme uri') == "https" &&
+      maybe False (\a -> hostBS (authorityHost a) == "raw.githubusercontent.com") (uriAuthority uri') &&
+      pathStartsWith "/haskell/ghcup-metadata/" (uriPath uri')
+    pathStartsWith prefix path = prefix `B.isPrefixOf` path
+    isURIPrefix predicate uri' = predicate uri'
+
+-- | Special case to check for nightlies URL
+isNightliesURI :: URI -> Bool
+isNightliesURI uri =
+  schemeBS (uriScheme uri) == "https" &&
+  maybe False (\a -> hostBS (authorityHost a) == "ghc.gitlab.haskell.org") (uriAuthority uri) &&
+  uriPath uri == "/ghcup-metadata/ghcup-nightlies-0.0.7.yaml"
 
 -- | Downloads the download information! But only if we need to ;P
 getDownloadsF :: ( FromJSONKey Tool
@@ -124,6 +153,17 @@ getDownloadsF :: ( FromJSONKey Tool
                    GHCupInfo
 getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   Settings { urlSource } <- lift getSettings
+  forM_ urlSource $ \src -> 
+    case src of
+      NewURI uri -> do
+        when (not (isOfficialURI uri) || isNightliesURI uri) $ 
+          logWarn $ "Warning: Using non-official metadata source: " <> formatURI uri <> 
+                   "\nThis source is not maintained or verified by the GHCup team."
+      NewGHCupInfo _ -> 
+        logWarn "Warning: Using custom GHCupInfo data that is not from an official GHCup metadata source"
+      NewSetupInfo _ -> 
+        logWarn "Warning: Using custom SetupInfo data that is not from an official GHCup metadata source"
+      _ -> pure () 
   infos <- liftE $ mapM dl' urlSource
   keys <- if any isRight infos
           then liftE . reThrowAll @_ @_ @'[StackPlatformDetectError] StackPlatformDetectError $ getStackPlatformKey pfreq
@@ -133,7 +173,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
     Right si -> pure $ fromStackSetupInfo si keys
   mergeGhcupInfo ghcupInfos
  where
-
+  
   dl' :: ( FromJSONKey Tool
          , FromJSONKey Version
          , FromJSON VersionInfo
@@ -162,7 +202,9 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
                             catchE @JSONError (\(JSONDecodeError s) -> do
                                 logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: " <> T.pack s
                                 Right <$> decodeMetadata @Stack.SetupInfo base)
-                              $ fmap Left (decodeMetadata @GHCupInfo base >>= \gI -> warnOnMetadataUpdate uri gI >> pure gI)
+                              $ fmap Left (decodeMetadata @GHCupInfo base >>= \gI -> 
+                                warnOnMetadataUpdate uri gI >> pure gI)
+
 
   fromStackSetupInfo :: MonadThrow m
                      => Stack.SetupInfo
