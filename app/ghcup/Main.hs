@@ -162,9 +162,17 @@ main = do
         )
 
   let main_footer = [s|Discussion:
-  ghcup installs the Glasgow Haskell Compiler from the official
+  ghcup installs the Haskell development tools from the configured
   release channels, enabling you to easily switch between different
   versions. It maintains a self-contained ~/.ghcup directory.
+
+Release Channels:
+  * default: maintained by GHCup (recommended)
+  * cross: contains experimental cross compilers
+  * prereleases: contains pre-releases of all tools
+  * vanilla: similar to default but only uses upstream bindists
+    (no patches/fixes are applied, no missing platforms added)
+More details at <https://www.haskell.org/ghcup/guide/#release-channels>
 
 ENV variables:
   * GHCUP_INSTALL_BASE_PREFIX: the base of ghcup (default: $HOME)
