@@ -39,7 +39,9 @@ die() {
     exit 2
 }
 
+echo "DEBUG:START"
 plat="$(uname -s)"
+echo "DEBUG:plat ${plat}"
 arch=$(uname -m)
 ghver="0.1.50.2"
 : "${GHCUP_BASE_URL:=https://downloads.haskell.org/~ghcup}"
@@ -106,6 +108,9 @@ case "${plat}" in
 			fi
 			;;
 esac
+
+echo "DEBUG:GHCUP_INSTALL_BASE_PREFIX ${GHCUP_INSTALL_BASE_PREFIX}"
+echo "DEBUG:GHCUP_DIR ${GHCUP_DIR}"
 
 : "${BOOTSTRAP_HASKELL_GHC_VERSION:=recommended}"
 : "${BOOTSTRAP_HASKELL_CABAL_VERSION:=recommended}"
