@@ -12,7 +12,10 @@ git describe --always
 
 ./scripts/bootstrap/bootstrap-haskell
 
-[ "$(ghc --numeric-version)" = "${BOOTSTRAP_HASKELL_GHC_VERSION}" ]
+# on windows remove the carriage return
+version=$(ghc --numeric-version | tr -d '\r\n')
+
+[ "$version" = "${BOOTSTRAP_HASKELL_GHC_VERSION}" ]
+
 # https://github.com/actions/runner-images/issues/7061
 [ "$(ghcup config | grep --color=never meta-mode)" = "meta-mode: Lax" ]
-
