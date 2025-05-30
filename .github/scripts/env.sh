@@ -20,9 +20,9 @@ if [ "${RUNNER_OS}" = "Windows" ] ; then
 	# on windows use pwd to get unix style path
 	CI_PROJECT_DIR="$(pwd)"
 	export CI_PROJECT_DIR
-    export GHCUP_INSTALL_BASE_PREFIX="/c"
-    export GHCUP_BIN="$GHCUP_INSTALL_BASE_PREFIX/ghcup/bin"
-    export PATH="$GHCUP_BIN:$PATH"
+    # export GHCUP_INSTALL_BASE_PREFIX="/c"
+    # export GHCUP_BIN="$GHCUP_INSTALL_BASE_PREFIX/ghcup/bin"
+    # export PATH="$GHCUP_BIN:$PATH"
 	export CABAL_DIR="C:\\Users\\runneradmin\\AppData\\Roaming\\cabal"
 else
 	export CI_PROJECT_DIR="${GITHUB_WORKSPACE}"

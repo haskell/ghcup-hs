@@ -81,11 +81,4 @@ jobs:
 
       - name: Run bootstrap
         run: |
-          sh -c "echo $GHCUP_INSTALL_BASE_PREFIX"
-          sh -c "unset GHCUP_INSTALL_BASE_PREFIX"
-          sh -c "echo $GHCUP_INSTALL_BASE_PREFIX"
-          sh -c "echo '${GITHUB_WORKSPACE}/github/scripts/bootstrap.sh'
-          sh -c "echo $(cygpath -u '${GITHUB_WORKSPACE}/github/scripts/bootstrap.sh')"
-          sh -c "echo '${GITHUB_WORKSPACE}\github\scripts\bootstrap.sh'
-          sh -c "echo $(cygpath -u '${GITHUB_WORKSPACE}\github\scripts\bootstrap.sh')"
-          sh -c "unset GHCUP_INSTALL_BASE_PREFIX && $(cygpath -u '${GITHUB_WORKSPACE}/github/scripts/bootstrap.sh')"
+          sh ./.github/scripts/bootstrap.sh
