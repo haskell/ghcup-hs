@@ -81,5 +81,4 @@ jobs:
 
       - name: Run bootstrap
         run: |
-          Remove-Item Env:GHCUP_INSTALL_BASE_PREFIX
-          sh ./.github/scripts/bootstrap.sh
+          sh -c "unset GHCUP_INSTALL_BASE_PREFIX && ./github/scripts/bootstrap.sh"
