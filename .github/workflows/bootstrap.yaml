@@ -68,6 +68,9 @@ jobs:
       ARCH: 64
       JSON_VERSION: "0.0.7"
     steps:
+      - name: unset GHCUP_INSTALL_BASE_PREFIX
+        run: Remove-Item Env:GHCUP_INSTALL_BASE_PREFIX
+
       - run: git config --global core.autocrlf input
       - name: Checkout code
         uses: actions/checkout@v3
