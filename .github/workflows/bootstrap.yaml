@@ -80,4 +80,6 @@ jobs:
           install-dir: 'c:\cygwin64'
 
       - name: Run bootstrap
-        run: sh ./.github/scripts/bootstrap.sh
+        run: |
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch '^C:/mingw64/bin' }) -join ';'
+          sh ./.github/scripts/bootstrap.sh
