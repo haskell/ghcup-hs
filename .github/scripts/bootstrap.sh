@@ -18,4 +18,4 @@ version=$(ghc --numeric-version | tr -d '\r\n')
 [ "$version" = "${BOOTSTRAP_HASKELL_GHC_VERSION}" ]
 
 # https://github.com/actions/runner-images/issues/7061
-[ "$(ghcup config | grep --color=never meta-mode)" = "meta-mode: Lax" ]
+[ "$(ghcup config | grep --color=never meta-mode | tr -d '\r\n')" = "meta-mode: Lax" ]
