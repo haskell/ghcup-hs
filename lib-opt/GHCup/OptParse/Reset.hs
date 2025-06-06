@@ -19,8 +19,8 @@
 
 {-
 Resetting config uses type-checking to prevent following scenarios
-either UserSetting field is uncovered by the key handler
-or an invalid key is handling.
+either some UserSetting fields are uncovered by the key handler
+or some exceeded keys are handling.
 -}
 
 module GHCup.OptParse.Reset where
