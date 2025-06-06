@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -19,7 +18,7 @@ import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 import           GHCup.OptParse.Common
-import           GHCup.OptParse.Reset (resetUserConfig, toSelect)
+import           GHCup.OptParse.Reset (resetUserConfig, toKey)
 import           GHCup.Version
 
 #if !MIN_VERSION_base(4,13,0)
@@ -258,11 +257,11 @@ config configCommand settings userConf keybindings runLogger = case configComman
           pure ExitSuccess
     ResetKeys stringKeys -> do
       runLogger $ logDebug $ "stringKeys: " <> T.pack (show stringKeys)
-      let mKeys = traverse toSelect stringKeys
+      let mKeys = traverse toKey stringKeys
       runLogger $ logDebug $ "mKeys: " <> T.pack (show mKeys)
       case mKeys of
         Nothing -> do
-          void $ throwM $ ParseError $ "Ivalid key(s) " <> show stringKeys
+          void $ throwM $ ParseError $ "Some keys are invalid " <> show stringKeys
           pure $ ExitFailure 65
         Just keys -> do
           runLogger $ logDebug $ "userConf: " <> T.pack (show userConf)

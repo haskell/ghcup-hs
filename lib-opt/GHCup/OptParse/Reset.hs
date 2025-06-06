@@ -18,12 +18,9 @@
 {-# LANGUAGE InstanceSigs #-}
 
 {-
-Reset scenario uses type-checking to prevent a scenario
-when new field is added to UserSettings and
-correspondent constructor is missed.
-
-Type-checker signals when correspondent constructor is missed or
-when not-correspondent constructor is added
+Resetting config uses type-checking to prevent following scenarios
+either UserSetting field is uncovered by the key handler
+or an invalid key is handling.
 -}
 
 module GHCup.OptParse.Reset where
@@ -36,8 +33,8 @@ import GHC.TypeLits
 import Data.Type.Bool
 import Data.Type.Equality
 
--- Select constructors correspond to UserSettings fields
-data Select
+-- Key constructors correspond to UserSettings fields
+data Key
     = Cache
     | MetaCache
     | MetaMode
@@ -56,47 +53,47 @@ data Select
     | GuessVersion
     deriving (Show, Eq)
 
-deriving instance Generic Select
+deriving instance Generic Key
 
-data SelectVal (s :: Select) where
-    CacheVal :: SelectVal 'Cache
-    MetaCacheVal :: SelectVal 'MetaCache
-    MetaModeVal :: SelectVal 'MetaMode
-    NoVerifyVal :: SelectVal 'NoVerify
-    VerboseVal :: SelectVal 'Verbose
-    KeepDirsVal :: SelectVal 'KeepDirs
-    DownloaderVal :: SelectVal 'Downloader
-    KeyBindingsVal :: SelectVal 'KeyBindings
-    UrlSourceVal :: SelectVal 'UrlSource
-    NoNetworkVal :: SelectVal 'NoNetwork
-    GPGSettingVal :: SelectVal 'GPGSetting
-    PlatformOverrideVal :: SelectVal 'PlatformOverride
-    MirrorsVal :: SelectVal 'Mirrors
-    DefGHCConfOptionsVal :: SelectVal 'DefGHCConfOptions
-    PagerVal :: SelectVal 'Pager
-    GuessVersionVal :: SelectVal 'GuessVersion
+data KeyVal (s :: Key) where
+    CacheVal :: KeyVal 'Cache
+    MetaCacheVal :: KeyVal 'MetaCache
+    MetaModeVal :: KeyVal 'MetaMode
+    NoVerifyVal :: KeyVal 'NoVerify
+    VerboseVal :: KeyVal 'Verbose
+    KeepDirsVal :: KeyVal 'KeepDirs
+    DownloaderVal :: KeyVal 'Downloader
+    KeyBindingsVal :: KeyVal 'KeyBindings
+    UrlSourceVal :: KeyVal 'UrlSource
+    NoNetworkVal :: KeyVal 'NoNetwork
+    GPGSettingVal :: KeyVal 'GPGSetting
+    PlatformOverrideVal :: KeyVal 'PlatformOverride
+    MirrorsVal :: KeyVal 'Mirrors
+    DefGHCConfOptionsVal :: KeyVal 'DefGHCConfOptions
+    PagerVal :: KeyVal 'Pager
+    GuessVersionVal :: KeyVal 'GuessVersion
 
-toSelectVal ::
-    Select -> (forall s. (ResetField s UserSettings, HasValidSelector s) => SelectVal s -> r) -> r
-toSelectVal Cache k = k CacheVal
-toSelectVal MetaCache k = k MetaCacheVal
-toSelectVal MetaMode k = k MetaModeVal
-toSelectVal NoVerify k = k NoVerifyVal
-toSelectVal Verbose k = k VerboseVal
-toSelectVal KeepDirs k = k KeepDirsVal
-toSelectVal Downloader k = k DownloaderVal
-toSelectVal KeyBindings k = k KeyBindingsVal
-toSelectVal UrlSource k = k UrlSourceVal
-toSelectVal NoNetwork k = k NoNetworkVal
-toSelectVal GPGSetting k = k GPGSettingVal
-toSelectVal PlatformOverride k = k PlatformOverrideVal
-toSelectVal Mirrors k = k MirrorsVal
-toSelectVal DefGHCConfOptions k = k DefGHCConfOptionsVal
-toSelectVal Pager k = k PagerVal
-toSelectVal GuessVersion k = k GuessVersionVal
+toKeyVal ::
+    Key -> (forall s. (ResetField s UserSettings, HasValidKey s) => KeyVal s -> r) -> r
+toKeyVal Cache k = k CacheVal
+toKeyVal MetaCache k = k MetaCacheVal
+toKeyVal MetaMode k = k MetaModeVal
+toKeyVal NoVerify k = k NoVerifyVal
+toKeyVal Verbose k = k VerboseVal
+toKeyVal KeepDirs k = k KeepDirsVal
+toKeyVal Downloader k = k DownloaderVal
+toKeyVal KeyBindings k = k KeyBindingsVal
+toKeyVal UrlSource k = k UrlSourceVal
+toKeyVal NoNetwork k = k NoNetworkVal
+toKeyVal GPGSetting k = k GPGSettingVal
+toKeyVal PlatformOverride k = k PlatformOverrideVal
+toKeyVal Mirrors k = k MirrorsVal
+toKeyVal DefGHCConfOptions k = k DefGHCConfOptionsVal
+toKeyVal Pager k = k PagerVal
+toKeyVal GuessVersion k = k GuessVersionVal
 
---Links Select with fields
-type family FieldNameOf (s :: Select) :: Symbol where
+--Links Key with fields
+type family FieldNameOf (s :: Key) :: Symbol where
     FieldNameOf 'Cache = "uCache"
     FieldNameOf 'MetaCache = "uMetaCache"
     FieldNameOf 'MetaMode = "uMetaMode"
@@ -113,28 +110,28 @@ type family FieldNameOf (s :: Select) :: Symbol where
     FieldNameOf 'DefGHCConfOptions = "uDefGHCConfOptions"
     FieldNameOf 'Pager = "uPager"
     FieldNameOf 'GuessVersion = "uGuessVersion"
-    FieldNameOf s = TypeError ('Text "Selector " ':<>: 'ShowType s ':<>: 'Text " has no corresponding field in UserSettings")
+    FieldNameOf s = TypeError ('Text "Keyor " ':<>: 'ShowType s ':<>: 'Text " has no corresponding field in UserSettings")
 
--- Check that Select is valid
-type family HasValidSelector (s :: Select) :: Constraint where
-    HasValidSelector s =
+-- Check that Key is valid
+type family HasValidKey (s :: Key) :: Constraint where
+    HasValidKey s =
         If
-            (HasValidSelector' (FieldNameOf s) (FieldNames UserSettings))
+            (HasValidKey' (FieldNameOf s) (FieldNames UserSettings))
             (() :: Constraint)
             ( TypeError
-                ( 'Text "Selector "
+                ( 'Text "Keyor "
                     ':<>: 'ShowType s
                     ':<>: 'Text " is not valid for UserSettings"
                 )
             )
 
-type family HasValidSelector' (field :: Symbol) (fields :: [Symbol]) :: Bool where
-    HasValidSelector' field '[] = 'False
-    HasValidSelector' field (f ': fs) =
+type family HasValidKey' (field :: Symbol) (fields :: [Symbol]) :: Bool where
+    HasValidKey' field '[] = 'False
+    HasValidKey' field (f ': fs) =
         If
             (field == f)
             'True
-            (HasValidSelector' field fs)
+            (HasValidKey' field fs)
 
 type family (xs :: [k]) ++ (ys :: [k]) :: [k] where
     '[] ++ ys = ys
@@ -155,13 +152,13 @@ type family FieldNames'' (fields :: Type -> Type) :: [Symbol] where
     FieldNames'' U1 = '[]
 
 -- Check correspondence by number
-type family CheckCount (selectors :: [Select]) (fields :: [Symbol]) :: Constraint where
+type family CheckCount (keys :: [Key]) (fields :: [Symbol]) :: Constraint where
     CheckCount '[] '[] = ()
     CheckCount (s ': ss) (f ': fs) = CheckCount ss fs
     CheckCount (s ': ss) '[] =
         TypeError
-            ( 'Text "Excess selectors: "
-                ':<>: ShowSelectors (s ': ss)
+            ( 'Text "Excess keys: "
+                ':<>: ShowKeys (s ': ss)
             )
     CheckCount '[] (f ': fs) =
         TypeError
@@ -169,20 +166,20 @@ type family CheckCount (selectors :: [Select]) (fields :: [Symbol]) :: Constrain
                 ':<>: ShowFields (f ': fs)
             )
 
-type family ShowSelectors (selectors :: [Select]) :: ErrorMessage where
-    ShowSelectors '[] = 'Text ""
-    ShowSelectors (s ': '[]) = 'ShowType s
-    ShowSelectors (s ': ss) = 'ShowType s ':<>: 'Text ", " ':<>: ShowSelectors ss
+type family ShowKeys (keys :: [Key]) :: ErrorMessage where
+    ShowKeys '[] = 'Text ""
+    ShowKeys (s ': '[]) = 'ShowType s
+    ShowKeys (s ': ss) = 'ShowType s ':<>: 'Text ", " ':<>: ShowKeys ss
 
 type family ShowFields (fields :: [Symbol]) :: ErrorMessage where
     ShowFields '[] = 'Text ""
     ShowFields (f ': '[]) = 'ShowType f
     ShowFields (f ': fs) = 'ShowType f ':<>: 'Text ", " ':<>: ShowFields fs
 
-type family AllSelectors :: [Select] where
-    AllSelectors = '[ 'Cache, 'MetaCache, 'MetaMode, 'NoVerify, 'Verbose, 'KeepDirs, 'Downloader, 'KeyBindings, 'UrlSource, 'NoNetwork, 'GPGSetting, 'PlatformOverride, 'Mirrors, 'DefGHCConfOptions, 'Pager, 'GuessVersion ]
+type family AllKeys :: [Key] where
+    AllKeys = '[ 'Cache, 'MetaCache, 'MetaMode, 'NoVerify, 'Verbose, 'KeepDirs, 'Downloader, 'KeyBindings, 'UrlSource, 'NoNetwork, 'GPGSetting, 'PlatformOverride, 'Mirrors, 'DefGHCConfOptions, 'Pager, 'GuessVersion ]
 
-class ResetField (s :: Select) a where
+class ResetField (s :: Key) a where
     resetField :: a -> a
 
 instance ResetField 'Cache UserSettings where
@@ -252,19 +249,19 @@ instance ResetField 'GuessVersion UserSettings where
 resetUserConfig' ::
     forall s.
     ( ResetField s UserSettings
-    , HasValidSelector s
-    , CheckCount AllSelectors (FieldNames UserSettings)
+    , HasValidKey s
+    , CheckCount AllKeys (FieldNames UserSettings)
     ) =>
-    UserSettings -> SelectVal s -> UserSettings
+    UserSettings -> KeyVal s -> UserSettings
 resetUserConfig' userSettings _ = resetField @s userSettings
 
 resetUserConfig ::
-    CheckCount AllSelectors (FieldNames UserSettings) =>
-    UserSettings -> Select -> UserSettings
-resetUserConfig userSettings select = toSelectVal select $ \selectVal -> resetUserConfig' userSettings selectVal
+    CheckCount AllKeys (FieldNames UserSettings) =>
+    UserSettings -> Key -> UserSettings
+resetUserConfig userSettings key = toKeyVal key $ \keyVal -> resetUserConfig' userSettings keyVal
 
-toSelect :: String -> Maybe Select
-toSelect = \case
+toKey :: String -> Maybe Key
+toKey = \case
   "cache" -> Just Cache
   "meta-cache" -> Just MetaCache
   "meta-mode" -> Just MetaMode
