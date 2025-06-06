@@ -19,6 +19,7 @@ import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 import           GHCup.OptParse.Common
+import           GHCup.OptParse.Reset (resetUserConfig, toSelect)
 import           GHCup.Version
 
 #if !MIN_VERSION_base(4,13,0)
@@ -28,6 +29,7 @@ import           Control.Monad (when)
 import           Control.Exception              ( displayException )
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
+import           Data.Foldable (foldl')
 import           Data.Functor
 import           Data.Maybe
 import           Data.Variant.Excepts
@@ -52,10 +54,13 @@ import Control.Exception.Safe (MonadMask)
 data ConfigCommand
   = ShowConfig
   | SetConfig String (Maybe String)
+  | ResetConfig ResetCommand
   | InitConfig
   | AddReleaseChannel Bool NewURLSource
   deriving (Eq, Show)
 
+data ResetCommand = ResetKeys [String] | ResetAll
+  deriving (Eq, Show)
 
 
     ---------------
@@ -67,6 +72,7 @@ configP :: Parser ConfigCommand
 configP = subparser
       (  command "init" initP
       <> command "set"  setP -- [set] KEY VALUE at help lhs
+      <> command "reset" resetP
       <> command "show" showP
       <> command "add-release-channel" addP
       )
@@ -74,11 +80,21 @@ configP = subparser
  where
   initP = info (pure InitConfig) (progDesc "Write default config to ~/.ghcup/config.yaml")
   showP = info (pure ShowConfig) (progDesc "Show current config (default)")
-  setP  = info argsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
-  argsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
+  setP  = info setArgsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
+  setArgsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
+  resetP = info resetArgsP (progDesc "Reset the whole config or just specific keys" <> footerDoc (Just $ text configResetFooter))
+  resetArgsP = ResetConfig  <$> (resetKeysP <|> resetAllP)
   addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing")
                 <*> argument (eitherReader parseNewUrlSource) (metavar "<URL_SOURCE|cross|prereleases|vanilla>" <> completer urlSourceCompleter))
     (progDesc "Add a release channel, e.g. from a URI or using alias")
+  resetKeysP = ResetKeys <$> some (strOption
+    (  long "keys"
+    <> metavar "YAML_KEY"
+    <> help "Reset specific keys of the config" ))
+
+  resetAllP = flag' ResetAll
+    (  long "all"
+    <> help "Reset the whole config" )
 
 
 
@@ -100,6 +116,9 @@ configFooter = [s|Examples:
   # set <key> <value> configuration pair
   ghcup config set <key> <value>
 
+  # reset <key>
+  ghcup config reset --keys <key>
+
   # add a release channel
   ghcup config add-release-channel prereleases|]
 
@@ -120,6 +139,16 @@ configSetFooter = [s|Examples:
   # set mirror for ghcup metadata
   ghcup config set '{url-source: { OwnSource: "<url>"}}'|]
 
+configResetFooter :: String
+configResetFooter = [s|Examples:
+  # unset whole config
+  ghcup config reset --all
+
+  # reset --keys cache
+  ghcup config reset cache
+
+  # reset cache, url-source and downloader
+  ghcup config reset --keys cache url-source downloader|]
 
 
     -----------------
@@ -224,6 +253,24 @@ config configCommand settings userConf keybindings runLogger = case configComman
       VLeft e -> do
         runLogger (logError $ T.pack $ prettyHFError e)
         pure $ ExitFailure 65
+  (ResetConfig resetCommand) -> case resetCommand of
+    ResetAll -> do
+          doReset defaultUserSettings
+          pure ExitSuccess
+    ResetKeys stringKeys -> do
+      runLogger $ logDebug $ "stringKeys: " <> T.pack (show stringKeys)
+      let mKeys = traverse toSelect stringKeys
+      runLogger $ logDebug $ "mKeys: " <> T.pack (show mKeys)
+      case mKeys of
+        Nothing -> do
+          void $ throwM $ ParseError $ "Ivalid key(s) " <> show stringKeys
+          pure $ ExitFailure 65
+
+        Just keys -> do
+          runLogger $ logDebug $ "userConf: " <> T.pack (show userConf)
+          let newUserConf = foldl' (\conf key -> resetUserConfig conf key ) userConf keys
+          doReset newUserConf
+          pure ExitSuccess
 
   AddReleaseChannel force new -> do
     r <- runE @'[DuplicateReleaseChannel] $ do
@@ -258,6 +305,13 @@ config configCommand settings userConf keybindings runLogger = case configComman
     path <- liftIO getConfigFilePath
     liftIO $ writeFile path $ formatConfig $ settings'
     runLogger $ logDebug $ T.pack $ show settings'
+    pure ()
+
+  doReset :: MonadIO m => UserSettings -> m ()
+  doReset resetUserSettings = do
+    path <- liftIO getConfigFilePath
+    liftIO $ writeFile path $ formatConfig $ resetUserSettings
+    runLogger $ logDebug $ "reset to config: " <> T.pack (show resetUserSettings)
     pure ()
 
   decodeSettings = lE' (JSONDecodeError . displayException) . Y.decodeEither' . UTF8.fromString
