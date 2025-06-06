@@ -57,7 +57,6 @@ import           GHCup.Utils.Parsers (gpgParser, downloaderParser, keepOnParser,
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
-import           Control.Monad.Reader
 import           Data.Either
 import           Data.Functor
 import           Data.Maybe

@@ -48,6 +48,9 @@ checkList =
     , AddReleaseChannel False (NewChannelAlias VanillaChannel)
     )
   , ("config set cache true", SetConfig "cache" (Just "true"))
+  , ("config reset all", ResetConfig ResetAll)
+  , ("config reset keys cache", ResetConfig (ResetKeys ["cache"]))
+  , ("config reset keys cache downloader", ResetConfig (ResetKeys ["cache", "downloader"]))
   ]
 
 configParseWith :: [String] -> IO ConfigCommand
