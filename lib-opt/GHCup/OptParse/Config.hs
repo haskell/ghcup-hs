@@ -81,22 +81,21 @@ configP = subparser
   initP = info (pure InitConfig) (progDesc "Write default config to ~/.ghcup/config.yaml")
   showP = info (pure ShowConfig) (progDesc "Show current config (default)")
   setP  = info setArgsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
-  setArgsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
-  resetP = info resetArgsP (progDesc "Reset the whole config or just specific keys" <> footerDoc (Just $ text configResetFooter))
-  resetArgsP = ResetConfig  <$> (resetKeysP <|> resetAllP)
   addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing")
                 <*> argument (eitherReader parseNewUrlSource) (metavar "<URL_SOURCE|cross|prereleases|vanilla>" <> completer urlSourceCompleter))
     (progDesc "Add a release channel, e.g. from a URI or using alias")
-  resetKeysP = ResetKeys <$> some (strOption
-    (  long "keys"
-    <> metavar "YAML_KEY"
-    <> help "Reset specific keys of the config" ))
-
-  resetAllP = flag' ResetAll
-    (  long "all"
-    <> help "Reset the whole config" )
-
-
+  setArgsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
+  resetP = info resetArgsP
+    (progDesc "Reset the whole config or just specific keys" <> footerDoc (Just $ text configResetFooter))
+  resetArgsP = ResetConfig <$> subparser
+       ( command "all"
+         (info (pure ResetAll) (progDesc "Reset the whole config"))
+      <> command "keys"
+         (info resetKeysP (progDesc "Reset specific keys of the config"))
+       )
+  resetKeysP = ResetKeys <$> some (strArgument
+    (  metavar "YAML_KEY"
+    <> help "Specify key(s)" ))
 
 
     --------------
@@ -116,8 +115,8 @@ configFooter = [s|Examples:
   # set <key> <value> configuration pair
   ghcup config set <key> <value>
 
-  # reset <key>
-  ghcup config reset --keys <key>
+  # reset config key(s)
+  ghcup config reset keys <key> <key> ...
 
   # add a release channel
   ghcup config add-release-channel prereleases|]
@@ -141,14 +140,14 @@ configSetFooter = [s|Examples:
 
 configResetFooter :: String
 configResetFooter = [s|Examples:
-  # unset whole config
-  ghcup config reset --all
+  # reset the whole config
+  ghcup config reset all
 
-  # reset --keys cache
-  ghcup config reset cache
+  # reset one key (cache)
+  ghcup config reset keys cache
 
-  # reset cache, url-source and downloader
-  ghcup config reset --keys cache url-source downloader|]
+  # reset some keys (cache, url-source and downloader)
+  ghcup config reset keys cache url-source downloader|]
 
 
     -----------------
@@ -265,7 +264,6 @@ config configCommand settings userConf keybindings runLogger = case configComman
         Nothing -> do
           void $ throwM $ ParseError $ "Ivalid key(s) " <> show stringKeys
           pure $ ExitFailure 65
-
         Just keys -> do
           runLogger $ logDebug $ "userConf: " <> T.pack (show userConf)
           let newUserConf = foldl' (\conf key -> resetUserConfig conf key ) userConf keys
