@@ -81,9 +81,6 @@ configP = subparser
   initP = info (pure InitConfig) (progDesc "Write default config to ~/.ghcup/config.yaml")
   showP = info (pure ShowConfig) (progDesc "Show current config (default)")
   setP  = info setArgsP (progDesc "Set config KEY to VALUE (or specify as single json value)" <> footerDoc (Just $ text configSetFooter))
-  addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing")
-                <*> argument (eitherReader parseNewUrlSource) (metavar "<URL_SOURCE|cross|prereleases|vanilla>" <> completer urlSourceCompleter))
-    (progDesc "Add a release channel, e.g. from a URI or using alias")
   setArgsP = SetConfig <$> argument str (metavar "<JSON_VALUE | YAML_KEY>") <*> optional (argument str (metavar "YAML_VALUE"))
   resetP = info resetArgsP
     (progDesc "Reset the whole config or just specific keys" <> footerDoc (Just $ text configResetFooter))
@@ -96,6 +93,9 @@ configP = subparser
   resetKeysP = ResetKeys <$> some (strArgument
     (  metavar "YAML_KEY"
     <> help "Specify key(s)" ))
+  addP  = info (AddReleaseChannel <$> switch (long "force" <> help "Delete existing entry (if any) and append instead of failing")
+                <*> argument (eitherReader parseNewUrlSource) (metavar "<URL_SOURCE|cross|prereleases|vanilla>" <> completer urlSourceCompleter))
+    (progDesc "Add a release channel, e.g. from a URI or using alias")
 
 
     --------------
