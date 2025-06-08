@@ -51,8 +51,8 @@ param (
     [string]$Msys2Env
 )
 
-$DefaultMsys2Version = "20221216"
-$DefaultMsys2Hash = "18370d32b0264915c97e3d7c618f7b32d48ad80858923883fde5145acd32ca0f"
+$DefaultMsys2Version = "20250221"
+$DefaultMsys2Hash = "6d4952fd65d1924c56620355c3c7d5a1b40e3c7d7be358f6eb1017363d2dbbb1"
 
 $Silent = !$Interactive
 
@@ -561,12 +561,6 @@ if ($msys2Action -eq 0) {
 
     Exec "$env:windir\system32\taskkill.exe" /F /FI "MODULES eq msys-2.0.dll"
 
-    Print-Msg -msg 'Upgrading full system...'
-    Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
-
-    Print-Msg -msg 'Upgrading full system twice...'
-    Exec "$Bash" '-lc' 'pacman --noconfirm -Syuu'
-
     Print-Msg -msg 'Installing Dependencies...'
     Exec "$Bash" '-lc' ('pacman --noconfirm -S --needed curl autoconf {0}' -f $PkgConf)
 
@@ -650,9 +644,15 @@ if ($Host.Name -eq "ConsoleHost")
 
 	$GhcInstArgs = ('{0} -mintty -c "pacman --noconfirm -S --needed base-devel gettext autoconf make libtool automake python p7zip patch unzip"' -f $ShellType)
 	Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $GhcInstArgs -DestinationPath 'Install GHC dev dependencies.lnk' -TempPath $GhcupDir
-	Create-Shortcut -SourceExe ('{0}\msys2_shell.cmd' -f $MsysDir) -ArgumentsToSourceExe $ShellType -DestinationPath 'Mingw haskell shell.lnk' -TempPath $GhcupDir
-	Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath 'Mingw package management docs.url' -TempPath $GhcupDir
+
 	$DesktopDir = [Environment]::GetFolderPath("Desktop")
+	$shellScript = (@'
+powershell.exe -ExecutionPolicy Bypass -Command ". '{0}\msys2_shell.cmd' '{1}' '-here' '-no-start' '-shell' 'bash' '-use-full-path' '-c' 'echo && echo To keep your msys2 env and bash shell up to date, run: pacman -Syuu && /usr/bin/bash -l'"
+'@ -f $MsysDir, $ShellType)
+	$null = New-Item -Path $MsysDir -Name "Haskell Shell.bat" -ItemType "file" -Force -Value $shellScript
+	Create-Shortcut -SourceExe ('{0}\Haskell Shell.bat' -f $MsysDir) -ArgumentsToSourceExe '' -DestinationPath 'Mingw haskell shell.lnk' -TempPath $GhcupDir
+
+	Create-Shortcut -SourceExe 'https://www.msys2.org/docs/package-management' -ArgumentsToSourceExe '' -DestinationPath 'Mingw package management docs.url' -TempPath $GhcupDir
 	$null = New-Item -Path $DesktopDir -Name "Uninstall Haskell.ps1" -ItemType "file" -Force -Value $uninstallShortCut
 }
 
