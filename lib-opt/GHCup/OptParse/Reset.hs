@@ -24,7 +24,6 @@ data Key
     | GuessVersion
     deriving (Show, Eq)
 
--- Parse a string into a Key
 toKey :: String -> Maybe Key
 toKey = \case
     "cache" -> Just Cache
