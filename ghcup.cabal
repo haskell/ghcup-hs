@@ -371,18 +371,24 @@ library ghcup-tui
   import:             app-common-depends
   exposed-modules:
     GHCup.BrickMain
-    GHCup.Brick.Widgets.Navigation
-    GHCup.Brick.Widgets.Tutorial
-    GHCup.Brick.Widgets.KeyInfo
+    GHCup.Brick.Widgets.BaseWidget
+    GHCup.Brick.Widgets.BasicOverlay
     GHCup.Brick.Widgets.SectionList
-    GHCup.Brick.Widgets.Menu
-    GHCup.Brick.Widgets.Menus.Context
-    GHCup.Brick.Widgets.Menus.AdvanceInstall
-    GHCup.Brick.Widgets.Menus.CompileGHC
-    GHCup.Brick.Widgets.Menus.CompileHLS
+    GHCup.Brick.Widgets.GenericMenu
+    GHCup.Brick.Widgets.InputField.Class
+    GHCup.Brick.Widgets.InputField.CheckBox
+    GHCup.Brick.Widgets.InputField.EditInput
+    GHCup.Brick.Widgets.InputField.SelectInput
     GHCup.Brick.Actions
-    GHCup.Brick.App
-    GHCup.Brick.BrickState
+    GHCup.Brick.App.Common
+    GHCup.Brick.App.AdvanceInstallOptions
+    GHCup.Brick.App.AdvanceInstallMenu
+    GHCup.Brick.App.CompileGHCMenu
+    GHCup.Brick.App.CompileHLSMenu
+    GHCup.Brick.App.ContextMenu
+    GHCup.Brick.App.Navigation
+    GHCup.Brick.App.KeyInfo
+    GHCup.Brick.App.Tutorial
     GHCup.Brick.Attributes
     GHCup.Brick.Common
 
@@ -400,6 +406,7 @@ library ghcup-tui
 
   build-depends:
     , ghcup
+    , some
     , brick         >=2.1 && <2.8
     , vty           ^>=6.0 || ^>=6.1 || ^>=6.2
 
