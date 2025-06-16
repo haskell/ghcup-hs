@@ -951,27 +951,6 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
     read -r answer </dev/tty
 fi
 
-if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
-    ask_base_channel
-    ask_base_channel_answer=$?
-    if [ $ask_base_channel_answer != 0 ] ; then
-        ask_prerelease_channel
-        ask_prerelease_channel_answer=$?
-        ask_cross_channel
-        ask_cross_channel_answer=$?
-    fi
-fi
-ask_bashrc
-ask_bashrc_answer=$?
-ask_cabal_config_init
-ask_cabal_config_init_answer=$?
-if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
-	ask_hls
-	ask_hls_answer=$?
-	ask_stack
-	ask_stack_answer=$?
-fi
-
 edo mkdir -p "${GHCUP_BIN}"
 
 if command -V "ghcup" >/dev/null 2>&1 ; then
@@ -987,13 +966,34 @@ if [ -n "${BOOTSTRAP_HASKELL_YAML}" ] ; then (>&2 ghcup -s "${BOOTSTRAP_HASKELL_
 echo
 
 if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+    echo
     warn "Press ENTER to proceed or ctrl-c to abort."
-    warn "Installation may take a while."
     echo
 
     # Wait for user input to continue.
     # shellcheck disable=SC2034
     read -r answer </dev/tty
+fi
+
+if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
+    ask_base_channel
+    ask_base_channel_answer=$?
+    if [ $ask_base_channel_answer != 0 ] ; then
+        ask_prerelease_channel
+        ask_prerelease_channel_answer=$?
+        ask_cross_channel
+        ask_cross_channel_answer=$?
+    fi
+fi
+ask_bashrc
+ask_bashrc_answer=$?
+ask_cabal_config_init
+ask_cabal_config_init_answer=$?
+if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
+	  ask_hls
+	  ask_hls_answer=$?
+	  ask_stack
+	  ask_stack_answer=$?
 fi
 
 case $ask_base_channel_answer in
