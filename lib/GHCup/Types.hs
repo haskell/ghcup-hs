@@ -400,8 +400,8 @@ data MetaMode = Strict
 
 instance NFData MetaMode
 
--- In case of updating any of the field (adding, removing, changing the name)
--- Please update GHCup.OptParse.Reset module
+-- If you add, remove, or rename any fields,
+-- make sure to update the GHCup.OptParse.Reset module as well.
 data UserSettings = UserSettings
   { uCache             :: Maybe Bool
   , uMetaCache         :: Maybe Integer
