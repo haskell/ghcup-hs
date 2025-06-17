@@ -1,11 +1,9 @@
-{-# OPTIONS_GHC -Wincomplete-patterns -Werror=incomplete-patterns #-}
-
 module GHCup.OptParse.Reset where
 
 import GHCup.Types (UserSettings(..))
 
--- Key constructors correspond to UserSettings fields
-data Key
+-- UserSettingsKey constructors correspond to UserSettings fields
+data UserSettingsKey
     = Cache
     | MetaCache
     | MetaMode
@@ -24,28 +22,28 @@ data Key
     | GuessVersion
     deriving (Show, Eq)
 
-toKey :: String -> Maybe Key
-toKey = \case
-    "cache" -> Just Cache
-    "meta-cache" -> Just MetaCache
-    "meta-mode" -> Just MetaMode
-    "no-verify" -> Just NoVerify
-    "verbose" -> Just Verbose
-    "keep-dirs" -> Just KeepDirs
-    "downloader" -> Just Downloader
-    "key-bindings" -> Just KeyBindings
-    "url-source" -> Just UrlSource
-    "no-network" -> Just NoNetwork
-    "gpg-setting" -> Just GPGSetting
-    "platform-override" -> Just PlatformOverride
-    "mirrors" -> Just Mirrors
-    "def-ghc-conf-options" -> Just DefGHCConfOptions
-    "pager" -> Just Pager
-    "guess-version" -> Just GuessVersion
-    _ -> Nothing
+toUserSettingsKey :: String -> Either String UserSettingsKey
+toUserSettingsKey = \case
+    "cache" -> Right Cache
+    "meta-cache" -> Right MetaCache
+    "meta-mode" -> Right MetaMode
+    "no-verify" -> Right NoVerify
+    "verbose" -> Right Verbose
+    "keep-dirs" -> Right KeepDirs
+    "downloader" -> Right Downloader
+    "key-bindings" -> Right KeyBindings
+    "url-source" -> Right UrlSource
+    "no-network" -> Right NoNetwork
+    "gpg-setting" -> Right GPGSetting
+    "platform-override" -> Right PlatformOverride
+    "mirrors" -> Right Mirrors
+    "def-ghc-conf-options" -> Right DefGHCConfOptions
+    "pager" -> Right Pager
+    "guess-version" -> Right GuessVersion
+    invalidString -> Left invalidString
 
 resetUserConfig ::
-    UserSettings -> Key -> UserSettings
+    UserSettings -> UserSettingsKey -> UserSettings
 resetUserConfig settings key = case key of
     Cache -> settings { uCache = Nothing }
     MetaCache -> settings { uMetaCache = Nothing }

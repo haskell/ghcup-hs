@@ -18,7 +18,7 @@ import           GHCup.Prelude
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 import           GHCup.OptParse.Common
-import           GHCup.OptParse.Reset (resetUserConfig, toKey)
+import           GHCup.OptParse.Reset (resetUserConfig, toUserSettingsKey)
 import           GHCup.Version
 
 #if !MIN_VERSION_base(4,13,0)
@@ -251,23 +251,29 @@ config configCommand settings userConf keybindings runLogger = case configComman
       VLeft e -> do
         runLogger (logError $ T.pack $ prettyHFError e)
         pure $ ExitFailure 65
-  (ResetConfig resetCommand) -> case resetCommand of
-    ResetAll -> do
-          doReset defaultUserSettings
-          pure ExitSuccess
-    ResetKeys stringKeys -> do
-      runLogger $ logDebug $ "stringKeys: " <> T.pack (show stringKeys)
-      let mKeys = traverse toKey stringKeys
-      runLogger $ logDebug $ "mKeys: " <> T.pack (show mKeys)
-      case mKeys of
-        Nothing -> do
-          void $ throwM $ ParseError $ "Some keys are invalid " <> show stringKeys
-          pure $ ExitFailure 65
-        Just keys -> do
-          runLogger $ logDebug $ "userConf: " <> T.pack (show userConf)
-          let newUserConf = foldl' (\conf key -> resetUserConfig conf key ) userConf keys
-          doReset newUserConf
-          pure ExitSuccess
+  (ResetConfig resetCommand) -> do
+    r <- runE @'[ParseError] $ do
+      case resetCommand of
+        ResetAll -> do
+          lift $ doReset defaultUserSettings
+          pure ()
+        ResetKeys stringKeys -> do
+          lift $ runLogger $ logDebug $ "Raw keys: " <> T.pack (show stringKeys)
+          let eKeys = traverse toUserSettingsKey stringKeys
+          lift $ runLogger $ logDebug $ "Handled keys: " <> T.pack (show eKeys)
+          case eKeys of
+            Left invalidString -> do
+              throwE $ ParseError $ "Key <<" <> invalidString <> ">> is invalid"
+            Right keys -> do
+              lift $ runLogger $ logDebug $ "userConf: " <> T.pack (show userConf)
+              let newUserConf = foldl' (\conf key -> resetUserConfig conf key ) userConf keys
+              lift $ doReset newUserConf
+              pure ()
+    case r of
+      VRight _ -> pure ExitSuccess
+      VLeft e -> do
+        runLogger (logError $ T.pack $ prettyHFError e)
+        pure $ ExitFailure 65
 
   AddReleaseChannel force new -> do
     r <- runE @'[DuplicateReleaseChannel] $ do
