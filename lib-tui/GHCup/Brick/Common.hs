@@ -1,170 +1,25 @@
-{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE ViewPatterns      #-}
-{-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
-{-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE PatternSynonyms #-}
 
-{-
-This module contains common values used across the library. Crucially it contains two important types for the brick app:
+module GHCup.Brick.Common where
 
-- Name: List all resources (widgets) used by the app. see https://github.com/jtdaugherty/brick/blob/master/docs/guide.rst#resource-names
-- Mode: Use to dispatch events and drawings. see: https://github.com/jtdaugherty/brick/issues/476#issuecomment-1629151920
-
--}
-
-module GHCup.Brick.Common  (
-  installedSign,
-  setSign,
-  notInstalledSign,
-  checkBoxSelectedSign,
-  showKey,
-  showMod,
-  keyToWidget,
-  separator,
-  frontwardLayer,
-  enableScreenReader,
-  zoom,
-  defaultAppSettings,
-  lr,
-  showAllVersions,
-  Name(..),
-  Mode(..),
-  BrickData(..),
-  BrickSettings(..),
-  ResourceId (
-      UrlEditBox, SetCheckBox, IsolateEditBox, ForceCheckBox, AdditionalEditBox
-    , TargetGhcEditBox, BootstrapGhcEditBox, HadrianGhcEditBox, JobsEditBox, BuildConfigEditBox
-    , PatchesEditBox, CrossTargetEditBox, AddConfArgsEditBox, OvewrwiteVerEditBox
-    , BuildFlavourEditBox, BuildSystemEditBox, OkButton, AdvanceInstallButton
-    , CompileGHCButton, CompileHLSButton, CabalProjectEditBox
-    , CabalProjectLocalEditBox, UpdateCabalCheckBox, GitRefEditBox
-    , BootstrapGhcSelectBox, HadrianGhcSelectBox, ToolVersionBox, GHCInstallTargets
-  ) ) where
-
-import           GHCup.List ( ListResult )
 import           GHCup.Prelude ( isWindows )
-import           GHCup.Types ( Tool, KeyCombination (KeyCombination) )
+import qualified GHCup.Brick.Attributes as Attributes
+import           GHCup.Types ( Tool, KeyCombination (KeyCombination), KeyBindings(..) )
 import Data.List (intercalate)
 import           Prelude                 hiding ( appendFile )
 import qualified Graphics.Vty                  as Vty
-import           Optics.TH (makeLenses)
 import           Optics.Lens (toLensVL)
 import qualified Brick
+import qualified Brick.Widgets.List as L
 import qualified Brick.Widgets.Border as Border
 import Brick ((<+>))
 import qualified Data.Text as T
 import qualified Brick.Widgets.Center as Brick
 import qualified Brick.Widgets.Border.Style as Border
-
--- We could use regular ADTs but different menus share the same options.
--- example: all of ghcup compile ghc, ghcup compile hls, ghcup install cabal, etc...
--- all have a --set, --force, etc... common arguments. If we went for the ADT we'd end up
--- with SetCompileHLSOption, SetCompileGHCOption, SetInstallCabalOption, etc...
--- which isn't terrible, but verbose enough to reject it.
-
--- | A newtype for labeling resources in menus. It is bundled along with pattern synonyms
-newtype ResourceId = ResourceId Int deriving (Eq, Ord, Show)
-
-pattern OkButton :: ResourceId
-pattern OkButton = ResourceId 0
-pattern AdvanceInstallButton :: ResourceId
-pattern AdvanceInstallButton = ResourceId 100
-pattern CompileGHCButton :: ResourceId
-pattern CompileGHCButton = ResourceId 101
-pattern CompileHLSButton :: ResourceId
-pattern CompileHLSButton = ResourceId 102
-
-pattern UrlEditBox :: ResourceId
-pattern UrlEditBox = ResourceId 1
-pattern SetCheckBox :: ResourceId
-pattern SetCheckBox = ResourceId 2
-pattern IsolateEditBox :: ResourceId
-pattern IsolateEditBox = ResourceId 3
-pattern ForceCheckBox :: ResourceId
-pattern ForceCheckBox = ResourceId 4
-pattern AdditionalEditBox :: ResourceId
-pattern AdditionalEditBox = ResourceId 5
-
-pattern TargetGhcEditBox :: ResourceId
-pattern TargetGhcEditBox = ResourceId 6
-pattern BootstrapGhcEditBox :: ResourceId
-pattern BootstrapGhcEditBox = ResourceId 7
-pattern HadrianGhcEditBox :: ResourceId
-pattern HadrianGhcEditBox = ResourceId 20
-pattern JobsEditBox :: ResourceId
-pattern JobsEditBox = ResourceId 8
-pattern BuildConfigEditBox :: ResourceId
-pattern BuildConfigEditBox = ResourceId 9
-pattern PatchesEditBox :: ResourceId
-pattern PatchesEditBox = ResourceId 10
-pattern CrossTargetEditBox :: ResourceId
-pattern CrossTargetEditBox = ResourceId 11
-pattern AddConfArgsEditBox :: ResourceId
-pattern AddConfArgsEditBox = ResourceId 12
-pattern OvewrwiteVerEditBox :: ResourceId
-pattern OvewrwiteVerEditBox = ResourceId 13
-pattern BuildFlavourEditBox :: ResourceId
-pattern BuildFlavourEditBox = ResourceId 14
-pattern BuildSystemEditBox :: ResourceId
-pattern BuildSystemEditBox = ResourceId 15
-
-pattern CabalProjectEditBox  :: ResourceId
-pattern CabalProjectEditBox  = ResourceId 16
-pattern CabalProjectLocalEditBox  :: ResourceId
-pattern CabalProjectLocalEditBox  = ResourceId 17
-pattern UpdateCabalCheckBox  :: ResourceId
-pattern UpdateCabalCheckBox  = ResourceId 18
-
-pattern GitRefEditBox  :: ResourceId
-pattern GitRefEditBox  = ResourceId 19
-
-pattern BootstrapGhcSelectBox :: ResourceId
-pattern BootstrapGhcSelectBox = ResourceId 21
-pattern HadrianGhcSelectBox :: ResourceId
-pattern HadrianGhcSelectBox = ResourceId 22
-
-pattern ToolVersionBox :: ResourceId
-pattern ToolVersionBox = ResourceId 23
-
-pattern GHCInstallTargets :: ResourceId
-pattern GHCInstallTargets = ResourceId 24
-
--- | Name data type. Uniquely identifies each widget in the TUI.
--- some constructors might end up unused, but still is a good practise
--- to have all of them defined, just in case
-data Name = AllTools                   -- ^ The main list widget
-          | Singular Tool              -- ^ The particular list for each tool
-          | ListItem Tool Int          -- ^ An item in list
-          | KeyInfoBox                 -- ^ The text box widget with action informacion
-          | TutorialBox                -- ^ The tutorial widget
-          | ContextBox                 -- ^ The resource for Context Menu
-          | CompileGHCBox              -- ^ The resource for CompileGHC Menu
-          | AdvanceInstallBox          -- ^ The resource for AdvanceInstall Menu
-          | MenuElement ResourceId     -- ^ Each element in a Menu. Resources must not be share for visible
-                                       --   Menus, but MenuA and MenuB can share resources if they both are
-                                       --   invisible, or just one of them is visible.
-
-          deriving (Eq, Ord, Show)
-
--- | Mode type. It helps to dispatch events to different handlers.
-data Mode = Navigation
-          | KeyInfo
-          | Tutorial
-          | ContextPanel
-          | AdvanceInstallPanel
-          | CompileGHCPanel
-          | CompileHLSPanel
-          deriving (Eq, Show, Ord)
+import Optics.TH (makeLenses)
 
 installedSign :: String
   | isWindows = "I "
@@ -209,6 +64,14 @@ frontwardLayer layer_name =
       . Brick.withBorderStyle Border.unicode
       . Border.borderWithLabel (Brick.txt layer_name)
 
+smallerOverlayLayer :: T.Text -> Brick.Widget n -> Brick.Widget n
+smallerOverlayLayer layer_name =
+    Brick.centerLayer
+      . Brick.hLimitPercent 50
+      . Brick.vLimitPercent 65
+      . Brick.withBorderStyle Border.unicode
+      . Border.borderWithLabel (Brick.txt layer_name)
+
 -- | puts a cursor at the line beginning so It can be read by screen readers
 enableScreenReader :: n -> Brick.Widget n -> Brick.Widget n
 enableScreenReader n = Brick.putCursor n (Brick.Location (0,0))
@@ -218,17 +81,47 @@ enableScreenReader n = Brick.putCursor n (Brick.Location (0,0))
 -- | Given a lens, zoom on it. It is needed because Brick uses microlens but GHCup uses optics.
 zoom l = Brick.zoom (toLensVL l)
 
-data BrickData = BrickData
-  { _lr    :: [ListResult]
+data MenuKeyBindings = MenuKeyBindings
+  { _mKbUp              :: KeyCombination
+  , _mKbDown            :: KeyCombination
+  , _mKbQuit            :: KeyCombination
   }
-  deriving Show
+  deriving (Show)
 
-makeLenses ''BrickData
+makeLenses ''MenuKeyBindings
 
-data BrickSettings = BrickSettings { _showAllVersions :: Bool}
-  --deriving Show
+toMenuKeyBindings :: KeyBindings -> MenuKeyBindings
+toMenuKeyBindings KeyBindings {..} = MenuKeyBindings { _mKbUp = bUp, _mKbDown = bDown, _mKbQuit = bQuit}
 
-makeLenses ''BrickSettings
+-- | highlights a widget (using List.listSelectedFocusedAttr)
+highlighted :: Brick.Widget n -> Brick.Widget n
+highlighted = Brick.withAttr L.listSelectedFocusedAttr
 
-defaultAppSettings :: BrickSettings
-defaultAppSettings = BrickSettings False
+-- | Given a text, crates a highlighted label on focus. An amplifier can be passed
+renderAslabel :: T.Text -> Bool -> Brick.Widget n
+renderAslabel t focus =
+  if focus
+    then highlighted $ Brick.txt t
+    else Brick.txt t
+
+-- | Creates a left align column.
+-- Example:       |- col2 is align dispite the length of col1
+--   row1_col1         row1_col2
+--   row2_col1_large   row2_col2
+leftify :: Int -> Brick.Widget n -> Brick.Widget n
+leftify i = Brick.hLimit i . Brick.padRight Brick.Max
+
+-- | Creates a right align column.
+-- Example:       |- col2 is align dispite the length of col1
+--         row1_col1   row1_col2
+--   row2_col1_large   row2_col2
+rightify :: Int -> Brick.Widget n -> Brick.Widget n
+rightify i = Brick.hLimit i . Brick.padLeft Brick.Max
+
+-- | render some Text using helpMsgAttr
+renderAsHelpMsg :: T.Text -> Brick.Widget n
+renderAsHelpMsg = Brick.withAttr Attributes.helpMsgAttr . Brick.txt
+
+-- | render some Text using errMsgAttr
+renderAsErrMsg :: T.Text -> Brick.Widget n
+renderAsErrMsg = Brick.withAttr Attributes.errMsgAttr . Brick.txt

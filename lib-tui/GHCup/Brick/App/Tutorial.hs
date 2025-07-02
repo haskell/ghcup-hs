@@ -1,40 +1,34 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-{-
-A very simple information-only widget with no handler.
--}
+module GHCup.Brick.App.Tutorial (Tutorial(..)) where
 
-module GHCup.Brick.Widgets.Tutorial (draw) where
-
+import GHCup.Brick.Widgets.BaseWidget
+import qualified GHCup.Brick.App.Common as Common
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Attributes as Attributes
 import GHCup.Types (KeyCombination(..))
 
 import Brick
-    ( Padding(Max),
+    ( BrickEvent(..),
+      Padding(Max),
       Widget(..),
       (<=>), (<+>))
 import qualified Brick
 import           Brick.Widgets.Center ( center )
+import qualified Graphics.Vty as Vty
 import           Prelude                 hiding ( appendFile )
 
+data Tutorial = Tutorial
+  { _quitKey :: KeyCombination
+  }
 
+instance BaseWidget Common.Name Tutorial where
+  draw (Tutorial {..}) =
+    let
+      mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
 
-draw :: KeyCombination -> Widget Common.Name
-draw exitKey =
-  let
-    mkTextBox = Brick.hLimitPercent 70 . Brick.vBox . fmap (Brick.padRight Brick.Max)
-
-  in Common.frontwardLayer "Tutorial"
-      $ Brick.vBox
+    in Brick.vBox
           (fmap center
             [ mkTextBox [Brick.txtWrap "GHCup is a distribution channel for Haskell's tools."]
             , Common.separator
@@ -76,4 +70,11 @@ draw exitKey =
             , Brick.txt " "
             ])
         <=> (Brick.padRight Brick.Max $
-          Brick.txt "Press " <+> Common.keyToWidget exitKey <+> Brick.txt " to exit the tutorial")
+          Brick.txt "Press " <+> Common.keyToWidget _quitKey <+> Brick.txt " to exit the tutorial")
+
+  handleEvent ev = do
+    (Tutorial {..}) <- Brick.get
+    case ev of
+      VtyEvent (Vty.EvKey key mods)
+        | _quitKey == KeyCombination key mods -> pure (Just CloseAllOverlays)
+      _ -> pure Nothing
