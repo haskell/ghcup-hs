@@ -331,6 +331,7 @@ library ghcup-optparse
     GHCup.OptParse.List
     GHCup.OptParse.Nuke
     GHCup.OptParse.Prefetch
+    GHCup.OptParse.Reset
     GHCup.OptParse.Rm
     GHCup.OptParse.Run
     GHCup.OptParse.Set
