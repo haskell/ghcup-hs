@@ -29,11 +29,14 @@ package libyaml
 if os(linux)
   package ghcup
       flags: +yaml-streamly
-  if arch(x86_64) || arch(i386)
+  if arch(x86_64)
     flags: -tar
     executable-static: True
     package *
       ghc-options: -split-sections
+  elif arch(i386)
+    flags: -tar
+    executable-static: True
   elif arch(arm)
     flags: +tar
   else
