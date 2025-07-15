@@ -80,8 +80,15 @@ set_msys2_env_dir() {
 }
 
 case "${plat}" in
-        MSYS*|MINGW*|CYGWIN*)
+        MSYS*|MINGW*)
 			: "${GHCUP_INSTALL_BASE_PREFIX:=/c}"
+			GHCUP_DIR=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup")
+			GHCUP_BIN=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin")
+			: "${GHCUP_MSYS2:=${GHCUP_DIR}/msys64}"
+			set_msys2_env_dir
+			;;
+        CYGWIN*)
+			: "${GHCUP_INSTALL_BASE_PREFIX:=/cygdrive/c}"
 			GHCUP_DIR=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup")
 			GHCUP_BIN=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin")
 			: "${GHCUP_MSYS2:=${GHCUP_DIR}/msys64}"
