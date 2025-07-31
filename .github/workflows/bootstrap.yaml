@@ -59,3 +59,28 @@ jobs:
           Write-Host "Current Working Directory: $curDir"
           Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; try { & ([ScriptBlock]::Create((Invoke-WebRequest https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/scripts/bootstrap/bootstrap-haskell.ps1 -UseBasicParsing))) -InstallDir ${GITHUB_WORKSPACE} -BootstrapUrl ("{0}/scripts/bootstrap/bootstrap-haskell" -f $curDir) -InBash -Msys2Env "MINGW64" } catch { Write-Error $_ }
         shell: pwsh
+
+  bootstrap-windows-cygwin:
+    name: bootstrap-windows-cygwin
+    runs-on: windows-latest
+    env:
+      BOOTSTRAP_HASKELL_CABAL_VERSION: 3.12.1.0
+      BOOTSTRAP_HASKELL_GHC_VERSION: 9.6.7
+      BOOTSTRAP_HASKELL_NONINTERACTIVE: yes
+      ARCH: 64
+      JSON_VERSION: "0.0.7"
+    steps:
+      - run: git config --global core.autocrlf input
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Install cygwin
+        uses: cygwin/cygwin-install-action@master
+        with:
+          install-dir: 'c:\cygwin64'
+
+      - name: Run bootstrap
+        run: |
+          sh ./.github/scripts/bootstrap.sh
