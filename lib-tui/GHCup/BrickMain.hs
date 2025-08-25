@@ -27,7 +27,7 @@ import qualified GHCup.Brick.Attributes as Attributes
 import qualified GHCup.Brick.BrickState as AppState
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import qualified GHCup.Brick.Widgets.SectionList as Navigation
-import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
+import qualified GHCup.Brick.Widgets.Menus.AdvancedInstall as AdvancedInstall
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
 import qualified Brick
@@ -73,7 +73,7 @@ brickMain s = do
                       Common.defaultAppSettings
                       initial_list
                       (ContextMenu.create e exit_key)
-                      (AdvanceInstall.create exit_key)
+                      (AdvancedInstall.create exit_key)
                       (CompileGHC.create exit_key installedGHCs)
                       (CompileHLS.create exit_key installedGHCs)
                       (keyBindings s)

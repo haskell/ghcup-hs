@@ -14,9 +14,9 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
-module GHCup.Brick.Widgets.Menus.AdvanceInstall (
+module GHCup.Brick.Widgets.Menus.AdvancedInstall (
   InstallOptions (..),
-  AdvanceInstallMenu,
+  AdvancedInstallMenu,
   create,
   handler,
   draw,
@@ -70,10 +70,10 @@ makeLensesFor [
   ]
   ''InstallOptions
 
-type AdvanceInstallMenu = Menu InstallOptions Name
+type AdvancedInstallMenu = Menu InstallOptions Name
 
-create :: MenuKeyBindings -> AdvanceInstallMenu
-create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" validator k [ok] fields
+create :: MenuKeyBindings -> AdvancedInstallMenu
+create k = Menu.createMenu AdvancedInstallBox initialState "Advanced Install" validator k [ok] fields
   where
     initialInstallTargets = "install"
     initialState = InstallOptions Nothing False Nothing Nothing False [] initialInstallTargets
@@ -124,12 +124,12 @@ create k = Menu.createMenu AdvanceInstallBox initialState "Advance Install" vali
       ]
 
     ok = Menu.createButtonField (Common.MenuElement Common.OkButton)
-          & Menu.fieldLabelL .~ "Advance Install"
+          & Menu.fieldLabelL .~ "Advanced Install"
           & Menu.fieldHelpMsgL .~ "Install with options below"
 
-handler :: BrickEvent Name e -> EventM Name AdvanceInstallMenu ()
+handler :: BrickEvent Name e -> EventM Name AdvancedInstallMenu ()
 handler = Menu.handlerMenu
 
 
-draw :: AdvanceInstallMenu -> [Widget Name]
+draw :: AdvancedInstallMenu -> [Widget Name]
 draw = Menu.drawMenu

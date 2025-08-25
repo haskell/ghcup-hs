@@ -32,7 +32,7 @@ import GHCup.Types                    ( KeyBindings )
 import GHCup.Brick.Common             ( BrickData(..), BrickSettings(..), Mode(..))
 import GHCup.Brick.Widgets.Navigation ( BrickInternalState)
 import GHCup.Brick.Widgets.Menus.Context (ContextMenu)
-import GHCup.Brick.Widgets.Menus.AdvanceInstall (AdvanceInstallMenu)
+import GHCup.Brick.Widgets.Menus.AdvancedInstall (AdvancedInstallMenu)
 import GHCup.Brick.Widgets.Menus.CompileGHC (CompileGHCMenu)
 import Optics.TH                      (makeLenses)
 import GHCup.Brick.Widgets.Menus.CompileHLS (CompileHLSMenu)
@@ -43,7 +43,7 @@ data BrickState = BrickState
   , _appSettings        :: BrickSettings
   , _appState           :: BrickInternalState
   , _contextMenu        :: ContextMenu
-  , _advanceInstallMenu :: AdvanceInstallMenu
+  , _advancedInstallMenu :: AdvancedInstallMenu
   , _compileGHCMenu     :: CompileGHCMenu
   , _compileHLSMenu     :: CompileHLSMenu
   , _appKeys            :: KeyBindings

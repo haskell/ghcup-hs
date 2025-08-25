@@ -28,7 +28,7 @@ import           GHCup.Brick.BrickState
 import           GHCup.Brick.Widgets.SectionList
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import           GHCup.Brick.Widgets.Navigation (BrickInternalState)
-import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
+import qualified GHCup.Brick.Widgets.Menus.AdvancedInstall as AdvancedInstall
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
 
@@ -182,19 +182,19 @@ withIOAction action = do
           Left err -> throwIO $ userError err
 
 installWithOptions :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
-         => AdvanceInstall.InstallOptions
+         => AdvancedInstall.InstallOptions
          -> (Int, ListResult)
          -> m (Either String ())
 installWithOptions opts (_, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
   let
-    misolated = opts ^. AdvanceInstall.isolateDirL
-    shouldIsolate = maybe GHCupInternal IsolateDir (opts ^. AdvanceInstall.isolateDirL)
-    shouldForce   = opts ^. AdvanceInstall.forceInstallL
-    shouldSet     = opts ^. AdvanceInstall.instSetL
-    extraArgs     = opts ^. AdvanceInstall.addConfArgsL
-    installTargets = opts ^. AdvanceInstall.installTargetsL
-    v = fromMaybe (GHCTargetVersion lCross lVer) (opts ^. AdvanceInstall.instVersionL)
+    misolated = opts ^. AdvancedInstall.isolateDirL
+    shouldIsolate = maybe GHCupInternal IsolateDir (opts ^. AdvancedInstall.isolateDirL)
+    shouldForce   = opts ^. AdvancedInstall.forceInstallL
+    shouldSet     = opts ^. AdvancedInstall.instSetL
+    extraArgs     = opts ^. AdvancedInstall.addConfArgsL
+    installTargets = opts ^. AdvancedInstall.installTargetsL
+    v = fromMaybe (GHCTargetVersion lCross lVer) (opts ^. AdvancedInstall.instVersionL)
     toolV = _tvVersion v
   let run =
         runResourceT
@@ -244,7 +244,7 @@ installWithOptions opts (_, ListResult {..}) = do
             lift $ logWarn
               "...waiting for 5 seconds, you can still abort..."
             liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-          case opts ^. AdvanceInstall.instBindistL of
+          case opts ^. AdvancedInstall.instBindistL of
             Nothing -> do
               liftE $
                 runBothE'
@@ -272,7 +272,7 @@ installWithOptions opts (_, ListResult {..}) = do
             lift $ logWarn
               "...waiting for 5 seconds, you can still abort..."
             liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-          case opts ^. AdvanceInstall.instBindistL of
+          case opts ^. AdvancedInstall.instBindistL of
             Nothing -> do
               liftE $
                 runBothE'
@@ -301,7 +301,7 @@ installWithOptions opts (_, ListResult {..}) = do
             lift $ logWarn
               "...waiting for 5 seconds, you can still abort..."
             liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-          case opts ^. AdvanceInstall.instBindistL of
+          case opts ^. AdvancedInstall.instBindistL of
             Nothing -> do
               liftE $
                 runBothE'
@@ -321,7 +321,7 @@ installWithOptions opts (_, ListResult {..}) = do
 
         Stack -> do
           let vi = getVersionInfo v Stack dls
-          case opts ^. AdvanceInstall.instBindistL of
+          case opts ^. AdvancedInstall.instBindistL of
             Nothing -> do
               liftE $
                 runBothE'
@@ -363,7 +363,7 @@ installWithOptions opts (_, ListResult {..}) = do
 
 install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
          => (Int, ListResult) -> m (Either String ())
-install' = installWithOptions (AdvanceInstall.InstallOptions Nothing False Nothing Nothing False [] "install")
+install' = installWithOptions (AdvancedInstall.InstallOptions Nothing False Nothing Nothing False [] "install")
 
 set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
      => (Int, ListResult)

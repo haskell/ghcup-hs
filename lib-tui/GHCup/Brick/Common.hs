@@ -45,7 +45,7 @@ module GHCup.Brick.Common  (
       UrlEditBox, SetCheckBox, IsolateEditBox, ForceCheckBox, AdditionalEditBox
     , TargetGhcEditBox, BootstrapGhcEditBox, HadrianGhcEditBox, JobsEditBox, BuildConfigEditBox
     , PatchesEditBox, CrossTargetEditBox, AddConfArgsEditBox, OvewrwiteVerEditBox
-    , BuildFlavourEditBox, BuildSystemEditBox, OkButton, AdvanceInstallButton
+    , BuildFlavourEditBox, BuildSystemEditBox, OkButton, AdvancedInstallButton
     , CompileGHCButton, CompileHLSButton, CabalProjectEditBox
     , CabalProjectLocalEditBox, UpdateCabalCheckBox, GitRefEditBox
     , BootstrapGhcSelectBox, HadrianGhcSelectBox, ToolVersionBox, GHCInstallTargets
@@ -77,8 +77,8 @@ newtype ResourceId = ResourceId Int deriving (Eq, Ord, Show)
 
 pattern OkButton :: ResourceId
 pattern OkButton = ResourceId 0
-pattern AdvanceInstallButton :: ResourceId
-pattern AdvanceInstallButton = ResourceId 100
+pattern AdvancedInstallButton :: ResourceId
+pattern AdvancedInstallButton = ResourceId 100
 pattern CompileGHCButton :: ResourceId
 pattern CompileGHCButton = ResourceId 101
 pattern CompileHLSButton :: ResourceId
@@ -149,7 +149,7 @@ data Name = AllTools                   -- ^ The main list widget
           | TutorialBox                -- ^ The tutorial widget
           | ContextBox                 -- ^ The resource for Context Menu
           | CompileGHCBox              -- ^ The resource for CompileGHC Menu
-          | AdvanceInstallBox          -- ^ The resource for AdvanceInstall Menu
+          | AdvancedInstallBox         -- ^ The resource for AdvancedInstall Menu
           | MenuElement ResourceId     -- ^ Each element in a Menu. Resources must not be share for visible
                                        --   Menus, but MenuA and MenuB can share resources if they both are
                                        --   invisible, or just one of them is visible.
@@ -161,7 +161,7 @@ data Mode = Navigation
           | KeyInfo
           | Tutorial
           | ContextPanel
-          | AdvanceInstallPanel
+          | AdvancedInstallPanel
           | CompileGHCPanel
           | CompileHLSPanel
           deriving (Eq, Show, Ord)
