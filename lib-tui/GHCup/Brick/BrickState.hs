@@ -39,15 +39,15 @@ import GHCup.Brick.Widgets.Menus.CompileHLS (CompileHLSMenu)
 
 
 data BrickState = BrickState
-  { _appData            :: BrickData
-  , _appSettings        :: BrickSettings
-  , _appState           :: BrickInternalState
-  , _contextMenu        :: ContextMenu
+  { _appData             :: BrickData
+  , _appSettings         :: BrickSettings
+  , _appState            :: BrickInternalState
+  , _contextMenu         :: ContextMenu
   , _advancedInstallMenu :: AdvancedInstallMenu
-  , _compileGHCMenu     :: CompileGHCMenu
-  , _compileHLSMenu     :: CompileHLSMenu
-  , _appKeys            :: KeyBindings
-  , _mode               :: Mode
+  , _compileGHCMenu      :: CompileGHCMenu
+  , _compileHLSMenu      :: CompileHLSMenu
+  , _appKeys             :: KeyBindings
+  , _mode                :: Mode
   }
   --deriving Show
 
