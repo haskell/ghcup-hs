@@ -25,7 +25,7 @@ module GHCup.Brick.App where
 
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Attributes as Attributes
-import GHCup.Brick.BrickState (BrickState (..), advanceInstallMenu, appKeys, appSettings, appState, contextMenu, mode, compileGHCMenu, compileHLSMenu)
+import GHCup.Brick.BrickState (BrickState (..), advancedInstallMenu, appKeys, appSettings, appState, contextMenu, mode, compileGHCMenu, compileHLSMenu)
 import GHCup.Brick.Common (Mode (..), Name (..))
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Widgets.KeyInfo as KeyInfo
@@ -33,7 +33,7 @@ import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import qualified GHCup.Brick.Widgets.Navigation as Navigation
 import qualified GHCup.Brick.Widgets.Tutorial as Tutorial
 import qualified GHCup.Brick.Widgets.Menu as Menu
-import qualified GHCup.Brick.Widgets.Menus.AdvanceInstall as AdvanceInstall
+import qualified GHCup.Brick.Widgets.Menus.AdvancedInstall as AdvancedInstall
 
 import GHCup.List (ListResult)
 import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination), KeyBindings (..))
@@ -103,7 +103,7 @@ drawUI dimAttrs st =
        Tutorial     -> [Tutorial.draw (bQuit $ st ^. appKeys), navg]
        KeyInfo      -> [KeyInfo.draw (st ^. appKeys), navg]
        ContextPanel -> [ContextMenu.draw (st ^. contextMenu), navg]
-       AdvanceInstallPanel -> AdvanceInstall.draw (st ^. advanceInstallMenu) ++ [navg]
+       AdvancedInstallPanel -> AdvancedInstall.draw (st ^. advancedInstallMenu) ++ [navg]
        CompileGHCPanel     -> CompileGHC.draw (st ^. compileGHCMenu) ++ [navg]
        CompileHLSPanel     -> CompileHLS.draw (st ^. compileHLSMenu) ++ [navg]
 
@@ -146,13 +146,13 @@ contextMenuHandler ev = do
   case (ev, focusedElement) of
     (_ , Nothing) -> pure ()
     (VtyEvent (Vty.EvKey k m), Just n) |  k == exitKey && m == mods -> mode .= Navigation
-    (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.AdvanceInstallButton) ) -> mode .= Common.AdvanceInstallPanel
+    (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.AdvancedInstallButton) ) -> mode .= Common.AdvancedInstallPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompileGHCButton) ) -> mode .= Common.CompileGHCPanel
     (VtyEvent (Vty.EvKey Vty.KEnter []),  Just (Common.MenuElement Common.CompileHLSButton) ) -> mode .= Common.CompileHLSPanel
     _ -> Common.zoom contextMenu $ ContextMenu.handler ev
 --
-advanceInstallHandler :: BrickEvent Name e -> EventM Name BrickState ()
-advanceInstallHandler = menuWithOverlayHandler advanceInstallMenu Actions.installWithOptions AdvanceInstall.handler
+advancedInstallHandler :: BrickEvent Name e -> EventM Name BrickState ()
+advancedInstallHandler = menuWithOverlayHandler advancedInstallMenu Actions.installWithOptions AdvancedInstall.handler
 
 compileGHCHandler :: BrickEvent Name e -> EventM Name BrickState ()
 compileGHCHandler = menuWithOverlayHandler compileGHCMenu Actions.compileGHC CompileGHC.handler
@@ -190,6 +190,6 @@ eventHandler ev = do
     Tutorial     -> tutorialHandler ev
     Navigation   -> navigationHandler ev
     ContextPanel -> contextMenuHandler ev
-    AdvanceInstallPanel -> advanceInstallHandler ev
+    AdvancedInstallPanel -> advancedInstallHandler ev
     CompileGHCPanel     -> compileGHCHandler ev
     CompileHLSPanel     -> compileHLSHandler ev

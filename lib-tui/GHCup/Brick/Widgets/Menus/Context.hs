@@ -32,9 +32,9 @@ create :: ListResult -> MenuKeyBindings -> ContextMenu
 create lr keyBindings = Menu.createMenu Common.ContextBox lr "" validator keyBindings buttons []
  where
   advInstallButton =
-    Menu.createButtonField (MenuElement Common.AdvanceInstallButton)
+    Menu.createButtonField (MenuElement Common.AdvancedInstallButton)
       & Menu.fieldLabelL .~ "Install"
-      & Menu.fieldHelpMsgL .~ "Advance Installation Settings"
+      & Menu.fieldHelpMsgL .~ "Advanced Installation Settings"
   compileGhcButton =
     Menu.createButtonField (MenuElement Common.CompileGHCButton)
       & Menu.fieldLabelL .~ "Compile"
