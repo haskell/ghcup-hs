@@ -759,7 +759,7 @@ keyHandlers KeyBindings {..} =
   , (bUp, const "Up", Common.zoom appState moveUp)
   , (bDown, const "Down", Common.zoom appState moveDown)
   , (KeyCombination (Vty.KChar 'h') [], const "help", mode .= KeyInfo)
-  , (KeyCombination Vty.KEnter [], const "advance options", createMenuforTool )
+  , (KeyCombination Vty.KEnter [], const "advanced options", createMenuforTool )
   ]
  where
   createMenuforTool = do
