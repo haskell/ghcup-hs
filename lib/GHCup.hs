@@ -28,12 +28,14 @@ module GHCup (
   module GHCup.GHC,
   module GHCup.HLS,
   module GHCup.Stack,
+  module GHCup.HealthCheck,
   module GHCup.List
 ) where
 
 
 import           GHCup.Cabal
 import           GHCup.GHC             hiding ( GHCVer(..) )
+import           GHCup.HealthCheck
 import           GHCup.HLS             hiding ( HLSVer(..) )
 import           GHCup.Stack
 import           GHCup.List

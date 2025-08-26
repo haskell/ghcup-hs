@@ -326,6 +326,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             Nuke                       -> nuke appState runLogger
             Prefetch pfCom             -> prefetch pfCom settings runAppState runLogger
             GC gcOpts                  -> gc gcOpts runAppState runLogger
+            HealthCheckCommand hcOpts  -> hc hcOpts runLeanAppState runLogger
             Run runCommand             -> run runCommand settings appState leanAppstate runLogger
             PrintAppErrors             -> putStrLn allHFError >> pure ExitSuccess
 
