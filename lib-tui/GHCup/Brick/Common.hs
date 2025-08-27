@@ -145,7 +145,7 @@ pattern GHCInstallTargets = ResourceId 24
 data Name = AllTools                   -- ^ The main list widget
           | Singular Tool              -- ^ The particular list for each tool
           | ListItem Tool Int          -- ^ An item in list
-          | KeyInfoBox                 -- ^ The text box widget with action informacion
+          | KeyInfoBox                 -- ^ The text box widget with action information
           | TutorialBox                -- ^ The tutorial widget
           | ContextBox                 -- ^ The resource for Context Menu
           | CompileGHCBox              -- ^ The resource for CompileGHC Menu

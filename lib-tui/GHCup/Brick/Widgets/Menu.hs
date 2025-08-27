@@ -34,14 +34,14 @@ An input (type FieldInput) consist in
   b) a validator function
   c) a handler and a renderer
 
-We have to use existential types to achive a composable API since every FieldInput has a different
+We have to use existential types to achieve a composable API since every FieldInput has a different
 internal type, and every MenuField has a different Lens. For example:
   - The menu state is a record (MyRecord {uri: URI, flag : Bool})
   - Then, there are two MenuField:
     - One MenuField has (Lens' MyRecord URI) and the other has (Lens' MyRecord Bool)
     - The MenuFields has FieldInputs with internal state Text and Bool, respectively
-  - Obviously, the MenuField has to be polimorphic in the Lens' and in the Input internal state,
-    But we must hide that polimorphisim (existential), in order to store all MenuField in a List
+  - Obviously, the MenuField has to be polymorphic in the Lens' and in the Input internal state,
+    But we must hide that polymorphism (existential), in order to store all MenuField in a List
 
 ************** -}
 
@@ -100,7 +100,7 @@ idFormatter = const id
 type ErrorMessage = T.Text
 data ErrorStatus = Valid | Invalid ErrorMessage deriving (Eq)
 
--- | A lens which does nothing. Usefull to defined no-op fields
+-- | A lens which does nothing. Useful to define no-op fields
 emptyLens :: Lens' s ()
 emptyLens = lens (const ()) (\s _ -> s)
 
@@ -156,7 +156,7 @@ data SelectState i n = SelectState
   { selectStateItems :: (NonEmpty (Int, (i, Bool)), Bool) -- ^ All items along with their selected state
                                                           -- And Bool to indicate if editable field is selected
   , selectStateEditState :: Maybe (Edit.Editor T.Text n)  -- ^ Editable field's editor state
-  , selectStateFocusRing :: FocusRing Int                 -- ^ Focus ring using integeral values assigned to each item
+  , selectStateFocusRing :: FocusRing Int                 -- ^ Focus ring using integral values assigned to each item
   , selectStateOverlayOpen :: Bool                        -- ^ Whether the select menu is open
   }
 
@@ -199,7 +199,7 @@ fieldHelpMsgL = lens g s
   where g (MenuField {..})= fieldInput ^. inputHelpL
         s (MenuField{..}) msg = MenuField {fieldInput = fieldInput & inputHelpL .~ msg , ..}
 
--- | How to draw a field given a formater
+-- | How to draw a field given a formatter
 drawField :: Formatter n -> Bool -> MenuField s n -> Widget n
 drawField amp focus (MenuField { fieldInput = FieldInput {..}, ..}) =
   let (input, overlay) = inputRender focus fieldStatus inputHelp fieldLabel inputState (amp focus)
@@ -467,14 +467,14 @@ renderAslabel t focus =
     else Brick.txt t
 
 -- | Creates a left align column.
--- Example:       |- col2 is align dispite the length of col1
+-- Example:       |- col2 is align despite the length of col1
 --   row1_col1         row1_col2
 --   row2_col1_large   row2_col2
 leftify :: Int -> Brick.Widget n -> Brick.Widget n
 leftify i = Brick.hLimit i . Brick.padRight Brick.Max
 
 -- | Creates a right align column.
--- Example:       |- col2 is align dispite the length of col1
+-- Example:       |- col2 is align despite the length of col1
 --         row1_col1   row1_col2
 --   row2_col1_large   row2_col2
 rightify :: Int -> Brick.Widget n -> Brick.Widget n

@@ -125,7 +125,7 @@ selectBy tool predicate internal_state =
         & tool_lens %~ L.listMoveTo 0            -- We move to 0 first
         & tool_lens %~ L.listFindBy predicate    -- The lookup by the predicate.
 
--- | Select the latests GHC tool
+-- | Select the latest GHC tool
 selectLatest :: BrickInternalState -> BrickInternalState
 selectLatest = selectBy GHC (elem Latest . lTag)
 
@@ -471,7 +471,7 @@ del' (_, ListResult {..}) = do
     >>= \case
           VRight vi -> do
             when (lTool == GHC) $ logGHCPostRm crossVer
-            logInfo $ "Successfuly removed " <> T.pack (prettyShow lTool) <> " " <> (if lTool == GHC then tVerToText crossVer else prettyVer lVer)
+            logInfo $ "Successfully removed " <> T.pack (prettyShow lTool) <> " " <> (if lTool == GHC then tVerToText crossVer else prettyVer lVer)
             forM_ (_viPostRemove =<< vi) $ \msg ->
               logInfo msg
             pure $ Right ()

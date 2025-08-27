@@ -230,5 +230,5 @@ rm rmCommand runAppState runLogger = case rmCommand of
               pure $ ExitFailure 15
 
   postRmLog tv tool vi = runLogger $ do
-    logInfo $ "Successfuly removed " <> T.pack (prettyShow tool) <> " " <> tv
+    logInfo $ "Successfully removed " <> T.pack (prettyShow tool) <> " " <> tv
     forM_ (_viPostRemove =<< vi) logInfo

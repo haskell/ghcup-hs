@@ -47,7 +47,7 @@ param (
     [switch]$DontWriteDesktopShortcuts,
     # Whether to disable adjusting bashrc (in msys2 env) with PATH
     [switch]$DontAdjustBashRc,
-    # The msys2 environment to use, see https://www.msys2.org/docs/environments/ (defauts to MINGW64, MINGW32 or CLANGARM64, depending on the architecture)
+    # The msys2 environment to use, see https://www.msys2.org/docs/environments/ (defaults to MINGW64, MINGW32 or CLANGARM64, depending on the architecture)
     [string]$Msys2Env
 )
 

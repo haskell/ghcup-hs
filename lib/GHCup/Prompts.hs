@@ -19,7 +19,7 @@ getUserPromptResponse :: ( HasLog env
                          , MonadReader env m
                          , MonadIO m)
                       => PromptQuestion
-                      -> PromptResponse -- ^ Default reponse to use if user doesn't type explicit response (e.g. just presses Return)
+                      -> PromptResponse -- ^ Default response to use if user doesn't type explicit response (e.g. just presses Return)
                       -> m PromptResponse
 getUserPromptResponse prompt defaultResponse = do
   logInfo prompt
