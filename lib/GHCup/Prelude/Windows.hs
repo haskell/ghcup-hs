@@ -23,7 +23,7 @@ import           System.Win32.Types
 -- | Enables ANSI support on windows, does nothing on unix.
 --
 -- Returns 'Left str' on errors and 'Right bool' on success, where
--- 'bool' markes whether ansi support was already enabled.
+-- 'bool' marks whether ansi support was already enabled.
 --
 -- This function never crashes.
 --

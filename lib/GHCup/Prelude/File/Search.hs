@@ -71,7 +71,7 @@ searchPath paths needle = go paths
     if b' then t else f
 
 
--- | Check wether a binary is shadowed by another one that comes before
+-- | Check whether a binary is shadowed by another one that comes before
 -- it in PATH. Returns the path to said binary, if any.
 isShadowed :: FilePath -> IO (Maybe FilePath)
 isShadowed p = do

@@ -22,7 +22,7 @@
 #   * BOOTSTRAP_HASKELL_ADJUST_CABAL_CONFIG - whether to adjust mingw paths in cabal.config on windows
 #   * BOOTSTRAP_HASKELL_DOWNLOADER - which downloader to use (default: curl)
 #   * GHCUP_BASE_URL - the base url for ghcup binary download (use this to overwrite https://downloads.haskell.org/~ghcup with a mirror)
-#   * GHCUP_MSYS2_ENV - the msys2 environment to use on windows, see https://www.msys2.org/docs/environments/ (defauts to MINGW64, MINGW32 or CLANGARM64, depending on the architecture)
+#   * GHCUP_MSYS2_ENV - the msys2 environment to use on windows, see https://www.msys2.org/docs/environments/ (defaults to MINGW64, MINGW32 or CLANGARM64, depending on the architecture)
 
 # License: LGPL-3.0
 

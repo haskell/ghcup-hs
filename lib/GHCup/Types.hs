@@ -170,7 +170,7 @@ data Tag = Latest             -- ^ the latest version of a tool (unique per tool
          | LatestNightly      -- ^ the latest nightly (unique per tool)
          | Base PVP           -- ^ the base version shipped with GHC
          | Old                -- ^ old versions are hidden by default in TUI
-         | Experimental       -- ^ an experiemntal version/bindist
+         | Experimental       -- ^ an experimental version/bindist
          | UnknownTag String  -- ^ used for upwardscompat
          deriving (Ord, Eq, GHC.Generic, Show) -- FIXME: manual JSON instance
 

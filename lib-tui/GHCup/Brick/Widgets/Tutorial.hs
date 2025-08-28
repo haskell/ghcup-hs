@@ -71,7 +71,7 @@ draw exitKey =
                 , Brick.withAttr Attributes.setAttr (Brick.str Common.setSign)
                 , Brick.txt ") hls"
                 ]
-              , Brick.txtWrap "base-X.Y.Z.W tag is the minimun version of the base package admited in such ghc version"
+              , Brick.txtWrap "base-X.Y.Z.W tag is the minimum version of the base package admitted in such ghc version"
               ]
             , Brick.txt " "
             ])
