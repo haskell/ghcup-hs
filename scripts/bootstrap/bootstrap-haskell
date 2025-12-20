@@ -522,10 +522,11 @@ ask_prerelease_channel() {
     echo "-------------------------------------------------------------------------------"
 
     warn ""
-    warn "Do you also want to enable the pre-releases channel, getting access to."
+    warn "Do you also want to enable the pre-releases channel, getting access to"
     warn "alpha, betas and release candidates?"
     warn ""
     warn "[N] No  [Y] Yes  [?] Help (default is \"N\")."
+    warn ""
 	while true; do
 
 		read -r prereleasechannel_answer </dev/tty
@@ -577,8 +578,8 @@ ask_cross_channel() {
 			*)
 				echo "Possible choices are:"
 				echo
-                echo "N - No, don't enable cross (default)"
-				echo "Y - Yes, enable prereleases"
+                echo "N - No, don't enable the cross channel (default)"
+				echo "Y - Yes, enable the cross channel"
 				echo
 				echo "Please make your choice and press ENTER."
 				;;
@@ -620,7 +621,8 @@ ask_bashrc() {
 				return 2
 				;;
 			[Nn]*)
-				return 0;;
+				return 0
+                ;;
 			*)
 				echo "Possible choices are:"
 				echo
