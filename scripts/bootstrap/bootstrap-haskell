@@ -83,6 +83,7 @@ case "${plat}" in
         MSYS*|MINGW*|CYGWIN*)
 			: "${GHCUP_INSTALL_BASE_PREFIX:=/c}"
 			GHCUP_DIR=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup")
+			GHCUP_CONFDIR=${GHCUP_DIR}
 			GHCUP_BIN=$(cygpath -u "${GHCUP_INSTALL_BASE_PREFIX}/ghcup/bin")
 			: "${GHCUP_MSYS2:=${GHCUP_DIR}/msys64}"
 			set_msys2_env_dir
@@ -92,9 +93,11 @@ case "${plat}" in
 
 			if [ -n "${GHCUP_USE_XDG_DIRS}" ] ; then
 				GHCUP_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/ghcup
+				GHCUP_CONFDIR=${XDG_DATA_HOME:=$HOME/.config}/ghcup
 				GHCUP_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
 			else
 				GHCUP_DIR=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup
+				GHCUP_CONFDIR=${GHCUP_DIR}
 				GHCUP_BIN=${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/bin
 			fi
 			;;
@@ -479,16 +482,27 @@ ask_base_channel() {
     warn ""
 	while true; do
 
-        warn "[S] Skip  [D] Default (GHCup maintained)  [V] Vanilla (Upstream maintained)  [?] Help (default is \"Skip\")."
+        if [ "$preexisting_config_file" -eq 1 ] ; then
+            warn "[K] Keep  [G] GHCup maintained  [V] Vanilla (upstream maintained)  [?] Help (default is \"K\")."
+        else
+            warn "[G] GHCup maintained  [V] Vanilla (upstream maintained)  [?] Help (default is \"G\")."
+        fi
         warn ""
 
 		read -r basechannel_answer </dev/tty
 
+        # Handle the [K]eep choice only if we actually offered it
+        if [ "$preexisting_config_file" -eq 1 ] ; then
+            case $basechannel_answer in
+                [Kk]* | "")
+                    return 0
+                    ;;
+            esac
+        fi
+
+        # Handle the other choices
 		case $basechannel_answer in
-			[Ss]* | "")
-				return 0
-				;;
-			[Dd]*)
+			[Gg]* | "")
 				return 1
 				;;
 			[Vv]*)
@@ -497,16 +511,20 @@ ask_base_channel() {
 			*)
 				echo "Possible choices are:"
 				echo
-				echo "[S]kip    - Do nothing and leave GHCup config as is"
-                echo "[D]efault - The default channel maintained by GHCup developers"
+                if [ "$preexisting_config_file" -eq 1 ] ; then
+                    echo "[K]eep    - Do nothing and leave your existing GHCup config as-is"
+                fi
+                echo "[G]HCup   - The default channel maintained by GHCup developers"
                 echo "            (receives QA and support from GHCup and may provide"
                 echo "            unofficial bindists for less supported platforms)"
 				echo "[V]anilla - Only contains unchanged upstream binary distributions"
                 echo "            (is updated with newer releases faster since it receives no GHCup QA)"
 				echo
-				echo "Selecting Default or Vanilla will overwrite any pre-existing channel"
-                echo "config you might have (if you've previously installed GHCup)."
-				echo
+                if [ "$preexisting_config_file" -eq 1 ] ; then
+                    echo "Selecting GHCup or Vanilla will overwrite the channel config in"
+                    echo "your existing GHCup installation."
+                    echo
+                fi
                 echo "Please make your choice and press ENTER."
 				;;
 		esac
@@ -952,6 +970,9 @@ if [ -z "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
     # shellcheck disable=SC2034
     read -r answer </dev/tty
 fi
+
+preexisting_config_file=0
+test -f "${GHCUP_CONFDIR}/config.yaml" && preexisting_config_file=1
 
 edo mkdir -p "${GHCUP_BIN}"
 
