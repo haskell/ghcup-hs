@@ -482,9 +482,9 @@ ask_base_channel() {
         warn "[S] Skip  [D] Default (GHCup maintained)  [V] Vanilla (Upstream maintained)  [?] Help (default is \"Skip\")."
         warn ""
 
-		read -r bashrc_answer </dev/tty
+		read -r basechannel_answer </dev/tty
 
-		case $bashrc_answer in
+		case $basechannel_answer in
 			[Ss]* | "")
 				return 0
 				;;
@@ -512,7 +512,7 @@ ask_base_channel() {
 		esac
 	done
 
-	unset bashrc_answer
+	unset basechannel_answer
 }
 
 ask_prerelease_channel() {
@@ -528,9 +528,9 @@ ask_prerelease_channel() {
     warn "[N] No  [Y] Yes  [?] Help (default is \"N\")."
 	while true; do
 
-		read -r bashrc_answer </dev/tty
+		read -r prereleasechannel_answer </dev/tty
 
-		case $bashrc_answer in
+		case $prereleasechannel_answer in
 			[Nn]* | "")
 				return 0
 				;;
@@ -548,7 +548,7 @@ ask_prerelease_channel() {
 		esac
 	done
 
-	unset bashrc_answer
+	unset prereleasechannel_answer
 }
 
 ask_cross_channel() {
@@ -565,9 +565,9 @@ ask_cross_channel() {
         warn "[N] No  [Y] Yes  [?] Help (default is \"N\")."
         warn ""
 
-		read -r bashrc_answer </dev/tty
+		read -r crosschannel_answer </dev/tty
 
-		case $bashrc_answer in
+		case $crosschannel_answer in
 			[Nn]* | "")
 				return 0
 				;;
@@ -585,7 +585,7 @@ ask_cross_channel() {
 		esac
 	done
 
-	unset bashrc_answer
+	unset crosschannel_answer
 }
 
 
