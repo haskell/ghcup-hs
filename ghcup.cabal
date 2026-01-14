@@ -400,7 +400,7 @@ library ghcup-tui
 
   build-depends:
     , ghcup
-    , brick         >=2.1 && <2.8
+    , brick         >=2.1 && <2.11
     , vty           ^>=6.0 || ^>=6.1 || ^>=6.2
 
   if !flag(tui)
