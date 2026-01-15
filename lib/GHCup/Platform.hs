@@ -141,10 +141,10 @@ getLinuxDistro :: (MonadCatch m, MonadIO m, MonadFail m)
 getLinuxDistro = do
   -- TODO: don't do alternative on IO, because it hides bugs
   (name, mid, ver) <- join $ liftIO $ handleIO (\_ -> pure (throwE DistroNotFound)) $ fmap pure $ asum
-    [ liftIO try_os_release
+    [ try_os_release
     , try_lsb_release_cmd
-    , liftIO try_redhat_release
-    , liftIO try_debian_version
+    , try_redhat_release
+    , try_debian_version
     ]
   let hasWord xs = let f t = any (\x -> match (regex x) (T.unpack t)) xs
                    in f name || maybe False f mid
