@@ -533,7 +533,6 @@ installGHCBin :: ( MonadFail m
                  , MonadResource m
                  , MonadIO m
                  , MonadUnliftIO m
-                 , Alternative m
                  )
               => GHCTargetVersion -- ^ the version to install
               -> InstallDir

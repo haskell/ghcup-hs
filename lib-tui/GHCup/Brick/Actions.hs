@@ -181,7 +181,7 @@ withIOAction action = do
             pure (updateList data' as)
           Left err -> throwIO $ userError err
 
-installWithOptions :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
+installWithOptions :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
          => AdvancedInstall.InstallOptions
          -> (Int, ListResult)
          -> m (Either String ())
@@ -361,11 +361,11 @@ installWithOptions opts (_, ListResult {..}) = do
           VLeft e -> pure $ Left $ prettyHFError e <> "\n"
             <> "Also check the logs in ~/.ghcup/logs"
 
-install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
+install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
          => (Int, ListResult) -> m (Either String ())
 install' = installWithOptions (AdvancedInstall.InstallOptions Nothing False Nothing Nothing False [] "install")
 
-set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
+set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
      => (Int, ListResult)
      -> m (Either String ())
 set' input@(_, ListResult {..}) = do
@@ -505,7 +505,7 @@ changelog' (_, ListResult {..}) = do
         Right _ -> pure $ Right ()
         Left  e -> pure $ Left $ prettyHFError e
 
-compileGHC :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
+compileGHC :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
            => CompileGHC.CompileGHCOptions -> (Int, ListResult) -> m (Either String ())
 compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
   appstate <- ask
@@ -603,7 +603,7 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
 compileGHC _ (_, ListResult{lTool = _}) = pure (Right ())
 
 
-compileHLS :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
+compileHLS :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
            => CompileHLS.CompileHLSOptions -> (Int, ListResult) -> m (Either String ())
 compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
   appstate <- ask
