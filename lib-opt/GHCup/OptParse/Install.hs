@@ -387,26 +387,12 @@ install installCommand settings getAppState' runLogger = case installCommand of
               VLeft e@(V (AlreadyInstalled _ _)) -> do
                 runLogger $ logWarn $ T.pack $ prettyHFError e
                 pure ExitSuccess
-              VLeft e@(V (AlreadyInstalled _ _)) -> do
-                runLogger $ logWarn $ T.pack $ prettyHFError e
-                pure ExitSuccess
 
               VLeft (V (DirNotEmpty fp)) -> do
                 runLogger $ logError $
                   "Install directory " <> T.pack fp <> " is not empty."
                 pure $ ExitFailure 3
-              VLeft (V (DirNotEmpty fp)) -> do
-                runLogger $ logError $
-                  "Install directory " <> T.pack fp <> " is not empty."
-                pure $ ExitFailure 3
 
-              VLeft err@(V (BuildFailed tmpdir _)) -> do
-                case keepDirs settings of
-                  Never -> runLogger (logError $ T.pack $ prettyHFError err)
-                  _ -> runLogger (logError $ T.pack (prettyHFError err) <> "\n" <>
-                    "Check the logs at " <> T.pack (fromGHCupPath logsDir) <> " and the build directory " <> T.pack tmpdir <> " for more clues." <> "\n" <>
-                    "Make sure to clean up " <> T.pack tmpdir <> " afterwards.")
-                pure $ ExitFailure 3
               VLeft err@(V (BuildFailed tmpdir _)) -> do
                 case keepDirs settings of
                   Never -> runLogger (logError $ T.pack $ prettyHFError err)
@@ -468,13 +454,6 @@ install installCommand settings getAppState' runLogger = case installCommand of
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install cabal --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
-            VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyHFError e
-              pure ExitSuccess
-            VLeft (V (FileAlreadyExistsError fp)) -> do
-              runLogger $ logWarn $
-                "File " <> T.pack fp <> " already exists. Use 'ghcup install cabal --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
-              pure $ ExitFailure 3
             VLeft e -> do
               runLogger $ do
                 logError $ T.pack $ prettyHFError e
@@ -528,13 +507,6 @@ install installCommand settings getAppState' runLogger = case installCommand of
               runLogger $ logWarn $
                 "File " <> T.pack fp <> " already exists. Use 'ghcup install hls --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
               pure $ ExitFailure 3
-            VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyHFError e
-              pure ExitSuccess
-            VLeft (V (FileAlreadyExistsError fp)) -> do
-              runLogger $ logWarn $
-                "File " <> T.pack fp <> " already exists. Use 'ghcup install hls --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
-              pure $ ExitFailure 3
             VLeft e -> do
               runLogger $ do
                 logError $ T.pack $ prettyHFError e
@@ -580,13 +552,6 @@ install installCommand settings getAppState' runLogger = case installCommand of
               forM_ (_viPostInstall =<< vi) $ \msg ->
                 runLogger $ logInfo msg
               pure ExitSuccess
-            VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyHFError e
-              pure ExitSuccess
-            VLeft (V (FileAlreadyExistsError fp)) -> do
-              runLogger $ logWarn $
-                "File " <> T.pack fp <> " already exists. Use 'ghcup install stack --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
-              pure $ ExitFailure 3
             VLeft e@(V (AlreadyInstalled _ _)) -> do
               runLogger $ logWarn $ T.pack $ prettyHFError e
               pure ExitSuccess
