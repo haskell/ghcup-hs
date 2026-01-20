@@ -312,7 +312,7 @@ library
 
   if flag(tui)
     cpp-options:   -DBRICK
-    build-depends: vty ^>=6.0 || ^>=6.1 || ^>=6.2
+    build-depends: vty ^>=6.0 || ^>=6.1 || ^>=6.2 || ^>=6.3 || ^>=6.4
 
   if (flag(strict-metadata-parsing))
     cpp-options:     -DSTRICT_METADATA_PARSING
@@ -402,7 +402,7 @@ library ghcup-tui
   build-depends:
     , ghcup
     , brick         >=2.1 && <2.11
-    , vty           ^>=6.0 || ^>=6.1 || ^>=6.2
+    , vty           ^>=6.0 || ^>=6.1 || ^>=6.2 || ^>=6.3 || ^>=6.4
 
   if !flag(tui)
     buildable: False
