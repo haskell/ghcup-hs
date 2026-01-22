@@ -84,7 +84,7 @@ sectionList name elements height
   , sectionListElements  = V.fromList [L.list section_name els height | (section_name, els) <- elements]
   , sectionListName = name
   }
--- | This lens constructor, takes a name and looks if a section has such a name.
+-- | This lens constructor takes a name and looks if a section has such a name.
 --   Used to dispatch events to sections. It is a partial function only meant to
 --   be used with the FocusRing inside GenericSectionList
 sectionL :: Eq n => n -> Lens' (GenericSectionList n t e) (L.GenericList n t e)

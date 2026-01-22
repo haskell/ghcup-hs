@@ -689,7 +689,7 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
       VLeft e -> do
         pure $ Left $ prettyHFError e
 -- This is the case when the tool is not HLS... which should be impossible but,
--- it exhaustes pattern matches
+-- it exhausts pattern matches
 compileHLS _ (_, ListResult{lTool = _}) = pure (Right ())
 
 
@@ -758,8 +758,8 @@ keyHandlers KeyBindings {..} =
     )
   , (bUp, const "Up", Common.zoom appState moveUp)
   , (bDown, const "Down", Common.zoom appState moveDown)
-  , (KeyCombination (Vty.KChar 'h') [], const "help", mode .= KeyInfo)
-  , (KeyCombination Vty.KEnter [], const "advanced options", createMenuforTool )
+  , (KeyCombination (Vty.KChar 'h') [], const "Help", mode .= KeyInfo)
+  , (KeyCombination Vty.KEnter [], const "Advanced options", createMenuforTool )
   ]
  where
   createMenuforTool = do
