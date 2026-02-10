@@ -39,7 +39,7 @@ defaultAttributes no_color = Brick.attrMap
   , (strayAttr                 , Vty.defAttr `withForeColor` Vty.brightCyan)
   , (dayAttr                   , Vty.defAttr `withForeColor` Vty.brightCyan)
   , (helpAttr                  , Vty.defAttr `withStyle`     Vty.italic)
-  , (hoorayAttr                , Vty.defAttr `withForeColor` Vty.brightWhite)
+  , (hoorayAttr                , Vty.defAttr `withStyle`     Vty.bold)
   , (helpMsgAttr               , Vty.defAttr `withForeColor` Vty.yellow)
   , (errMsgAttr                , Vty.defAttr `withForeColor` Vty.red)
   ]
