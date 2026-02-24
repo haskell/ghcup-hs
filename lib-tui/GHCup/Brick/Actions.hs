@@ -734,7 +734,7 @@ getAppData mgi = runExceptT $ do
   settings <- liftIO $ readIORef settings'
 
   flip runReaderT settings $ do
-    lV <- listVersions Nothing [] False True (Nothing, Nothing)
+    lV <- listVersions [] [] False True (Nothing, Nothing)
     pure $ BrickData (reverse lV)
 
 --
