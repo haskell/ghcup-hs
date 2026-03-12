@@ -1,0 +1,2 @@
+- [ ] I have read https://www.haskell.org/ghcup/dev/
+- [ ] I did not use an LLM to generate this patch or parts of it
