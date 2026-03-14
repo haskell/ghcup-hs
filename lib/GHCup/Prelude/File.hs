@@ -45,7 +45,7 @@ module GHCup.Prelude.File (
 ) where
 
 import GHCup.Utils.Dirs
-import GHCup.Prelude.Logger.Internal (logInfo, logDebug)
+import GHCup.Prelude.Logger.Internal (logInfo, logDebug, logDebug2)
 import GHCup.Prelude.Internal
 import GHCup.Prelude.File.Search
 #if IS_WINDOWS
@@ -127,7 +127,7 @@ mergeFileTree sourceBase destBase tool v' copyOp = do
     logDebug "Starting merge"
     lift $ runConduitRes $ getDirectoryContentsRecursive sourceBase .| C.mapM_ (\f -> do
       lift $ copy f
-      logDebug $ T.pack "Recording installed file: " <> T.pack f
+      logDebug2 $ T.pack "Recording installed file: " <> T.pack f
       recordInstalledFile f recFile)
 
  where
@@ -139,12 +139,12 @@ mergeFileTree sourceBase destBase tool v' copyOp = do
     logDebug "Deleting recorded files due to partial install"
     forM_ l $ \f -> do
       let dest = fromInstallDir destBase </> dropDrive f
-      logDebug $ "rm -f " <> T.pack f
+      logDebug2 $ "rm -f " <> T.pack f
       hideError NoSuchThing $ rmFile dest
       pure ()
-    logDebug $ "rm -f " <> T.pack recFile
+    logDebug2 $ "rm -f " <> T.pack recFile
     hideError NoSuchThing $ rmFile recFile
-    logDebug $ "rm -f " <> T.pack (fromInstallDir destBase)
+    logDebug2 $ "rm -f " <> T.pack (fromInstallDir destBase)
     hideError UnsatisfiedConstraints $ hideError NoSuchThing $
       removeEmptyDirsRecursive (fromInstallDir destBase)
 
