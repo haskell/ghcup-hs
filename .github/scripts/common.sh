@@ -147,3 +147,12 @@ strip_binary() {
    esac
 	)
 }
+
+to_posix_path() {
+    if [ "${OS}" = "Windows" ]; then
+        cygpath -u "$1"
+    else
+        echo "$1"
+    fi
+}
+
