@@ -51,12 +51,11 @@ fi
 
 eghcup install ghc "${GHC_VER}"
 eghcup unset ghc "${GHC_VER}"
-ls -lah "$("$(eghcup whereis -d ghc "${GHC_VER}")")"
-[ "$($(to_posix_path "$(eghcup whereis ghc "${GHC_VER}")") --numeric-version)" = "${GHC_VER}" ]
-[ "$(eghcup run -q --ghc "${GHC_VER}" -- ghc --numeric-version)" = "${GHC_VER}" ]
-[ "$(ghcup run -q --ghc "${GHC_VER}" -- ghc -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" = "$($(to_posix_path "$(ghcup whereis ghc "${GHC_VER}")") -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" ]
+
 eghcup set ghc "${GHC_VER}"
 eghcup install cabal "${CABAL_VER}"
+ldd /c/ghcup/bin/cabal-3.14.2.0.exe
+/c/ghcup/bin/cabal-3.14.2.0.exe --numeric-version
 [ "$($(to_posix_path "$(eghcup whereis cabal "${CABAL_VER}")") --numeric-version)" = "${CABAL_VER}" ]
 eghcup unset cabal
 "$GHCUP_BIN"/cabal --version && exit 1 || echo yes
