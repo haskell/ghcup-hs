@@ -13,6 +13,10 @@ if [ "${RUNNER_OS}" = "freebsd" ] ; then
     export RUNNER_OS=FreeBSD
 fi
 
+if [ "${RUNNER_OS}" = "openbsd" ] ; then
+    export RUNNER_OS=OpenBSD
+fi
+
 export OS="$RUNNER_OS"
 export PATH="$HOME/.local/bin:$PATH"
 

@@ -51,7 +51,7 @@ eghcup() {
 }
 
 sha_sum() {
-	if [ "${OS}" = "FreeBSD" ] ; then
+	if [ "${OS}" = "FreeBSD" ] || [ "${OS}" = "OpenBSD" ] ; then
 		sha256 "$@"
 	else
 		sha256sum "$@"

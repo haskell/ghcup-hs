@@ -35,6 +35,10 @@ sha_sum "$(raw_eghcup --offline whereis ghcup)"
 ./"ghcup-test-optparse${ext}"
 rm "ghcup-test${ext}" "ghcup-test-optparse${ext}"
 
+if [ "${OS}" = "OpenBSD" ] ; then
+	exit 0
+fi
+
 ### manual cli based testing
 
 eghcup --numeric-version

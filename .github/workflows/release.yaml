@@ -225,7 +225,6 @@ jobs:
     runs-on: [self-hosted, FreeBSD, X64]
     env:
       CABAL_VER: 3.14.1.1
-      MACOSX_DEPLOYMENT_TARGET: 10.13
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -249,6 +248,41 @@ jobs:
 
       - name: Install GHCup
         uses: haskell/ghcup-setup@v1
+
+      - name: Run build
+        run: bash .github/scripts/build.sh
+
+      - if: always()
+        name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ env.ARTIFACT }}
+          path: |
+            ./out/*
+
+  build-openbsd:
+    name: Build binary (OpenBSD)
+    runs-on: [self-hosted, openbsd, X64]
+    env:
+      CABAL_VER: 3.14.1.1
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      S3_HOST: ${{ secrets.S3_HOST }}
+      ARTIFACT: "x86_64-openbsd-ghcup"
+      GHC_VER: 9.6.7
+      ARCH: 64
+      DISTRO: na
+      RUNNER_OS: OpenBSD
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Install prerequisites
+        run: |
+          gcc_ver=$(pkg_info -Q gcc | grep '^gcc-[0-9]' | sort -u | head -1 | awk '{ print $1 }')
+          doas pkg_add -I ghc cabal-install git bash libiconv curl ${gcc_ver} gmp gmake libffi
 
       - name: Run build
         run: bash .github/scripts/build.sh
@@ -503,9 +537,50 @@ jobs:
         name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: testfiles-${{ matrix.ARTIFACT }}
+          name: testfiles-${{ env.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
+
+  test-openbsd:
+    name: Test OpenBSD
+    needs: "build-openbsd"
+    runs-on: [self-hosted, openbsd, X64]
+    env:
+      CABAL_VER: 3.14.1.1
+      ARTIFACT: "x86_64-openbsd-ghcup"
+      GHC_VER: 9.6.7
+      ARCH: 64
+      DISTRO: na
+      RUNNER_OS: OpenBSD
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Install prerequisites
+        run: |
+          gcc_ver=$(pkg_info -Q gcc | grep '^gcc-[0-9]' | sort -u | head -1 | awk '{ print $1 }')
+          doas pkg_add -I ghc cabal-install git bash libiconv curl ${gcc_ver} gmp gmake libffi
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: artifacts-*
+          merge-multiple: true
+          path: ./out
+
+      - name: Run test
+        run: |
+          bash .github/scripts/test.sh
+
+      - if: failure()
+        name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: testfiles-${{ env.ARTIFACT }}
+          path: |
+            ./test/ghcup-test/golden/unix/GHCupInfo*json
+
   hls:
     name: hls
     needs: build-linux
@@ -539,7 +614,7 @@ jobs:
 
   release:
     name: release
-    needs: ["test-linux", "test-arm", "test-macwin", "test-freebsd", "hls"]
+    needs: ["test-linux", "test-arm", "test-macwin", "test-freebsd", "test-openbsd", "hls"]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:

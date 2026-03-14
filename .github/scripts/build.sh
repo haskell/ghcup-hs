@@ -10,11 +10,15 @@ git_describe
 download_cabal_cache "$HOME/.local/bin/cabal-cache"
 
 # install toolchain (if necessary)
-ghcup -v install ghc --set --force "$GHC_VER"
-ghcup -v install cabal --force "$CABAL_VER"
-ghc --version
-cabal --version
-GHC="ghc-${GHC_VER}"
+if [ "${OS}" = "OpenBSD" ] ; then
+	GHC="ghc-$(ghc --numeric-version)"
+else
+	ghcup -v install ghc --set --force "$GHC_VER"
+	ghcup -v install cabal --force "$CABAL_VER"
+	ghc --version
+	cabal --version
+    GHC="ghc-${GHC_VER}"
+fi
 
 # build
 ecabal update
