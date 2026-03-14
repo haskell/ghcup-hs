@@ -71,7 +71,7 @@ import qualified Data.List                     as L
 
 
 -- | Get the full platform request, consisting of architecture, distro, ...
-platformRequest :: (MonadReader env m, Alternative m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
+platformRequest :: (MonadReader env m, MonadFail m, HasLog env, MonadCatch m, MonadIO m)
                 => Excepts
                      '[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound]
                      m
@@ -96,7 +96,7 @@ getArchitecture = case arch of
   what          -> Left (NoCompatibleArch what)
 
 
-getPlatform :: (Alternative m, MonadReader env m, HasLog env, MonadCatch m, MonadIO m, MonadFail m)
+getPlatform :: (MonadReader env m, HasLog env, MonadCatch m, MonadIO m, MonadFail m)
             => Excepts
                  '[NoCompatiblePlatform, DistroNotFound]
                  m
@@ -136,15 +136,15 @@ getPlatform = do
                                                         Nothing
 
 
-getLinuxDistro :: (Alternative m, MonadCatch m, MonadIO m, MonadFail m)
+getLinuxDistro :: (MonadCatch m, MonadIO m, MonadFail m)
                => Excepts '[DistroNotFound] m (LinuxDistro, Maybe Versioning)
 getLinuxDistro = do
   -- TODO: don't do alternative on IO, because it hides bugs
-  (name, mid, ver) <- handleIO (\_ -> throwE DistroNotFound) $ lift $ asum
-    [ liftIO try_os_release
+  (name, mid, ver) <- join $ liftIO $ handleIO (\_ -> pure (throwE DistroNotFound)) $ fmap pure $ asum
+    [ try_os_release
     , try_lsb_release_cmd
-    , liftIO try_redhat_release
-    , liftIO try_debian_version
+    , try_redhat_release
+    , try_debian_version
     ]
   let hasWord xs = let f t = any (\x -> match (regex x) (T.unpack t)) xs
                    in f name || maybe False f mid
