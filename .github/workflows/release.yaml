@@ -16,13 +16,15 @@ env:
   CABAL_CACHE_DISABLE: ${{ vars.CABAL_CACHE_DISABLE }}
   CABAL_CACHE_NONFATAL: yes
   JSON_VERSION: "0.0.9"
+  GHC_VER_DEFAULT: 9.6.7
+  CABAL_VER_DEFAULT: 3.14.2.0
 
 jobs:
   build-linux:
     name: Build linux binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -36,7 +38,7 @@ jobs:
             ARCH: 32
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: 64
     steps:
       - name: Checkout code
@@ -85,7 +87,7 @@ jobs:
     name: Build ARM binary
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
@@ -94,7 +96,7 @@ jobs:
         include:
           - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: ARM64
             DISTRO: Alpine
     steps:
@@ -134,7 +136,7 @@ jobs:
     name: Build binary (Mac/Win)
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
       MACOSX_DEPLOYMENT_TARGET: 10.13
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -146,15 +148,15 @@ jobs:
         include:
           - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: ARM64
           - os: macOS-15-intel
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: 64
           - os: windows-latest
             ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: 64
     steps:
       - name: Checkout code
@@ -224,12 +226,12 @@ jobs:
     name: Build binary (FreeBSD)
     runs-on: [self-hosted, FreeBSD, X64]
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
-      GHC_VER: 9.6.7
+      GHC_VER: ${{ env.GHC_VER_DEFAULT }}
       ARCH: 64
       DISTRO: na
       RUNNER_OS: FreeBSD
@@ -264,12 +266,12 @@ jobs:
     name: Build binary (OpenBSD)
     runs-on: [self-hosted, openbsd, X64]
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
       ARTIFACT: "x86_64-openbsd-ghcup"
-      GHC_VER: 9.6.7
+      GHC_VER: ${{ env.GHC_VER_DEFAULT }}
       ARCH: 64
       DISTRO: na
       RUNNER_OS: OpenBSD
@@ -300,7 +302,7 @@ jobs:
     needs: "build-linux"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
     strategy:
       matrix:
         include:
@@ -311,12 +313,12 @@ jobs:
             DISTRO: Alpine
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: 64
             DISTRO: Alpine
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: 64
             DISTRO: Ubuntu
 
@@ -378,13 +380,13 @@ jobs:
     needs: "build-arm"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
     strategy:
       matrix:
         include:
           - os: [self-hosted, Linux, ARM64, maerwald]
             ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: ARM64
             DISTRO: Alpine
 
@@ -424,24 +426,24 @@ jobs:
     needs: "build-macwin"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
       MACOSX_DEPLOYMENT_TARGET: 10.13
     strategy:
       matrix:
         include:
           - os: [self-hosted, macOS, ARM64]
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: ARM64
             DISTRO: na
           - os: macOS-15-intel
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: 64
             DISTRO: na
           - os: windows-latest
             ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 9.6.7
+            GHC_VER: ${{ env.GHC_VER_DEFAULT }}
             ARCH: 64
             DISTRO: na
 
@@ -503,10 +505,10 @@ jobs:
     needs: "build-freebsd"
     runs-on: [self-hosted, FreeBSD, X64]
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
       MACOSX_DEPLOYMENT_TARGET: 10.13
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
-      GHC_VER: 9.6.7
+      GHC_VER: ${{ env.GHC_VER_DEFAULT }}
       ARCH: 64
       DISTRO: na
       RUNNER_OS: FreeBSD
@@ -546,9 +548,9 @@ jobs:
     needs: "build-openbsd"
     runs-on: [self-hosted, openbsd, X64]
     env:
-      CABAL_VER: 3.14.1.1
+      CABAL_VER: ${{ env.CABAL_VER_DEFAULT }}
       ARTIFACT: "x86_64-openbsd-ghcup"
-      GHC_VER: 9.6.7
+      GHC_VER: ${{ env.GHC_VER_DEFAULT }}
       ARCH: 64
       DISTRO: na
       RUNNER_OS: OpenBSD
