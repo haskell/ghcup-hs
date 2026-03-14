@@ -35,10 +35,10 @@ import           Options.Applicative.Pretty.Shim ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Environment
 import           System.Exit
+import           System.FilePath
 
 import qualified Data.Text                     as T
 import Control.Exception.Safe (MonadMask)
-import System.FilePath (takeDirectory)
 import GHCup.Types.Optics
 
 
@@ -273,7 +273,7 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
   Dirs{ .. }  <- runReaderT getDirs leanAppstate
   case (whereisCommand, whereisOptions) of
     (WhereisTool GHCup _, WhereisOptions{..}) -> do
-      loc <- liftIO (getExecutablePath >>= canonicalizePath )
+      loc <- liftIO (getExecutablePath >>= canon )
       if directory
       then liftIO $ putStr $ takeDirectory loc
       else liftIO $ putStr loc
@@ -283,8 +283,8 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
       runLeanWhereIs leanAppstate (do
         loc <- liftE $ whereIsTool tool v
         if directory
-        then pure $ takeDirectory loc
-        else pure loc
+        then canon $ takeDirectory loc
+        else canon loc
         )
         >>= \case
               VRight r -> do
@@ -297,8 +297,8 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
       runLeanWhereIs leanAppstate (do
         loc <- liftE $ whereIsTool tool (mkTVer v)
         if directory
-        then pure $ takeDirectory loc
-        else pure loc
+        then canon $ takeDirectory loc
+        else canon loc
         )
         >>= \case
               VRight r -> do
@@ -313,8 +313,8 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
         (v, _) <- liftE $ fromVersion whereVer guessMode tool
         loc <- liftE $ whereIsTool tool v
         if directory
-        then pure $ takeDirectory loc
-        else pure loc
+        then canon $ takeDirectory loc
+        else canon loc
         )
         >>= \case
               VRight r -> do
@@ -325,23 +325,29 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
                 pure $ ExitFailure 30
 
     (WhereisBaseDir, _) -> do
-      liftIO $ putStr $ fromGHCupPath baseDir
+      liftIO $ putStr =<< canon (fromGHCupPath baseDir)
       pure ExitSuccess
 
     (WhereisBinDir, _) -> do
-      liftIO $ putStr binDir
+      liftIO $ putStr =<< canon binDir
       pure ExitSuccess
 
     (WhereisCacheDir, _) -> do
-      liftIO $ putStr $ fromGHCupPath cacheDir
+      liftIO $ putStr =<< canon (fromGHCupPath cacheDir)
       pure ExitSuccess
 
     (WhereisLogsDir, _) -> do
-      liftIO $ putStr $ fromGHCupPath logsDir
+      liftIO $ putStr =<< canon (fromGHCupPath logsDir)
       pure ExitSuccess
 
     (WhereisConfDir, _) -> do
-      liftIO $ putStr $ fromGHCupPath confDir
+      liftIO $ putStr =<< canon (fromGHCupPath confDir)
       pure ExitSuccess
  where
+  -- make sure we only have forward slashes on windows
+  canon fp = do
+    cfp <- liftIO $ canonicalizePath fp
+    pure $ map (\c -> if isPathSeparator c then '/' else c) cfp
+
   guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
+
