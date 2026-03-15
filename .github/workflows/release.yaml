@@ -158,7 +158,7 @@ jobs:
         uses: haskell/ghcup-setup@v1
 
       - if: matrix.ARCH == 'ARM64' && runner.os == 'macOS'
-        name: Run build
+        name: Run build (mac aarch64)
         run: |
           bash .github/scripts/brew.sh git coreutils autoconf automake
           export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$PATH"
@@ -173,7 +173,7 @@ jobs:
           HOMEBREW_CHANGE_ARCH_TO_ARM: 1
 
       - if: matrix.ARCH == '64' && runner.os == 'macOS'
-        name: Run build (windows/mac)
+        name: Run build (mac x86_64)
         run: |
           bash .github/scripts/brew.sh coreutils
           export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$PATH"
@@ -188,9 +188,8 @@ jobs:
           HOMEBREW_CHANGE_ARCH_TO_ARM: 1
 
       - if: runner.os == 'Windows'
-        name: Run build (windows/mac)
+        name: Run build (windows)
         run: |
-          bash .github/scripts/brew.sh git coreutils autoconf automake
           bash .github/scripts/build.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
@@ -432,7 +431,7 @@ jobs:
           path: ./out
 
       - if: runner.os == 'macOS'
-        name: Run test
+        name: Run test (mac)
         run: |
           bash .github/scripts/brew.sh coreutils
           export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$PATH"
@@ -444,7 +443,7 @@ jobs:
           HOMEBREW_CHANGE_ARCH_TO_ARM: 1
 
       - if: runner.os != 'macOS'
-        name: Run test
+        name: Run test (windows)
         run: bash .github/scripts/test.sh
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
@@ -467,6 +466,7 @@ jobs:
           name: testfiles-${{ matrix.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
+
   test-freebsd:
     name: Test FreeBSD
     needs: "build-freebsd"
