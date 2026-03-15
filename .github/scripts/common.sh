@@ -51,7 +51,7 @@ eghcup() {
 }
 
 sha_sum() {
-	if [ "${OS}" = "FreeBSD" ] ; then
+	if [ "${OS}" = "FreeBSD" ] || [ "${OS}" = "OpenBSD" ] ; then
 		sha256 "$@"
 	else
 		sha256sum "$@"
@@ -147,3 +147,12 @@ strip_binary() {
    esac
 	)
 }
+
+to_posix_path() {
+    if [ "${OS}" = "Windows" ]; then
+        cygpath -u "$1"
+    else
+        echo "$1"
+    fi
+}
+

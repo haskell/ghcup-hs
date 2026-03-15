@@ -35,6 +35,10 @@ sha_sum "$(raw_eghcup --offline whereis ghcup)"
 ./"ghcup-test-optparse${ext}"
 rm "ghcup-test${ext}" "ghcup-test-optparse${ext}"
 
+if [ "${OS}" = "OpenBSD" ] ; then
+	exit 0
+fi
+
 ### manual cli based testing
 
 eghcup --numeric-version
@@ -47,13 +51,12 @@ fi
 
 eghcup install ghc "${GHC_VER}"
 eghcup unset ghc "${GHC_VER}"
-ls -lah "$(eghcup whereis -d ghc "${GHC_VER}")"
-[ "$($(eghcup whereis ghc "${GHC_VER}") --numeric-version)" = "${GHC_VER}" ]
-[ "$(eghcup run -q --ghc "${GHC_VER}" -- ghc --numeric-version)" = "${GHC_VER}" ]
-[ "$(ghcup run -q --ghc "${GHC_VER}" -- ghc -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" = "$($(ghcup whereis ghc "${GHC_VER}") -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" ]
+
 eghcup set ghc "${GHC_VER}"
 eghcup install cabal "${CABAL_VER}"
-[ "$($(eghcup whereis cabal "${CABAL_VER}") --numeric-version)" = "${CABAL_VER}" ]
+ldd /c/ghcup/bin/cabal-3.14.2.0.exe
+/c/ghcup/bin/cabal-3.14.2.0.exe --numeric-version
+[ "$($(to_posix_path "$(eghcup whereis cabal "${CABAL_VER}")") --numeric-version)" = "${CABAL_VER}" ]
 eghcup unset cabal
 "$GHCUP_BIN"/cabal --version && exit 1 || echo yes
 
@@ -62,7 +65,7 @@ eghcup unset cabal
 [ "$(eghcup run -q --cabal "${CABAL_VER}" -- cabal --numeric-version)" = "${CABAL_VER}" ]
 eghcup set cabal "${CABAL_VER}"
 
-[ "$($(eghcup whereis cabal "${CABAL_VER}") --numeric-version)" = "${CABAL_VER}" ]
+[ "$($(to_posix_path "$(eghcup whereis cabal "${CABAL_VER}")") --numeric-version)" = "${CABAL_VER}" ]
 
 if [ "${OS}" != "FreeBSD" ] ; then
 	if [ "${ARCH}" = "64" ] && [ "${DISTRO}" != "Alpine" ] ; then

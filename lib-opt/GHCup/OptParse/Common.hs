@@ -269,7 +269,7 @@ tagCompleter :: Tool -> [String] -> Completer
 tagCompleter tool add = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
   let loggerConfig = LoggerConfig
-        { lcPrintDebug   = False
+        { lcPrintDebugLvl = Nothing
         , consoleOutter  = mempty
         , fileOutter     = mempty
         , fancyColors    = False
@@ -297,7 +297,7 @@ versionCompleter' :: [ListCriteria] -> Tool -> (Version -> Bool) -> Completer
 versionCompleter' criteria tool filter' = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
   let loggerConfig = LoggerConfig
-        { lcPrintDebug   = False
+        { lcPrintDebugLvl = Nothing
         , consoleOutter  = mempty
         , fileOutter     = mempty
         , fancyColors    = False

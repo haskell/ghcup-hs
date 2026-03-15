@@ -61,7 +61,7 @@ jobs:
     needs: "build"
     runs-on: [self-hosted, Linux, X64]
     container:
-      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:a9297a370025101b479cfd4977f8f910814e03ab
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:5df428b97c501f61f57587048d4bd15eba53e364
       options: --user root
       env:
         CABAL_VER: 3.10.3.0
@@ -108,7 +108,7 @@ jobs:
     needs: "build"
     runs-on: [self-hosted, Linux, X64]
     container:
-      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:a9297a370025101b479cfd4977f8f910814e03ab
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:5df428b97c501f61f57587048d4bd15eba53e364
       options: --user root
       env:
         CABAL_VER: 3.10.3.0

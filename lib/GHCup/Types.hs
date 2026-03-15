@@ -407,7 +407,7 @@ data UserSettings = UserSettings
   , uMetaCache         :: Maybe Integer
   , uMetaMode          :: Maybe MetaMode
   , uNoVerify          :: Maybe Bool
-  , uVerbose           :: Maybe Bool
+  , uVerbose           :: Maybe Int
   , uKeepDirs          :: Maybe KeepDirs
   , uDownloader        :: Maybe Downloader
   , uKeyBindings       :: Maybe UserKeyBindings
@@ -551,7 +551,7 @@ data Settings = Settings
   , noVerify          :: Bool
   , keepDirs          :: KeepDirs
   , downloader        :: Downloader
-  , verbose           :: Bool
+  , verbose           :: Int
   , urlSource         :: [NewURLSource]
   , noNetwork         :: Bool
   , gpgSetting        :: GPGSetting
@@ -582,7 +582,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl False [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig True
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl 0 [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig True
 
 instance NFData Settings
 
@@ -765,15 +765,15 @@ instance Show (IO ()) where
 
 data LogLevel = Warn
               | Info
-              | Debug
+              | Debug Int
               | Error
   deriving (Eq, Ord, Show)
 
 data LoggerConfig = LoggerConfig
-  { lcPrintDebug   :: Bool            -- ^ whether to print debug in colorOutter
-  , consoleOutter  :: T.Text -> IO () -- ^ how to write the console output
-  , fileOutter     :: T.Text -> IO () -- ^ how to write the file output
-  , fancyColors    :: Bool
+  { lcPrintDebugLvl :: Maybe Int            -- ^ whether to print debug in colorOutter
+  , consoleOutter   :: T.Text -> IO () -- ^ how to write the console output
+  , fileOutter      :: T.Text -> IO () -- ^ how to write the file output
+  , fancyColors     :: Bool
   }
   deriving Show
 

@@ -197,7 +197,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           -- logger interpreter
           logfile <- runReaderT initGHCupFileLogging dirs
           let loggerConfig = LoggerConfig
-                { lcPrintDebug = verbose settings
+                { lcPrintDebugLvl = Just (verbose settings)
                 , consoleOutter  = T.hPutStr stderr
                 , fileOutter    =
                     case optCommand of
@@ -252,7 +252,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
 #endif
                   -- check for new tools
                   _
-                    | Just False <- optVerbose -> pure ()
+                    | Just 0 <- optVerbose -> pure ()
                     | otherwise -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
                          Nothing -> void . flip runReaderT s' . runE @'[TagNotFound, DayNotFound, NextVerNotFound, NoToolVersionSet] $ do
                            newTools <- lift checkForUpdates

@@ -697,7 +697,7 @@ settings' :: IORef AppState
 {-# NOINLINE settings' #-}
 settings' = unsafePerformIO $ do
   dirs <- getAllDirs
-  let loggerConfig = LoggerConfig { lcPrintDebug  = False
+  let loggerConfig = LoggerConfig { lcPrintDebugLvl = Nothing
                                   , consoleOutter = \_ -> pure ()
                                   , fileOutter    = \_ -> pure ()
                                   , fancyColors   = True
