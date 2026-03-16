@@ -1,12 +1,12 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 module GHCup.Prelude.File (
   mergeFileTree,
@@ -15,6 +15,8 @@ module GHCup.Prelude.File (
   getDirectoryContentsRecursive,
   getDirectoryContentsRecursiveUnsafe,
   recordedInstallationFile,
+  recordedInstallationSpecFile,
+  recordedSetVersionFile,
   module GHCup.Prelude.File.Search,
 
   chmod_755,
@@ -44,10 +46,10 @@ module GHCup.Prelude.File (
   createLink
 ) where
 
-import GHCup.Utils.Dirs
-import GHCup.Prelude.Logger.Internal (logInfo, logDebug, logDebug2)
-import GHCup.Prelude.Internal
 import GHCup.Prelude.File.Search
+import GHCup.Prelude.Internal
+import GHCup.Prelude.Logger.Internal ( logDebug, logDebug2 )
+import GHCup.Query.GHCupDirs
 #if IS_WINDOWS
 import GHCup.Prelude.File.Windows
 import GHCup.Prelude.Windows
@@ -55,26 +57,27 @@ import GHCup.Prelude.Windows
 import GHCup.Prelude.File.Posix
 import GHCup.Prelude.Posix
 #endif
-import           GHCup.Errors
-import           GHCup.Types
-import           GHCup.Types.Optics
+import GHCup.Errors
+import GHCup.System.Directory
+import GHCup.Types
+import GHCup.Types.Optics
 
-import           Text.Regex.Posix
 import           Conduit
-import qualified Data.Conduit.Combinators as C
 import           Control.Exception.Safe
 import           Control.Monad.Reader
 import           Data.ByteString                ( ByteString )
+import qualified Data.Conduit.Combinators       as C
 import           Data.Variant.Excepts
 import           System.FilePath
-import           Text.PrettyPrint.HughesPJClass (prettyShow)
+import           Text.PrettyPrint.HughesPJClass ( prettyShow )
+import           Text.Regex.Posix
 
-import qualified Data.Text                     as T
-import Control.DeepSeq (force)
-import Control.Exception (evaluate)
-import GHC.IO.Exception
-import System.IO.Error
-import Control.Monad (when, forM_, filterM)
+import           Control.DeepSeq   ( force )
+import           Control.Exception ( evaluate )
+import           Control.Monad     ( filterM, forM_, when )
+import qualified Data.Text         as T
+import           GHC.IO.Exception
+import           System.IO.Error
 
 
 -- | Merge one file tree to another given a copy operation.
@@ -97,11 +100,12 @@ mergeFileTree :: ( MonadMask m
               -> Tool
               -> GHCTargetVersion
               -> (FilePath -> FilePath -> m ())  -- ^ file copy operation
+              -> Bool                            -- ^ whether to abort if the DB file already exists
               -> Excepts '[MergeFileTreeError] m ()
-mergeFileTree _ (GHCupBinDir fp) _ _ _ =
+mergeFileTree _ (GHCupBinDir fp) _ _ _ _ =
   throwIO $ userError ("mergeFileTree: internal error, called on " <> fp)
-mergeFileTree sourceBase destBase tool v' copyOp = do
-  lift $ logInfo $ "Merging file tree from \""
+mergeFileTree sourceBase destBase tool v' copyOp append = do
+  lift $ logDebug $ "Merging file tree from \""
        <> T.pack (fromGHCupPath sourceBase)
        <> "\" to \""
        <> T.pack (fromInstallDir destBase)
@@ -118,7 +122,7 @@ mergeFileTree sourceBase destBase tool v' copyOp = do
 
     -- we only record for non-isolated installs
     when (isSafeDir destBase) $ do
-      whenM (liftIO $ doesFileExist recFile)
+      whenM (fmap (&& not append) $ liftIO $ doesFileExist recFile)
         $ throwIO $ userError ("mergeFileTree: DB file " <> recFile <> " already exists!")
       liftIO $ createDirectoryIfMissing True (takeDirectory recFile)
 
@@ -197,6 +201,7 @@ findFilesDeep path regex =
 
 recordedInstallationFile :: ( MonadReader env m
                             , HasDirs env
+                            , MonadIO m
                             )
                          => Tool
                          -> GHCTargetVersion
@@ -204,6 +209,30 @@ recordedInstallationFile :: ( MonadReader env m
 recordedInstallationFile t v' = do
   Dirs {..}  <- getDirs
   pure (fromGHCupPath dbDir </> prettyShow t </> T.unpack (tVerToText v'))
+
+recordedInstallationSpecFile :: ( MonadReader env m
+                                , HasDirs env
+                                )
+                             => Tool
+                             -> GHCTargetVersion
+                             -> m FilePath
+recordedInstallationSpecFile t v' = do
+  Dirs {..}  <- getDirs
+  pure (fromGHCupPath dbDir </> prettyShow t </> T.unpack (tVerToText v') <.> "spec")
+
+recordedSetVersionFile ::
+  ( MonadReader env m
+  , HasDirs env
+  )
+  => Tool
+  -> Maybe T.Text
+  -> m FilePath
+recordedSetVersionFile t Nothing = do
+  Dirs {..}  <- getDirs
+  pure (fromGHCupPath dbDir </> prettyShow t </> "set")
+recordedSetVersionFile t (Just target) = do
+  Dirs {..}  <- getDirs
+  pure (fromGHCupPath dbDir </> prettyShow t </> T.unpack target <.> "set")
 
 removeDirIfEmptyOrIsSymlink :: (MonadMask m, MonadIO m, MonadCatch m) => FilePath -> m ()
 removeDirIfEmptyOrIsSymlink filepath =
@@ -248,7 +277,7 @@ createDirRecursive' p =
         rft <- doesDirectoryExist rp
         case rft of
           True -> pure ()
-          _ -> throwIO e
+          _    -> throwIO e
       _ -> throwIO e
 
 

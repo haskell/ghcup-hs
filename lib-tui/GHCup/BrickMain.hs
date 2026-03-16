@@ -15,9 +15,9 @@ This module contains the entrypoint for the brick application and nothing else.
 
 module GHCup.BrickMain where
 
-import GHCup.List ( ListResult (..))
+import GHCup.Command.List ( ListResult (..))
 import GHCup.Types
-    ( Settings(noColor), Tool (GHC),
+    ( Settings(noColor), ghc,
       AppState(ghcupInfo, settings, keyBindings, loggerConfig), KeyBindings(..) )
 import GHCup.Prelude.Logger ( logError )
 import qualified GHCup.Brick.Actions as Actions
@@ -31,7 +31,6 @@ import qualified GHCup.Brick.Widgets.Menus.AdvancedInstall as AdvancedInstall
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
 import qualified Brick
-import qualified Graphics.Vty as Vty
 
 import Control.Monad.Reader ( ReaderT(runReaderT) )
 import Data.Functor ( ($>) )
@@ -41,6 +40,7 @@ import System.Exit ( ExitCode(ExitFailure), exitWith )
 
 import qualified Data.Text                     as T
 import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
+import Data.Maybe (isNothing)
 
 
 
@@ -67,7 +67,7 @@ brickMain s = do
                   (Attributes.defaultAttributes $ noColor $ settings s)
                   (Attributes.dimAttributes $ noColor $ settings s)
               installedGHCs = fmap lVer $
-                filter (\(ListResult {..}) -> lInstalled && lTool == GHC && lCross == Nothing) (Common._lr ad)
+                filter (\(ListResult {..}) -> lInstalled && lTool == ghc && isNothing lCross) (Common._lr ad)
               initstate =
                 AppState.BrickState ad
                       Common.defaultAppSettings

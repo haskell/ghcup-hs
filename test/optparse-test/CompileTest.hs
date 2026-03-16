@@ -13,8 +13,8 @@ import GHCup.Types
 import URI.ByteString.QQ
 import qualified GHCup.OptParse.Compile as GHC (GHCCompileOptions(..))
 import qualified GHCup.OptParse.Compile as HLS (HLSCompileOptions(..))
-import GHCup.GHC as GHC
-import GHCup.HLS as HLS
+import GHCup.Command.Compile.GHC as GHC
+import GHCup.Command.Compile.HLS as HLS
 
 
 compileTests :: TestTree
@@ -40,7 +40,7 @@ mkDefaultGHCCompileOptions target boot =
     Nothing
     Nothing
     Nothing
-    "install"
+    Nothing
 
 mkDefaultHLSCompileOptions :: HLSVer -> [ToolVersion] -> HLSCompileOptions
 mkDefaultHLSCompileOptions target ghcs =

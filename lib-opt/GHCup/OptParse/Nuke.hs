@@ -11,7 +11,9 @@ module GHCup.OptParse.Nuke where
 
 
 
-import           GHCup
+import           GHCup.Command.List (ListResult(..), ListCriteria(..), listVersions)
+import           GHCup.Command.Rm
+import           GHCup.Command.Nuke
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Prelude.Logger
@@ -24,7 +26,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Maybe
 import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
+import           Options.Applicative     hiding ( style, ParseError )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 
@@ -42,7 +44,7 @@ import Control.Concurrent (threadDelay)
     ---------------------------
 
 
-type NukeEffects = '[ NotInstalled, UninstallFailed ]
+type NukeEffects = '[ NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo ]
 
 
 runNuke :: AppState
@@ -78,9 +80,9 @@ nuke appState runLogger = do
        lift $ logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
        lift $ logInfo "Nuking in 3...2...1"
 
-       lInstalled <- lift $ listVersions Nothing [ListInstalled True] False True (Nothing, Nothing)
+       lInstalled' <- liftE $ listVersions Nothing [ListInstalled True] False True (Nothing, Nothing)
 
-       forM_ lInstalled (liftE . rmTool)
+       forM_ lInstalled' (\ListResult{..} -> liftE $ rmToolVersion lTool (GHCTargetVersion lCross lVer))
 
        lift rmGhcupDirs
 

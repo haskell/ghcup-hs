@@ -55,7 +55,7 @@ import Data.Char (isSpace)
 import Data.Versions
 import Control.Applicative (Alternative((<|>)))
 import Text.Read (readEither)
-import qualified GHCup.Utils.Parsers as Utils
+import qualified GHCup.Input.Parsers as Utils
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 data CompileHLSOptions = CompileHLSOptions

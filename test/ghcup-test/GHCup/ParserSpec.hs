@@ -4,7 +4,7 @@
 module GHCup.ParserSpec where
 
 import           GHCup.Types
-import           GHCup.Types.JSON
+import           GHCup.Types.JSON ()
 import           GHCup.Prelude.Version.QQ
 import           GHCup.Prelude.MegaParsec
 

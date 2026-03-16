@@ -1,21 +1,18 @@
-resolver: lts-23.1
+resolver: lts-24.37
 
 packages:
   - .
 
+
 extra-deps:
-  - brick-2.1.1@sha256:ff36d64f1027eac17a14a83de053067413accb58b79e5002dce2a79cb8a3dcb3,17385
-  - file-uri-0.1.0.0@sha256:d6dcc12bde249362c93e413f87a41558b827333dfe3f97d953e47e1070c0da6f,1857
-  - generic-arbitrary-0.2.2@sha256:202ffbf2032672a51318f2e80d7e75b72f8950e690346b4314f38bc7e39215f7,1189
   - libarchive-3.0.4.2
+  - xz-5.6.3
+  - xz-clib-5.6.3
+  - file-uri-0.1.0.0@sha256:82b67416a75ed01ee1bb46a4662d7195cfc86e8f1342df659d0cc9ca1e18abe2,1857
   - os-release-1.0.2.1@sha256:2c3e8f7a9a0e17d5042d14d2036d52b42c8d5606e8d004697af462a95c87a9e2,2718
   - strict-base-0.4.0.0@sha256:2ff4e43cb95eedf2995558d7fc34d19362846413dd39e6aa6a5b3ea8228fef9f,1248
-  - variant-1.0@sha256:a3c819560424f59285a09f3ebd762f3a328163d109b5da55c4c54b6626f58c97,2180
-  - xz-5.6.3
-  - zlib-0.6.3.0@sha256:96d388c95a98d6db94b74053130c00aea3c8c8ee041b5594bbe09242f1714356,5465
-  - uri-bytestring-0.4.0.0
-  - xz-clib-5.6.3
-
+  - variant-1.0.1@sha256:97364d20e13ad92e02bb45e78876087ffb3b2979f39a82cadb10df1b3a920268,2182
+  - zip-2.1.0@sha256:e1fcdab8f7b01d8a78ef4a8c6f584fe4d7e42e89de870f310ab293b6e0ffda07,4026
 allow-newer: true
 
 allow-newer-deps:
@@ -45,6 +42,11 @@ flags:
 
   ghcup:
     tar: true
+
+  dhall:
+    cross: false
+    with-http: false
+    network-tests: false
 
 ghc-options:
   "$locals": -O2

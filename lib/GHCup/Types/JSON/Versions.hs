@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {-|
 Module      : GHCup.Types.JSON.Versions
@@ -17,11 +17,11 @@ Portability : portable
 -}
 module GHCup.Types.JSON.Versions where
 
-import           Data.Aeson              hiding (Key)
-import           Data.Aeson.Types        hiding (Key)
-import           Data.Versions
+import Data.Aeson       hiding ( Key )
+import Data.Aeson.Types hiding ( Key )
+import Data.Versions
 
-import qualified Data.Text                     as T
+import qualified Data.Text as T
 
 instance ToJSON Versioning where
   toJSON = toJSON . prettyV

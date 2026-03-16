@@ -1,6 +1,6 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {-|
 Module      : GHCup.Utils.Logger
@@ -19,25 +19,25 @@ module GHCup.Prelude.Logger
   )
 where
 
-import           GHCup.Prelude.Logger.Internal
-import           GHCup.Types
-import           GHCup.Types.Optics
-import           GHCup.Utils.Dirs (fromGHCupPath)
-import           GHCup.Prelude.Internal
-import           GHCup.Prelude.File.Search (findFiles)
-import           GHCup.Prelude.File (recycleFile)
-import           GHCup.Prelude.String.QQ
+import GHCup.Prelude.File            ( recycleFile )
+import GHCup.Prelude.File.Search     ( findFiles )
+import GHCup.Prelude.Internal
+import GHCup.Prelude.Logger.Internal
+import GHCup.Prelude.String.QQ
+import GHCup.Query.GHCupDirs         ( fromGHCupPath )
+import GHCup.Types
+import GHCup.Types.Optics
 
-import           Control.Exception.Safe
-import           Control.Monad
-import           Control.Monad.IO.Class
-import           Control.Monad.Reader
-import           Prelude                 hiding ( appendFile )
-import           System.FilePath
-import           System.IO.Error
-import           Text.Regex.Posix
+import Control.Exception.Safe
+import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Reader
+import Prelude                hiding ( appendFile )
+import System.FilePath
+import System.IO.Error
+import Text.Regex.Posix
 
-import qualified Data.ByteString               as B
+import qualified Data.ByteString as B
 
 
 

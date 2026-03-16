@@ -16,6 +16,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GHCUP_INSTALL_BASE_PREFIX: ${{ github.workspace }}
+
+
 jobs:
   bootstrap:
     name: bootstrap
@@ -24,6 +28,7 @@ jobs:
       BOOTSTRAP_HASKELL_CABAL_VERSION: 3.12.1.0
       BOOTSTRAP_HASKELL_GHC_VERSION: 9.6.7
       BOOTSTRAP_HASKELL_NONINTERACTIVE: yes
+      BOOTSTRAP_HASKELL_ADJUST_BASHRC: yes
       ARCH: 64
       JSON_VERSION: "0.0.7"
     strategy:
@@ -37,21 +42,37 @@ jobs:
             DISTRO: na
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
 
       - if: runner.os == 'Linux'
-        name: Run bootstrap
+        name: Install Linux dependencies
         run: |
+          set -eux
+
           sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
-          sh ./.github/scripts/bootstrap.sh
+
+      - if: runner.os == 'Linux'
+        name: Run bootstrap
+        run: &bootstrap |
+          set -eux
+
+          ./scripts/bootstrap/bootstrap-haskell
+          cat "${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/env"
+          . "${GHCUP_INSTALL_BASE_PREFIX}/.ghcup/env"
+
+          [ "$(ghc --numeric-version)" = "${BOOTSTRAP_HASKELL_GHC_VERSION}" ]
+          # https://github.com/actions/runner-images/issues/7061
+          [ "$(ghcup config | grep --color=never meta-mode)" = "meta-mode: Lax" ]
+
+        shell: bash
         env:
           DISTRO: ${{ matrix.DISTRO }}
 
       - if: runner.os == 'macOS'
         name: Run bootstrap
-        run: sh ./.github/scripts/bootstrap.sh
+        run: *bootstrap
         env:
           DISTRO: ${{ matrix.DISTRO }}
 

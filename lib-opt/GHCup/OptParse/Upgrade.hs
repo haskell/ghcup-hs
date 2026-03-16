@@ -1,43 +1,43 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module GHCup.OptParse.Upgrade where
 
 
 
 
-import           GHCup
-import           GHCup.Errors
-import           GHCup.Types
-import           GHCup.Prelude.File
-import           GHCup.Prelude.Logger
-
-import           Control.Concurrent (threadDelay)
-#if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
-#endif
-import           Control.Monad (forM_)
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
-import           Data.Functor
-import           Data.Maybe
-import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
-import           Prelude                 hiding ( appendFile )
-import           System.Exit
-
-import qualified Data.Text                     as T
-import Control.Exception.Safe (MonadMask)
-import System.Environment
-import GHCup.Utils
-import System.FilePath
+import GHCup.Command.Upgrade
+import GHCup.Errors
+import GHCup.Prelude.File
+import GHCup.Prelude.Logger
+import GHCup.Query.Metadata
+import GHCup.Types
 import GHCup.Types.Optics
+
+import Control.Concurrent ( threadDelay )
+#if !MIN_VERSION_base(4,13,0)
+import Control.Monad.Fail ( MonadFail )
+#endif
+import Control.Exception.Safe       ( MonadMask )
+import Control.Monad                ( forM_ )
+import Control.Monad.Reader
+import Control.Monad.Trans.Resource
+import Data.Functor
+import Data.Maybe
+import Data.Variant.Excepts
 import Data.Versions
+import Options.Applicative          hiding ( style )
+import Prelude                      hiding ( appendFile )
+import System.Environment
+import System.Exit
+import System.FilePath
+
+import qualified Data.Text as T
 
 
 
@@ -49,10 +49,11 @@ import Data.Versions
     ---------------
 
 
-data UpgradeOpts = UpgradeInplace
-                 | UpgradeAt FilePath
-                 | UpgradeGHCupDir
-                 deriving (Eq, Show)
+data UpgradeOpts
+  = UpgradeInplace
+  | UpgradeAt FilePath
+  | UpgradeGHCupDir
+  deriving (Eq, Show)
 
 
 
@@ -139,7 +140,7 @@ upgrade uOpts force' fatal Dirs{..} runAppState runLogger = do
 
   runUpgrade runAppState (do
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-    Just (tver, vi) <- pure $ getLatest dls GHCup
+    Just (tver, vi) <- pure $ getLatest dls ghcup
     let latestVer = _tvVersion tver
     forM_ (_viPreInstall vi) $ \msg -> do
       lift $ logWarn msg
@@ -151,7 +152,7 @@ upgrade uOpts force' fatal Dirs{..} runAppState runLogger = do
     ) >>= \case
       VRight (v', dls) -> do
         let pretty_v = prettyVer v'
-        let vi = fromJust $ snd <$> getLatest dls GHCup
+        let vi = snd (fromJust (getLatest dls ghcup))
         runLogger $ logInfo $
           "Successfully upgraded GHCup to version " <> pretty_v
         forM_ (_viPostInstall vi) $ \msg ->

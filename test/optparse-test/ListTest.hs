@@ -3,7 +3,7 @@ module ListTest where
 import Test.Tasty
 import GHCup.OptParse
 import Utils
-import GHCup.List
+import GHCup.Command.List
 import GHCup.Types
 
 
@@ -16,10 +16,10 @@ defaultOptions = ListOptions Nothing Nothing Nothing Nothing False False False
 listCheckList :: [(String, ListOptions)]
 listCheckList =
   [ ("list", defaultOptions)
-  , ("list -t ghc", defaultOptions{loTool = Just GHC})
-  , ("list -t cabal", defaultOptions{loTool = Just Cabal})
-  , ("list -t hls", defaultOptions{loTool = Just HLS})
-  , ("list -t stack", defaultOptions{loTool = Just Stack})
+  , ("list -t ghc", defaultOptions{loTool = Just [ghc]})
+  , ("list -t cabal", defaultOptions{loTool = Just [cabal]})
+  , ("list -t hls", defaultOptions{loTool = Just [hls]})
+  , ("list -t stack", defaultOptions{loTool = Just [stack]})
   , ("list -c installed", defaultOptions{lCriteria = Just $ ListInstalled True})
   , ("list -c +installed", defaultOptions{lCriteria = Just $ ListInstalled True})
   , ("list -c -installed", defaultOptions{lCriteria = Just $ ListInstalled False})

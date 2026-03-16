@@ -1,10 +1,10 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 {-|
 Module      : GHCup.Prelude.Internal
@@ -21,37 +21,38 @@ recursive imports.
 module GHCup.Prelude.Internal where
 
 
-import           Control.Applicative
-import           Control.Exception.Safe
-import           Control.Monad
-import           Control.Monad.IO.Class
-import           Control.Monad.Reader
-import           Data.Bifunctor
-import           Data.ByteString                ( ByteString )
-import           Data.List                      ( intercalate, stripPrefix, isPrefixOf, dropWhileEnd )
-import           Data.Maybe
-import           Data.String
-import           Data.Text                      ( Text )
-import           Data.Versions
-import           Data.Word8                  hiding ( isDigit )
-import           Data.Variant.Types
-import           Data.Variant.Excepts
-import           System.IO.Error
+import Control.Applicative
+import Control.Exception.Safe
+import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Reader
+import Control.Retry
+import Data.Bifunctor
+import Data.ByteString        ( ByteString )
+import Data.Data              ( Proxy )
+import Data.List
+    ( dropWhileEnd, intercalate, isPrefixOf, stripPrefix )
+import Data.Maybe
+import Data.String
+import Data.Text              ( Text )
+import Data.Variant.Excepts
+import Data.Variant.Types
+import Data.Versions
+import Data.Word8             hiding ( isDigit )
+import GHC.IO.Exception
+import System.IO.Error
 
-import           Control.Retry
-import           GHC.IO.Exception
-
-import qualified Data.ByteString               as B
-import qualified Data.ByteString.Lazy          as L
-import qualified Data.Strict.Maybe             as S
-import qualified Data.List.Split               as Split
-import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as E
-import qualified Data.Text.Encoding.Error      as E
-import qualified Data.Text.Lazy                as TL
-import qualified Data.Text.Lazy.Builder        as B
-import qualified Data.Text.Lazy.Builder.Int    as B
-import qualified Data.Text.Lazy.Encoding       as TLE
+import qualified Data.ByteString            as B
+import qualified Data.ByteString.Lazy       as L
+import qualified Data.List.Split            as Split
+import qualified Data.Strict.Maybe          as S
+import qualified Data.Text                  as T
+import qualified Data.Text.Encoding         as E
+import qualified Data.Text.Encoding.Error   as E
+import qualified Data.Text.Lazy             as TL
+import qualified Data.Text.Lazy.Builder     as B
+import qualified Data.Text.Lazy.Builder.Int as B
+import qualified Data.Text.Lazy.Encoding    as TLE
 
 
 
@@ -134,6 +135,13 @@ handleIO' err handler = handleIO
      -> e
      -> Excepts es m a
 (!?) em e = lift em >>= (?? e)
+
+(!!?) :: forall e es es' a m
+      . (Monad m, e :< es', es' ~ Concat es '[e])
+     => Excepts es m (Maybe a)
+     -> e
+     -> Excepts es' m a
+(!!?) em e = appendE @'[e] em >>= (?? e)
 
 
 lE :: forall e es a m . (Monad m, e :< es) => Either e a -> Excepts es m a
@@ -220,7 +228,7 @@ hideExcept _ a =
 
 hideExcept' :: forall e es es' m
              . (Monad m, e :< es, LiftVariant (Remove e es) es')
-            => e
+            => Proxy e
             -> Excepts es m ()
             -> Excepts es' m ()
 hideExcept' _ =
@@ -258,7 +266,7 @@ throwEither' e eth = case eth of
 throwMaybe :: (Exception a, MonadThrow m) => a -> Maybe b -> m b
 throwMaybe a m = case m of
   Nothing -> throwM a
-  Just r -> pure r
+  Just r  -> pure r
 
 throwMaybeM :: (Exception a, MonadThrow m) => a -> m (Maybe b) -> m b
 throwMaybeM a am = do

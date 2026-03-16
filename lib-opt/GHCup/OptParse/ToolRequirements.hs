@@ -28,9 +28,9 @@ import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import Control.Exception.Safe (MonadMask)
 import GHCup.Types.Optics
-import GHCup.Platform
+import GHCup.Query.System
 import GHCup.Prelude
-import GHCup.Requirements
+import GHCup.Query.Metadata
 import System.IO
 
 
@@ -51,7 +51,7 @@ data ToolReqOpts = ToolReqOpts
     --[ Parsers ]--
     ---------------
 
-          
+
 toolReqP :: Parser ToolReqOpts
 toolReqP =
   ToolReqOpts
@@ -109,7 +109,8 @@ toolRequirements :: ( Monad m
 toolRequirements ToolReqOpts{..} runAppState runLogger = runToolRequirements runAppState (do
     GHCupInfo { .. } <- lift getGHCupInfo
     platform' <- liftE getPlatform
-    req       <- getCommonRequirements platform' _toolRequirements ?? NoToolRequirements
+    -- TODO
+    req       <- getCommonRequirements ghc platform' _toolRequirements ?? NoToolRequirements
     if tlrRaw
     then liftIO $ T.hPutStr stdout (rawRequirements req)
     else liftIO $ T.hPutStr stdout (prettyRequirements req)

@@ -1,5 +1,5 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {-|
 Module      : GHCup.Prelude.MegaParsec
@@ -12,22 +12,24 @@ Portability : portable
 -}
 module GHCup.Prelude.MegaParsec where
 
-import           GHCup.Types
+import GHCup.Types
 
-import           Control.Applicative
+import Control.Applicative
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Data.Functor
-import           Data.Maybe
-import           Data.Text                      ( Text )
-import           Data.Versions
-import           Data.Void
-import           System.FilePath
+import Data.Functor
+import Data.Maybe
+import Data.Text       ( Text )
+import Data.Versions
+import Data.Void
+import System.FilePath
 
-import qualified Data.List.NonEmpty            as NE
-import qualified Data.Text                     as T
-import qualified Text.Megaparsec               as MP
+import           Data.List.NonEmpty   ( NonEmpty ((:|)) )
+import qualified Data.List.NonEmpty   as NE
+import qualified Data.Text            as T
+import qualified Text.Megaparsec      as MP
+import qualified Text.Megaparsec.Char as MPC
 
 
 choice' :: (MonadFail f, MP.MonadParsec e s f) => [f a] -> f a
@@ -104,6 +106,31 @@ ghcTargetVerP =
       then pure $ prettyVer v
       else fail "Oh"
 
+ghcLinkVersion :: MP.Parsec Void Text GHCTargetVersion
+ghcLinkVersion =
+  (\x y -> GHCTargetVersion x y)
+    <$>
+       (MP.try (Just <$> parseUntil1 (MP.chunk "-ghc-" *> verP') <* MP.chunk "-")
+        <|> ((\ _ x -> x) Nothing <$> mempty)
+        )
+    <*> (MP.chunk "ghc-" *> version' <* MP.eof)
+ where
+  verP' :: MP.Parsec Void Text Text
+  verP' = do
+    v <- version'
+    let startsWithDigits =
+          and
+            . take 3
+            . map (\case
+                      Numeric  _ -> True
+                      Alphanum _ -> False)
+            . NE.toList
+            . (\(Chunks nec) -> nec)
+            $ _vChunks v
+    if startsWithDigits && isNothing (_vEpoch v)
+      then pure $ prettyVer v
+      else fail "Oh"
+
 
 verP :: MP.Parsec Void Text Text -> MP.Parsec Void Text Versioning
 verP suffix = do
@@ -150,3 +177,43 @@ ghcVersionFromPath =
   where
      binDir = MP.some pathSep <* MP.chunk "bin" *> MP.some pathSep <* MP.takeWhile1P Nothing (not . isPathSeparator) <* MP.eof
      parseTillLastPathSep = (MP.try (parseUntil1 pathSep *> MP.some pathSep) *> parseTillLastPathSep) <|> pure ()
+
+versionCmpP :: MP.Parsec Void T.Text VersionCmp
+versionCmpP = either (fail . T.unpack) pure =<< (translate <$> (MPC.space *> MP.try (MP.takeWhileP Nothing (`elem` ['>', '<', '=']))) <*> (MPC.space *> versioningEnd))
+ where
+   translate ">" v  = Right $ VR_gt v
+   translate ">=" v = Right $ VR_gteq v
+   translate "<" v  = Right $ VR_lt v
+   translate "<=" v = Right $ VR_lteq v
+   translate "==" v = Right $ VR_eq v
+   translate "" v   = Right $ VR_eq v
+   translate c  _   = Left $ "unexpected comparator: " <> c
+
+versionRangeP :: MP.Parsec Void T.Text VersionRange
+versionRangeP = go <* MP.eof
+ where
+  go =
+    MP.try orParse
+      <|> MP.try (fmap SimpleRange andParse)
+      <|> fmap (SimpleRange . pure) versionCmpP
+
+  orParse :: MP.Parsec Void T.Text VersionRange
+  orParse =
+    (\a o -> OrRange a o)
+      <$> (MP.try andParse <|> fmap pure versionCmpP)
+      <*> (MPC.space *> MP.chunk "||" *> MPC.space *> go)
+
+  andParse :: MP.Parsec Void T.Text (NonEmpty VersionCmp)
+  andParse =
+    fmap (\h t -> h :| t)
+         (MPC.space *> MP.chunk "(" *> MPC.space *> versionCmpP)
+      <*> MP.try (MP.many (MPC.space *> MP.chunk "&&" *> MPC.space *> versionCmpP))
+      <*  MPC.space
+      <*  MP.chunk ")"
+      <*  MPC.space
+
+versioningEnd :: MP.Parsec Void T.Text Versioning
+versioningEnd =
+  MP.try (verP (MP.chunk " " <|> MP.chunk ")" <|> MP.chunk "&&") <* MPC.space)
+    <|> versioning'
+

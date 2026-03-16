@@ -1,70 +1,70 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 
 
 module Main where
 
-import           GHCup.PlanJson
-
+import GHCup.PlanJson
 #if defined(BRICK)
-import           GHCup.BrickMain (brickMain)
+import GHCup.BrickMain ( brickMain )
 #endif
+import GHCup.Compat.Pager
+import GHCup.Download
+import GHCup.Errors
+import GHCup.Hardcoded.Version
+import GHCup.Input.Parsers     ( fromVersion )
+import GHCup.OptParse
+import GHCup.Prelude (enableAnsiSupport, decUTF8Safe')
+import GHCup.Prelude.Logger
+import GHCup.Prelude.String.QQ
+import GHCup.Query.GHCupDirs
+import GHCup.Query.System
+import GHCup.Setup
+import GHCup.Types
+import GHCup.Types.Optics      hiding ( toolRequirements )
 
-import qualified GHCup.GHC as GHC
-import qualified GHCup.HLS as HLS
-import           GHCup.OptParse
+import qualified GHCup.Command.Compile.GHC as GHC
+import qualified GHCup.Command.Compile.HLS as HLS
 
-import           GHCup.Utils.Pager
-import           GHCup.Download
-import           GHCup.Errors
-import           GHCup.Platform
-import           GHCup.Types
-import           GHCup.Types.Optics      hiding ( toolRequirements )
-import           GHCup.Utils
-import           GHCup.Utils.Parsers (fromVersion)
-import           GHCup.Prelude
-import           GHCup.Prelude.Logger
-import           GHCup.Prelude.String.QQ
-import           GHCup.Version
-
-import           Control.Monad (when, forM_, unless)
-import           Control.Concurrent
-import           Control.Concurrent.Async
-import           Control.Exception.Safe
+import Control.Concurrent
+import Control.Concurrent.Async
+import Control.Exception.Safe
+import Control.Monad            ( forM_, unless, when )
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad.Reader
-import           Data.Aeson                     ( decodeStrict', Value )
-import           Data.Aeson.Encode.Pretty       ( encodePretty )
-import           Data.Either
-import           Data.Functor
-import           Data.Versions (version)
-import           Data.Maybe
-import           GHC.IO.Encoding
-import           Data.Variant.Excepts
-import           Language.Haskell.TH
-import           Language.Haskell.TH.Syntax     ( Quasi(qAddDependentFile) )
-import           Options.Applicative     hiding ( style )
-import           Options.Applicative.Pretty.Shim ( text )
-import           Prelude                 hiding ( appendFile )
-import           System.Environment
-import           System.Exit
-import           System.IO               hiding ( appendFile )
-import           System.IO.Unsafe               ( unsafeInterleaveIO )
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
+import Control.Monad.Reader
+import Data.Aeson                      ( Value, decodeStrict' )
+import Data.Aeson.Encode.Pretty        ( encodePretty )
+import Data.Either
+import Data.Functor
+import Data.Maybe
+import Data.Variant.Excepts
+import Data.Versions                   ( version )
+import GHC.IO.Encoding
+import Language.Haskell.TH
+import Language.Haskell.TH.Syntax      ( Quasi (qAddDependentFile) )
+import Options.Applicative             hiding ( ParseError, style )
+import Options.Applicative.Pretty.Shim ( text )
+import Prelude                         hiding ( appendFile )
+import System.Environment
+import System.Exit
+import System.IO                       hiding ( appendFile )
+import System.IO.Unsafe                ( unsafeInterleaveIO )
+import Text.PrettyPrint.HughesPJClass  ( prettyShow )
 
-import qualified Data.ByteString               as B
-import qualified Data.Text                     as T
-import qualified Data.Text.IO                  as T
-import qualified Data.Text.Encoding            as E
-import qualified GHCup.Types                   as Types
+import qualified Data.ByteString    as B
+import qualified Data.Text          as T
+import qualified Data.Text.Encoding as E
+import qualified Data.Text.IO       as T
+import qualified GHCup.Types        as Types
+
 
 
 
@@ -95,10 +95,11 @@ toSettings noColor pagerCmd options = do
          platformOverride = optPlatform <|> (uPlatformOverride <|> Types.platformOverride defaultSettings)
          mirrors  = fromMaybe (Types.mirrors defaultSettings) uMirrors
          defGHCConfOptions  = fromMaybe (Types.defGHCConfOptions defaultSettings) uDefGHCConfOptions
-         pager = case fromMaybe (fromMaybe (Types.pager defaultSettings) uPager) (flip PagerConfig Nothing <$> optPager) of
+         pager = case maybe (fromMaybe (Types.pager defaultSettings) uPager) (`PagerConfig` Nothing) optPager of
                    PagerConfig b Nothing -> PagerConfig b pagerCmd
-                   x -> x
+                   x                     -> x
          guessVersion = fromMaybe (fromMaybe (Types.guessVersion defaultSettings) uGuessVersion) optGuessVersion
+         buildWrapper = uBuildWrapper
      in (Settings {..}, keyBindings)
 #if defined(INTERNAL_DOWNLOADER)
    defaultDownloader = Internal
@@ -202,10 +203,17 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                 , fileOutter    =
                     case optCommand of
                       Nuke -> \_ -> pure ()
-                      _ -> T.appendFile logfile
+                      _    -> T.appendFile logfile
                 , fancyColors = not no_color
                 }
-          let leanAppstate = LeanAppState settings dirs keybindings loggerConfig
+          pfreq <- case platformOverride settings of
+                     Just pfreq' -> return pfreq'
+                     Nothing -> (flip runReaderT loggerConfig . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest) >>= \case
+                                    VRight r -> pure r
+                                    VLeft e -> do
+                                      runReaderT (logError $ T.pack $ prettyHFError e) loggerConfig
+                                      exitWith (ExitFailure 2)
+          let leanAppstate = LeanAppState settings dirs keybindings pfreq loggerConfig
           let runLogger = flip runReaderT leanAppstate
           let siletRunLogger = flip runReaderT (leanAppstate { loggerConfig = loggerConfig { consoleOutter = \_ -> pure () } } :: LeanAppState)
 
@@ -216,17 +224,8 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
 
 
           let appState = do
-                pfreq <- case platformOverride settings of
-                           Just pfreq' -> return pfreq'
-                           Nothing -> (runLogger . runE @'[NoCompatiblePlatform, NoCompatibleArch, DistroNotFound] . liftE $ platformRequest) >>= \case
-                                          VRight r -> pure r
-                                          VLeft e -> do
-                                            runLogger
-                                              (logError $ T.pack $ prettyHFError e)
-                                            exitWith (ExitFailure 2)
-
                 ghcupInfo <-
-                  ( flip runReaderT leanAppstate . runE @'[ContentLengthError, DigestError, DistroNotFound, DownloadFailed, FileDoesNotExistError, GPGError, JSONError, NoCompatibleArch, NoCompatiblePlatform, NoDownload, GHCup.Errors.ParseError, ProcessError, UnsupportedSetupCombo, StackPlatformDetectError] $ do
+                  ( flip runReaderT leanAppstate . runE @'[ContentLengthError, DigestError, DistroNotFound, DownloadFailed, FileDoesNotExistError, GPGError, JSONError, NoCompatibleArch, NoCompatiblePlatform, NoDownload, GHCup.Errors.ParseError, ProcessError, UnsupportedSetupCombo, StackPlatformDetectError, UnsupportedMetadataFormat] $ do
                      liftE $ getDownloadsF pfreq
                   )
                     >>= \case
@@ -254,14 +253,14 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                   _
                     | Just 0 <- optVerbose -> pure ()
                     | otherwise -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
-                         Nothing -> void . flip runReaderT s' . runE @'[TagNotFound, DayNotFound, NextVerNotFound, NoToolVersionSet] $ do
+                         Nothing -> void . flip runReaderT s' . runE @'[TagNotFound, DayNotFound, NextVerNotFound, NoToolVersionSet, ParseError] $ do
                            newTools <- lift checkForUpdates
                            forM_ newTools $ \newTool@(t, l) -> do
                              -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/283
                              alreadyInstalling' <- alreadyInstalling optCommand newTool
                              when (not alreadyInstalling') $
                                case t of
-                                 GHCup -> runLogger $
+                                 Tool "ghcup" -> runLogger $
                                             logWarn ("New GHCup version available: "
                                               <> tVerToText l
                                               <> ". To upgrade, run 'ghcup upgrade'")
@@ -309,7 +308,6 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
               liftIO $ brickMain s' >> pure ExitSuccess
 #endif
             Install installCommand     -> install installCommand settings appState runLogger
-            InstallCabalLegacy iopts   -> install (Left (InstallCabal iopts)) settings appState runLogger
             Test testCommand           -> test testCommand settings appState runLogger
             Set setCommand             -> set setCommand settings runAppState runLeanAppState runLogger
             UnSet unsetCommand         -> unset unsetCommand runLeanAppState runLogger
@@ -337,13 +335,10 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
 
  where
   alreadyInstalling :: ( HasLog env
-                       , MonadFail m
                        , MonadReader env m
                        , HasGHCupInfo env
                        , HasDirs env
-                       , MonadThrow m
-                       , MonadIO m
-                       , MonadCatch m
+                       , MonadIOish m
                        )
                     => Command
                     -> (Tool, GHCTargetVersion)
@@ -352,35 +347,34 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                           , DayNotFound
                           , NextVerNotFound
                           , NoToolVersionSet
+                          , ParseError
                           ] m Bool
-  alreadyInstalling (Install (Right InstallOptions{..}))                 (GHC, ver)   = cmp' GHC instVer ver
-  alreadyInstalling (Install (Left (InstallGHC InstallOptions{..})))     (GHC, ver)   = cmp' GHC instVer ver
-  alreadyInstalling (Install (Left (InstallCabal InstallOptions{..})))   (Cabal, ver)    = cmp' Cabal instVer ver
-  alreadyInstalling (Install (Left (InstallHLS InstallOptions{..})))     (HLS, ver)      = cmp' HLS instVer ver
-  alreadyInstalling (Install (Left (InstallStack InstallOptions{..})))   (Stack, ver)    = cmp' Stack instVer ver
-  alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ overwriteVer = Just [S over] })) (GHC, ver)
-    | Right over' <- version (T.pack over) = cmp' GHC (Just $ GHCVersion (mkTVer over')) ver
+  alreadyInstalling (Install (InstallGHC InstallOptions{..}))     (Tool "ghc", ver)   = cmp' ghc instVer ver
+  alreadyInstalling (Install (InstallCabal InstallOptions{..}))   (Tool "cabal", ver) = cmp' cabal instVer ver
+  alreadyInstalling (Install (InstallHLS InstallOptions{..}))     (Tool "hls", ver)   = cmp' hls instVer ver
+  alreadyInstalling (Install (InstallStack InstallOptions{..}))   (Tool "stack", ver) = cmp' stack instVer ver
+  alreadyInstalling (Install (InstallOtherTool InstallOptionsNew{..})) (tool, ver)
+    | instTool == tool = cmp' tool instVer ver
+  alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ overwriteVer = Just [S over] })) (ghc', ver)
+    | Right over' <- version (T.pack over) = cmp' ghc' (Just $ GHCVersion (mkTVer over')) ver
     | otherwise = pure False
   alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ targetGhc = GHC.SourceDist tver }))
-    (GHC, ver)   = cmp' GHC (Just $ ToolVersion tver) ver
-  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ overwriteVer = Just [S over] })) (HLS, ver)
-    | Right over' <- version (T.pack over) = cmp' HLS (Just $ ToolVersion over') ver
+    (Tool "ghc", ver)   = cmp' ghc (Just $ ToolVersion tver) ver
+  alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ overwriteVer = Just [S over] })) (hls', ver)
+    | Right over' <- version (T.pack over) = cmp' hls' (Just $ ToolVersion over') ver
     | otherwise = pure False
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.SourceDist tver }))
-    (HLS, ver)   = cmp' HLS (Just $ ToolVersion tver) ver
+    (Tool "hls", ver)   = cmp' hls (Just $ ToolVersion tver) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.HackageDist tver }))
-    (HLS, ver)   = cmp' HLS (Just $ ToolVersion tver) ver
-  alreadyInstalling (Upgrade {}) (GHCup, _) = pure True
+    (Tool "hls", ver)   = cmp' hls (Just $ ToolVersion tver) ver
+  alreadyInstalling (Upgrade {}) (Tool "ghcup", _) = pure True
   alreadyInstalling _ _ = pure False
 
   cmp' :: ( HasLog env
-          , MonadFail m
           , MonadReader env m
           , HasGHCupInfo env
           , HasDirs env
-          , MonadThrow m
-          , MonadIO m
-          , MonadCatch m
+          , MonadIOish m
           )
        => Tool
        -> Maybe ToolVersion
@@ -390,6 +384,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
              , DayNotFound
              , NextVerNotFound
              , NoToolVersionSet
+             , ParseError
              ] m Bool
   cmp' tool instVer ver = do
     (v, _) <- liftE $ fromVersion instVer GLax tool

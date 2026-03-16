@@ -1,7 +1,11 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE FlexibleInstances #-}
+#if defined(DHALL)
+{-# LANGUAGE DeriveAnyClass #-}
+#endif
 
 {-|
 Module      : GHCup.Types.Stack
@@ -14,20 +18,55 @@ Portability : portable
 -}
 module GHCup.Types.Stack where
 
-import           GHCup.Types.JSON.Versions ()
+import GHCup.Types.JSON.Versions
+    ()
 
-import           Control.Applicative
-import           Control.DeepSeq                ( NFData )
-import           Data.ByteString
-import           Data.Aeson
-import           Data.Aeson.Types
-import           Data.Map.Strict                ( Map )
-import           Data.Text                      ( Text )
-import           Data.Text.Encoding
-import           Data.Versions
+import Control.Applicative
+import Control.DeepSeq     ( NFData )
+import Data.Aeson
+import Data.Aeson.Types
+import Data.ByteString
+import Data.Map.Strict     ( Map )
+import Data.Text.Encoding
+import Data.Versions
+#if defined(DHALL)
+import Dhall
+#else
+import Data.Text ( Text )
+#endif
 
 import qualified Data.Map as Map
-import qualified GHC.Generics                  as GHC
+#if defined(DHALL)
+import Data.Bifunctor ( first )
+import Data.Void      ( Void )
+import Dhall.Core     ( Expr )
+import Dhall.Src      ( Src )
+
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Text          as T
+import qualified Text.Megaparsec    as MP
+#endif
+import qualified GHC.Generics as GHC
+
+
+
+-- copy-pasted from GHCup.Types.Dhall
+
+#if defined(DHALL)
+instance FromDhall Version where
+  autoWith _ =
+    Dhall.string
+      { extract = extractParser version'
+      }
+
+extractParser :: forall a. MP.Parsec Void T.Text a -> Expr Src Void -> Extractor Src Void a
+extractParser parser = extractParser' (MP.parse parser "FromDhall")
+
+extractParser' :: forall a e. Show e => (T.Text -> Either e a) -> Expr Src Void -> Extractor Src Void a
+extractParser' parse' expr = fromMonadic $ do
+  t <- toMonadic $ extract Dhall.string expr
+  first (DhallErrors . NE.singleton . ExtractError . T.pack . show) . parse' . T.pack $ t
+#endif
 
 
     --------------------------------------
@@ -37,11 +76,15 @@ import qualified GHC.Generics                  as GHC
 data SetupInfo = SetupInfo
   { siSevenzExe :: Maybe DownloadInfo
   , siSevenzDll :: Maybe DownloadInfo
-  , siMsys2     :: Map Text VersionedDownloadInfo
-  , siGHCs      :: Map Text (Map Version GHCDownloadInfo)
-  , siStack     :: Map Text (Map Version DownloadInfo)
+  , siMsys2 :: Map Text VersionedDownloadInfo
+  , siGHCs :: Map Text (Map Version GHCDownloadInfo)
+  , siStack :: Map Text (Map Version DownloadInfo)
   }
-  deriving (Show, Eq, GHC.Generic)
+  deriving (Eq, GHC.Generic, Show
+#if defined(DHALL)
+           , FromDhall
+#endif
+           )
 
 instance NFData SetupInfo
 
@@ -87,13 +130,17 @@ instance Monoid SetupInfo where
 -- | Build of the compiler distribution (e.g. standard, gmp4, tinfo6)
 -- | Information for a file to download.
 data DownloadInfo = DownloadInfo
-  { downloadInfoUrl           :: Text
+  { downloadInfoUrl :: Text
     -- ^ URL or absolute file path
   , downloadInfoContentLength :: Maybe Int
-  , downloadInfoSha1          :: Maybe ByteString
-  , downloadInfoSha256        :: Maybe ByteString
+  , downloadInfoSha1 :: Maybe ByteString
+  , downloadInfoSha256 :: Maybe ByteString
   }
-  deriving (Show, Eq, GHC.Generic)
+  deriving (Eq, GHC.Generic, Show
+#if defined(DHALL)
+           , FromDhall
+#endif
+           )
 
 instance ToJSON DownloadInfo where
   toJSON (DownloadInfo {..}) = object [ "url"            .= downloadInfoUrl
@@ -123,10 +170,14 @@ parseDownloadInfoFromObject o = do
     }
 
 data VersionedDownloadInfo = VersionedDownloadInfo
-  { vdiVersion      :: Version
+  { vdiVersion :: Version
   , vdiDownloadInfo :: DownloadInfo
   }
-  deriving (Show, Eq, GHC.Generic)
+  deriving (Eq, GHC.Generic, Show
+#if defined(DHALL)
+           , FromDhall
+#endif
+           )
 
 instance ToJSON VersionedDownloadInfo where
   toJSON (VersionedDownloadInfo {vdiDownloadInfo = DownloadInfo{..}, ..})
@@ -150,10 +201,14 @@ instance FromJSON VersionedDownloadInfo where
 
 data GHCDownloadInfo = GHCDownloadInfo
   { gdiConfigureOpts :: [Text]
-  , gdiConfigureEnv  :: Map Text Text
-  , gdiDownloadInfo  :: DownloadInfo
+  , gdiConfigureEnv :: Map Text Text
+  , gdiDownloadInfo :: DownloadInfo
   }
-  deriving (Show, Eq, GHC.Generic)
+  deriving (Eq, GHC.Generic, Show
+#if defined(DHALL)
+           , FromDhall
+#endif
+           )
 
 instance NFData GHCDownloadInfo
 

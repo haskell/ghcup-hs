@@ -1,45 +1,45 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module GHCup.OptParse.Whereis where
 
 
 
 
-import           GHCup
-import           GHCup.Errors
-import           GHCup.OptParse.Common
-import           GHCup.Types
-import           GHCup.Utils
-import           GHCup.Utils.Parsers (fromVersion)
-import           GHCup.Prelude.Logger
-import           GHCup.Prelude.String.QQ
+import GHCup.Command.Whereis
+import GHCup.Errors
+import GHCup.Input.Parsers     ( fromVersion, toolParser )
+import GHCup.OptParse.Common
+import GHCup.Prelude.Logger
+import GHCup.Prelude.String.QQ
+import GHCup.Types
 
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
-import           Data.Functor
-import           Data.Maybe
-import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
-import           Options.Applicative.Pretty.Shim ( text )
-import           Prelude                 hiding ( appendFile )
-import           System.Environment
-import           System.Exit
-import           System.FilePath
+import Control.Monad.Reader
+import Control.Monad.Trans.Resource
+import Data.Functor
+import Data.Maybe
+import Data.Variant.Excepts
+import Options.Applicative             hiding ( ParseError, style )
+import Options.Applicative.Pretty.Shim ( text )
+import Prelude                         hiding ( appendFile )
+import System.Environment
+import System.Exit
+import System.FilePath
 
-import qualified Data.Text                     as T
-import Control.Exception.Safe (MonadMask)
-import GHCup.Types.Optics
+import           Control.Exception.Safe ( MonadMask )
+import qualified Data.Text              as T
+import           GHCup.Query.GHCupDirs
+import           GHCup.System.Directory
+import           GHCup.Types.Optics
 
 
 
@@ -49,13 +49,14 @@ import GHCup.Types.Optics
     ----------------
 
 
-data WhereisCommand = WhereisTool Tool (Maybe ToolVersion)
-                    | WhereisBaseDir
-                    | WhereisBinDir
-                    | WhereisCacheDir
-                    | WhereisLogsDir
-                    | WhereisConfDir
-                    deriving (Eq, Show)
+data WhereisCommand
+  = WhereisTool Tool (Maybe ToolVersion)
+  | WhereisBaseDir
+  | WhereisBinDir
+  | WhereisCacheDir
+  | WhereisLogsDir
+  | WhereisConfDir
+  deriving (Eq, Show)
 
 
 
@@ -66,9 +67,10 @@ data WhereisCommand = WhereisTool Tool (Maybe ToolVersion)
     ---------------
 
 
-data WhereisOptions = WhereisOptions {
-   directory :: Bool
-} deriving (Eq, Show)
+data WhereisOptions = WhereisOptions
+  { directory :: Bool
+  }
+  deriving (Eq, Show)
 
 
 
@@ -83,40 +85,41 @@ whereisP = subparser
   (commandGroup "Tools locations:" <>
     command
       "ghc"
-      (WhereisTool GHC <$> info
-        ( optional (toolVersionTagArgument [] (Just GHC)) <**> helper )
+      (WhereisTool ghc <$> info
+        ( optional (toolVersionTagArgument [] (Just ghc)) <**> helper )
         ( progDesc "Get GHC location"
         <> footerDoc (Just $ text whereisGHCFooter ))
       )
       <>
      command
       "cabal"
-      (WhereisTool Cabal <$> info
-        ( optional (toolVersionTagArgument [] (Just Cabal)) <**> helper )
+      (WhereisTool cabal <$> info
+        ( optional (toolVersionTagArgument [] (Just cabal)) <**> helper )
         ( progDesc "Get cabal location"
         <> footerDoc (Just $ text whereisCabalFooter ))
       )
       <>
      command
       "hls"
-      (WhereisTool HLS <$> info
-        ( optional (toolVersionTagArgument [] (Just HLS)) <**> helper )
+      (WhereisTool hls <$> info
+        ( optional (toolVersionTagArgument [] (Just hls)) <**> helper )
         ( progDesc "Get HLS location"
         <> footerDoc (Just $ text whereisHLSFooter ))
       )
       <>
      command
       "stack"
-      (WhereisTool Stack <$> info
-        ( optional (toolVersionTagArgument [] (Just Stack)) <**> helper )
+      (WhereisTool stack <$> info
+        ( optional (toolVersionTagArgument [] (Just stack)) <**> helper )
         ( progDesc "Get stack location"
         <> footerDoc (Just $ text whereisStackFooter ))
       )
       <>
      command
       "ghcup"
-      (WhereisTool GHCup <$> info ( pure Nothing <**> helper ) ( progDesc "Get ghcup location" ))
-    ) <|> subparser ( commandGroup "Directory locations:"
+      (WhereisTool ghcup <$> info ( pure Nothing <**> helper ) ( progDesc "Get ghcup location" ))
+    )
+    <|> subparser ( commandGroup "Directory locations:"
       <>
      command
       "basedir"
@@ -148,6 +151,11 @@ whereisP = subparser
             ( progDesc "Get ghcup config directory location" )
       )
   )
+    <|>
+    (
+     WhereisTool <$> argument (eitherReader toolParser) (metavar "TOOL")
+                 <*> optional (toolVersionTagArgument [] Nothing)
+    )
  where
   whereisGHCFooter = [s|Discussion:
   Finds the location of a GHC executable, which usually resides in
@@ -225,6 +233,8 @@ type WhereisEffects = '[ NotInstalled
                 , NextVerNotFound
                 , TagNotFound
                 , DayNotFound
+                , ParseError
+                , NoInstallInfo
                 ]
 
 
@@ -272,7 +282,7 @@ whereis :: ( Monad m
 whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogger = do
   Dirs{ .. }  <- runReaderT getDirs leanAppstate
   case (whereisCommand, whereisOptions) of
-    (WhereisTool GHCup _, WhereisOptions{..}) -> do
+    (WhereisTool (Tool "ghcup") _, WhereisOptions{..}) -> do
       loc <- liftIO (getExecutablePath >>= canon )
       if directory
       then liftIO $ putStr $ takeDirectory loc
@@ -283,7 +293,7 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
       runLeanWhereIs leanAppstate (do
         loc <- liftE $ whereIsTool tool v
         if directory
-        then canon $ takeDirectory loc
+        then takeDirectory <$> canon loc
         else canon loc
         )
         >>= \case
@@ -297,7 +307,7 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
       runLeanWhereIs leanAppstate (do
         loc <- liftE $ whereIsTool tool (mkTVer v)
         if directory
-        then canon $ takeDirectory loc
+        then takeDirectory <$> canon loc
         else canon loc
         )
         >>= \case
@@ -313,7 +323,7 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
         (v, _) <- liftE $ fromVersion whereVer guessMode tool
         loc <- liftE $ whereIsTool tool v
         if directory
-        then canon $ takeDirectory loc
+        then takeDirectory <$> canon loc
         else canon loc
         )
         >>= \case

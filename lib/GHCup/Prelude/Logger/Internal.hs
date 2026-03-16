@@ -1,6 +1,6 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {-|
 Module      : GHCup.Utils.Logger.Internal
@@ -15,18 +15,18 @@ Breaking import cycles.
 -}
 module GHCup.Prelude.Logger.Internal where
 
-import           GHCup.Types
-import           GHCup.Types.Optics
+import GHCup.Types
+import GHCup.Types.Optics
 
-import           Control.Monad
-import           Control.Monad.IO.Class
-import           Control.Monad.Reader
-import           Data.Text               ( Text )
-import           Optics
-import           Prelude                 hiding ( appendFile )
-import           System.Console.Pretty
+import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Reader
+import Data.Text              ( Text )
+import Optics
+import Prelude                hiding ( appendFile )
+import System.Console.Pretty
 
-import qualified Data.Text                     as T
+import qualified Data.Text as T
 
 logInfo :: ( MonadReader env m
            , LabelOptic' "loggerConfig" A_Lens env LoggerConfig

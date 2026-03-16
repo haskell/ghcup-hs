@@ -3,7 +3,6 @@
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RankNTypes #-}
@@ -11,7 +10,7 @@
 module GHCup.OptParse.GC where
 
 
-import           GHCup
+import           GHCup.Command.GC
 import           GHCup.Errors
 import           GHCup.Types
 import           GHCup.Prelude.Logger
@@ -25,7 +24,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
+import           Options.Applicative     hiding ( style, ParseError )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 
@@ -102,7 +101,7 @@ gcFooter = [s|Discussion:
     ---------------------------
 
 
-type GCEffects = '[ NotInstalled, UninstallFailed ]
+type GCEffects = '[ NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo ]
 
 
 runGC :: MonadUnliftIO m

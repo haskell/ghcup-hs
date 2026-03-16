@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -13,9 +12,11 @@ module GHCup.OptParse.UnSet where
 
 
 
-import           GHCup
 import           GHCup.Errors
+import           GHCup.Input.Parsers (toolParser)
+import           GHCup.Command.Set
 import           GHCup.Types
+import           GHCup.Types.Optics
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 
@@ -27,14 +28,15 @@ import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Maybe
 import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
+import           Options.Applicative     hiding ( style, ParseError )
 import           Options.Applicative.Pretty.Shim ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 
 import qualified Data.Text                     as T
-import Control.Exception.Safe (MonadMask)
-import GHCup.Types.Optics
+import           Control.Exception.Safe (MonadMask)
+
+import           Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
 
@@ -48,6 +50,7 @@ data UnsetCommand = UnsetGHC   UnsetOptions
                   | UnsetCabal UnsetOptions
                   | UnsetHLS   UnsetOptions
                   | UnsetStack UnsetOptions
+                  | UnsetOther UnsetOptionsNew
                   deriving (Eq, Show)
 
 
@@ -59,9 +62,13 @@ data UnsetCommand = UnsetGHC   UnsetOptions
 
 
 data UnsetOptions = UnsetOptions
-  { sToolVer :: Maybe T.Text -- target platform triple
+  { sToolTriple :: Maybe T.Text -- target platform triple
   } deriving (Eq, Show)
 
+data UnsetOptionsNew = UnsetOptionsNew
+  { sTool :: Tool
+  , sToolTriple :: Maybe T.Text -- target platform triple
+  } deriving (Eq, Show)
 
 
 
@@ -109,6 +116,8 @@ unsetParser =
                  <> footerDoc (Just $ text unsetStackFooter)
                  )
            )
+      ) <|>
+      ( UnsetOther <$> unsetOptsNew
       )
  where
   unsetGHCFooter :: String
@@ -117,7 +126,7 @@ unsetParser =
     be a ~/.ghcup/bin/ghc anymore.
 
 Examples:
-  # unset ghc 
+  # unset ghc
   ghcup unset ghc
 
   # unset ghc for the target version
@@ -139,6 +148,11 @@ Examples:
 unsetOpts :: Parser UnsetOptions
 unsetOpts = UnsetOptions . fmap T.pack <$> optional (argument str (metavar "TRIPLE"))
 
+unsetOptsNew :: Parser UnsetOptionsNew
+unsetOptsNew = UnsetOptionsNew
+  <$> argument (eitherReader toolParser) (metavar "TOOL")
+  <*> (fmap T.pack <$> optional (argument str (metavar "TRIPLE")))
+
 
 
     --------------
@@ -158,11 +172,11 @@ unsetFooter = [s|Discussion:
     ---------------------------
 
 
-type UnsetEffects = '[ NotInstalled ]
+type UnsetEffects = '[ NotInstalled, ParseError, NoToolVersionSet ]
 
 
-runUnsetGHC :: (ReaderT env m (VEither UnsetEffects a) -> m (VEither UnsetEffects a))
-            -> Excepts UnsetEffects (ReaderT env m) a
+runUnsetGHC :: forall appstate m a . (ReaderT appstate m (VEither UnsetEffects a) -> m (VEither UnsetEffects a))
+            -> Excepts UnsetEffects (ReaderT appstate m) a
             -> m (VEither UnsetEffects a)
 runUnsetGHC runLeanAppState =
     runLeanAppState
@@ -177,36 +191,37 @@ runUnsetGHC runLeanAppState =
 
 
 
-unset :: ( Monad m
+unset :: forall appstate m . ( Monad m
          , MonadMask m
          , MonadUnliftIO m
          , MonadFail m
-         , HasDirs env
-         , HasLog env
+         , HasDirs appstate
+         , HasLog appstate
+         , HasPlatformReq appstate
          )
       => UnsetCommand
-      -> (ReaderT env m (VEither UnsetEffects ())
+      -> (ReaderT appstate m (VEither UnsetEffects ())
           -> m (VEither UnsetEffects ()))
       -> (ReaderT LeanAppState m () -> m ())
       -> m ExitCode
 unset unsetCommand runLeanAppState runLogger = case unsetCommand of
-  (UnsetGHC (UnsetOptions triple)) -> runUnsetGHC runLeanAppState (unsetGHC triple)
+  (UnsetGHC usopts)   -> unsetOther (toUnsetOptionsNew ghc usopts)
+  (UnsetCabal usopts) -> unsetOther (toUnsetOptionsNew cabal usopts)
+  (UnsetHLS usopts)   -> unsetOther (toUnsetOptionsNew hls usopts)
+  (UnsetStack usopts) -> unsetOther (toUnsetOptionsNew stack usopts)
+  (UnsetOther usopts) -> unsetOther usopts
+
+ where
+  toUnsetOptionsNew sTool UnsetOptions{..} = UnsetOptionsNew{..}
+
+  unsetOther UnsetOptionsNew{..} =
+    runUnsetGHC runLeanAppState (liftE $ unsetTool sTool sToolTriple)
         >>= \case
               VRight _ -> do
-                runLogger $ logInfo "GHC successfully unset"
+                runLogger $ logInfo $ T.pack (prettyShow sTool) <> " successfully unset"
                 pure ExitSuccess
               VLeft  e -> do
                 runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 14
-  (UnsetCabal (UnsetOptions _)) -> do
-    void $ runLeanAppState (VRight <$> unsetCabal)
-    runLogger $ logInfo "Cabal successfully unset"
-    pure ExitSuccess
-  (UnsetHLS (UnsetOptions _)) -> do
-    void $ runLeanAppState (VRight <$> unsetHLS)
-    runLogger $ logInfo "HLS successfully unset"
-    pure ExitSuccess
-  (UnsetStack (UnsetOptions _)) -> do
-    void $ runLeanAppState (VRight <$> unsetStack)
-    runLogger $ logInfo "Stack successfully unset"
-    pure ExitSuccess
+
+

@@ -1,6 +1,6 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE DataKinds  #-}
 
 {-|
 Module      : GHCup.Utils.Process.Windows
@@ -13,32 +13,33 @@ Portability : Windows
 -}
 module GHCup.Prelude.Process.Windows where
 
-import           GHCup.Utils.Dirs
-import           GHCup.Prelude.File.Search
-import           GHCup.Prelude.Logger.Internal
-import           GHCup.Types
-import           GHCup.Types.Optics
+import GHCup.Prelude.File.Search
+import GHCup.Prelude.Logger.Internal
+import GHCup.Query.GHCupDirs
+import GHCup.System.Directory
+import GHCup.Types
+import GHCup.Types.Optics
 
-import           Control.Concurrent
-import           Control.DeepSeq
-import           Control.Exception.Safe
-import           Control.Monad
-import           Control.Monad.Reader
-import           Data.List
-import           Foreign.C.Error
-import           GHC.IO.Exception
-import           GHC.IO.Handle
-import           System.Environment
-import           System.FilePath
-import           System.IO
-import           System.Process
-import           System.Win32.Info (getSystemDirectory, getWindowsDirectory)
+import Control.Concurrent
+import Control.DeepSeq
+import Control.Exception.Safe
+import Control.Monad
+import Control.Monad.Reader
+import Data.List
+import Foreign.C.Error
+import GHC.IO.Exception
+import GHC.IO.Handle
+import System.Environment
+import System.FilePath
+import System.IO
+import System.Process
+import System.Win32.Info      ( getSystemDirectory, getWindowsDirectory )
 
-import qualified Control.Exception             as EX
-import qualified Data.ByteString               as BS
-import qualified Data.ByteString.Lazy          as BL
-import qualified Data.Map.Strict               as Map
-import qualified Data.Text                     as T
+import qualified Control.Exception    as EX
+import qualified Data.ByteString      as BS
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Map.Strict      as Map
+import qualified Data.Text            as T
 
 
 
@@ -49,7 +50,7 @@ toProcessError :: FilePath
                -> Either ProcessError ()
 toProcessError exe args exitcode = case exitcode of
   (ExitFailure xi) -> Left $ NonZeroExit xi exe args
-  ExitSuccess -> Right ()
+  ExitSuccess      -> Right ()
 
 
 -- | @readCreateProcessWithExitCode@ works exactly like 'readProcessWithExitCode' except that it

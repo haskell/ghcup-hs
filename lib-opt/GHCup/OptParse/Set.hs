@@ -14,10 +14,11 @@ module GHCup.OptParse.Set where
 
 import           GHCup.OptParse.Common
 
-import           GHCup
 import           GHCup.Errors
+import           GHCup.Command.List
+import           GHCup.Command.Set
 import           GHCup.Types
-import           GHCup.Utils.Parsers (SetToolVersion(..), tagEither, ghcVersionEither, toolVersionEither, fromVersion')
+import           GHCup.Input.Parsers (SetToolVersion(..), tagEither, ghcVersionEither, toolVersionEither, fromVersion', toolParser)
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 
@@ -32,7 +33,7 @@ import           Data.Maybe
 import           Data.Versions
 import           GHC.Unicode
 import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
+import           Options.Applicative     hiding ( style, ParseError )
 import           Options.Applicative.Pretty.Shim ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
@@ -41,6 +42,7 @@ import qualified Data.Text                     as T
 import Data.Bifunctor (second)
 import Control.Exception.Safe (MonadMask)
 import GHCup.Types.Optics
+import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
 
@@ -54,6 +56,7 @@ data SetCommand = SetGHC SetOptions
                 | SetCabal SetOptions
                 | SetHLS SetOptions
                 | SetStack SetOptions
+                | SetOther SetOptionsNew
                 deriving (Eq, Show)
 
 
@@ -68,6 +71,11 @@ data SetOptions = SetOptions
   { sToolVer :: SetToolVersion
   } deriving (Eq, Show)
 
+data SetOptionsNew = SetOptionsNew
+  { sTool    :: Tool
+  , sToolVer :: SetToolVersion
+  } deriving (Eq, Show)
+
 
 
 
@@ -76,14 +84,14 @@ data SetOptions = SetOptions
     ---------------
 
 
-setParser :: Parser (Either SetCommand SetOptions)
+setParser :: Parser SetCommand
 setParser =
-  (Left <$> subparser
+  subparser
       (  command
           "ghc"
           (   SetGHC
           <$> info
-                (setOpts GHC <**> helper)
+                (setOpts ghc <**> helper)
                 (  progDesc "Set GHC version"
                 <> footerDoc (Just $ text setGHCFooter)
                 )
@@ -92,7 +100,7 @@ setParser =
            "cabal"
            (   SetCabal
            <$> info
-                 (setOpts Cabal <**> helper)
+                 (setOpts cabal <**> helper)
                  (  progDesc "Set Cabal version"
                  <> footerDoc (Just $ text setCabalFooter)
                  )
@@ -101,7 +109,7 @@ setParser =
            "hls"
            (   SetHLS
            <$> info
-                 (setOpts HLS <**> helper)
+                 (setOpts hls <**> helper)
                  (  progDesc "Set haskell-language-server version"
                  <> footerDoc (Just $ text setHLSFooter)
                  )
@@ -110,14 +118,15 @@ setParser =
            "stack"
            (   SetStack
            <$> info
-                 (setOpts Stack <**> helper)
+                 (setOpts stack <**> helper)
                  (  progDesc "Set stack version"
                  <> footerDoc (Just $ text setStackFooter)
                  )
            )
       )
-    )
-    <|> (Right <$> setOpts GHC)
+    <|> (   SetOther
+           <$> setOptsNew
+           )
  where
   setGHCFooter :: String
   setGHCFooter = [s|Discussion:
@@ -139,9 +148,22 @@ setParser =
 
 
 setOpts :: Tool -> Parser SetOptions
-setOpts tool = SetOptions <$>
-    (fromMaybe SetRecommended <$>
-      optional (setVersionArgument [ListInstalled True] tool))
+setOpts tool =
+    SetOptions . fromMaybe SetRecommended <$>
+      optional (setVersionArgument [ListInstalled True] tool)
+
+setOptsNew :: Parser SetOptionsNew
+setOptsNew = SetOptionsNew
+  <$> argument (eitherReader toolParser) (metavar "TOOL")
+  <*> (fromMaybe SetRecommended <$> optional (argument (eitherReader setEither) (metavar "VERSION|TAG|next")))
+ where
+  setEither s' =
+        parseSet s'
+    <|> second SetToolTag (tagEither s')
+    <|> second SetGHCVersion (ghcVersionEither s')
+  parseSet s' = case fmap toLower s' of
+                  "next" -> Right SetNext
+                  other  -> Left $ "Unknown tag/version " <> other
 
 setVersionArgument :: [ListCriteria] -> Tool -> Parser SetToolVersion
 setVersionArgument criteria tool =
@@ -155,7 +177,7 @@ setVersionArgument criteria tool =
     <|> second SetToolTag (tagEither s')
     <|> se s'
   se s' = case tool of
-           GHC -> second SetGHCVersion (ghcVersionEither s')
+           Tool "ghc" -> second SetGHCVersion (ghcVersionEither s')
            _   -> second SetToolVersion (toolVersionEither s')
   parseSet s' = case fmap toLower s' of
                   "next" -> Right SetNext
@@ -188,7 +210,9 @@ type SetGHCEffects = '[ FileDoesNotExistError
                    , TagNotFound
                    , DayNotFound
                    , NextVerNotFound
-                   , NoToolVersionSet]
+                   , NoToolVersionSet
+                   , ParseError
+                   ]
 
 runSetGHC :: (ReaderT env m (VEither SetGHCEffects a) -> m (VEither SetGHCEffects a))
           -> Excepts SetGHCEffects (ReaderT env m) a
@@ -203,7 +227,9 @@ type SetCabalEffects = '[ NotInstalled
                         , TagNotFound
                         , DayNotFound
                         , NextVerNotFound
-                        , NoToolVersionSet]
+                        , NoToolVersionSet
+                        , ParseError
+                        ]
 
 runSetCabal :: (ReaderT env m (VEither SetCabalEffects a) -> m (VEither SetCabalEffects a))
             -> Excepts SetCabalEffects (ReaderT env m) a
@@ -258,7 +284,7 @@ set :: forall m env.
        , HasDirs env
        , HasLog env
        )
-    => Either SetCommand SetOptions
+    => SetCommand
     -> Settings
     -> (forall eff . ReaderT AppState m (VEither eff GHCTargetVersion)
         -> m (VEither eff GHCTargetVersion))
@@ -267,82 +293,31 @@ set :: forall m env.
     -> (ReaderT LeanAppState m () -> m ())
     -> m ExitCode
 set setCommand settings runAppState _ runLogger = case setCommand of
-  (Right sopts) -> do
-    runLogger (logWarn "This is an old-style command for setting GHC. Use 'ghcup set ghc' instead.")
-    setGHC' sopts
-  (Left (SetGHC sopts))   -> setGHC'   sopts
-  (Left (SetCabal sopts)) -> setCabal' sopts
-  (Left (SetHLS sopts))   -> setHLS'   sopts
-  (Left (SetStack sopts)) -> setStack' sopts
+  (SetGHC sopts)   -> setOther (toSetOptionsNew ghc sopts)
+  (SetCabal sopts) -> setOther (toSetOptionsNew cabal sopts)
+  (SetHLS sopts)   -> setOther (toSetOptionsNew hls sopts)
+  (SetStack sopts) -> setOther (toSetOptionsNew stack sopts)
+  (SetOther sopts) -> setOther sopts
 
  where
   guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
 
-  setGHC' :: SetOptions
-          -> m ExitCode
-  setGHC' SetOptions{ sToolVer } = runSetGHC runAppState (do
-          v <- liftE $ fst <$> fromVersion' sToolVer guessMode GHC
-          liftE $ setGHC v SetGHCOnly Nothing
+  toSetOptionsNew sTool SetOptions{..} = SetOptionsNew{..}
+
+  setOther :: SetOptionsNew
+           -> m ExitCode
+  setOther SetOptionsNew{ sTool, sToolVer } = runSetGHC runAppState (do
+          v <- liftE $ fst <$> fromVersion' sToolVer guessMode sTool
+          liftE $ setToolVersion sTool v
         )
       >>= \case
             VRight GHCTargetVersion{..} -> do
               runLogger
                 $ logInfo $
-                    "GHC " <> prettyVer _tvVersion <> " successfully set as default version" <> maybe "" (" for cross target " <>) _tvTarget
+                    T.pack (prettyShow sTool) <> " " <> prettyVer _tvVersion <> " successfully set as default version" <> maybe "" (" for cross target " <>) _tvTarget
               pure ExitSuccess
             VLeft e -> do
               runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 5
 
 
-  setCabal' :: SetOptions
-            -> m ExitCode
-  setCabal' SetOptions{ sToolVer } = runSetCabal runAppState (do
-          v <- liftE $ fst <$> fromVersion' sToolVer guessMode Cabal
-          liftE $ setCabal (_tvVersion v)
-          pure v
-        )
-      >>= \case
-            VRight v -> do
-              runLogger
-                $ logInfo $
-                    "Cabal " <> prettyVer (_tvVersion v) <> " successfully set as default version"
-              pure ExitSuccess
-            VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyHFError e
-              pure $ ExitFailure 14
-
-  setHLS' :: SetOptions
-          -> m ExitCode
-  setHLS' SetOptions{ sToolVer } = runSetHLS runAppState (do
-          v <- liftE $ fst <$> fromVersion' sToolVer guessMode HLS
-          liftE $ setHLS (_tvVersion v) SetHLSOnly Nothing
-          pure v
-        )
-      >>= \case
-            VRight v -> do
-              runLogger
-                $ logInfo $
-                    "HLS " <> prettyVer (_tvVersion v) <> " successfully set as default version"
-              pure ExitSuccess
-            VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyHFError e
-              pure $ ExitFailure 14
-
-
-  setStack' :: SetOptions
-            -> m ExitCode
-  setStack' SetOptions{ sToolVer } = runSetStack runAppState (do
-            v <- liftE $ fst <$> fromVersion' sToolVer guessMode Stack
-            liftE $ setStack (_tvVersion v)
-            pure v
-          )
-      >>= \case
-            VRight v -> do
-              runLogger
-                $ logInfo $
-                    "Stack " <> prettyVer (_tvVersion v) <> " successfully set as default version"
-              pure ExitSuccess
-            VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyHFError e
-              pure $ ExitFailure 14

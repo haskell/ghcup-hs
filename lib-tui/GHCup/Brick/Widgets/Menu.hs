@@ -225,7 +225,7 @@ type CheckBoxField = MenuField
 createCheckBoxInput :: FieldInput Bool Bool n
 createCheckBoxInput = FieldInput False Right "" checkBoxRender checkBoxHandler
   where
-    border w = Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 2) w) <+> Brick.txt "]"
+    border w = Brick.txt "[" <+> Brick.padRight (Brick.Pad 1) (Brick.padLeft (Brick.Pad 2) w) <+> Brick.txt "]"
     drawBool b =
         if b
           then border . Brick.withAttr Attributes.installedAttr    $ Brick.str Common.checkBoxSelectedSign
@@ -268,9 +268,9 @@ createEditableInput initText name validator = FieldInput initEdit validateEditCo
                  | focus     -> borderBox editorContents
                  | otherwise -> borderBox $ renderAsErrMsg msg
         mOverlay = if overlayOpen
-          then Just (overlayLayer ("Edit " <> label) $ overlay)
+          then Just (overlayLayer ("Edit " <> label) overlay)
           else Nothing
-        overlay = Brick.vBox $
+        overlay = Brick.vBox
           [ Brick.txtWrap help
           , Border.border $ Edit.renderEditor (Brick.txt . T.unlines) focus edi
           , case errMsg of
@@ -325,7 +325,7 @@ type SelectField = MenuField
 createSelectInput :: (Ord n, Show n)
   => NonEmpty i
   -> (i -> T.Text)
-  -> (Int -> (NonEmpty (Int, (i, Bool)), Bool) -> ((NonEmpty (Int, (i, Bool))), Bool))
+  -> (Int -> (NonEmpty (Int, (i, Bool)), Bool) -> (NonEmpty (Int, (i, Bool)), Bool))
   -> (([i], Maybe T.Text) -> Either ErrorMessage k)
   -> n
   -> Maybe n
@@ -341,10 +341,10 @@ createSelectInput items showItem updateSelection validator viewportFieldName mEd
       (F.focusRing [1.. totalRows])
       False
     getSelectedItems (SelectState {..}) =
-      ( fmap (fst . snd) . (filter (snd . snd)) . NE.toList . fst $ selectStateItems
-      , if snd selectStateItems then (T.init . T.unlines . Edit.getEditContents <$> selectStateEditState) else Nothing)
+      ( fmap (fst . snd) . filter (snd . snd) . NE.toList . fst $ selectStateItems
+      , if snd selectStateItems then T.init . T.unlines . Edit.getEditContents <$> selectStateEditState else Nothing)
 
-    border w = Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) w) <+> Brick.txt "]"
+    border w = Brick.txt "[" <+> Brick.padRight (Brick.Pad 1) (Brick.padLeft (Brick.Pad 1) w) <+> Brick.txt "]"
     selectRender focus errMsg help label s amp = (field, mOverlay)
       where
         field =
@@ -353,7 +353,7 @@ createSelectInput items showItem updateSelection validator viewportFieldName mEd
                 (xs, mTxt) -> Just $ fmap (Brick.padRight (Brick.Pad 1) . Brick.txt . showItem) xs
                    ++ (case mTxt of Just t -> [Brick.txt t]; Nothing -> [])
           in amp $ case (errMsg, mContents) of
-            (Valid, Nothing) -> (Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help)
+            (Valid, Nothing) -> Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help
             (Valid, Just contents) -> border $ Brick.hBox contents
             (Invalid msg, Nothing)
               | focus -> Brick.padLeft (Brick.Pad 1) . renderAsHelpMsg $ help
@@ -365,16 +365,16 @@ createSelectInput items showItem updateSelection validator viewportFieldName mEd
         mOverlay = if selectStateOverlayOpen s
           then Just (overlayLayer ("Select " <> label)  $ overlay s errMsg help)
           else Nothing
-    overlay (SelectState {..}) errMsg help = Brick.vBox $
+    overlay (SelectState {..}) errMsg help = Brick.vBox
       [ if txtFieldFocused
           then Brick.txtWrap "Press Enter to finish editing and select custom value. Press Up/Down keys to navigate"
           else Brick.txt "Press "
             <+> Common.keyToWidget (kb ^. mKbQuitL)
             <+> Brick.txt " to go back, Press Enter to select"
       , case errMsg of Invalid msg -> renderAsErrMsg msg; _ -> Brick.emptyWidget
-      , Brick.vLimit (totalRows) $ Brick.withVScrollBars Brick.OnRight
+      , Brick.vLimit totalRows $ Brick.withVScrollBars Brick.OnRight
           $ Brick.viewport viewportFieldName Brick.Vertical
-          $ Brick.vBox $ mEditableField ++ (NE.toList $ fmap (mkSelectRow focused) (fst selectStateItems))
+          $ Brick.vBox $ mEditableField ++ NE.toList (fmap (mkSelectRow focused) (fst selectStateItems))
       ]
       where focused = fromMaybe 1 $ F.focusGetCurrent selectStateFocusRing
             txtFieldFocused = focused == totalRows
@@ -383,12 +383,12 @@ createSelectInput items showItem updateSelection validator viewportFieldName mEd
               Nothing -> []
 
     mkSelectRow focused (ix, (item, selected)) = (if focused == ix then Brick.visible else id) $
-      Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) m) <+> Brick.txt "] "
-        <+> (renderAslabel (showItem item) (focused == ix))
+      Brick.txt "[" <+> Brick.padRight (Brick.Pad 1) (Brick.padLeft (Brick.Pad 1) m) <+> Brick.txt "] "
+        <+> renderAslabel (showItem item) (focused == ix)
       where m = if selected then Brick.txt "*" else Brick.txt " "
 
     mkEditTextRow focused edi selected help = (if focused then Brick.visible else id) $
-      Brick.txt "[" <+> (Brick.padRight (Brick.Pad 1) $ Brick.padLeft (Brick.Pad 1) m) <+> Brick.txt "] "
+      Brick.txt "[" <+> Brick.padRight (Brick.Pad 1) (Brick.padLeft (Brick.Pad 1) m) <+> Brick.txt "] "
         <+> if not focused && Edit.getEditContents edi == [mempty]
                then Brick.txt "(Specify custom text value)"
                else Brick.vLimit 1 $ Border.vBorder <+> Brick.padRight Brick.Max (Edit.renderEditor (Brick.txt . T.unlines) focused edi) <+> Border.vBorder
@@ -447,8 +447,8 @@ createSelectFieldWithEditable name editFieldName access validator items showItem
     singleSelect :: Int -> (NonEmpty (Int, (i, Bool)), Bool) -> (NonEmpty (Int, (i, Bool)), Bool)
     singleSelect ix (ne, a) = (fmap (\(ix', (i, b)) -> if ix' == ix then (ix', (i, True)) else (ix', (i, False))) ne, ix == length ne + 1)
 
-    getSelection (_, Just txt) = either Left (Right . Left) $ validator txt
-    getSelection (ls, _) = maybe (either Left (Right . Left) $ validator "") (Right . Right . NE.head) $ NE.nonEmpty ls
+    getSelection (_, Just txt) = Left <$> validator txt
+    getSelection (ls, _) = maybe (Left <$> validator "") (Right . Right . NE.head) $ NE.nonEmpty ls
 
 
 {- *****************
@@ -524,8 +524,8 @@ makeLensesFor
   ''Menu
 
 isValidMenu :: Menu s n -> Bool
-isValidMenu m = (all isValidField $ menuFields m)
-  && (case (menuValidator m) (menuState m) of { Nothing -> True; _ -> False })
+isValidMenu m = all isValidField (menuFields m)
+  && (case menuValidator m (menuState m) of { Nothing -> True; _ -> False })
 
 createMenu :: n -> s -> T.Text -> (s -> Maybe ErrorMessage)
   -> MenuKeyBindings -> [Button s n] -> [MenuField s n] -> Menu s n
@@ -550,7 +550,7 @@ handlerMenu ev = do
               Just err -> menuButtonsL %= fmap (fieldStatusL .~ Invalid err)
             else menuButtonsL %= fmap (fieldStatusL .~ Invalid "Some fields are invalid")
           menuFieldsL .= updated_fields
-  case (drawFieldOverlay =<< focusedField) of
+  case drawFieldOverlay =<< focusedField of
     Just _ -> case ev of
       VtyEvent e -> propagateEvent e
       _ -> pure ()
@@ -600,7 +600,7 @@ drawMenu menu =
     -- A list of functions which draw a highlighted label with right padding at the left of a widget.
     amplifiers =
       let labelsWidgets = fmap renderAslabel fieldLabels
-       in fmap (\f b -> ((rightify (maxWidth + 1) (f b <+> Brick.txt " ")) <+>) ) labelsWidgets
+       in fmap (\f b -> (rightify (maxWidth + 1) (f b <+> Brick.txt " ") <+>) ) labelsWidgets
     drawFields = fmap drawField amplifiers
     fieldWidgets = zipWith (F.withFocusRing (menu ^. menuFocusRingL)) drawFields (menu ^. menuFieldsL)
 

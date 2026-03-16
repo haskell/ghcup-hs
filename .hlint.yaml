@@ -20,6 +20,10 @@
 - ignore: {name: "Use uncurry"} # 1 hint
 - ignore: {name: "Use unless"} # 7 hints
 
+- functions:
+    - { name: System.Directory.removeDirectory, within: [GHCup.Query.GHCupDirs] }
+    - { name: System.Directory.removeDirectoryRecursive, within: [GHCup.Query.GHCupDirs] }
+    - { name: System.Directory.removePathForcibly, within: [GHCup.Query.GHCupDirs] }
 
 # Specify additional command line arguments
 #

@@ -11,14 +11,15 @@ module GHCup.OptParse.List where
 
 
 
-import           GHCup
+import           GHCup.Command.List
+import           GHCup.Errors
 import           GHCup.Prelude
 import           GHCup.Types
-import           GHCup.Utils.Parsers (dayParser, toolParser, criteriaParser)
+import           GHCup.Input.Parsers (dayParser, toolParserWithGHCup, criteriaParser)
 import           GHCup.OptParse.Common
 import           GHCup.Prelude.String.QQ
-import           GHCup.Utils.Output
-import           GHCup.Utils.Pager
+import           GHCup.Compat.Terminal
+import           GHCup.Compat.Pager
 
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
@@ -31,18 +32,19 @@ import           Data.List                      ( intercalate, sort )
 import           Data.Functor
 import           Data.Maybe
 import           Data.Time.Calendar             ( Day )
+import           Data.Variant.Excepts
 import           Data.Versions
 import           Options.Applicative     hiding ( style )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 import           System.Console.Pretty   hiding ( color )
+import           Text.PrettyPrint.HughesPJClass (prettyShow)
 
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import qualified System.Console.Pretty         as Pretty
 import Control.Exception.Safe (MonadMask)
 import GHCup.Types.Optics
-import GHCup.Prelude.Logger (logDebug)
 
 
 
@@ -55,7 +57,7 @@ import GHCup.Prelude.Logger (logDebug)
 
 
 data ListOptions = ListOptions
-  { loTool     :: Maybe Tool
+  { loTool     :: Maybe [Tool]
   , lCriteria  :: Maybe ListCriteria
   , lFrom      :: Maybe Day
   , lTo        :: Maybe Day
@@ -75,13 +77,15 @@ listOpts :: Parser ListOptions
 listOpts =
   ListOptions
     <$> optional
+         (some
           (option
-            (eitherReader toolParser)
+            (eitherReader toolParserWithGHCup)
             (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|stack>" <> help
               "Tool to list versions for. Default is all"
               <> completer toolCompleter
             )
           )
+         )
     <*> optional
           (option
             (eitherReader criteriaParser)
@@ -176,7 +180,7 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
                     | otherwise  -> (color Red   (if isWindows then "X " else "✗ "))
               in
                 (if raw then [] else [marks])
-                  ++ [ fmap toLower . show $ lTool
+                  ++ [ fmap toLower . prettyShow $ lTool
                      , case lCross of
                        Nothing -> T.unpack . prettyVer $ lVer
                        Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
@@ -226,19 +230,23 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
 
 
 
-list :: ( Monad m
-         , MonadMask m
-         , MonadUnliftIO m
-         , MonadFail m
-         )
-      => ListOptions
-      -> Bool
-      -> PagerConfig
-      -> (ReaderT AppState m ExitCode -> m ExitCode)
-      -> m ExitCode
-list ListOptions{..} no_color pgc runAppState =
-  runAppState (do
+list ::
+  ( Monad m
+  , MonadMask m
+  , MonadUnliftIO m
+  , MonadFail m
+  )
+  => ListOptions
+  -> Bool
+  -> PagerConfig
+  -> (forall a . ReaderT AppState m a -> m a)
+  -> m ExitCode
+list ListOptions{..} no_color pgc runAppState = do
+  r <- runAppState $ runE $ do
       l <- listVersions loTool (maybeToList lCriteria) lHideOld lShowNightly (lFrom, lTo)
-      printListResult no_color pgc lRawFormat l
-      pure ExitSuccess
-    )
+      lift $ printListResult no_color pgc lRawFormat l
+  case r of
+    VRight _ -> pure ExitSuccess
+    VLeft e -> do
+      runAppState $ logError $ T.pack $ prettyHFError e
+      pure $ ExitFailure 44

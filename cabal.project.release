@@ -2,12 +2,17 @@ import: cabal.project.common
 
 optimization: 2
 
+Tests: True
+
 constraints: xz-clib >= 5.8.1
 
 if arch(i386)
   constraints: xz +system-xz
   package xz
     flags: +system-xz
+  -- https://github.com/well-typed/cborg/issues/376
+  package ghcup
+    flags: -dhall
 else
   constraints: xz -system-xz
   package xz
@@ -31,7 +36,6 @@ if os(linux)
       flags: +yaml-streamly
   if arch(x86_64) || arch(i386)
     flags: -tar
-    executable-static: True
     package *
       ghc-options: -split-sections
   elif arch(arm)
@@ -47,6 +51,7 @@ elif os(mingw32)
   package ghcup
       flags: +yaml-streamly
   flags: -tar
+  constraints: zlib +bundled-c-zlib
 elif os(freebsd)
   flags: -tar
   constraints: zlib +bundled-c-zlib,

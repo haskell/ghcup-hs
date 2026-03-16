@@ -7,8 +7,10 @@ module GHCup.ArbitraryTypes where
 
 
 import           GHCup.Types
+import           GHCup.Types.JSON
 
 import           Data.ByteString                ( ByteString )
+import           Data.Char                      ( toLower )
 import           Data.Versions
 import           Data.List.NonEmpty
 import           Data.Time.Calendar             ( Day(..) )
@@ -40,6 +42,9 @@ genVer =
     <*> arbitrary
     <*> arbitrary
 
+instance ToADTArbitrary ToolDescription
+
+instance ToADTArbitrary ToolInfo
 
 instance ToADTArbitrary GHCupInfo
 
@@ -127,6 +132,69 @@ instance Arbitrary Versioning where
     --[ ghcup arbitrary ]--
     -----------------------
 
+instance Arbitrary ToolDescription where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary ToolInfo where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary EnvUnion where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary EnvSpec where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary ConfigSpec where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary MakeSpec where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+
+instance Arbitrary InstallationSpecInput where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary (NonEmpty InstallFileRule) where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary InstallFileRule where
+  arbitrary = suchThat genericArbitrary pred'
+   where
+    pred' (InstallFileRule source dest) = safePath source && maybe True safePath dest
+    pred' (InstallFilePatternRule fps) = all safePath fps
+  shrink    = genericShrink
+
+instance Arbitrary (SymlinkSpec String) where
+  arbitrary = suchThat genericArbitrary pred'
+   where
+    pred' SymlinkSpec{..} =
+         safePath _slTarget
+      && safeFilename _slLinkName
+      && maybe True safeFilename _slSetName
+  shrink    = genericShrink
+
+instance Arbitrary SymlinkInputSpec where
+  arbitrary = suchThat genericArbitrary pred'
+   where
+    pred' SymlinkInputSpec{..} =
+         safePath _slTarget
+      && safeFilename _slLinkName
+      && maybe True safeFilename _slSetName
+    pred' SymlinkPatternSpec{..} =
+         all safePath _slTargetPattern
+      && all safePath _slTargetPatternIgnore
+      && safeFilename _slLinkName
+      && maybe True safeFilename _slSetName
+  shrink    = genericShrink
+
 instance Arbitrary Requirements where
   arbitrary = genericArbitrary
   shrink    = genericShrink
@@ -172,7 +240,11 @@ instance Arbitrary TarDir where
   shrink    = genericShrink
 
 instance Arbitrary Tool where
-  arbitrary = genericArbitrary
+  arbitrary = flip suchThat pred' $ do
+    ASCIIString str <- arbitrary
+    pure $ Tool (toLower <$> str)
+   where
+    pred' = safeToolname
   shrink    = genericShrink
 
 instance Arbitrary GHCupInfo where
@@ -180,7 +252,9 @@ instance Arbitrary GHCupInfo where
   shrink    = genericShrink
 
 instance Arbitrary GHCTargetVersion where
-  arbitrary = GHCTargetVersion Nothing <$> arbitrary
+  arbitrary = suchThat (GHCTargetVersion Nothing <$> arbitrary) pred'
+   where
+    pred' = safeVersion
   shrink    = genericShrink
 
 

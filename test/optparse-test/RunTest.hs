@@ -24,6 +24,7 @@ defaultOptions =
     Nothing
     Nothing
     Nothing
+    []
     Nothing
     False
     []

@@ -1,28 +1,29 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module GHCup.CabalConfig (getStoreDir) where
 
-import Data.ByteString          (ByteString)
-import Data.List.NonEmpty       (NonEmpty)
-import Data.Map                 (Map)
-import System.Directory         (getAppUserDataDirectory, doesDirectoryExist, getXdgDirectory, XdgDirectory(XdgConfig))
-import System.Environment       (lookupEnv)
-import System.FilePath          ((</>))
+import GHCup.System.Directory
 
-import qualified Data.ByteString               as BS
-import qualified Data.Map.Strict               as M
-import qualified Distribution.CabalSpecVersion as C
-import qualified Distribution.FieldGrammar     as C
-import qualified Distribution.FieldGrammar.Parsec     as C
-import qualified Distribution.Fields           as C
-import qualified Distribution.Fields.LexerMonad as C
-import qualified Distribution.Parsec           as C
-import qualified Distribution.Utils.Generic    as C
-import qualified Text.Parsec                    as P
+import Data.ByteString    ( ByteString )
+import Data.List.NonEmpty ( NonEmpty )
+import Data.Map           ( Map )
+import System.Environment ( lookupEnv )
+import System.FilePath    ( (</>) )
 
-import Data.Foldable              (for_)
+import qualified Data.ByteString                  as BS
+import qualified Data.Map.Strict                  as M
+import qualified Distribution.CabalSpecVersion    as C
+import qualified Distribution.FieldGrammar        as C
+import qualified Distribution.FieldGrammar.Parsec as C
+import qualified Distribution.Fields              as C
+import qualified Distribution.Fields.LexerMonad   as C
+import qualified Distribution.Parsec              as C
+import qualified Distribution.Utils.Generic       as C
+import qualified Text.Parsec                      as P
+
+import Data.Foldable             ( for_ )
 import Distribution.Parsec.Error
 
 
@@ -55,8 +56,8 @@ findCabalDir = do
     appDir <- getAppUserDataDirectory "cabal"
     isXdg <- not <$> doesDirectoryExist appDir
     if | Just dir <- cabalDirVar -> pure dir
-       | isXdg -> getXdgDirectory XdgConfig "cabal"
-       | otherwise -> pure appDir
+       | isXdg                   -> getXdgDirectory XdgConfig "cabal"
+       | otherwise               -> pure appDir
 
 
 -------------------------------------------------------------------------------

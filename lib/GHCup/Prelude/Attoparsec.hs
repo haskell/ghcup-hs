@@ -1,5 +1,5 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {-|
 Module      : GHCup.Utils.Attoparsec
@@ -12,15 +12,15 @@ Portability : portable
 -}
 module GHCup.Prelude.Attoparsec where
 
-import           Control.Applicative
+import Control.Applicative
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Data.ByteString (ByteString)
-import           Data.ByteString.Internal (w2c)
-import           Data.Functor
+import Data.ByteString          ( ByteString )
+import Data.ByteString.Internal ( w2c )
+import Data.Functor
 
-import           Data.Attoparsec.ByteString as AP
+import Data.Attoparsec.ByteString as AP
 
 
 

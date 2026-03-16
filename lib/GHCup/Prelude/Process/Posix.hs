@@ -1,9 +1,9 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE DataKinds  #-}
-{-# LANGUAGE MultiWayIf  #-}
 {-# LANGUAGE CApiFFI #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {-|
 Module      : GHCup.Utils.File.Posix
@@ -16,47 +16,44 @@ Portability : POSIX
 -}
 module GHCup.Prelude.Process.Posix where
 
-import           GHCup.Utils.Dirs
-import           GHCup.Prelude.File
-import           GHCup.Prelude.File.Posix
-import           GHCup.Prelude
-import           GHCup.Prelude.Logger
-import           GHCup.Types
-import           GHCup.Types.Optics
+import GHCup.Prelude
+import GHCup.Prelude.File.Posix
+import GHCup.Query.GHCupDirs
+import GHCup.Types
+import GHCup.Types.Optics
 
 import           Control.Concurrent
 import           Control.Concurrent.Async
-import qualified Control.Exception              as E
+import qualified Control.Exception                as E
 import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.Reader
 import           Control.Monad.Trans.State.Strict
-import           Data.ByteString                ( ByteString )
+import           Data.ByteString                  ( ByteString )
 import           Data.Foldable
 import           Data.IORef
-import           Data.Sequence                  ( Seq, (|>) )
 import           Data.List
+import           Data.Sequence                    ( Seq, (|>) )
 import           Data.Word8
 import           GHC.IO.Exception
-import           System.IO                      ( stderr )
-import           System.IO.Error      hiding    ( catchIOError )
 import           System.FilePath
+import           System.IO                        ( stderr )
+import           System.IO.Error                  hiding ( catchIOError )
 import           System.Posix.Directory
 import           System.Posix.IO
-import           System.Posix.Process           ( ProcessStatus(..) )
+import           System.Posix.Process             ( ProcessStatus (..) )
 import           System.Posix.Types
 
 
-import qualified Control.Exception             as EX
-import qualified Data.Sequence                 as Sq
-import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as E
-import qualified System.Posix.Process          as SPP
-import qualified System.Console.Terminal.Size  as TP
-import qualified Data.ByteString               as BS
-import qualified Data.ByteString.Lazy          as BL
-import qualified System.Posix.IO.ByteString.Ext
-                                               as SPIB
+import qualified Control.Exception              as EX
+import qualified Data.ByteString                as BS
+import qualified Data.ByteString.Lazy           as BL
+import qualified Data.Sequence                  as Sq
+import qualified Data.Text                      as T
+import qualified Data.Text.Encoding             as E
+import qualified System.Console.Terminal.Size   as TP
+import qualified System.Posix.IO.ByteString.Ext as SPIB
+import qualified System.Posix.Process           as SPP
 
 
 
@@ -373,7 +370,7 @@ toProcessError :: FilePath
                -> Either ProcessError ()
 toProcessError exe args mps = case mps of
   Just (SPP.Exited (ExitFailure xi)) -> Left $ NonZeroExit xi exe args
-  Just (SPP.Exited ExitSuccess    ) -> Right ()
+  Just (SPP.Exited ExitSuccess    )  -> Right ()
   Just (Terminated _ _             ) -> Left $ PTerminated exe args
   Just (Stopped _                  ) -> Left $ PStopped exe args
   Nothing                            -> Left $ NoSuchPid exe args

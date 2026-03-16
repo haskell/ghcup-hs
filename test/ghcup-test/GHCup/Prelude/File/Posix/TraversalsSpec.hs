@@ -8,7 +8,6 @@ import           GHCup.Prelude.File.Posix.Traversals
 
 import           Control.Monad.IO.Class (liftIO)
 import           Data.List
-import           System.Posix.Directory
 import           Unsafe.Coerce
 #endif
 

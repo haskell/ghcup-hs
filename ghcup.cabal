@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               ghcup
-version:            0.1.50.2
+version:            0.2.0.0
 license:            LGPL-3.0-only
 license-file:       LICENSE
 copyright:          Julian Ospald 2024
@@ -82,6 +82,11 @@ flag yaml-streamly
   default:     False
   manual:      True
 
+flag dhall
+  description: Add support for dhall encoded metadata
+  default:     True
+  manual:      True
+
 common common-ghc-options
   ghc-options:
     -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
@@ -119,7 +124,7 @@ common app-common-depends
     , text                   ^>=2.0 || ^>=2.1
     , time                   >=1.9.3    && <1.15
     , unordered-containers   ^>=0.2
-    , uri-bytestring         ^>=0.4.0.0
+    , uri-bytestring         ^>=0.4.0.1
     , utf8-string            ^>=1.0
     , vector                 >=0.12     && <0.14
     , versions               >=6.0.5      && <6.1
@@ -143,47 +148,69 @@ common app-common-depends
 library
   import:             app-common-depends
   exposed-modules:
-    GHCup
-    GHCup.Cabal
+    GHCup.Builder
     GHCup.CabalConfig
+    GHCup.Command.Compile.GHC
+    GHCup.Command.Compile.HLS
+    GHCup.Command.Install
+    GHCup.Command.Install.LowLevel
+    GHCup.Command.List
+    GHCup.Command.Nuke
+    GHCup.Command.DebugInfo
+    GHCup.Command.Upgrade
+    GHCup.Command.Whereis
+    GHCup.Command.GC
+    GHCup.Command.Prefetch
+    GHCup.Command.Rm
+    GHCup.Command.Set
+    GHCup.Command.Test.GHC
+    GHCup.Compat.Pager
+    GHCup.Compat.Terminal
     GHCup.Download
-    GHCup.Download.Utils
     GHCup.Errors
-    GHCup.GHC
-    GHCup.HLS
-    GHCup.List
-    GHCup.Platform
+    GHCup.Hardcoded.URLs
+    GHCup.Hardcoded.Version
+    GHCup.Input.Parsers
+    GHCup.Input.Parsers.URI
+    GHCup.Input.Prompts
+    GHCup.Input.SymlinkSpec
+    GHCup.Legacy.Cabal
+    GHCup.Legacy.HLS
+    GHCup.Legacy.Stack
+    GHCup.Legacy.Utils
     GHCup.PlanJson
     GHCup.Prelude
     GHCup.Prelude.Attoparsec
     GHCup.Prelude.File
     GHCup.Prelude.File.Search
     GHCup.Prelude.Internal
+    GHCup.Prelude.JSON
     GHCup.Prelude.Logger
     GHCup.Prelude.Logger.Internal
     GHCup.Prelude.MegaParsec
     GHCup.Prelude.Process
     GHCup.Prelude.String.QQ
+    GHCup.Prelude.Version
     GHCup.Prelude.Version.QQ
-    GHCup.Prompts
-    GHCup.Requirements
-    GHCup.Stack
+    GHCup.Query
+    GHCup.Query.DB
+    GHCup.Query.GHCupDirs
+    GHCup.Query.Metadata
+    GHCup.Query.Symlink
+    GHCup.Query.System
+    GHCup.Setup
+    GHCup.System.Cmd
+    GHCup.System.Directory
     GHCup.Types
+    GHCup.Types.Dhall
     GHCup.Types.JSON
     GHCup.Types.JSON.MapIgnoreUnknownKeys
     GHCup.Types.JSON.Utils
     GHCup.Types.JSON.Versions
     GHCup.Types.Optics
     GHCup.Types.Stack
-    GHCup.Utils
-    GHCup.Utils.Dirs
-    GHCup.Utils.Tar
-    GHCup.Utils.Tar.Types
-    GHCup.Utils.URI
-    GHCup.Utils.Output
-    GHCup.Utils.Pager
-    GHCup.Utils.Parsers
-    GHCup.Version
+    GHCup.Types.Tar
+    GHCup.Unpack
 
   hs-source-dirs:     lib
   other-modules:      Paths_ghcup
@@ -226,6 +253,7 @@ library
     , disk-free-space       ^>=0.1.0.1
     , exceptions            ^>=0.10
     , filepath              >=1.4.101.0
+    , filepattern           ^>=0.1.3
     , file-uri              ^>=0.1.0.0
     , variant                ^>=1.0
     , xz                    ^>=5.6.3
@@ -251,12 +279,18 @@ library
     , transformers          ^>=0.5 || ^>=0.6
     , unliftio-core         ^>=0.2.0.1
     , unordered-containers  ^>=0.2.10.0
-    , uri-bytestring        ^>=0.4.0.0
+    , uri-bytestring        ^>=0.4.0.1
     , utf8-string           ^>=1.0
     , vector                 >=0.12     && <0.14
     , versions               >=6.0.5      && <6.1
     , word8                 ^>=0.1.3
     , zlib                  ^>=0.6.2.2 || ^>=0.7
+
+  if flag(dhall)
+    cpp-options: -DDHALL
+    build-depends:
+      dhall  ^>=1.42
+
 
   if flag(yaml-streamly)
     build-depends:
@@ -325,7 +359,7 @@ library ghcup-optparse
     GHCup.OptParse.Common
     GHCup.OptParse.Compile
     GHCup.OptParse.Config
-    GHCup.OptParse.DInfo
+    GHCup.OptParse.DebugInfo
     GHCup.OptParse.GC
     GHCup.OptParse.Install
     GHCup.OptParse.List
@@ -495,7 +529,7 @@ test-suite ghcup-test
     , quickcheck-arbitrary-adt  ^>=0.3.1.0
     , text                      ^>=2.0 || ^>=2.1
     , time                      >=1.9.3   && <1.15
-    , uri-bytestring            ^>=0.4.0.0
+    , uri-bytestring            ^>=0.4.0.1
     , versions                   >=6.0.5      && <6.1
 
   if os(windows)

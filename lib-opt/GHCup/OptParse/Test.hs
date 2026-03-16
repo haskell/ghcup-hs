@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -16,13 +15,12 @@ module GHCup.OptParse.Test where
 
 import           GHCup.OptParse.Common
 
-import           GHCup
+import           GHCup.Command.Test.GHC
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Dirs
-import           GHCup.Utils.Parsers (fromVersion, uriParser)
+import           GHCup.Query.GHCupDirs
+import           GHCup.Input.Parsers (fromVersion, uriParser)
 import           GHCup.Prelude
-import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 
 #if !MIN_VERSION_base(4,13,0)
@@ -33,7 +31,7 @@ import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Maybe
 import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
+import           Options.Applicative     hiding ( style, ParseError )
 import           Options.Applicative.Pretty.Shim ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
@@ -89,7 +87,7 @@ testParser =
           "ghc"
           (   TestGHC
           <$> info
-                (testOpts (Just GHC) <**> helper)
+                (testOpts (Just ghc) <**> helper)
                 (  progDesc "Test GHC"
                 <> footerDoc (Just $ text testGHCFooter)
                 )
@@ -110,7 +108,7 @@ testOpts tool =
                     (eitherReader uriParser)
                     (short 'u' <> long "url" <> metavar "BINDIST_URL" <> help
                       "Install the specified version from this bindist"
-                      <> completer (toolDlCompleter (fromMaybe GHC tool))
+                      <> completer (toolDlCompleter (fromMaybe ghc tool))
                     )
                   )
             <*> (Just <$> toolVersionTagArgument [] tool)
@@ -144,6 +142,8 @@ type TestGHCEffects = [ DigestError
                       , DayNotFound
                       , NoToolVersionSet
                       , URIParseError
+                      , NoInstallInfo
+                      , ParseError
                       ]
 
 runTestGHC :: AppState
@@ -172,13 +172,13 @@ test testCommand settings getAppState' runLogger = case testCommand of
     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
     (case testBindist of
        Nothing -> runTestGHC s' $ do
-         (v, vi) <- liftE $ fromVersion testVer guessMode GHC
+         (v, vi) <- liftE $ fromVersion testVer guessMode ghc
          liftE $ testGHCVer v addMakeArgs
          pure vi
        Just uri -> do
          runTestGHC s'{ settings = settings {noVerify = True}} $ do
-           (v, vi) <- liftE $ fromVersion testVer guessMode GHC
-           liftE $ testGHCBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir ".*/.*") "" Nothing Nothing Nothing) v addMakeArgs
+           (v, vi) <- liftE $ fromVersion testVer guessMode ghc
+           liftE $ testGHCBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir ".*/.*") "" Nothing Nothing Nothing Nothing) v addMakeArgs
            pure vi
       )
         >>= \case

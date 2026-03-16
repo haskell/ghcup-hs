@@ -22,12 +22,16 @@ env:
   JSON_VERSION: "0.0.9"
   GHC_VER: 9.6.7
   CABAL_VER: 3.14.2.0
+  GHCUP_VER: 0.2.0.0
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   S3_HOST: ${{ secrets.S3_HOST }}
   GHCUP_MSYS2_ENV: CLANG64
   MSYSTEM: CLANG64
   CHERE_INVOKING: 1
+  # overwritten for windows
+  CABAL_DIR: ${{ github.workspace }}/cabal
+  GHCUP_INSTALL_BASE_PREFIX: ${{ github.workspace }}
 
 jobs:
   build-linux:
@@ -53,8 +57,8 @@ jobs:
       - if: matrix.ARCH == '32'
         name: Run build (32 bit linux)
         uses: docker://hasufell/i386-alpine-haskell:3.21
-        with:
-          args: sh .github/scripts/build.sh
+        with: &build-linux
+          args: ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ runner.os }} --check-linking --strip -- --enable-executable-static
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -67,8 +71,7 @@ jobs:
       - if: matrix.ARCH == '64'
         name: Run build (64 bit linux)
         uses: docker://hasufell/alpine-haskell:3.21
-        with:
-          args: sh .github/scripts/build.sh
+        with: *build-linux
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -107,7 +110,7 @@ jobs:
       - uses: docker://hasufell/arm64v8-alpine-haskell:3.21
         name: Run build (aarch64 linux)
         with:
-          args: sh -c ".github/scripts/build.sh '--ghc-options=-split-sections' '--enable-executable-static'"
+          args: ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ runner.os }} --check-linking --strip -- --ghc-options=-split-sections --enable-executable-static
 
       - if: always()
         name: Upload artifact
@@ -146,7 +149,7 @@ jobs:
       - name: Run build (mac aarch64)
         run: |
           brew install git coreutils autoconf automake
-          bash .github/scripts/build.sh
+          ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ runner.os }} --check-linking --strip
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -189,7 +192,13 @@ jobs:
         run: |
           rm -f /c/Strawberry/perl/bin/pkg-config
           rm /clang64/bin/zlib1.dll
-          bash .github/scripts/build.sh
+          export PATH="/c/ghcup/bin:$PATH"
+          # don't use bash, because it points to WSL2
+          ghcup install ghc --set ${{ env.GHC_VER }}
+          ghcup install cabal --set ${{ env.CABAL_VER }}
+          bash .github/scripts/build.sh --ghc ghc-${{ env.GHC_VER }} --verbose --os ${{ runner.os }} --check-linking --strip
+        env:
+          CABAL_DIR: "C:\\Users\\runneradmin\\AppData\\Roaming\\cabal"
 
       - if: always()
         name: Upload artifact
@@ -224,7 +233,8 @@ jobs:
         uses: haskell/ghcup-setup@v1
 
       - name: Run build
-        run: bash .github/scripts/build.sh
+        run: |
+          ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ env.RUNNER_OS }} --check-linking --strip
 
       - if: always()
         name: Upload artifact
@@ -257,7 +267,8 @@ jobs:
           doas pkg_add -I ghc cabal-install git bash libiconv curl ${gcc_ver} gmp gmake libffi
 
       - name: Run build
-        run: bash .github/scripts/build.sh
+        run: |
+          bash .github/scripts/build.sh --verbose --os ${{ env.RUNNER_OS }} --check-linking --strip
 
       - if: always()
         name: Upload artifact
@@ -303,8 +314,8 @@ jobs:
       - if: matrix.ARCH == '32' && matrix.DISTRO == 'Alpine'
         name: Run test (32 bit linux Alpine)
         uses: docker://hasufell/i386-alpine-haskell:3.21
-        with:
-          args: sh .github/scripts/test.sh
+        with: &with-test-linux
+          args: bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ runner.os }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir ${{ github.workspace }} --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }}
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -314,8 +325,7 @@ jobs:
       - if: matrix.ARCH == '64' && matrix.DISTRO == 'Alpine'
         name: Run test (64 bit linux Alpine)
         uses: docker://hasufell/alpine-haskell:3.21
-        with:
-          args: sh .github/scripts/test.sh
+        with: *with-test-linux
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -325,7 +335,7 @@ jobs:
         name: Run test (64 bit linux)
         run: |
           sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
-          sh .github/scripts/test.sh
+          bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ runner.os }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir ${{ github.workspace }} --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }}
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -361,8 +371,7 @@ jobs:
 
       - uses: docker://hasufell/arm64v8-alpine-haskell:3.21
         name: Run test (aarch64 alpine)
-        with:
-          args: sh .github/scripts/test.sh
+        with: *with-test-linux
 
       - if: failure()
         name: Upload artifact
@@ -406,7 +415,7 @@ jobs:
       - name: Run test (mac)
         run: |
           brew install coreutils
-          bash .github/scripts/test.sh
+          bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ runner.os }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir ${{ github.workspace }} --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }} --project-dir ${{ github.workspace }}
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -454,7 +463,9 @@ jobs:
         run: |
           rm -f /c/Strawberry/perl/bin/pkg-config
           rm /clang64/bin/zlib1.dll
-          bash .github/scripts/test.sh
+          bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ runner.os }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir /c --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }} --project-dir '${{ github.workspace }}'
+        env:
+          CABAL_DIR: "C:\\Users\\runneradmin\\AppData\\Roaming\\cabal"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -471,7 +482,6 @@ jobs:
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
       ARCH: 64
       DISTRO: na
-      RUNNER_OS: FreeBSD
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -492,8 +502,10 @@ jobs:
           path: ./out
 
       - name: Run test
-        run: |
-          bash .github/scripts/test.sh
+        run: &freebsd-run-test |
+          bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ env.OS }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir ${{ github.workspace }} --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }} --project-dir ${{ github.workspace }}
+        env:
+          OS: "FreeBSD"
 
       - if: failure()
         name: Upload artifact
@@ -511,7 +523,6 @@ jobs:
       ARTIFACT: "x86_64-openbsd-ghcup"
       ARCH: 64
       DISTRO: na
-      RUNNER_OS: OpenBSD
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -530,8 +541,9 @@ jobs:
           path: ./out
 
       - name: Run test
-        run: |
-          bash .github/scripts/test.sh
+        run: *freebsd-run-test
+        env:
+          OS: "OpenBSD"
 
       - if: failure()
         name: Upload artifact
@@ -571,6 +583,9 @@ jobs:
         run: |
           sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
           sh .github/scripts/hls.sh
+        env:
+          PROJECT_DIR: ${{ github.workspace }}
+          OS: ${{ runner.os }}
 
   release:
     name: release

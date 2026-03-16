@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE AllowAmbiguousTypes   #-}
-{-# LANGUAGE MultiParamTypeClasses   #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 {-|
 Module      : GHCup.Types.Optics
@@ -19,12 +19,12 @@ Portability : portable
 -}
 module GHCup.Types.Optics where
 
-import           GHCup.Types
+import GHCup.Types
 
-import           Control.Monad.Reader
-import           Data.ByteString         ( ByteString )
-import           Optics
-import           URI.ByteString
+import Control.Monad.Reader
+import Data.ByteString      ( ByteString )
+import Optics
+import URI.ByteString
 
 
 makePrisms ''Tool
@@ -32,13 +32,22 @@ makePrisms ''Architecture
 makePrisms ''LinuxDistro
 makePrisms ''Platform
 makePrisms ''Tag
+makePrisms ''EnvUnion
 
+makeLenses ''ToolInfo
+makeLenses ''ToolDescription
+makeLenses ''EnvSpec
+makeLenses ''ConfigSpec
+makeLenses ''MakeSpec
+makeLenses ''InstallationSpecGen
+makeLenses ''InstallMetadata
 makeLenses ''PlatformResult
 makeLenses ''DownloadInfo
 makeLenses ''Tag
 makeLenses ''VersionInfo
 
 makeLenses ''GHCTargetVersion
+makeLenses ''InstallFileRule
 
 makeLenses ''GHCupInfo
 
@@ -88,18 +97,20 @@ getAppState = ask
 
 
 getLeanAppState :: ( MonadReader env m
-                   , LabelOptic' "settings"    A_Lens env Settings
-                   , LabelOptic' "dirs"        A_Lens env Dirs
-                   , LabelOptic' "keyBindings" A_Lens env KeyBindings
+                   , LabelOptic' "settings"     A_Lens env Settings
+                   , LabelOptic' "dirs"         A_Lens env Dirs
+                   , LabelOptic' "keyBindings"  A_Lens env KeyBindings
                    , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
+                   , LabelOptic' "pfreq"        A_Lens env PlatformRequest
                    )
                 => m LeanAppState
 getLeanAppState = do
   s <- gets @"settings"
   d <- gets @"dirs"
   k <- gets @"keyBindings"
+  p <- gets @"pfreq"
   l <- gets @"loggerConfig"
-  pure (LeanAppState s d k l)
+  pure (LeanAppState s d k p l)
 
 
 getSettings :: ( MonadReader env m
@@ -161,4 +172,7 @@ getDownloader = getSettings <&> downloader
 
 
 instance LabelOptic "dirs" A_Lens Dirs Dirs Dirs Dirs where
+  labelOptic = lens id (\_ d -> d)
+
+instance LabelOptic "loggerConfig" A_Lens LoggerConfig LoggerConfig LoggerConfig LoggerConfig where
   labelOptic = lens id (\_ d -> d)

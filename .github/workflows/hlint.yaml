@@ -27,4 +27,4 @@ jobs:
           submodules: 'true'
 
       - name: Run hlint
-        run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s -- -r lib/ test/
+        run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s -- -r lib/ test/ app/ lib-opt/ lib-tui/
