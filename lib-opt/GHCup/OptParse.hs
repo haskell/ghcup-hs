@@ -75,7 +75,7 @@ import Data.Function ((&))
 data Options = Options
   {
   -- global options
-    optVerbose     :: Maybe Bool
+    optVerbose     :: Maybe Int
   , optCache       :: Maybe Bool
   , optMetaCache   :: Maybe Integer
   , optMetaMode    :: Maybe MetaMode
@@ -120,11 +120,17 @@ data Command
   | PrintAppErrors
 
 
+toVerbosity :: Maybe Bool -> Maybe Int
+toVerbosity (Just True)  = Just 1
+toVerbosity (Just False) = Just 0
+toVerbosity _           = Nothing
+
 
 opts :: Parser Options
 opts =
   Options
-    <$> invertableSwitch "verbose" (Just 'v') False (help "Enable verbosity (default: disabled)")
+    <$> (fmap toVerbosity (invertableSwitch "verbose" (Just 'v') False (help "Enable verbosity (default: disabled)"))
+        <|> optional (option auto (long "verbosity" <> metavar "LEVEL" <> help "verbosity level (0 for off, 1 for 'verbose', 2 for extra)")))
     <*> invertableSwitch "cache" (Just 'c') False (help "Cache downloads in ~/.ghcup/cache (default: disabled)")
     <*> optional (option auto (long "metadata-caching" <> metavar "SEC" <> help "How long the yaml metadata caching interval is (in seconds), 0 to disable"))
     <*> optional (option auto (long "metadata-fetching-mode" <> metavar "<Strict|Lax>" <> help "Whether to fail on metadata download failure (Strict) or fall back to cached version (Lax (default))"))

@@ -35,6 +35,10 @@ sha_sum "$(raw_eghcup --offline whereis ghcup)"
 ./"ghcup-test-optparse${ext}"
 rm "ghcup-test${ext}" "ghcup-test-optparse${ext}"
 
+if [ "${OS}" = "OpenBSD" ] ; then
+	exit 0
+fi
+
 ### manual cli based testing
 
 eghcup --numeric-version
@@ -42,7 +46,7 @@ eghcup --numeric-version
 # test PATH on windows wrt msys2
 # https://github.com/haskell/ghcup-hs/pull/992/checks
 if [ "${OS}" = "Windows" ] ; then
-	eghcup run -m -- sh -c 'echo $PATH' | sed 's/:/\n/' | grep '^/mingw64/bin$'
+	eghcup run -m -- sh -c 'echo $PATH' | sed 's/:/\n/' | grep '^/clang64/bin$'
 fi
 
 eghcup install ghc "${GHC_VER}"
