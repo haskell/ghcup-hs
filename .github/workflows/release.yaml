@@ -444,12 +444,6 @@ jobs:
       - name: Install msys2 dependencies
         run: *msys2-install
 
-      - name: Run build (windows)
-        run: |
-          rm -f /c/Strawberry/perl/bin/pkg-config
-          rm /clang64/bin/zlib1.dll
-          bash .github/scripts/build.sh
-
       - uses: actions/download-artifact@v4
         with:
           pattern: artifacts-*

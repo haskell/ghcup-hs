@@ -37,7 +37,7 @@ if [ "${OS}" = "macOS" ] ; then
 	otool -L "${binary}"
 	otool -L "${binary}" | grep libyaml && { echo "undesired libyaml linking" ; exit 5 ; }
 else
-	ldd "${binary}"
+	ldd "${binary}" || true
 fi
 
 cp "${binary}" "out/${ARTIFACT}-${ver}${ext}"
