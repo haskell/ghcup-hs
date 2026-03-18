@@ -32,8 +32,12 @@ binary_opttest=$(cabal --project-file=cabal.project.release list-bin ghcup-optpa
 ver=$("${binary}" --numeric-version)
 strip_binary "${binary}"
 
+# linking info
 if [ "${OS}" = "macOS" ] ; then
-  otool -L "${binary}" | grep libyaml && { echo "undesired libyaml linking" ; exit 5 ; }
+	otool -L "${binary}"
+	otool -L "${binary}" | grep libyaml && { echo "undesired libyaml linking" ; exit 5 ; }
+else
+	ldd "${binary}"
 fi
 
 cp "${binary}" "out/${ARTIFACT}-${ver}${ext}"
