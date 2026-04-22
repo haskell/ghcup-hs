@@ -63,6 +63,7 @@ prettyRequirements Requirements {..} =
         then "\n  Please ensure the following distro packages "
           <> "are installed before continuing (you can exit ghcup "
           <> "and return at any time): "
+          <> "\n    "
           <> T.intercalate " " _distroPKGs
         else ""
       n = if not . T.null $ _notes then "\n  Note: " <> _notes else ""
