@@ -113,7 +113,7 @@ mergeGHCFileTree :: ( MonadReader env m
                     )
                  => GHCupPath           -- ^ Path to the root of the tree
                  -> InstallDirResolved  -- ^ Path to install to
-                 -> GHCTargetVersion    -- ^ The GHC version
+                 -> TargetVersion    -- ^ The GHC version
                  -> Bool                -- ^ Force install
                  -> Excepts '[MergeFileTreeError] m ()
 mergeGHCFileTree root inst tver forceInstall
@@ -203,7 +203,7 @@ compileGHC :: ( MonadMask m
                  , MalformedInstallInfo
                  ]
                 m
-                GHCTargetVersion
+                TargetVersion
 compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs buildFlavour buildSystem installDir installTargets
   = do
     pfreq@PlatformRequest { .. } <- lift getPlatformReq
@@ -235,7 +235,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                 Just vps' -> fmap Just $ expandVersionPattern (Just ver) "" "" "" "" vps'
                 Nothing   -> pure Nothing
 
-        pure (workdir, tmpUnpack, Just (GHCTargetVersion crossTarget ver), ov)
+        pure (workdir, tmpUnpack, Just (TargetVersion crossTarget ver), ov)
 
       RemoteDist uri -> do
         lift $ logDebug $ "Requested to compile (from uri): " <> T.pack (show uri)
@@ -263,7 +263,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                 Just vps' -> fmap Just $ expandVersionPattern tver "" "" "" "" vps'
                 Nothing   -> pure Nothing
 
-        pure (workdir, tmpUnpack, GHCTargetVersion crossTarget <$> tver, ov)
+        pure (workdir, tmpUnpack, TargetVersion crossTarget <$> tver, ov)
 
       -- clone from git
       GitDist GitBranch{..} -> do
@@ -331,10 +331,10 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
 
           pure (tver, ov)
 
-        pure (tmpUnpack, tmpUnpack, GHCTargetVersion crossTarget <$> tver, ov)
+        pure (tmpUnpack, tmpUnpack, TargetVersion crossTarget <$> tver, ov)
     -- the version that's installed may differ from the
     -- compiled version, so the user can overwrite it
-    installVer <- if | Just ov'   <- ov   -> pure (GHCTargetVersion crossTarget ov')
+    installVer <- if | Just ov'   <- ov   -> pure (TargetVersion crossTarget ov')
                      | Just tver' <- tver -> pure tver'
                      | otherwise          -> fail "No GHC version given and couldn't detect version. Giving up..."
 
@@ -447,7 +447,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
     , HasPlatformReq env
     )
     => FilePath                   -- ^ Binary dir
-    -> GHCTargetVersion
+    -> TargetVersion
     -> Excepts '[ UnknownArchive
                 , ArchiveResult
                 ] m InstallationSpecResolved
@@ -474,7 +474,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
     , HasPlatformReq env
     )
     => FilePath                   -- ^ archive path
-    -> GHCTargetVersion
+    -> TargetVersion
     -> Excepts '[ UnknownArchive
                 , ArchiveResult
                 ] m InstallationSpecResolved
@@ -534,7 +534,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                            , HasLog env
                            , MonadIOish m
                            )
-                        => GHCTargetVersion
+                        => TargetVersion
                         -> FilePath
                         -> InstallDirResolved
                         -> Excepts
@@ -603,7 +603,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                         , MonadUnliftIO m
                         , MonadResource m
                         )
-                     => GHCTargetVersion
+                     => TargetVersion
                      -> FilePath
                      -> InstallDirResolved
                      -> Excepts
@@ -661,7 +661,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                  , MonadCatch m
                  , HasLog env
                  )
-              => GHCTargetVersion
+              => TargetVersion
               -> FilePath           -- ^ tar file
               -> FilePath           -- ^ workdir
               -> Excepts
@@ -726,7 +726,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
     Just bf -> "BuildFlavour = " <> T.pack bf <> "\n" <> bc
     Nothing -> bc
 
-  isCross :: GHCTargetVersion -> Bool
+  isCross :: TargetVersion -> Bool
   isCross = isJust . _tvTarget
 
 
@@ -737,7 +737,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                       , HasLog env
                       , MonadIOish m
                       )
-                   => GHCTargetVersion
+                   => TargetVersion
                    -> FilePath
                    -> InstallDirResolved
                    -> Excepts
@@ -773,7 +773,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                           , HasLog env
                           , MonadIOish m
                           )
-                       => Maybe GHCTargetVersion
+                       => Maybe TargetVersion
                        -> [String]         -- ^ args for configure
                        -> Maybe FilePath   -- ^ optionally chdir into this
                        -> FilePath         -- ^ log filename (opened in append mode)

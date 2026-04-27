@@ -90,7 +90,7 @@ versionParser' criteria tool = argument
   (eitherReader (first show . version . T.pack))
   (metavar "VERSION"  <> foldMap (completer . versionCompleter criteria) tool)
 
-ghcVersionArgument :: [ListCriteria] -> Maybe Tool -> Parser GHCTargetVersion
+ghcVersionArgument :: [ListCriteria] -> Maybe Tool -> Parser TargetVersion
 ghcVersionArgument criteria tool = argument (eitherReader Parsers.ghcVersionEither)
                                             (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
 
@@ -478,13 +478,13 @@ checkForUpdates :: ( MonadReader env m
                    , HasLog env
                    , MonadIOish m
                    )
-                => m [(Tool, GHCTargetVersion)]
+                => m [(Tool, TargetVersion)]
 checkForUpdates = do
   GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
   (VRight lInstalled) <- runE $ listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
-  let latestInstalled tool = (fmap (\lr -> GHCTargetVersion (lCross lr) (lVer lr)) . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
+  let latestInstalled tool = (fmap (\lr -> TargetVersion (lCross lr) (lVer lr)) . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
 
-  ghcup' <- forMM (getLatest dls ghcup) $ \(GHCTargetVersion _ l, _) -> do
+  ghcup' <- forMM (getLatest dls ghcup) $ \(TargetVersion _ l, _) -> do
     (Right ghcup_ver) <- pure $ version $ prettyPVP ghcUpVer
     if l > ghcup_ver then pure $ Just (ghcup, mkTVer l) else pure Nothing
 
@@ -498,7 +498,7 @@ checkForUpdates = do
  where
   forMM a f = fmap join $ forM a f
 
-logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => GHCTargetVersion -> m ()
+logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => TargetVersion -> m ()
 logGHCPostRm ghcVer = do
   cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store or ~/.local/state/cabal/store")
     getStoreDir

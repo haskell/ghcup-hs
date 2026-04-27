@@ -86,7 +86,7 @@ rmUnsetTools :: ( MonadReader env m
              => Excepts '[NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo] m ()
 rmUnsetTools = do
   vers <- liftE $ listVersions Nothing [ListInstalled True, ListSet False] False True (Nothing, Nothing)
-  forM_ vers $ \ListResult{..} -> liftE $ rmToolVersion lTool (GHCTargetVersion lCross lVer)
+  forM_ vers $ \ListResult{..} -> liftE $ rmToolVersion lTool (TargetVersion lCross lVer)
 
 
 rmProfilingLibs :: ( MonadReader env m

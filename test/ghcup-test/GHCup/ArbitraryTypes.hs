@@ -251,8 +251,8 @@ instance Arbitrary GHCupInfo where
   arbitrary = genericArbitrary
   shrink    = genericShrink
 
-instance Arbitrary GHCTargetVersion where
-  arbitrary = suchThat (GHCTargetVersion Nothing <$> arbitrary) pred'
+instance Arbitrary TargetVersion where
+  arbitrary = suchThat (TargetVersion Nothing <$> arbitrary) pred'
    where
     pred' = safeVersion
   shrink    = genericShrink

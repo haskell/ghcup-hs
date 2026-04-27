@@ -194,7 +194,7 @@ linkEscapeCode linkText link = "\ESC]8;;" <> link <> "\ESC\\" <> linkText <> "\E
     --[ Low-level errors ]--
     ------------------------
 
-data NoInstallInfo = NoInstallInfo Tool GHCTargetVersion
+data NoInstallInfo = NoInstallInfo Tool TargetVersion
   deriving (Show)
 
 instance Pretty NoInstallInfo where
@@ -237,11 +237,11 @@ instance HFErrorProject NoCompatiblePlatform where
   eDesc _ = "No compatible platform could be found"
 
 -- | Unable to find a download for the requested version/distro.
-data NoDownload = NoDownload GHCTargetVersion Tool (Maybe PlatformRequest)
+data NoDownload = NoDownload TargetVersion Tool (Maybe PlatformRequest)
   deriving (Show)
 
 instance Pretty NoDownload where
-  pPrint (NoDownload tver@(GHCTargetVersion mtarget vv) tool mpfreq) =
+  pPrint (NoDownload tver@(TargetVersion mtarget vv) tool mpfreq) =
     let helperMsg
           | (Just target) <- mtarget
           , T.unpack (T.toLower target) `elem` ["ghc", "cabal", "hls", "stack"] =
@@ -390,7 +390,7 @@ instance HFErrorProject NextVerNotFound where
   eDesc _ = "Unable to find the next version of a tool (the one after the currently set one)"
 
 -- | The tool (such as GHC) is already installed with that version.
-data AlreadyInstalled = AlreadyInstalled Tool GHCTargetVersion
+data AlreadyInstalled = AlreadyInstalled Tool TargetVersion
   deriving (Show)
 
 instance Pretty AlreadyInstalled where
@@ -418,7 +418,7 @@ instance HFErrorProject DirNotEmpty where
 
 -- | The tool is not installed. Some operations rely on a tool
 -- to be installed (such as setting the current GHC version).
-data NotInstalled = NotInstalled Tool GHCTargetVersion
+data NotInstalled = NotInstalled Tool TargetVersion
   deriving (Show)
 
 instance Pretty NotInstalled where

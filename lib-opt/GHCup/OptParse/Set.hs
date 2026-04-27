@@ -286,10 +286,10 @@ set :: forall m env.
        )
     => SetCommand
     -> Settings
-    -> (forall eff . ReaderT AppState m (VEither eff GHCTargetVersion)
-        -> m (VEither eff GHCTargetVersion))
-    -> (forall eff. ReaderT env m (VEither eff GHCTargetVersion)
-        -> m (VEither eff GHCTargetVersion))
+    -> (forall eff . ReaderT AppState m (VEither eff TargetVersion)
+        -> m (VEither eff TargetVersion))
+    -> (forall eff. ReaderT env m (VEither eff TargetVersion)
+        -> m (VEither eff TargetVersion))
     -> (ReaderT LeanAppState m () -> m ())
     -> m ExitCode
 set setCommand settings runAppState _ runLogger = case setCommand of
@@ -311,7 +311,7 @@ set setCommand settings runAppState _ runLogger = case setCommand of
           liftE $ setToolVersion sTool v
         )
       >>= \case
-            VRight GHCTargetVersion{..} -> do
+            VRight TargetVersion{..} -> do
               runLogger
                 $ logInfo $
                     T.pack (prettyShow sTool) <> " " <> prettyVer _tvVersion <> " successfully set as default version" <> maybe "" (" for cross target " <>) _tvTarget

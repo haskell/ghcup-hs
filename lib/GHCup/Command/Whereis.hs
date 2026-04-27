@@ -65,9 +65,9 @@ whereIsTool :: ( MonadReader env m
                , MonadIOish m
                )
             => Tool
-            -> GHCTargetVersion
+            -> TargetVersion
             -> Excepts '[NotInstalled, ParseError, NoInstallInfo] m FilePath
-whereIsTool tool ver@GHCTargetVersion {..} = do
+whereIsTool tool ver@TargetVersion {..} = do
   dirs <- lift getDirs
   sSpec <- lift $ getSymlinkSpecPortable tool ver
   toolDir <- fromGHCupPath <$> lift (toolInstallDestination tool ver)
@@ -84,11 +84,11 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
           pure (bdir </> "bin" </> ghcBinaryName ver)
         Tool "cabal" -> do
           whenM (lift $ fmap not $ cabalInstalled _tvVersion)
-            $ throwE (NotInstalled cabal (GHCTargetVersion Nothing _tvVersion))
+            $ throwE (NotInstalled cabal (TargetVersion Nothing _tvVersion))
           pure (binDir dirs </> "cabal-" <> T.unpack (prettyVer _tvVersion) <> exeExt)
         Tool "hls" -> do
           whenM (lift $ fmap not $ hlsInstalled _tvVersion)
-            $ throwE (NotInstalled hls (GHCTargetVersion Nothing _tvVersion))
+            $ throwE (NotInstalled hls (TargetVersion Nothing _tvVersion))
           ifM (lift $ isLegacyHLS _tvVersion)
             (pure (binDir dirs </> "haskell-language-server-wrapper-" <> T.unpack (prettyVer _tvVersion) <> exeExt))
             $ do
@@ -97,7 +97,7 @@ whereIsTool tool ver@GHCTargetVersion {..} = do
 
         Tool "stack" -> do
           whenM (lift $ fmap not $ stackInstalled _tvVersion)
-            $ throwE (NotInstalled stack (GHCTargetVersion Nothing _tvVersion))
+            $ throwE (NotInstalled stack (TargetVersion Nothing _tvVersion))
           pure (binDir dirs </> "stack-" <> T.unpack (prettyVer _tvVersion) <> exeExt)
         Tool "ghcup" -> do
           currentRunningExecPath <- liftIO getExecutablePath

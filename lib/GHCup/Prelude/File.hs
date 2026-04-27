@@ -98,7 +98,7 @@ mergeFileTree :: ( MonadMask m
               => GHCupPath                       -- ^ source base directory from which to install findFiles
               -> InstallDirResolved              -- ^ destination base dir
               -> Tool
-              -> GHCTargetVersion
+              -> TargetVersion
               -> (FilePath -> FilePath -> m ())  -- ^ file copy operation
               -> Bool                            -- ^ whether to abort if the DB file already exists
               -> Excepts '[MergeFileTreeError] m ()
@@ -204,7 +204,7 @@ recordedInstallationFile :: ( MonadReader env m
                             , MonadIO m
                             )
                          => Tool
-                         -> GHCTargetVersion
+                         -> TargetVersion
                          -> m FilePath
 recordedInstallationFile t v' = do
   Dirs {..}  <- getDirs
@@ -214,7 +214,7 @@ recordedInstallationSpecFile :: ( MonadReader env m
                                 , HasDirs env
                                 )
                              => Tool
-                             -> GHCTargetVersion
+                             -> TargetVersion
                              -> m FilePath
 recordedInstallationSpecFile t v' = do
   Dirs {..}  <- getDirs

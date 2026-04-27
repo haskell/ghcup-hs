@@ -67,13 +67,13 @@ data RmCommand
 
 
 data RmOptions = RmOptions
-  { ghcVer :: GHCTargetVersion
+  { ghcVer :: TargetVersion
   }
   deriving (Eq, Show)
 
 data RmOptionsNew = RmOptionsNew
   { rmTool :: Tool
-  , ghcVer :: GHCTargetVersion
+  , ghcVer :: TargetVersion
   }
   deriving (Eq, Show)
 

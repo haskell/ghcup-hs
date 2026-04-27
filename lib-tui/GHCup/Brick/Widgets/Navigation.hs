@@ -19,7 +19,7 @@ module GHCup.Brick.Widgets.Navigation (BrickInternalState, create, handler, draw
 
 import GHCup.Command.List ( ListResult(..) )
 import GHCup.Types
-    ( GHCTargetVersion(GHCTargetVersion),
+    ( TargetVersion(TargetVersion),
       Tool(..),
       Tag(..),
       tVerToText,
@@ -81,7 +81,7 @@ draw dimAttrs section_list
   renderList' bis =
     let allElements = V.concatMap L.listElements $ SectionList.sectionListElements bis
         minTagSize = V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) allElements
-        minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (GHCTargetVersion lCross lVer)) allElements
+        minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (TargetVersion lCross lVer)) allElements
         minToolSize = V.maximum $ V.map (\ListResult{..} -> length $ prettyShow lTool) allElements
     in Brick.withDefAttr L.listAttr $ SectionList.renderSectionList (renderItem minToolSize minTagSize minVerSize) True bis
   renderItem minToolSize minTagSize minVerSize listIx b listResult@ListResult{lTag = lTag', ..} =

@@ -89,7 +89,7 @@ data ListResult = ListResult
 
 
 -- | Extract all available tool versions and their tags.
-availableToolVersions :: GHCupDownloads -> Tool -> Map.Map GHCTargetVersion VersionInfo
+availableToolVersions :: GHCupDownloads -> Tool -> Map.Map TargetVersion VersionInfo
 availableToolVersions av tool = view
   (at tool % to (_toolVersions <$>) % non Map.empty)
   av
@@ -130,7 +130,7 @@ listVersions lt' criteria hideOld showNightly days = do
         -- versions from the metadata
         let avVers :: Set Version = fromMaybe mempty $ (avTools M.!? tool) >>= (M.!? target)
 
-        let tver = GHCTargetVersion target ver'
+        let tver = TargetVersion target ver'
         dli <- fmap veitherToEither $ runE @'[NoDownload] $ getDownloadInfo' tool tver
         let bTags = either (const []) (fromMaybe [] . _dlTag) dli
         let mvi = getVersionInfo tver tool dls
@@ -171,7 +171,7 @@ listVersions lt' criteria hideOld showNightly days = do
         then do
           pure Nothing
         else do
-          let tver = GHCTargetVersion target ver'
+          let tver = TargetVersion target ver'
           dli <- fmap veitherToEither $ runE @'[NoDownload] $ getDownloadInfo' tool tver
           let bTags = either (const []) (fromMaybe [] . _dlTag) dli
           let mvi = getVersionInfo tver tool dls

@@ -385,7 +385,7 @@ ghcupGHCBaseDir = do
 -- and version.
 toolInstallDestination :: (MonadReader env m, HasDirs env)
                        => Tool
-                       -> GHCTargetVersion
+                       -> TargetVersion
                        -> m GHCupPath
 toolInstallDestination tool ver = do
   bDir  <- toolBaseDir tool
@@ -405,7 +405,7 @@ toolBaseDir tool = do
 --   * armv7-unknown-linux-gnueabihf-8.8.3
 --   * 8.8.4
 ghcupGHCDir :: (MonadReader env m, HasDirs env, MonadThrow m)
-            => GHCTargetVersion
+            => TargetVersion
             -> m GHCupPath
 ghcupGHCDir ver = do
   ghcbasedir <- ghcupGHCBaseDir
@@ -414,7 +414,7 @@ ghcupGHCDir ver = do
 
 
 -- | See 'ghcupToolParser'.
-parseGHCupGHCDir :: MonadThrow m => FilePath -> m GHCTargetVersion
+parseGHCupGHCDir :: MonadThrow m => FilePath -> m TargetVersion
 parseGHCupGHCDir (T.pack -> fp) =
   throwEither $ MP.parse ghcTargetVerP "" fp
 

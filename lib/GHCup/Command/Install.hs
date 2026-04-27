@@ -61,7 +61,7 @@ installTool ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> InstallDir
   -> Bool
   -> [String]
@@ -107,7 +107,7 @@ installBindist ::
   )
   => Tool
   -> DownloadInfo
-  -> GHCTargetVersion
+  -> TargetVersion
   -> InstallDir
   -> Bool           -- ^ Force install
   -> [String]
@@ -184,7 +184,7 @@ installPackedBindist ::
   -> FilePath             -- ^ Path to the tarball
   -> DownloadInfo
   -> InstallDirResolved   -- ^ Path to install to
-  -> GHCTargetVersion
+  -> TargetVersion
   -> Bool
   -> [String]
   -> Maybe [String]
@@ -234,7 +234,7 @@ installUnpackedBindist :: forall m env .
   -> InstallDirResolved   -- ^ Path to install to
   -> GHCupPath            -- ^ DESTDIR
   -> DownloadInfo
-  -> GHCTargetVersion
+  -> TargetVersion
   -> Bool
   -> [String]
   -> Maybe [String]

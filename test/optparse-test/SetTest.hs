@@ -26,27 +26,27 @@ setGhcCheckList :: [(String, SetCommand)]
 setGhcCheckList = mapSecond (SetGHC . SetOptions)
   [ ("set ghc", SetRecommended)
   , ("set ghc 9.2", SetGHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           Nothing
           $(versionQ "9.2")
     )
   , ("set ghc next", SetNext)
   , ("set ghc latest", SetToolTag Latest)
   , ("set ghc nightly", SetGHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           Nothing
           $(versionQ "nightly")
     )
   , ("set ghc recommended", SetToolTag Recommended)
   , ("set ghc prerelease", SetGHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           Nothing
           $(versionQ "prerelease")
     )
   , ("set ghc latest-prerelease", SetToolTag LatestPrerelease)
   , ("set ghc latest-nightly", SetToolTag LatestNightly)
   , ("set ghc javascript-unknown-ghcjs-9.6", SetGHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           (Just "javascript-unknown-ghcjs")
           $(versionQ "9.6")
     )

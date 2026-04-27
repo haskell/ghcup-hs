@@ -51,7 +51,7 @@ mergeToFileSystem ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> InstallDirResolved   -- ^ Path to install to
   -> GHCupPath            -- ^ DESTDIR
   -> Bool
@@ -215,7 +215,7 @@ recordInstallationInfo ::
   )
   => InstallDirResolved
   -> Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> DownloadInfo
   -> InstallationSpecResolved
   -> m ()
@@ -251,7 +251,7 @@ symlinkBinaries ::
   -> [SymlinkSpec [Either Char Version]]   -- ^ symlink spec
   -> InstallDirResolved                    -- ^ binary dir
   -> Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> Excepts '[MalformedInstallInfo] m ()
 symlinkBinaries (IsolateDirResolved _) _ _ _ _ = pure ()
 symlinkBinaries (fromInstallDir -> toolDir) rawSpec bindir tool tver = do

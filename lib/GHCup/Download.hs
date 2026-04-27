@@ -179,7 +179,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   fromStackSetupInfo (Stack.siGHCs -> ghcDli) keys = do
     let ghcVersionsPerKey = (`M.lookup` ghcDli) . T.pack <$> keys
         ghcVersions = fromMaybe mempty . listToMaybe . catMaybes $ ghcVersionsPerKey
-    (ghcupInfo' :: M.Map GHCTargetVersion DownloadInfo) <-
+    (ghcupInfo' :: M.Map TargetVersion DownloadInfo) <-
       M.mapKeys mkTVer <$> M.traverseMaybeWithKey (\v a -> pure $ fromStackDownloadInfo v a) ghcVersions
     let ghcupDownloads' = M.singleton ghc (ToolInfo (M.map fromDownloadInfo ghcupInfo') Nothing)
     pure (GHCupInfo mempty ghcupDownloads' Nothing)
@@ -436,7 +436,7 @@ getDownloadInfo' :: ( MonadReader env m
                     , HasGHCupInfo env
                     )
                  => Tool
-                 -> GHCTargetVersion
+                 -> TargetVersion
                  -- ^ tool version
                  -> Excepts
                       '[NoDownload]

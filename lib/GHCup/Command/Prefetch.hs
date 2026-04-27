@@ -56,7 +56,7 @@ fetchToolBindist :: ( MonadFail m
                     , MonadIO m
                     , MonadUnliftIO m
                     )
-                 => GHCTargetVersion
+                 => TargetVersion
                  -> Tool
                  -> Maybe FilePath
                  -> Excepts
@@ -88,7 +88,7 @@ fetchToolSrc :: ( MonadFail m
                , MonadUnliftIO m
                )
             => Tool
-            -> GHCTargetVersion
+            -> TargetVersion
             -> Maybe FilePath
             -> Excepts
                  '[ DigestError

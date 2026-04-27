@@ -30,7 +30,7 @@ checkList =
   , ("changelog -t ghcup", ChangeLogOptions False (Just ghcup) Nothing)
   , ("changelog 9.2", ChangeLogOptions False Nothing
       (Just $ GHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           Nothing
           $(versionQ "9.2"))
     )
@@ -38,7 +38,7 @@ checkList =
   , ("changelog -t cabal recommended", ChangeLogOptions False (Just cabal) (Just $ ToolTag Recommended))
   , ("changelog -t cabal 3.10.1.0", ChangeLogOptions False (Just cabal)
       (Just $ GHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           Nothing
           $(versionQ "3.10.1.0"))
     )

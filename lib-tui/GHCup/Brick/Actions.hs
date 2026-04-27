@@ -203,7 +203,7 @@ installWithOptions opts (_, ListResult {..}) = do
     shouldSet     = opts ^. AdvancedInstall.instSetL
     extraArgs     = opts ^. AdvancedInstall.addConfArgsL
     installTargets = opts ^. AdvancedInstall.installTargetsL
-    v = fromMaybe (GHCTargetVersion lCross lVer) (opts ^. AdvancedInstall.instVersionL)
+    v = fromMaybe (TargetVersion lCross lVer) (opts ^. AdvancedInstall.instVersionL)
   let run =
         runResourceT
           . runE
@@ -363,7 +363,7 @@ set' input@(_, ListResult {..}) = do
                 PromptYes -> do
                   void $ liftE $ upgradeGHCup Nothing False False
                 PromptNo -> pure ()
-        _ -> liftE $ setToolVersion lTool (GHCTargetVersion lCross lVer) $> ()
+        _ -> liftE $ setToolVersion lTool (TargetVersion lCross lVer) $> ()
     )
     >>= \case
           VRight _ -> pure $ Right ()
@@ -389,7 +389,7 @@ set' input@(_, ListResult {..}) = do
 
             _ -> pure $ Left (prettyHFError e)
 
-logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => GHCTargetVersion -> m ()
+logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => TargetVersion -> m ()
 logGHCPostRm ghcVer = do
   cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store or ~/.local/state/cabal/store")
     getStoreDir
@@ -420,7 +420,7 @@ del' (_, ListResult {..}) = do
             pure $ Right ()
           VLeft  e -> pure $ Left (prettyHFError e)
  where
-  crossVer = GHCTargetVersion lCross lVer
+  crossVer = TargetVersion lCross lVer
 
 
 changelog' :: (MonadReader AppState m, MonadIO m)

@@ -204,7 +204,7 @@ compileHlsCheckList = mapSecond CompileHLS
         [ghc928]
 
     ghc928 :: ToolVersion
-    ghc928 = GHCVersion $ GHCTargetVersion Nothing $(versionQ "9.2.8")
+    ghc928 = GHCVersion $ TargetVersion Nothing $(versionQ "9.2.8")
 
 compileParseWith :: [String] -> IO CompileCommand
 compileParseWith args = do

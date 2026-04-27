@@ -94,9 +94,9 @@ rmMinorGHCSymlinks :: ( MonadReader env m
                       , MonadFail m
                       , MonadMask m
                       )
-                   => GHCTargetVersion
+                   => TargetVersion
                    -> Excepts '[NotInstalled] m ()
-rmMinorGHCSymlinks tv@GHCTargetVersion{..} = do
+rmMinorGHCSymlinks tv@TargetVersion{..} = do
   Dirs {..}  <- lift getDirs
 
   files                         <- liftE $ ghcToolFiles tv
@@ -142,9 +142,9 @@ rmMajorGHCSymlinks :: ( MonadReader env m
                       , MonadFail m
                       , MonadMask m
                       )
-                   => GHCTargetVersion
+                   => TargetVersion
                    -> Excepts '[NotInstalled] m ()
-rmMajorGHCSymlinks tv@GHCTargetVersion{..} = do
+rmMajorGHCSymlinks tv@TargetVersion{..} = do
   Dirs {..}  <- lift getDirs
   (mj, mi) <- getMajorMinorV _tvVersion
   let v' = intToText mj <> "." <> intToText mi
@@ -222,7 +222,7 @@ rmPlainHLS = do
 
 
 -- | Whether the given GHC version is installed.
-ghcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => GHCTargetVersion -> m Bool
+ghcInstalled :: (MonadIO m, MonadReader env m, HasDirs env, MonadThrow m) => TargetVersion -> m Bool
 ghcInstalled ver = do
   ghcdir <- ghcupGHCDir ver
   liftIO $ doesDirectoryExist (fromGHCupPath ghcdir)
@@ -232,7 +232,7 @@ ghcInstalled ver = do
 ghcSet :: (MonadReader env m, HasDirs env, MonadThrow m, MonadIO m)
        => Maybe Text   -- ^ the target of the GHC version, if any
                        --  (e.g. armv7-unknown-linux-gnueabihf)
-       -> m (Maybe GHCTargetVersion)
+       -> m (Maybe TargetVersion)
 ghcSet mtarget = do
   Dirs {..}  <- getDirs
   let ghc' = maybe "ghc" (\t -> T.unpack t <> "-ghc") mtarget
@@ -244,13 +244,13 @@ ghcSet mtarget = do
     link <- liftIO $ getLinkTarget ghcBin
     Just <$> ghcLinkVersion' link
  where
-  ghcLinkVersion' :: MonadThrow m => FilePath -> m GHCTargetVersion
+  ghcLinkVersion' :: MonadThrow m => FilePath -> m TargetVersion
   ghcLinkVersion' (T.pack . dropSuffix exeExt -> t) = throwEither $
     MP.parse (MP.try ghcVersionFromPath <|> ghcLinkVersion) "ghcLinkVersion" t
 
 -- | Get all installed GHCs by reading ~/.ghcup/ghc/<dir>.
 -- If a dir cannot be parsed, returns left.
-getInstalledGHCs :: (MonadReader env m, HasDirs env, MonadIO m) => m [Either FilePath GHCTargetVersion]
+getInstalledGHCs :: (MonadReader env m, HasDirs env, MonadIO m) => m [Either FilePath TargetVersion]
 getInstalledGHCs = filter (either (const True) safeVersion) <$> do
   ghcdir <- ghcupGHCBaseDir
   fs     <- liftIO $ hideErrorDef [NoSuchThing] [] $ listDirectoryDirs (fromGHCupPath ghcdir)
@@ -624,7 +624,7 @@ hlsAllBinaries ver = do
 
 -- | Usually @~\/.ghcup\/ghc\/\<ver\>\/bin\/@
 ghcInternalBinDir :: (MonadReader env m, HasDirs env, MonadThrow m, MonadFail m, MonadIO m)
-                  => GHCTargetVersion
+                  => TargetVersion
                   -> m FilePath
 ghcInternalBinDir ver = do
   ghcdir <- fromGHCupPath <$> ghcupGHCDir ver
@@ -638,7 +638,7 @@ ghcInternalBinDir ver = do
 --
 --   - @["hsc2hs","haddock","hpc","runhaskell","ghc","ghc-pkg","ghci","runghc","hp2ps"]@
 ghcToolFiles :: (MonadReader env m, HasDirs env, HasLog env, MonadThrow m, MonadFail m, MonadIO m)
-             => GHCTargetVersion
+             => TargetVersion
              -> Excepts '[NotInstalled] m [FilePath]
 ghcToolFiles ver = do
   bindir <- ghcInternalBinDir ver
@@ -678,9 +678,9 @@ ghcToolFiles ver = do
 -- For ghc with arch triple:
 --
 --    - <triple>-ghc (e.g. arm-linux-gnueabihf-ghc)
-ghcBinaryName :: GHCTargetVersion -> String
-ghcBinaryName (GHCTargetVersion (Just t) _) = T.unpack (t <> "-ghc" <> T.pack exeExt)
-ghcBinaryName (GHCTargetVersion Nothing  _) = T.unpack ("ghc" <> T.pack exeExt)
+ghcBinaryName :: TargetVersion -> String
+ghcBinaryName (TargetVersion (Just t) _) = T.unpack (t <> "-ghc" <> T.pack exeExt)
+ghcBinaryName (TargetVersion Nothing  _) = T.unpack ("ghc" <> T.pack exeExt)
 
 
 

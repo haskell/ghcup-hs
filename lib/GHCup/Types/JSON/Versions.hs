@@ -29,7 +29,7 @@ instance ToJSON Versioning where
 instance FromJSON Versioning where
   parseJSON = withText "Versioning" $ \t -> case versioning t of
     Right x -> pure x
-    Left  e -> fail $ "Failure in GHCTargetVersion (FromJSON)" <> show e
+    Left  e -> fail $ "Failure in TargetVersion (FromJSON)" <> show e
 
 instance ToJSONKey Versioning where
   toJSONKey = toJSONKeyText $ \x -> prettyV x

@@ -82,9 +82,9 @@ ghcProjectVersion = do
 -- | Extracts target triple and version from e.g.
 --   * armv7-unknown-linux-gnueabihf-8.8.3
 --   * armv7-unknown-linux-gnueabihf-8.8.3
-ghcTargetVerP :: MP.Parsec Void Text GHCTargetVersion
+ghcTargetVerP :: MP.Parsec Void Text TargetVersion
 ghcTargetVerP =
-  (\x y -> GHCTargetVersion x y)
+  (\x y -> TargetVersion x y)
     <$> (MP.try (Just <$> parseUntil1 (MP.chunk "-" *> verP') <* MP.chunk "-")
         <|> ((\ _ x -> x) Nothing <$> mempty)
         )
@@ -106,9 +106,9 @@ ghcTargetVerP =
       then pure $ prettyVer v
       else fail "Oh"
 
-ghcLinkVersion :: MP.Parsec Void Text GHCTargetVersion
+ghcLinkVersion :: MP.Parsec Void Text TargetVersion
 ghcLinkVersion =
-  (\x y -> GHCTargetVersion x y)
+  (\x y -> TargetVersion x y)
     <$>
        (MP.try (Just <$> parseUntil1 (MP.chunk "-ghc-" *> verP') <* MP.chunk "-")
         <|> ((\ _ x -> x) Nothing <$> mempty)
@@ -167,7 +167,7 @@ isSpace c = (c == ' ') || ('\t' <= c && c <= '\r')
 -- Obtain the version from the link or shim path
 -- ../ghc/<ver>/bin/ghc
 -- ../ghc/<ver>/bin/ghc-<ver>
-ghcVersionFromPath :: MP.Parsec Void Text GHCTargetVersion
+ghcVersionFromPath :: MP.Parsec Void Text TargetVersion
 ghcVersionFromPath =
   do
      beforeBin <- parseUntil1 binDir <* MP.some pathSep

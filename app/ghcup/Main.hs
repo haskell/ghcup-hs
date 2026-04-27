@@ -341,7 +341,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                        , MonadIOish m
                        )
                     => Command
-                    -> (Tool, GHCTargetVersion)
+                    -> (Tool, TargetVersion)
                     -> Excepts
                          '[ TagNotFound
                           , DayNotFound
@@ -378,7 +378,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           )
        => Tool
        -> Maybe ToolVersion
-       -> GHCTargetVersion
+       -> TargetVersion
        -> Excepts
             '[ TagNotFound
              , DayNotFound

@@ -487,7 +487,7 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
      , MonadIOish m1
      )
      => Tool
-     -> GHCTargetVersion
+     -> TargetVersion
      -> InstallDirResolved
      -> Excepts '[ParseError, NotInstalled, MalformedInstallInfo] m1 ()
    setTool' tool v tmp = do
@@ -599,7 +599,7 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
 
 
 data Toolchain = Toolchain
-  { ghcVer :: Maybe GHCTargetVersion
+  { ghcVer :: Maybe TargetVersion
   , cabalVer :: Maybe Version
   , hlsVer :: Maybe Version
   , stackVer :: Maybe Version

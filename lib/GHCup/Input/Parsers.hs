@@ -102,7 +102,7 @@ import qualified Data.HashMap.Strict as KM
 
 -- a superset of ToolVersion
 data SetToolVersion
-  = SetGHCVersion GHCTargetVersion
+  = SetGHCVersion TargetVersion
   | SetToolVersion Version
   | SetToolTag Tag
   | SetToolDay Day
@@ -222,7 +222,7 @@ tagEither s' = case fmap toLower s' of
   other                      -> Left $ "Unknown tag " <> other
 
 
-ghcVersionEither :: String -> Either String GHCTargetVersion
+ghcVersionEither :: String -> Either String TargetVersion
 ghcVersionEither str' = do
   v <- first (const "Not a valid version") . MP.parse ghcTargetVerP "" . T.pack $ str'
   if safeVersion v
@@ -325,7 +325,7 @@ fromVersion :: ( HasLog env
                   , NextVerNotFound
                   , NoToolVersionSet
                   , ParseError
-                  ] m (GHCTargetVersion, Maybe VersionInfo)
+                  ] m (TargetVersion, Maybe VersionInfo)
 fromVersion tv = fromVersion' (toSetToolVer tv)
 
 fromVersion' :: ( HasLog env
@@ -343,7 +343,7 @@ fromVersion' :: ( HasLog env
                    , NextVerNotFound
                    , NoToolVersionSet
                    , ParseError
-                   ] m (GHCTargetVersion, Maybe VersionInfo)
+                   ] m (TargetVersion, Maybe VersionInfo)
 fromVersion' SetRecommended _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   second Just <$> getRecommended dls tool
@@ -412,10 +412,10 @@ guessFullVersion :: ( HasLog env
                     , MonadCatch m
                     )
                  => GHCupDownloads
-                 -> GHCTargetVersion
+                 -> TargetVersion
                  -> Tool
                  -> GuessMode
-                 -> m (GHCTargetVersion, Maybe VersionInfo)
+                 -> m (TargetVersion, Maybe VersionInfo)
 guessFullVersion dls v tool guessMode = do
   let vi = getVersionInfo v tool dls
   case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
@@ -428,7 +428,7 @@ guessFullVersion dls v tool guessMode = do
                  Just (pvp_, vi', mt) -> do
                    v' <- pvpToVersion pvp_ ""
                    when (v' /= _tvVersion v) $ logWarn ("Assuming you meant version " <> prettyVer v')
-                   pure (GHCTargetVersion mt v', Just vi')
+                   pure (TargetVersion mt v', Just vi')
                  Nothing -> pure (v, vi)
           else pure (v, vi)
     _ -> pure (v, vi)

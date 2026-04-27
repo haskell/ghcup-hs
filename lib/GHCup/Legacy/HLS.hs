@@ -147,7 +147,7 @@ setHLS :: ( MonadReader env m
                           -- and don't want mess with other versions
        -> Excepts '[NotInstalled] m ()
 setHLS ver shls mBinDir = do
-  whenM (lift $ not <$> hlsInstalled ver) (throwE (NotInstalled hls (GHCTargetVersion Nothing ver)))
+  whenM (lift $ not <$> hlsInstalled ver) (throwE (NotInstalled hls (TargetVersion Nothing ver)))
 
   -- symlink destination
   binDir <- case mBinDir of
@@ -181,7 +181,7 @@ setHLS ver shls mBinDir = do
     SetHLSOnly -> do
       -- set haskell-language-server-<ghcver> symlinks
       bins <- lift $ hlsServerBinaries ver Nothing
-      when (null bins) $ throwE $ NotInstalled hls (GHCTargetVersion Nothing ver)
+      when (null bins) $ throwE $ NotInstalled hls (TargetVersion Nothing ver)
 
       forM_ bins $ \f -> do
         let destL = f
@@ -239,7 +239,7 @@ rmHLSVer :: ( MonadMask m
          => Version
          -> Excepts '[NotInstalled, UninstallFailed] m ()
 rmHLSVer ver = do
-  whenM (lift $ fmap not $ hlsInstalled ver) $ throwE (NotInstalled hls (GHCTargetVersion Nothing ver))
+  whenM (lift $ fmap not $ hlsInstalled ver) $ throwE (NotInstalled hls (TargetVersion Nothing ver))
 
   isHlsSet <- lift hlsSet
 

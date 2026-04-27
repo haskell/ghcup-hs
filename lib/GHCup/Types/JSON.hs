@@ -74,8 +74,8 @@ safeFilename fp
 checkSafeFilename :: MonadFail m => FilePath -> m ()
 checkSafeFilename fp = unless (safeFilename fp) $ fail "'..' or '.' are not allowed and filepath must have no path separators"
 
-safeVersion :: GHCTargetVersion -> Bool
-safeVersion GHCTargetVersion{..}
+safeVersion :: TargetVersion -> Bool
+safeVersion TargetVersion{..}
   | prettyVer _tvVersion `notElem` ["db", "set", "ghc", "cabal", "stack", "hls", "ghcup"]
   , T.unpack (prettyVer _tvVersion) `notElem` cabalBadNames
   , safeFilename (T.unpack $ prettyVer _tvVersion)
@@ -118,7 +118,7 @@ cabalBadNames =
   ]
 
 
-checkSafeVersion :: MonadFail m => GHCTargetVersion -> m ()
+checkSafeVersion :: MonadFail m => TargetVersion -> m ()
 checkSafeVersion v' = unless (safeVersion v') $ fail "Unsafe version, try something more vanilla like '1.2.3'"
 
 safeToolname :: Tool -> Bool
@@ -214,25 +214,25 @@ instance FromJSON URI where
       Right x -> pure x
       Left  e -> fail . show $ e
 
-instance ToJSON GHCTargetVersion where
+instance ToJSON TargetVersion where
   toJSON = toJSON . tVerToText
 
-instance FromJSON GHCTargetVersion where
-  parseJSON = withText "GHCTargetVersion" $ \t -> case MP.parse ghcTargetVerP "" t of
+instance FromJSON TargetVersion where
+  parseJSON = withText "TargetVersion" $ \t -> case MP.parse ghcTargetVerP "" t of
     Right x -> do
       checkSafeVersion x
       pure x
-    Left  e -> fail $ "Failure in GHCTargetVersion (FromJSON)" <> show e
+    Left  e -> fail $ "Failure in TargetVersion (FromJSON)" <> show e
 
-instance ToJSONKey GHCTargetVersion where
+instance ToJSONKey TargetVersion where
   toJSONKey = toJSONKeyText $ \x -> tVerToText x
 
-instance FromJSONKey GHCTargetVersion where
+instance FromJSONKey TargetVersion where
   fromJSONKey = FromJSONKeyTextParser $ \t -> case MP.parse ghcTargetVerP "" t of
     Right x -> do
       checkSafeVersion x
       pure x
-    Left  e -> fail $ "Failure in GHCTargetVersion (FromJSONKey)" <> show e
+    Left  e -> fail $ "Failure in TargetVersion (FromJSONKey)" <> show e
 
 
 instance ToJSONKey Platform where

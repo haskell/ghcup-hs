@@ -60,7 +60,7 @@ getInstallMetadata ::
   , MonadFail m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> Excepts '[FileDoesNotExistError, ParseError] m InstallMetadata
 getInstallMetadata tool tver = do
   f <- lift $ recordedInstallationSpecFile tool tver
@@ -82,7 +82,7 @@ getSymlinkSpec ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> Excepts '[FileDoesNotExistError, ParseError, NoInstallInfo] m [SymlinkFileSpec]
 getSymlinkSpec tool tver = do
   spec <- getSymlinkSpec' tool tver
@@ -98,7 +98,7 @@ getSymlinkSpec' ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> Excepts
        '[FileDoesNotExistError, ParseError, NoInstallInfo]
        m
@@ -118,7 +118,7 @@ getSymlinkSpecPortable ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> m [SymlinkFileSpec]
 getSymlinkSpecPortable tool tver = do
   runE (getSymlinkSpec tool tver) >>= \case
@@ -150,7 +150,7 @@ getInstalledFiles :: ( MonadIO m
                      , MonadFail m
                      )
                   => Tool
-                  -> GHCTargetVersion
+                  -> TargetVersion
                   -> m (Maybe [FilePath])
 getInstalledFiles t v' = hideErrorDef [doesNotExistErrorType] Nothing $ do
   f <- recordedInstallationFile t v'
@@ -166,7 +166,7 @@ isInstalled ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> m Bool
 isInstalled tool ver
   | tool == ghc =
@@ -199,7 +199,7 @@ getInstalledVersions tool mtarget = do
   r <- getInstalledVersions' tool
   pure $ extract' r
  where
-  extract' = fmap _tvVersion . filter (\GHCTargetVersion{..} -> _tvTarget == mtarget)
+  extract' = fmap _tvVersion . filter (\TargetVersion{..} -> _tvTarget == mtarget)
 
 getInstalledVersions' ::
   ( MonadReader env m
@@ -208,7 +208,7 @@ getInstalledVersions' ::
   , MonadIOish m
   )
   => Tool
-  -> m [GHCTargetVersion]
+  -> m [TargetVersion]
 getInstalledVersions' tool
   | tool == ghc = do
       new <- getInstalledNew
@@ -321,7 +321,7 @@ isSet ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> Excepts '[ParseError] m Bool
 isSet tool tver = do
   v <- (fmap . fmap) fst . getSetVersion' tool $ _tvTarget tver
@@ -335,14 +335,14 @@ isSet tool tver = do
     -------------
 
 
-groupByTarget :: [GHCTargetVersion] -> Map.Map (Maybe Text) [Version]
-groupByTarget = foldr (\GHCTargetVersion{..} -> Map.alter (f _tvVersion) _tvTarget) mempty
+groupByTarget :: [TargetVersion] -> Map.Map (Maybe Text) [Version]
+groupByTarget = foldr (\TargetVersion{..} -> Map.alter (f _tvVersion) _tvTarget) mempty
  where
   f tvVersion' Nothing   = Just [tvVersion']
   f tvVersion' (Just xs) = Just (tvVersion':xs)
 
-groupByTarget' :: [GHCTargetVersion] -> Map.Map (Maybe Text) (Set Version)
-groupByTarget' = foldr (\GHCTargetVersion{..} -> Map.alter (f _tvVersion) _tvTarget) mempty
+groupByTarget' :: [TargetVersion] -> Map.Map (Maybe Text) (Set Version)
+groupByTarget' = foldr (\TargetVersion{..} -> Map.alter (f _tvVersion) _tvTarget) mempty
  where
   f tvVersion' Nothing   = Just $ Set.singleton tvVersion'
   f tvVersion' (Just xs) = Just $ Set.insert tvVersion' xs

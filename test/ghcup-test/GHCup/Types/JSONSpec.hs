@@ -22,7 +22,7 @@ spec = do
   roundtripSpecs (Proxy @SymlinkInputSpec)
   roundtripSpecs (Proxy @InstallationSpecInput)
   roundtripSpecs (Proxy @Tool)
-  roundtripSpecs (Proxy @GHCTargetVersion)
+  roundtripSpecs (Proxy @TargetVersion)
   roundtripSpecs (Proxy @VersionInfo)
   roundtripSpecs (Proxy @Architecture)
   roundtripSpecs (Proxy @Platform)

@@ -173,7 +173,7 @@ instance NFData Requirements
 -- | Description of all binary and source downloads. This is a tree
 -- of nested maps.
 type GHCupDownloads = Map Tool ToolInfo
-type ToolVersionSpec = Map GHCTargetVersion VersionInfo
+type ToolVersionSpec = Map TargetVersion VersionInfo
 type ArchitectureSpec = MapIgnoreUnknownKeys Architecture PlatformSpec
 type PlatformSpec = MapIgnoreUnknownKeys Platform PlatformVersionSpec
 type PlatformVersionSpec = Map (Maybe VersionRange) DownloadInfo
@@ -417,7 +417,7 @@ data InstallMetadata = InstallMetadata {
 
 instance NFData InstallMetadata
 
-defaultGHCExeSymLinked :: PlatformRequest -> GHCTargetVersion -> [String] -> [SymlinkSpec String]
+defaultGHCExeSymLinked :: PlatformRequest -> TargetVersion -> [String] -> [SymlinkSpec String]
 defaultGHCExeSymLinked pfreq tver binaries =
   (\b -> SymlinkSpec (b <.> exeExt)
                      (takeFileName b <> "-${PKGVER}" <.> exeExt)
@@ -430,7 +430,7 @@ defaultGHCExeSymLinked pfreq tver binaries =
     | otherwise = ""
 
 
-defaultGHCInstallSpec :: PlatformRequest -> GHCTargetVersion -> InstallationSpecResolved
+defaultGHCInstallSpec :: PlatformRequest -> TargetVersion -> InstallationSpecResolved
 defaultGHCInstallSpec pfreq@(PlatformRequest { _rPlatform = Windows }) tver =
   InstallationSpec {
     _isExeRules = [InstallFilePatternRule ["bin/**"]]
@@ -457,10 +457,10 @@ defaultGHCInstallSpec pfreq tver =
   , _isExeSymLinked = defaultGHCExeSymLinked pfreq tver (ghcBinaries pfreq tver)
   }
 
-ghcBinaries :: PlatformRequest -> GHCTargetVersion -> [FilePath]
+ghcBinaries :: PlatformRequest -> TargetVersion -> [FilePath]
 ghcBinaries _pfreq _tver = ["ghc", "haddock", "hpc", "hsc2hs", "ghci", "ghc-pkg", "hp2ps", "runhaskell", "runghc"]
 
-defaultCabalInstallSpec :: PlatformRequest -> GHCTargetVersion -> InstallationSpecResolved
+defaultCabalInstallSpec :: PlatformRequest -> TargetVersion -> InstallationSpecResolved
 defaultCabalInstallSpec pfreq _tver = InstallationSpec
   { _isExeRules = [InstallFileRule ("cabal" <.> exeExt) Nothing]
   , _isDataRules = []
@@ -480,7 +480,7 @@ defaultCabalInstallSpec pfreq _tver = InstallationSpec
     | _rPlatform pfreq == Windows = ".exe"
     | otherwise = ""
 
-defaultHLSInstallSpec :: PlatformRequest -> GHCTargetVersion -> InstallationSpecResolved
+defaultHLSInstallSpec :: PlatformRequest -> TargetVersion -> InstallationSpecResolved
 defaultHLSInstallSpec _pfreq _tver =
   InstallationSpec {
     _isExeRules = []
@@ -494,7 +494,7 @@ defaultHLSInstallSpec _pfreq _tver =
   , _isExeSymLinked = [] -- we can't figure it out
   }
 
-defaultStackInstallSpec :: PlatformRequest -> GHCTargetVersion -> InstallationSpecResolved
+defaultStackInstallSpec :: PlatformRequest -> TargetVersion -> InstallationSpecResolved
 defaultStackInstallSpec pfreq _tver = InstallationSpec
   { _isExeRules = [InstallFileRule ("stack" <.> exeExt) Nothing]
   , _isDataRules = []
@@ -524,7 +524,7 @@ emptyInstallSpec = InstallationSpec {
   , _isPreserveMtimes = False
   }
 
-defaultToolInstallSpec :: Tool -> PlatformRequest -> GHCTargetVersion -> Maybe InstallationSpecResolved
+defaultToolInstallSpec :: Tool -> PlatformRequest -> TargetVersion -> Maybe InstallationSpecResolved
 defaultToolInstallSpec (Tool "ghc") pfreq tver = Just $ defaultGHCInstallSpec pfreq tver
 defaultToolInstallSpec (Tool "stack") pfreq tver = Just $ defaultStackInstallSpec pfreq tver
 defaultToolInstallSpec (Tool "cabal") pfreq tver = Just $ defaultCabalInstallSpec pfreq tver
@@ -1080,13 +1080,13 @@ instance Pretty PlatformRequest where
 
 -- | A GHC identified by the target platform triple
 -- and the version.
-data GHCTargetVersion = GHCTargetVersion
+data TargetVersion = TargetVersion
   { _tvTarget :: Maybe Text
   , _tvVersion :: Version
   }
   deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData GHCTargetVersion
+instance NFData TargetVersion
 
 data GitBranch = GitBranch
   { ref :: String
@@ -1094,15 +1094,15 @@ data GitBranch = GitBranch
   }
   deriving (Eq, Ord, Show)
 
-mkTVer :: Version -> GHCTargetVersion
-mkTVer = GHCTargetVersion Nothing
+mkTVer :: Version -> TargetVersion
+mkTVer = TargetVersion Nothing
 
-tVerToText :: GHCTargetVersion -> Text
-tVerToText (GHCTargetVersion (Just t) v') = t <> "-" <> prettyVer v'
-tVerToText (GHCTargetVersion Nothing  v') = prettyVer v'
+tVerToText :: TargetVersion -> Text
+tVerToText (TargetVersion (Just t) v') = t <> "-" <> prettyVer v'
+tVerToText (TargetVersion Nothing  v') = prettyVer v'
 
 -- | Assembles a path of the form: <target-triple>-<version>
-instance Pretty GHCTargetVersion where
+instance Pretty TargetVersion where
   pPrint = text . T.unpack . tVerToText
 
 
@@ -1218,7 +1218,7 @@ data PromptResponse
   deriving (Eq, Show)
 
 data ToolVersion
-  = GHCVersion GHCTargetVersion
+  = GHCVersion TargetVersion
   | ToolVersion Version
   | ToolTag Tag
   | ToolDay Day

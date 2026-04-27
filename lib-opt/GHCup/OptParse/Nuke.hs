@@ -82,7 +82,7 @@ nuke appState runLogger = do
 
        lInstalled' <- liftE $ listVersions Nothing [ListInstalled True] False True (Nothing, Nothing)
 
-       forM_ lInstalled' (\ListResult{..} -> liftE $ rmToolVersion lTool (GHCTargetVersion lCross lVer))
+       forM_ lInstalled' (\ListResult{..} -> liftE $ rmToolVersion lTool (TargetVersion lCross lVer))
 
        lift rmGhcupDirs
 

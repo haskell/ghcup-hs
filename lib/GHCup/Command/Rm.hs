@@ -59,7 +59,7 @@ rmToolVersion ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> Excepts '[NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo] m ()
 rmToolVersion tool tver = do
   logInfo $ "Removing " <> prettyText tool <> " version " <> prettyText tver

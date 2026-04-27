@@ -45,31 +45,31 @@ installGhcCheckList =
   ("install ghc", InstallGHC defaultOptions)
   : mapSecond (InstallGHC . mkInstallOptions)
     [ ("install ghc 9.2", GHCVersion
-          $ GHCTargetVersion
+          $ TargetVersion
             Nothing
             $(versionQ "9.2")
       )
     , ("install ghc next", GHCVersion
-          $ GHCTargetVersion
+          $ TargetVersion
             Nothing
             $(versionQ "next")
       )
     , ("install ghc latest", ToolTag Latest)
     , ("install ghc nightly", GHCVersion
-          $ GHCTargetVersion
+          $ TargetVersion
             Nothing
             $(versionQ "nightly")
       )
     , ("install ghc recommended", ToolTag Recommended)
     , ("install ghc prerelease", GHCVersion
-          $ GHCTargetVersion
+          $ TargetVersion
             Nothing
             $(versionQ "prerelease")
       )
     , ("install ghc latest-prerelease", ToolTag LatestPrerelease)
     , ("install ghc latest-nightly", ToolTag LatestNightly)
     , ("install ghc javascript-unknown-ghcjs-9.6", GHCVersion
-          $ GHCTargetVersion
+          $ TargetVersion
             (Just "javascript-unknown-ghcjs")
             $(versionQ "9.6")
       )

@@ -72,7 +72,7 @@ setStack ver mTmpDir = do
 
   whenM (liftIO $ not <$> doesFileExist (binDir </> targetFile))
     $ throwE
-    $ NotInstalled stack (GHCTargetVersion Nothing ver)
+    $ NotInstalled stack (TargetVersion Nothing ver)
 
   let stackbin = fromMaybe binDir mTmpDir </> "stack" <> exeExt
 
@@ -115,7 +115,7 @@ rmStackVer :: ( MonadMask m
            => Version
            -> Excepts '[NotInstalled] m ()
 rmStackVer ver = do
-  whenM (lift $ fmap not $ stackInstalled ver) $ throwE (NotInstalled stack (GHCTargetVersion Nothing ver))
+  whenM (lift $ fmap not $ stackInstalled ver) $ throwE (NotInstalled stack (TargetVersion Nothing ver))
 
   sSet      <- lift stackSet
 

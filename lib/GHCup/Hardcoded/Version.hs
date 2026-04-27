@@ -25,7 +25,7 @@ import qualified Data.Versions          as V
 ghcUpVer :: V.PVP
 ghcUpVer = V.PVP . NE.fromList . fmap fromIntegral $ versionBranch version
 
-ghcUpVer' :: GHCTargetVersion
+ghcUpVer' :: TargetVersion
 ghcUpVer' = mkTVer $ fromJust $ pvpToVersion ghcUpVer mempty
 
 -- | ghcup version as numeric string.

@@ -46,7 +46,7 @@ makeLenses ''DownloadInfo
 makeLenses ''Tag
 makeLenses ''VersionInfo
 
-makeLenses ''GHCTargetVersion
+makeLenses ''TargetVersion
 makeLenses ''InstallFileRule
 
 makeLenses ''GHCupInfo

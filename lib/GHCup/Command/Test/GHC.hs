@@ -75,7 +75,7 @@ testGHCVer :: ( MonadFail m
               , MonadIO m
               , MonadUnliftIO m
               )
-           => GHCTargetVersion
+           => TargetVersion
            -> [T.Text]
            -> Excepts
                 '[ DigestError
@@ -116,7 +116,7 @@ testGHCBindist :: ( MonadFail m
                   , MonadUnliftIO m
                   )
                => DownloadInfo
-               -> GHCTargetVersion
+               -> TargetVersion
                -> [T.Text]
                -> Excepts
                     '[ DigestError
@@ -154,7 +154,7 @@ testPackedGHC :: ( MonadMask m
                  )
               => FilePath          -- ^ Path to the packed GHC bindist
               -> Maybe TarDir      -- ^ Subdir of the archive
-              -> GHCTargetVersion  -- ^ The GHC version
+              -> TargetVersion  -- ^ The GHC version
               -> [T.Text]          -- ^ additional make args
               -> Excepts
                    '[ ArchiveResult, UnknownArchive, TarDirDoesNotExist, TestFailed ] m ()
@@ -179,7 +179,7 @@ testUnpackedGHC :: ( MonadReader env m
                    , MonadIOish m
                    )
                 => GHCupPath         -- ^ Path to the unpacked GHC bindist (where the make file resides)
-                -> GHCTargetVersion  -- ^ The GHC version
+                -> TargetVersion  -- ^ The GHC version
                 -> [T.Text]          -- ^ additional configure args for bindist
                 -> Excepts '[ProcessError] m ()
 testUnpackedGHC path tver addMakeArgs = do

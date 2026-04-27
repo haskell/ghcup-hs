@@ -132,7 +132,7 @@ instance {-# OVERLAPPING #-} FromDhall (Maybe Version) where
       { extract = extractParser (MP.chunk "unknown_version" $> Nothing <|> (Just <$> version'))
       }
 
-instance FromDhall GHCTargetVersion where
+instance FromDhall TargetVersion where
   autoWith _ =
     Dhall.string
       { extract = extractParser ghcTargetVerP

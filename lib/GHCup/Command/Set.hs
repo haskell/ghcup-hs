@@ -45,8 +45,8 @@ setToolVersion ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
-  -> Excepts '[ParseError, NotInstalled] m GHCTargetVersion
+  -> TargetVersion
+  -> Excepts '[ParseError, NotInstalled] m TargetVersion
 setToolVersion tool ver = setToolVersion' tool ver Nothing
 
 setToolVersion' ::
@@ -57,10 +57,10 @@ setToolVersion' ::
   , MonadIOish m
   )
   => Tool
-  -> GHCTargetVersion
+  -> TargetVersion
   -> Maybe FilePath        -- ^ if @Nothing@, then we operate in ~/.ghcup/bin,
                            --   otherwise in a tmp directory
-  -> Excepts '[ParseError, NotInstalled] m GHCTargetVersion
+  -> Excepts '[ParseError, NotInstalled] m TargetVersion
 -- TODO: warn about hls compatibility
 setToolVersion' tool tver mTmpDir = do
   hideExcept' @NoToolVersionSet Proxy $ when (isNothing mTmpDir) $ unsetTool tool (_tvTarget tver)
@@ -160,7 +160,7 @@ unsetTool tool target = do
   setFile <- lift $ recordedSetVersionFile tool target
   case mset of
     Just (ver, mSetFile) -> do
-      let tver = GHCTargetVersion target ver
+      let tver = TargetVersion target ver
       vspec <- lift $ runE $ getSymlinkSpec tool tver
       case vspec of
         VLeft _

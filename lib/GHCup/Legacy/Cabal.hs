@@ -71,7 +71,7 @@ setCabal ver mTmpDir = do
 
   whenM (liftIO $ not <$> doesFileExist (binDir </> targetFile))
     $ throwE
-    $ NotInstalled cabal (GHCTargetVersion Nothing ver)
+    $ NotInstalled cabal (TargetVersion Nothing ver)
 
   let cabalbin = fromMaybe binDir mTmpDir </> "cabal" <> exeExt
 
@@ -116,7 +116,7 @@ rmCabalVer :: ( MonadMask m
            => Version
            -> Excepts '[NotInstalled] m ()
 rmCabalVer ver = do
-  whenM (lift $ fmap not $ cabalInstalled ver) $ throwE (NotInstalled cabal (GHCTargetVersion Nothing ver))
+  whenM (lift $ fmap not $ cabalInstalled ver) $ throwE (NotInstalled cabal (TargetVersion Nothing ver))
 
   cSet      <- lift cabalSet
 
