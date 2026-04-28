@@ -1,19 +1,19 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module GHCup.Types.JSON.MapIgnoreUnknownKeys where
 
-import           GHCup.Types
+import GHCup.Types
 
-import           Data.Aeson              hiding (Key)
-import           Data.Aeson.Types        hiding (Key)
+import Data.Aeson       hiding ( Key )
+import Data.Aeson.Types hiding ( Key )
 
-import qualified Data.Aeson.Key                as Key
-import qualified Data.Aeson.KeyMap             as KeyMap
-import qualified Data.Map.Strict               as Map
+import qualified Data.Aeson.Key    as Key
+import qualified Data.Aeson.KeyMap as KeyMap
+import qualified Data.Map.Strict   as Map
 
 #if defined(STRICT_METADATA_PARSING)
 -- | Use the instance of Map

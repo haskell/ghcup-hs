@@ -1,6 +1,6 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {-|
 Module      : GHCup.Utils.Logger.Internal
@@ -15,18 +15,18 @@ Breaking import cycles.
 -}
 module GHCup.Prelude.Logger.Internal where
 
-import           GHCup.Types
-import           GHCup.Types.Optics
+import GHCup.Types
+import GHCup.Types.Optics
 
-import           Control.Monad
-import           Control.Monad.IO.Class
-import           Control.Monad.Reader
-import           Data.Text               ( Text )
-import           Optics
-import           Prelude                 hiding ( appendFile )
-import           System.Console.Pretty
+import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Reader
+import Data.Text              ( Text )
+import Optics
+import Prelude                hiding ( appendFile )
+import System.Console.Pretty
 
-import qualified Data.Text                     as T
+import qualified Data.Text as T
 
 logInfo :: ( MonadReader env m
            , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
@@ -50,7 +50,15 @@ logDebug :: ( MonadReader env m
             )
          => Text
          -> m ()
-logDebug = logInternal Debug
+logDebug = logInternal (Debug 1)
+
+logDebug2 :: ( MonadReader env m
+            , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
+            , MonadIO m
+            )
+         => Text
+         -> m ()
+logDebug2 = logInternal (Debug 2)
 
 logError :: ( MonadReader env m
             , LabelOptic' "loggerConfig" A_Lens env LoggerConfig
@@ -71,12 +79,12 @@ logInternal logLevel msg = do
   LoggerConfig {..} <- gets @"loggerConfig"
   let color' c = if fancyColors then color c else id
   let style' = case logLevel of
-        Debug   -> style Bold . color' Blue
+        Debug _ -> style Bold . color' Blue
         Info    -> style Bold . color' Green
         Warn    -> style Bold . color' Yellow
         Error   -> style Bold . color' Red
   let l = case logLevel of
-        Debug   -> style' "[ Debug ]"
+        Debug _ -> style' "[ Debug ]"
         Info    -> style' "[ Info  ]"
         Warn    -> style' "[ Warn  ]"
         Error   -> style' "[ Error ]"
@@ -89,12 +97,19 @@ logInternal logLevel msg = do
                 . fmap (\line' -> style' "[ ...   ] " <> line' )
                 $ xs
 
-  when (lcPrintDebug || (not lcPrintDebug && (logLevel /= Debug)))
-    $ liftIO $ consoleOutter out
+  case logLevel of
+    Debug lvl
+      | Just cfgLvl <- lcPrintDebugLvl
+      , lvl <= cfgLvl
+      -> liftIO $ consoleOutter out
+    Info  -> liftIO $ consoleOutter out
+    Warn  -> liftIO $ consoleOutter out
+    Error -> liftIO $ consoleOutter out
+    _ -> pure ()
 
   -- raw output
   let lr = case logLevel of
-        Debug   -> "Debug:"
+        Debug _ -> "Debug:"
         Info    -> "Info:"
         Warn    -> "Warn:"
         Error   -> "Error:"

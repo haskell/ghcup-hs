@@ -1,9 +1,9 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
 {-# OPTIONS_GHC -Wno-unused-matches #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -11,78 +11,87 @@
 
 module GHCup.Brick.Actions where
 
-import           GHCup
-import           GHCup.CabalConfig
-import           GHCup.Download
-import           GHCup.Errors
-import           GHCup.Types.Optics ( getDirs, getPlatformReq, HasLog )
-import           GHCup.Types         hiding ( LeanAppState(..) )
-import           GHCup.Utils
-import           GHCup.Prelude ( decUTF8Safe, runBothE' )
-import           GHCup.Prelude.Logger
-import           GHCup.Prelude.Process
-import           GHCup.Prompts
-import           GHCup.Brick.Common (BrickData(..), BrickSettings(..), Name(..), Mode(..))
-import qualified GHCup.Brick.Common as Common
-import           GHCup.Brick.BrickState
-import           GHCup.Brick.Widgets.SectionList
-import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
-import           GHCup.Brick.Widgets.Navigation (BrickInternalState)
+import GHCup.CabalConfig
+import GHCup.Command.Install
+import GHCup.Command.List
+import GHCup.Command.Rm
+import GHCup.Command.Set
+import GHCup.Command.Upgrade
+import GHCup.Download
+import GHCup.Errors
+import GHCup.Input.Prompts
+import GHCup.Prelude
+import GHCup.Prelude.Process
+import GHCup.Query.GHCupDirs
+import GHCup.Query.Metadata
+import GHCup.System.Directory
+import GHCup.Types            hiding ( LeanAppState (..) )
+import GHCup.Types.Optics     ( HasLog, getDirs, getPlatformReq )
+
+import qualified GHCup.Command.Compile.GHC as GHC
+import qualified GHCup.Command.Compile.HLS as HLS
+import qualified GHCup.Input.Parsers       as Utils
+
+import GHCup.Brick.BrickState
+import GHCup.Brick.Common
+    ( BrickData (..), BrickSettings (..), Mode (..), Name (..) )
+import GHCup.Brick.Widgets.Menu        ( MenuKeyBindings (..) )
+import GHCup.Brick.Widgets.Navigation  ( BrickInternalState )
+import GHCup.Brick.Widgets.SectionList
+
+import qualified GHCup.Brick.Common                        as Common
 import qualified GHCup.Brick.Widgets.Menus.AdvancedInstall as AdvancedInstall
-import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
-import           GHCup.Brick.Widgets.Menu (MenuKeyBindings(..))
+import qualified GHCup.Brick.Widgets.Menus.CompileGHC      as CompileGHC
+import qualified GHCup.Brick.Widgets.Menus.CompileHLS      as CompileHLS
+import qualified GHCup.Brick.Widgets.Menus.Context         as ContextMenu
 
 import qualified Brick
-import qualified Brick.Widgets.List as L
-import qualified Brick.Focus as F
+import qualified Brick.Focus            as F
+import qualified Brick.Widgets.List     as L
 import           Control.Applicative
 import           Control.Exception.Safe
-import           Control.Monad (when, forM, forM_)
+import           Control.Monad          ( forM, forM_, when )
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Except
-import           Control.Monad.Trans.Resource
-import           Data.Bool
-import           Data.Functor
-import           Data.Function ( (&), on)
-import           Data.List
-import           Data.Maybe
-import           Data.IORef (IORef, readIORef, newIORef, modifyIORef)
-import           Data.Versions hiding (Lens')
-import           Data.Variant.Excepts
-import           Prelude                 hiding ( appendFile )
-import           System.Exit
-import           System.IO.Unsafe
-import           System.Process                 ( system )
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
-import           URI.ByteString
+import Control.Monad.Reader
+import Control.Monad.Trans.Except
+import Control.Monad.Trans.Resource
+import Data.Bool
+import Data.Function                  ( on, (&) )
+import Data.Functor
+import Data.IORef
+    ( IORef, modifyIORef, newIORef, readIORef )
+import Data.List
+import Data.Maybe
+import Data.Variant.Excepts
+import Data.Versions                  hiding ( Lens' )
+import Prelude                        hiding ( appendFile )
+import System.Exit
+import System.IO.Unsafe
+import System.Process                 ( system )
+import Text.PrettyPrint.HughesPJClass ( prettyShow )
+import URI.ByteString
 
-import qualified Data.Text                     as T
-import qualified Data.Text.Lazy.Builder        as B
-import qualified Data.Text.Lazy                as L
-import qualified Graphics.Vty                  as Vty
-import qualified Data.Vector                   as V
-import System.Environment (getExecutablePath)
+import qualified Data.Text              as T
+import qualified Data.Text.Lazy         as L
+import qualified Data.Text.Lazy.Builder as B
+import qualified Data.Vector            as V
+import qualified Graphics.Vty           as Vty
+import           System.Environment     ( getExecutablePath )
 #if !IS_WINDOWS
-import           GHCup.Prelude.File
-import qualified System.Posix.Process          as SPP
+import qualified System.Posix.Process as SPP
 #endif
 
-import           System.FilePath
+import System.FilePath
 
-import           Optics.State (use)
-import           Optics.State.Operators ( (.=))
-import           Optics.Operators ((.~),(%~))
-import           Optics.Getter (view)
-import Optics.Optic ((%))
-import Optics ((^.), to)
-import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
-import Control.Concurrent (threadDelay)
-import qualified GHCup.GHC as GHC
-import qualified GHCup.Utils.Parsers as Utils
-import qualified GHCup.HLS as HLS
+import Control.Concurrent     ( threadDelay )
+import Optics                 ( to, (^.) )
+import Optics.Getter          ( view )
+import Optics.Operators       ( (%~), (.~) )
+import Optics.Optic           ( (%) )
+import Optics.State           ( use )
+import Optics.State.Operators ( (.=) )
 
 
 
@@ -127,7 +136,7 @@ selectBy tool predicate internal_state =
 
 -- | Select the latest GHC tool
 selectLatest :: BrickInternalState -> BrickInternalState
-selectLatest = selectBy GHC (elem Latest . lTag)
+selectLatest = selectBy ghc (elem Latest . lTag)
 
 
 -- | Replace the @appState@ or construct it based on a filter function
@@ -143,7 +152,7 @@ replaceLR filterF list_result s =
       newSectionList = sectionList AllTools newVec 1
   in case oldElem of
       Just (_, el) -> selectBy (lTool el) (toolEqual el) newSectionList
-      Nothing -> selectLatest newSectionList
+      Nothing      -> selectLatest newSectionList
  where
   toolEqual e1 e2 =
     lTool e1 == lTool e2 && lVer e1 == lVer e2 && lCross e1 == lCross e2
@@ -194,8 +203,7 @@ installWithOptions opts (_, ListResult {..}) = do
     shouldSet     = opts ^. AdvancedInstall.instSetL
     extraArgs     = opts ^. AdvancedInstall.addConfArgsL
     installTargets = opts ^. AdvancedInstall.installTargetsL
-    v = fromMaybe (GHCTargetVersion lCross lVer) (opts ^. AdvancedInstall.instVersionL)
-    toolV = _tvVersion v
+    v = fromMaybe (TargetVersion lCross lVer) (opts ^. AdvancedInstall.instVersionL)
   let run =
         runResourceT
           . runE
@@ -227,6 +235,8 @@ installWithOptions opts (_, ListResult {..}) = do
               , NoCompatibleArch
               , InstallSetError
               , URIParseError
+              , NoInstallInfo
+              , MalformedInstallInfo
               ]
 
       withNoVerify :: (MonadReader AppState m) => m a -> m a
@@ -237,65 +247,16 @@ installWithOptions opts (_, ListResult {..}) = do
         try @_ @SomeException $ getExecutablePath >>= canonicalizePath
       dirs <- lift getDirs
       case lTool of
-        GHC   -> do
-          let vi = getVersionInfo v GHC dls
-          forM_ (_viPreInstall =<< vi) $ \msg -> do
-            lift $ logWarn msg
-            lift $ logWarn
-              "...waiting for 5 seconds, you can still abort..."
-            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-          case opts ^. AdvancedInstall.instBindistL of
-            Nothing -> do
-              liftE $
-                runBothE'
-                  (installGHCBin v shouldIsolate shouldForce extraArgs installTargets)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setGHC v SetGHCOnly Nothing))
-              pure (vi, dirs, ce)
-            Just uri -> do
-              liftE $
-                runBothE'
-                  (withNoVerify $ installGHCBindist
-                      (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir "ghc-.*") "" Nothing Nothing Nothing)
-                      v
-                      shouldIsolate
-                      shouldForce
-                      extraArgs
-                      installTargets
-                      )
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setGHC v SetGHCOnly Nothing))
-              pure (vi, dirs, ce)
-
-        Cabal -> do
-          let vi = getVersionInfo v Cabal dls
-          forM_ (_viPreInstall =<< vi) $ \msg -> do
-            lift $ logWarn msg
-            lift $ logWarn
-              "...waiting for 5 seconds, you can still abort..."
-            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-          case opts ^. AdvancedInstall.instBindistL of
-            Nothing -> do
-              liftE $
-                runBothE'
-                  (installCabalBin toolV shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal toolV))
-              pure (vi, dirs, ce)
-            Just uri -> do
-              liftE $
-                runBothE'
-                  (withNoVerify $ installCabalBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) Nothing "" Nothing Nothing Nothing) toolV shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setCabal toolV))
-              pure (vi, dirs, ce)
-
-        GHCup -> do
-          let vi = snd <$> getLatest dls GHCup
+        Tool "ghcup" -> do
+          let vi = snd <$> getLatest dls lTool
           forM_ (_viPreInstall =<< vi) $ \msg -> do
             lift $ logWarn msg
             lift $ logWarn
               "...waiting for 5 seconds, you can still abort..."
             liftIO $ threadDelay 5000000 -- give the user a sec to intervene
           liftE $ upgradeGHCup Nothing False False $> (vi, dirs, ce)
-        HLS   -> do
-          let vi = getVersionInfo v HLS dls
+        _ -> do
+          let vi = getVersionInfo v lTool dls
           forM_ (_viPreInstall =<< vi) $ \msg -> do
             lift $ logWarn msg
             lift $ logWarn
@@ -305,34 +266,22 @@ installWithOptions opts (_, ListResult {..}) = do
             Nothing -> do
               liftE $
                 runBothE'
-                  (installHLSBin toolV shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setHLS toolV SetHLSOnly Nothing))
+                  (installTool lTool v shouldIsolate shouldForce (T.unpack <$> extraArgs) (words . T.unpack <$> installTargets))
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setToolVersion lTool v))
               pure (vi, dirs, ce)
             Just uri -> do
               liftE $
                 runBothE'
-                  (withNoVerify $ installHLSBindist
-                    (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing Nothing)
-                    toolV
-                    shouldIsolate
-                    shouldForce)
-                  (when (shouldSet && isNothing misolated)  (liftE $ void $ setHLS toolV SetHLSOnly Nothing))
-              pure (vi, dirs, ce)
-
-        Stack -> do
-          let vi = getVersionInfo v Stack dls
-          case opts ^. AdvancedInstall.instBindistL of
-            Nothing -> do
-              liftE $
-                runBothE'
-                  (installStackBin toolV shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setStack toolV))
-              pure (vi, dirs, ce)
-            Just uri -> do
-              liftE $
-                runBothE'
-                  (withNoVerify $ installStackBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) Nothing "" Nothing Nothing Nothing) toolV shouldIsolate shouldForce)
-                  (when (shouldSet && isNothing misolated) (liftE $ void $ setStack toolV))
+                  (withNoVerify $ installBindist
+                      lTool
+                      (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir "ghc-.*") "" Nothing Nothing Nothing Nothing)
+                      v
+                      shouldIsolate
+                      shouldForce
+                      (T.unpack <$> extraArgs)
+                      (words . T.unpack <$> installTargets)
+                      )
+                  (when (shouldSet && isNothing misolated) (liftE $ void $ setToolVersion lTool v))
               pure (vi, dirs, ce)
 
     )
@@ -340,7 +289,7 @@ installWithOptions opts (_, ListResult {..}) = do
           VRight (vi, Dirs{..}, Just ce) -> do
             forM_ (_viPostInstall =<< vi) $ \msg -> logInfo msg
             case lTool of
-              GHCup -> do
+              Tool "ghcup" -> do
 #if !IS_WINDOWS
                 up <- liftIO $ fmap (either (const Nothing) Just)
                   $ try @_ @SomeException $ canonicalizePath (binDir </> "ghcup" <.> exeExt)
@@ -363,7 +312,7 @@ installWithOptions opts (_, ListResult {..}) = do
 
 install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
          => (Int, ListResult) -> m (Either String ())
-install' = installWithOptions (AdvancedInstall.InstallOptions Nothing False Nothing Nothing False [] "install")
+install' = installWithOptions (AdvancedInstall.InstallOptions Nothing False Nothing Nothing False [] Nothing)
 
 set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
      => (Int, ListResult)
@@ -406,11 +355,7 @@ set' input@(_, ListResult {..}) = do
 
   run (do
       case lTool of
-        GHC   -> liftE $ setGHC (GHCTargetVersion lCross lVer) SetGHCOnly Nothing $> ()
-        Cabal -> liftE $ setCabal lVer $> ()
-        HLS   -> liftE $ setHLS lVer SetHLSOnly Nothing $> ()
-        Stack -> liftE $ setStack lVer $> ()
-        GHCup -> do
+        Tool "ghcup" -> do
           promptAnswer <- getUserPromptResponse
             "Switching GHCup versions is not supported.\nDo you want to install the latest version? [Y/n]: "
             PromptYes
@@ -418,6 +363,7 @@ set' input@(_, ListResult {..}) = do
                 PromptYes -> do
                   void $ liftE $ upgradeGHCup Nothing False False
                 PromptNo -> pure ()
+        _ -> liftE $ setToolVersion lTool (TargetVersion lCross lVer) $> ()
     )
     >>= \case
           VRight _ -> pure $ Right ()
@@ -443,7 +389,7 @@ set' input@(_, ListResult {..}) = do
 
             _ -> pure $ Left (prettyHFError e)
 
-logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => GHCTargetVersion -> m ()
+logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => TargetVersion -> m ()
 logGHCPostRm ghcVer = do
   cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store or ~/.local/state/cabal/store")
     getStoreDir
@@ -457,27 +403,24 @@ del' :: (MonadReader AppState m, MonadIO m, MonadFail m, MonadMask m, MonadUnlif
 del' (_, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
 
-  let run = runE @'[NotInstalled, UninstallFailed]
+  let run = runE @'[NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo]
 
   run (do
       let vi = getVersionInfo crossVer lTool dls
       case lTool of
-        GHC   -> liftE $ rmGHCVer crossVer $> vi
-        Cabal -> liftE $ rmCabalVer lVer $> vi
-        HLS   -> liftE $ rmHLSVer lVer $> vi
-        Stack -> liftE $ rmStackVer lVer $> vi
-        GHCup -> pure Nothing
+        Tool "ghcup" -> pure Nothing
+        _            -> liftE $ rmToolVersion lTool crossVer $> vi
     )
     >>= \case
           VRight vi -> do
-            when (lTool == GHC) $ logGHCPostRm crossVer
-            logInfo $ "Successfully removed " <> T.pack (prettyShow lTool) <> " " <> (if lTool == GHC then tVerToText crossVer else prettyVer lVer)
+            when (lTool == ghc) $ logGHCPostRm crossVer
+            logInfo $ "Successfully removed " <> T.pack (prettyShow lTool) <> " " <> (if lTool == ghc then tVerToText crossVer else prettyVer lVer)
             forM_ (_viPostRemove =<< vi) $ \msg ->
               logInfo msg
             pure $ Right ()
           VLeft  e -> pure $ Left (prettyHFError e)
  where
-  crossVer = GHCTargetVersion lCross lVer
+  crossVer = TargetVersion lCross lVer
 
 
 changelog' :: (MonadReader AppState m, MonadIO m)
@@ -495,8 +438,8 @@ changelog' (_, ListResult {..}) = do
             FreeBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
             OpenBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
             Windows -> do
-              let args = "start \"\" " ++ (T.unpack $ decUTF8Safe $ serializeURIRef' uri)
-              c <- liftIO $ system $ args
+              let args = "start \"\" " ++ T.unpack (decUTF8Safe $ serializeURIRef' uri)
+              c <- liftIO $ system args
               case c of
                  (ExitFailure xi) -> pure $ Left $ NonZeroExit xi "cmd.exe" [args]
                  ExitSuccess -> pure $ Right ()
@@ -507,7 +450,7 @@ changelog' (_, ListResult {..}) = do
 
 compileGHC :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
            => CompileGHC.CompileGHCOptions -> (Int, ListResult) -> m (Either String ())
-compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
+compileGHC compopts (_, lr@ListResult{lTool = Tool "ghc", ..}) = do
   appstate <- ask
   let run =
         runResourceT
@@ -535,6 +478,10 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
                   , UninstallFailed
                   , MergeFileTreeError
                   , URIParseError
+                  , ParseError
+                  , FileAlreadyExistsError
+                  , NoInstallInfo
+                  , MalformedInstallInfo
                   ]
   compileResult <- run (do
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
@@ -542,7 +489,7 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
         Just ref -> pure (GHC.GitDist (GitBranch ref Nothing))
         Nothing -> do
           -- Compile the version user is pointing to in the tui
-          let vi = getVersionInfo (mkTVer lVer) GHC dls
+          let vi = getVersionInfo (mkTVer lVer) ghc dls
           forM_ (_viPreInstall =<< vi) $ \msg -> do
             lift $ logWarn msg
             lift $ logWarn
@@ -555,7 +502,7 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
             liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
           pure (GHC.SourceDist lVer)
 
-      targetVer <- liftE $ GHCup.compileGHC
+      targetVer <- liftE $ GHC.compileGHC
                     ghcVer
                     (compopts ^. CompileGHC.crossTarget)
                     (compopts ^. CompileGHC.overwriteVer)
@@ -564,16 +511,16 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
                     (compopts ^. CompileGHC.jobs)
                     (compopts ^. CompileGHC.buildConfig)
                     (compopts ^. CompileGHC.patches)
-                    (compopts ^. CompileGHC.addConfArgs)
+                    (fmap T.unpack $ compopts ^. CompileGHC.addConfArgs)
                     (compopts ^. CompileGHC.buildFlavour)
                     (compopts ^. CompileGHC.buildSystem)
                     (maybe GHCupInternal IsolateDir $ compopts ^. CompileGHC.isolateDir)
-                    (compopts ^. CompileGHC.installTargets)
+                    (fmap (words . T.unpack) $ compopts ^. CompileGHC.installTargets)
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls2 }} <- ask
-      let vi2 = getVersionInfo targetVer GHC dls2
+      let vi2 = getVersionInfo targetVer ghc dls2
       when
         (compopts ^. CompileGHC.setCompile)
-        (liftE . void $ GHCup.setGHC targetVer SetGHCOnly Nothing)
+        (liftE . void $ setToolVersion ghc targetVer)
       pure (vi2, targetVer)
       )
   case compileResult of
@@ -584,7 +531,7 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
         pure $ Right ()
       VLeft (V (AlreadyInstalled _ v)) -> do
         pure $ Left $
-          "GHC ver " <> T.unpack (prettyVer v) <> " already installed, remove it first to reinstall"
+          "GHC ver " <> prettyShow v <> " already installed, remove it first to reinstall"
       VLeft (V (DirNotEmpty fp)) -> do
         pure $ Left $
           "Install directory " <> fp <> " is not empty."
@@ -592,7 +539,7 @@ compileGHC compopts (_, lr@ListResult{lTool = GHC, ..}) = do
         case keepDirs (appstate & settings) of
           Never -> prettyHFError err
           _ -> prettyHFError err <> "\n"
-            <> "Check the logs at " <> (fromGHCupPath $ appstate & dirs & logsDir)
+            <> "Check the logs at " <> fromGHCupPath (appstate & dirs & logsDir)
             <> " and the build directory "
             <> tmpdir <> " for more clues." <> "\n"
             <> "Make sure to clean up " <> tmpdir <> " afterwards."
@@ -605,7 +552,7 @@ compileGHC _ (_, ListResult{lTool = _}) = pure (Right ())
 
 compileHLS :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
            => CompileHLS.CompileHLSOptions -> (Int, ListResult) -> m (Either String ())
-compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
+compileHLS compopts (_, lr@ListResult{lTool = Tool "hls", ..}) = do
   appstate <- ask
   let run =
         runResourceT
@@ -631,6 +578,7 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
                   , UninstallFailed
                   , MergeFileTreeError
                   , URIParseError
+                  , ParseError
                   ]
   compileResult <- run (do
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
@@ -638,7 +586,7 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
         Just ref -> pure (HLS.GitDist (GitBranch ref Nothing))
         Nothing -> do
           -- Compile the version user is pointing to in the tui
-          let vi = getVersionInfo (mkTVer lVer) HLS dls
+          let vi = getVersionInfo (mkTVer lVer) hls dls
           forM_ (_viPreInstall =<< vi) $ \msg -> do
             lift $ logWarn msg
             lift $ logWarn
@@ -653,8 +601,8 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
 
       ghcs <-
         liftE $ forM (compopts ^. CompileHLS.targetGHCs)
-                     (\ghc -> fmap (_tvVersion . fst) . Utils.fromVersion (Just ghc) GStrict $ GHC)
-      targetVer <- liftE $ GHCup.compileHLS
+                     (\ghc' -> fmap (_tvVersion . fst) . Utils.fromVersion (Just ghc') GStrict $ ghc)
+      targetVer <- liftE $ HLS.compileHLS
                       hlsVer
                       ghcs
                       (compopts ^. CompileHLS.jobs)
@@ -666,10 +614,10 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
                       (compopts ^. CompileHLS.patches)
                       (compopts ^. CompileHLS.cabalArgs)
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls2 }} <- ask
-      let vi2 = getVersionInfo (mkTVer targetVer) GHC dls2
+      let vi2 = getVersionInfo (mkTVer targetVer) ghc dls2
       when
         (compopts ^. CompileHLS.setCompile)
-        (liftE . void $ GHCup.setHLS targetVer SetHLSOnly Nothing)
+        (liftE . void $ setToolVersion hls (mkTVer targetVer))
       pure (vi2, targetVer)
       )
   case compileResult of
@@ -682,7 +630,7 @@ compileHLS compopts (_, lr@ListResult{lTool = HLS, ..}) = do
         case keepDirs (appstate & settings) of
           Never -> prettyHFError err
           _ -> prettyHFError err <> "\n"
-            <> "Check the logs at " <> (fromGHCupPath $ appstate & dirs & logsDir)
+            <> "Check the logs at " <> fromGHCupPath (appstate & dirs & logsDir)
                <> " and the build directory "
             <> tmpdir <> " for more clues." <> "\n"
             <> "Make sure to clean up " <> tmpdir <> " afterwards."
@@ -697,7 +645,7 @@ settings' :: IORef AppState
 {-# NOINLINE settings' #-}
 settings' = unsafePerformIO $ do
   dirs <- getAllDirs
-  let loggerConfig = LoggerConfig { lcPrintDebug  = False
+  let loggerConfig = LoggerConfig { lcPrintDebugLvl = Nothing
                                   , consoleOutter = \_ -> pure ()
                                   , fileOutter    = \_ -> pure ()
                                   , fancyColors   = True
@@ -716,7 +664,7 @@ getGHCupInfo = do
 
   r <-
     flip runReaderT settings
-    . runE @'[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError]
+    . runE @'[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError, UnsupportedMetadataFormat]
     $ do
       pfreq <- lift getPlatformReq
       liftE $ getDownloadsF pfreq
@@ -733,9 +681,10 @@ getAppData mgi = runExceptT $ do
   liftIO $ modifyIORef settings' (\s -> s { ghcupInfo = r })
   settings <- liftIO $ readIORef settings'
 
-  flip runReaderT settings $ do
+  r' <- lift $ flip runReaderT settings $ runE $ do
     lV <- listVersions Nothing [] False True (Nothing, Nothing)
-    pure $ BrickData (reverse lV)
+    pure $ BrickData lV
+  ExceptT $ pure $  either (Left . prettyHFError) Right $ veitherToEither r'
 
 --
 

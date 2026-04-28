@@ -1,43 +1,41 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module GHCup.OptParse.ChangeLog where
 
 
-import           GHCup.Types
-import           GHCup.Errors
-import           GHCup.OptParse.Common
-import           GHCup.Prelude
-import           GHCup.Prelude.Logger
-import           GHCup.Prelude.String.QQ
-import           GHCup.Prelude.Process (exec)
+import GHCup.Errors
+import GHCup.OptParse.Common
+import GHCup.Prelude
+import GHCup.Prelude.Process   ( exec )
+import GHCup.Prelude.String.QQ
+import GHCup.Query.Metadata
+import GHCup.Types
 
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
-import           Data.Functor
-import           Data.Maybe
-import           Options.Applicative     hiding ( style )
-import           Prelude                 hiding ( appendFile )
-import           System.Exit
-import           System.Process                 ( system )
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
-
-import qualified Data.Text                     as T
-import Control.Exception.Safe (MonadMask)
+import Control.Exception.Safe         ( MonadMask )
+import Control.Monad.Reader
+import Control.Monad.Trans.Resource
+import Data.Char                      ( toLower )
+import Data.Functor
+import Data.Maybe
 import GHCup.Types.Optics
-import GHCup.Utils
-import URI.ByteString (serializeURIRef')
-import Data.Char (toLower)
+import Options.Applicative            hiding ( style )
+import Prelude                        hiding ( appendFile )
+import System.Exit
+import System.Process                 ( system )
+import Text.PrettyPrint.HughesPJClass ( prettyShow )
+import URI.ByteString                 ( serializeURIRef' )
+
+import qualified Data.Text as T
 
 
 
@@ -47,10 +45,11 @@ import Data.Char (toLower)
 
 
 data ChangeLogOptions = ChangeLogOptions
-  { clOpen    :: Bool
-  , clTool    :: Maybe Tool
+  { clOpen :: Bool
+  , clTool :: Maybe Tool
   , clToolVer :: Maybe ToolVersion
-  } deriving (Eq, Show)
+  }
+  deriving (Eq, Show)
 
 
 
@@ -67,13 +66,7 @@ changelogP =
     <*> optional
           (option
             (eitherReader
-              (\s' -> case fmap toLower s' of
-                "ghc"   -> Right GHC
-                "cabal" -> Right Cabal
-                "ghcup" -> Right GHCup
-                "stack" -> Right Stack
-                "hls"   -> Right HLS
-                e       -> Left e
+              (\s' -> Right (Tool (fmap toLower s'))
               )
             )
             (short 't' <> long "tool" <> metavar "<ghc|cabal|hls|ghcup|stack>" <> help
@@ -114,7 +107,7 @@ changelog :: ( Monad m
           -> m ExitCode
 changelog ChangeLogOptions{..} runAppState runLogger = do
   GHCupInfo { _ghcupDownloads = dls } <- runAppState getGHCupInfo
-  let tool = fromMaybe GHC clTool
+  let tool = fromMaybe ghc clTool
       ver' = fromMaybe
         (ToolTag Latest)
         clToolVer
@@ -138,8 +131,8 @@ changelog ChangeLogOptions{..} runAppState runLogger = do
               FreeBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
               OpenBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
               Windows -> do
-                let args = "start \"\" " ++ (T.unpack $ decUTF8Safe $ serializeURIRef' uri)
-                c <- liftIO $ system $ args
+                let args = "start \"\" " ++ T.unpack (decUTF8Safe $ serializeURIRef' uri)
+                c <- liftIO $ system args
                 case c of
                    (ExitFailure xi) -> pure $ Left $ NonZeroExit xi "cmd.exe" [args]
                    ExitSuccess -> pure $ Right ()

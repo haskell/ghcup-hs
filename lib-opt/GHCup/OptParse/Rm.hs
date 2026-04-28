@@ -1,44 +1,46 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module GHCup.OptParse.Rm where
 
 
 
 
-import           GHCup
-import           GHCup.Errors
-import           GHCup.Types
-import           GHCup.Types.Optics
-import           GHCup.Utils
-import           GHCup.Prelude.Logger
-import           GHCup.Prelude.String.QQ
-import           GHCup.OptParse.Common
+import GHCup.Command.List
+import GHCup.Command.Rm
+import GHCup.Errors
+import GHCup.Input.Parsers     ( ghcVersionEither, toolParser )
+import GHCup.OptParse.Common
+import GHCup.Prelude.Logger
+import GHCup.Prelude.String.QQ
+import GHCup.Query.Metadata
+import GHCup.Types
+import GHCup.Types.Optics
 
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad (forM_)
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
-import           Data.Functor
-import           Data.Maybe
-import           Data.Versions
-import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
-import           Prelude                 hiding ( appendFile )
-import           System.Exit
-import           Text.PrettyPrint.HughesPJClass ( prettyShow )
+import Control.Monad                  ( forM_, when )
+import Control.Monad.Reader
+import Control.Monad.Trans.Resource
+import Data.Functor
+import Data.Maybe
+import Data.Variant.Excepts
+import Data.Versions
+import Options.Applicative            hiding ( ParseError, style )
+import Prelude                        hiding ( appendFile )
+import System.Exit
+import Text.PrettyPrint.HughesPJClass ( prettyShow )
 
-import qualified Data.Text                     as T
-import Control.Exception.Safe (MonadMask)
+import           Control.Exception.Safe ( MonadMask )
+import qualified Data.Text              as T
 
 
 
@@ -48,11 +50,13 @@ import Control.Exception.Safe (MonadMask)
     ----------------
 
 
-data RmCommand = RmGHC RmOptions
-               | RmCabal Version
-               | RmHLS Version
-               | RmStack Version
-               deriving (Eq, Show)
+data RmCommand
+  = RmGHC RmOptions
+  | RmCabal Version
+  | RmHLS Version
+  | RmStack Version
+  | RmOther RmOptionsNew
+  deriving (Eq, Show)
 
 
 
@@ -63,8 +67,15 @@ data RmCommand = RmGHC RmOptions
 
 
 data RmOptions = RmOptions
-  { ghcVer :: GHCTargetVersion
-  } deriving (Eq, Show)
+  { ghcVer :: TargetVersion
+  }
+  deriving (Eq, Show)
+
+data RmOptionsNew = RmOptionsNew
+  { rmTool :: Tool
+  , ghcVer :: TargetVersion
+  }
+  deriving (Eq, Show)
 
 
 
@@ -74,38 +85,45 @@ data RmOptions = RmOptions
     ---------------
 
 
-rmParser :: Parser (Either RmCommand RmOptions)
+rmParser :: Parser RmCommand
 rmParser =
-  (Left <$> subparser
+  subparser
       (  command
           "ghc"
-          (RmGHC <$> info (rmOpts (Just GHC) <**> helper) (progDesc "Remove GHC version"))
+          (RmGHC <$> info (rmOpts (Just ghc) <**> helper) (progDesc "Remove GHC version"))
       <> command
            "cabal"
            (   RmCabal
-           <$> info (versionParser' [ListInstalled True] (Just Cabal) <**> helper)
+           <$> info (versionParser' [ListInstalled True] (Just cabal) <**> helper)
                     (progDesc "Remove Cabal version")
            )
       <> command
            "hls"
            (   RmHLS
-           <$> info (versionParser' [ListInstalled True] (Just HLS) <**> helper)
+           <$> info (versionParser' [ListInstalled True] (Just hls) <**> helper)
                     (progDesc "Remove haskell-language-server version")
            )
       <> command
            "stack"
            (   RmStack
-           <$> info (versionParser' [ListInstalled True] (Just Stack) <**> helper)
+           <$> info (versionParser' [ListInstalled True] (Just stack) <**> helper)
                     (progDesc "Remove stack version")
            )
       )
-    )
-    <|> (Right <$> rmOpts Nothing)
+    <|> (   RmOther
+           <$> rmOptsNew
+           )
 
 
 
 rmOpts :: Maybe Tool -> Parser RmOptions
 rmOpts tool = RmOptions <$> ghcVersionArgument [ListInstalled True] tool
+
+rmOptsNew :: Parser RmOptionsNew
+rmOptsNew = RmOptionsNew
+  <$> argument (eitherReader toolParser) (metavar "TOOL")
+  <*> argument (eitherReader ghcVersionEither) (metavar "VERSION")
+
 
 
 
@@ -129,7 +147,7 @@ rmFooter = [s|Discussion:
     ---------------------------
 
 
-type RmEffects = '[ NotInstalled, UninstallFailed ]
+type RmEffects = '[ NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo ]
 
 
 runRm :: (ReaderT env m (VEither RmEffects a) -> m (VEither RmEffects a))
@@ -153,81 +171,36 @@ rm :: ( Monad m
       , MonadUnliftIO m
       , MonadFail m
       )
-   => Either RmCommand RmOptions
+   => RmCommand
    -> (ReaderT AppState m (VEither RmEffects (Maybe VersionInfo))
        -> m (VEither RmEffects (Maybe VersionInfo)))
    -> (ReaderT LeanAppState m () -> m ())
    -> m ExitCode
 rm rmCommand runAppState runLogger = case rmCommand of
-  (Right rmopts) -> do
-    runLogger (logWarn "This is an old-style command for removing GHC. Use 'ghcup rm ghc' instead.")
-    rmGHC' rmopts
-  (Left (RmGHC rmopts)) -> rmGHC' rmopts
-  (Left (RmCabal rmopts)) -> rmCabal' rmopts
-  (Left (RmHLS rmopts)) -> rmHLS' rmopts
-  (Left (RmStack rmopts)) -> rmStack' rmopts
+  (RmGHC rmopts) -> rmOther (toRmOptionsNew ghc rmopts)
+  (RmCabal (RmOptions . mkTVer -> rmopts)) -> rmOther (toRmOptionsNew cabal rmopts)
+  (RmHLS (RmOptions . mkTVer -> rmopts)) -> rmOther (toRmOptionsNew hls rmopts)
+  (RmStack (RmOptions . mkTVer -> rmopts)) -> rmOther (toRmOptionsNew stack rmopts)
+  (RmOther rmopts) -> rmOther rmopts
 
  where
-  rmGHC' RmOptions{..} =
+  toRmOptionsNew rmTool RmOptions{..} = RmOptionsNew{..}
+
+  rmOther RmOptionsNew{..} =
     runRm runAppState (do
         liftE $
-          rmGHCVer ghcVer
+          rmToolVersion rmTool ghcVer
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        pure (getVersionInfo ghcVer GHC dls)
+        pure (getVersionInfo ghcVer rmTool dls)
       )
       >>= \case
             VRight vi -> do
-              postRmLog (tVerToText ghcVer) GHC vi
-              runLogger $ logGHCPostRm ghcVer
+              postRmLog (tVerToText ghcVer) rmTool vi
+              when (rmTool == ghc) $ runLogger $ logGHCPostRm ghcVer
               pure ExitSuccess
             VLeft  e -> do
               runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 7
-
-  rmCabal' tv =
-    runRm runAppState (do
-        liftE $
-          rmCabalVer tv
-        GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        pure (getVersionInfo (mkTVer tv) Cabal dls)
-      )
-      >>= \case
-            VRight vi -> do
-              postRmLog (prettyVer tv) Cabal vi
-              pure ExitSuccess
-            VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyHFError e
-              pure $ ExitFailure 15
-
-  rmHLS' tv =
-    runRm runAppState (do
-        liftE $
-          rmHLSVer tv
-        GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        pure (getVersionInfo (mkTVer tv) HLS dls)
-      )
-      >>= \case
-            VRight vi -> do
-              postRmLog (prettyVer tv) HLS vi
-              pure ExitSuccess
-            VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyHFError e
-              pure $ ExitFailure 15
-
-  rmStack' tv =
-    runRm runAppState (do
-        liftE $
-          rmStackVer tv
-        GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        pure (getVersionInfo (mkTVer tv) Stack dls)
-      )
-      >>= \case
-            VRight vi -> do
-              postRmLog (prettyVer tv) Stack vi
-              pure ExitSuccess
-            VLeft  e -> do
-              runLogger $ logError $ T.pack $ prettyHFError e
-              pure $ ExitFailure 15
 
   postRmLog tv tool vi = runLogger $ do
     logInfo $ "Successfully removed " <> T.pack (prettyShow tool) <> " " <> tv

@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 
@@ -23,7 +22,7 @@ module GHCup.OptParse (
   , module GHCup.OptParse.ChangeLog
   , module GHCup.OptParse.Prefetch
   , module GHCup.OptParse.GC
-  , module GHCup.OptParse.DInfo
+  , module GHCup.OptParse.DebugInfo
   , module GHCup.OptParse.Nuke
   , module GHCup.OptParse.ToolRequirements
   , module GHCup.OptParse.Run
@@ -48,16 +47,15 @@ import           GHCup.OptParse.Upgrade
 import           GHCup.OptParse.ChangeLog
 import           GHCup.OptParse.Prefetch
 import           GHCup.OptParse.GC
-import           GHCup.OptParse.DInfo
+import           GHCup.OptParse.DebugInfo
 import           GHCup.OptParse.ToolRequirements
 import           GHCup.OptParse.Nuke
 
 import           GHCup.Types
-import           GHCup.Utils.Parsers (gpgParser, downloaderParser, keepOnParser, platformParser, parseUrlSource)
+import           GHCup.Input.Parsers (gpgParser, downloaderParser, keepOnParser, platformParser, parseUrlSource)
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
-import           Data.Either
 import           Data.Functor
 import           Data.Maybe
 import           Options.Applicative     hiding ( style )
@@ -66,7 +64,7 @@ import           Prelude                 hiding ( appendFile )
 import System.Exit
 import System.Environment (getProgName)
 import System.IO
-import GHCup.Utils.Pager
+import GHCup.Compat.Pager
 import qualified Data.Text as T
 import Data.Function ((&))
 
@@ -75,7 +73,7 @@ import Data.Function ((&))
 data Options = Options
   {
   -- global options
-    optVerbose     :: Maybe Bool
+    optVerbose     :: Maybe Int
   , optCache       :: Maybe Bool
   , optMetaCache   :: Maybe Integer
   , optMetaMode    :: Maybe MetaMode
@@ -94,13 +92,12 @@ data Options = Options
   }
 
 data Command
-  = Install (Either InstallCommand InstallOptions)
+  = Install InstallCommand
   | Test TestCommand
-  | InstallCabalLegacy InstallOptions
-  | Set (Either SetCommand SetOptions)
+  | Set SetCommand
   | UnSet UnsetCommand
   | List ListOptions
-  | Rm (Either RmCommand RmOptions)
+  | Rm RmCommand
   | DInfo
   | Compile CompileCommand
   | Config ConfigCommand
@@ -120,11 +117,17 @@ data Command
   | PrintAppErrors
 
 
+toVerbosity :: Maybe Bool -> Maybe Int
+toVerbosity (Just True)  = Just 1
+toVerbosity (Just False) = Just 0
+toVerbosity _           = Nothing
+
 
 opts :: Parser Options
 opts =
   Options
-    <$> invertableSwitch "verbose" (Just 'v') False (help "Enable verbosity (default: disabled)")
+    <$> (fmap toVerbosity (invertableSwitch "verbose" (Just 'v') False (help "Enable verbosity (default: disabled)"))
+        <|> optional (option auto (long "verbosity" <> metavar "LEVEL" <> help "verbosity level (0 for off, 1 for 'verbose', 2 for extra)")))
     <*> invertableSwitch "cache" (Just 'c') False (help "Cache downloads in ~/.ghcup/cache (default: disabled)")
     <*> optional (option auto (long "metadata-caching" <> metavar "SEC" <> help "How long the yaml metadata caching interval is (in seconds), 0 to disable"))
     <*> optional (option auto (long "metadata-fetching-mode" <> metavar "<Strict|Lax>" <> help "Whether to fail on metadata download failure (Strict) or fall back to cached version (Lax (default))"))
@@ -185,7 +188,7 @@ opts =
           <> completer (listCompleter ["strict", "lax", "none"])
           ))
     <*> invertableSwitch "stack-setup" Nothing False (help "Use stack's setup info for discovering and installing GHC versions")
-    <*> (invertableSwitch "paginate" Nothing False (help "Send output (e.g. from 'ghcup list') through pager (default: disabled)"))
+    <*> invertableSwitch "paginate" Nothing False (help "Send output (e.g. from 'ghcup list') through pager (default: disabled)")
     <*> invertableSwitch "guess-version" Nothing True (help "Whether to guess the full version from an incomplete tool version, e.g. GHC '9.12' resolving to '9.12.2'")
     <*> com
 
@@ -275,8 +278,8 @@ com =
       <> command
            "whereis"
             (info
-             (   (Whereis
-                     <$> (WhereisOptions <$> switch (short 'd' <> long "directory" <> help "return directory of the binary instead of the binary location"))
+             (
+                     (Whereis . WhereisOptions <$> switch (short 'd' <> long "directory" <> help "return directory of the binary instead of the binary location")
                      <*> whereisP
                  ) <**> helper
              )
@@ -342,17 +345,6 @@ com =
           <> commandGroup "Other commands:"
           <> hidden
           )
-    <|> subparser
-          (  command
-              "install-cabal"
-              (info
-                 ((InstallCabalLegacy <$> installOpts (Just Cabal)) <**> helper)
-                 (  progDesc "Install or update cabal"
-                 <> footerDoc (Just $ text installCabalFooter)
-                 )
-              )
-          <> internal
-          )
      <|> subparser
           (command
               "nuke"
@@ -369,7 +361,7 @@ com =
            <> internal
           )
 
--- | Handle `ParserResult`.
+-- | Handle 'ParserResult'.
 handleParseResult' :: Maybe FilePath -> Bool -> ParserResult a -> IO a
 handleParseResult' _ _ (Success a) = return a
 handleParseResult' pagerCmd hasHelp (Failure failure) = do

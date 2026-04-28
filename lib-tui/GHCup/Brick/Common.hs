@@ -51,7 +51,7 @@ module GHCup.Brick.Common  (
     , BootstrapGhcSelectBox, HadrianGhcSelectBox, ToolVersionBox, GHCInstallTargets
   ) ) where
 
-import           GHCup.List ( ListResult )
+import           GHCup.Command.List ( ListResult )
 import           GHCup.Prelude ( isWindows )
 import           GHCup.Types ( Tool, KeyCombination (KeyCombination) )
 import Data.List (intercalate)

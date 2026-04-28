@@ -17,9 +17,9 @@ and a label which we can use in rendering. This data-structure helps to reuse Br
 
 module GHCup.Brick.Widgets.Navigation (BrickInternalState, create, handler, draw) where
 
-import GHCup.List ( ListResult(..) )
+import GHCup.Command.List ( ListResult(..) )
 import GHCup.Types
-    ( GHCTargetVersion(GHCTargetVersion),
+    ( TargetVersion(TargetVersion),
       Tool(..),
       Tag(..),
       tVerToText,
@@ -47,6 +47,7 @@ import           Data.Versions ( prettyPVP, prettyVer )
 import           Prelude                 hiding ( appendFile )
 import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
+import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 
 type BrickInternalState = SectionList.SectionList Common.Name ListResult
@@ -80,9 +81,10 @@ draw dimAttrs section_list
   renderList' bis =
     let allElements = V.concatMap L.listElements $ SectionList.sectionListElements bis
         minTagSize = V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) allElements
-        minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (GHCTargetVersion lCross lVer)) allElements
-    in Brick.withDefAttr L.listAttr $ SectionList.renderSectionList (renderItem minTagSize minVerSize) True bis
-  renderItem minTagSize minVerSize listIx b listResult@ListResult{lTag = lTag', ..} =
+        minVerSize = V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (TargetVersion lCross lVer)) allElements
+        minToolSize = V.maximum $ V.map (\ListResult{..} -> length $ prettyShow lTool) allElements
+    in Brick.withDefAttr L.listAttr $ SectionList.renderSectionList (renderItem minToolSize minTagSize minVerSize) True bis
+  renderItem minToolSize minTagSize minVerSize listIx b listResult@ListResult{lTag = lTag', ..} =
     let marks = if
           | lSet       -> (Brick.withAttr Attributes.setAttr $ Brick.str Common.setSign)
           | lInstalled -> (Brick.withAttr Attributes.installedAttr $ Brick.str Common.installedSign)
@@ -104,7 +106,7 @@ draw dimAttrs section_list
     in Brick.clickable (Common.ListItem lTool listIx) $ hooray $ active $ dim
           (   marks
           <+> Brick.padLeft (Pad 2)
-               ( minHSize 6
+               ( minHSize (minToolSize + 1)
                  (printTool lTool)
                )
           <+> minHSize minVerSize (Brick.str ver)
@@ -133,11 +135,12 @@ draw dimAttrs section_list
   printTag Experimental     = Just $ Brick.withAttr Attributes.latestNightlyAttr $ Brick.str "experimental"
   printTag (UnknownTag t) = Just $ Brick.str t
 
-  printTool Cabal = Brick.str "cabal"
-  printTool GHC = Brick.str "GHC"
-  printTool GHCup = Brick.str "GHCup"
-  printTool HLS = Brick.str "HLS"
-  printTool Stack = Brick.str "Stack"
+  printTool (Tool "cabal") = Brick.str "cabal"
+  printTool (Tool "ghc") = Brick.str "GHC"
+  printTool (Tool "ghcup") = Brick.str "GHCup"
+  printTool (Tool "hls") = Brick.str "HLS"
+  printTool (Tool "stack") = Brick.str "Stack"
+  printTool (Tool t) = Brick.str t
 
   printNotes ListResult {..} =
     (if hlsPowered then [Brick.withAttr Attributes.hlsPoweredAttr $ Brick.str "hls-powered"] else mempty

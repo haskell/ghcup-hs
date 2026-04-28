@@ -1,52 +1,55 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module GHCup.OptParse.Compile where
 
 
-import           GHCup
-import qualified GHCup.GHC as GHC
-import qualified GHCup.HLS as HLS
-import           GHCup.Errors
-import           GHCup.Types
-import           GHCup.Types.Optics
-import           GHCup.Utils
-import           GHCup.Utils.Parsers (fromVersion, uriParser, ghcVersionTagEither, isolateParser, overWriteVersionParser)
-import           GHCup.Prelude.Logger
-import           GHCup.Prelude.String.QQ
-import           GHCup.OptParse.Common
+import GHCup.Command.Set
+import GHCup.Errors
+import GHCup.Input.Parsers
+import GHCup.OptParse.Common
+import GHCup.Prelude.Logger
+import GHCup.Prelude.String.QQ
+import GHCup.Query.DB
+import GHCup.Query.GHCupDirs
+import GHCup.Query.Metadata
+import GHCup.Types
+import GHCup.Types.Optics
+
+import qualified GHCup.Command.Compile.GHC as GHC
+import qualified GHCup.Command.Compile.HLS as HLS
 
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad (when, forM_, forM)
-import           Control.Concurrent (threadDelay)
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
-import           Data.Bifunctor
-import           Data.Functor
-import           Data.Maybe
-import           Data.Versions                  ( Version, prettyVer, version, pvp )
-import qualified Data.Versions as V
-import           Data.Text                      ( Text )
-import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
-import           Options.Applicative.Pretty.Shim ( text, vsep )
-import           Prelude                 hiding ( appendFile )
-import           System.Exit
+import Control.Concurrent              ( threadDelay )
+import Control.Exception.Safe          ( MonadMask, displayException )
+import Control.Monad                   ( forM, forM_, when, (<=<) )
+import Control.Monad.Reader
+import Control.Monad.Trans.Resource
+import Data.Bifunctor
+import Data.Functor
+import Data.Maybe
+import Data.Text                       ( Text )
+import Data.Variant.Excepts
+import Data.Versions                   ( Version, prettyVer, pvp, version )
+import Options.Applicative             hiding ( ParseError, style )
+import Options.Applicative.Pretty.Shim ( text, vsep )
+import Prelude                         hiding ( appendFile )
+import System.Exit
+import System.FilePath                 ( isPathSeparator )
+import Text.PrettyPrint.HughesPJClass  ( prettyShow )
+import Text.Read                       ( readEither )
+import URI.ByteString                  hiding ( uriParser )
 
-import           URI.ByteString          hiding ( uriParser )
-import qualified Data.Text                     as T
-import Control.Exception.Safe (MonadMask, displayException)
-import System.FilePath (isPathSeparator)
-import Text.Read (readEither)
+import qualified Data.Text     as T
+import qualified Data.Versions as V
 
 
 
@@ -56,9 +59,10 @@ import Text.Read (readEither)
     ----------------
 
 
-data CompileCommand = CompileGHC GHCCompileOptions
-                    | CompileHLS HLSCompileOptions
-                    deriving (Eq, Show)
+data CompileCommand
+  = CompileGHC GHCCompileOptions
+  | CompileHLS HLSCompileOptions
+  deriving (Eq, Show)
 
 
 
@@ -68,36 +72,38 @@ data CompileCommand = CompileGHC GHCCompileOptions
 
 
 data GHCCompileOptions = GHCCompileOptions
-  { targetGhc    :: GHC.GHCVer
+  { targetGhc :: GHC.GHCVer
   , bootstrapGhc :: Either Version FilePath
-  , hadrianGhc   :: Maybe (Either Version FilePath)
-  , jobs         :: Maybe Int
-  , buildConfig  :: Maybe FilePath
-  , patches      :: Maybe (Either FilePath [URI])
-  , crossTarget  :: Maybe Text
-  , addConfArgs  :: [Text]
-  , setCompile   :: Bool
+  , hadrianGhc :: Maybe (Either Version FilePath)
+  , jobs :: Maybe Int
+  , buildConfig :: Maybe FilePath
+  , patches :: Maybe (Either FilePath [URI])
+  , crossTarget :: Maybe Text
+  , addConfArgs :: [String]
+  , setCompile :: Bool
   , overwriteVer :: Maybe [VersionPattern]
   , buildFlavour :: Maybe String
-  , buildSystem  :: Maybe BuildSystem
-  , isolateDir   :: Maybe FilePath
-  , installTargets :: T.Text
-  } deriving (Eq, Show)
+  , buildSystem :: Maybe BuildSystem
+  , isolateDir :: Maybe FilePath
+  , installTargets :: Maybe [String]
+  }
+  deriving (Eq, Show)
 
 
 data HLSCompileOptions = HLSCompileOptions
-  { targetHLS    :: HLS.HLSVer
-  , jobs         :: Maybe Int
-  , setCompile   :: Bool
-  , updateCabal  :: Bool
+  { targetHLS :: HLS.HLSVer
+  , jobs :: Maybe Int
+  , setCompile :: Bool
+  , updateCabal :: Bool
   , overwriteVer :: Maybe [VersionPattern]
-  , isolateDir   :: Maybe FilePath
+  , isolateDir :: Maybe FilePath
   , cabalProject :: Maybe (Either FilePath URI)
   , cabalProjectLocal :: Maybe URI
-  , patches      :: Maybe (Either FilePath [URI])
-  , targetGHCs   :: [ToolVersion]
-  , cabalArgs    :: [Text]
-  } deriving (Eq, Show)
+  , patches :: Maybe (Either FilePath [URI])
+  , targetGHCs :: [ToolVersion]
+  , cabalArgs :: [Text]
+  }
+  deriving (Eq, Show)
 
 
 
@@ -174,7 +180,7 @@ ghcCompileOpts =
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
             "The tool version to compile"
-            <> (completer $ versionCompleter [] GHC)
+            <> completer (versionCompleter [] ghc)
           )
           ) <|>
           (GHC.GitDist <$> (GitBranch <$> option
@@ -189,13 +195,12 @@ ghcCompileOpts =
           ))
           <|>
           (
-           GHC.RemoteDist <$> (option
+           GHC.RemoteDist <$> option
             (eitherReader uriParser)
             (long "remote-source-dist" <> metavar "URI" <> help
               "URI (https/http/file) to a GHC source distribution"
               <> completer fileUri
             )
-          )
           )
           )
     <*> option
@@ -209,7 +214,7 @@ ghcCompileOpts =
           <> metavar "BOOTSTRAP_GHC"
           <> help
                "The GHC version (or full path) to bootstrap with (must be installed)"
-          <> (completer $ versionCompleter [] GHC)
+          <> completer (versionCompleter [] ghc)
           )
     <*> optional (option
           (eitherReader
@@ -221,19 +226,19 @@ ghcCompileOpts =
           <> metavar "HADRIAN_GHC"
           <> help
                "The GHC version (or full path) that will be used to compile hadrian (must be installed)"
-          <> (completer $ versionCompleter [] GHC)
+          <> completer (versionCompleter [] ghc)
           ))
     <*> optional
           (option
             (eitherReader (readEither @Int))
             (short 'j' <> long "jobs" <> metavar "JOBS" <> help
               "How many jobs to use for make"
-              <> (completer $ listCompleter $ fmap show ([1..12] :: [Int]))
+              <> completer (listCompleter $ fmap show ([1..12] :: [Int]))
             )
           )
-    <*> (optional
+    <*> optional
           (
-            (fmap Right $ many $ option
+            fmap Right (many $ option
               (eitherReader uriParser)
               (long "patch" <> metavar "PATCH_URI" <> help
                 "URI to a patch (https/http/file)"
@@ -241,7 +246,7 @@ ghcCompileOpts =
               )
             )
             <|>
-            (fmap Left $ option
+            fmap Left (option
               str
               (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
                 "Absolute path to patch directory (applies all .patch and .diff files in order using -p1. This order is determined by a quilt series file if it exists, or the patches are lexicographically ordered)"
@@ -249,7 +254,6 @@ ghcCompileOpts =
               )
             )
           )
-        )
     <*> optional
           (option
             str
@@ -271,7 +275,7 @@ ghcCompileOpts =
                                       , text "%H  long commit hash"
                                       , text "%g  'git describe' output"
                                       ])
-            <> (completer $ versionCompleter [] GHC)
+            <> completer (versionCompleter [] ghc)
             )
           )
     <*> optional
@@ -288,12 +292,12 @@ ghcCompileOpts =
          <|>
          ((\b c -> case (b, c) of
                           -- --make specified
-                          (True, _) -> (Just Make, c)
+                          (True, _)       -> (Just Make, c)
                           -- only --config specified... assume make
                           (False, Just _) -> (Just Make, c)
                           -- otherwise fall back to runtime detection of build
                           -- system
-                          (False, _) -> (Nothing, c)) <$> switch
+                          (False, _)      -> (Nothing, c)) <$> switch
           (long "make" <> help "Use the make build system instead of hadrian. Tries to detect by default."
           )
           <*> optional
@@ -316,12 +320,12 @@ ghcCompileOpts =
             <> completer (bashCompleter "directory")
             )
            )
-    <*> strOption
+    <*> optional (option (eitherReader installTargetParser)
            (  long "install-targets"
            <> metavar "TARGETS"
-           <> help "Space separated list of install targets (default: install)"
+           <> help "Overwrite make based install targets"
            <> completer (listCompleter ["install", "install_bin", "install_lib", "install_extra", "install_man", "install_docs", "install_data", "update_package_db"])
-           <> value "install"
+           )
            )
 
 hlsCompileOpts :: Parser HLSCompileOptions
@@ -329,11 +333,11 @@ hlsCompileOpts =
   HLSCompileOptions
     <$> ((HLS.HackageDist <$> option
           (eitherReader
-            ((>>= first displayException . V.version . V.prettyPVP) . first (const "Not a valid PVP version") . pvp . T.pack)
+            ((first displayException . V.version . V.prettyPVP) <=< first (const "Not a valid PVP version") . pvp . T.pack)
           )
           (short 'v' <> long "version" <> metavar "VERSION" <> help
             "The version to compile (pulled from hackage)"
-            <> (completer $ versionCompleter' [] HLS (either (const False) (const True) . V.pvp . V.prettyVer))
+            <> completer (versionCompleter' [] hls (either (const False) (const True) . V.pvp . V.prettyVer))
           )
           )
           <|>
@@ -347,18 +351,18 @@ hlsCompileOpts =
           ))
           ))
           <|>
-          (HLS.SourceDist <$> (option
+          (HLS.SourceDist <$> option
             (eitherReader
               (first (const "Not a valid version") . version . T.pack)
             )
           (long "source-dist" <> metavar "VERSION" <> help
             "The version to compile (pulled from packaged git sources)"
-            <> (completer $ versionCompleter [] HLS)
+            <> completer (versionCompleter [] hls)
           )
-          ))
+          )
           <|>
           (
-           HLS.RemoteDist <$> (option
+           HLS.RemoteDist <$> option
             (eitherReader uriParser)
             (long "remote-source-dist" <> metavar "URI" <> help
               "URI (https/http/file) to a HLS source distribution"
@@ -366,13 +370,12 @@ hlsCompileOpts =
             )
           )
           )
-          )
     <*> optional
           (option
             (eitherReader (readEither @Int))
             (short 'j' <> long "jobs" <> metavar "JOBS" <> help
               "How many jobs to use for make"
-              <> (completer $ listCompleter $ fmap show ([1..12] :: [Int]))
+              <> completer (listCompleter $ fmap show ([1..12] :: [Int]))
             )
           )
     <*> fmap (fromMaybe True) (invertableSwitch "set" Nothing True (help "Don't set as active version after install"))
@@ -390,16 +393,15 @@ hlsCompileOpts =
                                       , text "%H  long commit hash"
                                       , text "%g  'git describe' output"
                                       ])
-            <> (completer $ versionCompleter [] HLS)
+            <> completer (versionCompleter [] hls)
             )
           )
           <|>
-          ((\b -> if b then Just [GitDescribe] else Nothing) <$> (switch
+          ((\b -> if b then Just [GitDescribe] else Nothing) <$> switch
                       (long "git-describe-version"
                          <> help "Use the output of 'git describe' (if building from git) as the VERSION component of the installed binary."
                          <> internal
                       )
-                    )
           )
           )
     <*> optional
@@ -414,7 +416,7 @@ hlsCompileOpts =
            )
     <*> optional
           (option
-            ((fmap Right $ eitherReader uriParser) <|> (fmap Left str))
+            (fmap Right (eitherReader uriParser) <|> fmap Left str)
             (long "cabal-project" <> metavar "CABAL_PROJECT" <> help
               "If relative filepath, specifies the path to cabal.project inside the unpacked HLS tarball/checkout. Otherwise expects a full URI with https/http/file scheme."
               <> completer fileUri
@@ -428,9 +430,9 @@ hlsCompileOpts =
               <> completer fileUri
             )
           )
-    <*> (optional
+    <*> optional
           (
-            (fmap Right $ many $ option
+            fmap Right (many $ option
               (eitherReader uriParser)
               (long "patch" <> metavar "PATCH_URI" <> help
                 "URI to a patch (https/http/file)"
@@ -438,7 +440,7 @@ hlsCompileOpts =
               )
             )
             <|>
-            (fmap Left $ option
+            fmap Left (option
               str
               (short 'p' <> long "patchdir" <> metavar "PATCH_DIR" <> help
                 "Absolute path to patch directory (applies all .patch and .diff files in order using -p1)"
@@ -446,12 +448,11 @@ hlsCompileOpts =
               )
             )
           )
-        )
     <*> some (
           option (eitherReader ghcVersionTagEither)
             (  long "ghc" <> metavar "GHC_VERSION|TAG" <> help "For which GHC version to compile for (can be specified multiple times)"
-            <> completer (tagCompleter GHC [])
-            <> completer (versionCompleter [] GHC))
+            <> completer (tagCompleter ghc [])
+            <> completer (versionCompleter [] ghc))
         )
     <*> many (argument str (metavar "CABAL_ARGS" <> help "Additional arguments to cabal install, prefix with '-- ' (longopts)"))
 
@@ -488,7 +489,12 @@ type GHCEffects = '[ AlreadyInstalled
                   , UninstallFailed
                   , MergeFileTreeError
                   , URIParseError
+                  , FileAlreadyExistsError
+                  , ParseError
+                  , NoInstallInfo
+                  , MalformedInstallInfo
                   ]
+
 type HLSEffects = '[ AlreadyInstalled
                   , BuildFailed
                   , DigestError
@@ -511,6 +517,9 @@ type HLSEffects = '[ AlreadyInstalled
                   , UninstallFailed
                   , MergeFileTreeError
                   , URIParseError
+                  , ParseError
+                  , NoInstallInfo
+                  , MalformedInstallInfo
                   ]
 
 
@@ -561,7 +570,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
         case targetHLS of
           HLS.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-            let vi = getVersionInfo (mkTVer targetVer) HLS dls
+            let vi = getVersionInfo (mkTVer targetVer) hls dls
             forM_ (_viPreInstall =<< vi) $ \msg -> do
               lift $ logWarn msg
               lift $ logWarn
@@ -573,22 +582,28 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
           _ -> pure ()
-        ghcs <- liftE $ forM targetGHCs (\ghc -> fmap (_tvVersion . fst) . fromVersion (Just ghc) guessMode $ GHC)
-        targetVer <- liftE $ compileHLS
+        ghcs <- liftE $ forM targetGHCs (\ghc' -> fmap (_tvVersion . fst) . fromVersion (Just ghc') guessMode $ ghc)
+        let instDir = maybe GHCupInternal IsolateDir isolateDir
+        targetVer <- liftE $ HLS.compileHLS
                     targetHLS
                     ghcs
                     jobs
                     overwriteVer
-                    (maybe GHCupInternal IsolateDir isolateDir)
+                    instDir
                     cabalProject
                     cabalProjectLocal
                     updateCabal
                     patches
                     cabalArgs
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        let vi = getVersionInfo (mkTVer targetVer) HLS dls
-        when setCompile $ void $ liftE $
-          setHLS targetVer SetHLSOnly Nothing
+        let vi = getVersionInfo (mkTVer targetVer) hls dls
+        -- TODO: also set if it's already set
+        case instDir of
+          GHCupInternal -> do
+            set <- liftE $ isSet hls (mkTVer targetVer)
+            when (setCompile || set) $ void $ liftE $
+              setToolVersion hls (mkTVer targetVer)
+          IsolateDir _ -> pure ()
         pure (vi, targetVer)
         )
         >>= \case
@@ -615,7 +630,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
         case targetGhc of
           GHC.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-            let vi = getVersionInfo (mkTVer targetVer) GHC dls
+            let vi = getVersionInfo (mkTVer targetVer) ghc dls
             forM_ (_viPreInstall =<< vi) $ \msg -> do
               lift $ logWarn msg
               lift $ logWarn
@@ -627,7 +642,8 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
           _ -> pure ()
-        targetVer <- liftE $ compileGHC
+        let instDir = maybe GHCupInternal IsolateDir isolateDir
+        targetVer <- liftE $ GHC.compileGHC
                     targetGhc
                     crossTarget
                     overwriteVer
@@ -639,12 +655,16 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     addConfArgs
                     buildFlavour
                     buildSystem
-                    (maybe GHCupInternal IsolateDir isolateDir)
+                    instDir
                     installTargets
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        let vi = getVersionInfo targetVer GHC dls
-        when setCompile $ void $ liftE $
-          setGHC targetVer SetGHCOnly Nothing
+        let vi = getVersionInfo targetVer ghc dls
+        case instDir of
+          GHCupInternal -> do
+            set <- liftE $ isSet ghc targetVer
+            when (setCompile || set) $ void $ liftE $
+              setToolVersion ghc targetVer
+          IsolateDir _ -> pure ()
         pure (vi, targetVer)
         )
         >>= \case
@@ -657,7 +677,7 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 pure ExitSuccess
               VLeft (V (AlreadyInstalled _ v)) -> do
                 runLogger $ logWarn $
-                  "GHC ver " <> prettyVer v <> " already installed, remove it first to reinstall"
+                  "GHC ver " <> T.pack (prettyShow v) <> " already installed, remove it first to reinstall"
                 pure ExitSuccess
               VLeft (V (DirNotEmpty fp)) -> do
                 runLogger $ logError $

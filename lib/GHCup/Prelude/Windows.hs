@@ -1,21 +1,21 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module GHCup.Prelude.Windows where
 
 
-import           Control.Exception.Safe
-import           Control.Monad
+import Control.Exception.Safe
+import Control.Monad
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Data.Bits
+import Data.Bits
 
-import           System.Win32.Console
-import           System.Win32.File     hiding ( copyFile )
-import           System.Win32.Types
+import System.Win32.Console
+import System.Win32.File    hiding ( copyFile )
+import System.Win32.Types
 
 
 

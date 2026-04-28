@@ -1,8 +1,9 @@
 module GHCup.PlanJson where
 
-import Control.Monad (unless)
+import GHCup.System.Directory
+
+import Control.Monad    ( unless )
 import System.FilePath
-import System.Directory
 
 findPlanJson
     :: FilePath

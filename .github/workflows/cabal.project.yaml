@@ -12,31 +12,68 @@ on:
   schedule:
     - cron: '0 2 * * *'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  tool-output:
+    runs-on: ubuntu-latest
+    outputs:
+      ghc_versions: ${{ steps.gen_output.outputs.ghc_versions }}
+
+    steps:
+
+    - uses: haskell/ghcup-setup@v1
+
+    - name: Generate output
+      id: gen_output
+      run: |
+        all="$(ghcup -s GHCupURL list -r -t ghc -c available)"
+        rec=$(echo "${all}"         | grep recommended | awk '{ print $2 }')
+        latest=$(echo "${all}"      | grep latest      | awk '{ print $2 }')
+
+        other_major=$(echo "${all}" | awk '{ print $2 }' | awk -F '.' '{ print $1 "." $2}' | sort -Vu | tail -${GHC_TEST_NUM:=5})
+        other=$(for v in $other_major ; do point_releases=$(echo "$all" | awk '{ print $2 }' | grep --color=never "^$v.") ; echo "${point_releases}" | tail -n1  ; done)
+
+        selected=$(echo -n ${rec} ${latest} ${other} | tr " " "\n"  | sort -Vu)
+        ghc_exclude=( $GHC_EXCLUDE )
+        selected_filtered=()
+        for ghc in $selected ; do
+          printf '%s\0' "${ghc_exclude[@]}" | grep --quiet --color=never -F -x -z -- $ghc || selected_filtered+=( $ghc )
+        done
+        unset ghc
+        selected_json=$(echo -n ${selected_filtered[@]} | jq -c -r -R 'split(" ") | [ .[] | if length > 0 then . else empty end ]')
+
+        echo "${selected}"
+        echo "${selected_filtered}"
+        echo "${selected_json}"
+
+        echo ghc_versions="${selected_json}" >> "$GITHUB_OUTPUT"
+      shell: bash
+      env:
+        GHC_TEST_NUM: ${{ vars.GHC_TEST_NUM }}
+        GHC_EXCLUDE: ${{ vars.GHC_EXCLUDE }}
+
   build:
     name: Build binary
     runs-on: ${{ matrix.os }}
+    needs: ["tool-output"]
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-15-intel, windows-latest, ubuntu-latest]
-        ghc: ["8.10.7", "9.0.2", "9.2.8", "9.4.8", "9.6.7", "9.8.4", "9.10.1"]
-        include:
-          - os: macOS-latest
-            ghc: "9.2.8"
-          - os: macOS-latest
-            ghc: "9.4.8"
-          - os: macOS-latest
-            ghc: "9.6.7"
-          - os: macOS-latest
-            ghc: "9.8.4"
-          - os: macOS-latest
-            ghc: "9.10.1"
+        os: [ubuntu-latest, ubuntu-24.04-arm, macOS-15-intel, macOS-latest, windows-latest]
+        ghc: ${{ fromJSON(needs.tool-output.outputs.ghc_versions) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: 'true'
+
+      - if: runner.os == 'Windows'
+        run: |
+          rm -f /c/Strawberry/perl/bin/pkg-config
+        shell: bash
 
       - if: runner.os == 'Linux'
         name: Install prerequisites

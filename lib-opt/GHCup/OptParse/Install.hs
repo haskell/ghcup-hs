@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -16,13 +15,14 @@ module GHCup.OptParse.Install where
 
 import           GHCup.OptParse.Common
 
-import           GHCup
 import           GHCup.Errors
+import           GHCup.Command.Install
+import           GHCup.Command.Set
 import           GHCup.Types
-import           GHCup.Utils.Dirs
-import           GHCup.Utils.Parsers (fromVersion, isolateParser, uriParser)
+import           GHCup.Types.Optics
+import           GHCup.Query.GHCupDirs
+import           GHCup.Input.Parsers (fromVersion, isolateParser, uriParser, toolParser, installTargetParser)
 import           GHCup.Prelude
-import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 
 import           Control.Concurrent (threadDelay)
@@ -32,7 +32,6 @@ import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad (when, forM_)
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
-import           Data.Either
 import           Data.Functor
 import           Data.Maybe
 import           Data.Variant.Excepts
@@ -41,6 +40,7 @@ import           Options.Applicative.Pretty.Shim ( text )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 import           URI.ByteString          hiding ( uriParser )
+import           Text.PrettyPrint.HughesPJClass (prettyShow)
 
 import qualified Data.Text                     as T
 
@@ -56,6 +56,7 @@ data InstallCommand = InstallGHC InstallOptions
                     | InstallCabal InstallOptions
                     | InstallHLS InstallOptions
                     | InstallStack InstallOptions
+                    | InstallOtherTool InstallOptionsNew
                     deriving (Eq, Show)
 
 
@@ -71,8 +72,19 @@ data InstallOptions = InstallOptions
   , instSet      :: Bool
   , isolateDir   :: Maybe FilePath
   , forceInstall :: Bool
-  , installTargets :: T.Text
-  , addConfArgs  :: [T.Text]
+  , installTargets :: Maybe [String]
+  , addConfArgs  :: [String]
+  } deriving (Eq, Show)
+
+data InstallOptionsNew = InstallOptionsNew
+  { instTool     :: Tool
+  , instVer      :: Maybe ToolVersion
+  , instBindist  :: Maybe URI
+  , instSet      :: Bool
+  , isolateDir   :: Maybe FilePath
+  , forceInstall :: Bool
+  , installTargets :: Maybe [String]
+  , addConfArgs  :: [String]
   } deriving (Eq, Show)
 
 
@@ -95,14 +107,14 @@ installCabalFooter = [s|Discussion:
     --[ Parsers ]--
     ---------------
 
-installParser :: Parser (Either InstallCommand InstallOptions)
+installParser :: Parser InstallCommand
 installParser =
-  (Left <$> subparser
+  subparser
       (  command
           "ghc"
           (   InstallGHC
           <$> info
-                (installOpts (Just GHC) <**> helper)
+                (installOpts (Just ghc) <**> helper)
                 (  progDesc "Install GHC"
                 <> footerDoc (Just $ text installGHCFooter)
                 )
@@ -111,7 +123,7 @@ installParser =
            "cabal"
            (   InstallCabal
            <$> info
-                 (installOpts (Just Cabal) <**> helper)
+                 (installOpts (Just cabal) <**> helper)
                  (  progDesc "Install Cabal"
                  <> footerDoc (Just $ text installCabalFooter)
                  )
@@ -120,7 +132,7 @@ installParser =
            "hls"
            (   InstallHLS
            <$> info
-                 (installOpts (Just HLS) <**> helper)
+                 (installOpts (Just hls) <**> helper)
                  (  progDesc "Install haskell-language-server"
                  <> footerDoc (Just $ text installHLSFooter)
                  )
@@ -129,14 +141,15 @@ installParser =
            "stack"
            (   InstallStack
            <$> info
-                 (installOpts (Just Stack) <**> helper)
+                 (installOpts (Just stack) <**> helper)
                  (  progDesc "Install stack"
                  <> footerDoc (Just $ text installStackFooter)
                  )
            )
       )
-    )
-    <|> (Right <$> installOpts (Just GHC))
+    <|> ( InstallOtherTool
+           <$> installOptsNew
+           )
  where
   installHLSFooter :: String
   installHLSFooter = [s|Discussion:
@@ -187,7 +200,7 @@ installOpts tool =
                     (eitherReader uriParser)
                     (short 'u' <> long "url" <> metavar "BINDIST_URL" <> help
                       "Install the specified version from this bindist"
-                      <> completer (toolDlCompleter (fromMaybe GHC tool))
+                      <> completer (toolDlCompleter (fromMaybe ghc tool))
                     )
                   )
             <*> (Just <$> toolVersionTagArgument [] tool)
@@ -208,20 +221,58 @@ installOpts tool =
           )
     <*> switch
           (short 'f' <> long "force" <> help "Force install (THIS IS UNSAFE, only use it in Dockerfiles or CI)")
-    <*> strOption
+    <*> optional (option (eitherReader installTargetParser)
            (  long "install-targets"
            <> metavar "TARGETS"
-           <> help "Space separated list of install targets (default: install)"
+           <> help "Overwrite make based install targets"
            <> completer (listCompleter ["install", "install_bin", "install_lib", "install_extra", "install_man", "install_docs", "install_data", "update_package_db"])
-           <> value "install"
+           )
            )
     <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to bindist configure, prefix with '-- ' (longopts)"))
  where
   setDefault = case tool of
     Nothing  -> False
-    Just GHC -> False
+    Just (Tool "ghc") -> False
     Just _   -> True
 
+installOptsNew :: Parser InstallOptionsNew
+installOptsNew =
+  (\t (u, v) -> InstallOptionsNew t v u)
+    <$> argument (eitherReader toolParser) (metavar "TOOL" <> help "Which tool to install")
+    <*> (   (   (,)
+            <$> optional
+                  (option
+                    (eitherReader uriParser)
+                    (short 'u' <> long "url" <> metavar "BINDIST_URL" <> help
+                      "Install the specified version from this bindist"
+                    )
+                  )
+            <*> (Just <$> toolVersionTagArgument [] Nothing)
+            )
+        <|> pure (Nothing, Nothing)
+        )
+    <*> fmap (fromMaybe False) (invertableSwitch "set" Nothing False
+      (help "Set as active version after install"))
+    <*> optional
+          (option
+           (eitherReader isolateParser)
+           (  short 'i'
+           <> long "isolate"
+           <> metavar "DIR"
+           <> help "install in an isolated absolute directory instead of the default one"
+           <> completer (bashCompleter "directory")
+           )
+          )
+    <*> switch
+          (short 'f' <> long "force" <> help "Force install (THIS IS UNSAFE, only use it in Dockerfiles or CI)")
+    <*> optional (option (eitherReader installTargetParser)
+           (  long "install-targets"
+           <> metavar "TARGETS"
+           <> help "Overwrite make based install targets"
+           <> completer (listCompleter ["install", "install_bin", "install_lib", "install_extra", "install_man", "install_docs", "install_data", "update_package_db"])
+           )
+           )
+    <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to bindist configure, prefix with '-- ' (longopts)"))
 
 
 
@@ -243,33 +294,6 @@ installToolFooter = [s|Discussion:
     --[ Effect interpreters ]--
     ---------------------------
 
-type InstallEffects = '[ AlreadyInstalled
-                       , UnknownArchive
-                       , ArchiveResult
-                       , FileDoesNotExistError
-                       , CopyError
-                       , NotInstalled
-                       , DirNotEmpty
-                       , NoDownload
-                       , NotInstalled
-                       , BuildFailed
-                       , TagNotFound
-                       , DayNotFound
-                       , DigestError
-                       , ContentLengthError
-                       , GPGError
-                       , DownloadFailed
-                       , TarDirDoesNotExist
-                       , NextVerNotFound
-                       , NoToolVersionSet
-                       , FileAlreadyExistsError
-                       , ProcessError
-                       , UninstallFailed
-                       , MergeFileTreeError
-                       , InstallSetError
-                       , URIParseError
-                       ]
-
 
 runInstTool :: AppState
             -> Excepts InstallEffects (ResourceT (ReaderT AppState IO)) a
@@ -281,45 +305,41 @@ runInstTool appstate' =
     @InstallEffects
 
 
-type InstallGHCEffects = '[ AlreadyInstalled
-                          , ArchiveResult
-                          , BuildFailed
-                          , CopyError
-                          , DigestError
-                          , ContentLengthError
-                          , DirNotEmpty
-                          , DownloadFailed
-                          , FileAlreadyExistsError
-                          , FileDoesNotExistError
-                          , GPGError
-                          , MergeFileTreeError
-                          , NextVerNotFound
-                          , NoDownload
-                          , NoToolVersionSet
-                          , NotInstalled
-                          , ProcessError
-                          , TagNotFound
-                          , DayNotFound
-                          , TarDirDoesNotExist
-                          , UninstallFailed
-                          , UnknownArchive
-                          , InstallSetError
-                          , NoCompatiblePlatform
-                          , GHCup.Errors.ParseError
-                          , UnsupportedSetupCombo
-                          , DistroNotFound
-                          , NoCompatibleArch
-                          , URIParseError
-                          ]
 
-runInstGHC :: AppState
-           -> Excepts InstallGHCEffects (ResourceT (ReaderT AppState IO)) a
-           -> IO (VEither InstallGHCEffects a)
-runInstGHC appstate' =
-  flip runReaderT appstate'
-  . runResourceT
-  . runE
-    @InstallGHCEffects
+type InstallEffects = '[ AlreadyInstalled
+                       , ArchiveResult
+                       , BuildFailed
+                       , CopyError
+                       , DigestError
+                       , ContentLengthError
+                       , DirNotEmpty
+                       , DownloadFailed
+                       , FileAlreadyExistsError
+                       , FileDoesNotExistError
+                       , GPGError
+                       , MergeFileTreeError
+                       , NextVerNotFound
+                       , NoDownload
+                       , NoToolVersionSet
+                       , NotInstalled
+                       , ProcessError
+                       , TagNotFound
+                       , DayNotFound
+                       , TarDirDoesNotExist
+                       , UninstallFailed
+                       , UnknownArchive
+                       , InstallSetError
+                       , NoCompatiblePlatform
+                       , GHCup.Errors.ParseError
+                       , UnsupportedSetupCombo
+                       , DistroNotFound
+                       , NoCompatibleArch
+                       , URIParseError
+                       , NoInstallInfo
+                       , GHCup.Errors.ParseError
+                       , MalformedInstallInfo
+                       ]
+
 
 
     -------------------
@@ -327,59 +347,63 @@ runInstGHC appstate' =
     -------------------
 
 
-install :: Either InstallCommand InstallOptions -> Settings -> IO AppState -> (ReaderT LeanAppState IO () -> IO ()) -> IO ExitCode
+install :: InstallCommand -> Settings -> IO AppState -> (ReaderT LeanAppState IO () -> IO ()) -> IO ExitCode
 install installCommand settings getAppState' runLogger = case installCommand of
-  (Right iGHCopts) -> do
-    runLogger (logWarn "This is an old-style command for installing GHC. Use 'ghcup install ghc' instead.")
-    installGHC iGHCopts
-  (Left (InstallGHC iGHCopts)) -> installGHC iGHCopts
-  (Left (InstallCabal iopts))  -> installCabal iopts
-  (Left (InstallHLS iopts))    -> installHLS iopts
-  (Left (InstallStack iopts))  -> installStack iopts
+  (InstallGHC iGHCopts) -> installOther (toInstallOptionsNew ghc iGHCopts)
+  (InstallCabal iopts)  -> installOther (toInstallOptionsNew cabal iopts)
+  (InstallHLS iopts)    -> installOther (toInstallOptionsNew hls iopts)
+  (InstallStack iopts)  -> installOther (toInstallOptionsNew stack iopts)
+  (InstallOtherTool iopts)  -> installOther iopts
  where
   guessMode = if guessVersion settings then GLax else GStrict
-  installGHC :: InstallOptions -> IO ExitCode
-  installGHC InstallOptions{..} = do
+
+  toInstallOptionsNew instTool InstallOptions{..} = InstallOptionsNew{..}
+
+  installOther :: InstallOptionsNew -> IO ExitCode
+  installOther InstallOptionsNew{..} = do
     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
     (case instBindist of
-       Nothing -> runInstGHC s' $ do
-         (v, vi) <- liftE $ fromVersion instVer guessMode GHC
+       Nothing -> runInstTool s' $ do
+         (v, vi) <- liftE $ fromVersion instVer guessMode instTool
          forM_ (_viPreInstall =<< vi) $ \msg -> do
            lift $ logWarn msg
            lift $ logWarn
              "...waiting for 5 seconds, you can still abort..."
            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-         liftE $ runBothE' (installGHCBin
-                     v
-                     (maybe GHCupInternal IsolateDir isolateDir)
-                     forceInstall
-                     addConfArgs
-                     installTargets
-                   )
-                   $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setGHC v SetGHCOnly Nothing
+         -- TODO: install targets
+         liftE $ runBothE' (installTool
+                                    instTool
+                                    v
+                                    (maybe GHCupInternal IsolateDir isolateDir)
+                                    forceInstall
+                                    addConfArgs
+                                    installTargets
+                                  ) $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setToolVersion instTool v
          pure vi
        Just uri -> do
-         runInstGHC s'{ settings = settings {noVerify = True}} $ do
-           (v, vi) <- liftE $ fromVersion instVer guessMode GHC
+         runInstTool s'{ settings = settings {noVerify = True}} $ do
+           pfreq <- lift getPlatformReq
+           (v, vi) <- liftE $ fromVersion instVer guessMode instTool
            forM_ (_viPreInstall =<< vi) $ \msg -> do
              lift $ logWarn msg
              lift $ logWarn
                "...waiting for 5 seconds, you can still abort..."
              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-           liftE $ runBothE' (installGHCBindist
-                       (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir "ghc-.*") "" Nothing Nothing Nothing)
+           liftE $ runBothE' (installBindist
+                       instTool
+                       (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) regexDir "" Nothing Nothing Nothing (toInstallationInputSpec <$> defaultToolInstallSpec instTool pfreq v))
                        v
                        (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
                        addConfArgs
                        installTargets
                      )
-                     $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setGHC v SetGHCOnly Nothing
+                     $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setToolVersion instTool v
            pure vi
       )
         >>= \case
               VRight vi -> do
-                runLogger $ logInfo "GHC installation successful"
+                runLogger $ logInfo $ T.pack (prettyShow instTool) <> " installation successful"
                 forM_ (_viPostInstall =<< vi) $ \msg ->
                   runLogger $ logInfo msg
                 pure ExitSuccess
@@ -406,161 +430,11 @@ install installCommand settings getAppState' runLogger = case installCommand of
                   logError $ T.pack $ prettyHFError e
                   logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
                 pure $ ExitFailure 3
+   where
+    regexDir = case instTool of
+                 (Tool "ghc") -> Just $ RegexDir "ghc-.*"
+                 (Tool "cabal") -> Nothing
+                 (Tool "stack") -> Nothing
+                 (Tool "hls") -> if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")
+                 _ -> Nothing -- TODO
 
-
-  installCabal :: InstallOptions -> IO ExitCode
-  installCabal InstallOptions{..} = do
-    s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
-    (case instBindist of
-       Nothing -> runInstTool s' $ do
-         (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode Cabal
-         forM_ (_viPreInstall =<< vi) $ \msg -> do
-           lift $ logWarn msg
-           lift $ logWarn
-             "...waiting for 5 seconds, you can still abort..."
-           liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-         liftE $ runBothE' (installCabalBin
-                                    v
-                                    (maybe GHCupInternal IsolateDir isolateDir)
-                                    forceInstall
-                                  ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setCabal v
-         pure vi
-       Just uri -> do
-         runInstTool s'{ settings = settings { noVerify = True}} $ do
-           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode Cabal
-           forM_ (_viPreInstall =<< vi) $ \msg -> do
-             lift $ logWarn msg
-             lift $ logWarn
-               "...waiting for 5 seconds, you can still abort..."
-             liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-           liftE $ runBothE' (installCabalBindist
-                                      (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) Nothing "" Nothing Nothing Nothing)
-                                      v
-                                      (maybe GHCupInternal IsolateDir isolateDir)
-                                      forceInstall
-                                    ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setCabal v
-           pure vi
-      )
-      >>= \case
-            VRight vi -> do
-              runLogger $ logInfo "Cabal installation successful"
-              forM_ (_viPostInstall =<< vi) $ \msg ->
-                runLogger $ logInfo msg
-              pure ExitSuccess
-            VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyHFError e
-              pure ExitSuccess
-            VLeft (V (FileAlreadyExistsError fp)) -> do
-              runLogger $ logWarn $
-                "File " <> T.pack fp <> " already exists. Use 'ghcup install cabal --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
-              pure $ ExitFailure 3
-            VLeft e -> do
-              runLogger $ do
-                logError $ T.pack $ prettyHFError e
-                logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
-              pure $ ExitFailure 4
-
-  installHLS :: InstallOptions -> IO ExitCode
-  installHLS InstallOptions{..} = do
-     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
-     (case instBindist of
-       Nothing -> runInstTool s' $ do
-         (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode HLS
-         forM_ (_viPreInstall =<< vi) $ \msg -> do
-           lift $ logWarn msg
-           lift $ logWarn
-             "...waiting for 5 seconds, you can still abort..."
-           liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-         liftE $ runBothE' (installHLSBin
-                                    v
-                                    (maybe GHCupInternal IsolateDir isolateDir)
-                                    forceInstall
-                                  ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setHLS v SetHLSOnly Nothing
-         pure vi
-       Just uri -> do
-         runInstTool s'{ settings = settings { noVerify = True}} $ do
-           (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode HLS
-           forM_ (_viPreInstall =<< vi) $ \msg -> do
-             lift $ logWarn msg
-             lift $ logWarn
-               "...waiting for 5 seconds, you can still abort..."
-             liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-           -- TODO: support legacy
-           liftE $ runBothE' (installHLSBindist
-                                      (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (if isWindows then Nothing else Just (RegexDir "haskell-language-server-*")) "" Nothing Nothing Nothing)
-                                      v
-                                      (maybe GHCupInternal IsolateDir isolateDir)
-                                      forceInstall
-                                    ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setHLS v SetHLSOnly Nothing
-           pure vi
-      )
-      >>= \case
-            VRight vi -> do
-              runLogger $ logInfo "HLS installation successful"
-              forM_ (_viPostInstall =<< vi) $ \msg ->
-                runLogger $ logInfo msg
-              pure ExitSuccess
-            VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyHFError e
-              pure ExitSuccess
-            VLeft (V (FileAlreadyExistsError fp)) -> do
-              runLogger $ logWarn $
-                "File " <> T.pack fp <> " already exists. Use 'ghcup install hls --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
-              pure $ ExitFailure 3
-            VLeft e -> do
-              runLogger $ do
-                logError $ T.pack $ prettyHFError e
-                logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
-              pure $ ExitFailure 4
-
-  installStack :: InstallOptions -> IO ExitCode
-  installStack InstallOptions{..} = do
-     s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
-     (case instBindist of
-        Nothing -> runInstTool s' $ do
-          (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode Stack
-          forM_ (_viPreInstall =<< vi) $ \msg -> do
-            lift $ logWarn msg
-            lift $ logWarn
-              "...waiting for 5 seconds, you can still abort..."
-            liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-          liftE $ runBothE' (installStackBin
-                                     v
-                                     (maybe GHCupInternal IsolateDir isolateDir)
-                                     forceInstall
-                                   ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setStack v
-          pure vi
-        Just uri -> do
-          runInstTool s'{ settings = settings { noVerify = True}} $ do
-            (_tvVersion -> v, vi) <- liftE $ fromVersion instVer guessMode Stack
-            forM_ (_viPreInstall =<< vi) $ \msg -> do
-              lift $ logWarn msg
-              lift $ logWarn
-                "...waiting for 5 seconds, you can still abort..."
-              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-            liftE $ runBothE' (installStackBindist
-                                       (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) Nothing "" Nothing Nothing Nothing)
-                                       v
-                                       (maybe GHCupInternal IsolateDir isolateDir)
-                                       forceInstall
-                                     ) $ when instSet $ when (isNothing isolateDir) $ liftE $ setStack v
-            pure vi
-      )
-      >>= \case
-            VRight vi -> do
-              runLogger $ logInfo "Stack installation successful"
-              forM_ (_viPostInstall =<< vi) $ \msg ->
-                runLogger $ logInfo msg
-              pure ExitSuccess
-            VLeft e@(V (AlreadyInstalled _ _)) -> do
-              runLogger $ logWarn $ T.pack $ prettyHFError e
-              pure ExitSuccess
-            VLeft (V (FileAlreadyExistsError fp)) -> do
-              runLogger $ logWarn $
-                "File " <> T.pack fp <> " already exists. Use 'ghcup install stack --isolate " <> T.pack fp <> " --force ..." <> "' if you want to overwrite."
-              pure $ ExitFailure 3
-            VLeft e -> do
-              runLogger $ do
-                logError $ T.pack $ prettyHFError e
-                logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
-              pure $ ExitFailure 4

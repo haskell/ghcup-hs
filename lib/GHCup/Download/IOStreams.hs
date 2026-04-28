@@ -11,7 +11,7 @@ import           GHCup.Download.Utils
 import           GHCup.Errors
 import           GHCup.Types.JSON               ( )
 import           GHCup.Prelude
-import           GHCup.Utils.URI
+import           GHCup.Input.Parsers.URI
 
 import           Control.Applicative
 import           Control.Exception.Safe

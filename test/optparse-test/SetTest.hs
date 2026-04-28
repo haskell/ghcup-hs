@@ -4,7 +4,7 @@
 module SetTest where
 
 import GHCup.OptParse
-import GHCup.Utils.Parsers (SetToolVersion(..))
+import GHCup.Input.Parsers (SetToolVersion(..))
 import Test.Tasty
 import GHCup.Types
 import Data.Versions
@@ -16,98 +16,45 @@ setTests =
   testGroup "set"
     $ map
         (buildTestTree setParseWith)
-        [ ("old-style", oldStyleCheckList)
-        , ("ghc", setGhcCheckList)
+        [ ("ghc", setGhcCheckList)
         , ("cabal", setCabalCheckList)
         , ("hls", setHlsCheckList)
         , ("stack", setStackCheckList)
         ]
 
-oldStyleCheckList :: [(String, Either SetCommand SetOptions)]
-oldStyleCheckList = mapSecond (Right . SetOptions)
-  [ ("set", SetRecommended)
-  , ("set ghc-9.2", SetGHCVersion
-          $ GHCTargetVersion
-            (Just "ghc")
-            $(versionQ "9.2")
-    )
-  , ("set next", SetNext)
-  , ("set latest", SetToolTag Latest)
-  , ("set nightly", SetGHCVersion
-          $ GHCTargetVersion
-            Nothing
-            $(versionQ "nightly")
-    )
-    -- different from `set`
-  , ("set recommended", SetToolTag Recommended)
-  , ("set prerelease", SetGHCVersion
-          $ GHCTargetVersion
-            Nothing
-            $(versionQ "prerelease")
-    )
-  , ("set latest-prerelease", SetToolTag LatestPrerelease)
-  , ("set latest-nightly", SetToolTag LatestNightly)
-  , ("set ghc-javascript-unknown-ghcjs-9.6", SetGHCVersion
-          $ GHCTargetVersion
-            (Just "ghc-javascript-unknown-ghcjs")
-            $(versionQ "9.6")
-    )
-  , ("set base-4.18", SetToolTag (Base (PVP {_pComponents = 4 :| [18]})))
-  , ("set cabal-3.10", SetGHCVersion
-          $ GHCTargetVersion
-            (Just "cabal")
-            $(versionQ "3.10")
-    )
-  , ("set hls-2.0.0.0", SetGHCVersion
-        $ GHCTargetVersion
-            (Just "hls")
-            $(versionQ "2.0.0.0")
-    )
-  , ("set stack-2.9.3", SetGHCVersion
-        $ GHCTargetVersion
-            (Just "stack")
-            $(versionQ "2.9.3")
-    )
-  ]
-
-setGhcCheckList :: [(String, Either SetCommand SetOptions)]
-setGhcCheckList = mapSecond (Left . SetGHC . SetOptions)
+setGhcCheckList :: [(String, SetCommand)]
+setGhcCheckList = mapSecond (SetGHC . SetOptions)
   [ ("set ghc", SetRecommended)
   , ("set ghc 9.2", SetGHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           Nothing
           $(versionQ "9.2")
     )
   , ("set ghc next", SetNext)
   , ("set ghc latest", SetToolTag Latest)
   , ("set ghc nightly", SetGHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           Nothing
           $(versionQ "nightly")
     )
   , ("set ghc recommended", SetToolTag Recommended)
   , ("set ghc prerelease", SetGHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           Nothing
           $(versionQ "prerelease")
     )
   , ("set ghc latest-prerelease", SetToolTag LatestPrerelease)
   , ("set ghc latest-nightly", SetToolTag LatestNightly)
   , ("set ghc javascript-unknown-ghcjs-9.6", SetGHCVersion
-        $ GHCTargetVersion
+        $ TargetVersion
           (Just "javascript-unknown-ghcjs")
           $(versionQ "9.6")
     )
   , ("set ghc base-4.18", SetToolTag (Base (PVP {_pComponents = 4 :| [18]})))
-  , ("set ghc ghc-9.2", SetGHCVersion
-        $ GHCTargetVersion
-          (Just "ghc")
-          $(versionQ "9.2")
-    )
   ]
 
-setCabalCheckList :: [(String, Either SetCommand SetOptions)]
-setCabalCheckList = mapSecond (Left . SetCabal . SetOptions)
+setCabalCheckList :: [(String, SetCommand)]
+setCabalCheckList = mapSecond (SetCabal . SetOptions)
   [ ("set cabal", SetRecommended)
   , ("set cabal 3.10", SetToolVersion $(versionQ "3.10"))
   , ("set cabal next", SetNext)
@@ -121,8 +68,8 @@ setCabalCheckList = mapSecond (Left . SetCabal . SetOptions)
   , ("set cabal cabal-3.10", SetToolVersion $(versionQ "cabal-3.10"))
   ]
 
-setHlsCheckList :: [(String, Either SetCommand SetOptions)]
-setHlsCheckList = mapSecond (Left . SetHLS . SetOptions)
+setHlsCheckList :: [(String, SetCommand)]
+setHlsCheckList = mapSecond (SetHLS . SetOptions)
   [ ("set hls", SetRecommended)
   , ("set hls 2.0", SetToolVersion $(versionQ "2.0"))
   , ("set hls next", SetNext)
@@ -136,8 +83,8 @@ setHlsCheckList = mapSecond (Left . SetHLS . SetOptions)
   , ("set hls hls-2.0", SetToolVersion $(versionQ "hls-2.0"))
   ]
 
-setStackCheckList :: [(String, Either SetCommand SetOptions)]
-setStackCheckList = mapSecond (Left . SetStack . SetOptions)
+setStackCheckList :: [(String, SetCommand)]
+setStackCheckList = mapSecond (SetStack . SetOptions)
   [ ("set stack", SetRecommended)
   , ("set stack 2.9", SetToolVersion $(versionQ "2.9"))
   , ("set stack next", SetNext)
@@ -151,7 +98,8 @@ setStackCheckList = mapSecond (Left . SetStack . SetOptions)
   , ("set stack stack-2.9", SetToolVersion $(versionQ "stack-2.9"))
   ]
 
-setParseWith :: [String] -> IO (Either SetCommand SetOptions)
+setParseWith :: [String] -> IO SetCommand
 setParseWith args = do
   Set a <- parseWith args
   pure a
+

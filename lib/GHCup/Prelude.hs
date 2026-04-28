@@ -1,10 +1,10 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 {-|
 Module      : GHCup.Prelude
@@ -20,18 +20,26 @@ GHCup specific prelude. Lots of Excepts functionality.
 module GHCup.Prelude
   (module GHCup.Prelude,
    module GHCup.Prelude.Internal,
+   module GHCup.Prelude.JSON,
+   module GHCup.Prelude.File,
+   module GHCup.Prelude.Logger,
+   module GHCup.Prelude.Version,
 #if defined(IS_WINDOWS)
-   module GHCup.Prelude.Windows
+   module GHCup.Prelude.Windows,
 #else
-   module GHCup.Prelude.Posix
+   module GHCup.Prelude.Posix,
 #endif
   )
 where
 
-import           GHCup.Errors
-import           GHCup.Prelude.Internal
-import           GHCup.Types.Optics   (HasLog)
-import           GHCup.Prelude.Logger (logWarn)
+import GHCup.Errors
+import GHCup.Prelude.File
+import GHCup.Prelude.Internal
+import GHCup.Prelude.JSON
+import GHCup.Prelude.Logger
+import GHCup.Prelude.Version
+import GHCup.Types            ( EnvUnion (..) )
+import GHCup.Types.Optics     ( HasLog )
 #if defined(IS_WINDOWS)
 import GHCup.Prelude.Windows
 #else
@@ -40,13 +48,13 @@ import GHCup.Prelude.Posix
 
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
+import           Data.List                      ( intercalate )
+import qualified Data.Map.Strict                as Map
+import qualified Data.Text                      as T
 import           Data.Variant.Excepts
-import           Text.PrettyPrint.HughesPJClass ( Pretty )
-import qualified Data.Text                     as T
-import System.Environment (getEnvironment)
-import qualified Data.Map.Strict               as Map
-import System.FilePath
-import Data.List (intercalate)
+import           System.Environment             ( getEnvironment )
+import           System.FilePath
+import           Text.PrettyPrint.HughesPJClass ( Pretty, prettyShow )
 
 
 
@@ -59,6 +67,8 @@ catchWarn :: forall es m env . ( Pretty (V es)
                              , Monad m) => Excepts es m () -> Excepts '[] m ()
 catchWarn = catchAllE @_ @es (\v -> lift $ logWarn (T.pack . prettyHFError $ v))
 
+prettyText :: Pretty a => a -> T.Text
+prettyText = T.pack . prettyShow
 
 runBothE' :: forall e m a b .
              ( Monad m
@@ -81,6 +91,14 @@ runBothE' a1 a2 = do
       (_       , VLeft e ) -> throwSomeE e
       (VRight _, VRight _) -> pure ()
 
+augmentEnvironment :: [(String, String)] -> EnvUnion -> IO [(String, String)]
+augmentEnvironment (Map.fromList -> addEnv) PreferSpec = do
+ cEnv <- Map.fromList <$> getEnvironment
+ pure (Map.toList $ Map.union addEnv cEnv)
+augmentEnvironment (Map.fromList -> addEnv) PreferSystem = do
+ cEnv <- Map.fromList <$> getEnvironment
+ pure (Map.toList $ Map.union cEnv addEnv)
+augmentEnvironment addEnv OnlySpec = pure addEnv
 
 addToPath :: [FilePath]
           -> Bool         -- ^ if False will prepend

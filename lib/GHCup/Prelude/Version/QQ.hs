@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wno-orphans    #-}
-{-# LANGUAGE CPP                #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveLift         #-}
-{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskellQuotes #-}
 
@@ -18,17 +18,17 @@ Portability : portable
 -}
 module GHCup.Prelude.Version.QQ where
 
-import           Data.Data
-import           Data.Text                      ( Text )
-import           Data.Versions
+import Data.Data
+import Data.Text     ( Text )
+import Data.Versions
 #if !MIN_VERSION_base(4,13,0)
-import           GHC.Base
+import GHC.Base
 #endif
+import qualified Data.Text                  as T
 import           Language.Haskell.TH
-import           Language.Haskell.TH.Quote      ( QuasiQuoter(..) )
-import           Language.Haskell.TH.Syntax     ( dataToExpQ )
-import qualified Data.Text                     as T
-import qualified Language.Haskell.TH.Syntax    as TH
+import           Language.Haskell.TH.Quote  ( QuasiQuoter (..) )
+import           Language.Haskell.TH.Syntax ( dataToExpQ )
+import qualified Language.Haskell.TH.Syntax as TH
 
 
 #if !MIN_VERSION_base(4,13,0)

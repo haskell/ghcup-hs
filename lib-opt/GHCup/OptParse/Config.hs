@@ -1,46 +1,45 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module GHCup.OptParse.Config where
 
 
-import           GHCup.Errors
-import           GHCup.Types
-import           GHCup.Utils
-import           GHCup.Utils.Parsers (parseNewUrlSource)
-import           GHCup.Prelude
-import           GHCup.Prelude.Logger
-import           GHCup.Prelude.String.QQ
-import           GHCup.OptParse.Common
-import           GHCup.OptParse.Reset (resetUserConfig, toUserSettingsKey)
-import           GHCup.Version
+import GHCup.Errors
+import GHCup.Hardcoded.URLs
+import GHCup.Input.Parsers     ( parseNewUrlSource )
+import GHCup.OptParse.Common
+import GHCup.OptParse.Reset    ( resetUserConfig, toUserSettingsKey )
+import GHCup.Prelude
+import GHCup.Prelude.String.QQ
+import GHCup.Query.GHCupDirs
+import GHCup.Types
 
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad (when)
-import           Control.Exception              ( displayException )
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
-import           Data.Foldable (foldl')
-import           Data.Functor
-import           Data.Maybe
-import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style, ParseError )
-import           Options.Applicative.Pretty.Shim ( text )
-import           Prelude                 hiding ( appendFile )
-import           System.Exit
+import Control.Exception               ( displayException )
+import Control.Exception.Safe          ( MonadMask )
+import Control.Monad                   ( when )
+import Control.Monad.Reader
+import Control.Monad.Trans.Resource
+import Data.Foldable                   ( foldl' )
+import Data.Functor
+import Data.Maybe
+import Data.Variant.Excepts
+import Options.Applicative             hiding ( ParseError, style )
+import Options.Applicative.Pretty.Shim ( text )
+import Prelude                         hiding ( appendFile )
+import System.Exit
 
-import qualified Data.Text                     as T
-import qualified Data.ByteString.UTF8          as UTF8
-import qualified Data.Yaml.Aeson               as Y
-import Control.Exception.Safe (MonadMask)
+import qualified Data.ByteString.UTF8 as UTF8
+import qualified Data.Text            as T
+import qualified Data.Yaml.Aeson      as Y
 
 
 
@@ -58,7 +57,9 @@ data ConfigCommand
   | AddReleaseChannel Bool NewURLSource
   deriving (Eq, Show)
 
-data ResetCommand = ResetKeys [String] | ResetAll
+data ResetCommand
+  = ResetKeys [String]
+  | ResetAll
   deriving (Eq, Show)
 
 
@@ -175,7 +176,8 @@ updateSettings usl usr =
        defGHCconfOptions' = uDefGHCConfOptions usl <|> uDefGHCConfOptions usr
        pagerConfig' = uPager usl <|> uPager usr
        guessVersion' = uGuessVersion usl <|> uGuessVersion usr
-   in UserSettings cache' metaCache' metaMode' noVerify' verbose' keepDirs' downloader' (updateKeyBindings (uKeyBindings usl) (uKeyBindings usr)) urlSource' noNetwork' gpgSetting' platformOverride' mirrors' defGHCconfOptions' pagerConfig' guessVersion'
+       buildWrapper' = uBuildWrapper usl <|> uBuildWrapper usr
+   in UserSettings cache' metaCache' metaMode' noVerify' verbose' keepDirs' downloader' (updateKeyBindings (uKeyBindings usl) (uKeyBindings usr)) urlSource' noNetwork' gpgSetting' platformOverride' mirrors' defGHCconfOptions' pagerConfig' guessVersion' buildWrapper'
  where
   updateKeyBindings :: Maybe UserKeyBindings -> Maybe UserKeyBindings -> Maybe UserKeyBindings
   updateKeyBindings Nothing Nothing = Nothing
@@ -199,9 +201,10 @@ updateSettings usl usr =
     --[ Entrypoint ]--
     ------------------
 
-data Duplicate = Duplicate     -- ^ there is a duplicate somewhere in the middle
-               | NoDuplicate   -- ^ there is no duplicate
-               | DuplicateLast -- ^ there's a duplicate, but it's the last element
+data Duplicate
+  = Duplicate -- ^ there is a duplicate somewhere in the middle
+  | NoDuplicate -- ^ there is no duplicate
+  | DuplicateLast
 
 
 config :: forall m. ( Monad m
@@ -300,20 +303,20 @@ config configCommand settings userConf keybindings runLogger = case configComman
 
   aliasToURI :: NewURLSource -> NewURLSource
   aliasToURI (NewChannelAlias a) = NewURI (channelURL a)
-  aliasToURI v = v
+  aliasToURI v                   = v
 
   doConfig :: MonadIO m => UserSettings -> m ()
   doConfig usersettings = do
     let settings' = updateSettings usersettings userConf
     path <- liftIO getConfigFilePath
-    liftIO $ writeFile path $ formatConfig $ settings'
+    liftIO $ writeFile path $ formatConfig settings'
     runLogger $ logDebug $ T.pack $ show settings'
     pure ()
 
   doReset :: MonadIO m => UserSettings -> m ()
   doReset resetUserSettings = do
     path <- liftIO getConfigFilePath
-    liftIO $ writeFile path $ formatConfig $ resetUserSettings
+    liftIO $ writeFile path $ formatConfig resetUserSettings
     runLogger $ logDebug $ "reset to config: " <> T.pack (show resetUserSettings)
     pure ()
 

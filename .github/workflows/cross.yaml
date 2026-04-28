@@ -12,22 +12,29 @@ on:
   schedule:
     - cron: '0 2 * * *'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CABAL_CACHE_DISABLE: ${{ vars.CABAL_CACHE_DISABLE }}
   CABAL_CACHE_NONFATAL: yes
+  GHCUP_INSTALL_BASE_PREFIX: ${{ github.workspace }}
+  GITHUB_WORKSPACE: ${{ github.workspace }}
+  GHCUP_VER: 0.2.0.0
 
 jobs:
   build:
     name: Build linux binary
-    runs-on: [self-hosted, Linux, X64, maerwald]
+    runs-on: ubuntu-latest
     env:
-      CABAL_VER: 3.10.3.0
-      JSON_VERSION: "0.0.8"
+      CABAL_VER: 3.14.2.0
+      JSON_VERSION: "0.0.9"
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       S3_HOST: ${{ secrets.S3_HOST }}
       ARTIFACT: "x86_64-linux-ghcup"
-      GHC_VER: 8.10.7
+      GHC_VER: 9.6.7
       ARCH: 64
     steps:
       - name: Checkout code
@@ -36,9 +43,9 @@ jobs:
           submodules: 'true'
 
       - name: Run build
-        uses: docker://hasufell/alpine-haskell:3.12
+        uses: docker://hasufell/alpine-haskell:3.21
         with:
-          args: sh .github/scripts/build.sh
+          args: bash .github/scripts/build.sh --verbose --os ${{ runner.os }} -- --enable-executable-static
         env:
           ARTIFACT: ${{ env.ARTIFACT }}
           ARCH: ${{ env.ARCH }}
@@ -61,20 +68,15 @@ jobs:
     needs: "build"
     runs-on: [self-hosted, Linux, X64]
     container:
-      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:a9297a370025101b479cfd4977f8f910814e03ab
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:5df428b97c501f61f57587048d4bd15eba53e364
       options: --user root
       env:
-        CABAL_VER: 3.10.3.0
+        CABAL_VER: 3.14.2.0
         BUILD_CONF_ARGS: "--enable-unregisterised"
         HADRIAN_FLAVOUR: ""
-        JSON_VERSION: "0.0.8"
+        JSON_VERSION: "0.0.9"
         GHC_VER: 8.10.6
         GHC_TARGET_VERSION: "8.10.7"
-        ARCH: 64
-        DISTRO: Debian
-        ARTIFACT: "x86_64-linux-ghcup"
-        CROSS: "arm-linux-gnueabihf"
-        WRAPPER: "run"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -101,26 +103,33 @@ jobs:
           update-alternatives --install "/usr/bin/arm-linux-gnueabihf-ld" "ld-arm" "/usr/bin/arm-linux-gnueabihf-ld.gold" 20
           update-alternatives --install "/usr/bin/arm-linux-gnueabihf-ld" "ld-arm" "/usr/bin/arm-linux-gnueabihf-ld.bfd" 10
           update-alternatives --set "ld-arm" "/usr/bin/arm-linux-gnueabihf-ld.gold"
-          sh .github/scripts/cross.sh
+
+          bash .github/scripts/cross.sh \
+            --ghcup-binary ./out/x86_64-linux-ghcup-${{ env.GHCUP_VER }} \
+            --cross arm-linux-gnueabihf \
+            --os Linux \
+            --distro Debian \
+            --arch 64 \
+            --ghcup-dir ${{ github.workspace }} \
+            --ghc-version ${GHC_VER} \
+            --ghc-target-version ${GHC_TARGET_VERSION} \
+            --cabal-version ${CABAL_VER} \
+            --json-version ${JSON_VERSION}
 
   test-cross-js:
     name: Test GHC JS cross
     needs: "build"
     runs-on: [self-hosted, Linux, X64]
     container:
-      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:a9297a370025101b479cfd4977f8f910814e03ab
+      image: registry.gitlab.haskell.org/ghc/ci-images/x86_64-linux-deb12:5df428b97c501f61f57587048d4bd15eba53e364
       options: --user root
       env:
-        CABAL_VER: 3.10.3.0
+        CABAL_VER: 3.14.2.0
         BUILD_CONF_ARGS: ""
         HADRIAN_FLAVOUR: "default+native_bignum"
-        JSON_VERSION: "0.0.8"
-        GHC_VER: 9.6.2
-        GHC_TARGET_VERSION: "9.6.2"
-        ARCH: 64
-        DISTRO: Debian
-        ARTIFACT: "x86_64-linux-ghcup"
-        CROSS: "javascript-unknown-ghcjs"
+        JSON_VERSION: "0.0.9"
+        GHC_VER: 9.6.7
+        GHC_TARGET_VERSION: "9.6.7"
         WRAPPER: "emconfigure"
     steps:
       - name: Checkout code
@@ -143,5 +152,15 @@ jobs:
           ./emsdk activate latest
           . ./emsdk_env.sh
           cd ..
-          bash .github/scripts/cross.sh
+          bash .github/scripts/cross.sh \
+            --ghcup-binary ./out/x86_64-linux-ghcup-${{ env.GHCUP_VER }} \
+            --cross javascript-unknown-ghcjs \
+            --os Linux \
+            --distro Debian \
+            --arch 64 \
+            --ghcup-dir ${{ github.workspace }} \
+            --ghc-version ${GHC_VER} \
+            --ghc-target-version ${GHC_TARGET_VERSION} \
+            --cabal-version ${CABAL_VER} \
+            --json-version ${JSON_VERSION}
 

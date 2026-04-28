@@ -3,7 +3,6 @@
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RankNTypes #-}
@@ -11,10 +10,10 @@
 module GHCup.OptParse.Prefetch where
 
 
-import           GHCup
+import           GHCup.Command.Prefetch
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Utils.Parsers (fromVersion)
+import           GHCup.Input.Parsers (fromVersion, toolParser)
 import           GHCup.Types.Optics
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
@@ -30,7 +29,7 @@ import           Control.Monad.Trans.Resource
 import           Data.Functor
 import           Data.Maybe
 import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
+import           Options.Applicative     hiding ( style, ParseError )
 import           Prelude                 hiding ( appendFile )
 import           System.Exit
 
@@ -50,6 +49,7 @@ data PrefetchCommand = PrefetchGHC PrefetchGHCOptions (Maybe ToolVersion)
                      | PrefetchCabal PrefetchOptions (Maybe ToolVersion)
                      | PrefetchHLS PrefetchOptions (Maybe ToolVersion)
                      | PrefetchStack PrefetchOptions (Maybe ToolVersion)
+                     | PrefetchTool PrefetchOptions (Maybe ToolVersion) Tool
                      | PrefetchMetadata
 
 
@@ -62,7 +62,8 @@ data PrefetchCommand = PrefetchGHC PrefetchGHCOptions (Maybe ToolVersion)
 
 
 data PrefetchOptions = PrefetchOptions {
-  pfCacheDir :: Maybe FilePath
+    pfSrc :: Bool
+  , pfCacheDir :: Maybe FilePath
 }
 
 data PrefetchGHCOptions = PrefetchGHCOptions {
@@ -86,7 +87,7 @@ prefetchP = subparser
           <$> (PrefetchGHCOptions
                 <$> ( switch (short 's' <> long "source" <> help "Download source tarball instead of bindist") <**> helper )
                 <*> optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*>  optional (toolVersionTagArgument [] (Just GHC)) )
+          <*>  optional (toolVersionTagArgument [] (Just ghc)) )
         ( progDesc "Download GHC assets for installation")
       )
       <>
@@ -94,8 +95,11 @@ prefetchP = subparser
       "cabal"
       (info
         (PrefetchCabal
-          <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*> ( optional (toolVersionTagArgument [] (Just Cabal)) <**> helper ))
+           <$> (PrefetchOptions
+                 <$> ( switch (short 's' <> long "source" <> help "Download source tarball instead of bindist") <**> helper )
+                 <*> optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory")))
+               )
+          <*> ( optional (toolVersionTagArgument [] (Just cabal)) <**> helper ))
         ( progDesc "Download cabal assets for installation")
       )
       <>
@@ -103,8 +107,11 @@ prefetchP = subparser
       "hls"
       (info
         (PrefetchHLS
-          <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*> ( optional (toolVersionTagArgument [] (Just HLS)) <**> helper ))
+           <$> (PrefetchOptions
+                 <$> ( switch (short 's' <> long "source" <> help "Download source tarball instead of bindist") <**> helper )
+                 <*> optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory")))
+               )
+          <*> ( optional (toolVersionTagArgument [] (Just hls)) <**> helper ))
         ( progDesc "Download HLS assets for installation")
       )
       <>
@@ -112,8 +119,11 @@ prefetchP = subparser
       "stack"
       (info
         (PrefetchStack
-          <$> fmap PrefetchOptions (optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory"))))
-          <*> ( optional (toolVersionTagArgument [] (Just Stack)) <**> helper ))
+           <$> (PrefetchOptions
+                 <$> ( switch (short 's' <> long "source" <> help "Download source tarball instead of bindist") <**> helper )
+                 <*> optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory")))
+               )
+          <*> ( optional (toolVersionTagArgument [] (Just stack)) <**> helper ))
         ( progDesc "Download stack assets for installation")
       )
       <>
@@ -123,6 +133,14 @@ prefetchP = subparser
         helper
         ( progDesc "Download ghcup's metadata, needed for various operations")
       )
+  ) <|>
+  ( (\o t v -> PrefetchTool o v t)
+    <$> (PrefetchOptions
+          <$> ( switch (short 's' <> long "source" <> help "Download source tarball instead of bindist") <**> helper )
+          <*> optional (option str (short 'd' <> long "directory" <> help "directory to download into (default: ~/.ghcup/cache/)" <> completer (bashCompleter "directory")))
+        )
+    <*> argument (eitherReader toolParser) (metavar "TOOL" <> help "Which tool to prefetch")
+    <*> optional (toolVersionTagArgument [] Nothing)
   )
 
 
@@ -162,7 +180,9 @@ type PrefetchEffects = '[ TagNotFound
                         , JSONError
                         , FileDoesNotExistError
                         , StackPlatformDetectError
+                        , UnsupportedMetadataFormat
                         , URIParseError
+                        , ParseError
                         ]
 
 
@@ -200,22 +220,32 @@ prefetch prefetchCommand settings runAppState runLogger =
       PrefetchGHC
         (PrefetchGHCOptions pfGHCSrc pfCacheDir) mt -> do
           forM_ pfCacheDir (liftIO . createDirRecursive')
-          (v, _) <- liftE $ fromVersion mt guessMode GHC
+          (v, _) <- liftE $ fromVersion mt guessMode ghc
           if pfGHCSrc
-          then liftE $ fetchGHCSrc v pfCacheDir
-          else liftE $ fetchToolBindist v GHC pfCacheDir
-      PrefetchCabal PrefetchOptions {pfCacheDir} mt   -> do
+          then liftE $ fetchToolSrc ghc v pfCacheDir
+          else liftE $ fetchToolBindist v ghc pfCacheDir
+      PrefetchCabal PrefetchOptions {pfSrc, pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt guessMode Cabal
-        liftE $ fetchToolBindist v Cabal pfCacheDir
-      PrefetchHLS PrefetchOptions {pfCacheDir} mt   -> do
+        (v, _) <- liftE $ fromVersion mt guessMode cabal
+        if pfSrc
+        then liftE $ fetchToolSrc cabal v pfCacheDir
+        else liftE $ fetchToolBindist v cabal pfCacheDir
+      PrefetchHLS PrefetchOptions {pfSrc, pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt guessMode HLS
-        liftE $ fetchToolBindist v HLS pfCacheDir
-      PrefetchStack PrefetchOptions {pfCacheDir} mt   -> do
+        (v, _) <- liftE $ fromVersion mt guessMode hls
+        if pfSrc
+        then liftE $ fetchToolSrc hls v pfCacheDir
+        else liftE $ fetchToolBindist v hls pfCacheDir
+      PrefetchStack PrefetchOptions {pfSrc, pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt guessMode Stack
-        liftE $ fetchToolBindist v Stack pfCacheDir
+        (v, _) <- liftE $ fromVersion mt guessMode stack
+        if pfSrc
+        then liftE $ fetchToolSrc stack v pfCacheDir
+        else liftE $ fetchToolBindist v stack pfCacheDir
+      PrefetchTool PrefetchOptions {pfCacheDir} mt tool -> do
+        forM_ pfCacheDir (liftIO . createDirRecursive')
+        (v, _) <- liftE $ fromVersion mt guessMode tool
+        liftE $ fetchToolBindist v tool pfCacheDir
       PrefetchMetadata -> do
         pfreq <- lift getPlatformReq
         _ <- liftE $ getDownloadsF pfreq

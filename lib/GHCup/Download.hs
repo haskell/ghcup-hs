@@ -1,9 +1,9 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {-|
 Module      : GHCup.Download
@@ -25,70 +25,78 @@ Generally we support downloading via:
 module GHCup.Download where
 
 #if defined(INTERNAL_DOWNLOADER)
-import           GHCup.Download.IOStreams
-import           GHCup.Download.Utils
+import GHCup.Download.IOStreams
 #endif
-import           GHCup.Errors
-import           GHCup.Types
-import qualified GHCup.Types.Stack                as Stack
-import           GHCup.Types.Optics
-import           GHCup.Types.JSON               ( )
-import           GHCup.Utils.Dirs
-import           GHCup.Utils.URI
-import           GHCup.Platform
-import           GHCup.Prelude
-import           GHCup.Prelude.File
-import           GHCup.Prelude.Logger.Internal
-import           GHCup.Prelude.Process
-import           GHCup.Version
+import GHCup.Errors
+import GHCup.Types
+import GHCup.Types.JSON
+    ()
+import GHCup.Types.Optics
+#if defined(DHALL)
+import GHCup.Types.Dhall
+    ()
+#endif
+import GHCup.Hardcoded.URLs
+import GHCup.Input.Parsers.URI
+import GHCup.Prelude
+import GHCup.Prelude.Process
+import GHCup.Query.GHCupDirs
+import GHCup.Query.System
+import GHCup.System.Directory
 
-import           Control.Applicative
-import           Control.Exception.Safe
-import           Control.Monad
+import qualified GHCup.Types.Stack as Stack
+
+import Control.Applicative
+import Control.Exception.Safe
+import Control.Monad
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
-                                         hiding ( throwM )
-import           Data.Aeson
-import           Data.ByteString                ( ByteString )
-#if defined(INTERNAL_DOWNLOADER)
-import           Data.CaseInsensitive           ( mk )
-#endif
-import           Data.Maybe
-import           Data.Either
-import           Data.List
-import           Data.Time.Clock
-import           Data.Time.Clock.POSIX
-import           Data.Versions
-import           Data.Word8              hiding ( isSpace )
-import           Data.Variant.Excepts
-#if defined(INTERNAL_DOWNLOADER)
-import           Network.Http.Client     hiding ( URL )
-#endif
-import           Optics
-import           Prelude                 hiding ( abs
-                                                , readFile
-                                                , writeFile
-                                                )
-import           Safe
-import           System.Environment
-import           System.Exit
-import           System.FilePath
-import           System.IO.Error
-import           System.IO.Temp
-import           URI.ByteString          hiding (parseURI)
+import Control.Monad.Reader
+import Control.Monad.Trans.Resource hiding ( throwM )
+import Data.Aeson
 
-import qualified Crypto.Hash.SHA256            as SHA256
-import qualified Data.ByteString               as B
-import qualified Data.ByteString.Base16        as B16
-import qualified Data.ByteString.Lazy          as L
-import qualified Data.Map.Strict               as M
-import qualified Data.Text                     as T
-import qualified Data.Text.IO                  as T
-import qualified Data.Text.Encoding            as E
-import qualified Data.Yaml.Aeson               as Y
+#if defined(DHALL)
+import qualified Data.ByteString.Lazy as BL
+import           Data.Void            ( Void )
+import qualified Dhall
+import qualified Dhall.Binary         as Dhall
+#endif
+
+import Data.ByteString ( ByteString )
+#if defined(INTERNAL_DOWNLOADER)
+import Data.CaseInsensitive ( mk )
+#endif
+import Data.Either
+import Data.List
+import Data.Maybe
+import Data.Time.Clock
+import Data.Time.Clock.POSIX
+import Data.Variant.Excepts
+import Data.Versions
+import Data.Word8            hiding ( isSpace )
+#if defined(INTERNAL_DOWNLOADER)
+import Network.Http.Client hiding ( URL )
+#endif
+import Optics
+import Prelude            hiding ( abs, readFile, writeFile )
+import Safe
+import System.Environment
+import System.Exit
+import System.FilePath
+import System.IO.Error
+import System.IO.Temp
+import URI.ByteString     hiding ( parseURI )
+
+import qualified Crypto.Hash.SHA256     as SHA256
+import qualified Data.ByteString        as B
+import qualified Data.ByteString.Base16 as B16
+import qualified Data.ByteString.Lazy   as L
+import qualified Data.Map.Strict        as M
+import qualified Data.Text              as T
+import qualified Data.Text.Encoding     as E
+import qualified Data.Text.IO           as T
+import qualified Data.Yaml.Aeson        as Y
 
 
 
@@ -119,7 +127,7 @@ getDownloadsF :: ( FromJSONKey Tool
                  )
               => PlatformRequest
               -> Excepts
-                   '[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError]
+                   '[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError, UnsupportedMetadataFormat]
                    m
                    GHCupInfo
 getDownloadsF pfreq@(PlatformRequest arch plat _) = do
@@ -149,7 +157,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
          )
       => NewURLSource
       -> Excepts
-           '[DownloadFailed, GPGError, DigestError, ContentLengthError, JSONError, FileDoesNotExistError]
+           '[DownloadFailed, GPGError, DigestError, ContentLengthError, JSONError, FileDoesNotExistError, UnsupportedMetadataFormat]
            m (Either GHCupInfo Stack.SetupInfo)
   dl' NewGHCupURL       = fmap Left $ liftE (getBase ghcupURL) >>= liftE . decodeMetadata @GHCupInfo
   dl' NewStackSetupURL  = fmap Right $ liftE (getBase stackSetupURL) >>= liftE . decodeMetadata @Stack.SetupInfo
@@ -171,19 +179,19 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   fromStackSetupInfo (Stack.siGHCs -> ghcDli) keys = do
     let ghcVersionsPerKey = (`M.lookup` ghcDli) . T.pack <$> keys
         ghcVersions = fromMaybe mempty . listToMaybe . catMaybes $ ghcVersionsPerKey
-    (ghcupInfo' :: M.Map GHCTargetVersion DownloadInfo) <-
-      M.mapKeys mkTVer <$> M.traverseMaybeWithKey (\_ a -> pure $ fromStackDownloadInfo a) ghcVersions
-    let ghcupDownloads' = M.singleton GHC (M.map fromDownloadInfo ghcupInfo')
+    (ghcupInfo' :: M.Map TargetVersion DownloadInfo) <-
+      M.mapKeys mkTVer <$> M.traverseMaybeWithKey (\v a -> pure $ fromStackDownloadInfo v a) ghcVersions
+    let ghcupDownloads' = M.singleton ghc (ToolInfo (M.map fromDownloadInfo ghcupInfo') Nothing)
     pure (GHCupInfo mempty ghcupDownloads' Nothing)
    where
     fromDownloadInfo :: DownloadInfo -> VersionInfo
     fromDownloadInfo dli = let aspec = MapIgnoreUnknownKeys $ M.singleton arch (MapIgnoreUnknownKeys $ M.singleton plat (M.singleton Nothing dli))
                            in VersionInfo [] Nothing Nothing Nothing Nothing aspec Nothing Nothing Nothing Nothing
 
-    fromStackDownloadInfo :: MonadThrow m => Stack.GHCDownloadInfo -> m DownloadInfo
-    fromStackDownloadInfo (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do
+    fromStackDownloadInfo :: MonadThrow m => Version -> Stack.GHCDownloadInfo -> m DownloadInfo
+    fromStackDownloadInfo ver (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do
       sha256 <- maybe (throwM $ DigestMissing downloadInfoUrl) (pure . E.decodeUtf8) downloadInfoSha256
-      pure $ DownloadInfo downloadInfoUrl (Just $ RegexDir "ghc-.*") sha256 Nothing Nothing Nothing
+      pure $ DownloadInfo downloadInfoUrl (Just $ RegexDir "ghc-.*") sha256 Nothing Nothing Nothing (Just $ toInstallationInputSpec $ defaultGHCInstallSpec pfreq $ mkTVer ver)
 
 
   mergeGhcupInfo :: MonadFail m
@@ -191,7 +199,8 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
                  -> m GHCupInfo
   mergeGhcupInfo [] = fail "mergeGhcupInfo: internal error: need at least one GHCupInfo"
   mergeGhcupInfo xs@(GHCupInfo{}: _) =
-    let newDownloads   = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_ghcupDownloads   <$> xs)
+    let newDownloads   = M.unionsWith (\(ToolInfo a _) (ToolInfo a' b') -> ToolInfo (M.unionWith (\_ b2 -> b2) a a') b')
+                                      (_ghcupDownloads   <$> xs)
         newToolReqs    = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_toolRequirements <$> xs)
     in pure $ GHCupInfo newToolReqs newDownloads Nothing
 
@@ -242,8 +251,8 @@ getBase uri = do
   warnCache :: (MonadReader env m, HasLog env, MonadMask m, MonadCatch m, MonadIO m) => FilePath -> Downloader -> m ()
   warnCache s downloader' = do
     let tryDownloder = case downloader' of
-                         Curl -> "Wget"
-                         Wget -> "Curl"
+                         Curl     -> "Wget"
+                         Wget     -> "Curl"
 #if defined(INTERNAL_DOWNLOADER)
                          Internal -> "Curl"
 #endif
@@ -350,19 +359,55 @@ decodeMetadata :: forall j m env .
                , HasLog env
                , MonadMask m
                , FromJSON j
+#if defined(DHALL)
+               , Dhall.FromDhall j
+#endif
                )
                => FilePath
-               -> Excepts '[JSONError, FileDoesNotExistError] m j
-decodeMetadata actualYaml = do
-  lift $ logDebug $ "Decoding yaml at: " <> T.pack actualYaml
+               -> Excepts '[JSONError, FileDoesNotExistError, UnsupportedMetadataFormat] m j
+decodeMetadata metadata
+  | takeExtension metadata `elem` [".yaml", ".yml"]= do
+      lift $ logDebug $ "Decoding yaml at: " <> T.pack metadata
+      liftE $ yamlMeta metadata
+  | takeExtension metadata == ".json" = do
+      lift $ logDebug $ "Decoding json at: " <> T.pack metadata
+      liftE $ jsonMeta metadata
+#if defined(DHALL)
+  | takeExtension metadata == ".dhall" = do
+      lift $ logDebug $ "Decoding dhall at: " <> T.pack metadata
+      liftE $ dhallMeta metadata
+  | takeExtension metadata `elem` [".dhallb", ".dhall-binary"] = do
+      lift $ logDebug $ "Decoding dhall binary at: " <> T.pack metadata
+      liftE $ dhallbMeta metadata
+#endif
+  | otherwise = throwE $ UnsupportedMetadataFormat (takeExtension metadata)
 
-  liftE
-    . onE_ (onError actualYaml)
-    . lEM' @_ @_ @'[JSONError] (\(displayException -> e) -> JSONDecodeError $ unlines [e, "Consider removing " <> actualYaml <> " manually."])
-    . liftIO
-    . Y.decodeFileEither
-    $ actualYaml
  where
+#if defined(DHALL)
+  dhallbMeta f =
+      onE_ (onError f)
+      . handleIO (\(displayException -> e) -> throwE @_ @'[JSONError] $ JSONDecodeError $ unlines [e, "Consider removing " <> f <> " manually."])
+      . liftIO
+      $ BL.readFile f >>= either (fail . show) pure . Dhall.decodeExpression @Void @Void >>= Dhall.rawInput Dhall.auto
+  dhallMeta f =
+      onE_ (onError f)
+      . handleIO (\(displayException -> e) -> throwE @_ @'[JSONError] $ JSONDecodeError $ unlines [e, "Consider removing " <> f <> " manually."])
+      . liftIO
+      . Dhall.inputFile Dhall.auto
+      $ f
+#endif
+  jsonMeta f =
+      onE_ (onError f)
+      . lEM' @_ @_ @'[JSONError] (\e -> JSONDecodeError $ unlines [e, "Consider removing " <> f <> " manually."])
+      . liftIO
+      . eitherDecodeFileStrict
+      $ f
+  yamlMeta f =
+      onE_ (onError f)
+      . lEM' @_ @_ @'[JSONError] (\(displayException -> e) -> JSONDecodeError $ unlines [e, "Consider removing " <> f <> " manually."])
+      . liftIO
+      . Y.decodeFileEither
+      $ f
   -- On error, remove the etags file and set access time to 0. This should ensure the next invocation
   -- may re-download and succeed.
   onError :: (MonadReader env m, HasLog env, MonadMask m, MonadCatch m, MonadIO m) => FilePath -> m ()
@@ -391,7 +436,7 @@ getDownloadInfo' :: ( MonadReader env m
                     , HasGHCupInfo env
                     )
                  => Tool
-                 -> GHCTargetVersion
+                 -> TargetVersion
                  -- ^ tool version
                  -> Excepts
                       '[NoDownload]
@@ -403,7 +448,7 @@ getDownloadInfo' t v = do
 
   let distro_preview f g =
         let platformVersionSpec =
-              preview (ix t % ix v % viArch % to unMapIgnoreUnknownKeys % ix a % to unMapIgnoreUnknownKeys % ix (f p)) dls
+              preview (ix t % toolVersions % ix v % viArch % to unMapIgnoreUnknownKeys % ix a % to unMapIgnoreUnknownKeys % ix (f p)) dls
             mv' = g mv
         in  fmap snd
               .   find
@@ -481,9 +526,9 @@ download rawUri gpgUri eDigest eCSize dest mfn etags
           (\e' -> do
             lift $ hideError doesNotExistErrorType $ recycleFile (tmpFile baseDestFile)
             case e' of
-              V e@GPGError {} -> throwE e
+              V e@GPGError {}    -> throwE e
               V e@DigestError {} -> throwE e
-              _ -> throwE (DownloadFailed e')
+              _                  -> throwE (DownloadFailed e')
           ) $ do
               Settings{ downloader, noNetwork, gpgSetting } <- lift getSettings
               when noNetwork $ throwE (DownloadFailed (V NoNetwork :: V '[NoNetwork]))
@@ -744,12 +789,12 @@ downloadCached :: ( MonadReader env m
                -> Excepts '[URIParseError, DigestError, ContentLengthError, DownloadFailed, GPGError] m FilePath
 downloadCached dli mfn = do
   Settings{ cache } <- lift getSettings
-  case cache of
-    True -> downloadCached' dli mfn Nothing
-    False -> do
-      dlu <- lE $ parseURI' (_dlUri dli)
-      tmp <- lift withGHCupTmpDir
-      liftE $ download dlu Nothing (Just (_dlHash dli)) (_dlCSize dli) (fromGHCupPath tmp) outputFileName False
+  if cache
+  then downloadCached' dli mfn Nothing
+  else do
+    dlu <- lE $ parseURI' (_dlUri dli)
+    tmp <- lift withGHCupTmpDir
+    liftE $ download dlu Nothing (Just (_dlHash dli)) (_dlCSize dli) (fromGHCupPath tmp) outputFileName False
  where
   outputFileName = mfn <|> _dlOutput dli
 
@@ -808,8 +853,7 @@ checkDigest eDigest file = do
   when verify $ do
     let p' = takeFileName file
     lift $ logInfo $ "verifying digest of: " <> T.pack p'
-    c <- liftIO $ L.readFile file
-    cDigest <- throwEither . E.decodeUtf8' . B16.encode . SHA256.hashlazy $ c
+    cDigest <- liftIO $ getFileDigest file
     when ((cDigest /= eDigest) && verify) $ throwE (DigestError file cDigest eDigest)
 
 checkCSize :: ( MonadReader env m
@@ -891,3 +935,9 @@ applyMirrors (DM ms) uri@(URI { uriAuthority = Just (Authority { authorityHost =
     Just (DownloadMirror auth Nothing) ->
       uri { uriAuthority = Just auth }
 applyMirrors _ uri = uri
+
+getFileDigest :: FilePath -> IO T.Text
+getFileDigest file = do
+  c <- liftIO $ L.readFile file
+  throwEither . E.decodeUtf8' . B16.encode . SHA256.hashlazy $ c
+

@@ -1,33 +1,43 @@
 #!/usr/bin/env bash
 
+# TODO: allow local execution
+
 set -eux
 
 . .github/scripts/common.sh
 
-mkdir -p "$CI_PROJECT_DIR"/.local/bin
+mkdir -p "$GITHUB_WORKSPACE"/.local/bin
 
 ### build
 
 
 
 if [ "${OS}" = "Windows" ] ; then
+	export GHCUP_INSTALL_BASE_PREFIX=/c
 	GHCUP_DIR="${GHCUP_INSTALL_BASE_PREFIX}"/ghcup
+	ext=".exe"
 else
+	export GHCUP_INSTALL_BASE_PREFIX=$(pwd)
 	GHCUP_DIR="${GHCUP_INSTALL_BASE_PREFIX}"/.ghcup
+	ext=""
 fi
 
+GHCUP_BINDIR="${GHCUP_DIR}/bin"
+export PATH="${GHCUP_BINDIR}:$PATH"
+
 rm -rf "${GHCUP_DIR}"
-mkdir -p "${GHCUP_BIN}"
+mkdir -p "${GHCUP_BINDIR}"
 
 ls -lah out
 find out
-cp "out/${ARTIFACT}"-* "$GHCUP_BIN/ghcup${ext}"
-chmod +x "$GHCUP_BIN/ghcup${ext}"
+cp "out/${ARTIFACT}"-* "$GHCUP_BINDIR/ghcup${ext}"
+export GHCUP_BIN="$GHCUP_BINDIR/ghcup${ext}"
+chmod +x "$GHCUP_BINDIR/ghcup${ext}"
 echo "$PATH"
 
-"$GHCUP_BIN/ghcup${ext}" --version
+"$GHCUP_BINDIR/ghcup${ext}" --version
 eghcup --version
-sha_sum "$GHCUP_BIN/ghcup${ext}"
+sha_sum "$GHCUP_BINDIR/ghcup${ext}"
 sha_sum "$(raw_eghcup --offline whereis ghcup)"
 
 git_describe
@@ -40,11 +50,6 @@ ecabal update
 if ! command -v cabal-cache ; then
 	download_cabal_cache "$HOME/.local/bin/cabal-cache"
 fi
-
-if ! cabal-cache version ; then
-	build_cabal_cache "$HOME/.local/bin"
-fi
-
 
 eghcup debug-info
 

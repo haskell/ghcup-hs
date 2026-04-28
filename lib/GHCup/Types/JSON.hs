@@ -1,14 +1,15 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE QuasiQuotes           #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {-|
 Module      : GHCup.Types.JSON
@@ -21,55 +22,137 @@ Portability : portable
 -}
 module GHCup.Types.JSON where
 
-import           GHCup.Types
-import           GHCup.Types.Stack (SetupInfo)
-import           GHCup.Types.JSON.MapIgnoreUnknownKeys ()
-import           GHCup.Types.JSON.Utils
-import           GHCup.Types.JSON.Versions ()
-import           GHCup.Prelude.MegaParsec
-import           GHCup.Utils.URI
+import GHCup.Input.Parsers.URI
+import GHCup.Prelude.JSON
+import GHCup.Prelude.MegaParsec
+import GHCup.Types
+import GHCup.Types.JSON.MapIgnoreUnknownKeys
+    ()
+import GHCup.Types.JSON.Utils
+import GHCup.Types.JSON.Versions
+    ()
+import GHCup.Types.Stack                     ( SetupInfo )
 
-import           Control.Applicative            ( (<|>) )
-import           Data.Aeson              hiding (Key)
-import           Data.Aeson.TH
-import           Data.Aeson.Types        hiding (Key)
-import           Data.ByteString                ( ByteString )
-import           Data.List.NonEmpty             ( NonEmpty(..) )
-import           Data.Maybe
-import           Data.Text.Encoding            as E
-import           Data.Foldable
-import           Data.Versions
-import           Data.Void
-import           URI.ByteString hiding (parseURI)
-import           Text.Casing
+import Control.Applicative ( (<|>) )
+import Control.Monad
+import Data.Aeson          hiding ( Key )
+import Data.Aeson.TH
+import Data.Aeson.Types    hiding ( Key )
+import Data.ByteString     ( ByteString )
+import Data.Foldable
+import Data.Maybe
+import Data.Text.Encoding  as E
+import Data.Versions
+import System.FilePath     ( hasDrive, isAbsolute, splitPath )
+import Text.Casing
+import URI.ByteString      hiding ( parseURI )
 
-import qualified Data.List.NonEmpty            as NE
-import qualified Data.Text                     as T
-import qualified Data.Text.Encoding.Error      as E
-import qualified Text.Megaparsec               as MP
-import qualified Text.Megaparsec.Char          as MPC
+import qualified Data.List.NonEmpty       as NE
+import qualified Data.Text                as T
+import qualified Data.Text.Encoding.Error as E
+import qualified Text.Megaparsec          as MP
+
+safePath :: FilePath -> Bool
+safePath fp
+  | "." `notElem` splitPath fp
+  , ".." `notElem` splitPath fp
+  , not (hasDrive fp)
+  , not (isAbsolute fp)
+  = True
+  | otherwise = False
+
+checkSafePath :: MonadFail m => FilePath -> m ()
+checkSafePath fp = unless (safePath fp) $ fail "'..' or '.' are not allowed"
+
+safeFilename :: FilePath -> Bool
+safeFilename fp
+  | length (splitPath fp) == 1
+  , safePath fp
+  = True
+  | otherwise = False
+
+checkSafeFilename :: MonadFail m => FilePath -> m ()
+checkSafeFilename fp = unless (safeFilename fp) $ fail "'..' or '.' are not allowed and filepath must have no path separators"
+
+safeVersion :: TargetVersion -> Bool
+safeVersion TargetVersion{..}
+  | prettyVer _tvVersion `notElem` ["db", "set", "ghc", "cabal", "stack", "hls", "ghcup"]
+  , T.unpack (prettyVer _tvVersion) `notElem` cabalBadNames
+  , safeFilename (T.unpack $ prettyVer _tvVersion)
+  , maybe True (`notElem` ["db", "set", "ghc", "cabal", "stack", "hls", "ghcup"]) _tvTarget
+  , maybe True (safeFilename . T.unpack) _tvTarget
+  = True
+  | otherwise = False
+
+-- This is sad, but our version parsers are too lax,
+-- so we need to make sure that e.g. 'cabal-audit'
+-- is not parser as cabal with version 'audit'.
+-- Backwards compatibility is a b*tch.
+cabalBadNames :: [String]
+cabalBadNames =
+  [ "plan"
+  , "add"
+  , "audit"
+  , "bounds"
+  , "bundler"
+  , "cache"
+  , "clean"
+  , "core-inspection"
+  , "deps"
+  , "diff"
+  , "docspec"
+  , "doctest"
+  , "edit"
+  , "env"
+  , "fmt"
+  , "haddock-server"
+  , "hasklint"
+  , "helper"
+  , "hie"
+  , "hoogle"
+  , "ifacy-query"
+  , "progdeps"
+  , "sort"
+  , "store-check"
+  , "store-gc"
+  ]
+
+
+checkSafeVersion :: MonadFail m => TargetVersion -> m ()
+checkSafeVersion v' = unless (safeVersion v') $ fail "Unsafe version, try something more vanilla like '1.2.3'"
+
+safeToolname :: Tool -> Bool
+safeToolname (Tool t)
+  | t `notElem` ["db", "set", "bin", "cache", "env", "config.yaml", "tmp", "trash", "logs"]
+  , safeFilename t
+  = True
+  | otherwise = False
+
+checkSafeToolname :: MonadFail m => Tool -> m ()
+checkSafeToolname t = unless (safeToolname t) $ fail "Unsafe tool name, try something more vanilla"
 
 instance ToJSON LinuxDistro where
   toJSON = String . T.pack . show
 
 instance FromJSON LinuxDistro where
   parseJSON = withText "LinuxDistro" $ \t -> case T.unpack (T.toLower t) of
-    "debian"   -> pure Debian
-    "ubuntu"   -> pure Ubuntu
-    "mint"     -> pure Mint
-    "fedora"   -> pure Fedora
-    "centos"   -> pure CentOS
-    "redhat"   -> pure RedHat
-    "alpine"   -> pure Alpine
-    "amazonlinux" -> pure AmazonLinux
-    "rocky"    -> pure Rocky
-    "void"     -> pure Void
-    "gentoo"   -> pure Gentoo
-    "exherbo"  -> pure Exherbo
-    "opensuse" -> pure OpenSUSE
+    "debian"       -> pure Debian
+    "ubuntu"       -> pure Ubuntu
+    "mint"         -> pure Mint
+    "fedora"       -> pure Fedora
+    "centos"       -> pure CentOS
+    "redhat"       -> pure RedHat
+    "alpine"       -> pure Alpine
+    "amazonlinux"  -> pure AmazonLinux
+    "rocky"        -> pure Rocky
+    "void"         -> pure Void
+    "gentoo"       -> pure Gentoo
+    "exherbo"      -> pure Exherbo
+    "opensuse"     -> pure OpenSUSE
     "unknownlinux" -> pure UnknownLinux
-    _ -> fail "Unknown Linux distro"
+    _              -> fail "Unknown Linux distro"
 
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''ProcessSpec
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''MetaMode
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Architecture
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VSep
@@ -79,10 +162,10 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Mess
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Chunk
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Release
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''SemVer
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Tool
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''KeepDirs
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Downloader
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GPGSetting
+deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''EnvUnion
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "r-") . T.pack . kebab . tail $ str' } ''PlatformRequest
 
 instance ToJSON Tag where
@@ -112,6 +195,15 @@ instance FromJSON Tag where
       Left  e -> fail . show $ e
     x -> pure (UnknownTag x)
 
+instance ToJSON Tool where
+  toJSON (Tool t) = String (T.toLower . T.pack $ t)
+
+instance FromJSON Tool where
+  parseJSON = withText "Tool" $ \t -> do
+    let tool = Tool . T.unpack . T.toLower $ t
+    checkSafeToolname tool
+    pure tool
+
 instance ToJSON URI where
   toJSON = toJSON . E.decodeUtf8With E.lenientDecode . serializeURIRef'
 
@@ -122,21 +214,25 @@ instance FromJSON URI where
       Right x -> pure x
       Left  e -> fail . show $ e
 
-instance ToJSON GHCTargetVersion where
+instance ToJSON TargetVersion where
   toJSON = toJSON . tVerToText
 
-instance FromJSON GHCTargetVersion where
-  parseJSON = withText "GHCTargetVersion" $ \t -> case MP.parse ghcTargetVerP "" t of
-    Right x -> pure x
-    Left  e -> fail $ "Failure in GHCTargetVersion (FromJSON)" <> show e
+instance FromJSON TargetVersion where
+  parseJSON = withText "TargetVersion" $ \t -> case MP.parse ghcTargetVerP "" t of
+    Right x -> do
+      checkSafeVersion x
+      pure x
+    Left  e -> fail $ "Failure in TargetVersion (FromJSON)" <> show e
 
-instance ToJSONKey GHCTargetVersion where
+instance ToJSONKey TargetVersion where
   toJSONKey = toJSONKeyText $ \x -> tVerToText x
 
-instance FromJSONKey GHCTargetVersion where
+instance FromJSONKey TargetVersion where
   fromJSONKey = FromJSONKeyTextParser $ \t -> case MP.parse ghcTargetVerP "" t of
-    Right x -> pure x
-    Left  e -> fail $ "Failure in GHCTargetVersion (FromJSONKey)" <> show e
+    Right x -> do
+      checkSafeVersion x
+      pure x
+    Left  e -> fail $ "Failure in TargetVersion (FromJSONKey)" <> show e
 
 
 instance ToJSONKey Platform where
@@ -177,10 +273,10 @@ instance FromJSONKey Architecture where
   fromJSONKey = genericFromJSONKey defaultJSONKeyOptions
 
 instance ToJSONKey Tool where
-  toJSONKey = genericToJSONKey defaultJSONKeyOptions
+  toJSONKey = toJSONKeyText $ \(Tool t) -> T.toLower . T.pack $ t
 
 instance FromJSONKey Tool where
-  fromJSONKey = genericFromJSONKey defaultJSONKeyOptions
+  fromJSONKey = FromJSONKeyTextParser $ \(T.unpack . T.toLower -> t) -> pure (Tool t)
 
 instance ToJSON TarDir where
   toJSON (RealDir  p) = toJSON p
@@ -219,18 +315,6 @@ versionCmpToText (VR_lt   ver') = "< " <> prettyV ver'
 versionCmpToText (VR_lteq ver') = "<= " <> prettyV ver'
 versionCmpToText (VR_eq   ver') = "== " <> prettyV ver'
 
-versionCmpP :: MP.Parsec Void T.Text VersionCmp
-versionCmpP = either (fail . T.unpack) pure =<< (translate <$> (MPC.space *> MP.try (MP.takeWhileP Nothing (`elem` ['>', '<', '=']))) <*> (MPC.space *> versioningEnd))
- where
-   translate ">" v  = Right $ VR_gt v
-   translate ">=" v = Right $ VR_gteq v
-   translate "<" v  = Right $ VR_lt v
-   translate "<=" v = Right $ VR_lteq v
-   translate "==" v = Right $ VR_eq v
-   translate "" v   = Right $ VR_eq v
-   translate c  _   = Left $ "unexpected comparator: " <> c
-
-
 instance ToJSON VersionRange where
   toJSON = String . verRangeToText
 
@@ -250,33 +334,6 @@ instance FromJSON VersionRange where
       Right r -> pure r
       Left  e -> fail (MP.errorBundlePretty e)
 
-versionRangeP :: MP.Parsec Void T.Text VersionRange
-versionRangeP = go <* MP.eof
- where
-  go =
-    MP.try orParse
-      <|> MP.try (fmap SimpleRange andParse)
-      <|> fmap (SimpleRange . pure) versionCmpP
-
-  orParse :: MP.Parsec Void T.Text VersionRange
-  orParse =
-    (\a o -> OrRange a o)
-      <$> (MP.try andParse <|> fmap pure versionCmpP)
-      <*> (MPC.space *> MP.chunk "||" *> MPC.space *> go)
-
-  andParse :: MP.Parsec Void T.Text (NonEmpty VersionCmp)
-  andParse =
-    fmap (\h t -> h :| t)
-         (MPC.space *> MP.chunk "(" *> MPC.space *> versionCmpP)
-      <*> MP.try (MP.many (MPC.space *> MP.chunk "&&" *> MPC.space *> versionCmpP))
-      <*  MPC.space
-      <*  MP.chunk ")"
-      <*  MPC.space
-
-versioningEnd :: MP.Parsec Void T.Text Versioning
-versioningEnd =
-  MP.try (verP (MP.chunk " " <|> MP.chunk ")" <|> MP.chunk "&&") <* MPC.space)
-    <|> versioning'
 
 instance ToJSONKey (Maybe VersionRange) where
   toJSONKey = toJSONKeyText $ \case
@@ -291,26 +348,132 @@ instance FromJSONKey (Maybe VersionRange)  where
       Right x -> pure $ Just x
       Left  e -> fail $ "Failure in (Maybe VersionRange) (FromJSONKey)" <> MP.errorBundlePretty e
 
+deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 } ''SymlinkSpec
+deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3
+                            , sumEncoding = UntaggedValue
+                            } ''SymlinkInputSpec
+deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 4
+                            , sumEncoding = UntaggedValue
+                            } ''InstallFileRule
+deriveJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 } ''EnvSpec
+deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 } ''ConfigSpec
+deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 } ''MakeSpec
+
+instance FromJSON SymlinkFileSpec where
+  parseJSON = withObject "SymlinkSpec" $ \o -> do
+    _slTarget <-   o .:  "target"
+    _slLinkName <- o .: "linkName"
+    _slPVPMajorLinks <- fromMaybe False <$> o .:? "pVPMajorLinks"
+    _slSetName <- o .:? "setName"
+    checkSafePath _slTarget
+    checkSafeFilename _slLinkName
+    forM_ _slSetName checkSafeFilename
+    pure SymlinkSpec{..}
+
+instance FromJSON SymlinkInputSpec where
+  parseJSON = withObject "SymlinkInputSpec" $ \o -> do
+    mTarget <- o .:?  "target"
+    case mTarget of
+      Just _slTarget -> do
+        _slLinkName <- o .: "linkName"
+        _slPVPMajorLinks <- o .:? "pVPMajorLinks" .!= False
+        _slSetName <- o .:? "setName"
+        checkSafePath _slTarget
+        checkSafeFilename _slLinkName
+        forM_ _slSetName checkSafeFilename
+        pure SymlinkInputSpec{..}
+      Nothing -> do
+        _slTargetPattern <- o .: "targetPattern"
+        _slTargetPatternIgnore <- o .:? "targetPatternIgnore" .!= []
+        _slLinkName <- o .: "linkName"
+        _slPVPMajorLinks <- o .:? "pVPMajorLinks" .!= False
+        _slSetName <- o .:? "setName"
+        forM_ _slTargetPattern checkSafePath
+        forM_ _slTargetPatternIgnore checkSafePath
+        checkSafeFilename _slLinkName
+        forM_ _slSetName checkSafeFilename
+        pure SymlinkPatternSpec{..}
+
+instance FromJSON InstallFileRule where
+  parseJSON = withObject "InstallFileRule" $ \o -> do
+    installPattern   <- o .:? "installPattern"
+    case installPattern of
+      Just iPs -> do
+        forM_ iPs checkSafePath
+        pure $ InstallFilePatternRule iPs
+      Nothing -> do
+        installSource <- o .: "installSource"
+        checkSafePath installSource
+        installDest   <- o .:? "installDest"
+        checkSafePath (fromMaybe "" installDest)
+        pure $ InstallFileRule installSource installDest
+
+
+instance FromJSON ConfigSpec where
+  parseJSON = withObject "ConfigSpec" $ \o -> do
+    _csConfigArgs     <- o .:  "configArgs"
+    _csConfigEnv      <- o .:? "configEnv"
+    _csConfigFile     <- o .:? "configFile"
+
+    pure $ ConfigSpec {..}
+
+instance FromJSON MakeSpec where
+  parseJSON = withObject "MakeSpec" $ \o -> do
+    _msMakeArgs       <- o .:  "makeArgs"
+    _msMakeEnv        <- o .:? "makeEnv"
+
+    pure $ MakeSpec {..}
+
+instance FromJSON a => FromJSON (InstallationSpecGen a) where
+  parseJSON = withObject "InstallationSpec" $ \o -> do
+    _isExeRules       <- o .:? "exeRules" .!= []
+    _isDataRules      <- o .:? "dataRules" .!= []
+    _isExeSymLinked   <- o .:? "exeSymLinked" .!= []
+    _isConfigure      <- o .:? "configure"
+    _isMake           <- o .:? "make"
+    _isPreserveMtimes <- o .:? "preserveMtimes" .!= False
+
+    pure $ InstallationSpec {..}
+
+instance ToJSON a => ToJSON (InstallationSpecGen a) where
+  toJSON = genericToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 }
+
 
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
+deriveJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 1 } ''ToolDescription
+deriveJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 } ''InstallMetadata
+
+instance FromJSON ToolInfo where
+  parseJSON v = newParse v <|> legacyParse v
+   where
+    legacyParse o = do
+      v' <- parseJSON o
+      pure $ ToolInfo v' Nothing
+    newParse = do
+      withObject "ToolInfo" $ \o -> do
+        _toolVersions <- o .: "toolVersions"
+        _toolDetails <- o .: "toolDetails"
+        pure ToolInfo{..}
+
+deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 1 } ''ToolInfo
 
 instance FromJSON GHCupInfo where
   parseJSON = withObject "GHCupInfo" $ \o -> do
-    toolRequirements' <- o .:? "toolRequirements"
+    toolRequirements' <- o .:? "toolRequirements" .!= mempty
     metadataUpdate    <- o .:? "metadataUpdate"
     ghcupDownloads'   <- o .:  "ghcupDownloads"
-    pure (GHCupInfo (fromMaybe mempty toolRequirements') ghcupDownloads' metadataUpdate)
+    pure (GHCupInfo toolRequirements' ghcupDownloads' metadataUpdate)
 
 deriveToJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''GHCupInfo
 
 instance ToJSON NewURLSource where
-  toJSON NewGHCupURL       = String "GHCupURL"
-  toJSON NewStackSetupURL  = String "StackSetupURL"
-  toJSON (NewGHCupInfo gi) = object [ "ghcup-info" .= gi ]
-  toJSON (NewSetupInfo si) = object [ "setup-info" .= si ]
-  toJSON (NewURI uri)      = toJSON uri
+  toJSON NewGHCupURL         = String "GHCupURL"
+  toJSON NewStackSetupURL    = String "StackSetupURL"
+  toJSON (NewGHCupInfo gi)   = object [ "ghcup-info" .= gi ]
+  toJSON (NewSetupInfo si)   = object [ "setup-info" .= si ]
+  toJSON (NewURI uri)        = toJSON uri
   toJSON (NewChannelAlias c) = toJSON c
 
 instance ToJSON URLSource where
@@ -323,7 +486,7 @@ instance FromJSON ChannelAlias where
   parseJSON = withText "ChannelAlias" $ \t ->
     let aliases = map (\c -> (channelAliasText c, c)) [minBound..maxBound]
     in case lookup t aliases of
-      Just c -> pure c
+      Just c  -> pure c
       Nothing -> fail $ "Unexpected ChannelAlias: " <> T.unpack t
 
 deriveJSON defaultOptions { sumEncoding = ObjectWithSingleField } ''Key
@@ -334,6 +497,7 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''UserIn
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' (T.unpack . T.toLower) . T.stripPrefix (T.pack "authority") . T.pack $ str' } ''Authority
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadMirror
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadMirrors
+
 
 instance FromJSON URLSource where
   parseJSON v =
@@ -358,7 +522,7 @@ instance FromJSON URLSource where
     <|> parseNewUrlSource' v
    where
     convert'' :: Either GHCupInfo URI -> Either (Either GHCupInfo SetupInfo) URI
-    convert'' (Left gi)  = Left (Left gi)
+    convert'' (Left gi)   = Left (Left gi)
     convert'' (Right uri) = Right uri
 
     parseOwnSourceLegacy = withObject "URLSource" $ \o -> do

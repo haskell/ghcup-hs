@@ -1,6 +1,8 @@
 #!/bin/sh
 
-. .github/scripts/env.sh
+run() {
+	"$@"
+}
 
 ecabal() {
 	cabal "$@"
@@ -11,7 +13,7 @@ nonfatal() {
 }
 
 sync_from() {
-	if [ "${RUNNER_OS}" != "Windows" ] ; then
+	if [ "${OS}" != "Windows" ] ; then
 		cabal_store_path="$(dirname "$(cabal help user-config | tail -n 1 | xargs)")/store"
 	fi
 
@@ -20,12 +22,12 @@ sync_from() {
 		--host-port-override=443 \
 		--host-ssl-override=True \
 		--region us-west-2 \
-		$([ "${RUNNER_OS}" != "Windows" ] && echo --store-path="$cabal_store_path") \
-		--archive-uri "s3://ghcup-hs/${RUNNER_OS}-${ARCH}-${DISTRO}"
+		$([ "${OS}" != "Windows" ] && echo --store-path="$cabal_store_path") \
+		--archive-uri "s3://ghcup-hs/${OS}-${ARCH}-${DISTRO}"
 }
 
 sync_to() {
-	if [ "${RUNNER_OS}" != "Windows" ] ; then
+	if [ "${OS}" != "Windows" ] ; then
 		cabal_store_path="$(dirname "$(cabal help user-config | tail -n 1 | xargs)")/store"
 	fi
 
@@ -34,24 +36,24 @@ sync_to() {
 		--host-port-override=443 \
 		--host-ssl-override=True \
 		--region us-west-2 \
-		$([ "${RUNNER_OS}" != "Windows" ] && echo --store-path="$cabal_store_path") \
-		--archive-uri "s3://ghcup-hs/${RUNNER_OS}-${ARCH}-${DISTRO}"
+		$([ "${OS}" != "Windows" ] && echo --store-path="$cabal_store_path") \
+		--archive-uri "s3://ghcup-hs/${OS}-${ARCH}-${DISTRO}"
 }
 
 raw_eghcup() {
-	"$GHCUP_BIN/ghcup${ext}" -v -c "$@"
+	"$GHCUP_BIN" -v -c "$@"
 }
 
 eghcup() {
 	if [ "${OS}" = "Windows" ] ; then
-		"$GHCUP_BIN/ghcup${ext}" -c -s "file:${GITHUB_WORKSPACE//\\//}/data/metadata/ghcup-${JSON_VERSION}.yaml" "$@"
+		"$GHCUP_BIN" -c -s "file:$(cygpath -m "${PROJECT_DIR}/data/metadata/ghcup-${JSON_VERSION}.yaml")" "$@"
 	else
-		"$GHCUP_BIN/ghcup${ext}" -c -s "file://$CI_PROJECT_DIR/data/metadata/ghcup-${JSON_VERSION}.yaml" "$@"
+		"$GHCUP_BIN" -c -s "file://${PROJECT_DIR}/data/metadata/ghcup-${JSON_VERSION}.yaml" "$@"
 	fi
 }
 
 sha_sum() {
-	if [ "${OS}" = "FreeBSD" ] ; then
+	if [ "${OS}" = "FreeBSD" ] || [ "${OS}" = "OpenBSD" ] ; then
 		sha256 "$@"
 	else
 		sha256sum "$@"
@@ -65,6 +67,7 @@ git_describe() {
 }
 
 download_cabal_cache() {
+	local curdir=$(pwd)
 	(
 	set -e
 	mkdir -p "$HOME/.local/bin"
@@ -72,12 +75,12 @@ download_cabal_cache() {
     url=""
 	exe=""
 	cd /tmp
-	case "${RUNNER_OS}" in
+	case "${OS}" in
 		"Linux")
 			case "${ARCH}" in
-				"32") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/i386-linux-cabal-cache
+				"X86") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/i386-linux-cabal-cache
 					;;
-				"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/x86_64-linux-cabal-cache
+				"X64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/x86_64-linux-cabal-cache
 					;;
 				"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/aarch64-linux-cabal-cache
 					;;
@@ -96,7 +99,7 @@ download_cabal_cache() {
 			case "${ARCH}" in
 				"ARM64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/aarch64-apple-darwin-cabal-cache
 					;;
-				"64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/x86_64-apple-darwin-cabal-cache
+				"X64") url=https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal-cache/experimental5/x86_64-apple-darwin-cabal-cache
 					;;
 			esac
 			;;
@@ -117,7 +120,7 @@ download_cabal_cache() {
 	fi
 
 	# install shell wrapper
-	cp "${CI_PROJECT_DIR}"/.github/scripts/cabal-cache.sh "$HOME"/.local/bin/
+	cp "${curdir}"/.github/scripts/cabal-cache.sh "$HOME"/.local/bin/
 	chmod +x "$HOME"/.local/bin/cabal-cache.sh
     )
 }
@@ -146,4 +149,108 @@ strip_binary() {
 		   ;;
    esac
 	)
+}
+
+mktempdir() {
+    if test "${OS}" = "macOS"; then
+        mktemp -d -t ghcup.XXXXXXX
+    else
+        mktemp -d
+    fi
+}
+
+get_os() {
+	my_uname="$(uname -s)"
+	case "${my_uname}" in
+		"Darwin"|"darwin")
+			printf "%s" "macOS"
+			;;
+		MSYS_*|MINGW*)
+			printf "%s" "Windows"
+			;;
+		*)
+			printf "%s" "${my_uname}"
+		   ;;
+	esac
+	unset my_uname
+}
+
+get_distro() {
+    if [ -f /etc/os-release ]; then
+        # freedesktop.org and systemd
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        printf "%s" "$NAME"
+    elif command_exists lsb_release ; then
+        # linuxbase.org
+        printf "%s" "$(lsb_release -si)"
+    elif [ -f /etc/lsb-release ]; then
+        # For some versions of Debian/Ubuntu without lsb_release command
+        # shellcheck disable=SC1091
+        . /etc/lsb-release
+        printf "%s" "$DISTRIB_ID"
+    elif [ -f /etc/redhat-release ]; then
+        case "$(cat /etc/redhat-release)" in
+        # Older CentOS releases didn't have a /etc/centos-release file
+        "CentOS release "*)
+            printf "CentOS"
+            ;;
+        "CentOS Linux release "*)
+            printf "CentOS Linux"
+            ;;
+        "Fedora release "*)
+            printf "Fedora"
+            ;;
+        # Fallback to uname
+        *)
+            printf "%s" "$(uname -s)"
+            ;;
+        esac
+    elif [ -f /etc/debian_version ]; then
+        # Older Debian/Ubuntu/etc.
+        printf "Debian"
+    else
+        # Fall back to uname, e.g. "Linux <version>", also works for BSD, etc.
+        printf "%s" "$(uname -s)"
+    fi
+}
+
+get_os() {
+	my_uname="$(uname -s)"
+	case "${my_uname}" in
+		"Darwin"|"darwin")
+			printf "%s" "macOS"
+			;;
+		MSYS_*|MINGW*)
+			printf "%s" "Windows"
+			;;
+		*)
+			printf "%s" "${my_uname}"
+		   ;;
+	esac
+	unset my_uname
+}
+
+get_arch() {
+    myarch=$(uname -m)
+
+    case "${myarch}" in
+    x86_64|amd64)
+        printf "%s" "X64"
+        ;;
+    i*86)
+        printf "%s" "X86"
+        ;;
+    aarch64|arm64)
+        printf "%s" "ARM64"
+        ;;
+	armv7*|*armv8l*)
+        printf "%s" "ARM"
+        ;;
+    *)
+		printf "%s" "${myarch}"
+		;;
+    esac
+
+    unset myarch
 }

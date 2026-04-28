@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds               #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators           #-}
-{-# LANGUAGE FlexibleInstances           #-}
-{-# LANGUAGE RankNTypes           #-}
+{-# LANGUAGE TypeOperators #-}
 
 {-|
 Module      : GHCup.Errors
@@ -19,23 +19,23 @@ Portability : portable
 -}
 module GHCup.Errors ( module GHCup.Errors, URIParseError ) where
 
-import           GHCup.Types
+import GHCup.Types
 
-import           Control.Exception.Safe
-import           Data.ByteString                ( ByteString )
-import           Data.CaseInsensitive           ( CI )
-import           Data.Text                      ( Text )
-import           Data.Versions
-import           Data.Variant
-import           System.FilePath
-import           Text.PrettyPrint               hiding ( (<>) )
-import           Text.PrettyPrint.HughesPJClass hiding ( (<>) )
-import           URI.ByteString
+import Control.Exception.Safe
+import Data.ByteString                ( ByteString )
+import Data.CaseInsensitive           ( CI )
+import Data.Data                      ( Proxy (..) )
+import Data.Text                      ( Text )
+import Data.Time                      ( Day )
+import Data.Variant
+import Data.Versions
+import System.FilePath
+import Text.PrettyPrint               hiding ( (<>) )
+import Text.PrettyPrint.HughesPJClass hiding ( (<>) )
+import URI.ByteString
 
-import qualified Data.Map.Strict               as M
-import qualified Data.Text                     as T
-import           Data.Data (Proxy(..))
-import Data.Time (Day)
+import qualified Data.Map.Strict as M
+import qualified Data.Text       as T
 
 
 
@@ -85,6 +85,10 @@ allHFError = unlines allErrors
     , let proxy = Proxy :: Proxy ContentLengthError in format proxy
     , let proxy = Proxy :: Proxy DuplicateReleaseChannel in format proxy
     , let proxy = Proxy :: Proxy UnsupportedSetupCombo in format proxy
+    , let proxy = Proxy :: Proxy UnsupportedMetadataFormat in format proxy
+    , let proxy = Proxy :: Proxy NoInstallInfo in format proxy
+    , let proxy = Proxy :: Proxy MalformedInstallInfo in format proxy
+    , let proxy = Proxy :: Proxy IncompatibleConfig in format proxy
     , ""
     , "# high level errors (4000+)"
     , let proxy = Proxy :: Proxy DownloadFailed in format proxy
@@ -190,11 +194,39 @@ linkEscapeCode linkText link = "\ESC]8;;" <> link <> "\ESC\\" <> linkText <> "\E
     --[ Low-level errors ]--
     ------------------------
 
+data NoInstallInfo = NoInstallInfo Tool TargetVersion
+  deriving (Show)
 
+instance Pretty NoInstallInfo where
+  pPrint (NoInstallInfo tool tver) = text "Could not find install info for" <+> pPrint tool <+> text "version" <+> pPrint tver
+
+instance HFErrorProject NoInstallInfo where
+  eBase _ = 380
+  eDesc _ = "Could not find install info for tool"
+
+data IncompatibleConfig = IncompatibleConfig String
+  deriving (Show)
+
+instance Pretty IncompatibleConfig where
+  pPrint (IncompatibleConfig str) = text ("Incompatible config: " <> str)
+
+instance HFErrorProject IncompatibleConfig where
+  eBase _ = 390
+  eDesc _ = "Could not find install info for tool"
+
+data MalformedInstallInfo = MalformedInstallInfo String
+  deriving (Show)
+
+instance Pretty MalformedInstallInfo where
+  pPrint (MalformedInstallInfo str') = text $ "The installation info from the metadata did not pass validation: " <> str'
+
+instance HFErrorProject MalformedInstallInfo where
+  eBase _ = 400
+  eDesc _ = "The installation info did not pass validation!"
 
 -- | A compatible platform could not be found.
 data NoCompatiblePlatform = NoCompatiblePlatform String -- the platform we got
-  deriving Show
+  deriving (Show)
 
 instance Pretty NoCompatiblePlatform where
   pPrint (NoCompatiblePlatform str') =
@@ -205,14 +237,14 @@ instance HFErrorProject NoCompatiblePlatform where
   eDesc _ = "No compatible platform could be found"
 
 -- | Unable to find a download for the requested version/distro.
-data NoDownload = NoDownload GHCTargetVersion Tool (Maybe PlatformRequest)
-  deriving Show
+data NoDownload = NoDownload TargetVersion Tool (Maybe PlatformRequest)
+  deriving (Show)
 
 instance Pretty NoDownload where
-  pPrint (NoDownload tver@(GHCTargetVersion mtarget vv) tool mpfreq) =
+  pPrint (NoDownload tver@(TargetVersion mtarget vv) tool mpfreq) =
     let helperMsg
           | (Just target) <- mtarget
-          , target `elem` (T.pack . prettyShow <$> enumFromTo (minBound :: Tool) (maxBound :: Tool)) =
+          , T.unpack (T.toLower target) `elem` ["ghc", "cabal", "hls", "stack"] =
               "\nPerhaps you meant: 'ghcup <command> "
               <> T.unpack target
               <> " "
@@ -231,8 +263,9 @@ instance HFErrorProject NoDownload where
   eDesc _ = "Unable to find a download for the requested version/distro."
 
 -- | No update available or necessary.
-data NoUpdate = NoUpdate
-  deriving Show
+data NoUpdate
+  = NoUpdate
+  deriving (Show)
 
 instance Pretty NoUpdate where
   pPrint NoUpdate = text (eDesc (Proxy :: Proxy NoUpdate))
@@ -243,7 +276,7 @@ instance HFErrorProject NoUpdate where
 
 -- | The Architecture is unknown and unsupported.
 data NoCompatibleArch = NoCompatibleArch String
-  deriving Show
+  deriving (Show)
 
 instance Pretty NoCompatibleArch where
   pPrint (NoCompatibleArch arch) =
@@ -254,8 +287,9 @@ instance HFErrorProject NoCompatibleArch where
   eDesc _ = "The Architecture is unknown and unsupported"
 
 -- | Unable to figure out the distribution of the host.
-data DistroNotFound = DistroNotFound
-  deriving Show
+data DistroNotFound
+  = DistroNotFound
+  deriving (Show)
 
 instance Pretty DistroNotFound where
   pPrint DistroNotFound =
@@ -267,7 +301,7 @@ instance HFErrorProject DistroNotFound where
 
 -- | The archive format is unknown. We don't know how to extract it.
 data UnknownArchive = UnknownArchive FilePath
-  deriving Show
+  deriving (Show)
 
 instance Pretty UnknownArchive where
   pPrint (UnknownArchive file) =
@@ -278,8 +312,9 @@ instance HFErrorProject UnknownArchive where
   eDesc _ = "The archive format is unknown. We don't know how to extract it."
 
 -- | The scheme is not supported (such as ftp).
-data UnsupportedScheme = UnsupportedScheme
-  deriving Show
+data UnsupportedScheme
+  = UnsupportedScheme
+  deriving (Show)
 
 instance Pretty UnsupportedScheme where
   pPrint UnsupportedScheme =
@@ -291,7 +326,7 @@ instance HFErrorProject UnsupportedScheme where
 
 -- | Unable to copy a file.
 data CopyError = CopyError String
-  deriving Show
+  deriving (Show)
 
 instance Pretty CopyError where
   pPrint (CopyError reason) =
@@ -303,7 +338,7 @@ instance HFErrorProject CopyError where
 
 -- | Unable to merge file trees.
 data MergeFileTreeError = MergeFileTreeError IOException FilePath FilePath
-  deriving Show
+  deriving (Show)
 
 instance Pretty MergeFileTreeError where
   pPrint (MergeFileTreeError e from to) =
@@ -316,7 +351,7 @@ instance HFErrorProject MergeFileTreeError where
 
 -- | Unable to find a tag of a tool.
 data TagNotFound = TagNotFound Tag Tool
-  deriving Show
+  deriving (Show)
 
 instance Pretty TagNotFound where
   pPrint (TagNotFound tag tool) =
@@ -328,7 +363,7 @@ instance HFErrorProject TagNotFound where
 
 -- | Unable to find a release day of a tool
 data DayNotFound = DayNotFound Day Tool (Maybe Day)
-  deriving Show
+  deriving (Show)
 
 instance Pretty DayNotFound where
   pPrint (DayNotFound day tool Nothing) =
@@ -344,7 +379,7 @@ instance HFErrorProject DayNotFound where
 -- | Unable to find the next version of a tool (the one after the currently
 -- set one).
 data NextVerNotFound = NextVerNotFound Tool
-  deriving Show
+  deriving (Show)
 
 instance Pretty NextVerNotFound where
   pPrint (NextVerNotFound tool) =
@@ -355,8 +390,8 @@ instance HFErrorProject NextVerNotFound where
   eDesc _ = "Unable to find the next version of a tool (the one after the currently set one)"
 
 -- | The tool (such as GHC) is already installed with that version.
-data AlreadyInstalled = AlreadyInstalled Tool Version
-  deriving Show
+data AlreadyInstalled = AlreadyInstalled Tool TargetVersion
+  deriving (Show)
 
 instance Pretty AlreadyInstalled where
   pPrint (AlreadyInstalled tool ver') =
@@ -368,8 +403,10 @@ instance HFErrorProject AlreadyInstalled where
   eDesc _ = "The tool (such as GHC) is already installed with that version"
 
 -- | The Directory is supposed to be empty, but wasn't.
-data DirNotEmpty = DirNotEmpty {path :: FilePath}
-  deriving Show
+data DirNotEmpty = DirNotEmpty
+  { path :: FilePath
+  }
+  deriving (Show)
 
 instance Pretty DirNotEmpty where
   pPrint (DirNotEmpty path) = do
@@ -381,8 +418,8 @@ instance HFErrorProject DirNotEmpty where
 
 -- | The tool is not installed. Some operations rely on a tool
 -- to be installed (such as setting the current GHC version).
-data NotInstalled = NotInstalled Tool GHCTargetVersion
-  deriving Show
+data NotInstalled = NotInstalled Tool TargetVersion
+  deriving (Show)
 
 instance Pretty NotInstalled where
   pPrint (NotInstalled tool ver) =
@@ -393,7 +430,7 @@ instance HFErrorProject NotInstalled where
   eDesc _ = "The required tool is not installed"
 
 data UninstallFailed = UninstallFailed FilePath [FilePath]
-  deriving Show
+  deriving (Show)
 
 instance Pretty UninstallFailed where
   pPrint (UninstallFailed dir files) =
@@ -405,7 +442,7 @@ instance HFErrorProject UninstallFailed where
 
 -- | An executable was expected to be in PATH, but was not found.
 data NotFoundInPATH = NotFoundInPATH FilePath
-  deriving Show
+  deriving (Show)
 
 instance Exception NotFoundInPATH
 
@@ -419,7 +456,7 @@ instance HFErrorProject NotFoundInPATH where
 
 -- | JSON decoding failed.
 data JSONError = JSONDecodeError String
-  deriving Show
+  deriving (Show)
 
 instance Pretty JSONError where
   pPrint (JSONDecodeError err) =
@@ -432,7 +469,7 @@ instance HFErrorProject JSONError where
 -- | A file that is supposed to exist does not exist
 -- (e.g. when we use file scheme to "download" something).
 data FileDoesNotExistError = FileDoesNotExistError FilePath
-  deriving Show
+  deriving (Show)
 
 instance Pretty FileDoesNotExistError where
   pPrint (FileDoesNotExistError file) =
@@ -446,7 +483,7 @@ instance HFErrorProject FileDoesNotExistError where
 -- (e.g. when we use isolated installs with the same path).
 -- (e.g. This is done to prevent any overwriting)
 data FileAlreadyExistsError = FileAlreadyExistsError FilePath
-  deriving Show
+  deriving (Show)
 
 instance Pretty FileAlreadyExistsError where
   pPrint (FileAlreadyExistsError file) =
@@ -457,7 +494,7 @@ instance HFErrorProject FileAlreadyExistsError where
   eDesc _ = "A file already exists that wasn't expected to exist"
 
 data TarDirDoesNotExist = TarDirDoesNotExist TarDir
-  deriving Show
+  deriving (Show)
 
 instance Pretty TarDirDoesNotExist where
   pPrint (TarDirDoesNotExist dir) =
@@ -469,7 +506,7 @@ instance HFErrorProject TarDirDoesNotExist where
 
 -- | File digest verification failed.
 data DigestError = DigestError FilePath Text Text
-  deriving Show
+  deriving (Show)
 
 instance Pretty DigestError where
   pPrint (DigestError fp currentDigest expectedDigest) =
@@ -482,7 +519,7 @@ instance HFErrorProject DigestError where
   eDesc _ = "File digest verification failed"
 
 -- | File PGP verification failed.
-data GPGError = forall xs . (ToVariantMaybe DownloadFailed xs, PopVariant DownloadFailed xs, Show (V xs), Pretty (V xs)) => GPGError (V xs)
+data GPGError = forall xs. (ToVariantMaybe DownloadFailed xs, PopVariant DownloadFailed xs, Show (V xs), Pretty (V xs)) => GPGError (V xs)
 
 deriving instance Show GPGError
 
@@ -495,7 +532,7 @@ instance HFErrorProject GPGError where
 
 -- | Unexpected HTTP status.
 data HTTPStatusError = HTTPStatusError Int (M.Map (CI ByteString) ByteString)
-  deriving Show
+  deriving (Show)
 
 instance Pretty HTTPStatusError where
   pPrint (HTTPStatusError status _) =
@@ -507,7 +544,7 @@ instance HFErrorProject HTTPStatusError where
 
 -- | Malformed headers.
 data MalformedHeaders = MalformedHeaders Text
-  deriving Show
+  deriving (Show)
 
 instance Pretty MalformedHeaders where
   pPrint (MalformedHeaders h) =
@@ -519,7 +556,7 @@ instance HFErrorProject MalformedHeaders where
 
 -- | Unexpected HTTP status.
 data HTTPNotModified = HTTPNotModified Text
-  deriving Show
+  deriving (Show)
 
 instance Pretty HTTPNotModified where
   pPrint (HTTPNotModified etag) =
@@ -530,8 +567,9 @@ instance HFErrorProject HTTPNotModified where
   eDesc _ = "Not modified HTTP status error (e.g. during downloads)."
 
 -- | The 'Location' header was expected during a 3xx redirect, but not found.
-data NoLocationHeader = NoLocationHeader
-  deriving Show
+data NoLocationHeader
+  = NoLocationHeader
+  deriving (Show)
 
 instance Pretty NoLocationHeader where
   pPrint NoLocationHeader =
@@ -542,8 +580,9 @@ instance HFErrorProject NoLocationHeader where
   eDesc _ = "The 'Location' header was expected during a 3xx redirect, but not found."
 
 -- | Too many redirects.
-data TooManyRedirs = TooManyRedirs
-  deriving Show
+data TooManyRedirs
+  = TooManyRedirs
+  deriving (Show)
 
 instance Pretty TooManyRedirs where
   pPrint TooManyRedirs =
@@ -554,8 +593,9 @@ instance HFErrorProject TooManyRedirs where
   eDesc _ = "Too many redirections."
 
 -- | A patch could not be applied.
-data PatchFailed = PatchFailed
-  deriving Show
+data PatchFailed
+  = PatchFailed
+  deriving (Show)
 
 instance Pretty PatchFailed where
   pPrint PatchFailed =
@@ -566,8 +606,9 @@ instance HFErrorProject PatchFailed where
   eDesc _ = "A patch could not be applied."
 
 -- | The tool requirements could not be found.
-data NoToolRequirements = NoToolRequirements
-  deriving Show
+data NoToolRequirements
+  = NoToolRequirements
+  deriving (Show)
 
 instance Pretty NoToolRequirements where
   pPrint NoToolRequirements =
@@ -578,7 +619,7 @@ instance HFErrorProject NoToolRequirements where
   eDesc _ = "The Tool requirements could not be found."
 
 data InvalidBuildConfig = InvalidBuildConfig Text
-  deriving Show
+  deriving (Show)
 
 instance Pretty InvalidBuildConfig where
   pPrint (InvalidBuildConfig reason) =
@@ -588,19 +629,22 @@ instance HFErrorProject InvalidBuildConfig where
   eBase _ = 290
   eDesc _ = "The build config is invalid."
 
-data NoToolVersionSet = NoToolVersionSet Tool
-  deriving Show
+data NoToolVersionSet = NoToolVersionSet Tool (Maybe Text)
+  deriving (Show)
 
 instance Pretty NoToolVersionSet where
-  pPrint (NoToolVersionSet tool) =
-    text "No version is set for tool" <+> pPrint tool <+> text "."
+  pPrint (NoToolVersionSet tool Nothing) =
+    text "No version is set for tool" <+> pPrint tool
+  pPrint (NoToolVersionSet tool (Just target)) =
+    text "No version is set for tool" <+> pPrint tool <+> text "cross target" <+> text (T.unpack target)
 
 instance HFErrorProject NoToolVersionSet where
   eBase _ = 300
   eDesc _ = "No version is set for tool (but was expected)."
 
-data NoNetwork = NoNetwork
-  deriving Show
+data NoNetwork
+  = NoNetwork
+  deriving (Show)
 
 instance Pretty NoNetwork where
   pPrint NoNetwork =
@@ -610,8 +654,9 @@ instance HFErrorProject NoNetwork where
   eBase _ = 310
   eDesc _ = "A download was required or requested, but '--offline' was specified."
 
-data HadrianNotFound = HadrianNotFound
-  deriving Show
+data HadrianNotFound
+  = HadrianNotFound
+  deriving (Show)
 
 instance Pretty HadrianNotFound where
   pPrint HadrianNotFound =
@@ -621,12 +666,9 @@ instance HFErrorProject HadrianNotFound where
   eBase _ = 320
   eDesc _ = "Could not find Hadrian build files. Does this GHC version support Hadrian builds?"
 
-data ToolShadowed = ToolShadowed
-                       Tool
-                       FilePath  -- shadow binary
-                       FilePath  -- upgraded binary
-                       Version   -- upgraded version
-  deriving Show
+data ToolShadowed = ToolShadowed Tool FilePath FilePath Version
+  -- upgraded version
+  deriving (Show)
 
 instance Pretty ToolShadowed where
   pPrint (ToolShadowed tool sh up _) =
@@ -648,7 +690,7 @@ instance HFErrorProject ToolShadowed where
 
 -- | File content length verification failed.
 data ContentLengthError = ContentLengthError (Maybe FilePath) (Maybe Integer) Integer
-  deriving Show
+  deriving (Show)
 
 instance Pretty ContentLengthError where
   pPrint (ContentLengthError Nothing Nothing expectedSize) =
@@ -674,7 +716,7 @@ instance HFErrorProject ContentLengthError where
   eDesc _ = "File content length verification failed"
 
 data DuplicateReleaseChannel = DuplicateReleaseChannel NewURLSource
-  deriving Show
+  deriving (Show)
 
 instance HFErrorProject DuplicateReleaseChannel where
   eBase _ = 350
@@ -687,7 +729,7 @@ instance Pretty DuplicateReleaseChannel where
       <> "\nGiving up. You can use '--force' to remove and append the duplicate source (this may change order/semantics)."
 
 data UnsupportedSetupCombo = UnsupportedSetupCombo Architecture Platform
-  deriving Show
+  deriving (Show)
 
 instance Pretty UnsupportedSetupCombo where
   pPrint (UnsupportedSetupCombo arch plat) =
@@ -697,18 +739,29 @@ instance HFErrorProject UnsupportedSetupCombo where
   eBase _ = 360
   eDesc _ = "Could not find a compatible setup combo"
 
+data UnsupportedMetadataFormat = UnsupportedMetadataFormat FilePath
+  deriving (Show)
+
+instance Pretty UnsupportedMetadataFormat where
+  pPrint (UnsupportedMetadataFormat ext) =
+    text "Unsupported file extension for metadata:" <+> pPrint ext
+
+instance HFErrorProject UnsupportedMetadataFormat where
+  eBase _ = 370
+  eDesc _ = "Unsupported file extension for metadata"
+
     -------------------------
     --[ High-level errors ]--
     -------------------------
 
 -- | A download failed. The underlying error is encapsulated.
-data DownloadFailed = forall xs . (HFErrorProject (V xs), ToVariantMaybe DownloadFailed xs, PopVariant DownloadFailed xs, Show (V xs), Pretty (V xs)) => DownloadFailed (V xs)
+data DownloadFailed = forall xs. (HFErrorProject (V xs), ToVariantMaybe DownloadFailed xs, PopVariant DownloadFailed xs, Show (V xs), Pretty (V xs)) => DownloadFailed (V xs)
 
 instance Pretty DownloadFailed where
   pPrint (DownloadFailed reason) =
     case reason of
       VMaybe (_ :: DownloadFailed) -> pPrint reason
-      _ -> text "Download failed:" <+> pPrint reason
+      _                            -> text "Download failed:" <+> pPrint reason
 
 deriving instance Show DownloadFailed
 
@@ -717,7 +770,7 @@ instance HFErrorProject DownloadFailed where
   eNum (DownloadFailed xs) = 5000 + eNum xs
   eDesc _ = "A download failed."
 
-data InstallSetError = forall xs1 xs2 . (Show (V xs1), Pretty (V xs1), HFErrorProject (V xs1), Show (V xs2), Pretty (V xs2), HFErrorProject (V xs2)) => InstallSetError (V xs1) (V xs2)
+data InstallSetError = forall xs1 xs2. (Show (V xs1), Pretty (V xs1), HFErrorProject (V xs1), Show (V xs2), Pretty (V xs2), HFErrorProject (V xs2)) => InstallSetError (V xs1) (V xs2)
 
 instance Pretty InstallSetError where
   pPrint (InstallSetError reason1 reason2) =
@@ -736,7 +789,7 @@ instance HFErrorProject InstallSetError where
 
 
 -- | A test failed.
-data TestFailed = forall es . (ToVariantMaybe TestFailed es, PopVariant TestFailed es, Pretty (V es), Show (V es), HFErrorProject (V es)) => TestFailed FilePath (V es)
+data TestFailed = forall es. (ToVariantMaybe TestFailed es, PopVariant TestFailed es, Pretty (V es), Show (V es), HFErrorProject (V es)) => TestFailed FilePath (V es)
 
 instance Pretty TestFailed where
   pPrint (TestFailed path reason) =
@@ -752,7 +805,7 @@ instance HFErrorProject TestFailed where
   eDesc _ = "The test failed."
 
 -- | A build failed.
-data BuildFailed = forall es . (ToVariantMaybe BuildFailed es, PopVariant BuildFailed es, Pretty (V es), Show (V es), HFErrorProject (V es)) => BuildFailed FilePath (V es)
+data BuildFailed = forall es. (ToVariantMaybe BuildFailed es, PopVariant BuildFailed es, Pretty (V es), Show (V es), HFErrorProject (V es)) => BuildFailed FilePath (V es)
 
 instance Pretty BuildFailed where
   pPrint (BuildFailed path reason) =
@@ -769,7 +822,7 @@ instance HFErrorProject BuildFailed where
 
 
 -- | Setting the current GHC version failed.
-data GHCupSetError = forall es . (ToVariantMaybe GHCupSetError es, PopVariant GHCupSetError es, Show (V es), Pretty (V es), HFErrorProject (V es)) => GHCupSetError (V es)
+data GHCupSetError = forall es. (ToVariantMaybe GHCupSetError es, PopVariant GHCupSetError es, Show (V es), Pretty (V es), HFErrorProject (V es)) => GHCupSetError (V es)
 
 instance Pretty GHCupSetError where
   pPrint (GHCupSetError reason) =
@@ -785,7 +838,7 @@ instance HFErrorProject GHCupSetError where
   eDesc _ = "Setting the current version failed."
 
 -- | Executing stacks platform detection failed.
-data StackPlatformDetectError = forall es . (ToVariantMaybe StackPlatformDetectError es, PopVariant StackPlatformDetectError es, Show (V es), Pretty (V es), HFErrorProject (V es)) => StackPlatformDetectError (V es)
+data StackPlatformDetectError = forall es. (ToVariantMaybe StackPlatformDetectError es, PopVariant StackPlatformDetectError es, Show (V es), Pretty (V es), HFErrorProject (V es)) => StackPlatformDetectError (V es)
 
 instance Pretty StackPlatformDetectError where
   pPrint (StackPlatformDetectError reason) =
@@ -808,7 +861,7 @@ instance HFErrorProject StackPlatformDetectError where
 
 -- | Parsing failed.
 data ParseError = ParseError String
-  deriving Show
+  deriving (Show)
 
 instance Pretty ParseError where
   pPrint (ParseError reason) =
@@ -822,7 +875,7 @@ instance HFErrorProject ParseError where
 
 
 data UnexpectedListLength = UnexpectedListLength String
-  deriving Show
+  deriving (Show)
 
 instance Pretty UnexpectedListLength where
   pPrint (UnexpectedListLength reason) =
@@ -835,7 +888,7 @@ instance HFErrorProject UnexpectedListLength where
   eDesc _ = "A list had an unexpected length."
 
 data NoUrlBase = NoUrlBase Text
-  deriving Show
+  deriving (Show)
 
 instance Pretty NoUrlBase where
   pPrint (NoUrlBase url) =
@@ -848,7 +901,7 @@ instance HFErrorProject NoUrlBase where
   eDesc _ = "URL does not have a base filename."
 
 data DigestMissing = DigestMissing Text
-  deriving Show
+  deriving (Show)
 
 instance Pretty DigestMissing where
   pPrint (DigestMissing uri) =
@@ -917,25 +970,25 @@ instance HFErrorProject URIParseError where
   eBase _ = 800
 
   eNum (MalformedScheme NonAlphaLeading) = 801
-  eNum (MalformedScheme InvalidChars) = 802
-  eNum (MalformedScheme MissingColon) = 803
-  eNum MalformedUserInfo   = 804
-  eNum MalformedQuery      = 805
-  eNum MalformedFragment   = 806
-  eNum MalformedHost       = 807
-  eNum MalformedPort       = 808
-  eNum MalformedPath       = 809
-  eNum (OtherError _)      = 810
+  eNum (MalformedScheme InvalidChars)    = 802
+  eNum (MalformedScheme MissingColon)    = 803
+  eNum MalformedUserInfo                 = 804
+  eNum MalformedQuery                    = 805
+  eNum MalformedFragment                 = 806
+  eNum MalformedHost                     = 807
+  eNum MalformedPort                     = 808
+  eNum MalformedPath                     = 809
+  eNum (OtherError _)                    = 810
 
   eDesc _ = "Failed to parse URI."
 
 instance Pretty ArchiveResult where
-  pPrint ArchiveFatal = text "Archive result: fatal"
+  pPrint ArchiveFatal  = text "Archive result: fatal"
   pPrint ArchiveFailed = text "Archive result: failed"
-  pPrint ArchiveWarn = text "Archive result: warning"
-  pPrint ArchiveRetry = text "Archive result: retry"
-  pPrint ArchiveOk = text "Archive result: Ok"
-  pPrint ArchiveEOF = text "Archive result: EOF"
+  pPrint ArchiveWarn   = text "Archive result: warning"
+  pPrint ArchiveRetry  = text "Archive result: retry"
+  pPrint ArchiveOk     = text "Archive result: Ok"
+  pPrint ArchiveEOF    = text "Archive result: EOF"
 
 instance HFErrorProject ArchiveResult where
   eBase _ = 820

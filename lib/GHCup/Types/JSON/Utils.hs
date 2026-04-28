@@ -10,7 +10,7 @@ Portability : portable
 
 module GHCup.Types.JSON.Utils where
 
-import qualified Data.Text                     as T
+import qualified Data.Text as T
 
 removeLensFieldLabel :: String -> String
 removeLensFieldLabel str' =

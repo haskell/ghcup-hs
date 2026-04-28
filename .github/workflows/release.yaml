@@ -12,20 +12,31 @@ on:
   schedule:
     - cron: '0 2 * * *'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CABAL_CACHE_DISABLE: ${{ vars.CABAL_CACHE_DISABLE }}
   CABAL_CACHE_NONFATAL: yes
   JSON_VERSION: "0.0.9"
+  GHC_VER: 9.6.7
+  CABAL_VER: 3.14.2.0
+  GHCUP_VER: 0.2.0.0
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  S3_HOST: ${{ secrets.S3_HOST }}
+  GHCUP_MSYS2_ENV: CLANG64
+  MSYSTEM: CLANG64
+  CHERE_INVOKING: 1
+  # overwritten for windows
+  CABAL_DIR: ${{ github.workspace }}/cabal
+  GHCUP_INSTALL_BASE_PREFIX: ${{ github.workspace }}
 
 jobs:
   build-linux:
     name: Build linux binary
     runs-on: ${{ matrix.os }}
-    env:
-      CABAL_VER: 3.14.1.1
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      S3_HOST: ${{ secrets.S3_HOST }}
     strategy:
       fail-fast: true
       matrix:
@@ -36,7 +47,6 @@ jobs:
             ARCH: 32
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 9.6.7
             ARCH: 64
     steps:
       - name: Checkout code
@@ -47,8 +57,8 @@ jobs:
       - if: matrix.ARCH == '32'
         name: Run build (32 bit linux)
         uses: docker://hasufell/i386-alpine-haskell:3.21
-        with:
-          args: sh .github/scripts/build.sh
+        with: &build-linux
+          args: ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ runner.os }} --check-linking --strip -- --enable-executable-static
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -61,12 +71,10 @@ jobs:
       - if: matrix.ARCH == '64'
         name: Run build (64 bit linux)
         uses: docker://hasufell/alpine-haskell:3.21
-        with:
-          args: sh .github/scripts/build.sh
+        with: *build-linux
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: Alpine
           AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
@@ -83,20 +91,11 @@ jobs:
 
   build-arm:
     name: Build ARM binary
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04-arm
     env:
-      CABAL_VER: 3.14.1.1
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      S3_HOST: ${{ secrets.S3_HOST }}
-    strategy:
-      matrix:
-        include:
-          - os: [self-hosted, Linux, ARM64, maerwald]
-            ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.6.7
-            ARCH: ARM64
-            DISTRO: Alpine
+      ARTIFACT: "aarch64-linux-ghcup"
+      ARCH: ARM64
+      DISTRO: Alpine
     steps:
       - name: git config
         run: |
@@ -108,53 +107,35 @@ jobs:
         with:
           submodules: 'true'
 
-      - if: matrix.ARCH == 'ARM64'
-        uses: docker://hasufell/arm64v8-alpine-haskell:3.21
+      - uses: docker://hasufell/arm64v8-alpine-haskell:3.21
         name: Run build (aarch64 linux)
         with:
-          args: sh -c ".github/scripts/build.sh '--ghc-options=-split-sections' '--enable-executable-static'"
-        env:
-          ARTIFACT: ${{ matrix.ARTIFACT }}
-          ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: ${{ matrix.DISTRO }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          S3_HOST: ${{ env.S3_HOST }}
+          args: ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ runner.os }} --check-linking --strip -- --ghc-options=-split-sections --enable-executable-static
 
       - if: always()
         name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.ARTIFACT }}
+          name: artifacts-${{ env.ARTIFACT }}
           path: |
             ./out/*
 
-  build-macwin:
-    name: Build binary (Mac/Win)
+  build-mac:
+    name: Build binary (Mac)
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.14.1.1
       MACOSX_DEPLOYMENT_TARGET: 10.13
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      S3_HOST: ${{ secrets.S3_HOST }}
       LLVM_VER: 16
+      DISTRO: na
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: [self-hosted, macOS, ARM64]
+          - os: macOS-latest
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.6.7
             ARCH: ARM64
           - os: macOS-15-intel
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.6.7
-            ARCH: 64
-          - os: windows-latest
-            ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 9.6.7
             ARCH: 64
     steps:
       - name: Checkout code
@@ -165,52 +146,13 @@ jobs:
       - name: Install GHCup
         uses: haskell/ghcup-setup@v1
 
-      - if: matrix.ARCH == 'ARM64' && runner.os == 'macOS'
-        name: Run build
+      - name: Run build (mac aarch64)
         run: |
-          bash .github/scripts/brew.sh git coreutils autoconf automake
-          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$PATH"
-          bash .github/scripts/build.sh
+          brew install git coreutils autoconf automake
+          ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ runner.os }} --check-linking --strip
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: na
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          S3_HOST: ${{ env.S3_HOST }}
-          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
-
-      - if: matrix.ARCH == '64' && runner.os == 'macOS'
-        name: Run build (windows/mac)
-        run: |
-          bash .github/scripts/brew.sh coreutils
-          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$PATH"
-          bash .github/scripts/build.sh
-        env:
-          ARTIFACT: ${{ matrix.ARTIFACT }}
-          ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: na
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          S3_HOST: ${{ env.S3_HOST }}
-          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
-
-      - if: runner.os == 'Windows'
-        name: Run build (windows/mac)
-        run: |
-          bash .github/scripts/brew.sh git coreutils autoconf automake
-          bash .github/scripts/build.sh
-        env:
-          ARTIFACT: ${{ matrix.ARTIFACT }}
-          ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: na
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          S3_HOST: ${{ env.S3_HOST }}
-          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
 
       - if: always()
         name: Upload artifact
@@ -220,17 +162,57 @@ jobs:
           path: |
             ./out/*
 
+  build-win:
+    name: Build binary (Windows)
+    runs-on: windows-latest
+    env:
+      ARTIFACT: "x86_64-mingw64-ghcup"
+      ARCH: 64
+      DISTRO: na
+      GHCUP_INSTALL_BASE_PREFIX: "C:\\"
+    defaults:
+      run:
+        shell: 'C:/msys64/usr/bin/bash.exe --login -e {0}'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Install GHCup
+        uses: haskell/ghcup-setup@v1
+        env:
+          GHCUP_MSYS2: 'C:/msys64'
+
+      - name: Install msys2 dependencies
+        run: &msys2-install |
+          pacman --noconfirm -S --needed --overwrite '*' bash winpty git tar bsdtar unzip binutils autoconf make xz curl libtool automake p7zip patch ca-certificates python3 zip mingw-w64-clang-x86_64-toolchain mingw-w64-clang-x86_64-tools-git gzip mingw-w64-clang-x86_64-pkgconf mingw-w64-clang-x86_64-zlib
+
+      - name: Run build (windows)
+        run: |
+          rm -f /c/Strawberry/perl/bin/pkg-config
+          rm /clang64/bin/zlib1.dll
+          export PATH="/c/ghcup/bin:$PATH"
+          # don't use bash, because it points to WSL2
+          ghcup install ghc --set ${{ env.GHC_VER }}
+          ghcup install cabal --set ${{ env.CABAL_VER }}
+          bash .github/scripts/build.sh --ghc ghc-${{ env.GHC_VER }} --verbose --os ${{ runner.os }} --check-linking --strip
+        env:
+          CABAL_DIR: "C:\\Users\\runneradmin\\AppData\\Roaming\\cabal"
+
+      - if: always()
+        name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ env.ARTIFACT }}
+          path: |
+            ./out/*
+
   build-freebsd:
     name: Build binary (FreeBSD)
     runs-on: [self-hosted, FreeBSD, X64]
     env:
-      CABAL_VER: 3.14.1.1
-      MACOSX_DEPLOYMENT_TARGET: 10.13
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      S3_HOST: ${{ secrets.S3_HOST }}
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
-      GHC_VER: 9.6.7
       ARCH: 64
       DISTRO: na
       RUNNER_OS: FreeBSD
@@ -251,7 +233,42 @@ jobs:
         uses: haskell/ghcup-setup@v1
 
       - name: Run build
-        run: bash .github/scripts/build.sh
+        run: |
+          ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ env.RUNNER_OS }} --check-linking --strip
+
+      - if: always()
+        name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ env.ARTIFACT }}
+          path: |
+            ./out/*
+
+  build-openbsd:
+    name: Build binary (OpenBSD)
+    runs-on: [self-hosted, openbsd, X64]
+    env:
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      S3_HOST: ${{ secrets.S3_HOST }}
+      ARTIFACT: "x86_64-openbsd-ghcup"
+      ARCH: 64
+      DISTRO: na
+      RUNNER_OS: OpenBSD
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Install prerequisites
+        run: |
+          gcc_ver=$(pkg_info -Q gcc | grep '^gcc-[0-9]' | sort -u | head -1 | awk '{ print $1 }')
+          doas pkg_add -I ghc cabal-install git bash libiconv curl ${gcc_ver} gmp gmake libffi
+
+      - name: Run build
+        run: |
+          bash .github/scripts/build.sh --verbose --os ${{ env.RUNNER_OS }} --check-linking --strip
 
       - if: always()
         name: Upload artifact
@@ -265,8 +282,6 @@ jobs:
     name: Test linux
     needs: "build-linux"
     runs-on: ${{ matrix.os }}
-    env:
-      CABAL_VER: 3.14.1.1
     strategy:
       matrix:
         include:
@@ -277,12 +292,10 @@ jobs:
             DISTRO: Alpine
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 9.6.7
             ARCH: 64
             DISTRO: Alpine
           - os: ubuntu-latest
             ARTIFACT: "x86_64-linux-ghcup"
-            GHC_VER: 9.6.7
             ARCH: 64
             DISTRO: Ubuntu
 
@@ -301,8 +314,8 @@ jobs:
       - if: matrix.ARCH == '32' && matrix.DISTRO == 'Alpine'
         name: Run test (32 bit linux Alpine)
         uses: docker://hasufell/i386-alpine-haskell:3.21
-        with:
-          args: sh .github/scripts/test.sh
+        with: &with-test-linux
+          args: bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ runner.os }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir ${{ github.workspace }} --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }}
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
@@ -312,23 +325,20 @@ jobs:
       - if: matrix.ARCH == '64' && matrix.DISTRO == 'Alpine'
         name: Run test (64 bit linux Alpine)
         uses: docker://hasufell/alpine-haskell:3.21
-        with:
-          args: sh .github/scripts/test.sh
+        with: *with-test-linux
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: ${{ matrix.DISTRO }}
 
       - if: matrix.DISTRO != 'Alpine'
         name: Run test (64 bit linux)
         run: |
           sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
-          sh .github/scripts/test.sh
+          bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ runner.os }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir ${{ github.workspace }} --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }}
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
           DISTRO: ${{ matrix.DISTRO }}
 
       - if: failure()
@@ -342,18 +352,11 @@ jobs:
   test-arm:
     name: Test ARM
     needs: "build-arm"
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04-arm
     env:
-      CABAL_VER: 3.14.1.1
-    strategy:
-      matrix:
-        include:
-          - os: [self-hosted, Linux, ARM64, maerwald]
-            ARTIFACT: "aarch64-linux-ghcup"
-            GHC_VER: 9.6.7
-            ARCH: ARM64
-            DISTRO: Alpine
-
+      ARTIFACT: "aarch64-linux-ghcup"
+      ARCH: ARM64
+      DISTRO: Alpine
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -366,51 +369,34 @@ jobs:
           merge-multiple: true
           path: ./out
 
-      - if: matrix.ARCH == 'ARM64'
-        uses: docker://hasufell/arm64v8-alpine-haskell:3.21
+      - uses: docker://hasufell/arm64v8-alpine-haskell:3.21
         name: Run test (aarch64 alpine)
-        with:
-          args: sh .github/scripts/test.sh
-        env:
-          ARTIFACT: ${{ matrix.ARTIFACT }}
-          ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: ${{ matrix.DISTRO }}
+        with: *with-test-linux
 
       - if: failure()
         name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: testfiles-${{ matrix.ARTIFACT }}
+          name: testfiles-${{ env.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
 
-  test-macwin:
-    name: Test Mac/Win
-    needs: "build-macwin"
+  test-mac:
+    name: Test Mac
+    needs: "build-mac"
     runs-on: ${{ matrix.os }}
     env:
-      CABAL_VER: 3.14.1.1
       MACOSX_DEPLOYMENT_TARGET: 10.13
+      DISTRO: na
     strategy:
       matrix:
         include:
-          - os: [self-hosted, macOS, ARM64]
+          - os: macOS-latest
             ARTIFACT: "aarch64-apple-darwin-ghcup"
-            GHC_VER: 9.6.7
             ARCH: ARM64
-            DISTRO: na
           - os: macOS-15-intel
             ARTIFACT: "x86_64-apple-darwin-ghcup"
-            GHC_VER: 9.6.7
             ARCH: 64
-            DISTRO: na
-          - os: windows-latest
-            ARTIFACT: "x86_64-mingw64-ghcup"
-            GHC_VER: 9.6.7
-            ARCH: 64
-            DISTRO: na
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -426,56 +412,76 @@ jobs:
           merge-multiple: true
           path: ./out
 
-      - if: runner.os == 'macOS'
-        name: Run test
+      - name: Run test (mac)
         run: |
-          bash .github/scripts/brew.sh coreutils
-          export PATH="$HOME/.brew/bin:$HOME/.brew/sbin:$PATH"
-          bash .github/scripts/test.sh
+          brew install coreutils
+          bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ runner.os }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir ${{ github.workspace }} --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }} --project-dir ${{ github.workspace }}
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: ${{ matrix.DISTRO }}
-          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
 
-      - if: runner.os != 'macOS'
-        name: Run test
-        run: bash .github/scripts/test.sh
-        env:
-          ARTIFACT: ${{ matrix.ARTIFACT }}
-          ARCH: ${{ matrix.ARCH }}
-          GHC_VER: ${{ matrix.GHC_VER }}
-          DISTRO: ${{ matrix.DISTRO }}
-          HOMEBREW_CHANGE_ARCH_TO_ARM: 1
-
-      - if: failure() && runner.os == 'Windows'
-        name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: testfiles-${{ matrix.ARTIFACT }}
-          path: |
-            ./test/ghcup-test/golden/windows/GHCupInfo*json
-
-      - if: failure() && runner.os != 'Windows'
-        name: Upload artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: testfiles-${{ matrix.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
+
+  test-win:
+    name: Test Win
+    needs: "build-win"
+    runs-on: windows-latest
+    env:
+      ARTIFACT: "x86_64-mingw64-ghcup"
+      ARCH: 64
+      DISTRO: na
+      GHCUP_INSTALL_BASE_PREFIX: "C:\\"
+    defaults:
+      run:
+        shell: 'C:/msys64/usr/bin/bash.exe --login -e {0}'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Install GHCup
+        uses: haskell/ghcup-setup@v1
+        env:
+          GHCUP_MSYS2: 'C:/msys64'
+
+      - name: Install msys2 dependencies
+        run: *msys2-install
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: artifacts-*
+          merge-multiple: true
+          path: ./out
+
+      - name: Run test (windows)
+        run: |
+          rm -f /c/Strawberry/perl/bin/pkg-config
+          rm /clang64/bin/zlib1.dll
+          bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ runner.os }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir /c --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }} --project-dir '${{ github.workspace }}'
+        env:
+          CABAL_DIR: "C:\\Users\\runneradmin\\AppData\\Roaming\\cabal"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: testfiles-${{ env.ARTIFACT }}
+          path: |
+            ./test/ghcup-test/golden/windows/GHCupInfo*json
+
   test-freebsd:
     name: Test FreeBSD
     needs: "build-freebsd"
     runs-on: [self-hosted, FreeBSD, X64]
     env:
-      CABAL_VER: 3.14.1.1
-      MACOSX_DEPLOYMENT_TARGET: 10.13
       ARTIFACT: "x86_64-portbld-freebsd-ghcup"
-      GHC_VER: 9.6.7
       ARCH: 64
       DISTRO: na
-      RUNNER_OS: FreeBSD
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -496,16 +502,57 @@ jobs:
           path: ./out
 
       - name: Run test
-        run: |
-          bash .github/scripts/test.sh
+        run: &freebsd-run-test |
+          bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ env.OS }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir ${{ github.workspace }} --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }} --project-dir ${{ github.workspace }}
+        env:
+          OS: "FreeBSD"
 
       - if: failure()
         name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: testfiles-${{ matrix.ARTIFACT }}
+          name: testfiles-${{ env.ARTIFACT }}
           path: |
             ./test/ghcup-test/golden/unix/GHCupInfo*json
+
+  test-openbsd:
+    name: Test OpenBSD
+    needs: "build-openbsd"
+    runs-on: [self-hosted, openbsd, X64]
+    env:
+      ARTIFACT: "x86_64-openbsd-ghcup"
+      ARCH: 64
+      DISTRO: na
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Install prerequisites
+        run: |
+          gcc_ver=$(pkg_info -Q gcc | grep '^gcc-[0-9]' | sort -u | head -1 | awk '{ print $1 }')
+          doas pkg_add -I ghc cabal-install git bash libiconv curl ${gcc_ver} gmp gmake libffi
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: artifacts-*
+          merge-multiple: true
+          path: ./out
+
+      - name: Run test
+        run: *freebsd-run-test
+        env:
+          OS: "OpenBSD"
+
+      - if: failure()
+        name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: testfiles-${{ env.ARTIFACT }}
+          path: |
+            ./test/ghcup-test/golden/unix/GHCupInfo*json
+
   hls:
     name: hls
     needs: build-linux
@@ -536,10 +583,13 @@ jobs:
         run: |
           sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
           sh .github/scripts/hls.sh
+        env:
+          PROJECT_DIR: ${{ github.workspace }}
+          OS: ${{ runner.os }}
 
   release:
     name: release
-    needs: ["test-linux", "test-arm", "test-macwin", "test-freebsd", "hls"]
+    needs: ["test-linux", "test-arm", "test-mac", "test-win", "test-freebsd", "test-openbsd", "hls"]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -556,4 +606,3 @@ jobs:
           draft: true
           files: |
             ./out/*
-

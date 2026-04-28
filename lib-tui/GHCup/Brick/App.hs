@@ -35,7 +35,7 @@ import qualified GHCup.Brick.Widgets.Tutorial as Tutorial
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import qualified GHCup.Brick.Widgets.Menus.AdvancedInstall as AdvancedInstall
 
-import GHCup.List (ListResult)
+import GHCup.Command.List (ListResult)
 import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination), KeyBindings (..))
 
 import qualified Brick.Focus as F

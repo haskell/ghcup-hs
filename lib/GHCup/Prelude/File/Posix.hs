@@ -1,8 +1,8 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE DataKinds  #-}
-{-# LANGUAGE MultiWayIf  #-}
 {-# LANGUAGE CApiFFI #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {-|
 Module      : GHCup.Utils.File.Posix
@@ -15,28 +15,30 @@ Portability : POSIX
 -}
 module GHCup.Prelude.File.Posix where
 
-import           Conduit
-import           Control.Exception.Safe
-import           Foreign.C.String
-import           Foreign.C.Error
-import           Foreign.C.Types
-import           System.IO                      ( hClose, hSetBinaryMode )
-import           System.IO.Error      hiding    ( catchIOError )
-import           System.FilePath
-import           System.Directory               ( removeFile, pathIsSymbolicLink, getSymbolicLinkTarget, doesPathExist )
-import           System.Posix.Error             ( throwErrnoPathIfMinus1Retry )
-import           System.Posix.Internals         ( withFilePath )
-import           System.Posix.Files
-import           System.Posix.Types
+import Conduit
+import Control.Exception.Safe
+import Foreign.C.Error
+import Foreign.C.String
+import Foreign.C.Types
+import System.Directory
+    ( doesPathExist, getSymbolicLinkTarget, pathIsSymbolicLink, removeFile )
+import System.FilePath
+import System.IO              ( hClose, hSetBinaryMode )
+import System.IO.Error        hiding ( catchIOError )
+import System.Posix.Error     ( throwErrnoPathIfMinus1Retry )
+import System.Posix.Files
+import System.Posix.Internals ( withFilePath )
+import System.Posix.Types
 
 
-import qualified System.Posix.Directory        as PD
-import qualified System.Posix.Files            as PF
-import qualified System.Posix.IO               as SPI
-import qualified System.Posix as Posix
-import qualified GHCup.Prelude.File.Posix.Foreign as FD
-import GHCup.Prelude.File.Posix.Traversals
-import GHC.IO.Exception (IOException(ioe_type), IOErrorType (..))
+import           GHC.IO.Exception
+    ( IOErrorType (..), IOException (ioe_type) )
+import qualified GHCup.Prelude.File.Posix.Foreign    as FD
+import           GHCup.Prelude.File.Posix.Traversals
+import qualified System.Posix                        as Posix
+import qualified System.Posix.Directory              as PD
+import qualified System.Posix.Files                  as PF
+import qualified System.Posix.IO                     as SPI
 
 import qualified Data.Conduit.Combinators as C
 

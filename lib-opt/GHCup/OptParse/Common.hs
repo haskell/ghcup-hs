@@ -1,67 +1,68 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE NumericUnderscores #-}
-{-# LANGUAGE ViewPatterns      #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 module GHCup.OptParse.Common where
 
 
-import           GHCup
-import           GHCup.CabalConfig
-import           GHCup.Download
-import           GHCup.Platform
-import           GHCup.Types
-import           GHCup.Types.Optics
-import           GHCup.Utils
-import qualified GHCup.Utils.Parsers as Parsers
-import           GHCup.Prelude
-import           GHCup.Prelude.Process
-import           GHCup.Prelude.Logger
+import GHCup.CabalConfig
+import GHCup.Command.List
+import GHCup.Download
+import GHCup.Hardcoded.Version
+import GHCup.Prelude
+import GHCup.Prelude.Process
+import GHCup.Query.GHCupDirs
+import GHCup.Query.Metadata
+import GHCup.Query.System
+import GHCup.System.Directory
+import GHCup.Types
+import GHCup.Types.Optics
 
-import           Control.Monad (forM, join)
-import           Control.DeepSeq
-import           Control.Concurrent
-import           Control.Concurrent.Async
-import           Control.Exception.Safe
+import qualified GHCup.Input.Parsers as Parsers
+
+import Control.Concurrent
+import Control.Concurrent.Async
+import Control.DeepSeq
+import Control.Exception        ( evaluate )
+import Control.Exception.Safe
+import Control.Monad            ( forM, join )
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad.Reader
-import           Data.Aeson
+import Control.Monad.Reader
+import Data.Aeson
 #if MIN_VERSION_aeson(2,0,0)
 import qualified Data.Aeson.Key    as KM
 import qualified Data.Aeson.KeyMap as KM
 #else
 import qualified Data.HashMap.Strict as KM
 #endif
-import           Data.ByteString.Lazy           ( ByteString )
 import           Data.Bifunctor
+import           Data.ByteString.Lazy ( ByteString )
 import           Data.Char
 import           Data.Either
 import           Data.Functor
-import           Data.List                      ( nub, isPrefixOf, stripPrefix )
+import           Data.List            ( isPrefixOf, nub, stripPrefix )
 import           Data.Maybe
-import           Data.Versions
-import qualified Data.Vector      as V
-import           GHC.IO.Exception
 import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
-import           Prelude                 hiding ( appendFile )
-import           Safe (lastMay)
-import           System.Process                  ( readProcess )
+import qualified Data.Vector          as V
+import           Data.Versions
+import           GHC.IO.Exception
+import           Options.Applicative  hiding ( style )
+import           Prelude              hiding ( appendFile )
+import           Safe                 ( lastMay )
 import           System.FilePath
-import           Text.HTML.TagSoup       hiding ( Tag )
+import           System.Process       ( readProcess )
+import           Text.HTML.TagSoup    hiding ( Tag )
 
-import qualified Data.Map.Strict               as M
-import qualified Data.Text                     as T
-import qualified System.FilePath.Posix         as FP
-import GHCup.Version
-import Control.Exception (evaluate)
+import qualified Data.Map.Strict       as M
+import qualified Data.Text             as T
+import qualified System.FilePath.Posix as FP
 
     --------------
     --[ Parser ]--
@@ -72,16 +73,16 @@ toolVersionTagArgument :: [ListCriteria] -> Maybe Tool -> Parser ToolVersion
 toolVersionTagArgument criteria tool =
   argument (eitherReader (parser tool))
     (metavar (mv tool)
-    <> completer (tagCompleter (fromMaybe GHC tool) [])
+    <> completer (tagCompleter (fromMaybe ghc tool) [])
     <> foldMap (completer . versionCompleter criteria) tool)
  where
-  mv (Just GHC) = "GHC_VERSION|TAG|RELEASE_DATE"
-  mv (Just HLS) = "HLS_VERSION|TAG|RELEASE_DATE"
-  mv _          = "VERSION|TAG|RELEASE_DATE"
+  mv (Just (Tool "ghc")) = "GHC_VERSION|TAG|RELEASE_DATE"
+  mv (Just (Tool "hls")) = "HLS_VERSION|TAG|RELEASE_DATE"
+  mv _                   = "VERSION|TAG|RELEASE_DATE"
 
-  parser (Just GHC) = Parsers.ghcVersionTagEither
-  parser Nothing    = Parsers.ghcVersionTagEither
-  parser _          = Parsers.toolVersionTagEither
+  parser (Just (Tool "ghc")) = Parsers.ghcVersionTagEither
+  parser Nothing             = Parsers.ghcVersionTagEither
+  parser _                   = Parsers.toolVersionTagEither
 
 
 versionParser' :: [ListCriteria] -> Maybe Tool -> Parser Version
@@ -89,7 +90,7 @@ versionParser' criteria tool = argument
   (eitherReader (first show . version . T.pack))
   (metavar "VERSION"  <> foldMap (completer . versionCompleter criteria) tool)
 
-ghcVersionArgument :: [ListCriteria] -> Maybe Tool -> Parser GHCTargetVersion
+ghcVersionArgument :: [ListCriteria] -> Maybe Tool -> Parser TargetVersion
 ghcVersionArgument criteria tool = argument (eitherReader Parsers.ghcVersionEither)
                                             (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
 
@@ -178,7 +179,7 @@ fileUri' add = \case
   compgen action' r opts = do
     let cmd = unwords $ ["compgen", "-A", action'] <> opts <> ["--", requote r]
     result <- tryIO $ readProcess "bash" ["-c", cmd] ""
-    return . lines . either (const []) id $ result
+    return . lines . fromRight [] $ result
 
   -- | Strongly quote the string we pass to compgen.
   --
@@ -228,20 +229,20 @@ fileUri' add = \case
       unescapeN = goX
         where
           goX ('\'' : xs) = goN xs
-          goX (x : xs) = x : goX xs
-          goX [] = []
+          goX (x : xs)    = x : goX xs
+          goX []          = []
 
           goN ('\\' : '\'' : xs) = '\'' : goN xs
-          goN ('\'' : xs) = goX xs
-          goN (x : xs) = x : goN xs
-          goN [] = []
+          goN ('\'' : xs)        = goX xs
+          goN (x : xs)           = x : goN xs
+          goN []                 = []
 
       -- Unescape an unquoted string
       unescapeU = goX
         where
-          goX [] = []
+          goX []              = []
           goX ('\\' : x : xs) = x : goX xs
-          goX (x : xs) = x : goX xs
+          goX (x : xs)        = x : goX xs
 
       -- Unescape a weakly quoted string
       unescapeD = goX
@@ -269,19 +270,20 @@ tagCompleter :: Tool -> [String] -> Completer
 tagCompleter tool add = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
   let loggerConfig = LoggerConfig
-        { lcPrintDebug   = False
+        { lcPrintDebugLvl = Nothing
         , consoleOutter  = mempty
         , fileOutter     = mempty
         , fancyColors    = False
         }
-  let appState = LeanAppState
-        (defaultSettings { noNetwork = True })
-        dirs'
-        defaultKeyBindings
-        loggerConfig
 
-  mpFreq <- flip runReaderT appState . runE $ platformRequest
+  mpFreq <- flip runReaderT loggerConfig . runE $ platformRequest
   forFold mpFreq $ \pfreq -> do
+    let appState = LeanAppState
+          (defaultSettings { noNetwork = True })
+          dirs'
+          defaultKeyBindings
+          pfreq
+          loggerConfig
     mGhcUpInfo <- flip runReaderT appState . runE $ getDownloadsF pfreq
     case mGhcUpInfo of
       VRight ghcupInfo -> do
@@ -297,19 +299,20 @@ versionCompleter' :: [ListCriteria] -> Tool -> (Version -> Bool) -> Completer
 versionCompleter' criteria tool filter' = listIOCompleter $ do
   dirs' <- liftIO getAllDirs
   let loggerConfig = LoggerConfig
-        { lcPrintDebug   = False
+        { lcPrintDebugLvl = Nothing
         , consoleOutter  = mempty
         , fileOutter     = mempty
         , fancyColors    = False
         }
+  mpFreq <- flip runReaderT loggerConfig . runE $ platformRequest
   let settings = defaultSettings { noNetwork = True }
-  let leanAppState = LeanAppState
-                   settings
-                   dirs'
-                   defaultKeyBindings
-                   loggerConfig
-  mpFreq <- flip runReaderT leanAppState . runE $ platformRequest
   forFold mpFreq $ \pfreq -> do
+    let leanAppState = LeanAppState
+                     settings
+                     dirs'
+                     defaultKeyBindings
+                     pfreq
+                     loggerConfig
     mGhcUpInfo <- flip runReaderT leanAppState . runE $ getDownloadsF pfreq
     forFold mGhcUpInfo $ \ghcupInfo -> do
       let appState = AppState
@@ -320,9 +323,9 @@ versionCompleter' criteria tool filter' = listIOCompleter $ do
             pfreq
             loggerConfig
 
-          runEnv = flip runReaderT appState
+          runEnv = flip runReaderT appState . runE
 
-      installedVersions <- runEnv $ listVersions (Just tool) criteria False False (Nothing, Nothing)
+      (VRight installedVersions) <- runEnv $ listVersions (Just [tool]) criteria False False (Nothing, Nothing)
       return $ fmap (T.unpack . prettyVer) . filter filter' . fmap lVer $ installedVersions
 
 
@@ -363,9 +366,9 @@ toolDlCompleter tool = mkCompleter $ \case
     | "https://github.com/c" `isPrefixOf` word -> pure ["https://github.com/commercialhaskell/stack/releases/download/"]
     | "https://github.com/h" `isPrefixOf` word -> pure ["https://github.com/haskell/haskell-language-server/releases/download/"]
     | "https://g" `isPrefixOf` word
-    , tool == Stack -> pure ["https://github.com/commercialhaskell/stack/releases/download/"]
+    , tool == stack -> pure ["https://github.com/commercialhaskell/stack/releases/download/"]
     | "https://g" `isPrefixOf` word
-    , tool == HLS -> pure ["https://github.com/haskell/haskell-language-server/releases/download/"]
+    , tool == hls -> pure ["https://github.com/haskell/haskell-language-server/releases/download/"]
 
     | "https://d" `isPrefixOf` word -> pure $ filter ("https://downloads.haskell.org/" `isPrefixOf`) $ initUrl tool
 
@@ -378,19 +381,20 @@ toolDlCompleter tool = mkCompleter $ \case
     | otherwise -> pure []
  where
   initUrl :: Tool -> [String]
-  initUrl GHC   = [ "https://downloads.haskell.org/~ghc/"
-                  , "https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/"
-                  ]
-  initUrl Cabal = [ "https://downloads.haskell.org/~cabal/"
-                  , "https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/"
-                  ]
-  initUrl GHCup = [ "https://downloads.haskell.org/~ghcup/" ]
-  initUrl HLS   = [ "https://github.com/haskell/haskell-language-server/releases/download/"
-                  , "https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/"
-                  ]
-  initUrl Stack = [ "https://github.com/commercialhaskell/stack/releases/download/"
-                  , "https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/"
-                  ]
+  initUrl (Tool "ghc")   = [ "https://downloads.haskell.org/~ghc/"
+                           , "https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/"
+                           ]
+  initUrl (Tool "cabal") = [ "https://downloads.haskell.org/~cabal/"
+                           , "https://downloads.haskell.org/~ghcup/unofficial-bindists/cabal/"
+                           ]
+  initUrl (Tool "ghcup") = [ "https://downloads.haskell.org/~ghcup/" ]
+  initUrl (Tool "hls")   = [ "https://github.com/haskell/haskell-language-server/releases/download/"
+                           , "https://downloads.haskell.org/~ghcup/unofficial-bindists/haskell-language-server/"
+                           ]
+  initUrl (Tool "stack") = [ "https://github.com/commercialhaskell/stack/releases/download/"
+                           , "https://downloads.haskell.org/~ghcup/unofficial-bindists/stack/"
+                           ]
+  initUrl _              = []
 
   completePrefix :: String -- ^ url, e.g.    'https://github.com/haskell/haskell-languag'
                  -> String -- ^ match, e.g.  'haskell-language-server'
@@ -452,11 +456,10 @@ toolDlCompleter tool = mkCompleter $ \case
   getGithubAssets owner repo tag = withCurl url 3_000_000 $ \stdout -> do
     Just xs <- pure $ decode' @Object stdout
     Just (Array assets) <- pure $ KM.lookup (mkval "assets") xs
-    as <- fmap V.toList $ forM assets $ \val -> do
+    fmap V.toList $ forM assets $ \val -> do
       (Object asset) <- pure val
       Just (String name) <- pure $ KM.lookup (mkval "name") asset
       pure $ T.unpack name
-    pure as
    where
     url = "https://api.github.com/repos/" <> owner <> "/" <> repo <> "/releases/tags/" <> tag
 
@@ -472,33 +475,30 @@ checkForUpdates :: ( MonadReader env m
                    , HasGHCupInfo env
                    , HasDirs env
                    , HasPlatformReq env
-                   , MonadCatch m
                    , HasLog env
-                   , MonadThrow m
-                   , MonadIO m
-                   , MonadFail m
+                   , MonadIOish m
                    )
-                => m [(Tool, GHCTargetVersion)]
+                => m [(Tool, TargetVersion)]
 checkForUpdates = do
   GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
-  lInstalled <- listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
-  let latestInstalled tool = (fmap (\lr -> GHCTargetVersion (lCross lr) (lVer lr)) . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
+  (VRight lInstalled) <- runE $ listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
+  let latestInstalled tool = (fmap (\lr -> TargetVersion (lCross lr) (lVer lr)) . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
 
-  ghcup <- forMM (getLatest dls GHCup) $ \(GHCTargetVersion _ l, _) -> do
+  ghcup' <- forMM (getLatest dls ghcup) $ \(TargetVersion _ l, _) -> do
     (Right ghcup_ver) <- pure $ version $ prettyPVP ghcUpVer
-    if (l > ghcup_ver) then pure $ Just (GHCup, mkTVer l) else pure Nothing
+    if l > ghcup_ver then pure $ Just (ghcup, mkTVer l) else pure Nothing
 
-  otherTools <- forM [GHC, Cabal, HLS, Stack] $ \t ->
+  otherTools <- forM (fst <$> allAvailableTools dls) $ \t ->
     forMM (getLatest dls t) $ \(l, _) -> do
       let mver = latestInstalled t
       forMM mver $ \ver ->
-        if (l > ver) then pure $ Just (t, l) else pure Nothing
+        if l > ver then pure $ Just (t, l) else pure Nothing
 
-  pure $ catMaybes (ghcup:otherTools)
+  pure $ catMaybes (ghcup':otherTools)
  where
   forMM a f = fmap join $ forM a f
 
-logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => GHCTargetVersion -> m ()
+logGHCPostRm :: (MonadReader env m, HasLog env, MonadIO m) => TargetVersion -> m ()
 logGHCPostRm ghcVer = do
   cabalStore <- liftIO $ handleIO (\_ -> if isWindows then pure "C:\\cabal\\store" else pure "~/.cabal/store or ~/.local/state/cabal/store")
     getStoreDir

@@ -75,5 +75,4 @@ draw exitKey =
               ]
             , Brick.txt " "
             ])
-        <=> (Brick.padRight Brick.Max $
-          Brick.txt "Press " <+> Common.keyToWidget exitKey <+> Brick.txt " to exit the tutorial")
+        <=> Brick.padRight Brick.Max ( Brick.txt "Press " <+> Common.keyToWidget exitKey <+> Brick.txt " to exit the tutorial")

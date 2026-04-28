@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE DataKinds             #-}
 
 module GHCup.Prelude.File.Search (
   module GHCup.Prelude.File.Search
@@ -9,31 +9,32 @@ module GHCup.Prelude.File.Search (
   , CapturedProcess(..)
   ) where
 
-import           GHCup.Prelude.Internal ((!?))
-import           GHCup.Types(ProcessError(..), CapturedProcess(..))
+import GHCup.Prelude.Internal ( (!?) )
+import GHCup.Types            ( CapturedProcess (..), ProcessError (..) )
 
-import           Control.Monad (forM)
-import           Control.Monad.Reader
-import           Data.Maybe
-import           Data.Text               ( Text )
-import           Data.Void
-import           GHC.IO.Exception
-import           System.Directory hiding ( removeDirectory
-                                         , removeDirectoryRecursive
-                                         , removePathForcibly
-                                         , findFiles
-                                         , makeAbsolute
-                                         )
-import           System.FilePath
-import           Text.Regex.Posix
+import Control.Monad        ( forM )
+import Control.Monad.Reader
+import Data.Maybe
+import Data.Text            ( Text )
+import Data.Void
+import GHC.IO.Exception
+import System.Directory     hiding
+    ( findFiles
+    , makeAbsolute
+    , removeDirectory
+    , removeDirectoryRecursive
+    , removePathForcibly
+    )
+import System.FilePath
+import Text.Regex.Posix
 
 
-import qualified Data.Text                     as T
-import qualified Text.Megaparsec               as MP
-import Control.Exception.Safe (handleIO)
-import System.Directory.Internal.Prelude (ioeGetErrorType)
-import Data.Variant.Excepts (Excepts)
-import GHCup.Errors (NotFoundInPATH(..))
+import           Control.Exception.Safe            ( handleIO )
+import qualified Data.Text                         as T
+import           Data.Variant.Excepts              ( Excepts )
+import           GHCup.Errors                      ( NotFoundInPATH (..) )
+import           System.Directory.Internal.Prelude ( ioeGetErrorType )
+import qualified Text.Megaparsec                   as MP
 
 
 makeAbsolute :: MonadIO m => FilePath -> Excepts '[NotFoundInPATH] m FilePath

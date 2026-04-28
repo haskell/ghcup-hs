@@ -9,7 +9,7 @@ import Data.Function ((&))
 import Prelude hiding (appendFile)
 
 import Data.Versions (prettyVer)
-import GHCup.List ( ListResult(..) )
+import GHCup.Command.List ( ListResult(..) )
 import GHCup.Types (Tool (..))
 
 import qualified GHCup.Brick.Common as Common
@@ -25,6 +25,7 @@ import Optics (to)
 import Optics.Operators ((.~), (^.))
 import Optics.Optic ((%))
 import Data.Foldable (foldl')
+import qualified Data.Text as T
 
 type ContextMenu = Menu ListResult Name
 
@@ -45,8 +46,8 @@ create lr keyBindings = Menu.createMenu Common.ContextBox lr "" validator keyBin
       & Menu.fieldHelpMsgL .~ "Compile HLS from source"
   buttons =
     case lTool lr of
-      GHC -> [advInstallButton, compileGhcButton]
-      HLS -> [advInstallButton, compileHLSButton]
+      Tool "ghc" -> [advInstallButton, compileGhcButton]
+      Tool "hls" -> [advInstallButton, compileHLSButton]
       _ -> [advInstallButton]
   validator = const Nothing
 
@@ -73,11 +74,12 @@ draw menu =
     buttonWidgets = zipWith (F.withFocusRing (menu ^. Menu.menuFocusRingL)) drawButtons (menu ^. Menu.menuButtonsL)
     tool_str =
       case menu ^. Menu.menuStateL % to lTool of
-        GHC -> "GHC"
-        GHCup -> "GHCup"
-        Cabal -> "Cabal"
-        HLS -> "HLS"
-        Stack -> "Stack"
+        Tool "ghc" -> "GHC"
+        Tool "ghcup" -> "GHCup"
+        Tool "cabal" -> "Cabal"
+        Tool "hls" -> "HLS"
+        Tool "stack" -> "Stack"
+        Tool t -> T.pack t
 
 handler :: BrickEvent Name e -> EventM Name ContextMenu ()
 handler = Menu.handlerMenu

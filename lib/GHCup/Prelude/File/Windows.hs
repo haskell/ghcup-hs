@@ -1,6 +1,6 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE DataKinds  #-}
 
 {-|
 Module      : GHCup.Utils.File.Windows
@@ -13,19 +13,20 @@ Portability : Windows
 -}
 module GHCup.Prelude.File.Windows where
 
-import           GHCup.Utils.Dirs
-import           GHCup.Prelude.Internal
+import GHCup.Prelude.Internal
+import GHCup.Query.GHCupDirs
+import GHCup.System.Directory
 
 import           Control.Monad.Reader
 import           Data.List
-import qualified GHC.Unicode                  as U
+import qualified GHC.Unicode          as U
 import           System.FilePath
-import qualified System.IO.Error              as IOE
+import qualified System.IO.Error      as IOE
 
-import qualified System.Win32.Info             as WS
-import qualified System.Win32.File             as WS
+import qualified System.Win32.File as WS
+import qualified System.Win32.Info as WS
 
-import           Data.Bits ((.&.))
+import Data.Bits ( (.&.) )
 
 import           Conduit
 import qualified Data.Conduit.Combinators as C
@@ -115,8 +116,8 @@ toExtendedLengthPath path
         '\\' : '?'  : '?' : '\\' : _ -> simplifiedPath
         '\\' : '\\' : '?' : '\\' : _ -> simplifiedPath
         '\\' : '\\' : '.' : '\\' : _ -> simplifiedPath
-        '\\' : subpath@('\\' : _) -> "\\\\?\\UNC" <> subpath
-        _ -> "\\\\?\\" <> simplifiedPath
+        '\\' : subpath@('\\' : _)    -> "\\\\?\\UNC" <> subpath
+        _                            -> "\\\\?\\" <> simplifiedPath
   where simplifiedPath = simplify path
 
 
@@ -128,7 +129,7 @@ simplifyWindows "" = ""
 simplifyWindows path =
   case drive' of
     "\\\\?\\" -> drive' <> subpath
-    _ -> simplifiedPath
+    _         -> simplifiedPath
   where
     simplifiedPath = joinDrive drive' subpath'
     (drive, subpath) = splitDrive path
@@ -182,9 +183,9 @@ expandDots = reverse . go []
             "." -> go ys' xs
             ".." ->
               case ys' of
-                [] -> go (x : ys') xs
+                []       -> go (x : ys') xs
                 ".." : _ -> go (x : ys') xs
-                _ : ys -> go ys xs
+                _ : ys   -> go ys xs
             _ -> go (x : ys') xs
 
 rawPrependCurrentDirectory :: FilePath -> IO FilePath

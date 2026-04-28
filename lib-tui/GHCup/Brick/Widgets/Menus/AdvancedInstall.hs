@@ -29,7 +29,7 @@ module GHCup.Brick.Widgets.Menus.AdvancedInstall (
   installTargetsL,
 ) where
 
-import GHCup.Types (GHCTargetVersion(..))
+import GHCup.Types (TargetVersion(..))
 import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import           GHCup.Brick.Common(Name(..))
@@ -46,17 +46,17 @@ import Data.Bifunctor (Bifunctor(..))
 import Data.Function ((&))
 import Optics ((.~))
 import Data.Char (isSpace)
-import qualified GHCup.Utils.Parsers as Utils
+import qualified GHCup.Input.Parsers as Utils
 
 data InstallOptions = InstallOptions
   { instBindist  :: Maybe URI
   , instSet      :: Bool
-  , instVersion :: Maybe GHCTargetVersion
+  , instVersion :: Maybe TargetVersion
   -- ^ User specified version to override default
   , isolateDir   :: Maybe FilePath
   , forceInstall :: Bool
   , addConfArgs  :: [T.Text]
-  , installTargets :: T.Text
+  , installTargets :: Maybe T.Text
   } deriving (Eq, Show)
 
 makeLensesFor [
@@ -75,8 +75,7 @@ type AdvancedInstallMenu = Menu InstallOptions Name
 create :: MenuKeyBindings -> AdvancedInstallMenu
 create k = Menu.createMenu AdvancedInstallBox initialState "Advanced Install" validator k [ok] fields
   where
-    initialInstallTargets = "install"
-    initialState = InstallOptions Nothing False Nothing Nothing False [] initialInstallTargets
+    initialState = InstallOptions Nothing False Nothing Nothing False [] Nothing
     validator InstallOptions {..} = case (instSet, isolateDir) of
       (True, Just _) -> Just "Cannot set active when doing an isolated install"
       _ -> Nothing
@@ -93,7 +92,10 @@ create k = Menu.createMenu AdvancedInstallBox initialState "Advanced Install" va
     filepathValidator :: T.Text -> Either Menu.ErrorMessage (Maybe FilePath)
     filepathValidator = whenEmpty Nothing (bimap T.pack Just . Utils.absolutePathParser . T.unpack)
 
-    toolVersionValidator :: T.Text -> Either Menu.ErrorMessage (Maybe GHCTargetVersion)
+    installTargetValidator :: T.Text -> Either Menu.ErrorMessage (Maybe T.Text)
+    installTargetValidator = whenEmpty Nothing (Right . Just)
+
+    toolVersionValidator :: T.Text -> Either Menu.ErrorMessage (Maybe TargetVersion)
     toolVersionValidator = whenEmpty Nothing (bimap T.pack Just . Utils.ghcVersionEither . T.unpack)
 
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
@@ -109,9 +111,9 @@ create k = Menu.createMenu AdvancedInstallBox initialState "Advanced Install" va
       , Menu.createEditableField (Common.MenuElement Common.ToolVersionBox) toolVersionValidator instVersionL
           & Menu.fieldLabelL .~ "version"
           & Menu.fieldHelpMsgL .~ "Specify a custom version"
-      , Menu.createEditableField' initialInstallTargets (Common.MenuElement Common.GHCInstallTargets) Right installTargetsL
+      , Menu.createEditableField (Common.MenuElement Common.GHCInstallTargets) installTargetValidator installTargetsL
           & Menu.fieldLabelL .~ "install-targets"
-          & Menu.fieldHelpMsgL .~ "Specify space separated list of make install targets"
+          & Menu.fieldHelpMsgL .~ "Overwrite install targets (space separated list)"
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathValidator isolateDirL
           & Menu.fieldLabelL .~ "isolated"
           & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
