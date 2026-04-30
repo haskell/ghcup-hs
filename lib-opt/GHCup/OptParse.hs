@@ -148,7 +148,6 @@ opts =
             <> long "url-source"
             <> metavar "<URL_SOURCE|cross|prereleases|vanilla|default>"
             <> help "Alternative ghcup download info"
-            <> internal
             <> completer urlSourceCompleter
             )
           )
