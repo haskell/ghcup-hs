@@ -9,8 +9,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 {- Brick's navigation widget:
-It is a FocusRing over many list's. Each list contains the information for each tool. Each list has an internal name (for Brick's runtime)
-and a label which we can use in rendering. This data-structure helps to reuse Brick.Widget.List and to navegate easily across
+It is a FocusRing over many lists. Each list contains the information for each tool. Each list has an internal name (for Brick's runtime)
+and a label which we can use in rendering. This data-structure helps to reuse Brick.Widget.List and to navigate easily across
 
 -}
 

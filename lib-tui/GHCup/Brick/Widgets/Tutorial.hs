@@ -42,12 +42,12 @@ draw exitKey =
                 Brick.hBox [
                   Brick.txt "This symbol "
                 , Brick.withAttr Attributes.installedAttr (Brick.str Common.installedSign)
-                , Brick.txtWrap " means that the tool is installed but not in used"
+                , Brick.txtWrap " means that the tool is installed but not in use"
                 ]
               , Brick.hBox [
                   Brick.txt "This symbol "
                 , Brick.withAttr Attributes.setAttr (Brick.str Common.setSign)
-                , Brick.txtWrap " means that the tool is installed and in used"
+                , Brick.txtWrap " means that the tool is installed and in use"
                 ]
               , Brick.hBox [
                   Brick.txt "This symbol "
@@ -59,7 +59,7 @@ draw exitKey =
             , mkTextBox [
                 Brick.hBox [
                   Brick.withAttr Attributes.recommendedAttr $ Brick.str "recommended"
-                , Brick.txtWrap " tag is based on community adoption, known bugs, etc... So It makes this version the least experimental"
+                , Brick.txtWrap " tag is based on community adoption, known bugs, etc... So it makes this version the least experimental"
                 ]
               , Brick.hBox [
                   Brick.withAttr Attributes.latestAttr $ Brick.str "latest"

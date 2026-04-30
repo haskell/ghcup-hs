@@ -13,7 +13,7 @@ This module defines the brick App. The pattern is very simple:
 - Pattern match on the Mode
 - Dispatch drawing/events to the corresponding widget/s
 
-In general each widget should know how to draw itself and how to handle its own events, so this
+In general, each widget should know how to draw itself and how to handle its own events, so this
 module should only contain:
 
 - how to draw non-widget information. For example the footer
