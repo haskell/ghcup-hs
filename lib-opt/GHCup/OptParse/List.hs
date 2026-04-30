@@ -45,6 +45,7 @@ import qualified Data.Text.IO                  as T
 import qualified System.Console.Pretty         as Pretty
 import Control.Exception.Safe (MonadMask)
 import GHCup.Types.Optics
+import qualified Data.Map.Strict as M
 
 
 
@@ -147,7 +148,7 @@ Examples:
 
 
 printListResult :: (HasLog env , MonadReader env m, MonadIO m)
-                => Bool -> PagerConfig -> Bool -> [ListResult] -> m ()
+                => Bool -> PagerConfig -> Bool -> ToolListResult -> m ()
 printListResult no_color (PagerConfig pList pCmd) raw lr = do
 
   let
@@ -172,12 +173,12 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
           then x
           else [color Green "", "Tool", "Version", "Tags", "Notes"] : x
         )
-        . fmap
-            (\ListResult {..} ->
+        . mconcat . fmap
+            (\(lTool, (_, ls)) -> ls <&> \ListResult{..} ->
               let marks = if
-                    | lSet       -> (color Green (if isWindows then "IS" else "✔✔"))
-                    | lInstalled -> (color Green (if isWindows then "I " else "✓ "))
-                    | otherwise  -> (color Red   (if isWindows then "X " else "✗ "))
+                   | lSet       -> (color Green (if isWindows then "IS" else "✔✔"))
+                   | lInstalled -> (color Green (if isWindows then "I " else "✓ "))
+                   | otherwise  -> (color Red   (if isWindows then "X " else "✗ "))
               in
                 (if raw then [] else [marks])
                   ++ [ fmap toLower . prettyShow $ lTool
@@ -200,7 +201,7 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
                         )
                      ]
             )
-        $ lr
+        $ M.toList lr
   let cols =
         foldr (\xs ys -> zipWith (:) xs ys) (repeat []) rows
       lengths = fmap (maximum . fmap strWidth) cols

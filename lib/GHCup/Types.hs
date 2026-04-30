@@ -195,7 +195,7 @@ data ToolDescription = ToolDescription {
   , _toolLicense     :: Maybe String
   , _toolContact     :: Maybe String
   }
-  deriving (Eq, GHC.Generic, Show)
+  deriving (Eq, GHC.Generic, Show, Ord)
 
 instance NFData ToolDescription
 
@@ -412,6 +412,7 @@ instance NFData DownloadInfo
 data InstallMetadata = InstallMetadata {
     _imDownloadInfo :: DownloadInfo
   , _imResolvedInstallSpec :: InstallationSpecResolved
+  , _imToolDescription :: Maybe ToolDescription
   }
   deriving (Eq, GHC.Generic, Ord, Show)
 

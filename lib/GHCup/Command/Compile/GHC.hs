@@ -391,12 +391,14 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
 
       _ -> pure ()
 
+    let toolDesc = preview (ix ghc % toolDetails % _Just) dls
+
     case mBindist of
       Just bindist -> do
         spec <- liftE $ compileInstallSpec bindist installVer
         cSize <- liftIO $ getFileSize bindist
         cDigest <- liftIO $ getFileDigest bindist
-        liftE $ void $ installPackedBindist ghc bindist
+        liftE $ void $ installPackedBindist ghc toolDesc bindist
                                  (DownloadInfo {
                                    _dlUri = "file:" <> T.pack bindist
                                  , _dlSubdir = Just $ RegexDir "ghc-.*"
@@ -424,7 +426,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                      , _dlTag = Nothing
                      , _dlInstallSpec = Just (toInstallationInputSpec spec)
                      })
-        lift $ recordInstallationInfo ghcdir ghc installVer dlInfo spec
+        lift $ recordInstallationInfo ghcdir ghc toolDesc installVer dlInfo spec
 
     case installDir of
       -- set and make symlinks for regular (non-isolated) installs

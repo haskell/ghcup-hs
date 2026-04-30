@@ -41,6 +41,7 @@ import Control.Monad.Fail ( MonadFail )
 import Control.Monad.Reader
 import Control.Monad.Trans.Resource hiding ( throwM )
 import Data.ByteString              ( ByteString )
+import Data.Foldable.WithIndex
 import Data.List
 import Data.Maybe
 import Data.Variant.Excepts
@@ -86,7 +87,7 @@ rmUnsetTools :: ( MonadReader env m
              => Excepts '[NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo] m ()
 rmUnsetTools = do
   vers <- liftE $ listVersions Nothing [ListInstalled True, ListSet False] False True (Nothing, Nothing)
-  forM_ vers $ \ListResult{..} -> liftE $ rmToolVersion lTool (TargetVersion lCross lVer)
+  iforM_ vers $ \tool (_, ls) -> forM_ ls $ \ListResult{..} -> liftE $ rmToolVersion tool (TargetVersion lCross lVer)
 
 
 rmProfilingLibs :: ( MonadReader env m

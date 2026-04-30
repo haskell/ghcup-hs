@@ -31,7 +31,7 @@
 ## code TODO
 
 - emit dhall types
-- TUI
+- fetch from InstallMetadata first in list view
 
 
 ## ideas

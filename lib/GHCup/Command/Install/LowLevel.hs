@@ -215,15 +215,16 @@ recordInstallationInfo ::
   )
   => InstallDirResolved
   -> Tool
+  -> Maybe ToolDescription
   -> TargetVersion
   -> DownloadInfo
   -> InstallationSpecResolved
   -> m ()
-recordInstallationInfo installDest tool tver dlInfo instSpec
+recordInstallationInfo installDest tool toolDesc tver dlInfo instSpec
   | isSafeDir installDest = do
       spec <- recordedInstallationSpecFile tool tver
       liftIO $ createDirectoryIfMissing True (takeDirectory spec)
-      let metadata = InstallMetadata dlInfo instSpec
+      let metadata = InstallMetadata dlInfo instSpec toolDesc
       logDebug2 $ "Writing install metadata to " <> T.pack spec <> "\n  " <> T.pack (show metadata)
       liftIO $ encodeFile spec metadata
   | otherwise = do

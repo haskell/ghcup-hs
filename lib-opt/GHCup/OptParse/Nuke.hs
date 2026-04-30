@@ -24,6 +24,7 @@ import           Control.Monad.Fail             ( MonadFail )
 import           Control.Monad (forM_, void)
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
+import           Data.Foldable.WithIndex
 import           Data.Maybe
 import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style, ParseError )
@@ -82,7 +83,7 @@ nuke appState runLogger = do
 
        lInstalled' <- liftE $ listVersions Nothing [ListInstalled True] False True (Nothing, Nothing)
 
-       forM_ lInstalled' (\ListResult{..} -> liftE $ rmToolVersion lTool (TargetVersion lCross lVer))
+       iforM_ lInstalled' $ \tool (_, ls) -> forM_ ls $ \ListResult{..} -> liftE $ rmToolVersion tool (TargetVersion lCross lVer)
 
        lift rmGhcupDirs
 

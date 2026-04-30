@@ -67,11 +67,13 @@ data ListCriteria
   | ListAvailable Bool
   deriving (Eq, Show)
 
+
+type ToolListResult = M.Map Tool (Maybe ToolDescription, [ListResult])
+
 -- | A list result describes a single tool version
 -- and various of its properties.
 data ListResult = ListResult
-  { lTool :: Tool
-  , lVer :: Version
+  { lVer :: Version
   , lCross :: Maybe Text
     -- ^ currently only for GHC
   , lTag :: [Tag]
@@ -110,7 +112,7 @@ listVersions ::
   -> Bool
   -> Bool
   -> (Maybe Day, Maybe Day)
-  -> Excepts '[ParseError] m [ListResult]
+  -> Excepts '[ParseError] m ToolListResult
 listVersions lt' criteria hideOld showNightly days = do
   GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
   instTools <- getAllInstalledTools lt'
@@ -124,8 +126,9 @@ listVersions lt' criteria hideOld showNightly days = do
   ioRefAvToolsProcessed :: IORef (M.Map Tool (M.Map (Maybe Text) (Set Version))) <- liftIO $ newIORef mempty
 
   -- process installed tools first
-  lInst <- fmap (mconcat . mconcat) $ forM instTools $ \(tool, targetMap) ->
-    forM (M.toList targetMap) $ \(target, (vers', mset)) ->
+  -- TODO: fetch from installed metadata first
+  lInst :: ToolListResult <- fmap M.fromList $ forM instTools $ \(tool, targetMap) -> do
+    toolVersions' <- forM (M.toList targetMap) $ \(target, (vers', mset)) ->
       forM vers' $ \ver' -> do
         -- versions from the metadata
         let avVers :: Set Version = fromMaybe mempty $ (avTools M.!? tool) >>= (M.!? target)
@@ -150,7 +153,6 @@ listVersions lt' criteria hideOld showNightly days = do
         pure ListResult { lVer = ver'
                         , lCross = target
                         , lTag = tags <> bTags
-                        , lTool = tool
                         , lSet = mset == Just ver'
                         , lInstalled = True
                         , lNoBindist = isLeft dli && not lStray
@@ -158,11 +160,14 @@ listVersions lt' criteria hideOld showNightly days = do
                         , ..
                         }
 
+    let tDesc = preview (ix tool % toolDetails % _Just) dls
+    pure (tool, (tDesc, mconcat toolVersions'))
+
   avToolsProcessed <- liftIO $ readIORef ioRefAvToolsProcessed
 
   -- then process tools in the metadata, that are not installed
-  lAv <- fmap (mconcat . mconcat) $ forM (M.toList avTools) $ \(tool, targetMap) ->
-    forM (M.toList targetMap) $ \(target, vers') -> fmap catMaybes $
+  lAv <- fmap M.fromList $ forM (M.toList avTools) $ \(tool, targetMap) -> do
+    toolVersions' <- forM (M.toList targetMap) $ \(target, vers') -> fmap catMaybes $
       forM (Set.toList vers') $ \ver' -> do
         -- versions from the metadata that's already installed
         let avInstVers :: Set Version = fromMaybe mempty $ (avToolsProcessed M.!? tool) >>= (M.!? target)
@@ -181,7 +186,6 @@ listVersions lt' criteria hideOld showNightly days = do
           pure $ Just $ ListResult { lVer = ver'
                                    , lCross = target
                                    , lTag = tags <> bTags
-                                   , lTool = tool
                                    , lSet = False
                                    , lInstalled = False
                                    , lNoBindist = isLeft dli
@@ -189,7 +193,10 @@ listVersions lt' criteria hideOld showNightly days = do
                                    , lStray = False
                                    , ..
                                    }
-  pure . sort . filter' $ lInst <> lAv
+    let tDesc = preview (ix tool % toolDetails % _Just) dls
+    pure (tool, (tDesc, mconcat toolVersions'))
+
+  pure $ M.unionWith (\(d, vs) (d', vs') -> (d <|> d', sort $ filter' (vs <> vs'))) lInst lAv
 
  where
   filter' :: [ListResult] -> [ListResult]
