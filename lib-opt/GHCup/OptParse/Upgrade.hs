@@ -102,16 +102,6 @@ type UpgradeEffects = '[ DigestError
                        ]
 
 
-runUpgrade :: MonadUnliftIO m
-           => (ReaderT AppState m (VEither UpgradeEffects a) -> m (VEither UpgradeEffects a))
-           -> Excepts UpgradeEffects (ResourceT (ReaderT AppState m)) a
-           -> m (VEither UpgradeEffects a)
-runUpgrade runAppState =
-  runAppState
-  . runResourceT
-  . runE
-    @UpgradeEffects
-
 
 
     ------------------
@@ -129,38 +119,48 @@ upgrade :: ( Monad m
         -> Bool
         -> Bool
         -> Dirs
-        -> (forall a. ReaderT AppState m (VEither UpgradeEffects a) -> m (VEither UpgradeEffects a))
-        -> (ReaderT LeanAppState m () -> m ())
+        -> (IO (AppState, IO ()), LeanAppState)
         -> m ExitCode
-upgrade uOpts force' fatal Dirs{..} runAppState runLogger = do
+upgrade uOpts force' fatal Dirs{..} (getAppState', leanAppstate) = do
   target <- case uOpts of
     UpgradeInplace  -> Just <$> liftIO getExecutablePath
     (UpgradeAt p)   -> pure $ Just p
     UpgradeGHCupDir -> pure (Just (binDir </> "ghcup" <> exeExt))
 
-  runUpgrade runAppState (do
+  run (do
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-    Just (tver, vi) <- pure $ getLatest dls ghcup
+    Just tver <- pure $ getLatest dls ghcup
     let latestVer = _tvVersion tver
-    forM_ (_viPreInstall vi) $ \msg -> do
+    let vm = getVersionMetadata tver ghcup dls
+    forM_ (_vmPreInstall =<< vm) $ \msg -> do
       lift $ logWarn msg
       lift $ logWarn
         "...waiting for 5 seconds, you can still abort..."
       liftIO $ threadDelay 5000000 -- give the user a sec to intervene
     v' <- liftE $ upgradeGHCup' target force' fatal latestVer
-    pure (v', dls)
+    pure (v', vm)
     ) >>= \case
-      VRight (v', dls) -> do
+      (VRight (v', vm), up) -> do
         let pretty_v = prettyVer v'
-        let vi = snd (fromJust (getLatest dls ghcup))
         runLogger $ logInfo $
           "Successfully upgraded GHCup to version " <> pretty_v
-        forM_ (_viPostInstall vi) $ \msg ->
+        forM_ (_vmPostInstall =<< vm) $ \msg ->
           runLogger $ logInfo msg
+        liftIO up
         pure ExitSuccess
-      VLeft (V NoUpdate) -> do
+      (VLeft (V NoUpdate), _) -> do
         runLogger $ logWarn "No GHCup update available"
         pure ExitSuccess
-      VLeft e -> do
+      (VLeft e, _) -> do
         runLogger $ logError $ T.pack $ prettyHFError e
         pure $ ExitFailure 11
+ where
+  runLogger = flip runReaderT leanAppstate
+  run action' = do
+    (appstate', up) <- liftIO getAppState'
+    r <- flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @UpgradeEffects
+                  $ action'
+    pure (r, up)

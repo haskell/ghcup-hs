@@ -26,27 +26,27 @@ setGhcCheckList :: [(String, SetCommand)]
 setGhcCheckList = mapSecond (SetGHC . SetOptions)
   [ ("set ghc", SetRecommended)
   , ("set ghc 9.2", SetGHCVersion
-        $ TargetVersion
+        $ (`TargetVersionReq` Nothing) $ TargetVersion
           Nothing
           $(versionQ "9.2")
     )
   , ("set ghc next", SetNext)
   , ("set ghc latest", SetToolTag Latest)
   , ("set ghc nightly", SetGHCVersion
-        $ TargetVersion
+        $ (`TargetVersionReq` Nothing) $ TargetVersion
           Nothing
           $(versionQ "nightly")
     )
   , ("set ghc recommended", SetToolTag Recommended)
   , ("set ghc prerelease", SetGHCVersion
-        $ TargetVersion
+        $ (`TargetVersionReq` Nothing) $ TargetVersion
           Nothing
           $(versionQ "prerelease")
     )
   , ("set ghc latest-prerelease", SetToolTag LatestPrerelease)
   , ("set ghc latest-nightly", SetToolTag LatestNightly)
   , ("set ghc javascript-unknown-ghcjs-9.6", SetGHCVersion
-        $ TargetVersion
+        $ (`TargetVersionReq` Nothing) $ TargetVersion
           (Just "javascript-unknown-ghcjs")
           $(versionQ "9.6")
     )
@@ -56,46 +56,46 @@ setGhcCheckList = mapSecond (SetGHC . SetOptions)
 setCabalCheckList :: [(String, SetCommand)]
 setCabalCheckList = mapSecond (SetCabal . SetOptions)
   [ ("set cabal", SetRecommended)
-  , ("set cabal 3.10", SetToolVersion $(versionQ "3.10"))
+  , ("set cabal 3.10", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "3.10"))
   , ("set cabal next", SetNext)
   , ("set cabal latest", SetToolTag Latest)
-  , ("set cabal nightly", SetToolVersion $(versionQ "nightly"))
+  , ("set cabal nightly", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "nightly"))
   , ("set cabal recommended", SetToolTag Recommended)
-  , ("set cabal prerelease", SetToolVersion $(versionQ "prerelease"))
+  , ("set cabal prerelease", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "prerelease"))
   , ("set cabal latest-prerelease", SetToolTag LatestPrerelease)
   , ("set cabal latest-nightly", SetToolTag LatestNightly)
   , ("set cabal base-4.18", SetToolTag (Base (PVP {_pComponents = 4 :| [18]})))
-  , ("set cabal cabal-3.10", SetToolVersion $(versionQ "cabal-3.10"))
+  , ("set cabal cabal-3.10", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "cabal-3.10"))
   ]
 
 setHlsCheckList :: [(String, SetCommand)]
 setHlsCheckList = mapSecond (SetHLS . SetOptions)
   [ ("set hls", SetRecommended)
-  , ("set hls 2.0", SetToolVersion $(versionQ "2.0"))
+  , ("set hls 2.0", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "2.0"))
   , ("set hls next", SetNext)
   , ("set hls latest", SetToolTag Latest)
-  , ("set hls nightly", SetToolVersion $(versionQ "nightly"))
+  , ("set hls nightly", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "nightly"))
   , ("set hls recommended", SetToolTag Recommended)
-  , ("set hls prerelease", SetToolVersion $(versionQ "prerelease"))
+  , ("set hls prerelease", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "prerelease"))
   , ("set hls latest-prerelease", SetToolTag LatestPrerelease)
   , ("set hls latest-nightly", SetToolTag LatestNightly)
   , ("set hls base-4.18", SetToolTag (Base (PVP {_pComponents = 4 :| [18]})))
-  , ("set hls hls-2.0", SetToolVersion $(versionQ "hls-2.0"))
+  , ("set hls hls-2.0", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "hls-2.0"))
   ]
 
 setStackCheckList :: [(String, SetCommand)]
 setStackCheckList = mapSecond (SetStack . SetOptions)
   [ ("set stack", SetRecommended)
-  , ("set stack 2.9", SetToolVersion $(versionQ "2.9"))
+  , ("set stack 2.9", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "2.9"))
   , ("set stack next", SetNext)
   , ("set stack latest", SetToolTag Latest)
-  , ("set stack nightly", SetToolVersion $(versionQ "nightly"))
+  , ("set stack nightly", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "nightly"))
   , ("set stack recommended", SetToolTag Recommended)
-  , ("set stack prerelease", SetToolVersion $(versionQ "prerelease"))
+  , ("set stack prerelease", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "prerelease"))
   , ("set stack latest-prerelease", SetToolTag LatestPrerelease)
   , ("set stack latest-nightly", SetToolTag LatestNightly)
   , ("set stack base-4.18", SetToolTag (Base (PVP {_pComponents = 4 :| [18]})))
-  , ("set stack stack-2.9", SetToolVersion $(versionQ "stack-2.9"))
+  , ("set stack stack-2.9", SetToolVersion $ (`VersionReq` Nothing) $(versionQ "stack-2.9"))
   ]
 
 setParseWith :: [String] -> IO SetCommand

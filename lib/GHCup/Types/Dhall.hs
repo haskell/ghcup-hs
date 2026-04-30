@@ -170,6 +170,10 @@ instance FromDhall SymlinkInputSpec where
   autoWith _ = genericAutoWith defaultInterpretOptions
     { fieldModifier = fieldModifierLowerCase 3 }
 
+instance FromDhall RevisionSpec where
+  autoWith _ = genericAutoWith defaultInterpretOptions
+    { fieldModifier = fieldModifierLowerCase 1 }
+
 instance FromDhall ToolInfo where
   autoWith _ = genericAutoWith defaultInterpretOptions
     { fieldModifier = fieldModifierLowerCase 1 }
@@ -210,6 +214,25 @@ instance FromDhall Requirements where
     { fieldModifier = fieldModifierLowerCase 1 }
 
 instance FromDhall GHCupInfo where
+  autoWith _ = genericAutoWith defaultInterpretOptions
+    { fieldModifier = fieldModifierLowerCase 1 }
+
+instance FromDhall PlatformVersionSpec where
+  autoWith _ = genericAutoWith defaultInterpretOptions
+
+instance FromDhall PlatformSpec where
+  autoWith _ = genericAutoWith defaultInterpretOptions
+
+instance FromDhall ArchitectureSpec where
+  autoWith _ = genericAutoWith defaultInterpretOptions
+
+instance FromDhall ToolVersionSpec where
+  autoWith _ = genericAutoWith defaultInterpretOptions
+
+instance FromDhall GHCupDownloads where
+  autoWith _ = genericAutoWith defaultInterpretOptions
+
+instance FromDhall VersionMetadata where
   autoWith _ = genericAutoWith defaultInterpretOptions
     { fieldModifier = fieldModifierLowerCase 1 }
 

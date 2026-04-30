@@ -167,10 +167,21 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   dl' (NewSetupInfo si) = pure (Right si)
   dl' (NewURI uri)      = do
                             base <- liftE $ getBase uri
-                            catchE @JSONError (\(JSONDecodeError s) -> do
-                                logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: " <> T.pack s
-                                Right <$> decodeMetadata @Stack.SetupInfo base)
-                              $ fmap Left (decodeMetadata @GHCupInfo base >>= \gI -> warnOnMetadataUpdate uri gI >> pure gI)
+                            gr <- runE $ decodeMetadata @GHCupInfo base >>= \gI -> warnOnMetadataUpdate uri gI >> pure gI
+                            case gr of
+                              VRight r -> pure $ Left r
+                              VLeft (V (JSONDecodeError ge)) -> do
+                                logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: " <> T.pack ge
+                                sr <- runE $ decodeMetadata @Stack.SetupInfo base
+                                case sr of
+                                  VRight r -> pure $ Right r
+                                  VLeft (V (JSONDecodeError se)) -> do
+                                    throwE $ JSONDecodeError $ "\nError decoding as GHCupInfo:\n"
+                                      <> (unlines . fmap ("  " <>) . lines $ ge)
+                                      <> "\nError decoding as StackSetupURL:\n"
+                                      <> (unlines . fmap ("  " <>) . lines $ se)
+                                  VLeft err -> throwSomeE err
+                              VLeft err -> throwSomeE err
 
   fromStackSetupInfo :: MonadThrow m
                      => Stack.SetupInfo
@@ -181,12 +192,12 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
         ghcVersions = fromMaybe mempty . listToMaybe . catMaybes $ ghcVersionsPerKey
     (ghcupInfo' :: M.Map TargetVersion DownloadInfo) <-
       M.mapKeys mkTVer <$> M.traverseMaybeWithKey (\v a -> pure $ fromStackDownloadInfo v a) ghcVersions
-    let ghcupDownloads' = M.singleton ghc (ToolInfo (M.map fromDownloadInfo ghcupInfo') Nothing)
+    let ghcupDownloads' = GHCupDownloads $ M.singleton ghc (ToolInfo (ToolVersionSpec $ M.map fromDownloadInfo ghcupInfo') Nothing)
     pure (GHCupInfo mempty ghcupDownloads' Nothing)
    where
-    fromDownloadInfo :: DownloadInfo -> VersionInfo
-    fromDownloadInfo dli = let aspec = MapIgnoreUnknownKeys $ M.singleton arch (MapIgnoreUnknownKeys $ M.singleton plat (M.singleton Nothing dli))
-                           in VersionInfo [] Nothing Nothing Nothing Nothing aspec Nothing Nothing Nothing Nothing
+    fromDownloadInfo :: DownloadInfo -> VersionMetadata
+    fromDownloadInfo dli = let aspec = ArchitectureSpec $ MapIgnoreUnknownKeys $ M.singleton arch (PlatformSpec $ MapIgnoreUnknownKeys $ M.singleton plat (PlatformVersionSpec $ M.singleton Nothing dli))
+                           in VersionMetadata [] Nothing Nothing Nothing Nothing Nothing Nothing (RevisionSpec . M.singleton 0 . VersionInfo Nothing Nothing $ aspec)
 
     fromStackDownloadInfo :: MonadThrow m => Version -> Stack.GHCDownloadInfo -> m DownloadInfo
     fromStackDownloadInfo ver (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do
@@ -199,10 +210,13 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
                  -> m GHCupInfo
   mergeGhcupInfo [] = fail "mergeGhcupInfo: internal error: need at least one GHCupInfo"
   mergeGhcupInfo xs@(GHCupInfo{}: _) =
-    let newDownloads   = M.unionsWith (\(ToolInfo a _) (ToolInfo a' b') -> ToolInfo (M.unionWith (\_ b2 -> b2) a a') b')
-                                      (_ghcupDownloads   <$> xs)
+    let newDownloads =
+          M.unionsWith
+            (\(ToolInfo (ToolVersionSpec a) td) (ToolInfo (ToolVersionSpec a') td') ->
+              ToolInfo (ToolVersionSpec (M.unionWith (\_ b2 -> b2) a a')) (td <|> td'))
+            (unGHCupDownloads . _ghcupDownloads <$> xs)
         newToolReqs    = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_toolRequirements <$> xs)
-    in pure $ GHCupInfo newToolReqs newDownloads Nothing
+    in pure $ GHCupInfo newToolReqs (GHCupDownloads newDownloads) Nothing
 
 
 
@@ -416,62 +430,6 @@ decodeMetadata metadata
     handleIO (\e -> logWarn $ "Couldn't remove file " <> T.pack efp <> ", error was: " <> T.pack (displayException e))
       (hideError doesNotExistErrorType $ rmFile efp)
     liftIO $ hideError doesNotExistErrorType $ setAccessTime fp (posixSecondsToUTCTime (fromIntegral @Int 0))
-
-
-getDownloadInfo :: ( MonadReader env m
-                   , HasPlatformReq env
-                   , HasGHCupInfo env
-                   )
-                => Tool
-                -> Version
-                -- ^ tool version
-                -> Excepts
-                     '[NoDownload]
-                     m
-                     DownloadInfo
-getDownloadInfo t v = getDownloadInfo' t (mkTVer v)
-
-getDownloadInfo' :: ( MonadReader env m
-                    , HasPlatformReq env
-                    , HasGHCupInfo env
-                    )
-                 => Tool
-                 -> TargetVersion
-                 -- ^ tool version
-                 -> Excepts
-                      '[NoDownload]
-                      m
-                      DownloadInfo
-getDownloadInfo' t v = do
-  pfreq@(PlatformRequest a p mv) <- lift getPlatformReq
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-
-  let distro_preview f g =
-        let platformVersionSpec =
-              preview (ix t % toolVersions % ix v % viArch % to unMapIgnoreUnknownKeys % ix a % to unMapIgnoreUnknownKeys % ix (f p)) dls
-            mv' = g mv
-        in  fmap snd
-              .   find
-                    (\(mverRange, _) -> maybe
-                      (isNothing mv')
-                      (\range -> maybe False (`versionRange` range) mv')
-                      mverRange
-                    )
-              .   M.toList
-              =<< platformVersionSpec
-      with_distro        = distro_preview id id
-      without_distro_ver = distro_preview id (const Nothing)
-      without_distro     = distro_preview (set _Linux UnknownLinux) (const Nothing)
-
-  maybe
-    (throwE $ NoDownload v t (Just pfreq))
-    pure
-    (case p of
-      -- non-musl won't work on alpine
-      Linux Alpine -> with_distro <|> without_distro_ver
-      _            -> with_distro <|> without_distro_ver <|> without_distro
-    )
-
 
 
 -- | Tries to download from the given http or https url

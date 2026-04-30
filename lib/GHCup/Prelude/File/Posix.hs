@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 
 {-|
 Module      : GHCup.Utils.File.Posix
@@ -17,6 +18,7 @@ module GHCup.Prelude.File.Posix where
 
 import Conduit
 import Control.Exception.Safe
+import Control.Monad (unless)
 import Foreign.C.Error
 import Foreign.C.String
 import Foreign.C.Types
@@ -32,7 +34,7 @@ import System.Posix.Types
 
 
 import           GHC.IO.Exception
-    ( IOErrorType (..), IOException (ioe_type) )
+    ( IOException (ioe_errno) )
 import qualified GHCup.Prelude.File.Posix.Foreign    as FD
 import           GHCup.Prelude.File.Posix.Traversals
 import qualified System.Posix                        as Posix
@@ -114,7 +116,15 @@ copyFile from to fail' = do
           (handleIO (\e -> if
                               -- if we copy from regular file to symlink, we need
                               -- to delete the symlink
-                              | ioe_type e == InvalidArgument
+                              | ioe_errno e == Just ((\(Errno x) -> x)
+#if defined(IS_FREEBSD)
+-- https://man.freebsd.org/cgi/man.cgi?open(2)
+                                                      eMLINK
+#else
+-- https://man7.org/linux/man-pages/man2/open.2.html
+                                                      eLOOP
+#endif
+                                                    )
                               , not fail' -> do
                                  removeLink to
                                  openFdHandle'
@@ -223,10 +233,8 @@ recreateSymlink :: FilePath   -- ^ the old symlink file
                 -> IO ()
 recreateSymlink symsource newsym fail' = do
   sympoint <- readSymbolicLink symsource
-  case fail' of
-    True  -> pure ()
-    False ->
-      handleIO (\e -> if doesNotExistErrorType  == ioeGetErrorType e then pure () else liftIO . ioError $ e) $ deleteFile newsym
+  unless fail' $
+    handleIO (\e -> if doesNotExistErrorType  == ioeGetErrorType e then pure () else liftIO . ioError $ e) $ deleteFile newsym
   createSymbolicLink sympoint newsym
 
 

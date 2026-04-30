@@ -14,7 +14,7 @@ module GHCup.OptParse.Whereis where
 
 import GHCup.Command.Whereis
 import GHCup.Errors
-import GHCup.Input.Parsers     ( fromVersion, toolParser )
+import GHCup.Input.Parsers     ( resolveVersion, toolParser )
 import GHCup.OptParse.Common
 import GHCup.Prelude.Logger
 import GHCup.Prelude.String.QQ
@@ -238,27 +238,6 @@ type WhereisEffects = '[ NotInstalled
                 ]
 
 
-runLeanWhereIs :: (MonadUnliftIO m, MonadIO m)
-               => LeanAppState
-               -> Excepts WhereisEffects (ReaderT LeanAppState m) a
-               -> m (VEither WhereisEffects a)
-runLeanWhereIs leanAppstate =
-    -- Don't use runLeanAppState here, which is disabled on windows.
-    -- This is the only command on all platforms that doesn't need full appstate.
-    flip runReaderT leanAppstate
-    . runE
-      @WhereisEffects
-
-
-runWhereIs :: (MonadUnliftIO m, MonadIO m)
-           => (ReaderT AppState m (VEither WhereisEffects a) -> m (VEither WhereisEffects a))
-           -> Excepts WhereisEffects (ReaderT AppState m) a
-           -> m (VEither WhereisEffects a)
-runWhereIs runAppState =
-    runAppState
-    . runE
-      @WhereisEffects
-
 
 
     ------------------
@@ -275,11 +254,9 @@ whereis :: ( Monad m
       => WhereisCommand
       -> WhereisOptions
       -> Settings
-      -> (forall a. ReaderT AppState m (VEither WhereisEffects a) -> m (VEither WhereisEffects a))
-      -> LeanAppState
-      -> (ReaderT LeanAppState m () -> m ())
+      -> (IO (AppState, IO ()), LeanAppState)
       -> m ExitCode
-whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogger = do
+whereis whereisCommand whereisOptions settings (getAppState', leanAppstate) = do
   Dirs{ .. }  <- runReaderT getDirs leanAppstate
   case (whereisCommand, whereisOptions) of
     (WhereisTool (Tool "ghcup") _, WhereisOptions{..}) -> do
@@ -289,8 +266,8 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
       else liftIO $ putStr loc
       pure ExitSuccess
 
-    (WhereisTool tool (Just (GHCVersion v)), WhereisOptions{..}) ->
-      runLeanWhereIs leanAppstate (do
+    (WhereisTool tool (Just (GHCVersion (TargetVersionReq v _))), WhereisOptions{..}) ->
+      runLeanWhereIs (do
         loc <- liftE $ whereIsTool tool v
         if directory
         then takeDirectory <$> canon loc
@@ -303,8 +280,8 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
               VLeft e -> do
                 runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 30
-    (WhereisTool tool (Just (ToolVersion v)), WhereisOptions{..}) ->
-      runLeanWhereIs leanAppstate (do
+    (WhereisTool tool (Just (ToolVersion (VersionReq v _))), WhereisOptions{..}) ->
+      runLeanWhereIs (do
         loc <- liftE $ whereIsTool tool (mkTVer v)
         if directory
         then takeDirectory <$> canon loc
@@ -319,8 +296,8 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
                 pure $ ExitFailure 30
 
     (WhereisTool tool whereVer, WhereisOptions{..}) -> do
-      runWhereIs runAppState (do
-        (v, _) <- liftE $ fromVersion whereVer guessMode tool
+      runWhereIs (do
+        (TargetVersionReq v _) <- liftE $ resolveVersion whereVer guessMode tool
         loc <- liftE $ whereIsTool tool v
         if directory
         then takeDirectory <$> canon loc
@@ -354,10 +331,25 @@ whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogge
       liftIO $ putStr =<< canon (fromGHCupPath confDir)
       pure ExitSuccess
  where
+  runLogger = flip runReaderT leanAppstate
+
   -- make sure we only have forward slashes on windows
   canon fp = do
     cfp <- liftIO $ canonicalizePath fp
     pure $ map (\c -> if isPathSeparator c then '/' else c) cfp
 
   guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
+  runLeanWhereIs =
+      -- Don't use runLeanAppState here, which is disabled on windows.
+      -- This is the only command on all platforms that doesn't need full appstate.
+      flip runReaderT leanAppstate
+      . runE
+        @WhereisEffects
 
+  runWhereIs action' = do
+    (appstate', _) <- liftIO getAppState'
+    flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @WhereisEffects
+                  $ action'

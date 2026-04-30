@@ -51,7 +51,7 @@ module GHCup.Brick.Common  (
     , BootstrapGhcSelectBox, HadrianGhcSelectBox, ToolVersionBox, GHCInstallTargets
   ) ) where
 
-import           GHCup.Command.List ( ListResult )
+import           GHCup.Command.List ( ToolListResult )
 import           GHCup.Prelude ( isWindows )
 import           GHCup.Types ( Tool, KeyCombination (KeyCombination) )
 import Data.List (intercalate)
@@ -159,6 +159,7 @@ data Name = AllTools                   -- ^ The main list widget
 -- | Mode type. It helps to dispatch events to different handlers.
 data Mode = Navigation
           | KeyInfo
+          | ToolInfo
           | Tutorial
           | ContextPanel
           | AdvancedInstallPanel
@@ -206,7 +207,7 @@ frontwardLayer layer_name =
     Brick.centerLayer
       . Brick.hLimitPercent 80
       . Brick.vLimitPercent 75
-      . Brick.withBorderStyle Border.unicode
+      . Brick.withBorderStyle Border.unicodeBold
       . Border.borderWithLabel (Brick.txt layer_name)
 
 -- | puts a cursor at the line beginning so It can be read by screen readers
@@ -219,7 +220,7 @@ enableScreenReader n = Brick.putCursor n (Brick.Location (0,0))
 zoom l = Brick.zoom (toLensVL l)
 
 data BrickData = BrickData
-  { _lr    :: [ListResult]
+  { _lr    :: ToolListResult
   }
   deriving Show
 

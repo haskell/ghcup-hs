@@ -16,7 +16,6 @@ import           GHCup.Errors
 import           GHCup.Input.Parsers (toolParser)
 import           GHCup.Command.Set
 import           GHCup.Types
-import           GHCup.Types.Optics
 import           GHCup.Prelude.Logger
 import           GHCup.Prelude.String.QQ
 
@@ -175,14 +174,6 @@ unsetFooter = [s|Discussion:
 type UnsetEffects = '[ NotInstalled, ParseError, NoToolVersionSet ]
 
 
-runUnsetGHC :: forall appstate m a . (ReaderT appstate m (VEither UnsetEffects a) -> m (VEither UnsetEffects a))
-            -> Excepts UnsetEffects (ReaderT appstate m) a
-            -> m (VEither UnsetEffects a)
-runUnsetGHC runLeanAppState =
-    runLeanAppState
-    . runE
-      @UnsetEffects
-
 
 
     ------------------
@@ -191,20 +182,15 @@ runUnsetGHC runLeanAppState =
 
 
 
-unset :: forall appstate m . ( Monad m
+unset :: ( Monad m
          , MonadMask m
          , MonadUnliftIO m
          , MonadFail m
-         , HasDirs appstate
-         , HasLog appstate
-         , HasPlatformReq appstate
          )
       => UnsetCommand
-      -> (ReaderT appstate m (VEither UnsetEffects ())
-          -> m (VEither UnsetEffects ()))
-      -> (ReaderT LeanAppState m () -> m ())
+      -> (IO (AppState, IO ()), LeanAppState)
       -> m ExitCode
-unset unsetCommand runLeanAppState runLogger = case unsetCommand of
+unset unsetCommand (_getAppState', leanAppstate) = case unsetCommand of
   (UnsetGHC usopts)   -> unsetOther (toUnsetOptionsNew ghc usopts)
   (UnsetCabal usopts) -> unsetOther (toUnsetOptionsNew cabal usopts)
   (UnsetHLS usopts)   -> unsetOther (toUnsetOptionsNew hls usopts)
@@ -212,10 +198,12 @@ unset unsetCommand runLeanAppState runLogger = case unsetCommand of
   (UnsetOther usopts) -> unsetOther usopts
 
  where
+  runLogger = flip runReaderT leanAppstate
+
   toUnsetOptionsNew sTool UnsetOptions{..} = UnsetOptionsNew{..}
 
   unsetOther UnsetOptionsNew{..} =
-    runUnsetGHC runLeanAppState (liftE $ unsetTool sTool sToolTriple)
+    (flip runReaderT leanAppstate . runE @UnsetEffects) (liftE $ unsetTool sTool sToolTriple)
         >>= \case
               VRight _ -> do
                 runLogger $ logInfo $ T.pack (prettyShow sTool) <> " successfully unset"

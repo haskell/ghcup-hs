@@ -41,6 +41,7 @@ import Control.Monad.Fail ( MonadFail )
 import Control.Monad.Reader
 import Control.Monad.Trans.Resource hiding ( throwM )
 import Data.ByteString              ( ByteString )
+import Data.Foldable.WithIndex
 import Data.List
 import Data.Maybe
 import Data.Variant.Excepts
@@ -68,9 +69,9 @@ rmOldGHC :: ( MonadReader env m
          => Excepts '[NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo] m ()
 rmOldGHC = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let oldGHCs = toListOf (ix ghc % toolVersions % getTagged Old % to fst) dls
+  let oldGHCs = toListOf (_GHCupDownloads % ix ghc % toolVersions % getTaggedL Old % to fst) dls
   ghcs <- lift $ getInstalledVersions' ghc
-  forM_ ghcs $ \ghcVer -> when (ghcVer `elem` oldGHCs) $ rmToolVersion ghc ghcVer
+  forM_ (_tvrTargetVer <$> ghcs) $ \ghcVer -> when (ghcVer `elem` oldGHCs) $ rmToolVersion ghc ghcVer
 
 
 rmUnsetTools :: ( MonadReader env m
@@ -86,7 +87,7 @@ rmUnsetTools :: ( MonadReader env m
              => Excepts '[NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo] m ()
 rmUnsetTools = do
   vers <- liftE $ listVersions Nothing [ListInstalled True, ListSet False] False True (Nothing, Nothing)
-  forM_ vers $ \ListResult{..} -> liftE $ rmToolVersion lTool (TargetVersion lCross lVer)
+  iforM_ vers $ \tool (_, ls) -> forM_ ls $ \ListResult{..} -> liftE $ rmToolVersion tool (TargetVersion lCross lVer)
 
 
 rmProfilingLibs :: ( MonadReader env m
@@ -105,7 +106,7 @@ rmProfilingLibs = do
       regexes = [[s|.*_p\.a$|], [s|.*\.p_hi$|]]
 
   forM_ regexes $ \regex ->
-    forM_ ghcs $ \ghc' -> do
+    forM_ (_tvrTargetVer <$> ghcs) $ \ghc' -> do
       d <- ghcupGHCDir ghc'
       -- TODO: audit findFilesDeep
       matches <- liftIO $ handleIO (\_ -> pure []) $ findFilesDeep
@@ -132,7 +133,7 @@ rmShareDir :: ( MonadReader env m
            => m ()
 rmShareDir = do
   ghcs <- getInstalledVersions' ghc
-  forM_ ghcs $ \ghc' -> do
+  forM_ (_tvrTargetVer <$> ghcs) $ \ghc' -> do
     d <- ghcupGHCDir ghc'
     let p = d `appendGHCupPath` "share"
     logDebug $ "rm -rf " <> T.pack (fromGHCupPath p)
@@ -152,9 +153,9 @@ rmHLSNoGHC = do
   Dirs {..} <- getDirs
   ghcs <- lift $ getInstalledVersions' ghc
   hlses <- lift $ getInstalledVersions hls Nothing -- TODO: we don't support cross HLS
-  forM_ hlses $ \hls' -> do
+  forM_ (_vrVersion <$> hlses) $ \hls' -> do
     hlsGHCs <- fmap mkTVer <$> hlsGHCVersions' hls'
-    let candidates = filter (`notElem` ghcs) hlsGHCs
+    let candidates = filter (`notElem` (_tvrTargetVer <$> ghcs)) hlsGHCs
     if (length hlsGHCs - length candidates) <= 0
     then rmHLSVer hls'
     else

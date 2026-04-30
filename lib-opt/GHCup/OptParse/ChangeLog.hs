@@ -13,6 +13,7 @@ module GHCup.OptParse.ChangeLog where
 import GHCup.Errors
 import GHCup.OptParse.Common
 import GHCup.Prelude
+import GHCup.Input.Parsers
 import GHCup.Prelude.Process   ( exec )
 import GHCup.Prelude.String.QQ
 import GHCup.Query.Metadata
@@ -27,8 +28,9 @@ import Control.Monad.Trans.Resource
 import Data.Char                      ( toLower )
 import Data.Functor
 import Data.Maybe
+import Data.Variant.Excepts
 import GHCup.Types.Optics
-import Options.Applicative            hiding ( style )
+import Options.Applicative            hiding ( style, ParseError )
 import Prelude                        hiding ( appendFile )
 import System.Exit
 import System.Process                 ( system )
@@ -102,43 +104,46 @@ changelog :: ( Monad m
              , MonadFail m
              )
           => ChangeLogOptions
-          -> (forall a . ReaderT AppState m a -> m a)
-          -> (ReaderT LeanAppState m () -> m ())
+          -> (IO (AppState, IO ()), LeanAppState)
           -> m ExitCode
-changelog ChangeLogOptions{..} runAppState runLogger = do
-  GHCupInfo { _ghcupDownloads = dls } <- runAppState getGHCupInfo
+changelog ChangeLogOptions{..} (getAppState', leanAppstate) = run (do
+  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   let tool = fromMaybe ghc clTool
-      ver' = fromMaybe
-        (ToolTag Latest)
-        clToolVer
-      muri = getChangeLog dls tool ver'
+  treq <- liftE $ resolveVersion clToolVer GLax tool
+  let muri = getChangeLog dls tool $ _tvqTargetVer treq
   case muri of
     Nothing -> do
-      runLogger
-        (logWarn $
-          "Could not find ChangeLog for " <> T.pack (prettyShow tool) <> ", version " <> T.pack (prettyShow ver')
-        )
-      pure ExitSuccess
+      lift $ logWarn $ "Could not find ChangeLog for " <> T.pack (prettyShow tool) <> ", version " <> T.pack (prettyShow treq)
     Just uri -> do
-      pfreq <- runAppState getPlatformReq
+      pfreq <- lift getPlatformReq
       let uri' = T.unpack . decUTF8Safe . serializeURIRef' $ uri
       if clOpen
         then do
-          runAppState $
-            case _rPlatform pfreq of
-              Darwin  -> exec "open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
-              Linux _ -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
-              FreeBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
-              OpenBSD -> exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
-              Windows -> do
-                let args = "start \"\" " ++ T.unpack (decUTF8Safe $ serializeURIRef' uri)
-                c <- liftIO $ system args
-                case c of
-                   (ExitFailure xi) -> pure $ Left $ NonZeroExit xi "cmd.exe" [args]
-                   ExitSuccess -> pure $ Right ()
-              >>= \case
-                    Right _ -> pure ExitSuccess
-                    Left  e -> logError (T.pack $ prettyHFError e)
-                      >> pure (ExitFailure 13)
-        else liftIO $ putStrLn uri' >> pure ExitSuccess
+          case _rPlatform pfreq of
+            Darwin  -> lEM $ exec "open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+            Linux _ -> lEM $ exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+            FreeBSD -> lEM $ exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+            OpenBSD -> lEM $ exec "xdg-open" [T.unpack $ decUTF8Safe $ serializeURIRef' uri] Nothing Nothing
+            Windows -> do
+              let args = "start \"\" " ++ T.unpack (decUTF8Safe $ serializeURIRef' uri)
+              c <- liftIO $ system args
+              case c of
+                 (ExitFailure xi) -> throwE $ NonZeroExit xi "cmd.exe" [args]
+                 ExitSuccess -> pure ()
+        else liftIO $ putStrLn uri'
+  ) >>= \case
+      VRight _ -> do
+        pure ExitSuccess
+      VLeft e -> do
+        runLogger $ logError $ T.pack $ prettyHFError e
+        pure $ ExitFailure 11
+ where
+  run action' = do
+    (appstate', _) <- liftIO getAppState'
+    flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @'[ TagNotFound , DayNotFound , NextVerNotFound , NoToolVersionSet , ParseError, ProcessError ]
+                  $ action'
+  runLogger = flip runReaderT leanAppstate
 

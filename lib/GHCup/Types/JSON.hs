@@ -41,48 +41,68 @@ import Data.Aeson.Types    hiding ( Key )
 import Data.ByteString     ( ByteString )
 import Data.Foldable
 import Data.Maybe
+import Data.Scientific (toBoundedInteger)
 import Data.Text.Encoding  as E
 import Data.Versions
 import System.FilePath     ( hasDrive, isAbsolute, splitPath )
 import Text.Casing
 import URI.ByteString      hiding ( parseURI )
 
+import qualified Data.Map.Strict          as M
 import qualified Data.List.NonEmpty       as NE
 import qualified Data.Text                as T
 import qualified Data.Text.Encoding.Error as E
 import qualified Text.Megaparsec          as MP
+import qualified Text.Megaparsec.Char.Lexer as L
 
 safePath :: FilePath -> Bool
 safePath fp
-  | "." `notElem` splitPath fp
-  , ".." `notElem` splitPath fp
+  | "." `notElem` fp'
+  , ".." `notElem` fp'
   , not (hasDrive fp)
   , not (isAbsolute fp)
   = True
   | otherwise = False
+ where
+  fp' = splitPath fp
 
 checkSafePath :: MonadFail m => FilePath -> m ()
 checkSafePath fp = unless (safePath fp) $ fail "'..' or '.' are not allowed"
 
 safeFilename :: FilePath -> Bool
 safeFilename fp
-  | length (splitPath fp) == 1
-  , safePath fp
+  | length fp' == 1
+  , "." `notElem` fp'
+  , ".." `notElem` fp'
+  , not (hasDrive fp)
+  , not (isAbsolute fp)
   = True
   | otherwise = False
+ where
+  fp' = splitPath fp
 
 checkSafeFilename :: MonadFail m => FilePath -> m ()
 checkSafeFilename fp = unless (safeFilename fp) $ fail "'..' or '.' are not allowed and filepath must have no path separators"
 
 safeVersion :: TargetVersion -> Bool
 safeVersion TargetVersion{..}
-  | prettyVer _tvVersion `notElem` ["db", "set", "ghc", "cabal", "stack", "hls", "ghcup"]
-  , T.unpack (prettyVer _tvVersion) `notElem` cabalBadNames
-  , safeFilename (T.unpack $ prettyVer _tvVersion)
+  | pver `notElem` ["db", "set", "ghc", "cabal", "stack", "hls", "ghcup"]
+  , pver' `notElem` cabalBadNames
+  , safeFilename pver'
   , maybe True (`notElem` ["db", "set", "ghc", "cabal", "stack", "hls", "ghcup"]) _tvTarget
   , maybe True (safeFilename . T.unpack) _tvTarget
+  , Left _ <- hasRev pver
   = True
   | otherwise = False
+ where
+  pver = prettyVer _tvVersion
+  pver' = T.unpack $ prettyVer _tvVersion
+  hasRev = MP.parse hasRevP "hasRev"
+  hasRevP = do
+    _ <- parseUntilEmpty "-r"
+    _ <- MP.chunk "-r" *> (L.decimal @_ @_ @_ @Int)
+    pure ()
+
 
 -- This is sad, but our version parsers are too lax,
 -- so we need to make sure that e.g. 'cabal-audit'
@@ -441,9 +461,98 @@ instance ToJSON a => ToJSON (InstallationSpecGen a) where
 
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requirements
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
-deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
+deriveJSON defaultOptions { unwrapUnaryRecords = True } ''PlatformVersionSpec
+deriveJSON defaultOptions { unwrapUnaryRecords = True } ''PlatformSpec
+deriveJSON defaultOptions { unwrapUnaryRecords = True } ''ArchitectureSpec
+deriveToJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
 deriveJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 1 } ''ToolDescription
-deriveJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 } ''InstallMetadata
+
+instance FromJSON InstallMetadata where
+  parseJSON v = newParse v <|> legacyParse v
+   where
+    legacyParse o = do
+      v'@DownloadInfo{..} <- parseJSON o
+      case _dlInstallSpec of
+        Nothing -> fail "No install metadata in legacy parser"
+        Just InstallationSpec{..} -> do
+          isExeSymLinked' <- forM _isExeSymLinked toSymlSpec
+          pure $ InstallMetadata v' InstallationSpec{ _isExeSymLinked = isExeSymLinked', ..} Nothing 0
+
+    toSymlSpec SymlinkInputSpec{..} = pure SymlinkSpec{..}
+    toSymlSpec _ = fail "Can't handle SymlinkPatternSpec in legacy parser"
+
+    newParse = do
+      withObject "InstallMetadata" $ \o -> do
+        _imDownloadInfo <- o .: "downloadInfo"
+        _imResolvedInstallSpec <- o .: "resolvedInstallSpec"
+        _imToolDescription <- o .:? "toolDescription"
+        _imRevision <- o .:? "revision" .!= 0
+        pure InstallMetadata{..}
+
+instance FromJSON RevisionSpec where
+  parseJSON v = newParse v <|> legacyParse v
+   where
+    legacyParse o = do
+      vi <- parseJSON o
+      pure $ RevisionSpec $ M.singleton 0 vi
+    newParse o = do
+      m <- parseJSON o
+      pure $ RevisionSpec m
+
+instance FromJSON VersionInfo where
+  parseJSON = withObject "VersionInfo" $ \o -> do
+    _viSourceDL <- o .::? ["viSourceDL", "sourceDL"]
+    _viTestDL <- o .::? ["viTestDL", "testDL"]
+    _viArch <- o .:: ["viArch", "arch"]
+    pure VersionInfo{..}
+
+instance FromJSON VersionMetadata where
+  parseJSON v = newParse v <|> legacyParse v
+   where
+    legacyParse =
+      withObject "VersionMetadata" $ \o -> do
+        _vmTags <- o .: "viTags"
+        _vmReleaseDay <- o .:? "viReleaseDay"
+        _vmChangeLog <- o .:? "viChangeLog"
+        _viSourceDL <- o .:? "viSourceDL"
+        _viTestDL <- o .:? "viTestDL"
+        _viArch <- ArchitectureSpec <$> o .: "viArch"
+        let vi = VersionInfo {..}
+        let _vmRevisionSpec = RevisionSpec $ M.singleton 0 vi
+        _vmPreInstall <- o .:? "viPreInstall"
+        _vmPostInstall <- o .:? "viPostInstall"
+        _vmPostRemove <- o .:? "viPostRemove"
+        _vmPreCompile <- o .:? "viPreCompile"
+        pure VersionMetadata{..}
+    newParse = do
+      withObject "VersionMetadata" $ \o -> do
+        _vmTags         <- o .:? "tags" .!= []
+        _vmReleaseDay   <- o .:? "releaseDay"
+        _vmChangeLog    <- o .:? "changelog"
+        _vmPreInstall   <- o .:? "preInstall"
+        _vmPostInstall  <- o .:? "postInstall"
+        _vmPostRemove   <- o .:? "postRemove"
+        _vmPreCompile   <- o .:? "preCompile"
+        _vmRevisionSpec <- o .:  "revisionSpec"
+        pure VersionMetadata{..}
+
+deriveToJSON defaultOptions { unwrapUnaryRecords = True } ''RevisionSpec
+
+instance ToJSON VersionMetadata where
+  toJSON VersionMetadata{..} = object
+    [ "tags"         .= _vmTags
+    , "releaseDay"   .= _vmReleaseDay
+    , "changelog"    .= _vmChangeLog
+    , "preInstall"   .= _vmPreInstall
+    , "postInstall"  .= _vmPostInstall
+    , "postRemove"   .= _vmPostRemove
+    , "preCompile"   .= _vmPreCompile
+    , "revisionSpec" .= _vmRevisionSpec
+    ]
+
+deriveJSON defaultOptions { unwrapUnaryRecords = True } ''ToolVersionSpec
+deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 } ''InstallMetadata
+deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 1 } ''ToolInfo
 
 instance FromJSON ToolInfo where
   parseJSON v = newParse v <|> legacyParse v
@@ -457,7 +566,7 @@ instance FromJSON ToolInfo where
         _toolDetails <- o .: "toolDetails"
         pure ToolInfo{..}
 
-deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 1 } ''ToolInfo
+deriveJSON defaultOptions { unwrapUnaryRecords = True } ''GHCupDownloads
 
 instance FromJSON GHCupInfo where
   parseJSON = withObject "GHCupInfo" $ \o -> do
@@ -637,7 +746,16 @@ instance FromJSON PagerConfig where
        cmd  <- o .:? "cmd"
        pure $ PagerConfig list cmd
 
+instance FromJSON Verbosity where
+  parseJSON v = new v <|> legacy v
+   where
+    legacy = withBool "Verbosity" $ \b -> do
+      pure $ Verbosity (if b then 1 else 0)
+    new = withScientific "Verbosity" $ \s -> do
+      int <- maybe (fail "Verbosity integer out of bounds") pure $ toBoundedInteger s
+      pure $ Verbosity int
 
+deriveToJSON defaultOptions { unwrapUnaryRecords = True } ''Verbosity
 deriveToJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "pager-") . T.pack . kebab $ str' } ''PagerConfig
 deriveToJSON defaultOptions { fieldLabelModifier = drop 2 . kebab } ''KeyBindings -- move under key-bindings key
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings

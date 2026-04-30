@@ -104,14 +104,6 @@ prettyDebugInfo DebugInfo { diDirs = Dirs { .. }, ..} =
 
 type DInfoEffects = '[ NoCompatiblePlatform , NoCompatibleArch , DistroNotFound ]
 
-runDebugInfo :: (ReaderT env m (VEither DInfoEffects a) -> m (VEither DInfoEffects a))
-             -> Excepts DInfoEffects (ReaderT env m) a
-             -> m (VEither DInfoEffects a)
-runDebugInfo runAppState =
-        runAppState
-        . runE
-          @DInfoEffects
-
 
 
     ------------------
@@ -126,16 +118,25 @@ dinfo :: ( Monad m
          , MonadFail m
          , Alternative m
          )
-      => (ReaderT AppState m (VEither DInfoEffects DebugInfo)
-          -> m (VEither DInfoEffects DebugInfo))
-      -> (ReaderT LeanAppState m () -> m ())
+      => (IO (AppState, IO ()), LeanAppState)
       -> m ExitCode
-dinfo runAppState runLogger = do
-  runDebugInfo runAppState (liftE getDebugInfo)
+dinfo (getAppState', leanAppstate) = do
+  run (liftE getDebugInfo)
     >>= \case
-          VRight di -> do
+          (VRight di, up) -> do
             liftIO $ putStrLn $ prettyDebugInfo di
+            liftIO up
             pure ExitSuccess
-          VLeft e -> do
+          (VLeft e, _) -> do
             runLogger $ logError $ T.pack $ prettyHFError e
             pure $ ExitFailure 8
+ where
+  runLogger = flip runReaderT leanAppstate
+  run action' = do
+    (appstate', up) <- liftIO getAppState'
+    r <- flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @DInfoEffects
+                  $ action'
+    pure (r, up)

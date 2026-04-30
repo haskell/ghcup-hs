@@ -39,6 +39,8 @@ import GHCup.Types
 import GHCup.Types.JSON
     (safeVersion, cabalBadNames)
 import GHCup.Types.Optics
+import qualified GHCup.Warnings as Warnings
+
 #if !MIN_VERSION_base(4,13,0)
 import Control.Monad.Fail ( MonadFail )
 #endif
@@ -55,7 +57,6 @@ import GHC.IO.Exception
 import Safe
 import System.FilePath
 import System.IO.Error
-import Text.PrettyPrint.HughesPJClass ( prettyShow )
 import Text.Regex.Posix
 
 import qualified Data.Text          as T
@@ -70,7 +71,6 @@ import qualified Text.Megaparsec    as MP
     ------------------------
 
 
--- TODO: rename to binarySymLinkTarget
 -- | Create a relative symlink destination for the binary directory,
 -- given a target toolpath.
 binarySymLinkDestination :: ( MonadThrow m
@@ -279,7 +279,6 @@ getInstalledCabals = filter (either (const True) (safeVersion . mkTVer)) <$> do
     Nothing        -> pure $ Left f
   pure $ nub vs
  where
-  -- TODO: disgusting
   notPrefixElem a xs = not (any (`isPrefixOf` a) xs)
 
 
@@ -327,6 +326,7 @@ cabalSet = do
     =   MP.try (stripAbsolutePath *> cabalParse)
     <|> MP.try (stripRelativePath *> cabalParse)
     <|> cabalParse
+    <|> (_tvVersion <$> toolVersionFromPath cabal)
   -- parses the version of "cabal-3.2.0.0" -> "3.2.0.0"
   cabalParse = MP.chunk "cabal-" *> version'
   -- parses any path component ending with path separator,
@@ -389,7 +389,6 @@ getInstalledStacks = filter (either (const True) (safeVersion . mkTVer)) <$> do
         Nothing        -> pure $ Left f
 
 -- Return the currently set stack version, if any.
--- TODO: there's a lot of code duplication here :>
 stackSet :: (MonadReader env m, HasDirs env, MonadIO m, MonadThrow m, MonadCatch m, HasLog env) => m (Maybe Version)
 stackSet = do
   Dirs {..}  <- getDirs
@@ -423,6 +422,7 @@ stackSet = do
       =   MP.try (stripAbsolutePath *> cabalParse)
       <|> MP.try (stripRelativePath *> cabalParse)
       <|> cabalParse
+      <|> (_tvVersion <$> toolVersionFromPath stack)
     -- parses the version of "stack-2.7.1" -> "2.7.1"
     cabalParse = MP.chunk "stack-" *> version'
     -- parses any path component ending with path separator,
@@ -476,6 +476,7 @@ hlsSet = do
       =   MP.try (stripAbsolutePath *> cabalParse)
       <|> MP.try (stripRelativePath *> cabalParse)
       <|> cabalParse
+      <|> (_tvVersion <$> toolVersionFromPath hls)
     -- parses the version of "haskell-language-server-wrapper-1.1.0" -> "1.1.0"
     cabalParse = MP.chunk "haskell-language-server-wrapper-" *> version'
     -- parses any path component ending with path separator,
@@ -689,25 +690,11 @@ ghcBinaryName (TargetVersion Nothing  _) = T.unpack ("ghc" <> T.pack exeExt)
 warnAboutHlsCompatibility :: ( MonadReader env m
                              , HasDirs env
                              , HasLog env
-                             , MonadThrow m
-                             , MonadCatch m
-                             , MonadIO m
+                             , MonadIOish m
                              )
                           => m ()
 warnAboutHlsCompatibility = do
   supportedGHC <- hlsGHCVersions
   currentGHC   <- fmap _tvVersion <$> ghcSet Nothing
   currentHLS   <- hlsSet
-
-  case (currentGHC, currentHLS) of
-    (Just gv, Just hv) | gv `notElem` supportedGHC -> do
-      logWarn $
-        "GHC-" <> T.pack (prettyShow gv) <> " appears to have no corresponding HLS-" <> T.pack (prettyShow hv) <> " binary." <> "\n" <>
-        "Haskell IDE support may not work." <> "\n" <>
-        "You can try to either: " <> "\n" <>
-        "  1. Install a different HLS version (e.g. downgrade for older GHCs)" <> "\n" <>
-        "  2. Install and set one of the following GHCs: " <> T.pack (prettyShow supportedGHC) <> "\n" <>
-        "  3. Let GHCup compile HLS for you, e.g. run: ghcup compile hls -g " <> T.pack (prettyShow hv) <> " --ghc " <> T.pack (prettyShow gv) <>
-        "     (see https://www.haskell.org/ghcup/guide/#hls for more information)"
-
-    _ -> return ()
+  Warnings.warnAboutHlsCompatibility currentHLS currentGHC supportedGHC

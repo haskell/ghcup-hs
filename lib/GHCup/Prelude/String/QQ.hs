@@ -15,9 +15,9 @@ import Language.Haskell.TH.Quote
 -- The pattern portion is undefined.
 s :: QuasiQuoter
 s = QuasiQuoter
-  (\s' -> case all isAscii s' of
-    True  -> (\a -> [|fromString a|]) . trimLeadingNewline . removeCRs $ s'
-    False -> fail "Not ascii"
+  (\s' -> if all isAscii s'
+    then (\a -> [|fromString a|]) . trimLeadingNewline . removeCRs $ s'
+    else fail "Not ascii"
   )
   (error "Cannot use s as a pattern")
   (error "Cannot use s as a type")

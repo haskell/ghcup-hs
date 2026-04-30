@@ -1,43 +1,44 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ViewPatterns      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 
 module GHCup.OptParse.Test where
 
 
 
 
-import           GHCup.OptParse.Common
+import GHCup.OptParse.Common
 
-import           GHCup.Command.Test.GHC
-import           GHCup.Errors
-import           GHCup.Types
-import           GHCup.Query.GHCupDirs
-import           GHCup.Input.Parsers (fromVersion, uriParser)
-import           GHCup.Prelude
-import           GHCup.Prelude.String.QQ
+import GHCup.Command.Test.GHC
+import GHCup.Errors
+import GHCup.Input.Parsers     ( resolveVersion, uriParser )
+import GHCup.Prelude
+import GHCup.Prelude.String.QQ
+import GHCup.Query.GHCupDirs
+import GHCup.Query.Metadata
+import GHCup.Types
+import GHCup.Types.Optics
 
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
-import           Data.Functor
-import           Data.Maybe
-import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style, ParseError )
-import           Options.Applicative.Pretty.Shim ( text )
-import           Prelude                 hiding ( appendFile )
-import           System.Exit
-import           URI.ByteString          hiding ( uriParser )
+import Control.Monad.Reader
+import Control.Monad.Trans.Resource
+import Data.Functor
+import Data.Maybe
+import Data.Variant.Excepts
+import Options.Applicative             hiding ( ParseError, style )
+import Options.Applicative.Pretty.Shim ( text )
+import Prelude                         hiding ( appendFile )
+import System.Exit
+import URI.ByteString                  hiding ( uriParser )
 
-import qualified Data.Text                     as T
+import qualified Data.Text as T
 
 
 
@@ -58,9 +59,9 @@ data TestCommand = TestGHC TestOptions
 
 
 data TestOptions = TestOptions
-  { testVer      :: Maybe ToolVersion
-  , testBindist  :: Maybe URI
-  , addMakeArgs  :: [T.Text]
+  { testVer :: Maybe ToolVersion
+  , testBindist :: Maybe URI
+  , addMakeArgs :: [T.Text]
   }
 
 
@@ -146,14 +147,6 @@ type TestGHCEffects = [ DigestError
                       , ParseError
                       ]
 
-runTestGHC :: AppState
-           -> Excepts TestGHCEffects (ResourceT (ReaderT AppState IO)) a
-           -> IO (VEither TestGHCEffects a)
-runTestGHC appstate' =
-  flip runReaderT appstate'
-  . runResourceT
-  . runE
-    @TestGHCEffects
 
 
     -------------------
@@ -161,29 +154,39 @@ runTestGHC appstate' =
     -------------------
 
 
-test :: TestCommand -> Settings -> IO AppState -> (ReaderT LeanAppState IO () -> IO ()) -> IO ExitCode
-test testCommand settings getAppState' runLogger = case testCommand of
+test :: TestCommand -> Settings -> (IO (AppState, IO ()), LeanAppState) -> IO ExitCode
+test testCommand settings (getAppState', leanAppstate) = case testCommand of
   (TestGHC iopts) -> go iopts
  where
   guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
+  runLogger = flip runReaderT leanAppstate
 
   go :: TestOptions -> IO ExitCode
   go TestOptions{..} = do
-    s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
+    (s'@AppState{ dirs = Dirs{ .. } }, up) <- getAppState'
+    let run appstate' = flip runReaderT (appstate' :: AppState)
+            . runResourceT
+            . runE
+            @TestGHCEffects
     (case testBindist of
-       Nothing -> runTestGHC s' $ do
-         (v, vi) <- liftE $ fromVersion testVer guessMode ghc
-         liftE $ testGHCVer v addMakeArgs
-         pure vi
+       Nothing -> run s' $ do
+         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+         treq@(TargetVersionReq tver _) <- liftE $ resolveVersion testVer guessMode ghc
+         let vm = getVersionMetadata tver ghcup dls
+         liftE $ testGHCVer treq addMakeArgs
+         pure vm
        Just uri -> do
-         runTestGHC s'{ settings = settings {noVerify = True}} $ do
-           (v, vi) <- liftE $ fromVersion testVer guessMode ghc
-           liftE $ testGHCBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir ".*/.*") "" Nothing Nothing Nothing Nothing) v addMakeArgs
-           pure vi
+         run s'{ settings = settings {noVerify = True}} $ do
+           GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+           (TargetVersionReq tver _) <- liftE $ resolveVersion testVer guessMode ghc
+           let vm = getVersionMetadata tver ghcup dls
+           liftE $ testGHCBindist (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir ".*/.*") "" Nothing Nothing Nothing Nothing) tver addMakeArgs
+           pure vm
       )
         >>= \case
               VRight _ -> do
                 runLogger $ logInfo "GHC test successful"
+                liftIO up
                 pure ExitSuccess
               VLeft e -> do
                 runLogger $ do

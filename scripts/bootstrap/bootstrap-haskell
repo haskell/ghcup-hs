@@ -607,6 +607,43 @@ ask_cross_channel() {
 	unset crosschannel_answer
 }
 
+ask_thirdparty_channel() {
+    if [ -n "${BOOTSTRAP_HASKELL_NONINTERACTIVE}" ] ; then
+        return 0
+    fi
+	while true; do
+		echo "-------------------------------------------------------------------------------"
+
+		warn ""
+        warn "Do you also want to enable the 3rdparty channel, getting access to"
+        warn "to various non-core tools such as hlint, dhall and ormolu?"
+        warn ""
+        warn "[N] No  [Y] Yes  [?] Help (default is \"N\")."
+        warn ""
+
+		read -r thirdparty_answer </dev/tty
+
+		case $thirdparty_answer in
+			[Nn]* | "")
+				return 0
+				;;
+			[Yy]*)
+				return 1
+				;;
+			*)
+				echo "Possible choices are:"
+				echo
+                echo "N - No, don't enable the cross channel (default)"
+				echo "Y - Yes, enable the cross channel"
+				echo
+				echo "Please make your choice and press ENTER."
+				;;
+		esac
+	done
+
+	unset thirdparty_answer
+}
+
 
 # Ask user if they want to adjust the bashrc.
 ask_bashrc() {
@@ -1006,6 +1043,8 @@ if [ -z "${BOOTSTRAP_HASKELL_MINIMAL}" ] ; then
         ask_prerelease_channel_answer=$?
         ask_cross_channel
         ask_cross_channel_answer=$?
+        ask_thirdparty_channel
+        ask_thirdparty_channel_answer=$?
     fi
 fi
 ask_bashrc
@@ -1039,6 +1078,13 @@ esac
 case $ask_cross_channel_answer in
     1)
         _eghcup config add-release-channel cross
+        ;;
+    *) ;;
+esac
+
+case $ask_thirdparty_channel_answer in
+    1)
+        _eghcup config add-release-channel 3rdparty
         ;;
     *) ;;
 esac

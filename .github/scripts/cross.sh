@@ -94,7 +94,7 @@ done
 [ -z "${GHC_VER}" ] && GHC_VER=9.6.7
 [ -z "${GHC_TARGET_VERSION}" ] && GHC_TARGET_VERSION=8.10.7
 [ -z "${CABAL_VER}" ] && CABAL_VER=3.14.2.0
-[ -z "${JSON_VERSION}" ] && JSON_VERSION=0.0.9
+[ -z "${JSON_VERSION}" ] && JSON_VERSION=0.1.0
 [ -z "${WRAPPER}" ] && WRAPPER=run
 
 export GHCUP_INSTALL_BASE_PREFIX

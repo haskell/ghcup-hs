@@ -4,7 +4,10 @@ optimization: 2
 
 Tests: True
 
-constraints: xz-clib >= 5.8.1
+constraints: xz-clib >= 5.8.1,
+             tar >= 0.7.1.0,
+             streamly-core >= 0.3.0
+
 
 if arch(i386)
   constraints: xz +system-xz
@@ -53,6 +56,8 @@ elif os(mingw32)
   flags: -tar
   constraints: zlib +bundled-c-zlib
 elif os(freebsd)
+  package ghcup
+      flags: +yaml-streamly
   flags: -tar
   constraints: zlib +bundled-c-zlib,
                zip +disable-zstd

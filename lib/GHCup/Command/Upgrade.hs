@@ -88,7 +88,7 @@ upgradeGHCup :: ( MonadMask m
                   Version
 upgradeGHCup mtarget force' fatal = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  let latestVer = _tvVersion $ fst (fromJust (getLatest dls ghcup))
+  let latestVer = _tvVersion (fromJust (getLatest dls ghcup))
   upgradeGHCup' mtarget force' fatal latestVer
 
 
@@ -132,7 +132,7 @@ upgradeGHCup' mtarget force' fatal latestVer = do
   lift $ logInfo "Upgrading GHCup..."
   (Just ghcupPVPVer) <- pure $ pvpToVersion ghcUpVer ""
   when (not force' && (latestVer <= ghcupPVPVer)) $ throwE NoUpdate
-  dli   <- liftE $ getDownloadInfo ghcup latestVer
+  (_, dli)   <- liftE $ getDownloadInfoE ghcup (VersionReq latestVer Nothing)
   tmp   <- fromGHCupPath <$> lift withGHCupTmpDir
   let fn = "ghcup" <> exeExt
   dlu <- lE $ parseURI' (_dlUri dli)
@@ -152,9 +152,9 @@ upgradeGHCup' mtarget force' fatal latestVer = do
   liftIO (isShadowed destFile) >>= \case
     Nothing -> pure ()
     Just pa
-      | fatal -> throwE (ToolShadowed ghcup pa destFile latestVer)
+      | fatal -> throwE (ToolShadowed ghcup latestVer [(pa, destFile)])
       | otherwise ->
-        lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed ghcup pa destFile latestVer)
+        lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed ghcup latestVer [(pa, destFile)])
 
   pure latestVer
 

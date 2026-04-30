@@ -33,9 +33,11 @@ import System.FilePath
 import Text.PrettyPrint               hiding ( (<>) )
 import Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import URI.ByteString
+import Data.Functor ((<&>))
 
 import qualified Data.Map.Strict as M
 import qualified Data.Text       as T
+import Data.List (intercalate)
 
 
 
@@ -237,11 +239,11 @@ instance HFErrorProject NoCompatiblePlatform where
   eDesc _ = "No compatible platform could be found"
 
 -- | Unable to find a download for the requested version/distro.
-data NoDownload = NoDownload TargetVersion Tool (Maybe PlatformRequest)
+data NoDownload = NoDownload TargetVersionReq Tool (Maybe PlatformRequest)
   deriving (Show)
 
 instance Pretty NoDownload where
-  pPrint (NoDownload tver@(TargetVersion mtarget vv) tool mpfreq) =
+  pPrint (NoDownload treq@(TargetVersionReq (TargetVersion mtarget vv) _) tool mpfreq) =
     let helperMsg
           | (Just target) <- mtarget
           , T.unpack (T.toLower target) `elem` ["ghc", "cabal", "hls", "stack"] =
@@ -254,7 +256,7 @@ instance Pretty NoDownload where
     in text $ "Unable to find a download for "
              <> show tool
              <> " version "
-             <> "'" <> T.unpack (tVerToText tver) <> "'"
+             <> "'" <> prettyShow treq <> "'"
              <> maybe "" (\pfreq -> " on detected platform " <> pfReqToString pfreq) mpfreq
              <> helperMsg
 
@@ -337,13 +339,18 @@ instance HFErrorProject CopyError where
   eDesc _ = "Unable to copy a file."
 
 -- | Unable to merge file trees.
-data MergeFileTreeError = MergeFileTreeError IOException FilePath FilePath
+data MergeFileTreeError = MergeFileTreeErrorPreCondition IOException FilePath FilePath
+                        | MergeFileTreeError IOException FilePath Tool TargetVersion
   deriving (Show)
 
 instance Pretty MergeFileTreeError where
-  pPrint (MergeFileTreeError e from to) =
-    text "Failed to merge file tree from" <+> text from <+> text "to" <+> text to <+> text "\nexception was:" <+> text (displayException e)
-     <+> text "\n...you may need to delete" <+> text to <+> text "manually. Make sure it's gone."
+  pPrint (MergeFileTreeErrorPreCondition e from to) =
+    text "Unmet precondition for merging file tree from" <+> text from <+> text "to" <+> text to <+> text "\nexception was:" <+> text (displayException e)
+  pPrint (MergeFileTreeError e to tool tver) =
+    text ("Error during merging file tree (" <> displayException e <> ")")
+     <+> text "\nYou may need to delete" <+> text to <+> text "manually."
+     <+> text "\nAlso run: ghcup healthcheck " <+> pPrint tool <+> pPrint tver
+     <+> text "\nBecause ghcup database might now be corrupted."
 
 instance HFErrorProject MergeFileTreeError where
   eBase _ = 80
@@ -470,6 +477,8 @@ instance HFErrorProject JSONError where
 -- (e.g. when we use file scheme to "download" something).
 data FileDoesNotExistError = FileDoesNotExistError FilePath
   deriving (Show)
+
+instance Exception FileDoesNotExistError
 
 instance Pretty FileDoesNotExistError where
   pPrint (FileDoesNotExistError file) =
@@ -666,22 +675,21 @@ instance HFErrorProject HadrianNotFound where
   eBase _ = 320
   eDesc _ = "Could not find Hadrian build files. Does this GHC version support Hadrian builds?"
 
-data ToolShadowed = ToolShadowed Tool FilePath FilePath Version
+data ToolShadowed = ToolShadowed Tool Version [(FilePath, FilePath)]
   -- upgraded version
   deriving (Show)
 
 instance Pretty ToolShadowed where
-  pPrint (ToolShadowed tool sh up _) =
+  pPrint (ToolShadowed tool ver shadows) =
     text (prettyShow tool
-         <> " is shadowed by "
-         <> sh
-         <> ".\nThe upgrade will not be in effect, unless you remove "
-         <> sh
-         <> "\nor make sure "
-         <> takeDirectory up
-         <> " comes before "
-         <> takeDirectory sh
-         <> " in PATH."
+         <> " version " <> T.unpack (prettyVer ver)
+         <> " has shadowed binaries:\n"
+         <> intercalate "\n" (shadows <&> \(sh, bin) ->
+              "  * " <> bin <> " shadowed by " <> sh
+           )
+         <> ".\nThe upgrade will not be in effect, unless you make sure that "
+         <> (takeDirectory . snd . head $ shadows)
+         <> " comes first in PATH."
          )
 
 instance HFErrorProject ToolShadowed where

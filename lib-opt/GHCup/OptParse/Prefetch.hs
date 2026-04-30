@@ -13,7 +13,7 @@ module GHCup.OptParse.Prefetch where
 import           GHCup.Command.Prefetch
 import           GHCup.Errors
 import           GHCup.Types
-import           GHCup.Input.Parsers (fromVersion, toolParser)
+import           GHCup.Input.Parsers (resolveVersion, toolParser)
 import           GHCup.Types.Optics
 import           GHCup.Prelude.File
 import           GHCup.Prelude.Logger
@@ -186,17 +186,6 @@ type PrefetchEffects = '[ TagNotFound
                         ]
 
 
-runPrefetch :: MonadUnliftIO m
-            => (ReaderT AppState m (VEither PrefetchEffects a) -> m (VEither PrefetchEffects a))
-            -> Excepts PrefetchEffects (ResourceT (ReaderT AppState m)) a
-            -> m (VEither PrefetchEffects a)
-runPrefetch runAppState =
-  runAppState
-  . runResourceT
-  . runE
-    @PrefetchEffects
-
-
 
     ------------------
     --[ Entrypoint ]--
@@ -211,51 +200,61 @@ prefetch :: ( Monad m
             )
          => PrefetchCommand
          -> Settings
-         -> (forall a. ReaderT AppState m (VEither PrefetchEffects a) -> m (VEither PrefetchEffects a))
-         -> (ReaderT LeanAppState m () -> m ())
+         -> (IO (AppState, IO ()), LeanAppState)
          -> m ExitCode
-prefetch prefetchCommand settings runAppState runLogger =
-  runPrefetch runAppState (do
+prefetch prefetchCommand settings (getAppState', leanAppstate) =
+  run (do
     case prefetchCommand of
       PrefetchGHC
         (PrefetchGHCOptions pfGHCSrc pfCacheDir) mt -> do
           forM_ pfCacheDir (liftIO . createDirRecursive')
-          (v, _) <- liftE $ fromVersion mt guessMode ghc
+          v <- liftE $ resolveVersion mt guessMode ghc
           if pfGHCSrc
           then liftE $ fetchToolSrc ghc v pfCacheDir
           else liftE $ fetchToolBindist v ghc pfCacheDir
       PrefetchCabal PrefetchOptions {pfSrc, pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt guessMode cabal
+        v <- liftE $ resolveVersion mt guessMode cabal
         if pfSrc
         then liftE $ fetchToolSrc cabal v pfCacheDir
         else liftE $ fetchToolBindist v cabal pfCacheDir
       PrefetchHLS PrefetchOptions {pfSrc, pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt guessMode hls
+        v <- liftE $ resolveVersion mt guessMode hls
         if pfSrc
         then liftE $ fetchToolSrc hls v pfCacheDir
         else liftE $ fetchToolBindist v hls pfCacheDir
       PrefetchStack PrefetchOptions {pfSrc, pfCacheDir} mt   -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt guessMode stack
+        v <- liftE $ resolveVersion mt guessMode stack
         if pfSrc
         then liftE $ fetchToolSrc stack v pfCacheDir
         else liftE $ fetchToolBindist v stack pfCacheDir
       PrefetchTool PrefetchOptions {pfCacheDir} mt tool -> do
         forM_ pfCacheDir (liftIO . createDirRecursive')
-        (v, _) <- liftE $ fromVersion mt guessMode tool
+        v <- liftE $ resolveVersion mt guessMode tool
         liftE $ fetchToolBindist v tool pfCacheDir
       PrefetchMetadata -> do
         pfreq <- lift getPlatformReq
         _ <- liftE $ getDownloadsF pfreq
         pure ""
        ) >>= \case
-                VRight _ -> do
-                      pure ExitSuccess
-                VLeft e -> do
+                (VRight _, up) -> do
+                  liftIO up
+                  pure ExitSuccess
+                (VLeft e, _) -> do
                   runLogger $ logError $ T.pack $ prettyHFError e
                   pure $ ExitFailure 15
 
  where
-   guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
+  guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
+
+  run action' = do
+    (appstate', up) <- liftIO getAppState'
+    r <- flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @PrefetchEffects
+                  $ action'
+    pure (r, up)
+  runLogger = flip runReaderT leanAppstate

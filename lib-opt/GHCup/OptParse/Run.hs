@@ -35,26 +35,26 @@ import Control.Exception.Safe ( displayException, handle )
 #if !MIN_VERSION_base(4,13,0)
 import Control.Monad.Fail ( MonadFail )
 #endif
-import Control.Monad                ( forM, forM_, unless, when )
+import Control.Monad                  ( forM, forM_, when )
 import Control.Monad.Reader
 import Control.Monad.Trans.Resource
+import Data.Data                      ( Proxy (..) )
 import Data.Functor
-import Data.List                    ( intercalate )
-import Data.Maybe                   ( isNothing )
+import Data.List                      ( intercalate )
+import Data.Maybe                     ( isNothing )
 import Data.Variant.Excepts
-import Options.Applicative          hiding ( ParseError, style )
-import Prelude                      hiding ( appendFile )
+import Options.Applicative            hiding ( ParseError, style )
+import Prelude                        hiding ( appendFile )
 import System.Environment
 import System.Exit
 import System.FilePath
+import Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Text       as T
 #ifndef IS_WINDOWS
 import qualified System.Posix.Process as SPP
 #endif
-import Data.Versions                  ( Version, prettyVer )
-import Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 
 
@@ -217,28 +217,6 @@ type RunEffects = '[ AlreadyInstalled
                    , MalformedInstallInfo
                    ]
 
-runLeanRUN :: (MonadIOish m)
-           => LeanAppState
-           -> Excepts RunEffects (ReaderT LeanAppState m) a
-           -> m (VEither RunEffects a)
-runLeanRUN leanAppstate =
-    -- Don't use runLeanAppState here, which is disabled on windows.
-    -- This is the only command on all platforms that doesn't need full appstate.
-    flip runReaderT leanAppstate
-    . runE
-      @RunEffects
-
-runRUN :: MonadUnliftIO m
-      => IO AppState
-      -> Excepts RunEffects (ResourceT (ReaderT AppState m)) a
-      -> m (VEither RunEffects a)
-runRUN appState action' = do
-  s' <- liftIO appState
-  flip runReaderT s'
-    . runResourceT
-    . runE
-      @RunEffects
-    $ action'
 
 
 
@@ -254,13 +232,11 @@ run :: forall m .
        )
    => RunOptions
    -> Settings
-   -> IO AppState
-   -> LeanAppState
-   -> (ReaderT LeanAppState m () -> m ())
+   -> (IO (AppState, IO ()), LeanAppState)
    -> m ExitCode
-run RunOptions{..} settings runAppState leanAppstate runLogger = do
+run RunOptions{..} settings (getAppState', leanAppstate) = do
    r <- if not runQuick
-        then runRUN runAppState $ do
+        then runRUN $ do
          toolchain <- liftE resolveToolchainFull
 
          -- oh dear
@@ -269,7 +245,7 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
 
          liftE $ installToolChainFull toolchain tmp
          pure tmp
-        else runLeanRUN leanAppstate $ do
+        else runLeanRUN $ do
          toolchain <- resolveToolchain
          tmp <- lift $ createTmpDir toolchain
          liftE $ installToolChain toolchain tmp
@@ -290,8 +266,8 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
 #else
                resolvedCmd <- fmap (fromMaybe cmd) $ liftIO $ resolveExecutable cmd runMinGWPath
                r' <- if runMinGWPath
-                     then runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ exec resolvedCmd args Nothing (Just newEnv)
-                     else runLeanRUN leanAppstate $ liftE $ lEM @_ @'[ProcessError] $ execNoMinGW resolvedCmd args Nothing (Just newEnv)
+                     then runLeanRUN $ liftE $ lEM @_ @'[ProcessError] $ exec resolvedCmd args Nothing (Just newEnv)
+                     else runLeanRUN $ liftE $ lEM @_ @'[ProcessError] $ execNoMinGW resolvedCmd args Nothing (Just newEnv)
                case r' of
                  VRight _ -> pure ExitSuccess
                  VLeft e -> do
@@ -306,7 +282,6 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
 
    guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
 
-   -- TODO: doesn't work for cross
    resolveToolchainFull :: ( MonadIOish m )
                         => Excepts
                              '[ TagNotFound
@@ -317,46 +292,42 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
                               ] (ResourceT (ReaderT AppState m)) Toolchain
    resolveToolchainFull = do
          ghcVer <- forM runGHCVer $ \ver -> do
-           (v, _) <- liftE $ fromVersion (Just ver) guessMode ghc
-           pure v
+           liftE $ resolveVersion (Just ver) guessMode ghc
          cabalVer <- forM runCabalVer $ \ver -> do
-           (v, _) <- liftE $ fromVersion (Just ver) guessMode cabal
-           pure (_tvVersion v)
+           fmap toVersionReq' $ liftE $ resolveVersion (Just ver) guessMode cabal
          hlsVer <- forM runHLSVer $ \ver -> do
-           (v, _) <- liftE $ fromVersion (Just ver) guessMode hls
-           pure (_tvVersion v)
+           fmap toVersionReq' $ liftE $ resolveVersion (Just ver) guessMode hls
          stackVer <- forM runStackVer $ \ver -> do
-           (v, _) <- liftE $ fromVersion (Just ver) guessMode stack
-           pure (_tvVersion v)
+           fmap toVersionReq' $ liftE $ resolveVersion (Just ver) guessMode stack
          toolVer <- forM runToolVer $ \(tool, ver) -> do
-           (v, _) <- liftE $ fromVersion (Just ver) guessMode tool
-           pure (tool, _tvVersion v)
+           v <- liftE $ resolveVersion (Just ver) guessMode tool
+           pure (tool, v)
          pure Toolchain{..}
 
    resolveToolchain = do
          ghcVer <- case runGHCVer of
             Just (GHCVersion v) -> pure $ Just v
-            Just (ToolVersion v) -> pure $ Just (mkTVer v)
+            Just (ToolVersion v) -> pure $ Just (toTargetVersionReq' v)
             Nothing -> pure Nothing
             _ -> throwE $ IncompatibleConfig "Cannot resolve tags/dates in quick mode"
          cabalVer <- case runCabalVer of
-            Just (GHCVersion v) -> pure $ Just (_tvVersion v)
+            Just (GHCVersion v) -> pure $ Just (toVersionReq' v)
             Just (ToolVersion v) -> pure $ Just v
             Nothing -> pure Nothing
             _ -> throwE $ IncompatibleConfig "Cannot resolve tags/dates in quick mode"
          hlsVer <- case runHLSVer of
-            Just (GHCVersion v) -> pure $ Just (_tvVersion v)
+            Just (GHCVersion v) -> pure $ Just (toVersionReq' v)
             Just (ToolVersion v) -> pure $ Just v
             Nothing -> pure Nothing
             _ -> throwE $ IncompatibleConfig "Cannot resolve tags/dates in quick mode"
          stackVer <- case runStackVer of
-            Just (GHCVersion v) -> pure $ Just (_tvVersion v)
+            Just (GHCVersion v) -> pure $ Just (toVersionReq' v)
             Just (ToolVersion v) -> pure $ Just v
             Nothing -> pure Nothing
             _ -> throwE $ IncompatibleConfig "Cannot resolve tags/dates in quick mode"
          toolVer <- forM runToolVer $ \(tool, tver) -> case tver of
-            (GHCVersion v) -> pure (tool, _tvVersion v)
-            (ToolVersion v) -> pure (tool, v)
+            (GHCVersion v) -> pure (tool, v)
+            (ToolVersion v) -> pure (tool, toTargetVersionReq' v)
             _ -> throwE $ IncompatibleConfig "Cannot resolve tags/dates in quick mode"
          pure Toolchain{..}
 
@@ -400,23 +371,21 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
                               ] (ResourceT (ReaderT AppState m)) ()
    installToolChainFull Toolchain{..} tmp = do
          case ghcVer of
-           Just v -> do
-             isInst <- lift $ isInstalled ghc v
-             unless isInst $ when (runInstTool' && isNothing (_tvTarget v)) $ void $ liftE $ installTool
+           Just treq@(TargetVersionReq tver _rev) -> do
+             hideExcept' @AlreadyInstalled Proxy $ when (runInstTool' && isNothing (_tvTarget tver)) $ void $ installTool
                ghc
-               v
+               treq
                GHCupInternal
                False
                []
                Nothing
-             liftE $ setTool' ghc v tmp
+             liftE $ setTool' ghc tver tmp
            _ -> pure ()
          case cabalVer of
-           Just v -> do
-             isInst <- lift $ isInstalled cabal (mkTVer v)
-             unless isInst $ when runInstTool' $ void $ liftE $ installTool
+           Just vreq@(VersionReq v _rev) -> do
+             hideExcept' @AlreadyInstalled Proxy $ when runInstTool' $ void $ installTool
                cabal
-               (mkTVer v)
+               (toTargetVersionReq' vreq)
                GHCupInternal
                False
                []
@@ -424,11 +393,10 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
              liftE $ setTool' cabal (mkTVer v) tmp
            _ -> pure ()
          case stackVer of
-           Just v -> do
-             isInst <- lift $ isInstalled stack (mkTVer v)
-             unless isInst $ when runInstTool' $ void $ liftE $ installTool
+           Just vreq@(VersionReq v _rev) -> do
+             hideExcept' @AlreadyInstalled Proxy $ when runInstTool' $ void $ installTool
                stack
-               (mkTVer v)
+               (toTargetVersionReq' vreq)
                GHCupInternal
                False
                []
@@ -436,27 +404,25 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
              liftE $ setTool' stack (mkTVer v) tmp
            _ -> pure ()
          case hlsVer of
-           Just v -> do
-             isInst <- lift $ isInstalled hls (mkTVer v)
-             unless isInst $ when runInstTool' $ void $ liftE $ installTool
+           Just vreq@(VersionReq v _rev) -> do
+             hideExcept' @AlreadyInstalled Proxy $ when runInstTool' $ void $ installTool
                hls
-               (mkTVer v)
+               (toTargetVersionReq' vreq)
                GHCupInternal
                False
                []
                Nothing
              liftE $ setTool' hls (mkTVer v) tmp
            _ -> pure ()
-         forM_ toolVer $ \(t, mkTVer -> v) -> do
-           isInst <- lift $ isInstalled t v
-           unless isInst $ when (runInstTool' && isNothing (_tvTarget v)) $ void $ liftE $ installTool
+         forM_ toolVer $ \(t, treq@(TargetVersionReq tver _rev)) -> do
+           hideExcept' @AlreadyInstalled Proxy $ when (runInstTool' && isNothing (_tvTarget tver)) $ void $ installTool
              t
-             v
+             treq
              GHCupInternal
              False
              []
              Nothing
-           liftE $ setTool' t v tmp
+           liftE $ setTool' t tver tmp
 
    installToolChain :: ( MonadIOish m
                        )
@@ -465,18 +431,18 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
                     -> Excepts '[ParseError, NotInstalled, MalformedInstallInfo] (ReaderT LeanAppState m) ()
    installToolChain Toolchain{..} tmp = do
          case ghcVer of
-           Just v -> setTool' ghc v tmp
-           _      -> pure ()
+           Just (TargetVersionReq tver _rev) -> setTool' ghc tver tmp
+           _                                 -> pure ()
          case cabalVer of
-           Just v -> setTool' cabal (mkTVer v) tmp
-           _      -> pure ()
+           Just (VersionReq v _rev) -> setTool' cabal (mkTVer v) tmp
+           _                        -> pure ()
          case stackVer of
-           Just v -> setTool' stack (mkTVer v) tmp
-           _      -> pure ()
+           Just (VersionReq v _rev) -> setTool' stack (mkTVer v) tmp
+           _                        -> pure ()
          case hlsVer of
-           Just v -> setTool' hls (mkTVer v) tmp
-           _      -> pure ()
-         forM_ toolVer $ \(t, mkTVer -> v) -> setTool' t v tmp
+           Just (VersionReq v _rev) -> setTool' hls (mkTVer v) tmp
+           _                        -> pure ()
+         forM_ toolVer $ \(t, TargetVersionReq tver _rev) -> setTool' t tver tmp
 
    setTool' ::
      forall m1 env .
@@ -582,14 +548,30 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
       Dirs { tmpDir } <- getDirs
       pure $ tmpDir
         `appendGHCupPath` ("ghcup-" <> intercalate "_"
-              (  maybe [] ( (:[]) . ("ghc-"   <>) . T.unpack . tVerToText) ghcVer
-              <> maybe [] ( (:[]) . ("cabal-" <>) . T.unpack . prettyVer) cabalVer
-              <> maybe [] ( (:[]) . ("hls-"   <>) . T.unpack . prettyVer) hlsVer
-              <> maybe [] ( (:[]) . ("stack-" <>) . T.unpack . prettyVer) stackVer
-              <> fmap (\(t, v) -> prettyShow t <> "-" <> T.unpack (prettyVer v)) toolVer
+              (  maybe [] ( (:[]) . ("ghc-"   <>) . prettyShow)        ghcVer
+              <> maybe [] ( (:[]) . ("cabal-" <>) . prettyShow)        cabalVer
+              <> maybe [] ( (:[]) . ("hls-"   <>) . prettyShow)        hlsVer
+              <> maybe [] ( (:[]) . ("stack-" <>) . prettyShow)        stackVer
+              <> fmap (\(t, v) -> prettyShow t <> "-" <> prettyShow v) toolVer
               )
             )
 
+   runLogger = flip runReaderT leanAppstate
+   runLeanRUN :: forall m1 a . Excepts RunEffects (ReaderT LeanAppState m1) a -> m1 (VEither RunEffects a)
+   runLeanRUN =
+        -- Don't use runLeanAppState here, which is disabled on windows.
+        -- This is the only command on all platforms that doesn't need full appstate.
+        flip runReaderT leanAppstate
+        . runE
+          @RunEffects
+
+   runRUN action' = do
+     (appstate', _) <- liftIO getAppState'
+     flip runReaderT appstate'
+                   . runResourceT
+                   . runE
+                     @RunEffects
+                   $ action'
 
 
     -------------------------
@@ -599,10 +581,10 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
 
 
 data Toolchain = Toolchain
-  { ghcVer :: Maybe TargetVersion
-  , cabalVer :: Maybe Version
-  , hlsVer :: Maybe Version
-  , stackVer :: Maybe Version
-  , toolVer :: [(Tool, Version)]
+  { ghcVer :: Maybe TargetVersionReq
+  , cabalVer :: Maybe VersionReq
+  , hlsVer :: Maybe VersionReq
+  , stackVer :: Maybe VersionReq
+  , toolVer :: [(Tool, TargetVersionReq)]
   }
   deriving (Show)

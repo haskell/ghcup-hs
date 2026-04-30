@@ -21,9 +21,12 @@ import           GHCup.Prelude.Logger
 #if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail             ( MonadFail )
 #endif
-import           Control.Monad (forM_, void)
+import           Control.Exception.Safe (MonadMask)
+import           Control.Concurrent (threadDelay)
+import           Control.Monad (forM_)
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource
+import           Data.Foldable.WithIndex
 import           Data.Maybe
 import           Data.Variant.Excepts
 import           Options.Applicative     hiding ( style, ParseError )
@@ -31,10 +34,6 @@ import           Prelude                 hiding ( appendFile )
 import           System.Exit
 
 import qualified Data.Text                     as T
-import Control.Exception.Safe (MonadMask)
-import Control.DeepSeq
-import Control.Exception
-import Control.Concurrent (threadDelay)
 
 
 
@@ -45,13 +44,6 @@ import Control.Concurrent (threadDelay)
 
 
 type NukeEffects = '[ NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo ]
-
-
-runNuke :: AppState
-        -> Excepts NukeEffects (ReaderT AppState m) a
-        -> m (VEither NukeEffects a)
-runNuke s' =
-  flip runReaderT s' . runE @NukeEffects
 
 
 
@@ -66,13 +58,10 @@ nuke :: ( Monad m
         , MonadUnliftIO m
         , MonadFail m
         )
-     => IO AppState
-     -> (ReaderT LeanAppState m () -> m ())
+     => (IO (AppState, IO ()), LeanAppState)
      -> m ExitCode
-nuke appState runLogger = do
-  s' <- liftIO appState
-  void $ liftIO $ evaluate $ force s'
-  runNuke s' (do
+nuke (getAppState', leanAppstate) = do
+  run (do
        lift $ logWarn "WARNING: This will remove GHCup and all installed components from your system."
        lift $ logWarn "Waiting 10 seconds before commencing, if you want to cancel it, now would be the time."
        liftIO $ threadDelay 10000000  -- wait 10s
@@ -82,7 +71,7 @@ nuke appState runLogger = do
 
        lInstalled' <- liftE $ listVersions Nothing [ListInstalled True] False True (Nothing, Nothing)
 
-       forM_ lInstalled' (\ListResult{..} -> liftE $ rmToolVersion lTool (TargetVersion lCross lVer))
+       iforM_ lInstalled' $ \tool (_, ls) -> forM_ ls $ \ListResult{..} -> liftE $ rmToolVersion tool (TargetVersion lCross lVer)
 
        lift rmGhcupDirs
 
@@ -99,3 +88,12 @@ nuke appState runLogger = do
                 VLeft e -> do
                   runLogger $ logError $ T.pack $ prettyHFError e
                   pure $ ExitFailure 15
+ where
+  run action' = do
+    (appstate', _) <- liftIO getAppState'
+    flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @NukeEffects
+                  $ action'
+  runLogger = flip runReaderT leanAppstate

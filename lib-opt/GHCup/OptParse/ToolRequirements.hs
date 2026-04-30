@@ -103,10 +103,9 @@ toolRequirements :: ( Monad m
                     , Alternative m
                     )
                  => ToolReqOpts
-                 -> (ReaderT AppState m (VEither ToolRequirementsEffects ()) -> m (VEither ToolRequirementsEffects ()))
-                 -> (ReaderT LeanAppState m () -> m ())
+                 -> (IO (AppState, IO ()), LeanAppState)
                  -> m ExitCode
-toolRequirements ToolReqOpts{..} runAppState runLogger = runToolRequirements runAppState (do
+toolRequirements ToolReqOpts{..} (getAppState', leanAppstate) = run (do
     GHCupInfo { .. } <- lift getGHCupInfo
     platform' <- liftE getPlatform
     -- TODO
@@ -120,3 +119,12 @@ toolRequirements ToolReqOpts{..} runAppState runLogger = runToolRequirements run
           VLeft  e -> do
             runLogger $ logError $ T.pack $ prettyHFError e
             pure $ ExitFailure 12
+ where
+  run action' = do
+    (appstate', _) <- liftIO getAppState'
+    flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @ToolRequirementsEffects
+                  $ action'
+  runLogger = flip runReaderT leanAppstate

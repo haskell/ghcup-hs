@@ -1,48 +1,53 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ViewPatterns      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 
 module GHCup.OptParse.Install where
 
 
 
 
-import           GHCup.OptParse.Common
+import GHCup.Command.Install
+import GHCup.Command.Set
+import GHCup.Errors
+import GHCup.Input.Parsers
+    ( installTargetParser
+    , isolateParser
+    , resolveVersion
+    , toolParser
+    , uriParser
+    )
+import GHCup.OptParse.Common
+import GHCup.Prelude
+import GHCup.Prelude.String.QQ
+import GHCup.Query.GHCupDirs
+import GHCup.Query.Metadata
+import GHCup.Types
+import GHCup.Types.Optics
 
-import           GHCup.Errors
-import           GHCup.Command.Install
-import           GHCup.Command.Set
-import           GHCup.Types
-import           GHCup.Types.Optics
-import           GHCup.Query.GHCupDirs
-import           GHCup.Input.Parsers (fromVersion, isolateParser, uriParser, toolParser, installTargetParser)
-import           GHCup.Prelude
-import           GHCup.Prelude.String.QQ
-
-import           Control.Concurrent (threadDelay)
+import Control.Concurrent ( threadDelay )
 #if !MIN_VERSION_base(4,13,0)
-import           Control.Monad.Fail             ( MonadFail )
+import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad (when, forM_)
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Resource
-import           Data.Functor
-import           Data.Maybe
-import           Data.Variant.Excepts
-import           Options.Applicative     hiding ( style )
-import           Options.Applicative.Pretty.Shim ( text )
-import           Prelude                 hiding ( appendFile )
-import           System.Exit
-import           URI.ByteString          hiding ( uriParser )
-import           Text.PrettyPrint.HughesPJClass (prettyShow)
+import Control.Monad                   ( forM_, when )
+import Control.Monad.Reader
+import Control.Monad.Trans.Resource
+import Data.Functor
+import Data.Maybe
+import Data.Variant.Excepts
+import Options.Applicative             hiding ( style )
+import Options.Applicative.Pretty.Shim ( text )
+import Prelude                         hiding ( appendFile )
+import System.Exit
+import Text.PrettyPrint.HughesPJClass  ( prettyShow )
+import URI.ByteString                  hiding ( uriParser )
 
-import qualified Data.Text                     as T
+import qualified Data.Text as T
 
 
 
@@ -52,12 +57,13 @@ import qualified Data.Text                     as T
     ----------------
 
 
-data InstallCommand = InstallGHC InstallOptions
-                    | InstallCabal InstallOptions
-                    | InstallHLS InstallOptions
-                    | InstallStack InstallOptions
-                    | InstallOtherTool InstallOptionsNew
-                    deriving (Eq, Show)
+data InstallCommand
+  = InstallGHC InstallOptions
+  | InstallCabal InstallOptions
+  | InstallHLS InstallOptions
+  | InstallStack InstallOptions
+  | InstallOtherTool InstallOptionsNew
+  deriving (Eq, Show)
 
 
 
@@ -67,25 +73,27 @@ data InstallCommand = InstallGHC InstallOptions
     ---------------
 
 data InstallOptions = InstallOptions
-  { instVer      :: Maybe ToolVersion
-  , instBindist  :: Maybe URI
-  , instSet      :: Bool
-  , isolateDir   :: Maybe FilePath
+  { instVer :: Maybe ToolVersion
+  , instBindist :: Maybe URI
+  , instSet :: Bool
+  , isolateDir :: Maybe FilePath
   , forceInstall :: Bool
   , installTargets :: Maybe [String]
-  , addConfArgs  :: [String]
-  } deriving (Eq, Show)
+  , addConfArgs :: [String]
+  }
+  deriving (Eq, Show)
 
 data InstallOptionsNew = InstallOptionsNew
-  { instTool     :: Tool
-  , instVer      :: Maybe ToolVersion
-  , instBindist  :: Maybe URI
-  , instSet      :: Bool
-  , isolateDir   :: Maybe FilePath
+  { instTool :: Tool
+  , instVer :: Maybe ToolVersion
+  , instBindist :: Maybe URI
+  , instSet :: Bool
+  , isolateDir :: Maybe FilePath
   , forceInstall :: Bool
   , installTargets :: Maybe [String]
-  , addConfArgs  :: [String]
-  } deriving (Eq, Show)
+  , addConfArgs :: [String]
+  }
+  deriving (Eq, Show)
 
 
 
@@ -231,9 +239,9 @@ installOpts tool =
     <*> many (argument str (metavar "CONFIGURE_ARGS" <> help "Additional arguments to bindist configure, prefix with '-- ' (longopts)"))
  where
   setDefault = case tool of
-    Nothing  -> False
+    Nothing           -> False
     Just (Tool "ghc") -> False
-    Just _   -> True
+    Just _            -> True
 
 installOptsNew :: Parser InstallOptionsNew
 installOptsNew =
@@ -295,17 +303,6 @@ installToolFooter = [s|Discussion:
     ---------------------------
 
 
-runInstTool :: AppState
-            -> Excepts InstallEffects (ResourceT (ReaderT AppState IO)) a
-            -> IO (VEither InstallEffects a)
-runInstTool appstate' =
-  flip runReaderT appstate'
-  . runResourceT
-  . runE
-    @InstallEffects
-
-
-
 type InstallEffects = '[ AlreadyInstalled
                        , ArchiveResult
                        , BuildFailed
@@ -347,13 +344,13 @@ type InstallEffects = '[ AlreadyInstalled
     -------------------
 
 
-install :: InstallCommand -> Settings -> IO AppState -> (ReaderT LeanAppState IO () -> IO ()) -> IO ExitCode
-install installCommand settings getAppState' runLogger = case installCommand of
-  (InstallGHC iGHCopts) -> installOther (toInstallOptionsNew ghc iGHCopts)
-  (InstallCabal iopts)  -> installOther (toInstallOptionsNew cabal iopts)
-  (InstallHLS iopts)    -> installOther (toInstallOptionsNew hls iopts)
-  (InstallStack iopts)  -> installOther (toInstallOptionsNew stack iopts)
-  (InstallOtherTool iopts)  -> installOther iopts
+install :: InstallCommand -> Settings -> (IO (AppState, IO ()), LeanAppState) -> IO ExitCode
+install installCommand settings (getAppState', leanAppstate) = case installCommand of
+  (InstallGHC iGHCopts)    -> installOther (toInstallOptionsNew ghc iGHCopts)
+  (InstallCabal iopts)     -> installOther (toInstallOptionsNew cabal iopts)
+  (InstallHLS iopts)       -> installOther (toInstallOptionsNew hls iopts)
+  (InstallStack iopts)     -> installOther (toInstallOptionsNew stack iopts)
+  (InstallOtherTool iopts) -> installOther iopts
  where
   guessMode = if guessVersion settings then GLax else GStrict
 
@@ -361,11 +358,13 @@ install installCommand settings getAppState' runLogger = case installCommand of
 
   installOther :: InstallOptionsNew -> IO ExitCode
   installOther InstallOptionsNew{..} = do
-    s'@AppState{ dirs = Dirs{ .. } } <- liftIO getAppState'
+    (s'@AppState{ dirs = Dirs{ .. } }, updateCheckAction) <- getAppState'
     (case instBindist of
-       Nothing -> runInstTool s' $ do
-         (v, vi) <- liftE $ fromVersion instVer guessMode instTool
-         forM_ (_viPreInstall =<< vi) $ \msg -> do
+       Nothing -> run s' $ do
+         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+         treq@(TargetVersionReq tver _) <- liftE $ resolveVersion instVer guessMode instTool
+         let vm = getVersionMetadata tver instTool dls
+         forM_ (_vmPreInstall =<< vm) $ \msg -> do
            lift $ logWarn msg
            lift $ logWarn
              "...waiting for 5 seconds, you can still abort..."
@@ -373,43 +372,50 @@ install installCommand settings getAppState' runLogger = case installCommand of
          -- TODO: install targets
          liftE $ runBothE' (installTool
                                     instTool
-                                    v
+                                    treq
                                     (maybe GHCupInternal IsolateDir isolateDir)
                                     forceInstall
                                     addConfArgs
                                     installTargets
-                                  ) $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setToolVersion instTool v
-         pure vi
+                                  ) $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setToolVersion instTool tver
+         pure vm
        Just uri -> do
-         runInstTool s'{ settings = settings {noVerify = True}} $ do
+         run s'{ settings = settings {noVerify = True}} $ do
            pfreq <- lift getPlatformReq
-           (v, vi) <- liftE $ fromVersion instVer guessMode instTool
-           forM_ (_viPreInstall =<< vi) $ \msg -> do
+           GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+           (TargetVersionReq tver _) <- liftE $ resolveVersion instVer guessMode instTool
+           let vm = getVersionMetadata tver instTool dls
+           forM_ (_vmPreInstall =<< vm) $ \msg -> do
              lift $ logWarn msg
              lift $ logWarn
                "...waiting for 5 seconds, you can still abort..."
              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-           liftE $ runBothE' (installBindist
+           liftE $ runBothE' (do
+                     (rev, _) <- liftE $ getDownloadInfoE' instTool (TargetVersionReq tver Nothing)
+                     installBindist
                        instTool
-                       (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) regexDir "" Nothing Nothing Nothing (toInstallationInputSpec <$> defaultToolInstallSpec instTool pfreq v))
-                       v
+                       Nothing
+                       (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) regexDir "" Nothing Nothing Nothing (toInstallationInputSpec <$> defaultToolInstallSpec instTool pfreq tver))
+                       (TargetVersionRev tver rev)
                        (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
                        addConfArgs
                        installTargets
                      )
-                     $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setToolVersion instTool v
-           pure vi
+                     $ when instSet $ when (isNothing isolateDir) $ liftE $ void $ setToolVersion instTool tver
+           pure vm
       )
         >>= \case
-              VRight vi -> do
+              VRight vm -> do
                 runLogger $ logInfo $ T.pack (prettyShow instTool) <> " installation successful"
-                forM_ (_viPostInstall =<< vi) $ \msg ->
+                forM_ (_vmPostInstall =<< vm) $ \msg ->
                   runLogger $ logInfo msg
+                liftIO updateCheckAction
                 pure ExitSuccess
 
               VLeft e@(V (AlreadyInstalled _ _)) -> do
                 runLogger $ logWarn $ T.pack $ prettyHFError e
+                liftIO updateCheckAction
                 pure ExitSuccess
 
               VLeft (V (DirNotEmpty fp)) -> do
@@ -431,6 +437,12 @@ install installCommand settings getAppState' runLogger = case installCommand of
                   logError $ "Also check the logs in " <> T.pack (fromGHCupPath logsDir)
                 pure $ ExitFailure 3
    where
+    run appstate' =
+      flip runReaderT (appstate' :: AppState)
+      . runResourceT
+      . runE
+        @InstallEffects
+    runLogger = flip runReaderT leanAppstate
     regexDir = case instTool of
                  (Tool "ghc") -> Just $ RegexDir "ghc-.*"
                  (Tool "cabal") -> Nothing

@@ -10,7 +10,7 @@ import Prelude hiding (appendFile)
 
 import Data.Versions (prettyVer)
 import GHCup.Command.List ( ListResult(..) )
-import GHCup.Types (Tool (..))
+import GHCup.Types (Tool (..), ToolDescription(..))
 
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Widgets.Menu as Menu
@@ -21,16 +21,16 @@ import qualified Brick.Widgets.Border as Border
 import qualified Brick.Focus as F
 import Brick.Widgets.Core ((<+>))
 
-import Optics (to)
+import Optics (to, _1, _2)
 import Optics.Operators ((.~), (^.))
 import Optics.Optic ((%))
 import Data.Foldable (foldl')
 import qualified Data.Text as T
 
-type ContextMenu = Menu ListResult Name
+type ContextMenu = Menu (Tool, (Maybe ToolDescription, ListResult)) Name
 
-create :: ListResult -> MenuKeyBindings -> ContextMenu
-create lr keyBindings = Menu.createMenu Common.ContextBox lr "" validator keyBindings buttons []
+create :: (Tool, (Maybe ToolDescription, ListResult)) -> MenuKeyBindings -> ContextMenu
+create (tool, (td, lr)) keyBindings = Menu.createMenu Common.ContextBox (tool, (td, lr)) "" validator keyBindings buttons []
  where
   advInstallButton =
     Menu.createButtonField (MenuElement Common.AdvancedInstallButton)
@@ -45,7 +45,7 @@ create lr keyBindings = Menu.createMenu Common.ContextBox lr "" validator keyBin
       & Menu.fieldLabelL .~ "Compile"
       & Menu.fieldHelpMsgL .~ "Compile HLS from source"
   buttons =
-    case lTool lr of
+    case tool of
       Tool "ghc" -> [advInstallButton, compileGhcButton]
       Tool "hls" -> [advInstallButton, compileHLSButton]
       _ -> [advInstallButton]
@@ -54,7 +54,7 @@ create lr keyBindings = Menu.createMenu Common.ContextBox lr "" validator keyBin
 draw :: ContextMenu -> Widget Name
 draw menu =
   Common.frontwardLayer
-    ("Context Menu for " <> tool_str <> " " <> prettyVer (lVer $ menu ^. Menu.menuStateL))
+    ("Context Menu for " <> tool_str <> " " <> prettyVer (menu ^. Menu.menuStateL % _2 % _2 % to lVer))
     $ Brick.vBox
         [ Brick.vBox buttonWidgets
         , Brick.txt " "
@@ -73,7 +73,7 @@ draw menu =
     drawButtons = fmap Menu.drawField buttonAmplifiers
     buttonWidgets = zipWith (F.withFocusRing (menu ^. Menu.menuFocusRingL)) drawButtons (menu ^. Menu.menuButtonsL)
     tool_str =
-      case menu ^. Menu.menuStateL % to lTool of
+      case menu ^. Menu.menuStateL % _1 of
         Tool "ghc" -> "GHC"
         Tool "ghcup" -> "GHCup"
         Tool "cabal" -> "Cabal"

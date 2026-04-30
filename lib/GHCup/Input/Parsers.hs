@@ -48,6 +48,7 @@ import Prelude              hiding ( appendFile )
 import Safe
 import System.FilePath
 import URI.ByteString       hiding ( parseURI )
+import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 import qualified Data.Attoparsec.ByteString as AP
 import qualified Data.ByteString.UTF8       as UTF8
@@ -102,8 +103,8 @@ import qualified Data.HashMap.Strict as KM
 
 -- a superset of ToolVersion
 data SetToolVersion
-  = SetGHCVersion TargetVersion
-  | SetToolVersion Version
+  = SetGHCVersion TargetVersionReq
+  | SetToolVersion VersionReq
   | SetToolTag Tag
   | SetToolDay Day
   | SetRecommended
@@ -111,8 +112,8 @@ data SetToolVersion
   deriving (Eq, Show)
 
 prettyToolVer :: ToolVersion -> String
-prettyToolVer (GHCVersion v')  = T.unpack $ tVerToText v'
-prettyToolVer (ToolVersion v') = T.unpack $ prettyVer v'
+prettyToolVer (GHCVersion v')  = prettyShow v'
+prettyToolVer (ToolVersion v') = prettyShow v'
 prettyToolVer (ToolTag t)      = show t
 prettyToolVer (ToolDay day)    = show day
 
@@ -203,12 +204,12 @@ toolAndVersionParser (T.pack -> s') = do
 -- this accepts cross prefix
 ghcVersionTagEither :: String -> Either String ToolVersion
 ghcVersionTagEither s' =
-  second ToolDay (dayParser s') <|> second ToolTag (tagEither s') <|> second GHCVersion (ghcVersionEither s')
+  second ToolDay (dayParser s') <|> second ToolTag (tagEither s') <|> second GHCVersion (ghcVersionEither' s')
 
 -- this ignores cross prefix
 toolVersionTagEither :: String -> Either String ToolVersion
 toolVersionTagEither s' =
-  second ToolDay (dayParser s') <|> second ToolTag (tagEither s') <|> second ToolVersion (toolVersionEither s')
+  second ToolDay (dayParser s') <|> second ToolTag (tagEither s') <|> second ToolVersion (toolVersionEither' s')
 
 tagEither :: String -> Either String Tag
 tagEither s' = case fmap toLower s' of
@@ -234,6 +235,20 @@ toolVersionEither str' = do
   v <- first (const "Not a valid version") . MP.parse (version' <* MP.eof) "" . T.pack $ str'
   if safeVersion (mkTVer v)
   then pure v
+  else Left "Unsafe version, try something more vanilla like '1.2.3'"
+
+ghcVersionEither' :: String -> Either String TargetVersionReq
+ghcVersionEither' str' = do
+  treq <- first (const "Not a valid version") . MP.parse ghcTargetVerRevP "" . T.pack $ str'
+  if safeVersion (_tvqTargetVer treq)
+  then pure treq
+  else Left "Unsafe version, try something more vanilla like '1.2.3'"
+
+toolVersionEither' :: String -> Either String VersionReq
+toolVersionEither' str' = do
+  vreq <- first (const "Not a valid version") . MP.parse (verRevP <* MP.eof) "" . T.pack $ str'
+  if safeVersion (mkTVer $ _vqVersion vreq)
+  then pure vreq
   else Left "Unsafe version, try something more vanilla like '1.2.3'"
 
 
@@ -309,74 +324,77 @@ overWriteVersionParser = first (const "Not a valid version pattern") . MP.parse 
     -----------------
 
 
-fromVersion :: ( HasLog env
-               , MonadFail m
-               , MonadReader env m
-               , HasGHCupInfo env
-               , HasDirs env
-               , MonadIOish m
-               )
-            => Maybe ToolVersion
-            -> GuessMode
-            -> Tool
-            -> Excepts
-                 '[ TagNotFound
-                  , DayNotFound
-                  , NextVerNotFound
-                  , NoToolVersionSet
-                  , ParseError
-                  ] m (TargetVersion, Maybe VersionInfo)
-fromVersion tv = fromVersion' (toSetToolVer tv)
+resolveVersion ::
+  ( HasLog env
+  , MonadFail m
+  , MonadReader env m
+  , HasGHCupInfo env
+  , HasDirs env
+  , MonadIOish m
+  )
+  => Maybe ToolVersion
+  -> GuessMode
+  -> Tool
+  -> Excepts
+       '[ TagNotFound
+        , DayNotFound
+        , NextVerNotFound
+        , NoToolVersionSet
+        , ParseError
+        ] m TargetVersionReq
+resolveVersion tv = resolveVersion' (toSetToolVer tv)
 
-fromVersion' :: ( HasLog env
-                , MonadReader env m
-                , HasGHCupInfo env
-                , HasDirs env
-                , MonadIOish m
-                )
-             => SetToolVersion
-             -> GuessMode
-             -> Tool
-             -> Excepts
-                  '[ TagNotFound
-                   , DayNotFound
-                   , NextVerNotFound
-                   , NoToolVersionSet
-                   , ParseError
-                   ] m (TargetVersion, Maybe VersionInfo)
-fromVersion' SetRecommended _ tool = do
+resolveVersion' ::
+  ( HasLog env
+  , MonadReader env m
+  , HasGHCupInfo env
+  , HasDirs env
+  , MonadIOish m
+  )
+  => SetToolVersion
+  -> GuessMode
+  -> Tool
+  -> Excepts
+       '[ TagNotFound
+        , DayNotFound
+        , NextVerNotFound
+        , NoToolVersionSet
+        , ParseError
+        ] m TargetVersionReq
+resolveVersion' SetRecommended _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  second Just <$> getRecommended dls tool
-    ?? TagNotFound Recommended tool
-fromVersion' (SetGHCVersion v) guessMode tool = do
+  fmap (`TargetVersionReq` Nothing) $ getRecommended dls tool ?? TagNotFound Recommended tool
+resolveVersion' (SetGHCVersion (TargetVersionReq v rev)) guessMode tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  lift $ guessFullVersion dls v tool guessMode
-fromVersion' (SetToolVersion (mkTVer -> v)) guessMode tool = do
+  tv' <- lift $ guessFullVersion dls v tool guessMode
+  pure (TargetVersionReq tv' rev)
+resolveVersion' (SetToolVersion (toTargetVersionReq' -> treq)) guessMode tool = do
+  let TargetVersionReq v rev = treq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  lift $ guessFullVersion dls v tool guessMode
-fromVersion' (SetToolTag Latest) _ tool = do
+  tv' <- lift $ guessFullVersion dls v tool guessMode
+  pure (TargetVersionReq tv' rev)
+resolveVersion' (SetToolTag Latest) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  second Just <$> getLatest dls tool ?? TagNotFound Latest tool
-fromVersion' (SetToolDay day) _ tool = do
+  fmap (`TargetVersionReq` Nothing) $ getLatest dls tool ?? TagNotFound Latest tool
+resolveVersion' (SetToolDay day) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  second Just <$> case getByReleaseDay dls tool day of
-                          Left ad -> throwE $ DayNotFound day tool ad
-                          Right v -> pure v
-fromVersion' (SetToolTag LatestPrerelease) _ tool = do
+  case getByReleaseDay dls tool day of
+    Left ad -> throwE $ DayNotFound day tool ad
+    Right (v, _) -> pure (TargetVersionReq v Nothing)
+resolveVersion' (SetToolTag LatestPrerelease) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  second Just <$> getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
-fromVersion' (SetToolTag LatestNightly) _ tool = do
+  fmap (`TargetVersionReq` Nothing) $ getLatestPrerelease dls tool ?? TagNotFound LatestPrerelease tool
+resolveVersion' (SetToolTag LatestNightly) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  second Just <$> getLatestNightly dls tool ?? TagNotFound LatestNightly tool
-fromVersion' (SetToolTag Recommended) _ tool = do
+  fmap (`TargetVersionReq` Nothing) $ getLatestNightly dls tool ?? TagNotFound LatestNightly tool
+resolveVersion' (SetToolTag Recommended) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-  second Just <$> getRecommended dls tool ?? TagNotFound Recommended tool
-fromVersion' (SetToolTag (Base pvp'')) _ t
+  fmap (`TargetVersionReq` Nothing) $ getRecommended dls tool ?? TagNotFound Recommended tool
+resolveVersion' (SetToolTag (Base pvp'')) _ t
   | t == ghc = do
       GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-      second Just <$> getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') ghc
-fromVersion' SetNext _ tool = do
-  GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+      fmap (`TargetVersionReq` Nothing) $ getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') ghc
+resolveVersion' SetNext _ tool = do
   set <- liftE $ getSetVersion tool Nothing !!? NoToolVersionSet tool Nothing -- TODO
   vers <- lift $ getInstalledVersions tool Nothing
   next <- (headMay
@@ -385,9 +403,9 @@ fromVersion' SetNext _ tool = do
     . cycle
     . sort
     $ vers) ?? NoToolVersionSet tool Nothing
-  let vi = getVersionInfo (mkTVer next) tool dls
-  pure (mkTVer next, vi)
-fromVersion' (SetToolTag t') _ tool =
+  let tv = mkTVer . _vrVersion $ next
+  pure (TargetVersionReq tv Nothing)
+resolveVersion' (SetToolTag t') _ tool =
   throwE $ TagNotFound t' tool
 
 -- | Guess the full version from an input version, by possibly
@@ -415,23 +433,22 @@ guessFullVersion :: ( HasLog env
                  -> TargetVersion
                  -> Tool
                  -> GuessMode
-                 -> m (TargetVersion, Maybe VersionInfo)
+                 -> m TargetVersion
 guessFullVersion dls v tool guessMode = do
-  let vi = getVersionInfo v tool dls
   case pvp $ prettyVer (_tvVersion v) of -- need to be strict here
-    Left _ -> pure (v, vi)
+    Left _ -> pure v
     Right pvpIn
-      | (guessMode /= GStrict) && hasn't (ix tool % toolVersions % ix v) dls -> do
+      | (guessMode /= GStrict) && hasn't (_GHCupDownloads % ix tool % toolVersionsL % ix v) dls -> do
           ghcs <- if guessMode == GLaxWithInstalled then fmap rights getInstalledTools else pure []
           if v `notElem` ghcs
           then getLatestToolFor tool (_tvTarget v) pvpIn dls >>= \case
-                 Just (pvp_, vi', mt) -> do
+                 Just (pvp_, _vm, mt) -> do
                    v' <- pvpToVersion pvp_ ""
                    when (v' /= _tvVersion v) $ logWarn ("Assuming you meant version " <> prettyVer v')
-                   pure (TargetVersion mt v', Just vi')
-                 Nothing -> pure (v, vi)
-          else pure (v, vi)
-    _ -> pure (v, vi)
+                   pure $ TargetVersion mt v'
+                 Nothing -> pure v
+          else pure v
+    _ -> pure v
  where
   getInstalledTools = case tool of
                         Tool "ghc" -> getInstalledGHCs

@@ -48,6 +48,7 @@ data BrickState = BrickState
   , _compileHLSMenu      :: CompileHLSMenu
   , _appKeys             :: KeyBindings
   , _mode                :: Mode
+  , _versionFocus        :: Bool
   }
   --deriving Show
 

@@ -5,6 +5,7 @@
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module GHCup.OptParse.List where
 
@@ -45,6 +46,7 @@ import qualified Data.Text.IO                  as T
 import qualified System.Console.Pretty         as Pretty
 import Control.Exception.Safe (MonadMask)
 import GHCup.Types.Optics
+import qualified Data.Map.Strict as M
 
 
 
@@ -147,7 +149,7 @@ Examples:
 
 
 printListResult :: (HasLog env , MonadReader env m, MonadIO m)
-                => Bool -> PagerConfig -> Bool -> [ListResult] -> m ()
+                => Bool -> PagerConfig -> Bool -> ToolListResult -> m ()
 printListResult no_color (PagerConfig pList pCmd) raw lr = do
 
   let
@@ -172,18 +174,22 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
           then x
           else [color Green "", "Tool", "Version", "Tags", "Notes"] : x
         )
-        . fmap
-            (\ListResult {..} ->
+        . mconcat . fmap
+            (\(lTool, (_, ls)) -> ls <&> \ListResult{..} ->
               let marks = if
-                    | lSet       -> (color Green (if isWindows then "IS" else "✔✔"))
-                    | lInstalled -> (color Green (if isWindows then "I " else "✓ "))
-                    | otherwise  -> (color Red   (if isWindows then "X " else "✗ "))
+                   | lSet       -> (color Green (if isWindows then "IS" else "✔✔"))
+                   | lInstalled -> (color Green (if isWindows then "I " else "✓ "))
+                   | otherwise  -> (color Red   (if isWindows then "X " else "✗ "))
               in
                 (if raw then [] else [marks])
                   ++ [ fmap toLower . prettyShow $ lTool
-                     , case lCross of
-                       Nothing -> T.unpack . prettyVer $ lVer
-                       Just c  -> T.unpack (c <> "-" <> prettyVer lVer)
+                     , let rev = case lRev of
+                                   (rev', RevUpdate)   -> "-r" <> show rev'
+                                   (rev', RevOutdated) -> "-r" <> show rev'
+                                   (_,    RevNormal)   -> ""
+                       in case lCross of
+                            Nothing -> T.unpack (prettyVer lVer) <> rev
+                            Just c  -> T.unpack (c <> "-" <> prettyVer lVer) <> rev
                      , intercalate "," (filter (/= "") . fmap printTag $ sort lTag)
                      , intercalate ","
                      $  (if hlsPowered
@@ -200,7 +206,7 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
                         )
                      ]
             )
-        $ lr
+        $ M.toList lr
   let cols =
         foldr (\xs ys -> zipWith (:) xs ys) (repeat []) rows
       lengths = fmap (maximum . fmap strWidth) cols
@@ -239,14 +245,26 @@ list ::
   => ListOptions
   -> Bool
   -> PagerConfig
-  -> (forall a . ReaderT AppState m a -> m a)
+  -> (IO (AppState, IO ()), LeanAppState)
   -> m ExitCode
-list ListOptions{..} no_color pgc runAppState = do
-  r <- runAppState $ runE $ do
+list ListOptions{..} no_color pgc (getAppState', leanAppstate) = do
+  r <- run $ do
       l <- listVersions loTool (maybeToList lCriteria) lHideOld lShowNightly (lFrom, lTo)
       lift $ printListResult no_color pgc lRawFormat l
   case r of
-    VRight _ -> pure ExitSuccess
-    VLeft e -> do
-      runAppState $ logError $ T.pack $ prettyHFError e
+    (VRight _, up) -> do
+      liftIO up
+      pure ExitSuccess
+    (VLeft e, _) -> do
+      runLogger $ logError $ T.pack $ prettyHFError e
       pure $ ExitFailure 44
+ where
+  runLogger = flip runReaderT leanAppstate
+  run action' = do
+    (appstate', up) <- liftIO getAppState'
+    r <- flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @'[GHCup.Errors.ParseError]
+                  $ action'
+    pure (r, up)

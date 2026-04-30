@@ -527,8 +527,15 @@ isValidMenu :: Menu s n -> Bool
 isValidMenu m = all isValidField (menuFields m)
   && (case menuValidator m (menuState m) of { Nothing -> True; _ -> False })
 
-createMenu :: n -> s -> T.Text -> (s -> Maybe ErrorMessage)
-  -> MenuKeyBindings -> [Button s n] -> [MenuField s n] -> Menu s n
+createMenu ::
+     n
+  -> s
+  -> T.Text
+  -> (s -> Maybe ErrorMessage)
+  -> MenuKeyBindings
+  -> [Button s n]
+  -> [MenuField s n]
+  -> Menu s n
 createMenu n initial title validator keys buttons fields = Menu fields initial validator buttons ring keys n title
   where ring = F.focusRing $ [field & fieldName | field <- fields] ++ [button & fieldName | button <- buttons]
 

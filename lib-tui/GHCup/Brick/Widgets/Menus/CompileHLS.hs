@@ -44,7 +44,7 @@ import Brick
 import           Prelude                 hiding ( appendFile )
 import           Optics.TH (makeLenses)
 import qualified GHCup.Brick.Common as Common
-import GHCup.Types (VersionPattern, ToolVersion(..))
+import GHCup.Types (VersionPattern, ToolVersion(..), VersionReq(..))
 import URI.ByteString (URI)
 import qualified Data.Text as T
 import Data.Bifunctor (Bifunctor(..))
@@ -145,7 +145,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile HLS
 
     targetGHCsField =
       let label = "target GHC(s)"
-      in case NE.nonEmpty (fmap ToolVersion availableGHCs) of
+      in case NE.nonEmpty (fmap (ToolVersion . (`VersionReq` Nothing)) availableGHCs) of
         Just ne -> Menu.createMultiSelectField (Common.MenuElement Common.TargetGhcEditBox) targetGHCs ne (T.pack . prettyShow) k
             & Menu.fieldLabelL .~ label
             & Menu.fieldHelpMsgL .~ "GHC versions to compile for (Press Enter to edit)"

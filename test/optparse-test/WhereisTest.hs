@@ -15,7 +15,7 @@ whereisTests = buildTestTree whereisParseWith ("whereis", whereisCheckList)
 whereisCheckList :: [(String, (WhereisOptions, WhereisCommand))]
 whereisCheckList = concatMap mk
   [ ("whereis ghc", WhereisTool ghc Nothing)
-  , ("whereis ghc 9.2.8", WhereisTool ghc (Just $ GHCVersion $ mkTVer $(versionQ "9.2.8")))
+  , ("whereis ghc 9.2.8", WhereisTool ghc (Just $ GHCVersion $ toTargetVersionReq'' $(versionQ "9.2.8")))
   , ("whereis ghc latest", WhereisTool ghc (Just $ ToolTag Latest))
   , ("whereis cabal", WhereisTool cabal Nothing)
   , ("whereis hls", WhereisTool hls Nothing)

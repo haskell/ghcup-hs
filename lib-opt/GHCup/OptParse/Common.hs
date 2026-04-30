@@ -92,7 +92,7 @@ versionParser' criteria tool = argument
 
 ghcVersionArgument :: [ListCriteria] -> Maybe Tool -> Parser TargetVersion
 ghcVersionArgument criteria tool = argument (eitherReader Parsers.ghcVersionEither)
-                                            (metavar "VERSION" <> foldMap (completer . versionCompleter criteria) tool)
+                                            (metavar "VERSION" <> help "Which version to install" <> foldMap (completer . versionCompleter criteria) tool)
 
 
 -- https://github.com/pcapriotti/optparse-applicative/issues/148
@@ -288,7 +288,7 @@ tagCompleter tool add = listIOCompleter $ do
     case mGhcUpInfo of
       VRight ghcupInfo -> do
         let allTags = filter (/= Old)
-              $ _viTags =<< M.elems (availableToolVersions (_ghcupDownloads ghcupInfo) tool)
+              $ _vmTags =<< M.elems (availableToolVersions (_ghcupDownloads ghcupInfo) tool)
         pure $ nub $ (add ++) $ fmap tagToString allTags
       VLeft _ -> pure  (nub $ ["recommended", "latest", "latest-prerelease"] ++ add)
 
@@ -326,7 +326,7 @@ versionCompleter' criteria tool filter' = listIOCompleter $ do
           runEnv = flip runReaderT appState . runE
 
       (VRight installedVersions) <- runEnv $ listVersions (Just [tool]) criteria False False (Nothing, Nothing)
-      return $ fmap (T.unpack . prettyVer) . filter filter' . fmap lVer $ installedVersions
+      return $ fmap (T.unpack . prettyVer) . filter filter' . maybe [] (fmap lVer . snd) $ M.lookup tool installedVersions
 
 
 toolDlCompleter :: Tool -> Completer
@@ -478,23 +478,38 @@ checkForUpdates :: ( MonadReader env m
                    , HasLog env
                    , MonadIOish m
                    )
-                => m [(Tool, TargetVersion)]
+                => m [(Tool, TargetVersionRev)]
 checkForUpdates = do
-  GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
-  (VRight lInstalled) <- runE $ listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
-  let latestInstalled tool = (fmap (\lr -> TargetVersion (lCross lr) (lVer lr)) . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
+  dl@GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
+  pfreq <- getPlatformReq
+  (VRight lInstalled') <- runE $ listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
+  let latestInstalled tool = do
+        (_, xs) <- M.lookup tool lInstalled'
+        ListResult{..} <- lastMay xs
+        pure $ TargetVersion lCross lVer
 
-  ghcup' <- forMM (getLatest dls ghcup) $ \(TargetVersion _ l, _) -> do
+  ghcup' <- forMM (getLatest dls ghcup) $ \(TargetVersion _ l) -> do
     (Right ghcup_ver) <- pure $ version $ prettyPVP ghcUpVer
-    if l > ghcup_ver then pure $ Just (ghcup, mkTVer l) else pure Nothing
+    let tver = mkTVer l
+    let rev = maybe 0 (\(_, i, _) -> i) $ getRev dls ghcup tver Nothing
+    if l > ghcup_ver then pure $ Just (ghcup, TargetVersionRev tver rev) else pure Nothing
 
   otherTools <- forM (fst <$> allAvailableTools dls) $ \t ->
-    forMM (getLatest dls t) $ \(l, _) -> do
+    forMM (getLatest dls t) $ \l -> do
       let mver = latestInstalled t
+      let rev = maybe 0 (\(_, i, _) -> i) $ getRev dls t l Nothing
       forMM mver $ \ver ->
-        if l > ver then pure $ Just (t, l) else pure Nothing
+        if l > ver then pure $ Just (t, TargetVersionRev l rev) else pure Nothing
 
-  pure $ catMaybes (ghcup':otherTools)
+  let revUpdates = mconcat $ M.toList lInstalled' <&> \(tool, (_, lrs)) -> catMaybes $
+        lrs <&> \ListResult{..} -> do
+          let tver = TargetVersion lCross lVer
+          (rev, _) <- either (const Nothing) pure $ getDownloadInfo tool (TargetVersionReq tver Nothing) dl pfreq
+          if rev > fst lRev
+          then Just (tool, TargetVersionRev tver rev)
+          else Nothing
+
+  pure $ nub (catMaybes (ghcup':otherTools) <> revUpdates)
  where
   forMM a f = fmap join $ forM a f
 

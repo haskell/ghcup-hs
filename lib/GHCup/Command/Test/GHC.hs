@@ -75,7 +75,7 @@ testGHCVer :: ( MonadFail m
               , MonadIO m
               , MonadUnliftIO m
               )
-           => TargetVersion
+           => TargetVersionReq
            -> [T.Text]
            -> Excepts
                 '[ DigestError
@@ -91,14 +91,14 @@ testGHCVer :: ( MonadFail m
                  ]
                 m
                 ()
-testGHCVer ver addMakeArgs = do
+testGHCVer tvr@TargetVersionReq{..} addMakeArgs = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
 
   dlInfo <-
-    preview (ix ghc % toolVersions % ix ver % viTestDL % _Just) dls
-      ?? NoDownload ver ghc Nothing
+    preview (_GHCupDownloads % ix ghc % toolVersionsL % ix _tvqTargetVer % revisionSpecL % ixOrLast _tvqRev % _2 % viTestDL % _Just) dls
+      ?? NoDownload tvr ghc Nothing
 
-  liftE $ testGHCBindist dlInfo ver addMakeArgs
+  liftE $ testGHCBindist dlInfo _tvqTargetVer addMakeArgs
 
 
 

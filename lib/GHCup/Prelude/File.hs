@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -12,6 +11,7 @@ module GHCup.Prelude.File (
   mergeFileTree,
   copyFileE,
   findFilesDeep,
+  getFilesDeep,
   getDirectoryContentsRecursive,
   getDirectoryContentsRecursiveUnsafe,
   recordedInstallationFile,
@@ -72,9 +72,7 @@ import           System.FilePath
 import           Text.PrettyPrint.HughesPJClass ( prettyShow )
 import           Text.Regex.Posix
 
-import           Control.DeepSeq   ( force )
-import           Control.Exception ( evaluate )
-import           Control.Monad     ( filterM, forM_, when )
+import           Control.Monad     ( filterM, forM_, when, unless )
 import qualified Data.Text         as T
 import           GHC.IO.Exception
 import           System.IO.Error
@@ -112,7 +110,7 @@ mergeFileTree sourceBase destBase tool v' copyOp append = do
        <> "\""
   recFile <- recordedInstallationFile tool v'
 
-  wrapInExcepts $ do
+  handleIO (\e -> throwE $ MergeFileTreeErrorPreCondition e (fromGHCupPath sourceBase) (fromInstallDir destBase)) $ do
     -- These checks are not atomic, but we perform them to have
     -- the opportunity to abort before copying has started.
     --
@@ -127,32 +125,14 @@ mergeFileTree sourceBase destBase tool v' copyOp append = do
       liftIO $ createDirectoryIfMissing True (takeDirectory recFile)
 
   -- we want the cleanup action to leak through in case of exception
-  onE_ (cleanupOnPartialInstall recFile) $ wrapInExcepts $ do
-    logDebug "Starting merge"
+  logDebug "Starting merge"
+  handleIO (\e -> throwE $ MergeFileTreeError e (fromInstallDir destBase) tool v') $
     lift $ runConduitRes $ getDirectoryContentsRecursive sourceBase .| C.mapM_ (\f -> do
       lift $ copy f
       logDebug2 $ T.pack "Recording installed file: " <> T.pack f
       recordInstalledFile f recFile)
 
  where
-  wrapInExcepts = handleIO (\e -> throwE $ MergeFileTreeError e (fromGHCupPath sourceBase) (fromInstallDir destBase))
-
-  cleanupOnPartialInstall recFile = when (isSafeDir destBase) $ do
-    (force -> !l) <- hideErrorDef [NoSuchThing] [] $ lines <$> liftIO
-      (readFile recFile >>= evaluate)
-    logDebug "Deleting recorded files due to partial install"
-    forM_ l $ \f -> do
-      let dest = fromInstallDir destBase </> dropDrive f
-      logDebug2 $ "rm -f " <> T.pack f
-      hideError NoSuchThing $ rmFile dest
-      pure ()
-    logDebug2 $ "rm -f " <> T.pack recFile
-    hideError NoSuchThing $ rmFile recFile
-    logDebug2 $ "rm -f " <> T.pack (fromInstallDir destBase)
-    hideError UnsatisfiedConstraints $ hideError NoSuchThing $
-      removeEmptyDirsRecursive (fromInstallDir destBase)
-
-
   recordInstalledFile f recFile = when (isSafeDir destBase) $
     liftIO $ appendFile recFile (f <> "\n")
 
@@ -197,6 +177,10 @@ getDirectoryContentsRecursiveUnsafe = sourceDirectoryDeep'
 findFilesDeep :: GHCupPath -> Regex -> IO [FilePath]
 findFilesDeep path regex =
   runResourceT $ sourceToList $ getDirectoryContentsRecursive path .| C.filter (match regex)
+
+getFilesDeep :: GHCupPath -> IO [FilePath]
+getFilesDeep path =
+  runResourceT $ sourceToList $ getDirectoryContentsRecursive path
 
 
 recordedInstallationFile :: ( MonadReader env m
@@ -271,14 +255,13 @@ createDirRecursive' p =
  where
   isSymlinkDir e = do
     ft <- pathIsSymbolicLink p
-    case ft of
-      True -> do
+    if ft
+    then
+      do
         rp <- canonicalizePath p
         rft <- doesDirectoryExist rp
-        case rft of
-          True -> pure ()
-          _    -> throwIO e
-      _ -> throwIO e
+        unless rft $ throwIO e
+    else throwIO e
 
 
 -- https://github.com/haskell/directory/issues/110

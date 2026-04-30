@@ -31,14 +31,108 @@ import Data.Variant.Excepts ( Excepts, throwE, liftE )
 import Data.Versions        ( PVP )
 import Optics
 import Prelude              hiding ( readFile, writeFile )
-import Safe                 ( headMay )
+import Safe                 ( headMay, lastMay )
 import URI.ByteString       ( URI )
 
 import qualified Data.Map.Strict as M
 import qualified Data.Map.Strict as Map
 import qualified Data.Text       as T
 import Control.Monad.Trans (lift)
-import GHCup.Download (getDownloadInfo')
+import Control.Monad (guard)
+import GHCup.Prelude
+
+
+
+    --------------------
+    --[ Requirements ]--
+    --------------------
+
+
+getDownloadInfoE ::
+  ( MonadReader env m
+  , HasPlatformReq env
+  , HasGHCupInfo env
+  )
+  => Tool
+  -> VersionReq
+  -- ^ tool version
+  -> Excepts
+       '[NoDownload]
+       m
+       (Int, DownloadInfo)
+getDownloadInfoE t VersionReq{..} = getDownloadInfoE' t (TargetVersionReq (mkTVer _vqVersion) _vqRev)
+
+
+getDownloadInfoE' ::
+  ( MonadReader env m
+  , HasPlatformReq env
+  , HasGHCupInfo env
+  )
+  => Tool
+  -> TargetVersionReq
+  -- ^ tool version
+  -> Excepts
+       '[NoDownload]
+       m
+       (Int, DownloadInfo)
+getDownloadInfoE' t tvr = do
+  pfreq <- lift getPlatformReq
+  ghcupInfo <- lift getGHCupInfo
+  lE $ getDownloadInfo t tvr ghcupInfo pfreq
+
+
+getDownloadInfo ::
+     Tool
+  -> TargetVersionReq
+  -> GHCupInfo
+  -> PlatformRequest
+  -> Either NoDownload (Int, DownloadInfo)
+getDownloadInfo t tvr@TargetVersionReq{..} (GHCupInfo { _ghcupDownloads = dls }) pfreq =
+  let mRev_Vi = preview (_GHCupDownloads
+                        % ix t
+                        % toolVersionsL
+                        % ix _tvqTargetVer
+                        % revisionSpecL
+                        % ixOrLast _tvqRev
+                        ) dls
+  in maybe (Left $ NoDownload tvr t (Just pfreq)) Right (mRev_Vi >>= \(rev, vi) -> (rev,) <$> getDownloadInfo' pfreq vi)
+
+
+getDownloadInfo' ::
+     PlatformRequest
+  -> VersionInfo
+  -> Maybe DownloadInfo
+getDownloadInfo' (PlatformRequest a p mv) vi =
+  let distro_preview f g =
+        let platformVersionSpec = preview
+                                      ( archL
+                                      % to unMapIgnoreUnknownKeys
+                                      % ix a
+                                      % _PlatformSpec
+                                      % to unMapIgnoreUnknownKeys
+                                      % ix (f p)
+                                      % _PlatformVersionSpec
+                                      ) vi
+            mv' = g mv
+        in  (\m ->
+                fmap snd
+              . find
+                  (\(mverRange, _) -> maybe
+                     (isNothing mv')
+                     (\range -> maybe False (`versionRange` range) mv')
+                     mverRange
+                  )
+              . M.toList
+              $ m
+            ) =<< platformVersionSpec
+      with_distro        = distro_preview id id
+      without_distro_ver = distro_preview id (const Nothing)
+      without_distro     = distro_preview (set _Linux UnknownLinux) (const Nothing)
+
+  in case p of
+       -- non-musl won't work on alpine
+       Linux Alpine -> with_distro <|> without_distro_ver
+       _            -> with_distro <|> without_distro_ver <|> without_distro
 
 
     --------------------
@@ -112,13 +206,17 @@ getLatestToolFor :: MonadThrow m
                  -> Maybe Text
                  -> PVP
                  -> GHCupDownloads
-                 -> m (Maybe (PVP, VersionInfo, Maybe Text))
+                 -> m (Maybe (PVP, VersionMetadata, Maybe Text))
 getLatestToolFor tool target pvpIn dls = do
-  let ls :: [(TargetVersion, VersionInfo)]
-      ls = fromMaybe [] $ preview (ix tool % toolVersions % to Map.toDescList) dls
-  let ps :: [((PVP, Text), VersionInfo, Maybe Text)]
-      ps = catMaybes $ fmap (\(v, vi) -> (,vi, _tvTarget v) <$> versionToPVP (_tvVersion v)) ls
-  pure . fmap (\((pv', _), vi, mt) -> (pv', vi, mt)) . headMay . filter (\((v, _), _, t) -> matchPVPrefix pvpIn v && t == target) $ ps
+  let ls :: [(TargetVersion, VersionMetadata)]
+      ls = fromMaybe [] $ preview (_GHCupDownloads % ix tool % toolVersionsL % to Map.toDescList) dls
+  let ps :: [(PVP, VersionMetadata, Maybe Text)]
+      ps = catMaybes $ fmap (\(v, vm) -> do
+             (pvp, unparsable) <- versionToPVP (_tvVersion v)
+             guard (T.null unparsable) -- TODO: hm
+             pure (pvp, vm, _tvTarget v)
+           ) ls
+  pure . headMay . filter (\(v, _, t) -> matchPVPrefix pvpIn v && t == target) $ ps
 
 
     ------------
@@ -126,56 +224,80 @@ getLatestToolFor tool target pvpIn dls = do
     ------------
 
 
+selectLatestRevL :: Getter ToolVersionSpec (M.Map TargetVersion (Int, VersionInfo))
+selectLatestRevL = _ToolVersionSpec % to (M.mapMaybe (lastMay . Map.toAscList . unRev . _vmRevisionSpec))
+
+selectRevL :: Maybe Int -> AffineFold VersionMetadata (Int, VersionInfo)
+selectRevL mrev = revisionSpecL % ixOrLast mrev
+
 -- | Get the tool version that has this tag. If multiple have it,
 -- picks the greatest version.
-getTagged :: Tag
-          -> Fold (Map.Map TargetVersion VersionInfo) (TargetVersion, VersionInfo)
-getTagged tag =
-  to (Map.toDescList . Map.filter (\VersionInfo {..} -> tag `elem` _viTags))
+getTaggedL' :: Tag
+            -> Lens' a [Tag]
+            -> Fold (Map.Map TargetVersion a) (TargetVersion, a)
+getTaggedL' tag getTags =
+  to (Map.toDescList . Map.filter (\a -> tag `elem` fromMaybe [] (preview getTags a)))
   % folding id
 
-getByReleaseDay :: GHCupDownloads -> Tool -> Day -> Either (Maybe Day) (TargetVersion, VersionInfo)
-getByReleaseDay av tool day = let mvv = fromMaybe mempty $ headOf (ix tool % toolVersions) av
-                                  mdv = Map.foldrWithKey (\k vi@VersionInfo{..} m ->
-                                            maybe m (\d -> let diff = diffDays d day
-                                                           in Map.insert (abs diff) (diff, (k, vi)) m) _viReleaseDay)
-                                          Map.empty mvv
-                              in case headMay (Map.toAscList mdv) of
-                                   Nothing -> Left Nothing
-                                   Just (absDiff, (diff, (k, vi)))
-                                     | absDiff == 0 -> Right (k, vi)
-                                     | otherwise -> Left (Just (addDays diff day))
+getTaggedL :: Tag
+           -> Fold ToolVersionSpec (TargetVersion, VersionMetadata)
+getTaggedL tag = _ToolVersionSpec % getTaggedL' tag vmTags
 
-getByReleaseDayFold :: Day -> Fold (Map.Map TargetVersion VersionInfo) (TargetVersion, VersionInfo)
-getByReleaseDayFold day = to (Map.toDescList . Map.filter (\VersionInfo {..} -> Just day == _viReleaseDay)) % folding id
+getFirstTag :: Tag -> GHCupDownloads -> Tool -> Maybe TargetVersion
+getFirstTag tag av tool = do
+  (tv, _) <- headOf (_GHCupDownloads % ix tool % toolVersions % getTaggedL tag) av
+  pure tv
 
-getLatest :: GHCupDownloads -> Tool -> Maybe (TargetVersion, VersionInfo)
-getLatest av tool = headOf (ix tool % toolVersions % getTagged Latest) av
+getRev :: GHCupDownloads -> Tool -> TargetVersion -> Maybe Int -> Maybe (VersionMetadata, Int, VersionInfo)
+getRev av tool tv mRev = do
+  vm <- preview (_GHCupDownloads % ix tool % toolVersionsL % ix tv) av
+  (rev, vi) <- preview (selectRevL mRev) vm
+  pure (vm, rev, vi)
 
-getLatestPrerelease :: GHCupDownloads -> Tool -> Maybe (TargetVersion, VersionInfo)
-getLatestPrerelease av tool = headOf (ix tool % toolVersions % getTagged LatestPrerelease) av
+getByReleaseDay :: GHCupDownloads -> Tool -> Day -> Either (Maybe Day) (TargetVersion, VersionMetadata)
+getByReleaseDay av tool day =
+  let mvv = fromMaybe mempty $ headOf (_GHCupDownloads % ix tool % toolVersions % _ToolVersionSpec) av
+      mdv = Map.foldrWithKey (\k vi@VersionMetadata{..} m ->
+                maybe m (\d -> let diff = diffDays d day
+                               in Map.insert (abs diff) (diff, (k, vi)) m) _vmReleaseDay)
+              Map.empty
+              mvv
+  in case headMay (Map.toAscList mdv) of
+       Nothing -> Left Nothing
+       Just (absDiff, (diff, (k, vi)))
+         | absDiff == 0 -> Right (k, vi)
+         | otherwise -> Left (Just (addDays diff day))
 
-getLatestNightly :: GHCupDownloads -> Tool -> Maybe (TargetVersion, VersionInfo)
-getLatestNightly av tool = headOf (ix tool % toolVersions % getTagged LatestNightly) av
+getByReleaseDayFold :: Day -> Fold (Map.Map TargetVersion VersionMetadata) TargetVersion
+getByReleaseDayFold day = to (fmap fst . Map.toDescList . Map.filter (\VersionMetadata {..} -> Just day == _vmReleaseDay)) % folding id
 
-getRecommended :: GHCupDownloads -> Tool -> Maybe (TargetVersion, VersionInfo)
-getRecommended av tool = headOf (ix tool % toolVersions % getTagged Recommended) av
+getLatest :: GHCupDownloads -> Tool -> Maybe TargetVersion
+getLatest = getFirstTag Latest
 
+getLatestPrerelease :: GHCupDownloads -> Tool -> Maybe TargetVersion
+getLatestPrerelease = getFirstTag LatestPrerelease
+
+getLatestNightly :: GHCupDownloads -> Tool -> Maybe TargetVersion
+getLatestNightly = getFirstTag LatestNightly
+
+getRecommended :: GHCupDownloads -> Tool -> Maybe TargetVersion
+getRecommended = getFirstTag Recommended
 
 -- | Gets the latest GHC with a given base version.
-getLatestBaseVersion :: GHCupDownloads -> PVP -> Maybe (TargetVersion, VersionInfo)
-getLatestBaseVersion av pvpVer =
-  headOf (ix ghc % toolVersions % getTagged (Base pvpVer)) av
+getLatestBaseVersion :: GHCupDownloads -> PVP -> Maybe TargetVersion
+getLatestBaseVersion g pvpVer = getFirstTag (Base pvpVer) g ghc
 
 
-getVersionInfo :: TargetVersion
-               -> Tool
-               -> GHCupDownloads
-               -> Maybe VersionInfo
-getVersionInfo v' tool =
+getVersionMetadata :: TargetVersion
+                   -> Tool
+                   -> GHCupDownloads
+                   -> Maybe VersionMetadata
+getVersionMetadata v' tool =
   headOf
-    ( ix tool
+    ( _GHCupDownloads
+    % ix tool
     % toolVersions
+    % _ToolVersionSpec
     % to (Map.filterWithKey (\k _ -> k == v'))
     % to Map.elems
     % _head
@@ -187,15 +309,9 @@ getVersionInfo v' tool =
     -----------------
 
 
-getChangeLog :: GHCupDownloads -> Tool -> ToolVersion -> Maybe URI
-getChangeLog dls tool (GHCVersion v') =
-  preview (ix tool % toolVersions % ix v' % viChangeLog % _Just) dls
-getChangeLog dls tool (ToolVersion (mkTVer -> v')) =
-  preview (ix tool % toolVersions % ix v' % viChangeLog % _Just) dls
-getChangeLog dls tool (ToolTag tag) =
-  preview (ix tool % toolVersions % pre (getTagged tag) % to snd % viChangeLog % _Just) dls
-getChangeLog dls tool (ToolDay day) =
-  preview (ix tool % toolVersions % pre (getByReleaseDayFold day) % to snd % viChangeLog % _Just) dls
+getChangeLog :: GHCupDownloads -> Tool -> TargetVersion -> Maybe URI
+getChangeLog dls tool tv =
+  preview (_GHCupDownloads % ix tool % toolVersionsL % ix tv % vmChangeLog % _Just) dls
 
 
 
@@ -206,8 +322,8 @@ getChangeLog dls tool (ToolDay day) =
 
 -- NOTE: there might be installed tools that are not in the available tools set
 -- (e.g. because the metadata was removed)
-allAvailableTools :: GHCupDownloads -> [(Tool, [TargetVersion])]
-allAvailableTools = Map.toList . Map.mapWithKey (\_ (ToolInfo v _) -> Map.keys v)
+allAvailableTools :: GHCupDownloads -> [(Tool, [(TargetVersion, VersionMetadata)])]
+allAvailableTools = Map.toList . Map.mapWithKey (\_ (ToolInfo (ToolVersionSpec v) _) -> Map.toList v) . unGHCupDownloads
 
 installationSpecFromMetadata' ::
   ( MonadReader env m
@@ -234,8 +350,12 @@ installationSpecFromMetadata ::
   , HasPlatformReq env
   )
   => Tool
-  -> TargetVersion
-  -> Excepts '[NoDownload, NoInstallInfo] m InstallationSpecInput
+  -> TargetVersionReq
+  -> Excepts '[NoDownload, NoInstallInfo] m (Int, InstallationSpecInput)
 installationSpecFromMetadata tool tver = do
-  dlinfo <- liftE $ getDownloadInfo' tool tver
-  liftE $ installationSpecFromMetadata' dlinfo tool tver
+  pfreq <- lift getPlatformReq
+  ghcupInfo <- lift getGHCupInfo
+  (rev, dlinfo) <- lE $ getDownloadInfo tool tver ghcupInfo pfreq
+  spec <- liftE $ installationSpecFromMetadata' dlinfo tool (_tvqTargetVer tver)
+  pure (rev, spec)
+

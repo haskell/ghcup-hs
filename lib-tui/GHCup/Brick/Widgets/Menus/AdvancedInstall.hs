@@ -29,7 +29,7 @@ module GHCup.Brick.Widgets.Menus.AdvancedInstall (
   installTargetsL,
 ) where
 
-import GHCup.Types (TargetVersion(..))
+import GHCup.Types (TargetVersionReq(..))
 import GHCup.Brick.Widgets.Menu (Menu, MenuKeyBindings)
 import qualified GHCup.Brick.Widgets.Menu as Menu
 import           GHCup.Brick.Common(Name(..))
@@ -51,7 +51,7 @@ import qualified GHCup.Input.Parsers as Utils
 data InstallOptions = InstallOptions
   { instBindist  :: Maybe URI
   , instSet      :: Bool
-  , instVersion :: Maybe TargetVersion
+  , instVersion :: Maybe TargetVersionReq
   -- ^ User specified version to override default
   , isolateDir   :: Maybe FilePath
   , forceInstall :: Bool
@@ -95,8 +95,8 @@ create k = Menu.createMenu AdvancedInstallBox initialState "Advanced Install" va
     installTargetValidator :: T.Text -> Either Menu.ErrorMessage (Maybe T.Text)
     installTargetValidator = whenEmpty Nothing (Right . Just)
 
-    toolVersionValidator :: T.Text -> Either Menu.ErrorMessage (Maybe TargetVersion)
-    toolVersionValidator = whenEmpty Nothing (bimap T.pack Just . Utils.ghcVersionEither . T.unpack)
+    toolVersionValidator :: T.Text -> Either Menu.ErrorMessage (Maybe TargetVersionReq)
+    toolVersionValidator = whenEmpty Nothing (bimap T.pack Just . Utils.ghcVersionEither' . T.unpack)
 
     additionalValidator :: T.Text -> Either Menu.ErrorMessage [T.Text]
     additionalValidator = Right . T.split isSpace

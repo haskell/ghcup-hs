@@ -19,6 +19,7 @@ module GHCup.Command.Prefetch where
 import GHCup.Download
 import GHCup.Errors
 import GHCup.Prelude
+import GHCup.Query.Metadata
 import GHCup.Types
 import GHCup.Types.JSON
     ()
@@ -56,7 +57,7 @@ fetchToolBindist :: ( MonadFail m
                     , MonadIO m
                     , MonadUnliftIO m
                     )
-                 => TargetVersion
+                 => TargetVersionReq
                  -> Tool
                  -> Maybe FilePath
                  -> Excepts
@@ -70,7 +71,7 @@ fetchToolBindist :: ( MonadFail m
                       m
                       FilePath
 fetchToolBindist v t mfp = do
-  dlinfo <- liftE $ getDownloadInfo' t v
+  (_, dlinfo) <- liftE $ getDownloadInfoE' t v
   liftE $ downloadCached' dlinfo Nothing mfp
 
 
@@ -88,7 +89,7 @@ fetchToolSrc :: ( MonadFail m
                , MonadUnliftIO m
                )
             => Tool
-            -> TargetVersion
+            -> TargetVersionReq
             -> Maybe FilePath
             -> Excepts
                  '[ DigestError
@@ -100,9 +101,19 @@ fetchToolSrc :: ( MonadFail m
                   ]
                  m
                  FilePath
-fetchToolSrc tool v mfp = do
+fetchToolSrc tool v@(TargetVersionReq{..}) mfp = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   dlInfo <-
-    preview (ix tool % toolVersions % ix v % viSourceDL % _Just) dls
+    preview (_GHCupDownloads
+                % ix tool
+                % toolVersionsL
+                % ix _tvqTargetVer
+                % revisionSpecL
+                % ixOrLast _tvqRev
+                % _2
+                % viSourceDL
+                % _Just
+            ) dls
       ?? NoDownload v ghc Nothing
   liftE $ downloadCached' dlInfo Nothing mfp
+

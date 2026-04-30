@@ -14,22 +14,28 @@ module GHCup.Prelude.MegaParsec where
 
 import GHCup.Types
 
-import Control.Applicative
+import Control.Applicative ( Alternative((<|>), many) )
+
 #if !MIN_VERSION_base(4,13,0)
 import Control.Monad.Fail ( MonadFail )
 #endif
+
+import Data.Foldable                  ( asum )
 import Data.Functor
 import Data.Maybe
-import Data.Text       ( Text )
+import Data.Text                      ( Text )
 import Data.Versions
 import Data.Void
 import System.FilePath
+import Text.PrettyPrint.HughesPJClass ( prettyShow )
 
-import           Data.List.NonEmpty   ( NonEmpty ((:|)) )
-import qualified Data.List.NonEmpty   as NE
-import qualified Data.Text            as T
-import qualified Text.Megaparsec      as MP
-import qualified Text.Megaparsec.Char as MPC
+import           Data.List.NonEmpty         ( NonEmpty ((:|)) )
+import qualified Data.List.NonEmpty         as NE
+import qualified Data.Text                  as T
+import qualified Text.Megaparsec            as MP
+import qualified Text.Megaparsec.Char       as MPC
+import qualified Text.Megaparsec.Char.Lexer as L
+
 
 
 choice' :: (MonadFail f, MP.MonadParsec e s f) => [f a] -> f a
@@ -77,7 +83,6 @@ ghcProjectVersion = do
   ver <- parseUntil1 $ MP.chunk "\""
   MP.setInput ver
   version'
-
 
 -- | Extracts target triple and version from e.g.
 --   * armv7-unknown-linux-gnueabihf-8.8.3
@@ -168,15 +173,60 @@ isSpace c = (c == ' ') || ('\t' <= c && c <= '\r')
 -- ../ghc/<ver>/bin/ghc
 -- ../ghc/<ver>/bin/ghc-<ver>
 ghcVersionFromPath :: MP.Parsec Void Text TargetVersion
-ghcVersionFromPath =
-  do
-     beforeBin <- parseUntil1 binDir <* MP.some pathSep
-     MP.setInput beforeBin
-     _ <- parseTillLastPathSep
-     ghcTargetVerP
-  where
-     binDir = MP.some pathSep <* MP.chunk "bin" *> MP.some pathSep <* MP.takeWhile1P Nothing (not . isPathSeparator) <* MP.eof
-     parseTillLastPathSep = (MP.try (parseUntil1 pathSep *> MP.some pathSep) *> parseTillLastPathSep) <|> pure ()
+ghcVersionFromPath = toolVersionFromPath ghc
+
+toolVersionFromPath :: Tool -> MP.Parsec Void Text TargetVersion
+toolVersionFromPath tool = MP.try legacyParse <|> newParse
+ where
+  legacyParse = do
+    beforeBin <- parseUntil1 binDir <* MP.some pathSep
+    MP.setInput beforeBin
+    _ <- parseTillLastPathSep
+    ghcTargetVerP
+   where
+    binDir = MP.some pathSep <* MP.chunk "bin" *> MP.some pathSep <* MP.takeWhile1P Nothing (not . isPathSeparator) <* MP.eof
+    parseTillLastPathSep = (MP.try (parseUntil1 pathSep *> MP.some pathSep) *> parseTillLastPathSep) <|> pure ()
+
+  newParse = asum $ pathSeparators <&> MP.try . newParse'
+  newParse' sep = do
+    let toolPath = T.pack $ [sep] <> prettyShow tool <> [sep]
+    ver <- parseUntilEmpty toolPath *> MP.chunk toolPath *> parseUntil1 (MP.chunk $ T.singleton sep)
+    MP.setInput ver
+    ghcTargetVerP
+
+
+{--
+  -- this doesn'twork because parseUntilEmpty can't take a parser as input
+--}
+
+ghcTargetVerRevP :: MP.Parsec Void Text TargetVersionReq
+ghcTargetVerRevP = MP.try withRev <|> ((`TargetVersionReq` Nothing) <$> ghcTargetVerP)
+ where
+  withRev = do
+    verText <- parseUntilEmpty "-r"
+    rev <- MP.chunk "-r" *> L.decimal
+    MP.setInput verText
+    tver <- ghcTargetVerP
+    pure $ TargetVersionReq tver (Just rev)
+
+verRevP :: MP.Parsec Void Text VersionReq
+verRevP = MP.try withRev <|> ((`VersionReq` Nothing) <$> version')
+ where
+  withRev = do
+    verText <- parseUntilEmpty "-r"
+    rev <- MP.chunk "-r" *> L.decimal
+    MP.setInput verText
+    ver <- version'
+    pure $ VersionReq ver (Just rev)
+
+-- find a parse in a greedy manner
+parseUntilEmpty :: Text -> MP.Parsec Void Text Text
+parseUntilEmpty needle = go
+ where
+  go = do
+    prefix <- parseUntil (MP.chunk needle)
+    s2 <- MP.try ((<>) <$> MP.chunk needle <*> go) <|> mempty
+    pure $ prefix <> s2
 
 versionCmpP :: MP.Parsec Void T.Text VersionCmp
 versionCmpP = either (fail . T.unpack) pure =<< (translate <$> (MPC.space *> MP.try (MP.takeWhileP Nothing (`elem` ['>', '<', '=']))) <*> (MPC.space *> versioningEnd))

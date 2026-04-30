@@ -30,16 +30,14 @@ checkList =
   , ("changelog -t ghcup", ChangeLogOptions False (Just ghcup) Nothing)
   , ("changelog 9.2", ChangeLogOptions False Nothing
       (Just $ GHCVersion
-        $ TargetVersion
-          Nothing
+        $ toTargetVersionReq''
           $(versionQ "9.2"))
     )
   , ("changelog recommended", ChangeLogOptions False Nothing (Just $ ToolTag Recommended))
   , ("changelog -t cabal recommended", ChangeLogOptions False (Just cabal) (Just $ ToolTag Recommended))
   , ("changelog -t cabal 3.10.1.0", ChangeLogOptions False (Just cabal)
       (Just $ GHCVersion
-        $ TargetVersion
-          Nothing
+        $ toTargetVersionReq''
           $(versionQ "3.10.1.0"))
     )
   , ("changelog 2023-07-22", ChangeLogOptions False Nothing (Just (ToolDay (read "2023-07-22"))))

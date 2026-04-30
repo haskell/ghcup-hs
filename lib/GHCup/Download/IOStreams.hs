@@ -171,8 +171,8 @@ withConnection' :: Bool
 withConnection' https host port = bracket acquire closeConnection
 
  where
-  acquire = case https of
-    True -> do
+  acquire = if https
+    then do
       ctx <- baselineContextSSL
       openConnectionSSL ctx host (fromIntegral $ fromMaybe 443 port)
-    False -> openConnection host (fromIntegral $ fromMaybe 80 port)
+    else openConnection host (fromIntegral $ fromMaybe 80 port)

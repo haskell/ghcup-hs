@@ -172,11 +172,9 @@ rm :: ( Monad m
       , MonadFail m
       )
    => RmCommand
-   -> (ReaderT AppState m (VEither RmEffects (Maybe VersionInfo))
-       -> m (VEither RmEffects (Maybe VersionInfo)))
-   -> (ReaderT LeanAppState m () -> m ())
+   -> (IO (AppState, IO ()), LeanAppState)
    -> m ExitCode
-rm rmCommand runAppState runLogger = case rmCommand of
+rm rmCommand (getAppState', leanAppstate) = case rmCommand of
   (RmGHC rmopts) -> rmOther (toRmOptionsNew ghc rmopts)
   (RmCabal (RmOptions . mkTVer -> rmopts)) -> rmOther (toRmOptionsNew cabal rmopts)
   (RmHLS (RmOptions . mkTVer -> rmopts)) -> rmOther (toRmOptionsNew hls rmopts)
@@ -185,23 +183,33 @@ rm rmCommand runAppState runLogger = case rmCommand of
 
  where
   toRmOptionsNew rmTool RmOptions{..} = RmOptionsNew{..}
+  runLogger = flip runReaderT leanAppstate
+  run action' = do
+    (appstate', up) <- liftIO getAppState'
+    r <- flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @RmEffects
+                  $ action'
+    pure (r, up)
 
   rmOther RmOptionsNew{..} =
-    runRm runAppState (do
+    run (do
         liftE $
           rmToolVersion rmTool ghcVer
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        pure (getVersionInfo ghcVer rmTool dls)
+        pure (getVersionMetadata ghcVer rmTool dls)
       )
       >>= \case
-            VRight vi -> do
-              postRmLog (tVerToText ghcVer) rmTool vi
+            (VRight vm, up) -> do
+              postRmLog (tVerToText ghcVer) rmTool vm
               when (rmTool == ghc) $ runLogger $ logGHCPostRm ghcVer
+              liftIO up
               pure ExitSuccess
-            VLeft  e -> do
+            (VLeft e, _) -> do
               runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 7
 
-  postRmLog tv tool vi = runLogger $ do
+  postRmLog tv tool vm = runLogger $ do
     logInfo $ "Successfully removed " <> T.pack (prettyShow tool) <> " " <> tv
-    forM_ (_viPostRemove =<< vi) logInfo
+    forM_ (_vmPostRemove =<< vm) logInfo

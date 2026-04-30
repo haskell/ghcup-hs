@@ -1,22 +1,19 @@
-## documentation
-
-- configure script must support `--prefix`
-- make must support `DESTDIR`
-- write about the rewrite in the dev section
-- first tool in exe list matters
-- invariants (`make` must not compile the binaries that are to be installed)
-- limitations (packaging `cabal-cache`)
-
 ## breaking changes
 
 - `cabal install <ghc-ver>` is gone, use `cabal install ghc <ghc-ver>`
 - `cabal install-cabal <cabal-ver>` is gone, use `cabal install cabal <cabal-ver>`
 - `ghcup compile hls --isolate=/tmp/foo` installs binaries into `/tmp/foo/bin` instead of `/tmp/foo`
 
+## behavioral changes
+
+- the order of tools in `ghcup list` is different (alphabetical), but the order of versions remains the same
+- we don't clean up the destination anymore if merging the files fails
+- improved update warnings
+- explain revisions to end users
+- `ghcup check`
+
 ## refactoring and some day
 
-- get rid of Utils/Common... and improve module structure
-- rename GHCTargetVersion
 - better logging
 
 ## investigate
@@ -26,13 +23,14 @@
 ## metadata TODO
 
 * cross GHC JS has less binaries
-* description of tools
 
 ## code TODO
 
-- emit dhall types
-- TUI
+- test: make sure we can generate dhall and convert it back to yaml
+- import qualified Dhall.Schema as Schema
+- show details of tool version
 
+- bug in set
 
 ## ideas
 

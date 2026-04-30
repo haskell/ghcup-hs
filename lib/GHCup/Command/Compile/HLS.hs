@@ -113,21 +113,25 @@ compileHLS :: ( MonadMask m
 compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal updateCabal patches cabalArgs = do
   pfreq@PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  let toolDesc = preview (_GHCupDownloads % ix hls % toolDetails % _Just) dls
   Dirs { .. } <- lift getDirs
+
 
   when updateCabal $ reThrowAll @_ @'[ProcessError] DownloadFailed $ do
     lift $ logInfo "Updating cabal DB"
     liftE $ execWithWrapper "cabal" ["update"] (Just $ fromGHCupPath tmpDir) "cabal" Nothing
 
-  (workdir, tmpUnpack, tver, ov) <- case targetHLS of
+  (workdir, tmpUnpack, ver, rev, ov) <- case targetHLS of
     -- unpack from version tarball
-    SourceDist tver -> do
-      lift $ logDebug $ "Requested to compile: " <> prettyVer tver
+    SourceDist ver -> do
+      let tver = mkTVer ver
+      lift $ logDebug $ "Requested to compile: " <> prettyVer ver
 
       -- download source tarball
-      dlInfo <-
-        preview (ix hls % toolVersions % ix (mkTVer tver) % viSourceDL % _Just) dls
-          ?? NoDownload (mkTVer tver) hls (Just pfreq)
+      (rev, dlInfo) <- (?? NoDownload (unsafeToTargetVersionReq tver) hls (Just pfreq)) $ do
+            (rev, vi) <- preview (_GHCupDownloads % ix hls % toolVersionsL % ix tver % revisionSpecL % mapLast) dls
+            dlInfo <- preview (viSourceDL % _Just) vi
+            pure (rev, dlInfo)
       dl <- liftE $ downloadCached dlInfo Nothing
 
       -- unpack
@@ -140,17 +144,17 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
                        (view dlSubdir dlInfo)
 
       ov <- case vps of
-              Just vps' -> fmap Just $ expandVersionPattern (Just tver) "" "" "" "" vps'
+              Just vps' -> fmap Just $ expandVersionPattern (Just ver) "" "" "" "" vps'
               Nothing   -> pure Nothing
 
-      pure (workdir, tmpUnpack, tver, ov)
+      pure (workdir, tmpUnpack, ver, rev, ov)
 
-    HackageDist tver -> do
-      lift $ logDebug $ "Requested to compile (from hackage): " <> prettyVer tver
+    HackageDist ver -> do
+      lift $ logDebug $ "Requested to compile (from hackage): " <> prettyVer ver
 
       -- download source tarball
       tmpUnpack <- lift mkGhcupTmpDir
-      let hls' = "haskell-language-server-" <> T.unpack (prettyVer tver)
+      let hls' = "haskell-language-server-" <> T.unpack (prettyVer ver)
       reThrowAll @_ @'[ProcessError] DownloadFailed $ do
         -- unpack
         liftE $ execWithWrapper "cabal" ["unpack", hls'] (Just $ fromGHCupPath tmpUnpack) "cabal" Nothing
@@ -158,10 +162,11 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
       let workdir = appendGHCupPath tmpUnpack hls'
 
       ov <- case vps of
-              Just vps' -> fmap Just $ expandVersionPattern (Just tver) "" "" "" "" vps'
+              Just vps' -> fmap Just $ expandVersionPattern (Just ver) "" "" "" "" vps'
               Nothing   -> pure Nothing
 
-      pure (workdir, tmpUnpack, tver, ov)
+      let rev = fromMaybe 0 $ preview (_GHCupDownloads % ix hls % toolVersionsL % ix (mkTVer ver) % revisionSpecL % mapLast % _1) dls
+      pure (workdir, tmpUnpack, ver, rev, ov)
 
     RemoteDist uri -> do
       lift $ logDebug $ "Requested to compile (from uri): " <> T.pack (show uri)
@@ -170,7 +175,7 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
       tmpDownload <- lift withGHCupTmpDir
       tmpUnpack <- lift mkGhcupTmpDir
       tar <- liftE $ download uri Nothing Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
-      (cf, tver) <- liftE $ cleanUpOnError tmpUnpack $ do
+      (cf, ver) <- liftE $ cleanUpOnError tmpUnpack $ do
         unpackToDir (fromGHCupPath tmpUnpack) tar
         let regex = [s|^(.*/)*haskell-language-server\.cabal$|] :: B.ByteString
         [cabalFile] <- liftIO $ findFilesDeep
@@ -179,16 +184,17 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
                          execBlank
                          regex
           )
-        tver <- getCabalVersion (fromGHCupPath tmpUnpack </> cabalFile)
-        pure (cabalFile, tver)
+        ver <- getCabalVersion (fromGHCupPath tmpUnpack </> cabalFile)
+        pure (cabalFile, ver)
 
       let workdir = appendGHCupPath tmpUnpack (takeDirectory cf)
 
       ov <- case vps of
-              Just vps' -> fmap Just $ expandVersionPattern (Just tver) "" "" "" "" vps'
+              Just vps' -> fmap Just $ expandVersionPattern (Just ver) "" "" "" "" vps'
               Nothing   -> pure Nothing
 
-      pure (workdir, tmpUnpack, tver, ov)
+      let rev = fromMaybe 0 $ preview (_GHCupDownloads % ix hls % toolVersionsL % ix (mkTVer ver) % revisionSpecL % mapLast % _1) dls
+      pure (workdir, tmpUnpack, ver, rev, ov)
 
     -- clone from git
     GitDist GitBranch{..} -> do
@@ -229,13 +235,13 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
                         else fmap Just $ gitOut ["describe", "--tags"] (fromGHCupPath tmpUnpack)
         chash <- gitOut ["rev-parse", "HEAD" ] (fromGHCupPath tmpUnpack)
         branch <- gitOut ["rev-parse", "--abbrev-ref", "HEAD" ] (fromGHCupPath tmpUnpack)
-        tver <- getCabalVersion (fromGHCupPath tmpUnpack </> "haskell-language-server.cabal")
+        ver <- getCabalVersion (fromGHCupPath tmpUnpack </> "haskell-language-server.cabal")
 
         liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
 
         ov <- case vps of
                 Just vps' -> fmap Just $ expandVersionPattern
-                                           (Just tver)
+                                           (Just ver)
                                            (take 7 $ T.unpack chash)
                                            (T.unpack chash)
                                            (maybe "" T.unpack git_describe)
@@ -244,15 +250,17 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
                 Nothing -> pure Nothing
 
         lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
-                                    "HLS version (from cabal file): " <> prettyVer tver <>
+                                    "HLS version (from cabal file): " <> prettyVer ver <>
                                     "\n  branch: " <> branch <>
                                     (if not shallow_clone then "\n  " <> "'git describe' output: " <> fromJust git_describe else mempty) <>
                                     (if isCommitHash ref then mempty else "\n  " <> "commit hash: " <> chash)
-        pure (tmpUnpack, tmpUnpack, tver, ov)
+
+        let rev = fromMaybe 0 $ preview (_GHCupDownloads % ix hls % toolVersionsL % ix (mkTVer ver) % revisionSpecL % mapLast % _1) dls
+        pure (tmpUnpack, tmpUnpack, ver, rev, ov)
 
   -- the version that's installed may differ from the
   -- compiled version, so the user can overwrite it
-  installVer <- maybe (pure tver) pure ov
+  installVer <- maybe (pure ver) pure ov
 
   liftE $ runBuildAction
     tmpUnpack
@@ -331,14 +339,14 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
       runE (getInstallMetadata hls (mkTVer installVer)) >>= \case
         VRight metadata -> do
           destdir <- lift withGHCupTmpDir
-          liftE $ addAdHocBinaries (Just metadata) tmpInstallDir installDirResolved destdir installVer True
+          liftE $ addAdHocBinaries (Just metadata) toolDesc tmpInstallDir installDirResolved destdir (VersionRev installVer rev) True
         VLeft (V (FileDoesNotExistError _)) -> do
           inst <- lift $ isInstalled hls (mkTVer installVer)
-          if inst
+          if isJust inst
           then liftE $ installHLSUnpackedLegacy tmpInstallDir (GHCupBinDir binDir) installVer True
           else do
             destdir <- lift withGHCupTmpDir
-            liftE $ addAdHocBinaries Nothing tmpInstallDir installDirResolved destdir installVer True
+            liftE $ addAdHocBinaries Nothing toolDesc tmpInstallDir installDirResolved destdir (VersionRev installVer rev) True
         VLeft (V (ParseError pe)) -> liftE $ throwE @_ @'[ParseError] (ParseError pe)
         VLeft v -> lift $ fail (prettyHFError v)
     )
@@ -382,10 +390,11 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
     , MonadIOish m
     )
     => Maybe InstallMetadata
+    -> Maybe ToolDescription
     -> FilePath
     -> InstallDirResolved   -- ^ Path to install to
     -> GHCupPath            -- ^ DESTDIR
-    -> Version
+    -> VersionRev
     -> Bool
     -> Excepts '[ CopyError
                 , MergeFileTreeError
@@ -394,30 +403,35 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
                 , NoInstallInfo
                 , ProcessError
                 ] m ()
-  addAdHocBinaries mMetadata workdir installDest tmpInstallDest (mkTVer -> tver) forceInstall = do
+  addAdHocBinaries mMetadata toolDesc workdir installDest tmpInstallDest VersionRev{..} forceInstall = do
+    let tver = mkTVer _vrVersion
     binaries <- liftIO $ listDirectoryFiles workdir
     let spec = adHocInstallationSpec (dropSuffix exeExt <$> binaries)
 
     logDebug $ T.pack (show spec)
+    logDebug "Install into tmp dir as per the spec"
     liftE $ installTheSpec (toInstallationInputSpec spec) workdir installDest tmpInstallDest [] Nothing forceInstall
 
+    logDebug "Merge to filesystem"
     liftE $ mergeToFileSystem hls tver installDest tmpInstallDest (_isPreserveMtimes spec) forceInstall True
 
 
     case installDir of
       -- set and make symlinks for regular (non-isolated) installs
       GHCupInternal -> do
+        logDebug "Symlink binaries"
         Dirs {..} <- lift getDirs
         parsedSymlinkSpec <- forM (_isExeSymLinked spec) (liftE . parseSymlinkSpec (_tvVersion tver))
         liftE $ symlinkBinaries installDest parsedSymlinkSpec (GHCupBinDir binDir) hls tver
 
         -- write InstallationInfo to the disk
+        logDebug "Writing installation info to disk"
         case mMetadata of
-          (Just (InstallMetadata { _imResolvedInstallSpec, _imDownloadInfo })) -> do
-            lift $ recordInstallationInfo installDest hls tver _imDownloadInfo (manipulateSpec _imResolvedInstallSpec spec)
+          (Just (InstallMetadata {..})) -> do
+            lift $ recordInstallationInfo installDest hls toolDesc (TargetVersionRev tver _imRevision) _imDownloadInfo (manipulateSpec _imResolvedInstallSpec spec)
           Nothing -> do
             let dlInfo = DownloadInfo "" Nothing "" Nothing Nothing Nothing (Just $ toInstallationInputSpec spec)
-            lift $ recordInstallationInfo installDest hls tver dlInfo spec
+            lift $ recordInstallationInfo installDest hls toolDesc (TargetVersionRev tver _vrRev) dlInfo spec
       _ -> pure ()
 
     pure ()

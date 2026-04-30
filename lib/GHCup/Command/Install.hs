@@ -61,7 +61,7 @@ installTool ::
   , MonadIOish m
   )
   => Tool
-  -> TargetVersion
+  -> TargetVersionReq
   -> InstallDir
   -> Bool
   -> [String]
@@ -90,11 +90,20 @@ installTool ::
         ]
        m
        (InstallationSpecResolved, FilePath)
-installTool tool tver installDir forceInstall extraArgs installTargets = do
-  dlinfo <- liftE $ getDownloadInfo' tool tver
-  installBindist tool dlinfo tver installDir forceInstall extraArgs installTargets
+installTool tool treq installDir forceInstall extraArgs installTargets = do
+  GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
+  (rev, dlinfo) <- liftE $ getDownloadInfoE' tool treq
+  installBindist
+    tool
+    (preview (_GHCupDownloads % ix tool % toolDetails % _Just) dls)
+    dlinfo
+    (TargetVersionRev (treq ^. tvqTargetVer) rev)
+    installDir
+    forceInstall
+    extraArgs
+    installTargets
 
--- | Like 'installCabalBin', except takes the 'DownloadInfo' as
+-- | Like 'installTool', except takes the 'DownloadInfo' as
 -- argument instead of looking it up from 'GHCupDownloads'.
 installBindist ::
   ( MonadReader env m
@@ -106,8 +115,9 @@ installBindist ::
   , MonadIOish m
   )
   => Tool
+  -> Maybe ToolDescription
   -> DownloadInfo
-  -> TargetVersion
+  -> TargetVersionRev
   -> InstallDir
   -> Bool           -- ^ Force install
   -> [String]
@@ -136,7 +146,7 @@ installBindist ::
         ]
        m
        (InstallationSpecResolved, FilePath)
-installBindist tool dlinfo tver installDir forceInstall extraArgs installTargets = do
+installBindist tool toolDesc dlinfo trev@(TargetVersionRev tver rev) installDir forceInstall extraArgs installTargets = do
   lift $ logDebug $ "Requested to install "
                      <> T.pack (prettyShow tool)
                      <> " version " <> T.pack (prettyShow tver)
@@ -144,12 +154,16 @@ installBindist tool dlinfo tver installDir forceInstall extraArgs installTargets
   installed <- lift $ isInstalled tool tver
   if
     | not forceInstall
-    , installed
+    , Just irev <- installed
     , GHCupInternal <- installDir -> do
-        throwE $ AlreadyInstalled tool tver
+        if rev == irev
+        then throwE $ AlreadyInstalled tool tver
+        else do
+          lift $ logInfo "Removing the currently installed revision first!"
+          liftE $ rmToolVersion tool tver
 
     | forceInstall
-    , installed
+    , Just _ <- installed
     , GHCupInternal <- installDir -> do
         lift $ logInfo "Removing the currently installed version first!"
         liftE $ rmToolVersion tool tver
@@ -163,12 +177,12 @@ installBindist tool dlinfo tver installDir forceInstall extraArgs installTargets
   case installDir of
     IsolateDir isoDir -> do             -- isolated install
       lift $ logInfo $ "isolated installing Cabal to " <> T.pack isoDir
-      installSpec <- liftE $ installPackedBindist tool dl dlinfo (IsolateDirResolved isoDir) tver forceInstall extraArgs installTargets
+      installSpec <- liftE $ installPackedBindist tool toolDesc dl dlinfo (IsolateDirResolved isoDir) trev forceInstall extraArgs installTargets
       pure (installSpec, isoDir)
 
     GHCupInternal -> do                 -- regular install
       instDir <- lift $ toolInstallDestination tool tver
-      installSpec <- liftE $ installPackedBindist tool dl dlinfo (GHCupDir instDir) tver forceInstall extraArgs installTargets
+      installSpec <- liftE $ installPackedBindist tool toolDesc dl dlinfo (GHCupDir instDir) trev forceInstall extraArgs installTargets
       pure (installSpec, fromGHCupPath instDir)
 
 installPackedBindist ::
@@ -181,10 +195,11 @@ installPackedBindist ::
   , MonadIOish m
   )
   => Tool
+  -> Maybe ToolDescription
   -> FilePath             -- ^ Path to the tarball
   -> DownloadInfo
   -> InstallDirResolved   -- ^ Path to install to
-  -> TargetVersion
+  -> TargetVersionRev
   -> Bool
   -> [String]
   -> Maybe [String]
@@ -200,7 +215,7 @@ installPackedBindist ::
               , NoInstallInfo
               , MalformedInstallInfo
               ] m InstallationSpecResolved
-installPackedBindist tool dl dlInfo inst tver forceInstall extraArgs installTargets = do
+installPackedBindist tool toolDesc dl dlInfo inst trev forceInstall extraArgs installTargets = do
   PlatformRequest {..} <- lift getPlatformReq
 
   unless forceInstall
@@ -217,8 +232,8 @@ installPackedBindist tool dl dlInfo inst tver forceInstall extraArgs installTarg
 
   tmpInstallDest <- lift withGHCupTmpDir
 
-  liftE $ runBuildAction tmpUnpack $ installUnpackedBindist tool workdir
-        inst tmpInstallDest dlInfo tver forceInstall extraArgs installTargets
+  liftE $ runBuildAction tmpUnpack $ installUnpackedBindist tool toolDesc workdir
+        inst tmpInstallDest dlInfo trev forceInstall extraArgs installTargets
 
 -- | Install an unpacked distribution.
 installUnpackedBindist :: forall m env .
@@ -230,11 +245,12 @@ installUnpackedBindist :: forall m env .
   , MonadIOish m
   )
   => Tool
+  -> Maybe ToolDescription
   -> FilePath             -- ^ Path to the unpacked cabal bindist (where the executable resides)
   -> InstallDirResolved   -- ^ Path to install to
   -> GHCupPath            -- ^ DESTDIR
   -> DownloadInfo
-  -> TargetVersion
+  -> TargetVersionRev
   -> Bool
   -> [String]
   -> Maybe [String]
@@ -246,7 +262,7 @@ installUnpackedBindist :: forall m env .
               , NoInstallInfo
               , MalformedInstallInfo
               ] m InstallationSpecResolved
-installUnpackedBindist tool workdir installDest tmpInstallDest dlInfo tver forceInstall extraArgs installTargets = do
+installUnpackedBindist tool toolDesc workdir installDest tmpInstallDest dlInfo trev@(TargetVersionRev tver _rev) forceInstall extraArgs installTargets = do
   instSpec <- liftE $ installationSpecFromMetadata' dlInfo tool tver
   lift $ logInfo $ "Installing " <> T.pack (prettyShow tool)
   liftE $ installTheSpec instSpec workdir installDest tmpInstallDest extraArgs installTargets forceInstall
@@ -264,7 +280,7 @@ installUnpackedBindist tool workdir installDest tmpInstallDest dlInfo tver force
   liftE $ symlinkBinaries installDest parsedSymlinkSpec (GHCupBinDir binDir) tool tver
 
   -- write InstallationInfo to the disk
-  lift $ recordInstallationInfo installDest tool tver dlInfo resolvedInstSpec
+  lift $ recordInstallationInfo installDest tool toolDesc trev dlInfo resolvedInstSpec
   pure resolvedInstSpec
 
 

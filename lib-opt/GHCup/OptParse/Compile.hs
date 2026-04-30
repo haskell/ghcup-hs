@@ -524,26 +524,6 @@ type HLSEffects = '[ AlreadyInstalled
 
 
 
-runCompileGHC :: (MonadUnliftIO m, MonadIO m)
-              => (ReaderT AppState m (VEither GHCEffects a) -> m (VEither GHCEffects a))
-              -> Excepts GHCEffects (ResourceT (ReaderT AppState m)) a
-              -> m (VEither GHCEffects a)
-runCompileGHC runAppState =
-        runAppState
-        . runResourceT
-        . runE
-          @GHCEffects
-
-runCompileHLS :: (MonadUnliftIO m, MonadIO m)
-              => (ReaderT AppState m (VEither HLSEffects a) -> m (VEither HLSEffects a))
-              -> Excepts HLSEffects (ResourceT (ReaderT AppState m)) a
-              -> m (VEither HLSEffects a)
-runCompileHLS runAppState =
-        runAppState
-        . runResourceT
-        . runE
-          @HLSEffects
-
 
 
     ------------------
@@ -560,29 +540,34 @@ compile :: ( Monad m
       => CompileCommand
       -> Settings
       -> Dirs
-      -> (forall eff a . ReaderT AppState m (VEither eff a) -> m (VEither eff a))
-      -> (ReaderT LeanAppState m () -> m ())
+      -> (IO (AppState, IO ()), LeanAppState)
       -> m ExitCode
-compile compileCommand settings Dirs{..} runAppState runLogger = do
+compile compileCommand settings Dirs{..} (getAppState', leanAppstate) = do
+  (s', updateCheckAction) <- liftIO getAppState'
+  liftIO updateCheckAction
   case compileCommand of
     (CompileHLS HLSCompileOptions { .. }) -> do
-      runCompileHLS runAppState (do
+      runCompileHLS s' (do
         case targetHLS of
           HLS.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-            let vi = getVersionInfo (mkTVer targetVer) hls dls
-            forM_ (_viPreInstall =<< vi) $ \msg -> do
+            let vm = getVersionMetadata (mkTVer targetVer) hls dls
+            forM_ (_vmPreInstall =<< vm) $ \msg -> do
               lift $ logWarn msg
               lift $ logWarn
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-            forM_ (_viPreCompile =<< vi) $ \msg -> do
+            forM_ (_vmPreCompile =<< vm) $ \msg -> do
               lift $ logWarn msg
               lift $ logWarn
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- for compilation, give the user a sec to intervene
           _ -> pure ()
-        ghcs <- liftE $ forM targetGHCs (\ghc' -> fmap (_tvVersion . fst) . fromVersion (Just ghc') guessMode $ ghc)
+        ghcs' <- liftE $ forM targetGHCs (\ghc' -> resolveVersion (Just ghc') guessMode ghc)
+        ghcs <- forM ghcs' $ \TargetVersionReq{..} -> do
+          when (isJust $ _tvTarget _tvqTargetVer) $ fail "Cannot compile HLS for a cross GHC"
+          pure (_tvVersion _tvqTargetVer)
+
         let instDir = maybe GHCupInternal IsolateDir isolateDir
         targetVer <- liftE $ HLS.compileHLS
                     targetHLS
@@ -596,21 +581,21 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     patches
                     cabalArgs
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        let vi = getVersionInfo (mkTVer targetVer) hls dls
+        let vm = getVersionMetadata (mkTVer targetVer) hls dls
         -- TODO: also set if it's already set
         case instDir of
           GHCupInternal -> do
             set <- liftE $ isSet hls (mkTVer targetVer)
-            when (setCompile || set) $ void $ liftE $
+            when (setCompile || isJust set) $ void $ liftE $
               setToolVersion hls (mkTVer targetVer)
           IsolateDir _ -> pure ()
-        pure (vi, targetVer)
+        pure (vm, targetVer)
         )
         >>= \case
-              VRight (vi, tv) -> do
+              VRight (vm, tv) -> do
                 runLogger $ logInfo
                   "HLS successfully compiled and installed"
-                forM_ (_viPostInstall =<< vi) $ \msg ->
+                forM_ (_vmPostInstall =<< vm) $ \msg ->
                   runLogger $ logInfo msg
                 liftIO $ putStr (T.unpack $ prettyVer tv)
                 pure ExitSuccess
@@ -626,17 +611,17 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 9
     (CompileGHC GHCCompileOptions {..}) ->
-      runCompileGHC runAppState (do
+      runCompileGHC s' (do
         case targetGhc of
           GHC.SourceDist targetVer -> do
             GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-            let vi = getVersionInfo (mkTVer targetVer) ghc dls
-            forM_ (_viPreInstall =<< vi) $ \msg -> do
+            let vm = getVersionMetadata (mkTVer targetVer) ghc dls
+            forM_ (_vmPreInstall =<< vm) $ \msg -> do
               lift $ logWarn msg
               lift $ logWarn
                 "...waiting for 5 seconds, you can still abort..."
               liftIO $ threadDelay 5000000 -- give the user a sec to intervene
-            forM_ (_viPreCompile =<< vi) $ \msg -> do
+            forM_ (_vmPreCompile =<< vm) $ \msg -> do
               lift $ logWarn msg
               lift $ logWarn
                 "...waiting for 5 seconds, you can still abort..."
@@ -658,20 +643,20 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                     instDir
                     installTargets
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-        let vi = getVersionInfo targetVer ghc dls
+        let vm = getVersionMetadata targetVer ghc dls
         case instDir of
           GHCupInternal -> do
             set <- liftE $ isSet ghc targetVer
-            when (setCompile || set) $ void $ liftE $
+            when (setCompile || isJust set) $ void $ liftE $
               setToolVersion ghc targetVer
           IsolateDir _ -> pure ()
-        pure (vi, targetVer)
+        pure (vm, targetVer)
         )
         >>= \case
-              VRight (vi, tv) -> do
+              VRight (vm, tv) -> do
                 runLogger $ logInfo
                   "GHC successfully compiled and installed"
-                forM_ (_viPostInstall =<< vi) $ \msg ->
+                forM_ (_vmPostInstall =<< vm) $ \msg ->
                   runLogger $ logInfo msg
                 liftIO $ putStr (T.unpack $ tVerToText tv)
                 pure ExitSuccess
@@ -695,5 +680,15 @@ compile compileCommand settings Dirs{..} runAppState runLogger = do
                 runLogger $ logError $ T.pack $ prettyHFError e
                 pure $ ExitFailure 9
  where
+  runLogger = flip runReaderT leanAppstate
   guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
-
+  runCompileGHC appstate' =
+    flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @GHCEffects
+  runCompileHLS appstate' =
+    flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @HLSEffects

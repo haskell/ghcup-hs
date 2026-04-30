@@ -104,16 +104,6 @@ gcFooter = [s|Discussion:
 type GCEffects = '[ NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo ]
 
 
-runGC :: MonadUnliftIO m
-      => (ReaderT AppState m (VEither GCEffects a) -> m (VEither GCEffects a))
-      -> Excepts GCEffects (ResourceT (ReaderT AppState m)) a
-      -> m (VEither GCEffects a)
-runGC runAppState =
-  runAppState
-    . runResourceT
-    . runE
-      @GCEffects
-
 
 
     ------------------
@@ -128,10 +118,9 @@ gc :: ( Monad m
       , MonadFail m
       )
    => GCOptions
-   -> (forall a. ReaderT AppState m (VEither GCEffects a) -> m (VEither GCEffects a))
-   -> (ReaderT LeanAppState m () -> m ())
+   -> (IO (AppState, IO ()), LeanAppState)
    -> m ExitCode
-gc GCOptions{..} runAppState runLogger = runGC runAppState (do
+gc GCOptions{..} (getAppState', leanAppstate) = run (do
   when gcOldGHC (liftE rmOldGHC)
   lift $ when gcProfilingLibs rmProfilingLibs
   lift $ when gcShareDir rmShareDir
@@ -140,8 +129,19 @@ gc GCOptions{..} runAppState runLogger = runGC runAppState (do
   lift $ when gcTmp rmTmp
   liftE $ when gcUnset rmUnsetTools
    ) >>= \case
-            VRight _ -> do
-                  pure ExitSuccess
-            VLeft e -> do
+            (VRight _, up) -> do
+              liftIO up
+              pure ExitSuccess
+            (VLeft e, _) -> do
               runLogger $ logError $ T.pack $ prettyHFError e
               pure $ ExitFailure 27
+ where
+  run action' = do
+    (appstate', up) <- liftIO getAppState'
+    r <- flip runReaderT appstate'
+                  . runResourceT
+                  . runE
+                    @GCEffects
+                  $ action'
+    pure (r, up)
+  runLogger = flip runReaderT leanAppstate

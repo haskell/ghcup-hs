@@ -172,17 +172,42 @@ instance NFData Requirements
 
 -- | Description of all binary and source downloads. This is a tree
 -- of nested maps.
-type GHCupDownloads = Map Tool ToolInfo
-type ToolVersionSpec = Map TargetVersion VersionInfo
-type ArchitectureSpec = MapIgnoreUnknownKeys Architecture PlatformSpec
-type PlatformSpec = MapIgnoreUnknownKeys Platform PlatformVersionSpec
-type PlatformVersionSpec = Map (Maybe VersionRange) DownloadInfo
+newtype GHCupDownloads = GHCupDownloads
+  { unGHCupDownloads  :: Map Tool ToolInfo }
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+newtype ToolVersionSpec = ToolVersionSpec
+  { unToolVersionSpec :: Map TargetVersion VersionMetadata }
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+newtype RevisionSpec = RevisionSpec
+  { unRev :: Map Int VersionInfo }
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+newtype ArchitectureSpec = ArchitectureSpec
+  { unArchitectureSpnec :: MapIgnoreUnknownKeys Architecture PlatformSpec }
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+newtype PlatformSpec = PlatformSpec
+  { unPlatformSpec :: MapIgnoreUnknownKeys Platform PlatformVersionSpec }
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+newtype PlatformVersionSpec = PlatformVersionSpec
+  { unPlatformVersionSpec :: Map (Maybe VersionRange) DownloadInfo }
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData GHCupDownloads
+instance NFData ToolVersionSpec
+instance NFData RevisionSpec
+instance NFData ArchitectureSpec
+instance NFData PlatformSpec
+instance NFData PlatformVersionSpec
 
 data ToolInfo = ToolInfo {
     _toolVersions :: ToolVersionSpec
   , _toolDetails :: Maybe ToolDescription
   }
-  deriving (Eq, GHC.Generic, Show)
+  deriving (Eq, GHC.Generic, Ord, Show)
 
 instance NFData ToolInfo
 
@@ -195,7 +220,7 @@ data ToolDescription = ToolDescription {
   , _toolLicense     :: Maybe String
   , _toolContact     :: Maybe String
   }
-  deriving (Eq, GHC.Generic, Show)
+  deriving (Eq, GHC.Generic, Show, Ord)
 
 instance NFData ToolDescription
 
@@ -228,27 +253,32 @@ instance Pretty Tool where
 
 instance NFData Tool
 
+data VersionMetadata = VersionMetadata
+  { _vmTags :: [Tag]
+  , _vmReleaseDay :: Maybe Day
+  , _vmChangeLog :: Maybe URI
+  , _vmPreInstall :: Maybe Text
+  , _vmPostInstall :: Maybe Text
+  , _vmPostRemove :: Maybe Text
+  , _vmPreCompile :: Maybe Text
+  , _vmRevisionSpec :: RevisionSpec
+  }
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData VersionMetadata
 
 -- | All necessary information of a tool version, including
 -- source download and per-architecture downloads.
 data VersionInfo = VersionInfo
-  { _viTags :: [Tag]
-    -- ^ version specific tag
-  , _viReleaseDay :: Maybe Day
-  , _viChangeLog :: Maybe URI
-  , _viSourceDL :: Maybe DownloadInfo
+  { _viSourceDL :: Maybe DownloadInfo
     -- ^ source tarball
   , _viTestDL :: Maybe DownloadInfo
     -- ^ test tarball
   , _viArch :: ArchitectureSpec
     -- ^ descend for binary downloads per arch
     -- informative messages
-  , _viPreInstall :: Maybe Text
-  , _viPostInstall :: Maybe Text
-  , _viPostRemove :: Maybe Text
-  , _viPreCompile :: Maybe Text
   }
-  deriving (Eq, GHC.Generic, Show)
+  deriving (Eq, GHC.Generic, Ord, Show)
 
 instance NFData VersionInfo
 
@@ -412,6 +442,8 @@ instance NFData DownloadInfo
 data InstallMetadata = InstallMetadata {
     _imDownloadInfo :: DownloadInfo
   , _imResolvedInstallSpec :: InstallationSpecResolved
+  , _imToolDescription :: Maybe ToolDescription
+  , _imRevision :: Int
   }
   deriving (Eq, GHC.Generic, Ord, Show)
 
@@ -728,6 +760,7 @@ data ChannelAlias
   | CrossChannel
   | PrereleasesChannel
   | VanillaChannel
+  | ThirdPartyChannel
   deriving (Bounded, Enum, Eq, GHC.Generic, Show)
 
 channelAliasText :: ChannelAlias -> Text
@@ -736,6 +769,7 @@ channelAliasText StackChannel       = "stack"
 channelAliasText CrossChannel       = "cross"
 channelAliasText PrereleasesChannel = "prereleases"
 channelAliasText VanillaChannel     = "vanilla"
+channelAliasText ThirdPartyChannel  = "3rdparty"
 
 fromURLSource :: URLSource -> [NewURLSource]
 fromURLSource GHCupURL             = [NewGHCupURL]
@@ -764,6 +798,11 @@ data MetaMode
 
 instance NFData MetaMode
 
+newtype Verbosity = Verbosity Int
+  deriving (Eq, GHC.Generic, Show)
+
+instance NFData Verbosity
+
 -- If you add, remove, or rename any fields,
 -- make sure to update the GHCup.OptParse.Reset module as well.
 data UserSettings = UserSettings
@@ -771,7 +810,7 @@ data UserSettings = UserSettings
   , uMetaCache :: Maybe Integer
   , uMetaMode :: Maybe MetaMode
   , uNoVerify :: Maybe Bool
-  , uVerbose :: Maybe Int
+  , uVerbose :: Maybe Verbosity
   , uKeepDirs :: Maybe KeepDirs
   , uDownloader :: Maybe Downloader
   , uKeyBindings :: Maybe UserKeyBindings
@@ -815,6 +854,9 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
   let ukb = UserKeyBindings
             { kUp           = Just bUp
             , kDown         = Just bDown
+            , kLeft         = Just bLeft
+            , kRight        = Just bRight
+            , kTab          = Just bTab
             , kQuit         = Just bQuit
             , kInstall      = Just bInstall
             , kUninstall    = Just bUninstall
@@ -845,6 +887,9 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
 data UserKeyBindings = UserKeyBindings
   { kUp :: Maybe KeyCombination
   , kDown :: Maybe KeyCombination
+  , kLeft :: Maybe KeyCombination
+  , kRight :: Maybe KeyCombination
+  , kTab :: Maybe KeyCombination
   , kQuit :: Maybe KeyCombination
   , kInstall :: Maybe KeyCombination
   , kUninstall :: Maybe KeyCombination
@@ -857,6 +902,9 @@ data UserKeyBindings = UserKeyBindings
 data KeyBindings = KeyBindings
   { bUp :: KeyCombination
   , bDown :: KeyCombination
+  , bLeft :: KeyCombination
+  , bRight :: KeyCombination
+  , bTab :: KeyCombination
   , bQuit :: KeyCombination
   , bInstall :: KeyCombination
   , bUninstall :: KeyCombination
@@ -877,14 +925,17 @@ instance NFData KeyCombination
 
 defaultKeyBindings :: KeyBindings
 defaultKeyBindings = KeyBindings
-  { bUp              = KeyCombination { key = KUp      , mods = [] }
-  , bDown            = KeyCombination { key = KDown    , mods = [] }
-  , bQuit            = KeyCombination { key = KChar 'q', mods = [] }
-  , bInstall         = KeyCombination { key = KChar 'i', mods = [] }
-  , bUninstall       = KeyCombination { key = KChar 'u', mods = [] }
-  , bSet             = KeyCombination { key = KChar 's', mods = [] }
-  , bChangelog       = KeyCombination { key = KChar 'c', mods = [] }
-  , bShowAllVersions = KeyCombination { key = KChar 'a', mods = [] }
+  { bUp              = KeyCombination { key = KUp        , mods = [] }
+  , bDown            = KeyCombination { key = KDown      , mods = [] }
+  , bLeft            = KeyCombination { key = KLeft      , mods = [] }
+  , bRight           = KeyCombination { key = KRight     , mods = [] }
+  , bTab             = KeyCombination { key = KChar '\t' , mods = [] }
+  , bQuit            = KeyCombination { key = KChar 'q'  , mods = [] }
+  , bInstall         = KeyCombination { key = KChar 'i'  , mods = [] }
+  , bUninstall       = KeyCombination { key = KChar 'u'  , mods = [] }
+  , bSet             = KeyCombination { key = KChar 's'  , mods = [] }
+  , bChangelog       = KeyCombination { key = KChar 'c'  , mods = [] }
+  , bShowAllVersions = KeyCombination { key = KChar 'a'  , mods = [] }
   }
 
 data AppState = AppState
@@ -921,7 +972,7 @@ data Settings = Settings
   , noVerify :: Bool
   , keepDirs :: KeepDirs
   , downloader :: Downloader
-  , verbose :: Int
+  , verbose :: Verbosity
   , urlSource :: [NewURLSource]
   , noNetwork :: Bool
   , gpgSetting :: GPGSetting
@@ -962,7 +1013,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl 0 [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig True Nothing
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl (Verbosity 0) [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig True Nothing
 
 instance NFData Settings
 
@@ -1078,6 +1129,33 @@ pfReqToString (PlatformRequest arch plat ver) =
 instance Pretty PlatformRequest where
   pPrint = text . pfReqToString
 
+-- | A version with a revision, denoting bindist 'versions' that are purely distribution specific.
+--
+-- The revision starts at 0.
+data VersionRev = VersionRev
+  { _vrVersion :: Version
+  , _vrRev :: Int
+  }
+  deriving (Ord, Eq, GHC.Generic, Show)
+
+instance NFData VersionRev
+
+data VersionReq = VersionReq
+  { _vqVersion :: Version
+  , _vqRev       :: Maybe Int
+  }
+  deriving (Ord, Eq, Show)
+
+instance Pretty VersionReq where
+  pPrint (VersionReq tver Nothing) = pPrint tver
+  pPrint (VersionReq tver (Just rev)) = pPrint tver <> "-r" <> text (show rev)
+
+mkVersionRev :: Version -> VersionRev
+mkVersionRev v = VersionRev v 0
+
+prettyVerRev :: VersionRev -> Text
+prettyVerRev VersionRev{..} = prettyVer _vrVersion <> "-r" <> T.pack (show _vrRev)
+
 -- | A GHC identified by the target platform triple
 -- and the version.
 data TargetVersion = TargetVersion
@@ -1088,18 +1166,64 @@ data TargetVersion = TargetVersion
 
 instance NFData TargetVersion
 
+-- | A GHC identified by the target platform triple
+-- and the version.
+data TargetVersionRev = TargetVersionRev
+  { _tvrTargetVer :: TargetVersion
+  , _tvrRev       :: Int
+  }
+  deriving (Ord, Eq, Show)
+
+instance Pretty TargetVersionRev where
+  pPrint (TargetVersionRev tver rev) = text $ T.unpack (tVerToText tver) <> "-r" <> show rev
+
+toTargetVersionReq'' :: Version -> TargetVersionReq
+toTargetVersionReq'' v = TargetVersionReq (TargetVersion Nothing v) Nothing
+
+toTargetVersionReq' :: VersionReq -> TargetVersionReq
+toTargetVersionReq' (VersionReq v' rev) = TargetVersionReq (TargetVersion Nothing v') rev
+
+toVersionReq' :: TargetVersionReq -> VersionReq
+toVersionReq' (TargetVersionReq (TargetVersion _ v') rev) = VersionReq v' rev
+
+unsafeToTargetVersionRev :: TargetVersion -> TargetVersionRev
+unsafeToTargetVersionRev tv = TargetVersionRev tv 0
+
+unsafeToTargetVersionReq :: TargetVersion -> TargetVersionReq
+unsafeToTargetVersionReq tv = TargetVersionReq tv (Just 0)
+
+data TargetVersionReq = TargetVersionReq
+  { _tvqTargetVer :: TargetVersion
+  , _tvqRev       :: Maybe Int
+  }
+  deriving (Ord, Eq, Show)
+
+instance Pretty TargetVersionReq where
+  pPrint (TargetVersionReq tver Nothing) = pPrint tver
+  pPrint (TargetVersionReq tver (Just rev)) = text $ T.unpack (tVerToText tver) <> "-r" <> show rev
+
+reqTV :: TargetVersionRev -> TargetVersionReq
+reqTV TargetVersionRev{..} = TargetVersionReq _tvrTargetVer (Just _tvrRev)
+
 data GitBranch = GitBranch
   { ref :: String
   , repo :: Maybe String
   }
+
   deriving (Eq, Ord, Show)
 
 mkTVer :: Version -> TargetVersion
 mkTVer = TargetVersion Nothing
 
+unsafeMkTVerRev :: Version -> TargetVersionRev
+unsafeMkTVerRev v' = TargetVersionRev (mkTVer v') 0
+
 tVerToText :: TargetVersion -> Text
 tVerToText (TargetVersion (Just t) v') = t <> "-" <> prettyVer v'
 tVerToText (TargetVersion Nothing  v') = prettyVer v'
+
+tVerRevToText :: TargetVersionRev -> Text
+tVerRevToText (TargetVersionRev tv rev) = tVerToText tv <> "-r" <> T.pack (show rev)
 
 -- | Assembles a path of the form: <target-triple>-<version>
 instance Pretty TargetVersion where
@@ -1218,8 +1342,8 @@ data PromptResponse
   deriving (Eq, Show)
 
 data ToolVersion
-  = GHCVersion TargetVersion
-  | ToolVersion Version
+  = GHCVersion TargetVersionReq
+  | ToolVersion VersionReq
   | ToolTag Tag
   | ToolDay Day
   deriving (Eq, Show)
@@ -1250,7 +1374,7 @@ data VersionPattern
 -- | Map with custom FromJSON instance which ignores unknown keys
 newtype MapIgnoreUnknownKeys k v
   = MapIgnoreUnknownKeys { unMapIgnoreUnknownKeys :: Map k v }
-  deriving (Eq, GHC.Generic, Show)
+  deriving (Eq, GHC.Generic, Ord, Show)
 
 instance (NFData k, NFData v) => NFData (MapIgnoreUnknownKeys k v)
 

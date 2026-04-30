@@ -23,8 +23,11 @@ import GHCup.Types
 
 import Control.Monad.Reader
 import Data.ByteString      ( ByteString )
+import Data.Map.Strict      ( Map )
 import Optics
 import URI.ByteString
+
+import qualified Data.Map.Strict as M
 
 
 makePrisms ''Tool
@@ -33,6 +36,12 @@ makePrisms ''LinuxDistro
 makePrisms ''Platform
 makePrisms ''Tag
 makePrisms ''EnvUnion
+makePrisms ''GHCupDownloads
+makePrisms ''ToolVersionSpec
+makePrisms ''RevisionSpec
+makePrisms ''ArchitectureSpec
+makePrisms ''PlatformSpec
+makePrisms ''PlatformVersionSpec
 
 makeLenses ''ToolInfo
 makeLenses ''ToolDescription
@@ -45,13 +54,24 @@ makeLenses ''PlatformResult
 makeLenses ''DownloadInfo
 makeLenses ''Tag
 makeLenses ''VersionInfo
+makeLenses ''VersionMetadata
 
-makeLenses ''TargetVersion
+makeLenses ''TargetVersionReq
+makeLenses ''TargetVersionRev
 makeLenses ''InstallFileRule
 
 makeLenses ''GHCupInfo
 
 makeLenses ''CapturedProcess
+
+toolVersionsL :: Lens' ToolInfo (Map TargetVersion VersionMetadata)
+toolVersionsL = toolVersions % _ToolVersionSpec
+
+revisionSpecL :: Lens' VersionMetadata (Map Int VersionInfo)
+revisionSpecL = vmRevisionSpec % _RevisionSpec
+
+archL :: Lens' VersionInfo (MapIgnoreUnknownKeys Architecture PlatformSpec)
+archL = viArch % _ArchitectureSpec
 
 uriSchemeL' :: Lens' (URIRef Absolute) Scheme
 uriSchemeL' = lensVL uriSchemeL
@@ -79,6 +99,12 @@ pathL' = lensVL pathL
 
 queryL' :: Lens' (URIRef a) Query
 queryL' = lensVL queryL
+
+mapLast :: AffineFold (Map k a) (k, a)
+mapLast = to M.lookupMax % _Just
+
+ixOrLast :: forall k v . Ord k => Maybe k -> AffineFold (Map k v) (k, v)
+ixOrLast = maybe mapLast (\i -> castOptic @An_AffineFold (ix @(Map k v) i) % to (i,))
 
 
 

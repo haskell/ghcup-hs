@@ -18,12 +18,13 @@ import GHCup.Compat.Pager
 import GHCup.Download
 import GHCup.Errors
 import GHCup.Hardcoded.Version
-import GHCup.Input.Parsers     ( fromVersion )
+import GHCup.Input.Parsers     ( resolveVersion )
 import GHCup.OptParse
 import GHCup.Prelude (enableAnsiSupport, decUTF8Safe')
 import GHCup.Prelude.Logger
 import GHCup.Prelude.String.QQ
 import GHCup.Query.GHCupDirs
+import GHCup.Query.Metadata
 import GHCup.Query.System
 import GHCup.Setup
 import GHCup.Types
@@ -55,6 +56,7 @@ import Options.Applicative.Pretty.Shim ( text )
 import Prelude                         hiding ( appendFile )
 import System.Environment
 import System.Exit
+import System.FilePath                 ( (</>) )
 import System.IO                       hiding ( appendFile )
 import System.IO.Unsafe                ( unsafeInterleaveIO )
 import Text.PrettyPrint.HughesPJClass  ( prettyShow )
@@ -65,6 +67,11 @@ import qualified Data.Text.Encoding as E
 import qualified Data.Text.IO       as T
 import qualified GHCup.Types        as Types
 
+#if defined(DHALL)
+import qualified Dhall hiding (Text)
+import qualified Dhall.Core
+import qualified Data.Either.Validation as Validation
+#endif
 
 
 
@@ -85,7 +92,7 @@ toSettings noColor pagerCmd options = do
          metaCache   = fromMaybe (fromMaybe (Types.metaCache defaultSettings) uMetaCache) optMetaCache
          metaMode    = fromMaybe (fromMaybe (Types.metaMode defaultSettings) uMetaMode) optMetaMode
          noVerify    = fromMaybe (fromMaybe (Types.noVerify defaultSettings) uNoVerify) optNoVerify
-         verbose     = fromMaybe (fromMaybe (Types.verbose defaultSettings) uVerbose) optVerbose
+         verbose     = maybe (fromMaybe (Types.verbose defaultSettings) uVerbose) Verbosity optVerbose
          keepDirs    = fromMaybe (fromMaybe (Types.keepDirs defaultSettings) uKeepDirs) optKeepDirs
          downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
@@ -113,6 +120,9 @@ toSettings noColor pagerCmd options = do
            bUp = fromMaybe bUp kUp
          , bDown = fromMaybe bDown kDown
          , bQuit = fromMaybe bQuit kQuit
+         , bLeft = fromMaybe bLeft kLeft
+         , bRight = fromMaybe bRight kRight
+         , bTab = fromMaybe bTab kTab
          , bInstall = fromMaybe bInstall kInstall
          , bUninstall = fromMaybe bUninstall kUninstall
          , bSet = fromMaybe bSet kSet
@@ -198,7 +208,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           -- logger interpreter
           logfile <- runReaderT initGHCupFileLogging dirs
           let loggerConfig = LoggerConfig
-                { lcPrintDebugLvl = Just (verbose settings)
+                { lcPrintDebugLvl = Just ((\(Verbosity i) -> i) . verbose $ settings)
                 , consoleOutter  = T.hPutStr stderr
                 , fileOutter    =
                     case optCommand of
@@ -215,7 +225,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                                       exitWith (ExitFailure 2)
           let leanAppstate = LeanAppState settings dirs keybindings pfreq loggerConfig
           let runLogger = flip runReaderT leanAppstate
-          let siletRunLogger = flip runReaderT (leanAppstate { loggerConfig = loggerConfig { consoleOutter = \_ -> pure () } } :: LeanAppState)
+          let silentRunLogger = flip runReaderT (leanAppstate { loggerConfig = loggerConfig { consoleOutter = \_ -> pure () } } :: LeanAppState)
 
 
           -------------------------
@@ -223,7 +233,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           -------------------------
 
 
-          let appState = do
+          let getAppState_and_updateCheckAction = do
                 ghcupInfo <-
                   ( flip runReaderT leanAppstate . runE @'[ContentLengthError, DigestError, DistroNotFound, DownloadFailed, FileDoesNotExistError, GPGError, JSONError, NoCompatibleArch, NoCompatiblePlatform, NoDownload, GHCup.Errors.ParseError, ProcessError, UnsupportedSetupCombo, StackPlatformDetectError, UnsupportedMetadataFormat] $ do
                      liftE $ getDownloadsF pfreq
@@ -239,62 +249,51 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                 race_ (liftIO $ runReaderT cleanupTrash s')
                       (threadDelay 5000000 >> runLogger (logWarn $ "Killing cleanup thread (exceeded 5s timeout)... please remove leftover files in " <> T.pack (fromGHCupPath recycleDir) <> " manually"))
 
-                case optCommand of
-                  Nuke -> pure ()
-                  Whereis _ _ -> pure ()
-                  DInfo -> pure ()
-                  ToolRequirements _ -> pure ()
-                  ChangeLog _ -> pure ()
-                  UnSet _ -> pure ()
-#if defined(BRICK)
-                  Interactive -> pure ()
-#endif
-                  -- check for new tools
-                  _
-                    | Just 0 <- optVerbose -> pure ()
-                    | otherwise -> lookupEnv "GHCUP_SKIP_UPDATE_CHECK" >>= \case
-                         Nothing -> void . flip runReaderT s' . runE @'[TagNotFound, DayNotFound, NextVerNotFound, NoToolVersionSet, ParseError] $ do
-                           newTools <- lift checkForUpdates
-                           forM_ newTools $ \newTool@(t, l) -> do
-                             -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/283
-                             alreadyInstalling' <- alreadyInstalling optCommand newTool
-                             when (not alreadyInstalling') $
-                               case t of
-                                 Tool "ghcup" -> runLogger $
-                                            logWarn ("New GHCup version available: "
-                                              <> tVerToText l
-                                              <> ". To upgrade, run 'ghcup upgrade'")
-                                 _ -> runLogger $
-                                        logWarn ("New "
-                                          <> T.pack (prettyShow t)
-                                          <> " version available. "
-                                          <> "If you want to install this latest version, run 'ghcup install "
-                                          <> T.pack (prettyShow t)
-                                          <> " "
-                                          <> tVerToText l
-                                          <> "'")
-                         Just _ -> pure ()
+                let updateCheckAction
+                      | Just 0 <- optVerbose = pure ()
+                      | otherwise = void . flip runReaderT s' . runE @'[TagNotFound, DayNotFound, NextVerNotFound, NoToolVersionSet, ParseError] $ liftIO (lookupEnv "GHCUP_SKIP_UPDATE_CHECK") >>= \case
+                          Nothing -> do
+                            newTools <- lift checkForUpdates
+                            forM_ newTools $ \newTool@(t, l) -> do
+                              -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/283
+                              alreadyInstalling' <- alreadyInstalling optCommand newTool
+                              when (not alreadyInstalling') $ do
+                                let warnFile = fromGHCupPath cacheDir </> "ghcup_update_check"
+                                let warnMsg = case t of
+                                                Tool "ghcup" ->  "New GHCup version available: "
+                                                             <> T.pack (prettyShow l)
+                                                             <> ". To upgrade, run 'ghcup upgrade'\n"
+                                                             <> "To skip this check in the future, export GHCUP_SKIP_UPDATE_CHECK=1"
+                                                _ -> "New "
+                                                         <> T.pack (prettyShow t)
+                                                         <> " version available. "
+                                                         <> "If you want to install this latest version, run 'ghcup install "
+                                                         <> T.pack (prettyShow t)
+                                                         <> " "
+                                                         <> T.pack (prettyShow l)
+                                                         <> "'\n"
+                                                         <> "To skip this check in the future, export GHCUP_SKIP_UPDATE_CHECK=1"
 
-                -- TODO: always run for windows
-                siletRunLogger (flip runReaderT s' $ runE ensureShimGen) >>= \case
+                                prevWarn <- try @_ @SomeException $ liftIO $ T.readFile warnFile
+                                if either (const Nothing) Just prevWarn == Just warnMsg
+                                then pure ()
+                                else do
+                                  liftIO $ T.writeFile warnFile warnMsg
+                                  runLogger $ logWarn warnMsg
+                          Just _ -> do
+                            logDebug "GHCUP_SKIP_UPDATE_CHECK is set, skipping update check"
+                            pure ()
+
+                silentRunLogger (flip runReaderT s' $ runE ensureShimGen) >>= \case
                   VRight _ -> pure ()
                   VLeft e -> do
                     runLogger
                       (logError $ T.pack $ prettyHFError e)
                     exitWith (ExitFailure 30)
-                pure s'
+
+                pure (s', updateCheckAction)
 
 
-#if defined(IS_WINDOWS)
-              -- FIXME: windows needs 'ensureGlobalTools', which requires
-              -- full appstate
-              runLeanAppState = runAppState
-#else
-              runLeanAppState = flip runReaderT leanAppstate
-#endif
-              runAppState action' = do
-                s' <- liftIO appState
-                runReaderT action' s'
 
 
           -----------------
@@ -304,28 +303,40 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           res <- case optCommand of
 #if defined(BRICK)
             Interactive -> do
-              s' <- appState
-              liftIO $ brickMain s' >> pure ExitSuccess
+              (appState, _) <- liftIO $ getAppState_and_updateCheckAction
+              liftIO $ brickMain appState >> pure ExitSuccess
 #endif
-            Install installCommand     -> install installCommand settings appState runLogger
-            Test testCommand           -> test testCommand settings appState runLogger
-            Set setCommand             -> set setCommand settings runAppState runLeanAppState runLogger
-            UnSet unsetCommand         -> unset unsetCommand runLeanAppState runLogger
-            List lo                    -> list lo no_color (pager settings) runAppState
-            Rm rmCommand               -> rm rmCommand runAppState runLogger
-            DInfo                      -> dinfo runAppState runLogger
-            Compile compileCommand     -> compile compileCommand settings dirs runAppState runLogger
-            Config configCommand       -> config configCommand settings userConf keybindings runLogger
+            Install installCommand     -> install installCommand settings (getAppState_and_updateCheckAction, leanAppstate)
+            Test testCommand           -> test testCommand settings (getAppState_and_updateCheckAction, leanAppstate)
+            Set setCommand             -> set setCommand settings (getAppState_and_updateCheckAction, leanAppstate)
+            UnSet unsetCommand         -> unset unsetCommand (getAppState_and_updateCheckAction, leanAppstate)
+            List lo                    -> list lo no_color (pager settings) (getAppState_and_updateCheckAction, leanAppstate)
+            Rm rmCommand               -> rm rmCommand (getAppState_and_updateCheckAction, leanAppstate)
+            DInfo                      -> dinfo (getAppState_and_updateCheckAction, leanAppstate)
+            Compile compileCommand     -> compile compileCommand settings dirs (getAppState_and_updateCheckAction, leanAppstate)
+            Config configCommand       -> config configCommand settings userConf keybindings (getAppState_and_updateCheckAction, leanAppstate)
             Whereis whereisOptions
-                    whereisCommand     -> whereis whereisCommand whereisOptions settings runAppState leanAppstate runLogger
-            Upgrade uOpts force' fatal -> upgrade uOpts force' fatal dirs runAppState runLogger
-            ToolRequirements topts     -> toolRequirements topts runAppState runLogger
-            ChangeLog changelogOpts    -> changelog changelogOpts runAppState runLogger
-            Nuke                       -> nuke appState runLogger
-            Prefetch pfCom             -> prefetch pfCom settings runAppState runLogger
-            GC gcOpts                  -> gc gcOpts runAppState runLogger
-            Run runCommand             -> run runCommand settings appState leanAppstate runLogger
+                    whereisCommand     -> whereis whereisCommand whereisOptions settings (getAppState_and_updateCheckAction, leanAppstate)
+            Upgrade uOpts force' fatal -> upgrade uOpts force' fatal dirs (getAppState_and_updateCheckAction, leanAppstate)
+            ToolRequirements topts     -> toolRequirements topts (getAppState_and_updateCheckAction, leanAppstate)
+            ChangeLog changelogOpts    -> changelog changelogOpts (getAppState_and_updateCheckAction, leanAppstate)
+            Nuke                       -> nuke (getAppState_and_updateCheckAction, leanAppstate)
+            Prefetch pfCom             -> prefetch pfCom settings (getAppState_and_updateCheckAction, leanAppstate)
+            GC gcOpts                  -> gc gcOpts (getAppState_and_updateCheckAction, leanAppstate)
+            Run runCommand             -> run runCommand settings (getAppState_and_updateCheckAction, leanAppstate)
             PrintAppErrors             -> putStrLn allHFError >> pure ExitSuccess
+            HealthCheck hcCommands     -> hc hcCommands (getAppState_and_updateCheckAction, leanAppstate)
+#if defined(DHALL)
+            GenerateDhallSchema        ->
+              case Dhall.expected (Dhall.auto @GHCupInfo) of
+                  Validation.Success result -> do
+                    T.putStrLn (Dhall.Core.pretty result)
+                    pure ExitSuccess
+                  Validation.Failure errors -> do
+                    runLogger $ logError (T.pack $ show errors)
+                    pure $ ExitFailure 42
+#endif
+
 
           case res of
             ExitSuccess        -> pure ()
@@ -341,7 +352,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                        , MonadIOish m
                        )
                     => Command
-                    -> (Tool, TargetVersion)
+                    -> (Tool, TargetVersionRev)
                     -> Excepts
                          '[ TagNotFound
                           , DayNotFound
@@ -356,17 +367,17 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
   alreadyInstalling (Install (InstallOtherTool InstallOptionsNew{..})) (tool, ver)
     | instTool == tool = cmp' tool instVer ver
   alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ overwriteVer = Just [S over] })) (ghc', ver)
-    | Right over' <- version (T.pack over) = cmp' ghc' (Just $ GHCVersion (mkTVer over')) ver
+    | Right over' <- version (T.pack over) = cmp' ghc' (Just $ GHCVersion (mkTVer over' `TargetVersionReq` Nothing)) ver
     | otherwise = pure False
   alreadyInstalling (Compile (CompileGHC GHCCompileOptions{ targetGhc = GHC.SourceDist tver }))
-    (Tool "ghc", ver)   = cmp' ghc (Just $ ToolVersion tver) ver
+    (Tool "ghc", ver)   = cmp' ghc (Just $ ToolVersion (tver `VersionReq` Nothing)) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ overwriteVer = Just [S over] })) (hls', ver)
-    | Right over' <- version (T.pack over) = cmp' hls' (Just $ ToolVersion over') ver
+    | Right over' <- version (T.pack over) = cmp' hls' (Just $ ToolVersion (over' `VersionReq` Nothing)) ver
     | otherwise = pure False
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.SourceDist tver }))
-    (Tool "hls", ver)   = cmp' hls (Just $ ToolVersion tver) ver
+    (Tool "hls", ver)   = cmp' hls (Just $ ToolVersion (tver `VersionReq` Nothing)) ver
   alreadyInstalling (Compile (CompileHLS HLSCompileOptions{ targetHLS = HLS.HackageDist tver }))
-    (Tool "hls", ver)   = cmp' hls (Just $ ToolVersion tver) ver
+    (Tool "hls", ver)   = cmp' hls (Just $ ToolVersion (tver `VersionReq` Nothing)) ver
   alreadyInstalling (Upgrade {}) (Tool "ghcup", _) = pure True
   alreadyInstalling _ _ = pure False
 
@@ -378,7 +389,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           )
        => Tool
        -> Maybe ToolVersion
-       -> TargetVersion
+       -> TargetVersionRev
        -> Excepts
             '[ TagNotFound
              , DayNotFound
@@ -386,7 +397,9 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
              , NoToolVersionSet
              , ParseError
              ] m Bool
-  cmp' tool instVer ver = do
-    (v, _) <- liftE $ fromVersion instVer GLax tool
-    pure (v == ver)
+  cmp' tool instVer TargetVersionRev{..} = do
+    GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
+    (TargetVersionReq v mRev) <- liftE $ resolveVersion instVer GLax tool
+    let rev = fromMaybe (maybe 0 (\(_, i, _) -> i) $ getRev dls tool v Nothing) mRev
+    pure (v == _tvrTargetVer && _tvrRev == rev)
 

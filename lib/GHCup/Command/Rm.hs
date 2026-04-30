@@ -38,7 +38,6 @@ import System.Environment
 import System.FilePath
 import System.IO.Error
 import System.IO.Temp
-import Text.PrettyPrint.HughesPJClass ( prettyShow )
 
 import qualified Data.Text as T
 
@@ -66,7 +65,7 @@ rmToolVersion tool tver = do
   let target = _tvTarget tver
       ver' = _tvVersion tver
 
-  unlessM (lift $ isInstalled tool tver) $ throwE (NotInstalled tool tver)
+  unlessM (lift $ fmap isJust $ isInstalled tool tver) $ throwE (NotInstalled tool tver)
 
   mset  <- liftE $ getSetVersion' tool target
 
@@ -83,9 +82,9 @@ rmToolVersion tool tver = do
       toolDir <- fromGHCupPath <$> lift (toolInstallDestination tool tver)
 
       case mset of
-        Just (setVersion, mSetFile) -> do
-          lift $ logDebug $ "Set version: " <> T.pack (prettyShow setVersion)
-          when (setVersion == ver') $ lift $ do
+        Just (vr@VersionRev{..}, mSetFile) -> do
+          lift $ logDebug $ "Set version: " <> prettyVerRev vr
+          when (_vrVersion == ver') $ lift $ do
               unqualSyml <- getUnqualifiedSymlinks spec toolDir
               forM_ unqualSyml (rmLink . snd)
               forM_ mSetFile recycleFile
@@ -130,7 +129,7 @@ rmToolVersion tool tver = do
 
       lift $ logInfo $ "Removing files safely from: " <> T.pack dir
       forM_ files (lift . hideError NoSuchThing . recycleFile . (\f -> dir </> dropDrive f))
-      hideError UnsatisfiedConstraints $ removeEmptyDirsRecursive dir
+      hideError NoSuchThing $ hideError UnsatisfiedConstraints $ removeEmptyDirsRecursive dir
       survivors <- liftIO $ hideErrorDef [doesNotExistErrorType] [] $ listDirectory dir
       f <- recordedInstallationFile tool tver
       lift $ logDebug $ T.pack (show f)

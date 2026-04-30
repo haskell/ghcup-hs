@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               ghcup
-version:            0.2.0.0
+version:            0.2.1.0
 license:            LGPL-3.0-only
 license-file:       LICENSE
 copyright:          Julian Ospald 2024
@@ -95,6 +95,12 @@ common common-ghc-options
 common app-common-depends
   import: common-ghc-options
 
+  if flag(dhall)
+    cpp-options: -DDHALL
+    build-depends:
+        dhall  ^>=1.42
+      , either ^>=5.0.3
+
   build-depends:
     , aeson                  >=1.4
     , aeson-pretty           ^>=0.8.8
@@ -106,12 +112,13 @@ common app-common-depends
     , deepseq                ^>=1.4 || ^>=1.5 || ^>=1.6
     , directory              ^>=1.3.6.0
     , filepath               >=1.4.101.0
+    , indexed-traversable   ^>=0.1.4
     , variant                ^>=1.0
     , megaparsec             >=8.0.0    && <9.8
     , mtl                    ^>=2.2 || ^>=2.3
     , optics                ^>=0.4
     , optparse-applicative   >=0.15.1.0 && <0.19
-    , pretty                 ^>=1.1.3.1
+    , pretty                 ^>=1.1.3.6
     , pretty-terminal        ^>=0.1.0.0
     , process                ^>=1.6.11.0
     , resourcet              ^>=1.2.2 || ^>=1.3
@@ -139,7 +146,7 @@ common app-common-depends
   if flag(tar)
     cpp-options:   -DTAR
     build-depends:
-        tar ^>=0.6.0.0
+        tar ^>=0.7.0.0
       , zip ^>=2.0.0 || ^>=2.1.0
 
   else
@@ -160,6 +167,7 @@ library
     GHCup.Command.Upgrade
     GHCup.Command.Whereis
     GHCup.Command.GC
+    GHCup.Command.HealthCheck
     GHCup.Command.Prefetch
     GHCup.Command.Rm
     GHCup.Command.Set
@@ -194,6 +202,7 @@ library
     GHCup.Prelude.Version.QQ
     GHCup.Query
     GHCup.Query.DB
+    GHCup.Query.DB.HLS
     GHCup.Query.GHCupDirs
     GHCup.Query.Metadata
     GHCup.Query.Symlink
@@ -211,6 +220,7 @@ library
     GHCup.Types.Stack
     GHCup.Types.Tar
     GHCup.Unpack
+    GHCup.Warnings
 
   hs-source-dirs:     lib
   other-modules:      Paths_ghcup
@@ -262,13 +272,14 @@ library
     , optics                ^>=0.4
     , os-release            ^>=1.0.0
     , parsec
-    , pretty                ^>=1.1.3.1
+    , pretty                ^>=1.1.3.6
     , pretty-terminal       ^>=0.1.0.0
     , regex-posix           ^>=0.96
     , resourcet             ^>=1.2.2 || ^>=1.3
     , retry                 >=0.8.1.2    && <0.10
     , safe                  ^>=0.3.18
     , safe-exceptions       ^>=0.1
+    , scientific
     , split                 ^>=0.2.3.4
     , strict-base           ^>=0.4
     , template-haskell       >=2.7      && <2.24
@@ -284,13 +295,8 @@ library
     , vector                 >=0.12     && <0.14
     , versions               >=6.0.5      && <6.1
     , word8                 ^>=0.1.3
+    , witherable            ^>=0.5
     , zlib                  ^>=0.6.2.2 || ^>=0.7
-
-  if flag(dhall)
-    cpp-options: -DDHALL
-    build-depends:
-      dhall  ^>=1.42
-
 
   if flag(yaml-streamly)
     build-depends:
@@ -302,7 +308,7 @@ library
   if flag(tar)
     cpp-options:   -DTAR
     build-depends:
-        tar ^>=0.6.0.0
+        tar ^>=0.7.0.0
       , zip ^>=2.0.0 || ^>=2.1.0
 
   else
@@ -317,8 +323,11 @@ library
       , io-streams             >=1.5.2.1
       , terminal-progress-bar  >=0.4.1
 
+  if os(freebsd)
+    cpp-options: -DIS_FREEBSD
+
   if os(windows)
-    cpp-options:     -DIS_WINDOWS
+    cpp-options: -DIS_WINDOWS
     other-modules:
       GHCup.Prelude.File.Windows
       GHCup.Prelude.Windows
@@ -361,6 +370,7 @@ library ghcup-optparse
     GHCup.OptParse.Config
     GHCup.OptParse.DebugInfo
     GHCup.OptParse.GC
+    GHCup.OptParse.HealthCheck
     GHCup.OptParse.Install
     GHCup.OptParse.List
     GHCup.OptParse.Nuke
@@ -396,6 +406,9 @@ library ghcup-optparse
   if flag(tui)
     cpp-options:   -DBRICK
 
+  if os(freebsd)
+    cpp-options: -DIS_FREEBSD
+
   if os(windows)
     cpp-options: -DIS_WINDOWS
 
@@ -409,7 +422,7 @@ library ghcup-tui
     GHCup.Brick.Widgets.Navigation
     GHCup.Brick.Widgets.Tutorial
     GHCup.Brick.Widgets.KeyInfo
-    GHCup.Brick.Widgets.SectionList
+    GHCup.Brick.Widgets.ToolInfo
     GHCup.Brick.Widgets.Menu
     GHCup.Brick.Widgets.Menus.Context
     GHCup.Brick.Widgets.Menus.AdvancedInstall
@@ -440,6 +453,9 @@ library ghcup-tui
 
   if !flag(tui)
     buildable: False
+
+  if os(freebsd)
+    cpp-options: -DIS_FREEBSD
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
@@ -478,6 +494,9 @@ executable ghcup
     build-depends:
       , ghcup-tui
       , transformers  ^>=0.5 || ^>=0.6
+
+  if os(freebsd)
+    cpp-options: -DIS_FREEBSD
 
   if os(windows)
     cpp-options: -DIS_WINDOWS
@@ -532,6 +551,9 @@ test-suite ghcup-test
     , uri-bytestring            ^>=0.4.0.1
     , versions                   >=6.0.5      && <6.1
 
+  if os(freebsd)
+    cpp-options: -DIS_FREEBSD
+
   if os(windows)
     cpp-options: -DIS_WINDOWS
 
@@ -558,6 +580,9 @@ test-suite ghcup-optparse-test
     UpgradeTest
     Utils
     WhereisTest
+
+  if os(freebsd)
+    cpp-options: -DIS_FREEBSD
 
   if os(windows)
     cpp-options: -DIS_WINDOWS

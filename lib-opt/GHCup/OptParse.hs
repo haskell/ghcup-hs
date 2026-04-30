@@ -22,6 +22,7 @@ module GHCup.OptParse (
   , module GHCup.OptParse.ChangeLog
   , module GHCup.OptParse.Prefetch
   , module GHCup.OptParse.GC
+  , module GHCup.OptParse.HealthCheck
   , module GHCup.OptParse.DebugInfo
   , module GHCup.OptParse.Nuke
   , module GHCup.OptParse.ToolRequirements
@@ -47,6 +48,7 @@ import           GHCup.OptParse.Upgrade
 import           GHCup.OptParse.ChangeLog
 import           GHCup.OptParse.Prefetch
 import           GHCup.OptParse.GC
+import           GHCup.OptParse.HealthCheck
 import           GHCup.OptParse.DebugInfo
 import           GHCup.OptParse.ToolRequirements
 import           GHCup.OptParse.Nuke
@@ -115,6 +117,10 @@ data Command
   | GC GCOptions
   | Run RunOptions
   | PrintAppErrors
+#if defined(DHALL)
+  | GenerateDhallSchema
+#endif
+  | HealthCheck HealthCheckCommand
 
 
 toVerbosity :: Maybe Bool -> Maybe Int
@@ -359,6 +365,23 @@ com =
                (info (pure PrintAppErrors <**> helper)
                      (progDesc ""))
            <> internal
+          )
+#if defined(DHALL)
+     <|> subparser
+          (command
+              "generate-dhall-schema"
+               (info (pure GenerateDhallSchema <**> helper)
+                     (progDesc ""))
+           <> internal
+          )
+#endif
+     <|> subparser
+          (command
+              "check"
+              ( HealthCheck <$>
+               info (hcP <**> helper)
+                    (progDesc "Health check ghcup")
+              )
           )
 
 -- | Handle 'ParserResult'.

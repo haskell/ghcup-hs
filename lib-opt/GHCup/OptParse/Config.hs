@@ -188,6 +188,9 @@ updateSettings usl usr =
            kUp = kUp kbl <|> kUp kbr
          , kDown = kDown kbl <|> kDown kbr
          , kQuit = kQuit kbl <|> kQuit kbr
+         , kLeft = kLeft kbl <|> kLeft kbr
+         , kRight = kRight kbl <|> kRight kbr
+         , kTab = kTab kbl <|> kTab kbr
          , kInstall = kInstall kbl <|> kInstall kbr
          , kUninstall = kUninstall kbl <|> kUninstall kbr
          , kSet = kSet kbl <|> kSet kbr
@@ -216,9 +219,9 @@ config :: forall m. ( Monad m
      -> Settings
      -> UserSettings
      -> KeyBindings
-     -> (ReaderT LeanAppState m () -> m ())
+     -> (IO (AppState, IO ()), LeanAppState)
      -> m ExitCode
-config configCommand settings userConf keybindings runLogger = case configCommand of
+config configCommand settings userConf keybindings (_getAppState', leanAppstate) = case configCommand of
   InitConfig -> do
     path <- getConfigFilePath
     liftIO $ writeFile path $ formatConfig $ fromSettings settings (Just keybindings)
@@ -295,6 +298,8 @@ config configCommand settings userConf keybindings runLogger = case configComman
         pure $ ExitFailure 15
 
  where
+  runLogger = flip runReaderT leanAppstate
+
   checkDuplicate :: Eq a => [a] -> a -> Duplicate
   checkDuplicate xs a
     | last xs == a = DuplicateLast
