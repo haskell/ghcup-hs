@@ -57,7 +57,6 @@ import GHC.IO.Exception
 import Safe
 import System.FilePath
 import System.IO.Error
-import Text.PrettyPrint.HughesPJClass ( prettyShow )
 import Text.Regex.Posix
 
 import qualified Data.Text          as T

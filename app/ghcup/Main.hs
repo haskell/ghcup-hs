@@ -65,6 +65,11 @@ import qualified Data.Text.Encoding as E
 import qualified Data.Text.IO       as T
 import qualified GHCup.Types        as Types
 
+#if defined(DHALL)
+import qualified Dhall
+import qualified Dhall.Core
+import qualified Data.Either.Validation as Validation
+#endif
 
 
 
@@ -326,6 +331,17 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             GC gcOpts                  -> gc gcOpts runAppState runLogger
             Run runCommand             -> run runCommand settings appState leanAppstate runLogger
             PrintAppErrors             -> putStrLn allHFError >> pure ExitSuccess
+#if defined(DHALL)
+            GenerateDhallSchema        ->
+              case Dhall.expected (Dhall.auto @GHCupInfo) of
+                  Validation.Success result -> do
+                    T.putStrLn (Dhall.Core.pretty result)
+                    pure ExitSuccess
+                  Validation.Failure errors -> do
+                    runLogger $ logError (T.pack $ show errors)
+                    pure $ ExitFailure 42
+#endif
+
 
           case res of
             ExitSuccess        -> pure ()

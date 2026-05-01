@@ -115,6 +115,9 @@ data Command
   | GC GCOptions
   | Run RunOptions
   | PrintAppErrors
+#if defined(DHALL)
+  | GenerateDhallSchema
+#endif
 
 
 toVerbosity :: Maybe Bool -> Maybe Int
@@ -360,6 +363,15 @@ com =
                      (progDesc ""))
            <> internal
           )
+#if defined(DHALL)
+     <|> subparser
+          (command
+              "generate-dhall-schema"
+               (info (pure GenerateDhallSchema <**> helper)
+                     (progDesc ""))
+           <> internal
+          )
+#endif
 
 -- | Handle 'ParserResult'.
 handleParseResult' :: Maybe FilePath -> Bool -> ParserResult a -> IO a
