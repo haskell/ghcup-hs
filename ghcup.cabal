@@ -195,6 +195,7 @@ library
     GHCup.Prelude.Version.QQ
     GHCup.Query
     GHCup.Query.DB
+    GHCup.Query.DB.HLS
     GHCup.Query.GHCupDirs
     GHCup.Query.Metadata
     GHCup.Query.Symlink
@@ -212,6 +213,7 @@ library
     GHCup.Types.Stack
     GHCup.Types.Tar
     GHCup.Unpack
+    GHCup.Warnings
 
   hs-source-dirs:     lib
   other-modules:      Paths_ghcup

@@ -15,8 +15,6 @@
 
 ## refactoring and some day
 
-- get rid of Utils/Common... and improve module structure
-- rename GHCTargetVersion
 - better logging
 
 ## investigate
@@ -31,7 +29,7 @@
 ## code TODO
 
 - emit dhall types
-- fetch from InstallMetadata first in list view
+- backwards compat with RC
 
 
 ## ideas

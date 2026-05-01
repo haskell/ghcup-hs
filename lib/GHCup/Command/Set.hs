@@ -11,7 +11,7 @@ import GHCup.Errors
 import GHCup.Legacy.Cabal
 import GHCup.Legacy.HLS
 import GHCup.Legacy.Stack
-import GHCup.Legacy.Utils
+import GHCup.Legacy.Utils (rmPlainGHC, binarySymLinkDestination, ghcInternalBinDir, ghcToolFiles)
 import GHCup.Prelude
 import GHCup.Query.DB
 import GHCup.Query.GHCupDirs
@@ -19,6 +19,7 @@ import GHCup.Query.Symlink
 import GHCup.System.Directory
 import GHCup.Types
 import GHCup.Types.Optics
+import GHCup.Warnings
 
 import Control.Applicative
 import Control.Monad
@@ -36,6 +37,7 @@ import System.IO.Error
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
+import GHCup.Query.DB.HLS
 
 setToolVersion ::
   ( MonadReader env m
@@ -93,6 +95,10 @@ setToolVersion' tool tver mTmpDir = do
     setFile <- lift $ recordedSetVersionFile tool (_tvTarget tver)
     liftIO $ createDirRecursive' (takeDirectory setFile)
     liftIO $ T.writeFile setFile (prettyVer . _tvVersion $ tver)
+    currentHLS <- liftE $ getSetVersion' hls Nothing
+    currentGHC <- liftE $ getSetVersion' ghc Nothing
+    supportedGHC <- lift $ maybe (pure []) (getHLSGHCs . fst) currentHLS
+    lift $ warnAboutHlsCompatibility (fst <$> currentHLS) (fst <$> currentGHC) supportedGHC
 
   pure tver
  where
