@@ -21,7 +21,7 @@ env:
   CABAL_CACHE_NONFATAL: yes
   GHCUP_INSTALL_BASE_PREFIX: ${{ github.workspace }}
   GITHUB_WORKSPACE: ${{ github.workspace }}
-  GHCUP_VER: 0.2.0.0
+  GHCUP_VER: 0.2.1.0
 
 jobs:
   build:
