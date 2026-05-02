@@ -729,6 +729,7 @@ data ChannelAlias
   | CrossChannel
   | PrereleasesChannel
   | VanillaChannel
+  | ThirdPartyChannel
   deriving (Bounded, Enum, Eq, GHC.Generic, Show)
 
 channelAliasText :: ChannelAlias -> Text
@@ -737,6 +738,7 @@ channelAliasText StackChannel       = "stack"
 channelAliasText CrossChannel       = "cross"
 channelAliasText PrereleasesChannel = "prereleases"
 channelAliasText VanillaChannel     = "vanilla"
+channelAliasText ThirdPartyChannel  = "3rdparty"
 
 fromURLSource :: URLSource -> [NewURLSource]
 fromURLSource GHCupURL             = [NewGHCupURL]

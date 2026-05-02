@@ -199,7 +199,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
                  -> m GHCupInfo
   mergeGhcupInfo [] = fail "mergeGhcupInfo: internal error: need at least one GHCupInfo"
   mergeGhcupInfo xs@(GHCupInfo{}: _) =
-    let newDownloads   = M.unionsWith (\(ToolInfo a _) (ToolInfo a' b') -> ToolInfo (M.unionWith (\_ b2 -> b2) a a') b')
+    let newDownloads   = M.unionsWith (\(ToolInfo a b) (ToolInfo a' b') -> ToolInfo (M.unionWith (\_ b2 -> b2) a a') (b <|> b'))
                                       (_ghcupDownloads   <$> xs)
         newToolReqs    = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_toolRequirements <$> xs)
     in pure $ GHCupInfo newToolReqs newDownloads Nothing

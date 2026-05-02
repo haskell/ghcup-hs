@@ -24,7 +24,7 @@ import qualified Data.Text              as T
 -- 'https://www.haskell.org/ghcup/exp/ghcup-<ver>.yaml' with some newlines added.
 -- TODO: revert to master
 ghcupURL :: URI
-ghcupURL = [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.0.10.yaml|]
+ghcupURL = [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-0.1.0.yaml|]
 
 stackSetupURL :: URI
 stackSetupURL = [uri|https://raw.githubusercontent.com/commercialhaskell/stackage-content/master/stack/stack-setup-2.yaml|]
@@ -39,6 +39,8 @@ channelURL :: ChannelAlias -> URI
 channelURL = \case
   DefaultChannel -> ghcupURL
   StackChannel -> stackSetupURL
-  CrossChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.0.10.yaml|]
-  PrereleasesChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.10.yaml|]
-  VanillaChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.0.10.yaml|]
+  CrossChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-cross-0.1.0.yaml|]
+  PrereleasesChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.1.0.yaml|]
+  VanillaChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-vanilla-0.1.0.yaml|]
+  ThirdPartyChannel -> [uri|https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-3rdparty-0.1.0.yaml|]
+

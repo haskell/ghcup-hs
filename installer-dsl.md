@@ -1,12 +1,3 @@
-## documentation
-
-- configure script must support `--prefix`
-- make must support `DESTDIR`
-- write about the rewrite in the dev section
-- first tool in exe list matters
-- invariants (`make` must not compile the binaries that are to be installed)
-- limitations (packaging `cabal-cache`)
-
 ## breaking changes
 
 - `cabal install <ghc-ver>` is gone, use `cabal install ghc <ghc-ver>`
@@ -28,9 +19,7 @@
 
 ## code TODO
 
-- emit dhall types
-- backwards compat with RC
-
+- test: make sure we can generate dhall and convert it back to yaml
 
 ## ideas
 
