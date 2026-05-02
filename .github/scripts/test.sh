@@ -89,7 +89,7 @@ done
 [ -z "${PROJECT_DIR}" ] && PROJECT_DIR=$(pwd)
 [ -z "${GHC_VER}" ] && GHC_VER=9.6.7
 [ -z "${CABAL_VER}" ] && CABAL_VER=3.14.2.0
-[ -z "${JSON_VERSION}" ] && JSON_VERSION=0.0.9
+[ -z "${JSON_VERSION}" ] && JSON_VERSION=0.1.0
 
 export GHCUP_INSTALL_BASE_PREFIX
 
