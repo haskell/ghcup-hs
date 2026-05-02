@@ -76,7 +76,7 @@ setToolVersion' tool tver mTmpDir = do
       | tool == cabal -> liftE $ setCabal ver' mTmpDir
       | tool == stack -> liftE $ setStack ver' mTmpDir
       | tool == hls   -> liftE $ setHLS ver' SetHLSOnly mTmpDir
-      | otherwise -> fail "Could not find installation metadata... your DB seems corrupted"
+      | otherwise -> throwE $ NotInstalled tool tver
     VRight spec -> do
       lift $ logDebug2 $ T.pack (show spec)
       toolDir <- lift $ fmap fromGHCupPath $ toolInstallDestination tool tver
