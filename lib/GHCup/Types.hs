@@ -767,6 +767,11 @@ data MetaMode
 
 instance NFData MetaMode
 
+newtype Verbosity = Verbosity Int
+  deriving (Eq, GHC.Generic, Show)
+
+instance NFData Verbosity
+
 -- If you add, remove, or rename any fields,
 -- make sure to update the GHCup.OptParse.Reset module as well.
 data UserSettings = UserSettings
@@ -774,7 +779,7 @@ data UserSettings = UserSettings
   , uMetaCache :: Maybe Integer
   , uMetaMode :: Maybe MetaMode
   , uNoVerify :: Maybe Bool
-  , uVerbose :: Maybe Int
+  , uVerbose :: Maybe Verbosity
   , uKeepDirs :: Maybe KeepDirs
   , uDownloader :: Maybe Downloader
   , uKeyBindings :: Maybe UserKeyBindings
@@ -924,7 +929,7 @@ data Settings = Settings
   , noVerify :: Bool
   , keepDirs :: KeepDirs
   , downloader :: Downloader
-  , verbose :: Int
+  , verbose :: Verbosity
   , urlSource :: [NewURLSource]
   , noNetwork :: Bool
   , gpgSetting :: GPGSetting
@@ -965,7 +970,7 @@ defaultMetaCache :: Integer
 defaultMetaCache = 300 -- 5 minutes
 
 defaultSettings :: Settings
-defaultSettings = Settings False defaultMetaCache Lax False Never Curl 0 [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig True Nothing
+defaultSettings = Settings False defaultMetaCache Lax False Never Curl (Verbosity 0) [NewGHCupURL] False GPGNone False Nothing (DM mempty) [] defaultPagerConfig True Nothing
 
 instance NFData Settings
 

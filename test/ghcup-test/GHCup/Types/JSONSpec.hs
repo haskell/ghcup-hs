@@ -27,6 +27,7 @@ spec = do
   roundtripSpecs (Proxy @Architecture)
   roundtripSpecs (Proxy @Platform)
   roundtripSpecs (Proxy @VersionRange)
+  roundtripSpecs (Proxy @UserSettings)
   roundtripSpecs (Proxy @GHCupInfo)
   when (not isWindows) $
     roundtripAndGoldenSpecsWithSettings (defaultSettings { goldenDirectoryOption = CustomDirectoryName "test/ghcup-test/golden/unix", sampleSize = 2 }) (Proxy @GHCupInfo)

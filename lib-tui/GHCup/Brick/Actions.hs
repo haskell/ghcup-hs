@@ -724,6 +724,8 @@ keyHandlersToolList :: KeyBindings
                ]
 keyHandlersToolList KeyBindings {..} =
   [ (bQuit, Just $ const "Quit"     , Brick.halt)
+  , (bInstall, Just $ const "Install and set recommended version",
+       withIOActionRecommended $ installWithOptions (AdvancedInstall.InstallOptions Nothing True Nothing Nothing False [] Nothing))
   , ( bShowAllVersions
     , Just $ \BrickSettings {..} ->
        if _showAllVersions then "Don't show all versions" else "Show all versions"

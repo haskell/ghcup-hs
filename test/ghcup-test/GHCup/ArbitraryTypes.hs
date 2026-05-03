@@ -7,6 +7,7 @@ module GHCup.ArbitraryTypes where
 
 
 import           GHCup.Types
+import           GHCup.Types.Stack
 import           GHCup.Types.JSON
 
 import           Data.ByteString                ( ByteString )
@@ -199,7 +200,11 @@ instance Arbitrary Requirements where
   arbitrary = genericArbitrary
   shrink    = genericShrink
 
-instance Arbitrary DownloadInfo where
+instance Arbitrary GHCup.Types.DownloadInfo where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary GHCup.Types.Stack.DownloadInfo where
   arbitrary = genericArbitrary
   shrink    = genericShrink
 
@@ -224,6 +229,98 @@ instance Arbitrary VersionInfo where
   shrink    = genericShrink
 
 instance Arbitrary VersionRange where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary UserSettings where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary PagerConfig where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary PlatformRequest where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary MetaMode where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary GPGSetting where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary Verbosity where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary URLSource where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary KeepDirs where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary Downloader where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary SetupInfo where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary UserKeyBindings where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary NewURLSource where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary ChannelAlias where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary KeyCombination where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary Key where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary Modifier where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary GHCDownloadInfo where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary ProcessSpec where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary UserInfo where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary Authority where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary DownloadMirror where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary DownloadMirrors where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
+instance Arbitrary VersionedDownloadInfo where
   arbitrary = genericArbitrary
   shrink    = genericShrink
 

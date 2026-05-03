@@ -90,7 +90,7 @@ toSettings noColor pagerCmd options = do
          metaCache   = fromMaybe (fromMaybe (Types.metaCache defaultSettings) uMetaCache) optMetaCache
          metaMode    = fromMaybe (fromMaybe (Types.metaMode defaultSettings) uMetaMode) optMetaMode
          noVerify    = fromMaybe (fromMaybe (Types.noVerify defaultSettings) uNoVerify) optNoVerify
-         verbose     = fromMaybe (fromMaybe (Types.verbose defaultSettings) uVerbose) optVerbose
+         verbose     = maybe (fromMaybe (Types.verbose defaultSettings) uVerbose) Verbosity optVerbose
          keepDirs    = fromMaybe (fromMaybe (Types.keepDirs defaultSettings) uKeepDirs) optKeepDirs
          downloader  = fromMaybe (fromMaybe defaultDownloader uDownloader) optsDownloader
          keyBindings = maybe defaultKeyBindings mergeKeys uKeyBindings
@@ -203,7 +203,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
           -- logger interpreter
           logfile <- runReaderT initGHCupFileLogging dirs
           let loggerConfig = LoggerConfig
-                { lcPrintDebugLvl = Just (verbose settings)
+                { lcPrintDebugLvl = Just ((\(Verbosity i) -> i) . verbose $ settings)
                 , consoleOutter  = T.hPutStr stderr
                 , fileOutter    =
                     case optCommand of

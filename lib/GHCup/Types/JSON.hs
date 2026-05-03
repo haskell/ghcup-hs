@@ -41,6 +41,7 @@ import Data.Aeson.Types    hiding ( Key )
 import Data.ByteString     ( ByteString )
 import Data.Foldable
 import Data.Maybe
+import Data.Scientific (toBoundedInteger)
 import Data.Text.Encoding  as E
 import Data.Versions
 import System.FilePath     ( hasDrive, isAbsolute, splitPath )
@@ -658,7 +659,16 @@ instance FromJSON PagerConfig where
        cmd  <- o .:? "cmd"
        pure $ PagerConfig list cmd
 
+instance FromJSON Verbosity where
+  parseJSON v = new v <|> legacy v
+   where
+    legacy = withBool "Verbosity" $ \b -> do
+      pure $ Verbosity (if b then 1 else 0)
+    new = withScientific "Verbosity" $ \s -> do
+      int <- maybe (fail "Verbosity integer out of bounds") pure $ toBoundedInteger s
+      pure $ Verbosity int
 
+deriveToJSON defaultOptions { unwrapUnaryRecords = True } ''Verbosity
 deriveToJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "pager-") . T.pack . kebab $ str' } ''PagerConfig
 deriveToJSON defaultOptions { fieldLabelModifier = drop 2 . kebab } ''KeyBindings -- move under key-bindings key
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings

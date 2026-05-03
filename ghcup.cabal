@@ -278,6 +278,7 @@ library
     , retry                 >=0.8.1.2    && <0.10
     , safe                  ^>=0.3.18
     , safe-exceptions       ^>=0.1
+    , scientific
     , split                 ^>=0.2.3.4
     , strict-base           ^>=0.4
     , template-haskell       >=2.7      && <2.24
