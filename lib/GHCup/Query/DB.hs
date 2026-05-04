@@ -25,7 +25,6 @@ import Control.Monad.Catch            ( MonadCatch )
 import Control.Monad.IO.Class         ( MonadIO, liftIO )
 import Control.Monad.Reader           ( MonadReader )
 import Control.Monad.Trans            ( lift )
-import Data.Aeson                     ( eitherDecodeFileStrict )
 import Data.Either                    ( rights )
 import Data.Functor                   ( (<&>) )
 import Data.List                      ( nub )
@@ -34,11 +33,13 @@ import Data.Text                      ( Text )
 import Data.Variant.Excepts
     ( Excepts, liftE, pattern V, pattern VLeft, pattern VRight, runE, throwE )
 import Data.Versions                  ( Version, version )
+import Data.Yaml                      ( decodeEither' )
 import Optics                         ( preview, (%) )
 import System.FilePath                ( takeExtension, (</>) )
 import System.IO.Error                ( doesNotExistErrorType )
 import Text.PrettyPrint.HughesPJClass ( prettyShow )
 
+import qualified Data.ByteString as B
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
 import qualified Data.Text       as T
@@ -64,8 +65,13 @@ getInstallMetadata ::
   -> Excepts '[FileDoesNotExistError, ParseError] m InstallMetadata
 getInstallMetadata tool tver = do
   f <- lift $ recordedInstallationSpecFile tool tver
-  r <- liftIOException doesNotExistErrorType (FileDoesNotExistError f) (liftIO $ eitherDecodeFileStrict f)
-  either (throwE . ParseError) pure r
+  -- we have to trigger 'doesNotExistErrorType' explicitly, since libyaml swallows it, so
+  -- we have to avoid 'decodeFileEither':
+  --   https://github.com/snoyberg/yaml/blob/7380d7f560daa2f45ff265d425866f497ca07966/libyaml/src/Text/Libyaml.hs#L656-L657
+  r <- liftIOException doesNotExistErrorType (FileDoesNotExistError f) $ liftIO $ do
+    contents <- B.readFile f
+    pure $ decodeEither' contents
+  either (throwE . ParseError . displayException) pure r
 
 
 

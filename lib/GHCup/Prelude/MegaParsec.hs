@@ -24,12 +24,14 @@ import Data.Text       ( Text )
 import Data.Versions
 import Data.Void
 import System.FilePath
+import Text.PrettyPrint.HughesPJClass (prettyShow)
 
 import           Data.List.NonEmpty   ( NonEmpty ((:|)) )
 import qualified Data.List.NonEmpty   as NE
 import qualified Data.Text            as T
 import qualified Text.Megaparsec      as MP
 import qualified Text.Megaparsec.Char as MPC
+
 
 
 choice' :: (MonadFail f, MP.MonadParsec e s f) => [f a] -> f a
@@ -168,15 +170,24 @@ isSpace c = (c == ' ') || ('\t' <= c && c <= '\r')
 -- ../ghc/<ver>/bin/ghc
 -- ../ghc/<ver>/bin/ghc-<ver>
 ghcVersionFromPath :: MP.Parsec Void Text TargetVersion
-ghcVersionFromPath =
+ghcVersionFromPath = toolVersionFromPath ghc
+
+toolVersionFromPath :: Tool -> MP.Parsec Void Text TargetVersion
+toolVersionFromPath tool =
   do
-     beforeBin <- parseUntil1 binDir <* MP.some pathSep
-     MP.setInput beforeBin
-     _ <- parseTillLastPathSep
+     let toolPath = T.pack $ "/" <> prettyShow tool <> "/"
+     ver <- parseUntilEmpty (MP.chunk toolPath) *> parseUntil1 (MP.chunk "/")
+     MP.setInput ver
      ghcTargetVerP
-  where
-     binDir = MP.some pathSep <* MP.chunk "bin" *> MP.some pathSep <* MP.takeWhile1P Nothing (not . isPathSeparator) <* MP.eof
-     parseTillLastPathSep = (MP.try (parseUntil1 pathSep *> MP.some pathSep) *> parseTillLastPathSep) <|> pure ()
+
+parseUntilEmpty :: MP.Parsec Void Text a -> MP.Parsec Void Text Text
+parseUntilEmpty p = go ""
+ where
+  go lastParse = do
+    mt <- MP.try (Just <$> parseUntil p) <|> pure Nothing
+    case mt of
+      Nothing -> pure lastParse
+      Just t -> p *> go t
 
 versionCmpP :: MP.Parsec Void T.Text VersionCmp
 versionCmpP = either (fail . T.unpack) pure =<< (translate <$> (MPC.space *> MP.try (MP.takeWhileP Nothing (`elem` ['>', '<', '=']))) <*> (MPC.space *> versioningEnd))

@@ -80,7 +80,7 @@ setStack ver mTmpDir = do
 
   liftIO (isShadowed stackbin) >>= \case
     Nothing -> pure ()
-    Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed stack pa stackbin ver)
+    Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed stack ver [(pa, stackbin)])
 
   pure ()
 

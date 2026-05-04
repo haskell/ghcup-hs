@@ -22,21 +22,23 @@ import GHCup.Types.Optics
 import Control.Applicative
 import Control.Exception.Safe
 import Control.Monad
+import Data.Yaml.Pretty
 #if !MIN_VERSION_base(4,13,0)
 import Control.Monad.Fail ( MonadFail )
 #endif
-import           Control.Monad.Reader
-import           Data.Aeson                   ( encodeFile )
-import           Data.Maybe
-import qualified Data.Text                    as T
-import           Data.Variant.Excepts
-import           Data.Versions                hiding ( patch )
-import           Data.Void
-import           Prelude                      hiding ( abs )
-import           System.FilePath
-import qualified System.FilePath.Posix        as Posix
-import           System.FilePattern.Directory
-import qualified Text.Megaparsec              as MP
+import Control.Monad.Reader
+import Data.Maybe
+import Data.Variant.Excepts
+import Data.Versions                hiding ( patch )
+import Data.Void
+import Prelude                      hiding ( abs )
+import System.FilePath
+import System.FilePattern.Directory
+
+import qualified Data.ByteString       as B
+import qualified Data.Text             as T
+import qualified System.FilePath.Posix as Posix
+import qualified Text.Megaparsec       as MP
 
 
 
@@ -226,10 +228,14 @@ recordInstallationInfo installDest tool toolDesc tver dlInfo instSpec
       liftIO $ createDirectoryIfMissing True (takeDirectory spec)
       let metadata = InstallMetadata dlInfo instSpec toolDesc
       logDebug2 $ "Writing install metadata to " <> T.pack spec <> "\n  " <> T.pack (show metadata)
-      liftIO $ encodeFile spec metadata
+      liftIO $ encodeFilePretty spec metadata
   | otherwise = do
       logDebug2 $ "Skipping spec installation, because installing into isolated dir: " <> T.pack (show installDest)
       pure ()
+ where
+  encodeFilePretty file json =
+    let encoded = encodePretty defConfig json
+    in B.writeFile file encoded
 
 sanitizefConfOptions :: MonadFail m => [String] -> m [String]
 sanitizefConfOptions args

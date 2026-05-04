@@ -401,19 +401,23 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
     let spec = adHocInstallationSpec (dropSuffix exeExt <$> binaries)
 
     logDebug $ T.pack (show spec)
+    logDebug "Install into tmp dir as per the spec"
     liftE $ installTheSpec (toInstallationInputSpec spec) workdir installDest tmpInstallDest [] Nothing forceInstall
 
+    logDebug "Merge to filesystem"
     liftE $ mergeToFileSystem hls tver installDest tmpInstallDest (_isPreserveMtimes spec) forceInstall True
 
 
     case installDir of
       -- set and make symlinks for regular (non-isolated) installs
       GHCupInternal -> do
+        logDebug "Symlink binaries"
         Dirs {..} <- lift getDirs
         parsedSymlinkSpec <- forM (_isExeSymLinked spec) (liftE . parseSymlinkSpec (_tvVersion tver))
         liftE $ symlinkBinaries installDest parsedSymlinkSpec (GHCupBinDir binDir) hls tver
 
         -- write InstallationInfo to the disk
+        logDebug "Writing installation info to disk"
         case mMetadata of
           (Just (InstallMetadata { _imResolvedInstallSpec, _imDownloadInfo })) -> do
             lift $ recordInstallationInfo installDest hls toolDesc tver _imDownloadInfo (manipulateSpec _imResolvedInstallSpec spec)

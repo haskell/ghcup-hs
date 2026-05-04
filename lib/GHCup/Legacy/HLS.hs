@@ -199,7 +199,7 @@ setHLS ver shls mBinDir = do
 
       liftIO (isShadowed wrapper) >>= \case
         Nothing -> pure ()
-        Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed hls pa wrapper ver)
+        Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed hls ver [(pa, wrapper)])
 
 
 unsetHLS :: ( MonadMask m

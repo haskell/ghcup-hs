@@ -326,6 +326,7 @@ cabalSet = do
     =   MP.try (stripAbsolutePath *> cabalParse)
     <|> MP.try (stripRelativePath *> cabalParse)
     <|> cabalParse
+    <|> (_tvVersion <$> toolVersionFromPath cabal)
   -- parses the version of "cabal-3.2.0.0" -> "3.2.0.0"
   cabalParse = MP.chunk "cabal-" *> version'
   -- parses any path component ending with path separator,
@@ -421,6 +422,7 @@ stackSet = do
       =   MP.try (stripAbsolutePath *> cabalParse)
       <|> MP.try (stripRelativePath *> cabalParse)
       <|> cabalParse
+      <|> (_tvVersion <$> toolVersionFromPath stack)
     -- parses the version of "stack-2.7.1" -> "2.7.1"
     cabalParse = MP.chunk "stack-" *> version'
     -- parses any path component ending with path separator,
@@ -474,6 +476,7 @@ hlsSet = do
       =   MP.try (stripAbsolutePath *> cabalParse)
       <|> MP.try (stripRelativePath *> cabalParse)
       <|> cabalParse
+      <|> (_tvVersion <$> toolVersionFromPath hls)
     -- parses the version of "haskell-language-server-wrapper-1.1.0" -> "1.1.0"
     cabalParse = MP.chunk "haskell-language-server-wrapper-" *> version'
     -- parses any path component ending with path separator,

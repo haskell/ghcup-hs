@@ -152,9 +152,9 @@ upgradeGHCup' mtarget force' fatal latestVer = do
   liftIO (isShadowed destFile) >>= \case
     Nothing -> pure ()
     Just pa
-      | fatal -> throwE (ToolShadowed ghcup pa destFile latestVer)
+      | fatal -> throwE (ToolShadowed ghcup latestVer [(pa, destFile)])
       | otherwise ->
-        lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed ghcup pa destFile latestVer)
+        lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed ghcup latestVer [(pa, destFile)])
 
   pure latestVer
 

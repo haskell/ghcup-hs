@@ -84,11 +84,12 @@ setToolVersion' tool tver mTmpDir = do
         (lift $ getUnqualifiedSymlinks spec toolDir)
         (\tmpDir -> lift $ getUnqualifiedSymlinks' tmpDir spec toolDir)
         mTmpDir
-      forM_ symls $ \(target, bin) -> do
-        liftIO (isShadowed bin) >>= \case
-          Nothing -> pure ()
-          Just pa -> logWarn $ T.pack $ prettyHFError (ToolShadowed tool pa bin (_tvVersion tver))
+      shadows <- fmap catMaybes <$> forM symls $ \(target, bin) -> do
         lift $ createLink target bin
+        liftIO (isShadowed bin) >>= \case
+          Nothing -> pure Nothing
+          Just pa -> pure $ Just (pa, bin)
+      logWarn $ T.pack $ prettyHFError (ToolShadowed tool (_tvVersion tver) shadows)
 
   -- record in 'set' file
   when (isNothing mTmpDir) $ do
