@@ -8,6 +8,7 @@
 {-# OPTIONS_GHC -Wno-unused-matches #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module GHCup.Brick.Actions where
 
@@ -37,7 +38,6 @@ import GHCup.Brick.Common
     ( BrickData (..), BrickSettings (..), Mode (..), Name (..) )
 import GHCup.Brick.Widgets.Menu        ( MenuKeyBindings (..) )
 import GHCup.Brick.Widgets.Navigation  ( BrickInternalState )
-import GHCup.Brick.Widgets.SectionList
 
 import qualified GHCup.Brick.Common                        as Common
 import qualified GHCup.Brick.Widgets.Menus.AdvancedInstall as AdvancedInstall
@@ -46,7 +46,6 @@ import qualified GHCup.Brick.Widgets.Menus.CompileHLS      as CompileHLS
 import qualified GHCup.Brick.Widgets.Menus.Context         as ContextMenu
 
 import qualified Brick
-import qualified Brick.Focus            as F
 import qualified Brick.Widgets.List     as L
 import           Control.Applicative
 import           Control.Exception.Safe
@@ -58,8 +57,9 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Resource
 import Data.Bool
-import Data.Function                  ( on, (&) )
+import Data.Function                  ( (&) )
 import Data.Functor
+import qualified Data.Map.Strict as M
 import Data.IORef
     ( IORef, modifyIORef, newIORef, readIORef )
 import Data.List
@@ -88,10 +88,10 @@ import System.FilePath
 import Control.Concurrent     ( threadDelay )
 import Optics                 ( to, (^.) )
 import Optics.Getter          ( view )
-import Optics.Operators       ( (%~), (.~) )
+import Optics.Operators       ( (.~) )
 import Optics.Optic           ( (%) )
 import Optics.State           ( use )
-import Optics.State.Operators ( (.=) )
+import Optics.State.Operators ( (.=), (%=) )
 
 
 
@@ -127,35 +127,37 @@ constructList appD settings =
 -- | Focus on the tool section and the predicate which matches. If no result matches, focus on index 0
 selectBy :: Tool -> (ListResult -> Bool) -> BrickInternalState -> BrickInternalState
 selectBy tool predicate internal_state =
-  let new_focus = F.focusSetCurrent (Singular tool) (view sectionListFocusRingL internal_state)
-      tool_lens = sectionL (Singular tool)
-   in internal_state
-        & sectionListFocusRingL .~ new_focus
-        & tool_lens %~ L.listMoveTo 0            -- We move to 0 first
-        & tool_lens %~ L.listFindBy predicate    -- The lookup by the predicate.
+  L.listModify
+    (\(t, (td, vlr)) -> (t, (td, maybe vlr (`L.listMoveToElement` vlr) . V.find predicate $ L.listElements vlr)))
+    (L.listFindBy (\(t, _) -> tool == t) internal_state)
 
 -- | Select the latest GHC tool
 selectLatest :: BrickInternalState -> BrickInternalState
 selectLatest = selectBy ghc (elem Latest . lTag)
 
-
 -- | Replace the @appState@ or construct it based on a filter function
 -- and a new @[ListResult]@ evidence.
 -- When passed an existing @appState@, tries to keep the selected element.
 replaceLR :: (ListResult -> Bool)
-          -> [ListResult]
+          -> ToolListResult
           -> Maybe BrickInternalState
           -> BrickInternalState
 replaceLR filterF list_result s =
-  let oldElem = s >>= sectionListSelectedElement -- Maybe (Int, e)
-      newVec  =  [(Singular $ lTool (head g), V.fromList g) | g <- groupBy ((==) `on` lTool ) (filter filterF list_result)]
-      newSectionList = sectionList AllTools newVec 1
+  let oldElem = s >>= L.listSelectedElement -- Maybe (Int, e)
   in case oldElem of
-      Just (_, el) -> selectBy (lTool el) (toolEqual el) newSectionList
-      Nothing      -> selectLatest newSectionList
+      Just (_, (tool, (toolDesc, elr))) -> do
+        case L.listSelectedElement elr of
+          Just (_, lr) ->
+            selectBy tool (\lr' -> lVer lr == lVer lr' && lCross lr == lCross lr') newList
+          Nothing -> selectBy tool (elem Latest . lTag) newList
+      Nothing -> selectBy ghc (elem Latest . lTag) newList
  where
-  toolEqual e1 e2 =
-    lTool e1 == lTool e2 && lVer e1 == lVer e2 && lCross e1 == lCross e2
+   newList :: BrickInternalState
+   newList =
+      L.list
+        AllTools
+        (V.fromList $ fmap (\(tool, (td, filter filterF -> lr)) -> (tool, (td, L.list (Singular tool) (V.fromList lr) 1))) $ M.toList list_result) 1
+
 
 
 filterVisible :: Bool -> ListResult -> Bool
@@ -166,35 +168,61 @@ filterVisible v e | lInstalled e = True
                   , Old `notElem` lTag e
                   , Nightly `notElem` lTag e = True
                   | otherwise = (Old `notElem` lTag e)       &&
-                                  (Nightly `notElem` lTag e)
+                                (Nightly `notElem` lTag e)
 
 -- | Suspend the current UI and run an IO action in terminal. If the
 -- IO action returns a Left value, then it's thrown as userError.
 withIOAction :: (Ord n, Eq n)
-             => ( (Int, ListResult) -> ReaderT AppState IO (Either String a))
+             => ( (Int, Tool, Maybe ToolDescription, ListResult) -> ReaderT AppState IO (Either String a))
              -> Brick.EventM n BrickState ()
 withIOAction action = do
   as <- Brick.get
-  case sectionListSelectedElement (view appState as) of
+  case L.listSelectedElement (view appState as) of
     Nothing      -> pure ()
-    Just (curr_ix, e) -> do
-      Brick.suspendAndResume $ do
-        settings <- readIORef settings'
-        flip runReaderT settings $ action (curr_ix, e) >>= \case
-          Left  err -> liftIO $ putStrLn ("Error: " <> err)
-          Right _   -> liftIO $ putStrLn "Success"
-        getAppData Nothing >>= \case
-          Right data' -> do
-            putStrLn "Press enter to continue"
-            _ <- getLine
-            pure (updateList data' as)
-          Left err -> throwIO $ userError err
+    Just (curr_ix, (tool, (td, vlr))) -> case L.listSelectedElement vlr of
+      Just (curr_ix', lr) ->
+        Brick.suspendAndResume $ do
+          settings <- readIORef settings'
+          flip runReaderT settings $ action (curr_ix', tool, td, lr) >>= \case
+            Left  err -> liftIO $ putStrLn ("Error: " <> err)
+            Right _   -> liftIO $ putStrLn "Success"
+          getAppData Nothing >>= \case
+            Right data' -> do
+              putStrLn "Press enter to continue"
+              _ <- getLine
+              pure (updateList data' as)
+            Left err -> throwIO $ userError err
+      Nothing      -> pure ()
+
+withIOActionRecommended :: (Ord n, Eq n)
+                        => ( (Int, Tool, Maybe ToolDescription, ListResult) -> ReaderT AppState IO (Either String a))
+                        -> Brick.EventM n BrickState ()
+withIOActionRecommended action = do
+  as <- Brick.get
+  case L.listSelectedElement (view appState as) of
+    Nothing      -> pure ()
+    Just (curr_ix, (tool, (td, vlr))) -> do
+      let mlr = V.find (\ListResult{..} -> Recommended `elem` lTag) $ L.listElements vlr
+      case mlr of
+        Just lr ->
+          Brick.suspendAndResume $ do
+            settings <- readIORef settings'
+            flip runReaderT settings $ action (curr_ix, tool, td, lr) >>= \case
+              Left  err -> liftIO $ putStrLn ("Error: " <> err)
+              Right _   -> liftIO $ putStrLn "Success"
+            getAppData Nothing >>= \case
+              Right data' -> do
+                putStrLn "Press enter to continue"
+                _ <- getLine
+                pure (updateList data' as)
+              Left err -> throwIO $ userError err
+        Nothing -> pure ()
 
 installWithOptions :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
          => AdvancedInstall.InstallOptions
-         -> (Int, ListResult)
+         -> (Int, Tool, Maybe ToolDescription, ListResult)
          -> m (Either String ())
-installWithOptions opts (_, ListResult {..}) = do
+installWithOptions opts (_, lTool, td, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
   let
     misolated = opts ^. AdvancedInstall.isolateDirL
@@ -274,6 +302,7 @@ installWithOptions opts (_, ListResult {..}) = do
                 runBothE'
                   (withNoVerify $ installBindist
                       lTool
+                      td
                       (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) (Just $ RegexDir "ghc-.*") "" Nothing Nothing Nothing Nothing)
                       v
                       shouldIsolate
@@ -311,13 +340,13 @@ installWithOptions opts (_, ListResult {..}) = do
             <> "Also check the logs in ~/.ghcup/logs"
 
 install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
-         => (Int, ListResult) -> m (Either String ())
+         => (Int, Tool, Maybe ToolDescription, ListResult) -> m (Either String ())
 install' = installWithOptions (AdvancedInstall.InstallOptions Nothing False Nothing Nothing False [] Nothing)
 
 set' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
-     => (Int, ListResult)
+     => (Int, Tool, Maybe ToolDescription, ListResult)
      -> m (Either String ())
-set' input@(_, ListResult {..}) = do
+set' input@(_, lTool, _, ListResult {..}) = do
   settings <- liftIO $ readIORef settings'
 
   let run =
@@ -398,9 +427,9 @@ logGHCPostRm ghcVer = do
 
 
 del' :: (MonadReader AppState m, MonadIO m, MonadFail m, MonadMask m, MonadUnliftIO m)
-     => (Int, ListResult)
+     => (Int, Tool, Maybe ToolDescription, ListResult)
      -> m (Either String ())
-del' (_, ListResult {..}) = do
+del' (_, lTool, _, ListResult {..}) = do
   AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
 
   let run = runE @'[NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo]
@@ -424,9 +453,9 @@ del' (_, ListResult {..}) = do
 
 
 changelog' :: (MonadReader AppState m, MonadIO m)
-           => (Int, ListResult)
+           => (Int, Tool, Maybe ToolDescription, ListResult)
            -> m (Either String ())
-changelog' (_, ListResult {..}) = do
+changelog' (_, lTool, _, ListResult {..}) = do
   AppState { pfreq, ghcupInfo = GHCupInfo { _ghcupDownloads = dls }} <- ask
   case getChangeLog dls lTool (ToolVersion lVer) of
     Nothing -> pure $ Left $
@@ -449,8 +478,8 @@ changelog' (_, ListResult {..}) = do
         Left  e -> pure $ Left $ prettyHFError e
 
 compileGHC :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
-           => CompileGHC.CompileGHCOptions -> (Int, ListResult) -> m (Either String ())
-compileGHC compopts (_, lr@ListResult{lTool = Tool "ghc", ..}) = do
+           => CompileGHC.CompileGHCOptions -> (Int, Tool, Maybe ToolDescription, ListResult) -> m (Either String ())
+compileGHC compopts (_, Tool "ghc", _, lr@ListResult{..}) = do
   appstate <- ask
   let run =
         runResourceT
@@ -547,12 +576,11 @@ compileGHC compopts (_, lr@ListResult{lTool = Tool "ghc", ..}) = do
         pure $ Left $ prettyHFError e
 -- This is the case when the tool is not GHC... which should be impossible but,
 -- it exhaustes pattern matches
-compileGHC _ (_, ListResult{lTool = _}) = pure (Right ())
-
+compileGHC _ (_, _, _, _) = pure (Right ())
 
 compileHLS :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m, Alternative m)
-           => CompileHLS.CompileHLSOptions -> (Int, ListResult) -> m (Either String ())
-compileHLS compopts (_, lr@ListResult{lTool = Tool "hls", ..}) = do
+           => CompileHLS.CompileHLSOptions -> (Int, Tool, Maybe ToolDescription, ListResult) -> m (Either String ())
+compileHLS compopts (_, Tool "hls", _, lr@ListResult{..}) = do
   appstate <- ask
   let run =
         runResourceT
@@ -638,7 +666,7 @@ compileHLS compopts (_, lr@ListResult{lTool = Tool "hls", ..}) = do
         pure $ Left $ prettyHFError e
 -- This is the case when the tool is not HLS... which should be impossible but,
 -- it exhaustes pattern matches
-compileHLS _ (_, ListResult{lTool = _}) = pure (Right ())
+compileHLS _ (_, _, _, _) = pure (Right ())
 
 
 settings' :: IORef AppState
@@ -688,50 +716,75 @@ getAppData mgi = runExceptT $ do
 
 --
 
-keyHandlers :: KeyBindings
+keyHandlersToolList :: KeyBindings
             -> [ ( KeyCombination
-                 , BrickSettings -> String
+                 , Maybe (BrickSettings -> String)
                  , Brick.EventM Name BrickState ()
                  )
                ]
-keyHandlers KeyBindings {..} =
-  [ (bQuit, const "Quit"     , Brick.halt)
-  , (bInstall, const "Install"  , withIOAction install')
-  , (bUninstall, const "Uninstall", withIOAction del')
-  , (bSet, const "Set"      , withIOAction set')
-  , (bChangelog, const "ChangeLog", withIOAction changelog')
+keyHandlersToolList KeyBindings {..} =
+  [ (bQuit, Just $ const "Quit"     , Brick.halt)
+  , (bInstall, Just $ const "Install and set recommended version",
+       withIOActionRecommended $ installWithOptions (AdvancedInstall.InstallOptions Nothing True Nothing Nothing False [] Nothing))
   , ( bShowAllVersions
-    , \BrickSettings {..} ->
+    , Just $ \BrickSettings {..} ->
        if _showAllVersions then "Don't show all versions" else "Show all versions"
     , hideShowHandler' (not . _showAllVersions)
     )
-  , (bUp, const "Up", Common.zoom appState moveUp)
-  , (bDown, const "Down", Common.zoom appState moveDown)
-  , (KeyCombination (Vty.KChar 'h') [], const "help", mode .= KeyInfo)
-  , (KeyCombination Vty.KEnter [], const "advanced options", createMenuforTool )
+  , (KeyCombination (Vty.KChar 'h') [], Just $ const "help", mode .= KeyInfo)
+  , (KeyCombination Vty.KEnter [], Just $ const "Show tool details", mode .= Common.ToolInfo )
+  , (KeyCombination KLeft [], Nothing, versionFocus .= False)
+  , (KeyCombination KRight [], Nothing, versionFocus .= True)
+  , (KeyCombination (Vty.KChar '\t') [], Nothing, versionFocus %= not)
+  ]
+
+keyHandlersVersionList :: KeyBindings
+            -> [ ( KeyCombination
+                 , Maybe (BrickSettings -> String)
+                 , Brick.EventM Name BrickState ()
+                 )
+               ]
+keyHandlersVersionList KeyBindings {..} =
+  [ (bQuit, Just $ const "Quit"     , Brick.halt)
+  , (bInstall, Just $ const "Install"  , withIOAction install')
+  , (bUninstall, Just $ const "Uninstall", withIOAction del')
+  , (bSet, Just $ const "Set"      , withIOAction set')
+  , (bChangelog, Just $ const "ChangeLog", withIOAction changelog')
+  , ( bShowAllVersions
+    , Just $ \BrickSettings {..} ->
+       if _showAllVersions then "Don't show all versions" else "Show all versions"
+    , hideShowHandler' (not . _showAllVersions)
+    )
+  , (KeyCombination (Vty.KChar 'h') [], Just $ const "help", mode .= KeyInfo)
+  , (KeyCombination Vty.KEnter [], Just $ const "advanced options", createMenuforTool )
+  , (KeyCombination KLeft [], Nothing, versionFocus .= False)
+  , (KeyCombination KRight [], Nothing, versionFocus .= True)
+  , (KeyCombination (Vty.KChar '\t') [], Nothing, versionFocus %= not)
   ]
  where
   createMenuforTool = do
-    e <- use (appState % to sectionListSelectedElement)
+    e <- use (appState % to L.listSelectedElement)
     case e of
-      Nothing     -> pure ()
-      Just (_, r) -> do
-        -- Create new ContextMenu, but maintain the state of Install/Compile
-        -- menus. This is especially useful in case the user made a typo and
-        -- would like to retry the action.
-        contextMenu .= ContextMenu.create r
-          (MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit})
-        -- Set mode to context
-        mode           .= ContextPanel
+      Nothing -> pure ()
+      Just (_, (t, (td, vlr))) -> case L.listSelectedElement vlr of
+        Just (_, lr) -> do
+          -- Create new ContextMenu, but maintain the state of Install/Compile
+          -- menus. This is especially useful in case the user made a typo and
+          -- would like to retry the action.
+          contextMenu .= ContextMenu.create (t, (td, lr))
+            (MenuKeyBindings { mKbUp = bUp, mKbDown = bDown, mKbQuit = bQuit})
+          -- Set mode to context
+          mode           .= ContextPanel
+        Nothing -> pure ()
     pure ()
 
-  --hideShowHandler' :: (BrickSettings -> Bool) -> (BrickSettings -> Bool) -> m ()
-  hideShowHandler' f = do
-    app_settings <- use appSettings
-    let
-      vers = f app_settings
-      newAppSettings = app_settings & Common.showAllVersions .~ vers
-    ad <- use appData
-    current_app_state <- use appState
-    appSettings .= newAppSettings
-    appState    .= constructList ad newAppSettings (Just current_app_state)
+hideShowHandler' :: (BrickSettings -> Bool) -> Brick.EventM Name BrickState ()
+hideShowHandler' f = do
+  app_settings <- use appSettings
+  let
+    vers = f app_settings
+    newAppSettings = app_settings & Common.showAllVersions .~ vers
+  ad <- use appData
+  current_app_state <- use appState
+  appSettings .= newAppSettings
+  appState    .= constructList ad newAppSettings (Just current_app_state)

@@ -33,9 +33,11 @@ import System.FilePath
 import Text.PrettyPrint               hiding ( (<>) )
 import Text.PrettyPrint.HughesPJClass hiding ( (<>) )
 import URI.ByteString
+import Data.Functor ((<&>))
 
 import qualified Data.Map.Strict as M
 import qualified Data.Text       as T
+import Data.List (intercalate)
 
 
 
@@ -666,22 +668,21 @@ instance HFErrorProject HadrianNotFound where
   eBase _ = 320
   eDesc _ = "Could not find Hadrian build files. Does this GHC version support Hadrian builds?"
 
-data ToolShadowed = ToolShadowed Tool FilePath FilePath Version
+data ToolShadowed = ToolShadowed Tool Version [(FilePath, FilePath)]
   -- upgraded version
   deriving (Show)
 
 instance Pretty ToolShadowed where
-  pPrint (ToolShadowed tool sh up _) =
+  pPrint (ToolShadowed tool ver shadows) =
     text (prettyShow tool
-         <> " is shadowed by "
-         <> sh
-         <> ".\nThe upgrade will not be in effect, unless you remove "
-         <> sh
-         <> "\nor make sure "
-         <> takeDirectory up
-         <> " comes before "
-         <> takeDirectory sh
-         <> " in PATH."
+         <> " version " <> T.unpack (prettyVer ver)
+         <> " has shadowed binaries:\n"
+         <> intercalate "\n" (shadows <&> \(sh, bin) ->
+              "  * " <> bin <> " shadowed by " <> sh
+           )
+         <> ".\nThe upgrade will not be in effect, unless you make sure that "
+         <> (takeDirectory . snd . head $ shadows)
+         <> " comes first in PATH."
          )
 
 instance HFErrorProject ToolShadowed where

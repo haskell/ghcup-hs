@@ -13,6 +13,21 @@ no-network: False
 # whether/how to do gpg verification
 gpg-setting: GPGNone # GPGStrict | GPGLax | GPGNone
 
+# A wrapper around configure/make
+# Can be used to sandbox untrusted build systems, e.g.:
+#
+# build-wrapper: null
+#   cmd: bwrap
+#   cmdArgs:
+#     [ --ro-bind, /, /
+#     , --bind, /home/wurst/.ghcup, /home/wurst/.ghcup
+#     , --bind, /home/wurst/.cabal, /home/wurst/.cabal
+#     , --dev, /dev
+#     , --proc, /proc
+#     , --tmpfs, /tmp
+#     ]
+build-wrapper: null
+
 # TUI key bindings,
 # see https://hackage.haskell.org/package/vty-5.31/docs/Graphics-Vty-Input-Events.html#t:Key
 # for possible values.

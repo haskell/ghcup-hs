@@ -114,9 +114,10 @@ execLogged exe args chdir lfile env = do
         $ forkIO
         $ EX.handle (\(_ :: IOException) -> pure ())
         $ EX.finally
-            (if verbose > 0
-              then tee fd stdoutRead
-              else printToRegion fd stdoutRead 6 pState no_color
+            (case verbose of
+              Verbosity i
+                | i > 0 -> tee fd stdoutRead
+                | otherwise -> printToRegion fd stdoutRead 6 pState no_color
             )
             (putMVar done ())
 

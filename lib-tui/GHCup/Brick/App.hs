@@ -25,10 +25,11 @@ module GHCup.Brick.App where
 
 import qualified GHCup.Brick.Actions as Actions
 import qualified GHCup.Brick.Attributes as Attributes
-import GHCup.Brick.BrickState (BrickState (..), advancedInstallMenu, appKeys, appSettings, appState, contextMenu, mode, compileGHCMenu, compileHLSMenu)
+import GHCup.Brick.BrickState (BrickState (..), advancedInstallMenu, appKeys, appSettings, appState, contextMenu, mode, compileGHCMenu, compileHLSMenu, versionFocus)
 import GHCup.Brick.Common (Mode (..), Name (..))
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Widgets.KeyInfo as KeyInfo
+import qualified GHCup.Brick.Widgets.ToolInfo as ToolInfo
 import qualified GHCup.Brick.Widgets.Menus.Context as ContextMenu
 import qualified GHCup.Brick.Widgets.Navigation as Navigation
 import qualified GHCup.Brick.Widgets.Tutorial as Tutorial
@@ -36,7 +37,7 @@ import qualified GHCup.Brick.Widgets.Menu as Menu
 import qualified GHCup.Brick.Widgets.Menus.AdvancedInstall as AdvancedInstall
 
 import GHCup.Command.List (ListResult)
-import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination), KeyBindings (..))
+import GHCup.Types (AppState (AppState, keyBindings), KeyCombination (KeyCombination), KeyBindings (..), Tool, ToolDescription)
 
 import qualified Brick.Focus as F
 import Brick (
@@ -68,6 +69,7 @@ import Optics.State.Operators ((.=))
 import qualified GHCup.Brick.Widgets.Menus.CompileGHC as CompileGHC
 import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
 import Control.Monad (void, when)
+import Control.Monad.State.Class (get)
 
 app :: AttrMap -> AttrMap -> App BrickState () Name
 app attrs dimAttrs =
@@ -93,15 +95,20 @@ drawUI dimAttrs st =
       . Brick.txtWrap
       . T.pack
       . foldr1 (\x y -> x <> "  " <> y)
-      . fmap (\(KeyCombination key mods, pretty_setting, _)
-                  -> intercalate "+" (Common.showKey key : (Common.showMod <$> mods)) <> ":" <> pretty_setting (st ^. appSettings)
+      . fmap (\(KeyCombination key mods, mpretty_setting, _) ->
+                 case mpretty_setting of
+                   Just pretty_setting -> intercalate "+" (Common.showKey key : (Common.showMod <$> mods)) <> ":" <> pretty_setting (st ^. appSettings)
+                   Nothing -> ""
              )
-      $ Actions.keyHandlers (st ^. appKeys)
-    navg = Navigation.draw dimAttrs (st ^. appState) <=> footer
+      $ if st ^. versionFocus
+         then Actions.keyHandlersVersionList (st ^. appKeys)
+         else Actions.keyHandlersToolList (st ^. appKeys)
+    navg = Navigation.draw (st ^. versionFocus) dimAttrs (st ^. appState) <=> footer
   in case st ^. mode of
        Navigation   -> [navg]
        Tutorial     -> [Tutorial.draw (bQuit $ st ^. appKeys), navg]
        KeyInfo      -> [KeyInfo.draw (st ^. appKeys), navg]
+       ToolInfo     -> [ToolInfo.draw (st ^. appState) (st ^. appKeys), navg]
        ContextPanel -> [ContextMenu.draw (st ^. contextMenu), navg]
        AdvancedInstallPanel -> AdvancedInstall.draw (st ^. advancedInstallMenu) ++ [navg]
        CompileGHCPanel     -> CompileGHC.draw (st ^. compileGHCMenu) ++ [navg]
@@ -118,6 +125,14 @@ keyInfoHandler ev = do
       | bQuit kb == KeyCombination key mods -> mode .= Navigation
     _ -> pure ()
 
+toolInfoHandler :: BrickEvent Name e -> EventM Name BrickState ()
+toolInfoHandler ev = do
+  AppState { keyBindings = kb } <- liftIO $ readIORef Actions.settings'
+  case ev of
+    VtyEvent (Vty.EvKey key mods)
+      | bQuit kb == KeyCombination key mods -> mode .= Navigation
+    _ -> pure ()
+
 -- | On q, go back to navigation. Else, do nothing
 tutorialHandler :: BrickEvent Name e -> EventM Name BrickState ()
 tutorialHandler ev = do
@@ -130,13 +145,19 @@ tutorialHandler ev = do
 -- | Tab/Arrows to navigate.
 navigationHandler :: BrickEvent Name e -> EventM Name BrickState ()
 navigationHandler ev = do
+  BrickState{..} <- get
   AppState { keyBindings = kb } <- liftIO $ readIORef Actions.settings'
   case ev of
-    inner_event@(VtyEvent (Vty.EvKey key mods)) ->
-      case find (\(key', _, _) -> key' == KeyCombination key mods) (Actions.keyHandlers kb) of
-        Just (_, _, handler) -> handler
-        Nothing -> void $ Common.zoom appState $ Navigation.handler inner_event
-    inner_event -> Common.zoom appState $ Navigation.handler inner_event
+    inner_event@(VtyEvent (Vty.EvKey key mods))
+      | _versionFocus -> do
+          case find (\(key', _, _) -> key' == KeyCombination key mods) (Actions.keyHandlersVersionList kb) of
+            Just (_, _, handler) -> handler
+            Nothing -> void $ Common.zoom appState $ Navigation.handler _versionFocus inner_event
+      | otherwise -> do
+          case find (\(key', _, _) -> key' == KeyCombination key mods) (Actions.keyHandlersToolList kb) of
+            Just (_, _, handler) -> handler
+            Nothing -> void $ Common.zoom appState $ Navigation.handler _versionFocus inner_event
+    inner_event -> Common.zoom appState $ Navigation.handler _versionFocus inner_event
 
 contextMenuHandler :: BrickEvent Name e -> EventM Name BrickState ()
 contextMenuHandler ev = do
@@ -162,8 +183,9 @@ compileHLSHandler = menuWithOverlayHandler compileHLSMenu Actions.compileHLS Com
 
 -- | Passes all events to innerHandler if an overlay is opened
 -- else handles the exitKey and Enter key for the Menu's "OkButton"
-menuWithOverlayHandler :: Lens' BrickState (Menu.Menu t Name)
-  -> (t -> ((Int, ListResult) -> ReaderT AppState IO (Either String a)))
+menuWithOverlayHandler ::
+     Lens' BrickState (Menu.Menu t Name)
+  -> (t -> ((Int, Tool, Maybe ToolDescription, ListResult) -> ReaderT AppState IO (Either String a)))
   -> (BrickEvent Name e -> EventM Name (Menu.Menu t Name) ())
   -> BrickEvent Name e
   -> EventM Name BrickState ()
@@ -187,6 +209,7 @@ eventHandler ev = do
   m <- use mode
   case m of
     KeyInfo      -> keyInfoHandler ev
+    ToolInfo     -> toolInfoHandler ev
     Tutorial     -> tutorialHandler ev
     Navigation   -> navigationHandler ev
     ContextPanel -> contextMenuHandler ev

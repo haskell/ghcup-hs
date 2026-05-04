@@ -40,7 +40,12 @@ draw KeyBindings {..} =
             Brick.hBox [
               Brick.txt "Press "
             , Common.keyToWidget bUp, Brick.txt " and ", Common.keyToWidget bDown
-            , Brick.txtWrap " to navigate the list of tools"
+            , Brick.txtWrap " to select an element in the currently focused list (tools or versions)"
+            ],
+            Brick.hBox [
+              Brick.txt "Press "
+            , Brick.txt "← and →"
+            , Brick.txtWrap " to switch between tool and version list"
             ]
           , Brick.hBox [
               Brick.txt "Press "

@@ -326,7 +326,7 @@ versionCompleter' criteria tool filter' = listIOCompleter $ do
           runEnv = flip runReaderT appState . runE
 
       (VRight installedVersions) <- runEnv $ listVersions (Just [tool]) criteria False False (Nothing, Nothing)
-      return $ fmap (T.unpack . prettyVer) . filter filter' . fmap lVer $ installedVersions
+      return $ fmap (T.unpack . prettyVer) . filter filter' . maybe [] (fmap lVer . snd) $ M.lookup tool installedVersions
 
 
 toolDlCompleter :: Tool -> Completer
@@ -481,8 +481,11 @@ checkForUpdates :: ( MonadReader env m
                 => m [(Tool, TargetVersion)]
 checkForUpdates = do
   GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
-  (VRight lInstalled) <- runE $ listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
-  let latestInstalled tool = (fmap (\lr -> TargetVersion (lCross lr) (lVer lr)) . lastMay . filter (\lr -> lTool lr == tool)) lInstalled
+  (VRight lInstalled') <- runE $ listVersions Nothing [ListInstalled True] False False (Nothing, Nothing)
+  let latestInstalled tool = do
+        (_, xs) <- M.lookup tool lInstalled'
+        ListResult{..} <- lastMay xs
+        pure $ TargetVersion lCross lVer
 
   ghcup' <- forMM (getLatest dls ghcup) $ \(TargetVersion _ l, _) -> do
     (Right ghcup_ver) <- pure $ version $ prettyPVP ghcUpVer

@@ -11,7 +11,7 @@ import GHCup.Errors
 import GHCup.Legacy.Cabal
 import GHCup.Legacy.HLS
 import GHCup.Legacy.Stack
-import GHCup.Legacy.Utils
+import GHCup.Legacy.Utils (rmPlainGHC, binarySymLinkDestination, ghcInternalBinDir, ghcToolFiles)
 import GHCup.Prelude
 import GHCup.Query.DB
 import GHCup.Query.GHCupDirs
@@ -19,6 +19,7 @@ import GHCup.Query.Symlink
 import GHCup.System.Directory
 import GHCup.Types
 import GHCup.Types.Optics
+import GHCup.Warnings
 
 import Control.Applicative
 import Control.Monad
@@ -36,6 +37,7 @@ import System.IO.Error
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
+import GHCup.Query.DB.HLS
 
 setToolVersion ::
   ( MonadReader env m
@@ -74,7 +76,7 @@ setToolVersion' tool tver mTmpDir = do
       | tool == cabal -> liftE $ setCabal ver' mTmpDir
       | tool == stack -> liftE $ setStack ver' mTmpDir
       | tool == hls   -> liftE $ setHLS ver' SetHLSOnly mTmpDir
-      | otherwise -> fail "Could not find installation metadata... your DB seems corrupted"
+      | otherwise -> throwE $ NotInstalled tool tver
     VRight spec -> do
       lift $ logDebug2 $ T.pack (show spec)
       toolDir <- lift $ fmap fromGHCupPath $ toolInstallDestination tool tver
@@ -82,17 +84,22 @@ setToolVersion' tool tver mTmpDir = do
         (lift $ getUnqualifiedSymlinks spec toolDir)
         (\tmpDir -> lift $ getUnqualifiedSymlinks' tmpDir spec toolDir)
         mTmpDir
-      forM_ symls $ \(target, bin) -> do
-        liftIO (isShadowed bin) >>= \case
-          Nothing -> pure ()
-          Just pa -> logWarn $ T.pack $ prettyHFError (ToolShadowed tool pa bin (_tvVersion tver))
+      shadows <- fmap catMaybes <$> forM symls $ \(target, bin) -> do
         lift $ createLink target bin
+        liftIO (isShadowed bin) >>= \case
+          Nothing -> pure Nothing
+          Just pa -> pure $ Just (pa, bin)
+      logWarn $ T.pack $ prettyHFError (ToolShadowed tool (_tvVersion tver) shadows)
 
   -- record in 'set' file
   when (isNothing mTmpDir) $ do
     setFile <- lift $ recordedSetVersionFile tool (_tvTarget tver)
     liftIO $ createDirRecursive' (takeDirectory setFile)
     liftIO $ T.writeFile setFile (prettyVer . _tvVersion $ tver)
+    currentHLS <- liftE $ getSetVersion' hls Nothing
+    currentGHC <- liftE $ getSetVersion' ghc Nothing
+    supportedGHC <- lift $ maybe (pure []) (getHLSGHCs . fst) currentHLS
+    lift $ warnAboutHlsCompatibility (fst <$> currentHLS) (fst <$> currentGHC) supportedGHC
 
   pure tver
  where

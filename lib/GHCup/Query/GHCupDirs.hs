@@ -399,7 +399,6 @@ toolBaseDir tool = do
   Dirs {..}  <- getDirs
   pure (baseDir `appendGHCupPath` prettyShow tool)
 
--- TODO rm
 -- | Gets '~/.ghcup/ghc/<ghcupGHCDir>'.
 -- The dir may be of the form
 --   * armv7-unknown-linux-gnueabihf-8.8.3

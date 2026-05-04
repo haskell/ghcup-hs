@@ -113,6 +113,7 @@ compileHLS :: ( MonadMask m
 compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal updateCabal patches cabalArgs = do
   pfreq@PlatformRequest { .. } <- lift getPlatformReq
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+  let toolDesc = preview (ix hls % toolDetails % _Just) dls
   Dirs { .. } <- lift getDirs
 
   when updateCabal $ reThrowAll @_ @'[ProcessError] DownloadFailed $ do
@@ -331,14 +332,14 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
       runE (getInstallMetadata hls (mkTVer installVer)) >>= \case
         VRight metadata -> do
           destdir <- lift withGHCupTmpDir
-          liftE $ addAdHocBinaries (Just metadata) tmpInstallDir installDirResolved destdir installVer True
+          liftE $ addAdHocBinaries (Just metadata) toolDesc tmpInstallDir installDirResolved destdir installVer True
         VLeft (V (FileDoesNotExistError _)) -> do
           inst <- lift $ isInstalled hls (mkTVer installVer)
           if inst
           then liftE $ installHLSUnpackedLegacy tmpInstallDir (GHCupBinDir binDir) installVer True
           else do
             destdir <- lift withGHCupTmpDir
-            liftE $ addAdHocBinaries Nothing tmpInstallDir installDirResolved destdir installVer True
+            liftE $ addAdHocBinaries Nothing toolDesc tmpInstallDir installDirResolved destdir installVer True
         VLeft (V (ParseError pe)) -> liftE $ throwE @_ @'[ParseError] (ParseError pe)
         VLeft v -> lift $ fail (prettyHFError v)
     )
@@ -382,6 +383,7 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
     , MonadIOish m
     )
     => Maybe InstallMetadata
+    -> Maybe ToolDescription
     -> FilePath
     -> InstallDirResolved   -- ^ Path to install to
     -> GHCupPath            -- ^ DESTDIR
@@ -394,30 +396,34 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
                 , NoInstallInfo
                 , ProcessError
                 ] m ()
-  addAdHocBinaries mMetadata workdir installDest tmpInstallDest (mkTVer -> tver) forceInstall = do
+  addAdHocBinaries mMetadata toolDesc workdir installDest tmpInstallDest (mkTVer -> tver) forceInstall = do
     binaries <- liftIO $ listDirectoryFiles workdir
     let spec = adHocInstallationSpec (dropSuffix exeExt <$> binaries)
 
     logDebug $ T.pack (show spec)
+    logDebug "Install into tmp dir as per the spec"
     liftE $ installTheSpec (toInstallationInputSpec spec) workdir installDest tmpInstallDest [] Nothing forceInstall
 
+    logDebug "Merge to filesystem"
     liftE $ mergeToFileSystem hls tver installDest tmpInstallDest (_isPreserveMtimes spec) forceInstall True
 
 
     case installDir of
       -- set and make symlinks for regular (non-isolated) installs
       GHCupInternal -> do
+        logDebug "Symlink binaries"
         Dirs {..} <- lift getDirs
         parsedSymlinkSpec <- forM (_isExeSymLinked spec) (liftE . parseSymlinkSpec (_tvVersion tver))
         liftE $ symlinkBinaries installDest parsedSymlinkSpec (GHCupBinDir binDir) hls tver
 
         -- write InstallationInfo to the disk
+        logDebug "Writing installation info to disk"
         case mMetadata of
           (Just (InstallMetadata { _imResolvedInstallSpec, _imDownloadInfo })) -> do
-            lift $ recordInstallationInfo installDest hls tver _imDownloadInfo (manipulateSpec _imResolvedInstallSpec spec)
+            lift $ recordInstallationInfo installDest hls toolDesc tver _imDownloadInfo (manipulateSpec _imResolvedInstallSpec spec)
           Nothing -> do
             let dlInfo = DownloadInfo "" Nothing "" Nothing Nothing Nothing (Just $ toInstallationInputSpec spec)
-            lift $ recordInstallationInfo installDest hls tver dlInfo spec
+            lift $ recordInstallationInfo installDest hls toolDesc tver dlInfo spec
       _ -> pure ()
 
     pure ()

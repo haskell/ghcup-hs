@@ -81,7 +81,7 @@ setCabal ver mTmpDir = do
 
   liftIO (isShadowed cabalbin) >>= \case
     Nothing -> pure ()
-    Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed cabal pa cabalbin ver)
+    Just pa -> lift $ logWarn $ T.pack $ prettyHFError (ToolShadowed cabal ver [(pa, cabalbin)])
 
   pure ()
 

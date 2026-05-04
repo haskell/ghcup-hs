@@ -41,6 +41,7 @@ import Data.Aeson.Types    hiding ( Key )
 import Data.ByteString     ( ByteString )
 import Data.Foldable
 import Data.Maybe
+import Data.Scientific (toBoundedInteger)
 import Data.Text.Encoding  as E
 import Data.Versions
 import System.FilePath     ( hasDrive, isAbsolute, splitPath )
@@ -443,7 +444,27 @@ deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''Requir
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''DownloadInfo
 deriveJSON defaultOptions { fieldLabelModifier = removeLensFieldLabel } ''VersionInfo
 deriveJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 1 } ''ToolDescription
-deriveJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 } ''InstallMetadata
+
+instance FromJSON InstallMetadata where
+  parseJSON v = newParse v <|> legacyParse v
+   where
+    legacyParse o = do
+      v'@DownloadInfo{..} <- parseJSON o
+      case _dlInstallSpec of
+        Nothing -> fail "No install metadata in legacy parser"
+        Just InstallationSpec{..} -> do
+          isExeSymLinked' <- forM _isExeSymLinked toSymlSpec
+          pure $ InstallMetadata v' InstallationSpec{ _isExeSymLinked = isExeSymLinked', ..} Nothing
+
+    toSymlSpec SymlinkInputSpec{..} = pure SymlinkSpec{..}
+    toSymlSpec _ = fail "Can't handle SymlinkPatternSpec in legacy parser"
+
+    newParse = do
+      withObject "InstallMetadata" $ \o -> do
+        _imDownloadInfo <- o .: "downloadInfo"
+        _imResolvedInstallSpec <- o .: "resolvedInstallSpec"
+        _imToolDescription <- o .:? "toolDescription"
+        pure InstallMetadata{..}
 
 instance FromJSON ToolInfo where
   parseJSON v = newParse v <|> legacyParse v
@@ -457,6 +478,7 @@ instance FromJSON ToolInfo where
         _toolDetails <- o .: "toolDetails"
         pure ToolInfo{..}
 
+deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 3 } ''InstallMetadata
 deriveToJSON defaultOptions { fieldLabelModifier = mapHead lower . drop 1 } ''ToolInfo
 
 instance FromJSON GHCupInfo where
@@ -637,7 +659,16 @@ instance FromJSON PagerConfig where
        cmd  <- o .:? "cmd"
        pure $ PagerConfig list cmd
 
+instance FromJSON Verbosity where
+  parseJSON v = new v <|> legacy v
+   where
+    legacy = withBool "Verbosity" $ \b -> do
+      pure $ Verbosity (if b then 1 else 0)
+    new = withScientific "Verbosity" $ \s -> do
+      int <- maybe (fail "Verbosity integer out of bounds") pure $ toBoundedInteger s
+      pure $ Verbosity int
 
+deriveToJSON defaultOptions { unwrapUnaryRecords = True } ''Verbosity
 deriveToJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "pager-") . T.pack . kebab $ str' } ''PagerConfig
 deriveToJSON defaultOptions { fieldLabelModifier = drop 2 . kebab } ''KeyBindings -- move under key-bindings key
 deriveJSON defaultOptions { fieldLabelModifier = \str' -> maybe str' T.unpack . T.stripPrefix (T.pack "k-") . T.pack . kebab $ str' } ''UserKeyBindings

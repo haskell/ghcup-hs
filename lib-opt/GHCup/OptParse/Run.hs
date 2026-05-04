@@ -306,7 +306,6 @@ run RunOptions{..} settings runAppState leanAppstate runLogger = do
 
    guessMode = if guessVersion settings then GLaxWithInstalled else GStrict
 
-   -- TODO: doesn't work for cross
    resolveToolchainFull :: ( MonadIOish m )
                         => Excepts
                              '[ TagNotFound

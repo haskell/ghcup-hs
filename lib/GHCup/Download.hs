@@ -167,10 +167,21 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
   dl' (NewSetupInfo si) = pure (Right si)
   dl' (NewURI uri)      = do
                             base <- liftE $ getBase uri
-                            catchE @JSONError (\(JSONDecodeError s) -> do
-                                logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: " <> T.pack s
-                                Right <$> decodeMetadata @Stack.SetupInfo base)
-                              $ fmap Left (decodeMetadata @GHCupInfo base >>= \gI -> warnOnMetadataUpdate uri gI >> pure gI)
+                            gr <- runE $ decodeMetadata @GHCupInfo base >>= \gI -> warnOnMetadataUpdate uri gI >> pure gI
+                            case gr of
+                              VRight r -> pure $ Left r
+                              VLeft (V (JSONDecodeError ge)) -> do
+                                logDebug $ "Couldn't decode " <> T.pack base <> " as GHCupInfo, trying as SetupInfo: " <> T.pack ge
+                                sr <- runE $ decodeMetadata @Stack.SetupInfo base
+                                case sr of
+                                  VRight r -> pure $ Right r
+                                  VLeft (V (JSONDecodeError se)) -> do
+                                    throwE $ JSONDecodeError $ "\nError decoding as GHCupInfo:\n"
+                                      <> (unlines . fmap ("  " <>) . lines $ ge)
+                                      <> "\nError decoding as StackSetupURL:\n"
+                                      <> (unlines . fmap ("  " <>) . lines $ se)
+                                  VLeft err -> throwSomeE err
+                              VLeft err -> throwSomeE err
 
   fromStackSetupInfo :: MonadThrow m
                      => Stack.SetupInfo
@@ -199,7 +210,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
                  -> m GHCupInfo
   mergeGhcupInfo [] = fail "mergeGhcupInfo: internal error: need at least one GHCupInfo"
   mergeGhcupInfo xs@(GHCupInfo{}: _) =
-    let newDownloads   = M.unionsWith (\(ToolInfo a _) (ToolInfo a' b') -> ToolInfo (M.unionWith (\_ b2 -> b2) a a') b')
+    let newDownloads   = M.unionsWith (\(ToolInfo a b) (ToolInfo a' b') -> ToolInfo (M.unionWith (\_ b2 -> b2) a a') (b <|> b'))
                                       (_ghcupDownloads   <$> xs)
         newToolReqs    = M.unionsWith (M.unionWith (\_ b2 -> b2)) (_toolRequirements <$> xs)
     in pure $ GHCupInfo newToolReqs newDownloads Nothing

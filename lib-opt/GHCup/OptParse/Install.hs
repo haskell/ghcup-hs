@@ -391,6 +391,7 @@ install installCommand settings getAppState' runLogger = case installCommand of
              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
            liftE $ runBothE' (installBindist
                        instTool
+                       Nothing
                        (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) regexDir "" Nothing Nothing Nothing (toInstallationInputSpec <$> defaultToolInstallSpec instTool pfreq v))
                        v
                        (maybe GHCupInternal IsolateDir isolateDir)
