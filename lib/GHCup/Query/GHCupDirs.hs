@@ -232,7 +232,7 @@ ghcupCacheDir
 -- | Defaults to '~/.ghcup/logs'.
 --
 -- If 'GHCUP_USE_XDG_DIRS' is set (to anything),
--- then uses 'XDG_CACHE_HOME/ghcup/logs' as per xdg spec.
+-- then uses 'XDG_STATE_HOME/ghcup/logs' as per xdg spec.
 ghcupLogsDir :: IO GHCupPath
 ghcupLogsDir
   | isWindows = ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "logs"))
@@ -240,11 +240,11 @@ ghcupLogsDir
       xdg <- useXDG
       if xdg
         then do
-          bdir <- lookupEnv "XDG_CACHE_HOME" >>= \case
+          bdir <- lookupEnv "XDG_STATE_HOME" >>= \case
             Just r  -> pure r
             Nothing -> do
               home <- liftIO getHomeDirectory
-              pure (home </> ".cache")
+              pure (home </> ".local" </> "state")
           pure (GHCupPath (bdir </> "ghcup" </> "logs"))
         else ghcupBaseDir <&> (\(GHCupPath gp) -> GHCupPath (gp </> "logs"))
 

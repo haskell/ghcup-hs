@@ -341,7 +341,7 @@ installWithOptions opts (_ix, lTool, td, ListResult {..}) = do
           VLeft  (V (AlreadyInstalled _ _)) -> pure $ Right ()
           VLeft (V NoUpdate) -> pure $ Right ()
           VLeft e -> pure $ Left $ prettyHFError e <> "\n"
-            <> "Also check the logs in ~/.ghcup/logs"
+            <> "Also check the logs in ~/.ghcup/logs or $XDG_STATE_HOME/ghcup/logs"
 
 install' :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
          => (Int, Tool, Maybe ToolDescription, ListResult) -> m (Either String ())
