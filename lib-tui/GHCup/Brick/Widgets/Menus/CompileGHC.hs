@@ -214,7 +214,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
           & Menu.fieldHelpMsgL .~ "Absolute path to build config file (make build system only)"
       , Menu.createEditableField (Common.MenuElement Common.PatchesEditBox) patchesV patches
           & Menu.fieldLabelL .~ "patches"
-          & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or Absolute path to patch directory"
+          & Menu.fieldHelpMsgL .~ "Either a URI to a patch (https/http/file) or absolute path to patch directory"
       , Menu.createEditableField (Common.MenuElement Common.CrossTargetEditBox) (Right . Just) crossTarget
           & Menu.fieldLabelL .~ "cross target"
           & Menu.fieldHelpMsgL .~ "Build cross-compiler for this platform"
@@ -226,7 +226,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
           & Menu.fieldHelpMsgL .~ "Allows to overwrite the finally installed VERSION with a different one. Allows to specify patterns: %v (version), %b (branch name), %h (short commit hash), %H (long commit hash), %g ('git describe' output)"
       , Menu.createEditableField (Common.MenuElement Common.IsolateEditBox) filepathV isolateDir
           & Menu.fieldLabelL .~ "isolated"
-          & Menu.fieldHelpMsgL .~ "install in an isolated absolute directory instead of the default one"
+          & Menu.fieldHelpMsgL .~ "Install in an isolated absolute directory instead of the default one"
       , Menu.createEditableField (Common.MenuElement Common.GitRefEditBox) (Right . Just . T.unpack) gitRef
           & Menu.fieldLabelL .~ "git-ref"
           & Menu.fieldHelpMsgL .~ "The git commit/branch/ref to build from"

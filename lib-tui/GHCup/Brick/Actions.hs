@@ -579,7 +579,7 @@ compileGHC compopts (_, Tool "ghc", _, lr@ListResult{..}) = do
       VLeft e -> do
         pure $ Left $ prettyHFError e
 -- This is the case when the tool is not GHC... which should be impossible but,
--- it exhaustes pattern matches
+-- it exhausts pattern matches
 compileGHC _ (_, _, _, _) = pure (Right ())
 
 compileHLS :: (MonadReader AppState m, MonadIO m, MonadThrow m, MonadFail m, MonadMask m, MonadUnliftIO m)
@@ -762,8 +762,8 @@ keyHandlersVersionList KeyBindings {..} =
        if _showAllVersions then "Don't show all versions" else "Show all versions"
     , hideShowHandler' (not . _showAllVersions)
     )
-  , (KeyCombination (Vty.KChar 'h') [], Just $ const "help", mode .= KeyInfo)
-  , (KeyCombination Vty.KEnter [], Just $ const "advanced options", createMenuforTool )
+  , (KeyCombination (Vty.KChar 'h') [], Just $ const "Help", mode .= KeyInfo)
+  , (KeyCombination Vty.KEnter [], Just $ const "Advanced options", createMenuforTool )
   , (KeyCombination KLeft [], Nothing, versionFocus .= False)
   , (KeyCombination KRight [], Nothing, versionFocus .= True)
   , (KeyCombination (Vty.KChar '\t') [], Nothing, versionFocus %= not)
