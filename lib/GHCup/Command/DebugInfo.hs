@@ -49,8 +49,7 @@ import Prelude                      hiding ( abs, writeFile )
     ------------------
 
 
-getDebugInfo :: ( Alternative m
-                , MonadFail m
+getDebugInfo :: ( MonadFail m
                 , MonadReader env m
                 , HasDirs env
                 , HasLog env
