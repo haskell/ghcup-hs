@@ -124,12 +124,13 @@ draw versionFocus dimAttrs bis
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer) <> rev
         dim
           | lNoBindist && not lInstalled
-            && not b -- TODO: overloading dim and active ignores active
-                     --       so we hack around it here
+            && (  not versionFocus -- TODO: overloading dim and active ignores active
+               || not b             -- so we hack around it here
+               )
           = Brick.updateAttrMap (const dimAttrs) . Brick.withAttr (Brick.attrName "no-bindist")
           | otherwise  = id
         hooray
-          | elem Latest lTag' && not lInstalled =
+          | elem Latest lTag' && not lInstalled && not lNoBindist =
               Brick.withAttr Attributes.hoorayAttr
           | (_, RevUpdate) <- lRev
           = Brick.withAttr Attributes.hoorayAttr
