@@ -1,4 +1,42 @@
-# Revision history for ghcup
+# Version history for ghcup
+
+## 0.2.1.0 -- 2026-05-17
+
+### New feature
+
+* implement **"installer DSL"** (custom tool installation) wrt [#141](https://github.com/haskell/ghcup-hs/issues/141)
+  - run `ghcup config add-release-channel 3rdparty` to get access to tools like `hlint`, `ormolu`, `agda` etc.
+  - refer to the [Packaging documentation](https://www.haskell.org/ghcup/packaging) for more details
+* major design change in the TUI (two-pane view)
+  - use left/right arrow keys or tab to switch between the tool and version list
+* implement **revisions**
+  - these are "distributor" updates (e.g. fixes to bindists or the metadata) without requiring a proper upstream release
+  - refer to the [documentation](https://www.haskell.org/ghcup/guide/#revisions) for more details
+* pave the way for **OpenBSD** support wrt [#182](https://github.com/haskell/ghcup-hs/issues/182)
+  - we still lack GHC bindists
+* add experimental support for **Dhall metadata** wrt [#60](https://github.com/haskell/ghcup-hs/issues/60)
+  - dump the Dhall schema via `ghcup generate-dhall-schema`
+* add `ghcup config reset` subcommand by Vladislav Sabanov
+
+### Improvements and bug fixes
+
+* Introduce `--verbosity=<LEVEL>` (0-2) option
+  - `--verbose` still exists and is equivalent to `--verbosity=1`
+  - ghcup won't spam the installed file list on `--verbose`/`--verbosity=1` anymore
+* Store log files under `XDG_STATE_HOME` instead of `XDG_CACHE_HOME` when following XDG style by Eisuke Kawashima
+* Make `--tool` and `--show-criteria` a 'many' parser, fixes [#1235](https://github.com/haskell/ghcup-hs/issues/1235)
+* Ignore local cache when dlUri has a `file:` scheme, fixes [#1312](https://github.com/haskell/ghcup-hs/issues/1312)
+* don't show update warnings twice (if it's the same old warning)
+* Fix `ghcup whereis` on windows by only using forward slashes in the output
+* lots of other things we forgot
+
+### Breaking changes
+
+- `cabal install <ghc-ver>` is gone, use `cabal install ghc <ghc-ver>`
+- `cabal install-cabal <cabal-ver>` is gone, use `cabal install cabal <cabal-ver>`
+- `ghcup compile hls --isolate=/tmp/foo` installs binaries into `/tmp/foo/bin` instead of `/tmp/foo`
+- `ghcup list` may show `-rX` suffix on versions when there's a revision update
+  * if you rely on version equality checks in a script and don't want to deal with parsing those, you may consider `ghcup list --show-revisions=none`
 
 ## 0.1.50.2 -- 2025-05-17
 
