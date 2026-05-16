@@ -254,6 +254,12 @@ dayParser :: String -> Either String Day
 dayParser s = maybe (Left $ "Could not parse \"" <> s <> "\". Expected format is: YYYY-MM-DD") Right
             $ parseTimeM True defaultTimeLocale "%Y-%-m-%-d" s
 
+revisionShowParser :: String -> Either String ShowRevisions
+revisionShowParser s' | t == T.pack "updates"   = Right $ ShowUpdates
+                      | t == T.pack "all"       = Right $ ShowAll
+                      | t == T.pack "none"      = Right $ ShowNone
+                      | otherwise               = Left ("Unknown criteria: " <> s')
+  where t = T.toLower (T.pack s')
 
 criteriaParser :: String -> Either String ListCriteria
 criteriaParser s' | t == T.pack "installed"   = Right $ ListInstalled True

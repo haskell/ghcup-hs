@@ -289,7 +289,10 @@ getAllInstalledTools mtools = do
     Nothing -> do
       newTools <- fmap Tool <$> liftIO (listDirectoryDirs $ fromGHCupPath dbDir)
       pure (nub $ ghcup:ghc:cabal:hls:stack:newTools)
-    Just tools' -> pure (nub tools')
+    Just tools'
+      -- for GHC we also need to fetch HLS info, so we can display 'hls-powered'
+      | ghc `elem` tools' -> pure (nub $ hls:tools')
+      | otherwise -> pure (nub tools')
   fmap Map.fromList $ forM tools $ \newTool -> do
     vs <- lift $ getInstalledVersions' newTool
     -- add information on which is the 'set' version, if any

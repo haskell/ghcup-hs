@@ -1386,3 +1386,7 @@ data GuessMode
   | GLaxWithInstalled -- ^ guess by using metadata and installed versions
   deriving (Eq, Show)
 
+data ShowRevisions = ShowUpdates
+                   | ShowAll
+                   | ShowNone
+  deriving (Eq, Show)

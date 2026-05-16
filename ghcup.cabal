@@ -485,6 +485,7 @@ executable ghcup
   build-depends:
     , ghcup
     , ghcup-optparse
+    , witherable            ^>=0.5
 
   if flag(internal-downloader)
     cpp-options: -DINTERNAL_DOWNLOADER

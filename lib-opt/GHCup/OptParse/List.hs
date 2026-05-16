@@ -16,7 +16,7 @@ import           GHCup.Command.List
 import           GHCup.Errors
 import           GHCup.Prelude
 import           GHCup.Types
-import           GHCup.Input.Parsers (dayParser, toolParserWithGHCup, criteriaParser)
+import           GHCup.Input.Parsers (dayParser, toolParserWithGHCup, criteriaParser, revisionShowParser)
 import           GHCup.OptParse.Common
 import           GHCup.Prelude.String.QQ
 import           GHCup.Compat.Terminal
@@ -58,15 +58,16 @@ import qualified Data.Map.Strict as M
     ---------------
 
 
+
 data ListOptions = ListOptions
-  { loTool     :: Maybe [Tool]
-  , lCriteria  :: [ListCriteria]
-  , lFrom      :: Maybe Day
-  , lTo        :: Maybe Day
-  , lHideOld   :: Bool
-  , lShowNightly :: Bool
-  , lRawFormat :: Bool
-  , lShowRevisions :: Bool
+  { loTool         :: Maybe [Tool]
+  , lCriteria      :: [ListCriteria]
+  , lFrom          :: Maybe Day
+  , lTo            :: Maybe Day
+  , lHideOld       :: Bool
+  , lShowNightly   :: Bool
+  , lRawFormat     :: Bool
+  , lShowRevisions :: ShowRevisions
   } deriving (Eq, Show)
 
 
@@ -125,8 +126,12 @@ listOpts =
     <*> switch
           (short 'r' <> long "raw-format" <> help "More machine-parsable format"
           )
-    <*> switch
-          (long "show-revisions" <> help "Show all revisions"
+    <*> option
+          (eitherReader revisionShowParser)
+          (long "show-revisions" <> help "How to show revisions"
+              <> metavar "<updates|all|none>"
+              <> completer revisionCompleter
+              <> value ShowUpdates
           )
 
 
@@ -158,7 +163,7 @@ printListResult ::
   , MonadIO m
   )
   => Bool
-  -> Bool
+  -> ShowRevisions
   -> PagerConfig
   -> Bool
   -> ToolListResult
@@ -197,10 +202,14 @@ printListResult no_color show_revisions (PagerConfig pList pCmd) raw lr = do
                 (if raw then [] else [marks])
                   ++ [ fmap toLower . prettyShow $ lTool
                      , let rev = case lRev of
-                                   (rev', RevUpdate)   -> "-r" <> show rev'
-                                   (rev', RevOutdated) -> "-r" <> show rev'
+                                   (rev', RevUpdate)
+                                     | show_revisions == ShowNone -> ""
+                                     | otherwise -> "-r" <> show rev'
+                                   (rev', RevOutdated)
+                                     | show_revisions == ShowNone -> ""
+                                     | otherwise -> "-r" <> show rev'
                                    (rev', RevNormal)
-                                     | show_revisions  -> "-r" <> show rev'
+                                     | show_revisions == ShowAll -> "-r" <> show rev'
                                      | otherwise -> ""
                        in case lCross of
                             Nothing -> T.unpack (prettyVer lVer) <> rev

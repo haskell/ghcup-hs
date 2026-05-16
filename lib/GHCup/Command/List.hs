@@ -117,12 +117,11 @@ listVersions ::
   )
   => Maybe [Tool]
   -> [ListCriteria]
-  -> Bool
+  -> ShowRevisions
   -> Bool
   -> Bool
   -> (Maybe Day, Maybe Day)
   -> Excepts '[ParseError] m ToolListResult
--- TODO: show latest revision if available
 listVersions lt' criteria showRevisions hideOld showNightly days = do
   GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
   pfreq <- lift getPlatformReq
@@ -150,27 +149,24 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
   forM_ (M.toList instTools) $ \(tool, targetMap) -> do
     forM_ (M.toList targetMap) $ \(target, (vers', mset)) ->
       forM_ vers' $ \vr@VersionRev{..} -> do
-        -- versions from the metadata
-        let avVers :: Set (Version, VersionMetadata) = fromMaybe mempty $ (avTools M.!? tool) >>= (M.!? target)
-
         let tver = TargetVersion target _vrVersion
         let mvm = getVersionMetadata tver tool dls
         let tags = maybe [] _vmTags mvm
         let lReleaseDay = mvm >>= _vmReleaseDay
-        let lStray = _vrVersion `Set.notMember` (fst `Set.map` avVers)
         let lRev = (_vrRev, RevNormal)
         let tDesc = preview (_GHCupDownloads % ix tool % toolDetails % _Just) dls
 
         let hlsPowered = getHlsPowered tool target _vrVersion hlsGHCs
 
-        -- lNoBindist is updated when we traverse the metadata
+        -- lNoBindist and lStray are updated when we traverse the metadata
         -- bindist tags (as opposed to tool tags) will also be added later
         let lr = ListResult { lVer = _vrVersion
                             , lCross = target
                             , lTag = tags
                             , lSet = mset == Just vr
                             , lInstalled = True
-                            , lNoBindist = not lStray
+                            , lNoBindist = False
+                            , lStray = True
                             , ..
                             }
 
@@ -192,18 +188,16 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
 
         let lReleaseDay = _vmReleaseDay
 
-        let hlsPowered = getHlsPowered tool target ver' hlsGHCs
+        let latestMetaRev = maximum $ M.keys (unRev _vmRevisionSpec)
 
-        let latestRev = maximum $ M.keys (unRev _vmRevisionSpec)
-
-        -- isLeft dli && not lStray
 
         -- add all revision
         forM_ (M.toList (unRev _vmRevisionSpec)) $ \(metaRev, vi) -> do
           let mdli = getDownloadInfo' pfreq vi
           let bTags = fromMaybe [] $ mdli >>= _dlTag
 
-          let isLatestRev = metaRev == latestRev
+          -- this has to consider the installed rev as well,
+          -- which may or may not be in the metadata
 
           case iheadOf (ix ver' % itraversed) avInstVers of
             -- it's installed
@@ -211,57 +205,67 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
               -- and even the same revision
               if installedRev == metaRev
               then do
+                -- add information from the metadata to the installed rev
                 liftIO $ modifyIORef' ioRefAvToolsProcessed
                   (over (ix tool % _2 % ix target % ix ver' % ix installedRev) $ \lr' -> lr'
                     & lNoBindistL .~ (isNothing mdli && not (lStray installedLr))
                     & lTagL       %~ (<> bTags)
-                    & lRevL % _2  .~ (if installedRev == latestRev then RevNormal else RevOutdated)
+                    & lStrayL     .~ False
                   )
               else do
-                -- installed, but not this revision
+                when (showRevisions /= ShowNone) $ do
+                  -- installed, but not this revision
 
-                -- it could be an update
-                let isUpdate = isLatestRev
+                  -- is it the latest revision?
+                  let isLatestRev = metaRev == latestMetaRev && (metaRev > installedRev)
+                  -- it could be an update
+                  let isUpdate = isLatestRev
 
-                let lrNew = ListResult
-                              { lVer = ver'
-                              , lCross = target
-                              , lTag = (if isUpdate then filter (/= Old) else id) (_vmTags <> bTags)
-                              , lSet = False
-                              , lInstalled = False
-                              , lNoBindist = isNothing mdli
-                              , lStray = False
-                              , lRev = (metaRev, if isUpdate then RevUpdate else RevNormal)
-                              , ..
-                              }
+                  -- tag shenanigans
+                  let dropOld = if isUpdate then filter (/= Old) else id
+                  let filterNotLatestRec = filter (`notElem` [Latest, Recommended])
+                  let dropLatestRec = if isLatestRev then id else filterNotLatestRec
 
+                  when isUpdate $
+                    -- remove the latest/recommended tag from the installed revision
+                    liftIO $ modifyIORef' ioRefAvToolsProcessed
+                      (over (ix tool % _2 % ix target % ix ver' % ix installedRev) $ \lr' -> lr'
+                        & lRevL % _2 .~ RevOutdated
+                        & lTagL      %~ filterNotLatestRec
+                      )
 
-                when isUpdate $
-                  -- remove the latest/recommended tag from the installed revision
-                  liftIO $ modifyIORef' ioRefAvToolsProcessed
-                    (over (ix tool % _2 % ix target % ix ver' % ix installedRev) $ \lr' -> lr'
-                      & lRevL % _2 .~ RevOutdated
-                      & lTagL      %~ filter (`notElem` [Latest, Recommended])
-                    )
-
-                -- Insert the installed revision
-                -- updates are always inserted, but non-updates are only relevant if the user wants to see all revisions
-                when (showRevisions || isUpdate) $
-                  liftIO $ modifyIORef' ioRefAvToolsProcessed (M.alter (alterTools (VersionRev ver' metaRev) lrNew target tDesc) tool)
+                  -- Insert the installed revision
+                  -- updates are always inserted, but non-updates are only relevant if the user wants to see all revisions
+                  let lrNew = ListResult
+                                { lVer = ver'
+                                , lCross = target
+                                , lTag = dropLatestRec $ dropOld (_vmTags <> bTags)
+                                , lSet = False
+                                , lInstalled = False
+                                , hlsPowered = False
+                                , lNoBindist = isNothing mdli
+                                , lStray = False
+                                , lRev = (metaRev, if isUpdate then RevUpdate else RevNormal)
+                                , ..
+                                }
+                  when (showRevisions == ShowAll || isUpdate) $
+                    liftIO $ modifyIORef' ioRefAvToolsProcessed (M.alter (alterTools (VersionRev ver' metaRev) lrNew target tDesc) tool)
             -- not installed, just insert
             Nothing -> do
+              let isLatestRev = metaRev == latestMetaRev
               let lr = ListResult
                          { lVer = ver'
                          , lCross = target
                          , lTag = _vmTags <> bTags
                          , lSet = False
                          , lInstalled = False
+                         , hlsPowered = False
                          , lNoBindist = isNothing mdli
                          , lStray = False
                          , lRev = (metaRev, RevNormal)
                          , ..
                          }
-              when (showRevisions || isLatestRev) $
+              when (showRevisions == ShowAll || isLatestRev) $
                 liftIO $ modifyIORef' ioRefAvToolsProcessed (M.alter (alterTools (VersionRev ver' metaRev) lr target tDesc) tool)
 
 

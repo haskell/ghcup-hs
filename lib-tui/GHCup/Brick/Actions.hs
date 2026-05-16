@@ -717,7 +717,7 @@ getAppData mgi = runExceptT $ do
   settings <- liftIO $ readIORef settings'
 
   r' <- lift $ flip runReaderT settings $ runE $ do
-    lV <- listVersions Nothing [] False False True (Nothing, Nothing)
+    lV <- listVersions Nothing [] ShowUpdates False True (Nothing, Nothing)
     pure $ BrickData lV
   ExceptT $ pure $  either (Left . prettyHFError) Right $ veitherToEither r'
 
