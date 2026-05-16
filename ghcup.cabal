@@ -448,7 +448,7 @@ library ghcup-tui
 
   build-depends:
     , ghcup
-    , brick         >=2.1 && <2.11
+    , brick >=2.1 && <2.13
     , vty           ^>=6.0 || ^>=6.1 || ^>=6.2 || ^>=6.3 || ^>=6.4
 
   if !flag(tui)
