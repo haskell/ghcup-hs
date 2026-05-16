@@ -128,7 +128,7 @@ listOpts =
           )
     <*> option
           (eitherReader revisionShowParser)
-          (long "show-revisions" <> help "How to show revisions"
+          (long "show-revisions" <> help "How to show revisions (default: updates)"
               <> metavar "<updates|all|none>"
               <> completer revisionCompleter
               <> value ShowUpdates
