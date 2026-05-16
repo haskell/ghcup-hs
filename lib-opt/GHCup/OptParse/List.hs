@@ -60,7 +60,7 @@ import qualified Data.Map.Strict as M
 
 data ListOptions = ListOptions
   { loTool     :: Maybe [Tool]
-  , lCriteria  :: Maybe ListCriteria
+  , lCriteria  :: [ListCriteria]
   , lFrom      :: Maybe Day
   , lTo        :: Maybe Day
   , lHideOld   :: Bool
@@ -87,8 +87,8 @@ listOpts =
               <> completer toolCompleter
             )
           )
-         )
-    <*> optional
+        )
+    <*> many
           (option
             (eitherReader criteriaParser)
             (  short 'c'
@@ -249,7 +249,7 @@ list ::
   -> m ExitCode
 list ListOptions{..} no_color pgc (getAppState', leanAppstate) = do
   r <- run $ do
-      l <- listVersions loTool (maybeToList lCriteria) lHideOld lShowNightly (lFrom, lTo)
+      l <- listVersions loTool lCriteria lHideOld lShowNightly (lFrom, lTo)
       lift $ printListResult no_color pgc lRawFormat l
   case r of
     (VRight _, up) -> do
