@@ -126,7 +126,7 @@ common app-common-depends
     , safe-exceptions        ^>=0.1
     , tagsoup                ^>=0.14
     , transformers           ^>=0.5 || ^>=0.6
-    , template-haskell       >=2.7      && <2.24
+    , template-haskell >=2.7 && <2.25
     , temporary              ^>=1.3
     , text                   ^>=2.0 || ^>=2.1
     , time                   >=1.9.3    && <1.15
@@ -282,7 +282,7 @@ library
     , scientific
     , split                 ^>=0.2.3.4
     , strict-base           ^>=0.4
-    , template-haskell       >=2.7      && <2.24
+    , template-haskell >=2.7 && <2.25
     , temporary             ^>=1.3
     , terminal-size         ^>=0.3.3
     , text                  ^>=2.0 || ^>=2.1
