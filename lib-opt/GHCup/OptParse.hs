@@ -109,6 +109,9 @@ data Command
 #endif
   | ToolRequirements ToolReqOpts
   | ChangeLog ChangeLogOptions
+#if defined(DHALL)
+  | GenerateDhallSchema
+#endif
   | Nuke
 #if defined(BRICK)
   | Interactive
@@ -116,11 +119,8 @@ data Command
   | Prefetch PrefetchCommand
   | GC GCOptions
   | Run RunOptions
-  | PrintAppErrors
-#if defined(DHALL)
-  | GenerateDhallSchema
-#endif
   | HealthCheck HealthCheckCommand
+  | PrintAppErrors
 
 
 toVerbosity :: Maybe Bool -> Maybe Int
@@ -322,6 +322,12 @@ com =
                    <> footerDoc ( Just $ text runFooter )
                    )
                )
+      <> command
+              "check"
+              ( HealthCheck <$>
+               info (hcP <**> helper)
+                    (progDesc "Health check ghcup")
+              )
       <> commandGroup "Main commands:"
       )
     <|> subparser
@@ -348,16 +354,18 @@ com =
                <$> info (configP <**> helper)
                         (progDesc "Show or set config" <> footerDoc (Just $ text configFooter))
                )
+#if defined(DHALL)
+          <> command
+               "generate-dhall-schema"
+                (info (pure GenerateDhallSchema <**> helper)
+                      (progDesc "Emit the Dhall schema/type for the metadata"))
+#endif
+          <> command
+               "nuke"
+                (info (pure Nuke <**> helper)
+                      (progDesc "Completely remove ghcup from your system"))
           <> commandGroup "Other commands:"
           <> hidden
-          )
-     <|> subparser
-          (command
-              "nuke"
-               (info (pure Nuke <**> helper)
-                     (progDesc "Completely remove ghcup from your system"))
-           <> commandGroup "Nuclear Commands:"
-           <> hidden
           )
      <|> subparser
           (command
@@ -365,23 +373,6 @@ com =
                (info (pure PrintAppErrors <**> helper)
                      (progDesc ""))
            <> internal
-          )
-#if defined(DHALL)
-     <|> subparser
-          (command
-              "generate-dhall-schema"
-               (info (pure GenerateDhallSchema <**> helper)
-                     (progDesc ""))
-           <> internal
-          )
-#endif
-     <|> subparser
-          (command
-              "check"
-              ( HealthCheck <$>
-               info (hcP <**> helper)
-                    (progDesc "Health check ghcup")
-              )
           )
 
 -- | Handle 'ParserResult'.

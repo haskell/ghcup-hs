@@ -69,7 +69,7 @@ nuke (getAppState', leanAppstate) = do
        lift $ logInfo "Initiating Nuclear Sequence 🚀🚀🚀"
        lift $ logInfo "Nuking in 3...2...1"
 
-       lInstalled' <- liftE $ listVersions Nothing [ListInstalled True] False True (Nothing, Nothing)
+       lInstalled' <- liftE $ listVersions Nothing [ListInstalled True] False False True (Nothing, Nothing)
 
        iforM_ lInstalled' $ \tool (_, ls) -> forM_ ls $ \ListResult{..} -> liftE $ rmToolVersion tool (TargetVersion lCross lVer)
 

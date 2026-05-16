@@ -66,6 +66,7 @@ data ListOptions = ListOptions
   , lHideOld   :: Bool
   , lShowNightly :: Bool
   , lRawFormat :: Bool
+  , lShowRevisions :: Bool
   } deriving (Eq, Show)
 
 
@@ -124,6 +125,9 @@ listOpts =
     <*> switch
           (short 'r' <> long "raw-format" <> help "More machine-parsable format"
           )
+    <*> switch
+          (long "show-revisions" <> help "Show all revisions"
+          )
 
 
     --------------
@@ -148,9 +152,18 @@ Examples:
     -----------------
 
 
-printListResult :: (HasLog env , MonadReader env m, MonadIO m)
-                => Bool -> PagerConfig -> Bool -> ToolListResult -> m ()
-printListResult no_color (PagerConfig pList pCmd) raw lr = do
+printListResult ::
+  ( HasLog env
+  , MonadReader env m
+  , MonadIO m
+  )
+  => Bool
+  -> Bool
+  -> PagerConfig
+  -> Bool
+  -> ToolListResult
+  -> m ()
+printListResult no_color show_revisions (PagerConfig pList pCmd) raw lr = do
 
   let
     color | raw || no_color = (\_ x -> x)
@@ -186,7 +199,9 @@ printListResult no_color (PagerConfig pList pCmd) raw lr = do
                      , let rev = case lRev of
                                    (rev', RevUpdate)   -> "-r" <> show rev'
                                    (rev', RevOutdated) -> "-r" <> show rev'
-                                   (_,    RevNormal)   -> ""
+                                   (rev', RevNormal)
+                                     | show_revisions  -> "-r" <> show rev'
+                                     | otherwise -> ""
                        in case lCross of
                             Nothing -> T.unpack (prettyVer lVer) <> rev
                             Just c  -> T.unpack (c <> "-" <> prettyVer lVer) <> rev
@@ -249,8 +264,8 @@ list ::
   -> m ExitCode
 list ListOptions{..} no_color pgc (getAppState', leanAppstate) = do
   r <- run $ do
-      l <- listVersions loTool lCriteria lHideOld lShowNightly (lFrom, lTo)
-      lift $ printListResult no_color pgc lRawFormat l
+      l <- listVersions loTool lCriteria lShowRevisions lHideOld lShowNightly (lFrom, lTo)
+      lift $ printListResult no_color lShowRevisions pgc lRawFormat l
   case r of
     (VRight _, up) -> do
       liftIO up
