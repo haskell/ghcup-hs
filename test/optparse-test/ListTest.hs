@@ -11,7 +11,7 @@ listTests :: TestTree
 listTests = buildTestTree listParseWith ("list", listCheckList)
 
 defaultOptions :: ListOptions
-defaultOptions = ListOptions Nothing [] Nothing Nothing False False False
+defaultOptions = ListOptions Nothing [] Nothing Nothing False False False ShowUpdates
 
 listCheckList :: [(String, ListOptions)]
 listCheckList =
