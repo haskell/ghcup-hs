@@ -36,7 +36,7 @@ import qualified GHCup.Command.Compile.HLS as HLS
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Exception.Safe
-import Control.Monad            ( forM_, unless, when )
+import Control.Monad            ( unless )
 #if !MIN_VERSION_base(4,13,0)
 import Control.Monad.Fail ( MonadFail )
 #endif
@@ -60,6 +60,7 @@ import System.FilePath                 ( (</>) )
 import System.IO                       hiding ( appendFile )
 import System.IO.Unsafe                ( unsafeInterleaveIO )
 import Text.PrettyPrint.HughesPJClass  ( prettyShow )
+import Witherable                      ( witherM )
 
 import qualified Data.ByteString    as B
 import qualified Data.Text          as T
@@ -254,32 +255,35 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                       | otherwise = void . flip runReaderT s' . runE @'[TagNotFound, DayNotFound, NextVerNotFound, NoToolVersionSet, ParseError] $ liftIO (lookupEnv "GHCUP_SKIP_UPDATE_CHECK") >>= \case
                           Nothing -> do
                             newTools <- lift checkForUpdates
-                            forM_ newTools $ \newTool@(t, l) -> do
+                            warnMsg <- fmap (T.intercalate "\n") $ flip witherM newTools $ \newTool@(t, l) -> do
                               -- https://gitlab.haskell.org/haskell/ghcup-hs/-/issues/283
                               alreadyInstalling' <- alreadyInstalling optCommand newTool
-                              when (not alreadyInstalling') $ do
-                                let warnFile = fromGHCupPath cacheDir </> "ghcup_update_check"
-                                let warnMsg = case t of
-                                                Tool "ghcup" ->  "New GHCup version available: "
-                                                             <> T.pack (prettyShow l)
-                                                             <> ". To upgrade, run 'ghcup upgrade'\n"
-                                                             <> "To skip this check in the future, export GHCUP_SKIP_UPDATE_CHECK=1"
-                                                _ -> "New "
-                                                         <> T.pack (prettyShow t)
-                                                         <> " version available. "
-                                                         <> "If you want to install this latest version, run 'ghcup install "
-                                                         <> T.pack (prettyShow t)
-                                                         <> " "
-                                                         <> T.pack (prettyShow l)
-                                                         <> "'\n"
-                                                         <> "To skip this check in the future, export GHCUP_SKIP_UPDATE_CHECK=1"
+                              if alreadyInstalling'
+                              then pure Nothing
+                              else
+                                pure $ Just $
+                                  case t of
+                                    Tool "ghcup" ->  "New GHCup version available: "
+                                                 <> T.pack (prettyShow l)
+                                                 <> ". To upgrade, run 'ghcup upgrade'\n"
+                                                 <> "To skip this check in the future, export GHCUP_SKIP_UPDATE_CHECK=1"
+                                    _ -> "New "
+                                             <> T.pack (prettyShow t)
+                                             <> " version available. "
+                                             <> "If you want to install this latest version, run 'ghcup install "
+                                             <> T.pack (prettyShow t)
+                                             <> " "
+                                             <> T.pack (prettyShow l)
+                                             <> "'\n"
+                                             <> "To skip this check in the future, export GHCUP_SKIP_UPDATE_CHECK=1"
 
-                                prevWarn <- try @_ @SomeException $ liftIO $ T.readFile warnFile
-                                if either (const Nothing) Just prevWarn == Just warnMsg
-                                then pure ()
-                                else do
-                                  liftIO $ T.writeFile warnFile warnMsg
-                                  runLogger $ logWarn warnMsg
+                            let warnFile = fromGHCupPath cacheDir </> "ghcup_update_check"
+                            prevWarn <- try @_ @SomeException $ liftIO $ T.readFile warnFile
+                            if either (const Nothing) Just prevWarn == Just warnMsg
+                            then pure ()
+                            else do
+                              liftIO $ T.writeFile warnFile warnMsg
+                              runLogger $ logWarn warnMsg
                           Just _ -> do
                             logDebug "GHCUP_SKIP_UPDATE_CHECK is set, skipping update check"
                             pure ()
