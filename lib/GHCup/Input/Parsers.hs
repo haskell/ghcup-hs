@@ -255,9 +255,9 @@ dayParser s = maybe (Left $ "Could not parse \"" <> s <> "\". Expected format is
             $ parseTimeM True defaultTimeLocale "%Y-%-m-%-d" s
 
 revisionShowParser :: String -> Either String ShowRevisions
-revisionShowParser s' | t == T.pack "updates"   = Right $ ShowUpdates
-                      | t == T.pack "all"       = Right $ ShowAll
-                      | t == T.pack "none"      = Right $ ShowNone
+revisionShowParser s' | t == T.pack "updates"   = Right ShowUpdates
+                      | t == T.pack "all"       = Right ShowAll
+                      | t == T.pack "none"      = Right ShowNone
                       | otherwise               = Left ("Unknown criteria: " <> s')
   where t = T.toLower (T.pack s')
 
