@@ -747,10 +747,11 @@ downloadCached :: ( MonadReader env m
                -> Excepts '[URIParseError, DigestError, ContentLengthError, DownloadFailed, GPGError] m FilePath
 downloadCached dli mfn = do
   Settings{ cache } <- lift getSettings
-  if cache
+  dlu <- lE $ parseURI' (_dlUri dli)
+  let scheme = view (uriSchemeL' % schemeBSL') dlu
+  if cache && scheme /= "file"
   then downloadCached' dli mfn Nothing
   else do
-    dlu <- lE $ parseURI' (_dlUri dli)
     tmp <- lift withGHCupTmpDir
     liftE $ download dlu Nothing (Just (_dlHash dli)) (_dlCSize dli) (fromGHCupPath tmp) outputFileName False
  where
