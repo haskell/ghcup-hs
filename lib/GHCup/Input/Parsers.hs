@@ -12,7 +12,6 @@ module GHCup.Input.Parsers where
 
 import GHCup.Command.List
 import GHCup.Errors
-import GHCup.Legacy.Utils
 import GHCup.Prelude
 import GHCup.Prelude.Attoparsec as AP
 import GHCup.Prelude.MegaParsec as MP
@@ -24,7 +23,6 @@ import GHCup.Input.Parsers.URI
 import GHCup.Types.JSON
 
 import Control.Applicative    ( Alternative (..), (<|>) )
-import Control.Exception.Safe
 import Control.Monad          ( forM, when )
 #if !MIN_VERSION_base(4,13,0)
 import Control.Monad.Fail ( MonadFail )
@@ -422,12 +420,9 @@ resolveVersion' (SetToolTag t') _ tool =
 -- >>> go $ guessFullVersion rr (mkTVer [vver|8|]) GHC GStrict
 -- "8"
 guessFullVersion :: ( HasLog env
-                    , MonadFail m
                     , MonadReader env m
                     , HasDirs env
-                    , MonadThrow m
-                    , MonadIO m
-                    , MonadCatch m
+                    , MonadIOish m
                     )
                  => GHCupDownloads
                  -> TargetVersion
@@ -439,7 +434,7 @@ guessFullVersion dls v tool guessMode = do
     Left _ -> pure v
     Right pvpIn
       | (guessMode /= GStrict) && hasn't (_GHCupDownloads % ix tool % toolVersionsL % ix v) dls -> do
-          ghcs <- if guessMode == GLaxWithInstalled then fmap rights getInstalledTools else pure []
+          ghcs <- if guessMode == GLaxWithInstalled then getInstalledTools else pure []
           if v `notElem` ghcs
           then getLatestToolFor tool (_tvTarget v) pvpIn dls >>= \case
                  Just (pvp_, _vm, mt) -> do
@@ -450,12 +445,7 @@ guessFullVersion dls v tool guessMode = do
           else pure v
     _ -> pure v
  where
-  getInstalledTools = case tool of
-                        Tool "ghc" -> getInstalledGHCs
-                        Tool "cabal" -> (fmap . fmap) mkTVer <$> getInstalledCabals
-                        Tool "hls" -> (fmap . fmap) mkTVer <$> getInstalledHLSs
-                        Tool "stack" -> (fmap . fmap) mkTVer <$> getInstalledStacks
-                        _ -> pure []
+  getInstalledTools = fmap _tvrTargetVer <$> getInstalledVersions' tool
 
 
 parseUrlSource :: String -> Either String [NewURLSource]
