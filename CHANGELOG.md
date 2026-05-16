@@ -7,6 +7,7 @@
 * implement **"installer DSL"** (custom tool installation) wrt [#141](https://github.com/haskell/ghcup-hs/issues/141)
   - run `ghcup config add-release-channel 3rdparty` to get access to tools like `hlint`, `ormolu`, `agda` etc.
   - refer to the [Packaging documentation](https://www.haskell.org/ghcup/packaging) for more details
+  - this caused heavy changes to the internal ghcup layout and database
 * major design change in the TUI (two-pane view)
   - use left/right arrow keys or tab to switch between the tool and version list
 * implement **revisions**
@@ -17,6 +18,8 @@
 * add experimental support for **Dhall metadata** wrt [#60](https://github.com/haskell/ghcup-hs/issues/60)
   - dump the Dhall schema via `ghcup generate-dhall-schema`
 * add `ghcup config reset` subcommand by Vladislav Sabanov
+* add experimental healthcheck command `ghcup check tool ghc <ver>`
+  - this may only give useful information on newly installed versions since the database needs to be populated
 
 ### Improvements and bug fixes
 
@@ -37,6 +40,7 @@
 - `ghcup compile hls --isolate=/tmp/foo` installs binaries into `/tmp/foo/bin` instead of `/tmp/foo`
 - `ghcup list` may show `-rX` suffix on versions when there's a revision update
   * if you rely on version equality checks in a script and don't want to deal with parsing those, you may consider `ghcup list --show-revisions=none`
+- `~/.ghcup/bin/` is now all symlinks (except for `ghcup` binary itself) and the link targets may have different shape
 
 ## 0.1.50.2 -- 2025-05-17
 
