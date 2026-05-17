@@ -14,6 +14,7 @@ import GHCup.Query.GHCupDirs
 import GHCup.Types
 
 import Control.DeepSeq (force)
+import Control.Monad (forM)
 import Control.Monad.Reader (runReaderT)
 import Control.Exception (displayException, evaluate)
 import Data.Maybe
@@ -26,19 +27,26 @@ import Test.Tasty.Bench
 benchMark :: Benchmark
 benchMark =
   bgroup "GHCup.Commands.List"
-     [ env (getAppState "data/bench/ghcup-cross-0.1.0.yaml")           (bench "cross"   . nfAppIO listVersionsB)
-     , env (getAppState "data/bench/ghcup-0.1.0.yaml")                 (bench "def"     . nfAppIO listVersionsB)
-     , env (getAppState "data/bench/ghcup-nightlies-2025-0.0.7.yaml")  (bench "nightly" . nfAppIO listVersionsB)
+     [ env (getAppState ["data/bench/ghcup-cross-0.1.0.yaml"])           (bench "cross"   . nfAppIO listVersionsB)
+     , env (getAppState ["data/bench/ghcup-0.1.0.yaml"])                 (bench "def"     . nfAppIO listVersionsB)
+     , env (getAppState ["data/bench/ghcup-nightlies-2025-0.0.7.yaml"])  (bench "nightly" . nfAppIO listVersionsB)
+     , env (getAppState ["data/bench/ghcup-nightlies-2025-0.0.7.yaml"
+                        ,"data/bench/ghcup-0.1.0.yaml"
+                        ,"data/bench/ghcup-cross-0.1.0.yaml"
+                        ,"data/bench/ghcup-prereleases-0.1.0.yaml"
+                        ,"data/bench/ghcup-3rdparty-0.1.0.yaml"
+                        ])                                               (bench "all" . nfAppIO listVersionsB)
      ]
 
-readGHCupInfo :: FilePath -> IO [NewURLSource]
-readGHCupInfo fp = do
-  ghcupInfo <- either (fail . displayException) pure =<< decodeFileEither fp
-  evaluate $ force [NewGHCupInfo ghcupInfo]
+readGHCupInfo :: [FilePath] -> IO [NewURLSource]
+readGHCupInfo fps =
+  forM fps $ \fp -> do
+    ghcupInfo <- either (fail . displayException) pure =<< decodeFileEither fp
+    evaluate $ force $ NewGHCupInfo ghcupInfo
 
-getAppState :: FilePath -> IO AppState
-getAppState fp = do
-  infos <- readGHCupInfo fp
+getAppState :: [FilePath] -> IO AppState
+getAppState fps = do
+  infos <- readGHCupInfo fps
   spawnAppState infos
 
 spawnAppState :: [NewURLSource] -> IO AppState
