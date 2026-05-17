@@ -32,13 +32,15 @@ import Control.Monad
 import Control.Monad.Fail ( MonadFail )
 #endif
 import Control.Monad.Reader
+import Control.Monad.ST
 import Data.Bifunctor
-import Data.IORef
 import Data.List
 import Data.Maybe
+import Data.STRef
 import Data.Set             ( Set )
 import Data.Text            ( Text )
 import Data.Time.Calendar   ( Day )
+import Data.Traversable.WithIndex ( iforM )
 import Data.Variant.Excepts
 import Data.Versions        hiding ( patch )
 import Optics
@@ -46,7 +48,6 @@ import Prelude              hiding ( abs, writeFile )
 
 import qualified Data.Map.Strict as M
 import qualified Data.Map.Strict as Map
-import qualified Data.Set        as Set
 
 
 
@@ -141,162 +142,149 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
   let avTools :: M.Map Tool (M.Map (Maybe Text) (Set (Version, VersionMetadata)))
         = M.fromList $ (fmap . fmap) groupByTargetS allAvailableTools'
 
-  -- ioref for recording observed versions from the metadata
-  ioRefAvToolsProcessed :: IORef ProcessedListResult <- liftIO $ newIORef mempty
+  let avToolsProcessed = runST $ do
+        stRefAvToolsProcessed <- newSTRef mempty
+
+        -- process installed tools first
+        void $ iforM instTools $ \tool targetMap -> do
+          iforM targetMap $ \target (vers', mset) ->
+            forM_ vers' $ \vr@VersionRev{..} -> do
+              let tver = TargetVersion target _vrVersion
+                  mvm = getVersionMetadata tver tool dls
+                  tags = maybe [] _vmTags mvm
+                  lReleaseDay = mvm >>= _vmReleaseDay
+                  lRev = (_vrRev, RevNormal)
+                  tDesc = preview (_GHCupDownloads % ix tool % toolDetails % _Just) dls
+
+                  hlsPowered = getHlsPowered tool target _vrVersion hlsGHCs
+
+              -- lNoBindist and lStray are updated when we traverse the metadata
+              -- bindist tags (as opposed to tool tags) will also be added later
+              let lr = ListResult { lVer = _vrVersion
+                                  , lCross = target
+                                  , lTag = tags
+                                  , lSet = mset == Just vr
+                                  , lInstalled = True
+                                  , lNoBindist = False
+                                  , lStray = True
+                                  , ..
+                                  }
+
+              insertListResult stRefAvToolsProcessed tool target tDesc _vrVersion _vrRev lr
+
+        installedProcessed <- readSTRef stRefAvToolsProcessed
+
+        -- then process tools in the metadata, that are not installed
+        -- and add the installed ones in the process
+        void $ iforM avTools $ \tool targetMap -> do
+          let tDesc = preview (ix tool % _1 % _Just) installedProcessed <|> preview (_GHCupDownloads % ix tool % toolDetails % _Just) dls
+          iforM targetMap $ \target vers' ->
+            forM_ vers' $ \(ver', VersionMetadata{..}) -> do
+              -- versions from the metadata that's already installed
+              let avInstVers :: M.Map Version (M.Map Int ListResult) =
+                    fromMaybe mempty $ do
+                      (_, m) <- installedProcessed M.!? tool
+                      m M.!? target
+
+              let lReleaseDay = _vmReleaseDay
+
+              let latestMetaRev = maximum $ M.keys (unRev _vmRevisionSpec)
 
 
-  -- process installed tools first
-  forM_ (M.toList instTools) $ \(tool, targetMap) -> do
-    forM_ (M.toList targetMap) $ \(target, (vers', mset)) ->
-      forM_ vers' $ \vr@VersionRev{..} -> do
-        let tver = TargetVersion target _vrVersion
-        let mvm = getVersionMetadata tver tool dls
-        let tags = maybe [] _vmTags mvm
-        let lReleaseDay = mvm >>= _vmReleaseDay
-        let lRev = (_vrRev, RevNormal)
-        let tDesc = preview (_GHCupDownloads % ix tool % toolDetails % _Just) dls
+              -- add all revision
+              forM_ (M.toList (unRev _vmRevisionSpec)) $ \(metaRev, vi) -> do
+                let mdli = getDownloadInfo' pfreq vi
+                let bTags = fromMaybe [] $ mdli >>= _dlTag
 
-        let hlsPowered = getHlsPowered tool target _vrVersion hlsGHCs
+                -- this has to consider the installed rev as well,
+                -- which may or may not be in the metadata
 
-        -- lNoBindist and lStray are updated when we traverse the metadata
-        -- bindist tags (as opposed to tool tags) will also be added later
-        let lr = ListResult { lVer = _vrVersion
-                            , lCross = target
-                            , lTag = tags
-                            , lSet = mset == Just vr
-                            , lInstalled = True
-                            , lNoBindist = False
-                            , lStray = True
-                            , ..
-                            }
+                case iheadOf (ix ver' % itraversed) avInstVers of
+                  -- it's installed
+                  Just (installedRev, installedLr) -> do
+                    if installedRev == metaRev
+                    then do -- and even the same revision
+                      -- add information from the metadata to the installed rev
+                      modifySTRef' stRefAvToolsProcessed
+                        (over (ix tool % _2 % ix target % ix ver' % ix installedRev) $ \lr' -> lr'
+                          & lNoBindistL .~ (isNothing mdli && not (lStray installedLr))
+                          & lTagL       %~ (<> bTags)
+                          & lStrayL     .~ False
+                        )
+                    else do -- installed, but not this revision
+                      when (showRevisions /= ShowNone) $ do
 
-        liftIO $ modifyIORef' ioRefAvToolsProcessed (M.alter (alterTools vr lr target tDesc) tool)
+                        -- is it the latest revision?
+                        let isLatestRev = metaRev == latestMetaRev && (metaRev > installedRev)
+                        -- it could be an update
+                        let isUpdate = isLatestRev
 
-  avToolsProcessed <- liftIO $ readIORef ioRefAvToolsProcessed
+                        -- tag shenanigans
+                        let dropOld = if isUpdate then filter (/= Old) else id
+                            filterNotLatestRec = filter (`notElem` [Latest, Recommended])
+                            dropLatestRec = if isLatestRev then id else filterNotLatestRec
 
-  -- then process tools in the metadata, that are not installed
-  -- and add the installed ones in the process
-  forM_ (M.toList avTools) $ \(tool, targetMap) -> do
-    let tDesc = preview (ix tool % _1 % _Just) avToolsProcessed <|> preview (_GHCupDownloads % ix tool % toolDetails % _Just) dls
-    forM_ (M.toList targetMap) $ \(target, vers') ->
-      forM_ (Set.toList vers') $ \(ver', VersionMetadata{..}) -> do
-        -- versions from the metadata that's already installed
-        let avInstVers :: M.Map Version (M.Map Int ListResult) =
-              fromMaybe mempty $ do
-                (_, m) <- avToolsProcessed M.!? tool
-                m M.!? target
+                        when isUpdate $
+                          -- remove the latest/recommended tag from the installed revision
+                          modifySTRef' stRefAvToolsProcessed
+                            (over (ix tool % _2 % ix target % ix ver' % ix installedRev) $ \lr' -> lr'
+                              & lRevL % _2 .~ RevOutdated
+                              & lTagL      %~ filterNotLatestRec
+                            )
 
-        let lReleaseDay = _vmReleaseDay
+                        -- Insert the installed revision
+                        -- updates are always inserted, but non-updates are only relevant if the user wants to see all revisions
+                        let lrNew = ListResult
+                                      { lVer = ver'
+                                      , lCross = target
+                                      , lTag = dropLatestRec $ dropOld (_vmTags <> bTags)
+                                      , lSet = False
+                                      , lInstalled = False
+                                      , hlsPowered = False
+                                      , lNoBindist = isNothing mdli
+                                      , lStray = False
+                                      , lRev = (metaRev, if isUpdate then RevUpdate else RevNormal)
+                                      , ..
+                                      }
+                        when (showRevisions == ShowAll || isUpdate) $
+                          insertListResult stRefAvToolsProcessed tool target tDesc ver' metaRev lrNew
+                  -- not installed, just insert
+                  Nothing -> do
+                    let isLatestRev = metaRev == latestMetaRev
+                    let lr = ListResult
+                               { lVer = ver'
+                               , lCross = target
+                               , lTag = _vmTags <> bTags
+                               , lSet = False
+                               , lInstalled = False
+                               , hlsPowered = False
+                               , lNoBindist = isNothing mdli
+                               , lStray = False
+                               , lRev = (metaRev, RevNormal)
+                               , ..
+                               }
+                    when (showRevisions == ShowAll || isLatestRev) $
+                      insertListResult stRefAvToolsProcessed tool target tDesc ver' metaRev lr
+        readSTRef stRefAvToolsProcessed
 
-        let latestMetaRev = maximum $ M.keys (unRev _vmRevisionSpec)
-
-
-        -- add all revision
-        forM_ (M.toList (unRev _vmRevisionSpec)) $ \(metaRev, vi) -> do
-          let mdli = getDownloadInfo' pfreq vi
-          let bTags = fromMaybe [] $ mdli >>= _dlTag
-
-          -- this has to consider the installed rev as well,
-          -- which may or may not be in the metadata
-
-          case iheadOf (ix ver' % itraversed) avInstVers of
-            -- it's installed
-            Just (installedRev, installedLr) -> do
-              -- and even the same revision
-              if installedRev == metaRev
-              then do
-                -- add information from the metadata to the installed rev
-                liftIO $ modifyIORef' ioRefAvToolsProcessed
-                  (over (ix tool % _2 % ix target % ix ver' % ix installedRev) $ \lr' -> lr'
-                    & lNoBindistL .~ (isNothing mdli && not (lStray installedLr))
-                    & lTagL       %~ (<> bTags)
-                    & lStrayL     .~ False
-                  )
-              else do
-                when (showRevisions /= ShowNone) $ do
-                  -- installed, but not this revision
-
-                  -- is it the latest revision?
-                  let isLatestRev = metaRev == latestMetaRev && (metaRev > installedRev)
-                  -- it could be an update
-                  let isUpdate = isLatestRev
-
-                  -- tag shenanigans
-                  let dropOld = if isUpdate then filter (/= Old) else id
-                  let filterNotLatestRec = filter (`notElem` [Latest, Recommended])
-                  let dropLatestRec = if isLatestRev then id else filterNotLatestRec
-
-                  when isUpdate $
-                    -- remove the latest/recommended tag from the installed revision
-                    liftIO $ modifyIORef' ioRefAvToolsProcessed
-                      (over (ix tool % _2 % ix target % ix ver' % ix installedRev) $ \lr' -> lr'
-                        & lRevL % _2 .~ RevOutdated
-                        & lTagL      %~ filterNotLatestRec
-                      )
-
-                  -- Insert the installed revision
-                  -- updates are always inserted, but non-updates are only relevant if the user wants to see all revisions
-                  let lrNew = ListResult
-                                { lVer = ver'
-                                , lCross = target
-                                , lTag = dropLatestRec $ dropOld (_vmTags <> bTags)
-                                , lSet = False
-                                , lInstalled = False
-                                , hlsPowered = False
-                                , lNoBindist = isNothing mdli
-                                , lStray = False
-                                , lRev = (metaRev, if isUpdate then RevUpdate else RevNormal)
-                                , ..
-                                }
-                  when (showRevisions == ShowAll || isUpdate) $
-                    liftIO $ modifyIORef' ioRefAvToolsProcessed (M.alter (alterTools (VersionRev ver' metaRev) lrNew target tDesc) tool)
-            -- not installed, just insert
-            Nothing -> do
-              let isLatestRev = metaRev == latestMetaRev
-              let lr = ListResult
-                         { lVer = ver'
-                         , lCross = target
-                         , lTag = _vmTags <> bTags
-                         , lSet = False
-                         , lInstalled = False
-                         , hlsPowered = False
-                         , lNoBindist = isNothing mdli
-                         , lStray = False
-                         , lRev = (metaRev, RevNormal)
-                         , ..
-                         }
-              when (showRevisions == ShowAll || isLatestRev) $
-                liftIO $ modifyIORef' ioRefAvToolsProcessed (M.alter (alterTools (VersionRev ver' metaRev) lr target tDesc) tool)
-
-
-  toToolListResult <$> liftIO (readIORef ioRefAvToolsProcessed)
+  pure $ toToolListResult avToolsProcessed
 
  where
   toToolListResult :: ProcessedListResult -> ToolListResult
   toToolListResult = M.map (second (filter' . toListOf (traversed % traversed % traversed)))
 
-  -- TODO: probably easier with lens
-  alterTools ::
-       VersionRev
-    -> ListResult
+  insertListResult ::
+       STRef s ProcessedListResult
+    -> Tool
     -> Maybe Text
     -> Maybe ToolDescription
-    -> Maybe (Maybe ToolDescription, M.Map (Maybe Text) (M.Map Version (M.Map Int ListResult)))
-    -> Maybe (Maybe ToolDescription, M.Map (Maybe Text) (M.Map Version (M.Map Int ListResult)))
-  alterTools (VersionRev{..}) lr target tDesc Nothing       =
-    Just (tDesc, M.singleton target (M.singleton _vrVersion (M.singleton _vrRev lr)))
-  alterTools (VersionRev{..}) lr target tDesc (Just (_, m)) =
-    Just (tDesc, M.alter alterTarget target m)
-   where
-    alterTarget :: Maybe (M.Map Version (M.Map Int ListResult))
-                -> Maybe (M.Map Version (M.Map Int ListResult))
-    alterTarget Nothing   = Just $ M.singleton _vrVersion (M.singleton _vrRev lr)
-    alterTarget (Just xs) = Just $ M.alter alterVersion _vrVersion xs
-     where
-      alterVersion :: Maybe (M.Map Int ListResult)
-                   -> Maybe (M.Map Int ListResult)
-      alterVersion Nothing   = Just $ M.singleton _vrRev lr
-      alterVersion (Just ys) = Just $ M.insert _vrRev lr ys
+    -> Version
+    -> Int
+    -> ListResult
+    -> ST s ()
+  insertListResult ref tool target tDesc ver' rev lr =
+    modifySTRef' ref
+    (at tool % non (tDesc, mempty) % _2 % at target % non mempty % at ver' % non mempty % at rev ?~ lr)
 
   getHlsPowered tool target ver' hlsGHCs =
     (tool == ghc && isNothing target) && ver' `elem` hlsGHCs
