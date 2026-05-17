@@ -519,12 +519,13 @@ benchmark bench
                     BenchSetup
   type:             exitcode-stdio-1.0
   hs-source-dirs:   bench
-  ghc-options:      -O2 "-with-rtsopts=-A32m" -fmax-forced-spec-args=14
+  ghc-options:      -O2 "-with-rtsopts=-A32m"
   if impl(ghc >= 8.6)
     ghc-options:    -fproc-alignment=64
   build-depends:    base,
                     aeson,
                     bytestring,
+                    containers,
                     directory,
                     deepseq,
                     filepath,
@@ -535,5 +536,6 @@ benchmark bench
                     template-haskell,
                     text,
                     variant,
+                    versions,
                     yaml
 

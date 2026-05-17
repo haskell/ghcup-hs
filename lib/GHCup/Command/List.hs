@@ -140,14 +140,28 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
                Just VersionRev{..} -> do
                  getHLSGHCs _vrVersion
                Nothing -> pure []
+  pure $ listVersions' dls pfreq instTools hlsGHCs lt' criteria showRevisions hideOld showNightly days
 
+listVersions' ::
+     GHCupDownloads
+  -> PlatformRequest
+  -> Map.Map Tool (Map.Map (Maybe Text) ([VersionRev], Maybe VersionRev))
+  -> [Version]
+  -> Maybe [Tool]
+  -> [ListCriteria]
+  -> ShowRevisions
+  -> Bool
+  -> Bool
+  -> (Maybe Day, Maybe Day)
+  -> ToolListResult
+listVersions' dls pfreq instTools hlsGHCs lt' criteria showRevisions hideOld showNightly days =
   -- available tools from the metadata
   let allAvailableTools' :: [(Tool, [(TargetVersion, VersionMetadata)])]
         = maybe (allAvailableTools dls) (\ts -> filter (\(t, _) -> t `elem` ts) $ allAvailableTools dls) lt'
-  let avTools :: M.Map Tool (M.Map (Maybe Text) (Set (Version, VersionMetadata)))
+      avTools :: M.Map Tool (M.Map (Maybe Text) (Set (Version, VersionMetadata)))
         = M.fromList $ (fmap . fmap) groupByTargetS allAvailableTools'
 
-  let avToolsProcessed = runST $ do
+      avToolsProcessed = runST $ do
         stRefAvToolsProcessed <- newSTRef mempty
 
         -- process installed tools first
@@ -161,7 +175,7 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
                   lRev = (_vrRev, RevNormal)
                   tDesc = preview (_GHCupDownloads % ix tool % toolDetails % _Just) dls
 
-                  hlsPowered = getHlsPowered tool target _vrVersion hlsGHCs
+                  hlsPowered = getHlsPowered tool target _vrVersion
 
               -- lNoBindist and lStray are updated when we traverse the metadata
               -- bindist tags (as opposed to tool tags) will also be added later
@@ -270,7 +284,7 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
                       insertListResult stRefAvToolsProcessed tool target tDesc ver' metaRev lr
         readSTRef stRefAvToolsProcessed
 
-  pure $ toToolListResult avToolsProcessed
+  in toToolListResult avToolsProcessed
 
  where
   toToolListResult :: ProcessedListResult -> ToolListResult
@@ -301,7 +315,7 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
     modifySTRef' ref
       (at tool % non (tDesc, mempty) % _2 % at target % non mempty % at ver' % non mempty % at rev .~ filter' lr')
 
-  getHlsPowered tool target ver' hlsGHCs =
+  getHlsPowered tool target ver' =
     (tool == ghc && isNothing target) && ver' `elem` hlsGHCs
 
   filter' :: ListResult -> Maybe ListResult

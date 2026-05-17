@@ -8,7 +8,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveLift #-}
 #if defined(DHALL)
 {-# LANGUAGE DeriveAnyClass #-}
 #endif

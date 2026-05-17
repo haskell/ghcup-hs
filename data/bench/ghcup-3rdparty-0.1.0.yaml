@@ -1,0 +1,393 @@
+ghcupDownloads:
+  hlint:
+    toolDetails:
+      toolRepository: "https://github.com/ndmitchell/hlint"
+      toolDescription: "Haskell source code suggestions"
+      toolAuthor: "Neil Mitchell"
+      toolLicense: "BSD-3"
+    toolVersions:
+      3.10:
+        viTags:
+          - Latest
+          - Recommended
+        viArch:
+          A_64:
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/ndmitchell/hlint/releases/download/v3.10/hlint-3.10-x86_64-linux.tar.gz
+                dlHash: ccabc8802a58154699a3583b8dddc5ea2e6d65753a62c45c0e80088ebb16b42b
+                dlSubdir: hlint-3.10
+                dlInstallSpec: &hlint-install-spec1
+                  exeRules:
+                    - installSource: "hlint"
+                      installDest: "bin/hlint"
+                  exeSymLinked:
+                   - linkName: "hlint-${PKGVER}"
+                     pVPMajorLinks: false
+                     setName: "hlint"
+                     target: "bin/hlint"
+                  dataRules:
+                    - installPattern: ["data/**"]
+                  preserveMtimes: false
+            Windows:
+              unknown_versioning:
+                dlUri: https://github.com/ndmitchell/hlint/releases/download/v3.10/hlint-3.10-x86_64-windows.zip
+                dlHash: 9dc50b66771920464910472c5ae2b8eb83d33d4eadebe6d99bf512452ca22a20
+                dlSubdir: hlint-3.10
+                dlInstallSpec:
+                  exeRules:
+                    - installSource: "hlint.exe"
+                      installDest: "bin/hlint.exe"
+                  exeSymLinked:
+                   - linkName: "hlint-${PKGVER}.exe"
+                     pVPMajorLinks: false
+                     setName: "hlint.exe"
+                     target: "bin/hlint.exe"
+                  dataRules:
+                    - installPattern: ["data/**"]
+                  preserveMtimes: false
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/ndmitchell/hlint/releases/download/v3.10/hlint-3.10-x86_64-osx.tar.gz
+                dlHash: 7a3d208fb117999336b35a32a68c476f95e22e232357fea5862250f14493cae5
+                dlSubdir: hlint-3.10
+                dlInstallSpec: *hlint-install-spec1
+  ormolu:
+    toolDetails:
+      toolHomepage: "https://ormolu-live.tweag.io/"
+      toolRepository: "https://github.com/tweag/ormolu"
+      toolDescription: "A formatter for Haskell source code"
+      toolLicense: "BSD-3"
+    toolVersions:
+      0.8.0.2:
+        viTags:
+          - Latest
+          - Recommended
+        viArch:
+          A_64:
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/tweag/ormolu/releases/download/0.8.0.2/ormolu-x86_64-linux.zip
+                dlHash: f737b11835537d020d83a497903a392f19d4943aea03b75f76f1c5719d70f9f8
+                dlInstallSpec: &ormolu-install-spec1
+                  exeRules:
+                    - installSource: "ormolu"
+                      installDest: "bin/ormolu"
+                  exeSymLinked:
+                   - linkName: "ormolu-${PKGVER}"
+                     pVPMajorLinks: false
+                     setName: "ormolu"
+                     target: "bin/ormolu"
+                  preserveMtimes: false
+            Windows:
+              unknown_versioning:
+                dlUri: https://github.com/ndmitchell/hlint/releases/download/v3.10/hlint-3.10-x86_64-windows.zip
+                dlHash: 3e484422d68260083fcb7841433a9fa172ff01131f8610d750c1902fba4f2b7e
+                dlInstallSpec: &ormolu-install-spec1
+                  exeRules:
+                    - installSource: "ormolu.exe"
+                      installDest: "bin/ormolu.exe"
+                  exeSymLinked:
+                   - linkName: "ormolu-${PKGVER}.exe"
+                     pVPMajorLinks: false
+                     setName: "ormolu.exe"
+                     target: "bin/ormolu.exe"
+                  preserveMtimes: false
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/tweag/ormolu/releases/download/0.8.0.2/ormolu-x86_64-darwin.zip
+                dlHash: e94fa4253dcb9b58075c7550f6f43e908a0761b3df6bde7513222705f0c63167
+                dlInstallSpec: *ormolu-install-spec1
+          A_ARM64:
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/tweag/ormolu/releases/download/0.8.0.2/ormolu-aarch64-darwin.zip
+                dlHash: 942bc1cf11a0589f262a3306062f4eee59b7bcccacb5ade3851bfc3c448115a0
+                dlInstallSpec: *ormolu-install-spec1
+  shellcheck:
+    toolDetails:
+      toolHomepage: "https://www.shellcheck.net/"
+      toolRepository: "https://github.com/koalaman/shellcheck"
+      toolDescription: "ShellCheck, a static analysis tool for shell scripts"
+      toolAuthor: "Vidar Holen"
+      toolLicense: "GPL-3.0"
+    toolVersions:
+      0.11.0:
+        viTags:
+          - Latest
+          - Recommended
+        viArch:
+          A_64:
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.gz
+                dlHash: b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6
+                dlSubdir: shellcheck-v0.11.0
+                dlInstallSpec: &shellcheck-install-spec1
+                  exeRules:
+                    - installSource: "shellcheck"
+                      installDest: "bin/shellcheck"
+                  exeSymLinked:
+                   - linkName: "shellcheck-${PKGVER}"
+                     pVPMajorLinks: false
+                     setName: "shellcheck"
+                     target: "bin/shellcheck"
+                  preserveMtimes: false
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.darwin.x86_64.tar.gz
+                dlHash: c2c15e08df0e8fbc374c335b230a7ee958c313fa5714817a59aa59f1aa594f51
+                dlSubdir: shellcheck-v0.11.0
+                dlInstallSpec: *shellcheck-install-spec1
+          A_ARM64:
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.darwin.aarch64.tar.gz
+                dlHash: 339b930feb1ea764467013cc1f72d09cd6b869ebf1013296ba9055ab2ffbd26f
+                dlSubdir: shellcheck-v0.11.0
+                dlInstallSpec: *shellcheck-install-spec1
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.aarch64.tar.gz
+                dlHash: 68a8133197a50beb8803f8d42f9908d1af1c5540d4bb05fdfca8c1fa47decefc
+                dlSubdir: shellcheck-v0.11.0
+                dlInstallSpec: *shellcheck-install-spec1
+  pandoc:
+    toolDetails:
+      toolHomepage: "https://pandoc.org/"
+      toolRepository: "https://github.com/jgm/pandoc"
+      toolDescription: "Universal markup converter"
+      toolAuthor: "John MacFarlane"
+      toolLicense: "GPL-2.0"
+    toolVersions:
+      3.9.0.2:
+        viTags:
+          - Latest
+          - Recommended
+        viArch:
+          A_64:
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/jgm/pandoc/releases/download/3.9.0.2/pandoc-3.9.0.2-linux-amd64.tar.gz
+                dlHash: a69abfababda8a56969a254b09f9553a7be89ddec00d4e0fe9fd585d71a67508
+                dlSubdir: pandoc-3.9.0.2
+                dlInstallSpec: &pandoc-install-spec1
+                  exeRules:
+                    - installPattern: ["bin/pandoc"]
+                  dataRules:
+                    - installPattern: ["share/**"]
+                  exeSymLinked:
+                   - linkName: "pandoc-${PKGVER}"
+                     pVPMajorLinks: false
+                     setName: "pandoc"
+                     target: "bin/pandoc"
+                   - linkName: "pandoc-lua-${PKGVER}"
+                     pVPMajorLinks: false
+                     setName: "pandoc-lua"
+                     target: "bin/pandoc"
+                   - linkName: "pandoc-server-${PKGVER}"
+                     pVPMajorLinks: false
+                     setName: "pandoc-server"
+                     target: "bin/pandoc"
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.darwin.x86_64.tar.gz
+                dlHash: c2c15e08df0e8fbc374c335b230a7ee958c313fa5714817a59aa59f1aa594f51
+                dlSubdir: pandoc-3.9.0.2
+                dlInstallSpec: *pandoc-install-spec1
+            Windows:
+              unknown_versioning:
+                dlUri: https://github.com/jgm/pandoc/releases/download/3.9.0.2/pandoc-3.9.0.2-windows-x86_64.zip
+                dlHash: c97542f2800f446e788d9f74237856d995421ad1bb3cc8324286840c5f272d3a
+                dlInstallSpec:
+                  exeRules:
+                    - installSource: "pandoc.exe"
+                      installDest: "bin/pandoc.exe"
+                  exeSymLinked:
+                   - linkName: "pandoc-${PKGVER}.exe"
+                     pVPMajorLinks: false
+                     setName: "pandoc.exe"
+                     target: "bin/pandoc.exe"
+                  preserveMtimes: false
+          A_ARM64:
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/jgm/pandoc/releases/download/3.9.0.2/pandoc-3.9.0.2-arm64-macOS.zip
+                dlHash: 6e9eca844076bcbb599bbeebbba78a70f93b5307782b85c2c272872812c88875
+                dlSubdir: pandoc-3.9.0.2
+                dlInstallSpec: *pandoc-install-spec1
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/jgm/pandoc/releases/download/3.9.0.2/pandoc-3.9.0.2-linux-arm64.tar.gz
+                dlHash: b6d21e8f9c3b15744f5a7ab40248019157ed7793875dbe0383d4c82ff572b528
+                dlSubdir: pandoc-3.9.0.2
+                dlInstallSpec: *pandoc-install-spec1
+  agda:
+    toolDetails:
+      toolHomepage: "http://agda.readthedocs.io/"
+      toolRepository: "https://github.com/agda/agda"
+      toolDescription: "Agda is a dependently typed programming language / interactive theorem prover."
+      toolAuthor: "John MacFarlane"
+      toolLicense: "MIT"
+    toolVersions:
+      2.8.0:
+        viTags:
+          - Latest
+          - Recommended
+        viPostInstall: &agda-post-install |
+          After installing agda, please run:
+            agda --setup
+        viArch:
+          A_64:
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/agda/agda/releases/download/v2.8.0/Agda-v2.8.0-linux.tar.xz
+                dlHash: 824081b8dcbe431289a50ac6bd83e451f390c51c3884ac7a8c4a5c0df2632faf
+                dlInstallSpec: &agda-install-spec1
+                  exeRules:
+                    - installSource: "agda"
+                      installDest: "bin/agda"
+                  exeSymLinked:
+                   - linkName: "agda-${PKGVER}"
+                     pVPMajorLinks: true
+                     setName: "agda"
+                     target: "bin/agda"
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/agda/agda/releases/download/v2.8.0/Agda-v2.8.0-macOS-x64.tar.xz
+                dlHash: 9d3b4f376bc9469b5e0c684bf06053f7dae327f7e4314f31f3edc866a9bb3bc5
+                dlInstallSpec: *agda-install-spec1
+            Windows:
+              unknown_versioning:
+                dlUri: https://github.com/agda/agda/releases/download/v2.8.0/Agda-v2.8.0-win64.zip
+                dlHash: 5c97846c45dc8c43d79a5df3cc78ccf58bad710aac2182b70c4f5ede30af3cbc
+                dlInstallSpec:
+                  exeRules:
+                    - installSource: "agda.exe"
+                      installDest: "bin/agda.exe"
+                  exeSymLinked:
+                   - linkName: "agda-${PKGVER}.exe"
+                     pVPMajorLinks: false
+                     setName: "agda.exe"
+                     target: "bin/agda.exe"
+                  preserveMtimes: false
+          A_ARM64:
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/agda/agda/releases/download/v2.8.0/Agda-v2.8.0-macOS-arm64.tar.xz
+                dlHash: 9a35071eb9747f984177f48e1ba7008a9cebccfc259a40a0a84b29ffc2ec2db6
+                dlInstallSpec: *agda-install-spec1
+  purescript:
+    toolDetails:
+      toolHomepage: "https://www.purescript.org/"
+      toolRepository: "https://github.com/purescript/purescript"
+      toolDescription: "A strongly-typed language that compiles to JavaScript"
+      toolLicense: "BSD-3"
+    toolVersions:
+      0.15.16:
+        viTags:
+          - Latest
+          - Recommended
+        viArch:
+          A_64:
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/purescript/purescript/releases/download/v0.15.16/linux64.tar.gz
+                dlHash: 44da9efb8a4e14519e8fd5350acc377a4b981e42351a78c53e9f84045bf38e22
+                dlOutput: purescript-linux-x64-0.15.16.tar.gz
+                dlSubdir: purescript
+                dlInstallSpec: &purs-install-spec1
+                  exeRules:
+                    - installSource: "purs"
+                      installDest: "bin/purs"
+                  exeSymLinked:
+                   - linkName: "purs-${PKGVER}"
+                     pVPMajorLinks: true
+                     setName: "purs"
+                     target: "bin/purs"
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/purescript/purescript/releases/download/v0.15.16/macos.tar.gz
+                dlHash: 9f5bfdb7a468241c7106660bc6bd0209ce3f19ad197516ccdcd5c17df81958b6
+                dlOutput: purescript-macos-0.15.16.tar.gz
+                dlSubdir: purescript
+                dlInstallSpec: *purs-install-spec1
+            Windows:
+              unknown_versioning:
+                dlUri: https://github.com/purescript/purescript/releases/download/v0.15.16/win64.tar.gz
+                dlHash: 8b68ae1031f6aafda327672a424109ff28f8881b0ce00185a2b1445d32430df3
+                dlOutput: purescript-win64-0.15.16.tar.gz
+                dlSubdir: purescript
+                dlInstallSpec:
+                  exeRules:
+                    - installSource: "purs.exe"
+                      installDest: "bin/purs.exe"
+                  exeSymLinked:
+                   - linkName: "purs-${PKGVER}.exe"
+                     pVPMajorLinks: true
+                     setName: "purs.exe"
+                     target: "bin/purs.exe"
+          A_ARM64:
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/purescript/purescript/releases/download/v0.15.16/macos-arm64.tar.gz
+                dlHash: 63f15a13e226efc260fb025c4a4ad7f66429b6685da607040b7bcc209332fcc4
+                dlOutput: purescript-macos-arm64-0.15.16.tar.gz
+                dlSubdir: purescript
+                dlInstallSpec: *purs-install-spec1
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/purescript/purescript/releases/download/v0.15.16/linux-arm64.tar.gz
+                dlHash: b8d153c5c6e0d8c9618a90824eb342b5818e14a92b0b6cdff753d9b353a927f3
+                dlOutput: purescript-linux-arm64-0.15.16.tar.gz
+                dlSubdir: purescript
+                dlInstallSpec: *purs-install-spec1
+  dhall:
+    toolDetails:
+      toolHomepage: "https://dhall-lang.org/"
+      toolRepository: "https://github.com/dhall-lang/dhall-lang"
+      toolDescription: "Maintainable configuration files"
+      toolAuthor: "Gabriella Gonzalez"
+      toolContact: "GenuineGabriella@gmail.com"
+    toolVersions:
+      1.42.2:
+        viTags:
+          - Latest
+          - Recommended
+        viArch:
+          A_64:
+            Linux_UnknownLinux:
+              unknown_versioning:
+                dlUri: https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2
+                dlHash: b2509bbe07772f268ef193d9c36b18aa13bd32ecec76fd4b21782715b38386a3
+                dlInstallSpec: &dhall-install-spec1
+                  exeRules:
+                    - installSource: "bin/dhall"
+                  exeSymLinked:
+                   - linkName: "dhall-${PKGVER}"
+                     pVPMajorLinks: true
+                     setName: "dhall"
+                     target: "bin/dhall"
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-darwin.tar.bz2
+                dlHash: b1c5fd87b018d13d3a07db0561d1ffb906b7b840151fdb8ce00dc9f2f8dffe4a
+                dlInstallSpec: *dhall-install-spec1
+            Windows:
+              unknown_versioning:
+                dlUri: https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-windows.zip
+                dlHash: c2447b8406d11611f43c47366fc93baa8061961736b46b9822077625cbd8ff9e
+                dlInstallSpec: &dhall-install-win-spec1
+                  exeRules:
+                    - installSource: "bin/dhall.exe"
+                  exeSymLinked:
+                   - linkName: "dhall-${PKGVER}.exe"
+                     pVPMajorLinks: true
+                     setName: "dhall.exe"
+                     target: "bin/dhall.exe"
+          A_ARM64:
+            Darwin:
+              unknown_versioning:
+                dlUri: https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-aarch64-darwin.tar.bz2
+                dlHash: fe146e5004fda01e06f4a29fa160f1e5518a54b149f4c416bcfb5c280c91190c
+                dlInstallSpec: *dhall-install-spec1
