@@ -515,6 +515,8 @@ benchmark bench
 
   main-is:          Bench.hs
   other-modules:    BenchList
+                    BenchParse
+                    BenchSetup
   type:             exitcode-stdio-1.0
   hs-source-dirs:   bench
   ghc-options:      -O2 "-with-rtsopts=-A32m" -fmax-forced-spec-args=14
