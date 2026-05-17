@@ -1,6 +1,7 @@
 packages: ./ghcup.cabal
 
 Tests: True
+Benchmarks: True
 
 constraints: http-io-streams -brotli,
              any.aeson >= 2.0.1.0,
