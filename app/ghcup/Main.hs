@@ -283,7 +283,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                             then pure ()
                             else do
                               liftIO $ T.writeFile warnFile warnMsg
-                              runLogger $ logWarn warnMsg
+                              lift $ logWarn warnMsg
                           Just _ -> do
                             logDebug "GHCUP_SKIP_UPDATE_CHECK is set, skipping update check"
                             pure ()
