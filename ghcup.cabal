@@ -402,9 +402,6 @@ library ghcup-tui
   if !flag(tui)
     buildable: False
 
-  else
-    build-depends:  unix ^>=2.7 || ^>=2.8
-
 executable ghcup
   import:             app-common-depends
   main-is:            Main.hs
