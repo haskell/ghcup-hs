@@ -205,12 +205,11 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
                     if installedRev == metaRev
                     then do -- and even the same revision
                       -- add information from the metadata to the installed rev
-                      modifySTRef' stRefAvToolsProcessed
-                        (over (ix tool % _2 % ix target % ix ver' % ix installedRev) $ \lr' -> lr'
-                          & lNoBindistL .~ (isNothing mdli && not (lStray installedLr))
-                          & lTagL       %~ (<> bTags)
-                          & lStrayL     .~ False
-                        )
+                      modifyListResult stRefAvToolsProcessed tool target ver' installedRev
+                        [ lNoBindistL .~ (isNothing mdli && not (lStray installedLr))
+                        , lTagL       %~ (<> bTags)
+                        , lStrayL     .~ False
+                        ]
                     else do -- installed, but not this revision
                       when (showRevisions /= ShowNone) $ do
 
@@ -226,11 +225,10 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
 
                         when isUpdate $
                           -- remove the latest/recommended tag from the installed revision
-                          modifySTRef' stRefAvToolsProcessed
-                            (over (ix tool % _2 % ix target % ix ver' % ix installedRev) $ \lr' -> lr'
-                              & lRevL % _2 .~ RevOutdated
-                              & lTagL      %~ filterNotLatestRec
-                            )
+                          modifyListResult stRefAvToolsProcessed tool target ver' installedRev
+                            [ lRevL % _2 .~ RevOutdated
+                            , lTagL      %~ filterNotLatestRec
+                            ]
 
                         -- Insert the installed revision
                         -- updates are always inserted, but non-updates are only relevant if the user wants to see all revisions
@@ -271,7 +269,19 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
 
  where
   toToolListResult :: ProcessedListResult -> ToolListResult
-  toToolListResult = M.map (second (filter' . toListOf (traversed % traversed % traversed)))
+  toToolListResult = M.map (second (toListOf (traversed % traversed % traversed)))
+
+  modifyListResult ::
+       STRef s ProcessedListResult
+    -> Tool
+    -> Maybe Text
+    -> Version
+    -> Int
+    -> [ListResult -> ListResult]
+    -> ST s ()
+  modifyListResult ref tool target ver' rev setters =
+    modifySTRef' ref
+      (ix tool % _2 % ix target % ix ver' % at rev %~ (>>= (\lr' -> filter' (foldl (&) lr' setters))))
 
   insertListResult ::
        STRef s ProcessedListResult
@@ -282,23 +292,38 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
     -> Int
     -> ListResult
     -> ST s ()
-  insertListResult ref tool target tDesc ver' rev lr =
+  insertListResult ref tool target tDesc ver' rev lr' =
     modifySTRef' ref
-    (at tool % non (tDesc, mempty) % _2 % at target % non mempty % at ver' % non mempty % at rev ?~ lr)
+      (at tool % non (tDesc, mempty) % _2 % at target % non mempty % at ver' % non mempty % at rev .~ filter' lr')
 
   getHlsPowered tool target ver' hlsGHCs =
     (tool == ghc && isNothing target) && ver' `elem` hlsGHCs
 
+  filter' :: ListResult -> Maybe ListResult
+  filter' lr = do
+    lrN <- filterNightly lr
+    lrOld <- filterOld lrN
+    lrCrit <- if foldr (\a b -> fromCriteria a lrOld && b) True criteria
+              then Just lrOld
+              else Nothing
+    filterDays lrCrit
 
-  filter' :: [ListResult] -> [ListResult]
-  filter' = filterNightly . filterOld . filter (\lr -> foldr (\a b -> fromCriteria a lr && b) True criteria) . filterDays
-
-  filterDays :: [ListResult] -> [ListResult]
-  filterDays lrs = case days of
-                     (Nothing, Nothing)    -> lrs
-                     (Just from, Just to') -> filter (\ListResult{..} -> maybe False (\d -> d >= from && d <= to') lReleaseDay) lrs
-                     (Nothing, Just to')   -> filter (\ListResult{..} -> maybe False (<= to')                      lReleaseDay) lrs
-                     (Just from, Nothing)  -> filter (\ListResult{..} -> maybe False (>= from)                     lReleaseDay) lrs
+  filterDays :: ListResult -> Maybe ListResult
+  filterDays lr@ListResult{..} =
+    case days of
+      (Nothing, Nothing)    -> Just lr
+      (Just from, Just to')
+        | Just True <- (\d -> d >= from && d <= to') <$> lReleaseDay
+        -> Just lr
+        | otherwise -> Nothing
+      (Nothing, Just to')
+        | Just True <- (<= to') <$> lReleaseDay
+        -> Just lr
+        | otherwise -> Nothing
+      (Just from, Nothing)
+        | Just True <- (>= from) <$> lReleaseDay
+        -> Just lr
+        | otherwise -> Nothing
 
   fromCriteria :: ListCriteria -> ListResult -> Bool
   fromCriteria lc ListResult{..} = case lc of
@@ -310,13 +335,15 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
       | b         = id
       | otherwise = not
 
-  filterOld :: [ListResult] -> [ListResult]
-  filterOld lr
-    | hideOld   = filter (\ListResult {..} -> lInstalled || Old `notElem` lTag) lr
-    | otherwise = lr
+  filterOld :: ListResult -> Maybe ListResult
+  filterOld lr@ListResult {..}
+    | hideOld   = if lInstalled || Old `notElem` lTag then Just lr else Nothing
+    | otherwise = Just lr
 
-  filterNightly :: [ListResult] -> [ListResult]
-  filterNightly lr
-    | showNightly = lr
-    | otherwise   = filter (\ListResult {..} -> lInstalled || (Nightly `notElem` lTag && LatestNightly `notElem` lTag)) lr
+  filterNightly :: ListResult -> Maybe ListResult
+  filterNightly lr@ListResult {..}
+    | showNightly = Just lr
+    | otherwise   = if lInstalled || (Nightly `notElem` lTag && LatestNightly `notElem` lTag)
+                    then Just lr
+                    else Nothing
 
