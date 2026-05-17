@@ -27,6 +27,7 @@ import GHCup.Types.JSON
 import GHCup.Types.Optics
 
 import Control.Applicative
+import Control.DeepSeq              ( NFData )
 import Control.Monad
 #if !MIN_VERSION_base(4,13,0)
 import Control.Monad.Fail ( MonadFail )
@@ -48,6 +49,7 @@ import Prelude              hiding ( abs, writeFile )
 
 import qualified Data.Map.Strict as M
 import qualified Data.Map.Strict as Map
+import qualified GHC.Generics    as GHC
 
 
 
@@ -73,7 +75,9 @@ type ProcessedListResult = M.Map Tool (Maybe ToolDescription, M.Map (Maybe Text)
 data RevTag = RevUpdate
             | RevOutdated
             | RevNormal
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, GHC.Generic)
+
+instance NFData RevTag
 
 -- | A list result describes a single tool version
 -- and various of its properties.
@@ -93,8 +97,9 @@ data ListResult = ListResult
   , hlsPowered :: Bool
   , lReleaseDay :: Maybe Day
   }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, GHC.Generic)
 
+instance NFData ListResult
 
 makeLensesWith (lensRules & lensField .~ mappingNamer (\n -> [n <> "L"])) ''ListResult
 

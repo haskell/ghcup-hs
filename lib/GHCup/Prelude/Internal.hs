@@ -39,8 +39,11 @@ import Data.Variant.Excepts
 import Data.Variant.Types
 import Data.Versions
 import Data.Word8             hiding ( isDigit )
+import Data.Yaml (decodeFileEither, FromJSON)
 import GHC.IO.Exception
+import Language.Haskell.TH.Syntax (qAddDependentFile, runIO)
 import System.IO.Error
+import System.Directory (canonicalizePath)
 
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as L
@@ -53,6 +56,7 @@ import qualified Data.Text.Lazy             as TL
 import qualified Data.Text.Lazy.Builder     as B
 import qualified Data.Text.Lazy.Builder.Int as B
 import qualified Data.Text.Lazy.Encoding    as TLE
+import qualified Language.Haskell.TH.Syntax as TH
 
 
 
@@ -523,3 +527,12 @@ breakOn :: Eq a => [a] -> [a] -> ([a], [a])
 breakOn needle haystack | needle `isPrefixOf` haystack = ([], haystack)
 breakOn _ [] = ([], [])
 breakOn needle (x:xs) = first (x:) $ breakOn needle xs
+
+embedMetadata :: forall a. (TH.Lift a, FromJSON a) => Proxy a -> FilePath -> TH.Q TH.Exp
+embedMetadata _ fn = do
+  (res, fp) <- runIO $ do
+                 fp <- canonicalizePath fn
+                 res <- either (fail . displayException) pure =<< decodeFileEither @a fp
+                 pure (res, fp)
+  qAddDependentFile fp
+  TH.lift res

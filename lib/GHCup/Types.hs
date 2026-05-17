@@ -8,6 +8,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE TemplateHaskell #-}
 #if defined(DHALL)
 {-# LANGUAGE DeriveAnyClass #-}
 #endif
@@ -54,6 +56,7 @@ import URI.ByteString
 import Graphics.Vty ( Key (..), Modifier (..) )
 #endif
 import System.FilePattern
+import Language.Haskell.TH.Lift
 
 import qualified Data.ByteString.Lazy  as BL
 import qualified Data.List.NonEmpty    as NE
@@ -1390,3 +1393,35 @@ data ShowRevisions = ShowUpdates
                    | ShowAll
                    | ShowNone
   deriving (Eq, Show)
+
+deriveLift ''Requirements
+deriveLift ''VersionCmp
+deriveLift ''VersionRange
+deriveLift ''Tool
+deriveLift ''LinuxDistro
+deriveLift ''Platform
+deriveLift ''MapIgnoreUnknownKeys
+deriveLift ''Tag
+deriveLift ''EnvUnion
+deriveLift ''EnvSpec
+deriveLift ''ConfigSpec
+deriveLift ''InstallFileRule
+deriveLift ''MakeSpec
+deriveLift ''InstallationSpecGen
+deriveLift ''TarDir
+deriveLift ''SymlinkInputSpec
+deriveLift ''DownloadInfo
+deriveLift ''PlatformVersionSpec
+deriveLift ''PlatformSpec
+deriveLift ''Architecture
+deriveLift ''ArchitectureSpec
+deriveLift ''VersionInfo
+deriveLift ''RevisionSpec
+deriveLift ''VersionMetadata
+deriveLift ''TargetVersion
+deriveLift ''ToolVersionSpec
+deriveLift ''ToolDescription
+deriveLift ''ToolInfo
+deriveLift ''GHCupDownloads
+deriveLift ''GHCupInfo
+
