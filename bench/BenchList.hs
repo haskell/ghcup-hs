@@ -13,8 +13,9 @@ import GHCup.Prelude
 import GHCup.Query.GHCupDirs
 import GHCup.Types
 
+import Control.DeepSeq (force)
 import Control.Monad.Reader (runReaderT)
-import Control.Exception (displayException)
+import Control.Exception (displayException, evaluate)
 import Data.Maybe
 import Data.Yaml (decodeFileEither)
 import Data.Variant.Excepts
@@ -25,19 +26,23 @@ import Test.Tasty.Bench
 benchMark :: Benchmark
 benchMark =
   bgroup "GHCup.Commands.List"
-     [ env (readGHCupInfo "data/bench/ghcup-cross-0.1.0.yaml")           (bench "cross"   . nfAppIO listVersionsB)
-     , env (readGHCupInfo "data/bench/ghcup-0.1.0.yaml")                 (bench "def"     . nfAppIO listVersionsB)
-     , env (readGHCupInfo "data/bench/ghcup-nightlies-2025-0.0.7.yaml")  (bench "nightly" . nfAppIO listVersionsB)
+     [ env (getAppState "data/bench/ghcup-cross-0.1.0.yaml")           (bench "cross"   . nfAppIO listVersionsB)
+     , env (getAppState "data/bench/ghcup-0.1.0.yaml")                 (bench "def"     . nfAppIO listVersionsB)
+     , env (getAppState "data/bench/ghcup-nightlies-2025-0.0.7.yaml")  (bench "nightly" . nfAppIO listVersionsB)
      ]
 
-
 readGHCupInfo :: FilePath -> IO [NewURLSource]
-readGHCupInfo fp = either (fail . displayException) (pure . (:[]) . NewGHCupInfo) =<< decodeFileEither fp
+readGHCupInfo fp = do
+  ghcupInfo <- either (fail . displayException) pure =<< decodeFileEither fp
+  evaluate $ force [NewGHCupInfo ghcupInfo]
 
-type DownloadErrors = '[ContentLengthError, DigestError, DistroNotFound, DownloadFailed, FileDoesNotExistError, GPGError, JSONError, NoCompatibleArch, NoCompatiblePlatform, NoDownload, GHCup.Errors.ParseError, ProcessError, UnsupportedSetupCombo, StackPlatformDetectError, UnsupportedMetadataFormat]
+getAppState :: FilePath -> IO AppState
+getAppState fp = do
+  infos <- readGHCupInfo fp
+  spawnAppState infos
 
-listVersionsB :: [NewURLSource] -> IO ToolListResult
-listVersionsB infos = do
+spawnAppState :: [NewURLSource] -> IO AppState
+spawnAppState infos = do
   dirs <- getAllDirs
   let loggerConfig = LoggerConfig
         { lcPrintDebugLvl = Nothing
@@ -50,15 +55,19 @@ listVersionsB infos = do
   let keybindings = defaultKeyBindings
   let leanAppstate = LeanAppState settings dirs keybindings pfreq loggerConfig
 
-  ghcupInfo <-
+  VRight ghcupInfo <-
     ( flip runReaderT leanAppstate . runE @DownloadErrors $ do
        liftE $ getDownloadsF pfreq
     )
-      >>= \case
-            VRight r -> pure r
-            VLeft  e -> fail (show e)
-  let s' = AppState settings dirs keybindings ghcupInfo pfreq loggerConfig
 
+  let s' = AppState settings dirs keybindings ghcupInfo pfreq loggerConfig
+  evaluate (force s')
+
+
+type DownloadErrors = '[ContentLengthError, DigestError, DistroNotFound, DownloadFailed, FileDoesNotExistError, GPGError, JSONError, NoCompatibleArch, NoCompatiblePlatform, NoDownload, GHCup.Errors.ParseError, ProcessError, UnsupportedSetupCombo, StackPlatformDetectError, UnsupportedMetadataFormat]
+
+listVersionsB :: AppState -> IO ToolListResult
+listVersionsB s' = do
   VRight r <- flip runReaderT s' . runE @'[ParseError] $ listVersions Nothing []
     ShowUpdates -- showRevisions
     False       -- hideOld
