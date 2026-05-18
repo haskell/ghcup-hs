@@ -8,6 +8,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 #endif
 
 {-|
@@ -29,13 +30,13 @@ import           Dhall
     , Extractor
     , FromDhall (autoWith)
     , ToDhall (injectWith)
-    , InterpretOptions (fieldModifier)
+    , InterpretOptions (fieldModifier, singletonConstructors)
     , defaultInterpretOptions
     , genericToDhallWithInputNormalizer
     , extract
     , fromMonadic
     , genericAutoWith
-    , toMonadic
+    , toMonadic, SingletonConstructors (Bare)
     )
 import qualified Dhall
 import           GHCup.Types
@@ -45,7 +46,7 @@ import           GHCup.Types.JSON
 import           GHCup.Types.Stack
     ()
 
-import           Data.Versions            ( PVP, Version, pvp', version', prettyPVP, prettyVer )
+import           Data.Versions            ( PVP, Version, pvp', version', prettyPVP, prettyVer, pvp )
 import           Data.Void                ( Void )
 import           GHCup.Prelude.MegaParsec ( ghcTargetVerP, versionRangeP )
 import qualified Text.Megaparsec          as MP
@@ -65,13 +66,14 @@ import           Dhall.Parser            ( Src )
 import           GHCup.Input.Parsers.URI ( parseURI' )
 import           URI.ByteString          ( URI, serializeURIRef' )
 import Text.PrettyPrint.HughesPJClass (prettyShow)
+import Text.Read (readMaybe)
+import qualified Data.Map.Strict as M
+import qualified Dhall.Map
 
 
-dhallTextLit :: T.Text -> Expr s a
-dhallTextLit t = Dhall.Core.TextLit (Dhall.Core.Chunks [] t)
+pattern DhallString :: T.Text -> Expr s a
+pattern DhallString t = Dhall.Core.TextLit (Dhall.Core.Chunks [] t)
 
-dhallTextLit' :: String -> Expr s a
-dhallTextLit' (T.pack -> t) = Dhall.Core.TextLit (Dhall.Core.Chunks [] t)
 
 instance FromDhall VersionRange where
   autoWith _ =
@@ -81,32 +83,15 @@ instance FromDhall VersionRange where
 
 instance ToDhall VersionRange where
   injectWith _ = Dhall.Encoder
-    { embed = \(verRangeToText -> t) -> dhallTextLit t
+    { embed = \(verRangeToText -> t) -> DhallString t
     , declared = Dhall.Core.Text
     }
 
-instance {-# OVERLAPPING #-} FromDhall Architecture where
-  autoWith _ =
-    Dhall.string
-      { extract = extractParser' parseArch
-      }
-   where
-    parseArch t
-      | t == "x86_64"    = Right A_64
-      | t == "i386"      = Right A_32
-      | t == "powerpc"   = Right A_PowerPC
-      | t == "powerpc64" = Right A_PowerPC64
-      | t == "sparc"     = Right A_Sparc
-      | t == "sparc64"   = Right A_Sparc64
-      | t == "arm"       = Right A_ARM
-      | t == "aarch64"   = Right A_ARM64
-      | otherwise        = Left ("Unknown arch: " <> t)
+instance FromDhall Architecture where
+  autoWith _ = genericAutoWith defaultInterpretOptions
 
 instance ToDhall Architecture where
-  injectWith _ = Dhall.Encoder
-    { embed = \(prettyShow -> t) -> dhallTextLit' t
-    , declared = Dhall.Core.Text
-    }
+  injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
 
 instance {-# OVERLAPPING #-} FromDhall Platform where
   autoWith _ =
@@ -139,11 +124,11 @@ instance {-# OVERLAPPING #-} FromDhall Platform where
 instance ToDhall Platform where
   injectWith _ = Dhall.Encoder
     { embed = \case
-                 Darwin  -> dhallTextLit' "Darwin"
-                 FreeBSD -> dhallTextLit' "FreeBSD"
-                 Linux d -> dhallTextLit' ("Linux_" <> show d)
-                 OpenBSD -> dhallTextLit' "OpenBSD"
-                 Windows -> dhallTextLit' "Windows"
+                 Darwin  -> DhallString "Darwin"
+                 FreeBSD -> DhallString "FreeBSD"
+                 Linux d -> DhallString ("Linux_" <> T.pack (show d))
+                 OpenBSD -> DhallString "OpenBSD"
+                 Windows -> DhallString "Windows"
     , declared = Dhall.Core.Text
     }
 
@@ -157,7 +142,7 @@ instance {-# OVERLAPPING #-} ToDhall (Maybe VersionRange) where
   injectWith _ = Dhall.Encoder
     { embed = \case
                 Just t -> Dhall.embed @VersionRange Dhall.inject $ t
-                Nothing ->  dhallTextLit "unknown_versioning"
+                Nothing ->  DhallString "unknown_versioning"
     , declared = Dhall.Core.Text
     }
 
@@ -169,7 +154,7 @@ instance FromDhall PVP where
 
 instance ToDhall PVP where
   injectWith _ = Dhall.Encoder
-    { embed = \(prettyPVP -> t) -> dhallTextLit t
+    { embed = \(prettyPVP -> t) -> DhallString t
     , declared = Dhall.Core.Text
     }
 
@@ -181,7 +166,7 @@ instance {-# OVERLAPPING #-} FromDhall (Maybe Version) where
 
 instance ToDhall Version where
   injectWith _ = Dhall.Encoder
-    { embed = \(prettyVer -> t) -> dhallTextLit t
+    { embed = \(prettyVer -> t) -> DhallString t
     , declared = Dhall.Core.Text
     }
 
@@ -189,7 +174,7 @@ instance {-# OVERLAPPING #-} ToDhall (Maybe Version) where
   injectWith _ = Dhall.Encoder
     { embed = \case
                 Just t -> Dhall.embed @Version Dhall.inject $ t
-                Nothing -> dhallTextLit "unknown_version"
+                Nothing -> DhallString "unknown_version"
     , declared = Dhall.Core.Text
     }
 
@@ -201,7 +186,7 @@ instance FromDhall TargetVersion where
 
 instance ToDhall TargetVersion where
   injectWith _ = Dhall.Encoder
-    { embed = \(prettyShow -> t) -> dhallTextLit' t
+    { embed = \(T.pack . prettyShow -> t) -> DhallString t
     , declared = Dhall.Core.Text
     }
 
@@ -214,10 +199,38 @@ extractParser' parse expr = fromMonadic $ do
   first (DhallErrors . NE.singleton . ExtractError . T.pack . show) . parse . T.pack $ t
 
 instance FromDhall Tag where
-  autoWith _ = genericAutoWith defaultInterpretOptions
+  autoWith _ = Dhall.string
+    { extract = \case
+        DhallString "Latest"                             -> pure Latest
+        DhallString "Recommended"                        -> pure Recommended
+        DhallString "Prerelease"                         -> pure Prerelease
+        DhallString "Nightly"                            -> pure Nightly
+        DhallString "LatestPrerelease"                   -> pure LatestPrerelease
+        DhallString "LatestNightly"                      -> pure LatestNightly
+        DhallString "Experimental"                       -> pure Experimental
+        DhallString "old"                                -> pure Old
+        e@(DhallString (T.unpack -> 'b' : 'a' : 's' : 'e' : '-' : ver')) -> case pvp (T.pack ver') of
+          Right x -> pure $ Base x
+          Left  _ -> Dhall.typeError (Dhall.expected Dhall.string) e
+        DhallString x -> pure (UnknownTag $ T.unpack x)
+        e -> Dhall.typeError (Dhall.expected Dhall.string) e
+    }
 
 instance ToDhall Tag where
-  injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
+  injectWith _ = Dhall.Encoder
+    { embed = \case
+        Latest             -> DhallString "Latest"
+        Recommended        -> DhallString "Recommended"
+        Prerelease         -> DhallString "Prerelease"
+        Nightly            -> DhallString "Nightly"
+        Old                -> DhallString "old"
+        (Base       pvp'') -> DhallString ("base-" <> prettyPVP pvp'')
+        LatestPrerelease   -> DhallString "LatestPrerelease"
+        LatestNightly      -> DhallString "LatestNightly"
+        Experimental       -> DhallString "Experimental"
+        (UnknownTag x    ) -> DhallString (T.pack x)
+    , declared = Dhall.Core.Text
+    }
 
 instance FromDhall URI where
   autoWith _ =
@@ -227,7 +240,7 @@ instance FromDhall URI where
 
 instance ToDhall URI where
   injectWith _ = Dhall.Encoder
-    { embed = \(decUTF8Safe . serializeURIRef' -> uri) -> dhallTextLit uri
+    { embed = \(decUTF8Safe . serializeURIRef' -> uri) -> DhallString uri
     , declared = Dhall.Core.Text
     }
 
@@ -258,13 +271,21 @@ instance ToDhall SymlinkInputSpec where
   injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
     { fieldModifier = fieldModifierLowerCase 3 }
 
+instance FromDhall Rev where
+  autoWith _ = genericAutoWith defaultInterpretOptions
+    { singletonConstructors = Bare }
+
+instance ToDhall Rev where
+  injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
+    { singletonConstructors = Bare }
+
 instance FromDhall RevisionSpec where
   autoWith _ = genericAutoWith defaultInterpretOptions
-    { fieldModifier = fieldModifierLowerCase 1 }
+    { singletonConstructors = Bare }
 
 instance ToDhall RevisionSpec where
   injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
-    { fieldModifier = fieldModifierLowerCase 1 }
+    { singletonConstructors = Bare }
 
 instance FromDhall ToolInfo where
   autoWith _ = genericAutoWith defaultInterpretOptions
@@ -359,40 +380,50 @@ instance ToDhall GHCupInfo where
 
 instance FromDhall PlatformVersionSpec where
   autoWith _ = genericAutoWith defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance ToDhall PlatformVersionSpec where
   injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance FromDhall PlatformSpec where
   autoWith _ = genericAutoWith defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance ToDhall PlatformSpec where
   injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance FromDhall ArchitectureSpec where
   autoWith _ = genericAutoWith defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance ToDhall ArchitectureSpec where
   injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance FromDhall ToolVersionSpec where
   autoWith _ = genericAutoWith defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance ToDhall ToolVersionSpec where
   injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance FromDhall GHCupDownloads where
   autoWith _ = genericAutoWith defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance ToDhall GHCupDownloads where
   injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
+    { singletonConstructors = Bare }
 
 instance FromDhall VersionMetadata where
   autoWith _ = genericAutoWith defaultInterpretOptions
-    { fieldModifier = fieldModifierLowerCase 1 }
+    { fieldModifier = fieldModifierLowerCase 3 }
 
 instance ToDhall VersionMetadata where
   injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
-    { fieldModifier = fieldModifierLowerCase 1 }
+    { fieldModifier = fieldModifierLowerCase 3 }
 
 #endif

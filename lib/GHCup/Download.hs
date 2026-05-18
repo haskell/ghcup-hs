@@ -214,7 +214,7 @@ getDownloadsF' pfreq@(PlatformRequest arch plat _) urlSource = do
    where
     fromDownloadInfo :: DownloadInfo -> VersionMetadata
     fromDownloadInfo dli = let aspec = ArchitectureSpec $ MapIgnoreUnknownKeys $ M.singleton arch (PlatformSpec $ MapIgnoreUnknownKeys $ M.singleton plat (PlatformVersionSpec $ M.singleton Nothing dli))
-                           in VersionMetadata [] Nothing Nothing Nothing Nothing Nothing Nothing (RevisionSpec . M.singleton 0 . VersionInfo Nothing Nothing $ aspec)
+                           in VersionMetadata [] Nothing Nothing Nothing Nothing Nothing Nothing (RevisionSpec . M.singleton (Rev 0) . VersionInfo Nothing Nothing $ aspec)
 
     fromStackDownloadInfo :: MonadThrow m => Version -> Stack.GHCDownloadInfo -> m DownloadInfo
     fromStackDownloadInfo ver (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do

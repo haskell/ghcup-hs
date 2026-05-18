@@ -10,10 +10,11 @@ Portability : portable
 
 module GHCup.Types.JSON.Utils where
 
-import Data.Aeson       ( FromJSON, Key, Object, (.:), (.:?) )
-import Data.Aeson.Types ( Parser )
-import Data.Foldable    ( asum )
-import Data.Functor     ( (<&>) )
+import Control.Applicative ( optional )
+import Data.Aeson          ( FromJSON, Key, Object, (.:) )
+import Data.Aeson.Types    ( Parser )
+import Data.Foldable       ( asum )
+import Data.Functor        ( (<&>) )
 
 import qualified Data.Text as T
 
@@ -22,7 +23,8 @@ removeLensFieldLabel str' =
   maybe str' T.unpack . T.stripPrefix (T.pack "_") . T.pack $ str'
 
 (.::?) :: FromJSON a => Object -> [Key] -> Parser (Maybe a)
-(.::?) o keys = asum $ keys <&> (o .:?)
+-- asum <$> traverse (o .:?) keys
+(.::?) o keys = optional $ asum (keys <&> (o .:))
 
 (.::) :: FromJSON a => Object -> [Key] -> Parser a
 (.::) o keys = asum $ keys <&> (o .:)

@@ -290,7 +290,8 @@ toolRequirements:
       Darwin:
         unknown_versioning:
           distroPKGs: []
-          notes: On OS X, in the course of running ghcup you will be given a dialog
+          notes: |
+            On OS X, in the course of running ghcup you will be given a dialog
             box to install the command line tools. Accept and the requirements will
             be installed for you. You will then need to run the command again.
 

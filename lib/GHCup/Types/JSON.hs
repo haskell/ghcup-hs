@@ -54,6 +54,7 @@ import qualified Data.Text                as T
 import qualified Data.Text.Encoding.Error as E
 import qualified Text.Megaparsec          as MP
 import qualified Text.Megaparsec.Char.Lexer as L
+import Data.Functor.Contravariant (Contravariant(contramap))
 
 safePath :: FilePath -> Bool
 safePath fp
@@ -247,6 +248,14 @@ instance FromJSON TargetVersion where
 instance ToJSONKey TargetVersion where
   toJSONKey = toJSONKeyText $ \x -> tVerToText x
 
+deriveJSON defaultOptions { unwrapUnaryRecords = True } ''Rev
+
+instance FromJSONKey Rev where
+  fromJSONKey = Rev <$> fromJSONKey @Int
+
+instance ToJSONKey Rev where
+  toJSONKey = contramap unRev toJSONKey
+
 instance FromJSONKey TargetVersion where
   fromJSONKey = FromJSONKeyTextParser $ \t -> case MP.parse ghcTargetVerP "" t of
     Right x -> do
@@ -299,17 +308,20 @@ instance FromJSONKey Tool where
   fromJSONKey = FromJSONKeyTextParser $ \(T.unpack . T.toLower -> t) -> pure (Tool t)
 
 instance ToJSON TarDir where
-  toJSON (RealDir  p) = toJSON p
+  toJSON (RealDir  p) = object ["RealDir" .= p]
   toJSON (RegexDir r) = object ["RegexDir" .= r]
 
 instance FromJSON TarDir where
-  parseJSON v = realDir v <|> regexDir v
+  parseJSON v = realDir v <|> regexDir v <|> realDirStrict v
    where
     realDir = withText "TarDir" $ \t -> do
       fp <- parseJSON (String t)
       pure (RealDir fp)
+    realDirStrict = withObject "TarDir" $ \o -> do
+      r <- o .:: ["RealDir", "realDir"]
+      pure $ RealDir r
     regexDir = withObject "TarDir" $ \o -> do
-      r <- o .: "RegexDir"
+      r <- o .:: ["RegexDir", "regexDir"]
       pure $ RegexDir r
 
 
@@ -489,22 +501,31 @@ instance FromJSON InstallMetadata where
         _imRevision <- o .:? "revision" .!= 0
         pure InstallMetadata{..}
 
-instance FromJSON RevisionSpec where
-  parseJSON v = newParse v <|> legacyParse v
-   where
-    legacyParse o = do
-      vi <- parseJSON o
-      pure $ RevisionSpec $ M.singleton 0 vi
-    newParse o = do
-      m <- parseJSON o
-      pure $ RevisionSpec m
-
 instance FromJSON VersionInfo where
   parseJSON = withObject "VersionInfo" $ \o -> do
     _viSourceDL <- o .::? ["viSourceDL", "sourceDL"]
     _viTestDL <- o .::? ["viTestDL", "testDL"]
     _viArch <- o .:: ["viArch", "arch"]
     pure VersionInfo{..}
+
+deriveJSON defaultOptions ''DhallRevision
+deriveJSON defaultOptions { unwrapUnaryRecords = True } ''RevisionSpecDhall
+
+instance FromJSON RevisionSpec where
+  parseJSON v = newParse v <|> legacyParse v <|> dhallParse
+   where
+    legacyParse o = do
+      vi <- parseJSON o
+      pure $ RevisionSpec $ M.singleton (Rev 0) vi
+    newParse o = do
+      m <- parseJSON o
+      pure $ RevisionSpec m
+    dhallParse =
+      (\(unRevisionSpecDhall -> dhallSpec) ->
+        RevisionSpec $ M.fromList $ fmap (\DhallRevision{..} -> (Rev mapKey, mapValue)) dhallSpec
+      )
+      <$> parseJSON @RevisionSpecDhall v
+
 
 instance FromJSON VersionMetadata where
   parseJSON v = newParse v <|> legacyParse v
@@ -518,7 +539,7 @@ instance FromJSON VersionMetadata where
         _viTestDL <- o .:? "viTestDL"
         _viArch <- ArchitectureSpec <$> o .: "viArch"
         let vi = VersionInfo {..}
-        let _vmRevisionSpec = RevisionSpec $ M.singleton 0 vi
+        let _vmRevisionSpec = RevisionSpec $ M.singleton (Rev 0) vi
         _vmPreInstall <- o .:? "viPreInstall"
         _vmPostInstall <- o .:? "viPostInstall"
         _vmPostRemove <- o .:? "viPostRemove"
@@ -528,7 +549,7 @@ instance FromJSON VersionMetadata where
       withObject "VersionMetadata" $ \o -> do
         _vmTags         <- o .:? "tags" .!= []
         _vmReleaseDay   <- o .:? "releaseDay"
-        _vmChangeLog    <- o .:? "changelog"
+        _vmChangeLog    <- o .::? ["changelog", "changeLog"]
         _vmPreInstall   <- o .:? "preInstall"
         _vmPostInstall  <- o .:? "postInstall"
         _vmPostRemove   <- o .:? "postRemove"
@@ -542,7 +563,7 @@ instance ToJSON VersionMetadata where
   toJSON VersionMetadata{..} = object
     [ "tags"         .= _vmTags
     , "releaseDay"   .= _vmReleaseDay
-    , "changelog"    .= _vmChangeLog
+    , "changeLog"    .= _vmChangeLog
     , "preInstall"   .= _vmPreInstall
     , "postInstall"  .= _vmPostInstall
     , "postRemove"   .= _vmPostRemove

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TypeApplications #-}
 
 module GHCup.Types.JSONSpec where
@@ -9,15 +10,19 @@ import GHCup.Types.Dhall ()
 import GHCup.Types.JSON ()
 
 import Control.Monad (when)
-import Dhall.Marshal.Encode ()
 import Test.Aeson.GenericSpecs
 import Test.Hspec
 
+#if defined(DHALL)
+import Dhall.Marshal.Encode ()
 import qualified Data.Yaml as YAML
 import qualified Dhall.Core as Dhall
 import qualified Dhall.Binary as Dhall
 import qualified Dhall hiding (Text)
 import qualified Data.Void as V
+import Dhall.Yaml (dhallToYaml, defaultOptions)
+import Dhall.JSON (convertToHomogeneousMaps, Conversion(..))
+#endif
 
 spec :: Spec
 spec = do
@@ -50,6 +55,7 @@ spec = do
   when (not isWindows) $
     roundtripAndGoldenSpecsWithSettings (defaultSettings { goldenDirectoryOption = CustomDirectoryName "test/ghcup-test/golden/unix", sampleSize = 2 }) (Proxy @GHCupInfo)
 
+#if defined(DHALL)
   describe "Dhall roundtrip" $ do
     beforeAll (do
         info <- YAML.decodeFileEither @GHCupInfo "data/test/ghcup-0.1.0.yaml" >>= either (fail . show) pure
@@ -62,6 +68,9 @@ spec = do
           it "Binary dhall" $ \(info, expr) -> do
             bInfo <- roundTripBinary expr
             bInfo `shouldBe` info
+          it "dhall-to-yaml" $ \(info, expr) -> do
+            yInfo <- roundTripYaml expr
+            yInfo `shouldBe` info
  where
   roundTripNormal :: Dhall.Expr V.Void V.Void -> IO GHCupInfo
   roundTripNormal expr = do
@@ -74,3 +83,10 @@ spec = do
     expr' <- either (fail . show) pure $ Dhall.decodeExpression @V.Void @V.Void dhallCode
     Dhall.rawInput Dhall.auto expr'
 
+  -- using dhall-to-yaml essentially
+  roundTripYaml :: Dhall.Expr V.Void V.Void -> IO GHCupInfo
+  roundTripYaml (convertToHomogeneousMaps NoConversion -> expr) = do
+    let dhallCode = Dhall.pretty expr
+    yaml <- dhallToYaml defaultOptions Nothing dhallCode
+    either (fail . show) pure $ YAML.decodeEither' yaml
+#endif
