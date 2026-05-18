@@ -166,6 +166,11 @@ platformParser s' = case MP.parse (platformP <* MP.eof) "" (T.pack s') of
 uriParser :: String -> Either String URI
 uriParser = first show . parseURI . UTF8.fromString
 
+filePathParser :: FilePath -> Either String FilePath
+filePathParser f =
+  if isValid f
+  then Right $ normalise f
+  else Left "Please enter a valid filepath."
 
 absolutePathParser :: FilePath -> Either String FilePath
 absolutePathParser f =

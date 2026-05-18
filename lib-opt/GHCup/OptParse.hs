@@ -22,6 +22,7 @@ module GHCup.OptParse (
   , module GHCup.OptParse.ChangeLog
   , module GHCup.OptParse.Prefetch
   , module GHCup.OptParse.GC
+  , module GHCup.OptParse.Generate
   , module GHCup.OptParse.HealthCheck
   , module GHCup.OptParse.DebugInfo
   , module GHCup.OptParse.Nuke
@@ -48,6 +49,7 @@ import           GHCup.OptParse.Upgrade
 import           GHCup.OptParse.ChangeLog
 import           GHCup.OptParse.Prefetch
 import           GHCup.OptParse.GC
+import           GHCup.OptParse.Generate
 import           GHCup.OptParse.HealthCheck
 import           GHCup.OptParse.DebugInfo
 import           GHCup.OptParse.ToolRequirements
@@ -110,7 +112,7 @@ data Command
   | ToolRequirements ToolReqOpts
   | ChangeLog ChangeLogOptions
 #if defined(DHALL)
-  | GenerateDhallSchema
+  | Generate GenerateCommand
 #endif
   | Nuke
 #if defined(BRICK)
@@ -148,16 +150,7 @@ opts =
         )
       )
     <*> optional
-          (option
-            (eitherReader parseUrlSource)
-            (  short 's'
-            <> long "url-source"
-            <> metavar "<URL_SOURCE|cross|prereleases|vanilla|default>"
-            <> help "Alternative ghcup download info"
-            <> internal
-            <> completer urlSourceCompleter
-            )
-          )
+          parseUrlSourceP
     <*> (fmap . fmap) not (invertableSwitch "verify" (Just 'n') True (help "Disable tarball checksum verification (default: enabled)"))
     <*> optional (option
           (eitherReader keepOnParser)
@@ -356,9 +349,11 @@ com =
                )
 #if defined(DHALL)
           <> command
-               "generate-dhall-schema"
-                (info (pure GenerateDhallSchema <**> helper)
-                      (progDesc "Emit the Dhall schema/type for the metadata"))
+               "generate"
+                ( Generate
+                <$> (info (generateP <**> helper)
+                          (progDesc "Various generation facilities related to metadata"))
+                )
 #endif
           <> command
                "nuke"

@@ -40,7 +40,7 @@ import Control.Monad.Catch
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource
 #if defined(DHALL)
-import Dhall ( FromDhall )
+import Dhall ( FromDhall, ToDhall )
 #endif
 import Data.List.NonEmpty             ( NonEmpty (..) )
 import Data.Map.Strict                ( Map )
@@ -229,6 +229,7 @@ newtype Tool = Tool String
   deriving (Eq, GHC.Generic, Show, Ord
 #if defined(DHALL)
            , FromDhall
+           , ToDhall
 #endif
            )
 
@@ -395,6 +396,7 @@ data LinuxDistro = Debian
   deriving (Bounded, Eq, Enum, GHC.Generic, Ord, Show
 #if defined(DHALL)
            , FromDhall
+           , ToDhall
 #endif
            )
 
@@ -572,6 +574,7 @@ data EnvUnion = PreferSystem
   deriving (Eq, Ord, GHC.Generic, Show
 #if defined(DHALL)
            , FromDhall
+           , ToDhall
 #endif
            )
 
@@ -722,6 +725,7 @@ data TarDir = RealDir FilePath
             deriving (Eq, Ord, GHC.Generic, Show
 #if defined(DHALL)
            , FromDhall
+           , ToDhall
 #endif
            )
 
