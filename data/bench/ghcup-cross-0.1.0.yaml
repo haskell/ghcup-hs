@@ -1,0 +1,371 @@
+---
+toolRequirements: {}
+ghcupDownloads:
+  GHC:
+    javascript-unknown-ghcjs-9.6.2:
+      viTags:
+      - base-4.18.0.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: 4e12b602869206830eef1aa6a17a5a00fa887d6c98c3a552269c418ee7f736f8
+              dlSubdir: ghc-9.6.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.2/ghc-javascript-unknown-ghcjs-9.6.2-x86_64-linux-unknown.tar.xz
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.2/ghc-javascript-unknown-ghcjs-9.6.2-x86_64-apple-darwin.tar.xz
+              dlHash: dddb0ee68857a79e67a52c4ab9b7230023a8684a5e826e9afbb9c5820abf47e1
+              dlSubdir: ghc-9.6.2-javascript-unknown-ghcjs
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.2/ghc-javascript-unknown-ghcjs-9.6.2-aarch64-apple-darwin.tar.xz
+              dlHash: 0d65bb3940a820d95b4b33ea0cd61bf39670d48c4d8f747153ded01a7ef34821
+              dlSubdir: ghc-9.6.2-javascript-unknown-ghcjs
+    javascript-unknown-ghcjs-9.6.7:
+      viPreInstall: |
+        To use this bindist, you have to use emscripten version 3.1.74
+        Also see: https://www.haskell.org/ghcup/guide/#ghc-js-cross-bindists-experimental
+      viTags:
+      - base-4.18.3.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: efc47c6f9f19a48ea2f7eb2f1921524e7c165630b943f452fc3ca14aca56ad3b
+              dlSubdir: ghc-9.6.7-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.7/ghc-javascript-unknown-ghcjs-9.6.7-x86_64-linux-rocky-8.10.tar.xz
+          Darwin:
+            unknown_versioning:
+              dlHash: 3a3544a0452dda81b93152d6269aca34e8895b0753bec607c51f0f420330517c
+              dlSubdir: ghc-9.6.7-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.7/ghc-javascript-unknown-ghcjs-9.6.7-x86_64-darwin.tar.xz
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlHash: 9d7ce22ee821ca052a830cbe66cbf6d5577f3bffca5b4be9963ca5e7588176bf
+              dlSubdir: ghc-9.6.7-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.7/ghc-javascript-unknown-ghcjs-9.6.7-aarch64-darwin.tar.xz
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: 7d4127a38f3b93c0591997285d347f34dbeba1314f0270714c2a2bc747e11663
+              dlSubdir: ghc-9.6.7-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.6.7/ghc-javascript-unknown-ghcjs-9.6.7-aarch64-linux-rocky-8.10.tar.xz
+    javascript-unknown-ghcjs-9.10.0.20240413:
+      viPreInstall: |
+        To use this bindist, you have to use emscripten version 3.1.57
+        Also see: https://www.haskell.org/ghcup/guide/#ghc-js-cross-bindists-experimental
+      viTags:
+      - base-4.20.0.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.0.20240413/ghc-javascript-unknown-ghcjs-9.10.0.20240413-x86_64-linux-rocky-8.9-2024-04-16-dc318739.tar.xz
+              dlSubdir: ghc-9.10.0.20240413-javascript-unknown-ghcjs
+              dlHash: dc318739b1ec4f1051dd4b38793b5fbc8eb4dea56b6177d1fe212edcf9e28b30
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.0.20240413/ghc-javascript-unknown-ghcjs-9.10.0.20240413-x86_64-darwin-2024-04-16-a819da18.tar.xz
+              dlSubdir: ghc-9.10.0.20240413-javascript-unknown-ghcjs
+              dlHash: a819da1875e9763da5732c37dc7f36eb6e9eb6d33ddc6ea11894df9cfa18a6ee
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.0.20240413/ghc-javascript-unknown-ghcjs-9.10.0.20240413-aarch64-darwin-2024-04-16-c946719b.tar.xz
+              dlSubdir: ghc-9.10.0.20240413-javascript-unknown-ghcjs
+              dlHash: c946719b31f9249e899fdc15351b86a4297e66857ce4063743b1bcbd62cf9e0e
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.0.20240413/ghc-javascript-unknown-ghcjs-9.10.0.20240413-aarch64-linux-debian-12-2024-04-16-5f63452c.tar.xz
+              dlSubdir: ghc-9.10.0.20240413-javascript-unknown-ghcjs
+              dlHash: 5f63452c8bee2fcc1282645158bcd20bae7ff93181f3e5d5dc8b2aa8d15f4696
+    javascript-unknown-ghcjs-9.10.2:
+      viPreInstall: |
+        To use this bindist, you have to use emscripten version 3.1.74
+        Also see: https://www.haskell.org/ghcup/guide/#ghc-js-cross-bindists-experimental
+      viTags:
+      - base-4.20.1.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: d27b81bcecdb7474ecfbc22b1e6b1d69c5b2b11615be6924545e66f54a71f8a5
+              dlSubdir: ghc-9.10.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.2/ghc-javascript-unknown-ghcjs-9.10.2-x86_64-linux-rocky-8.10.tar.xz
+          FreeBSD:
+            unknown_versioning:
+              dlHash: 2afcf41dfd5d1fd895d458ded7db6c5c31d4fef3474bbbcf1069ee5b7170cb19
+              dlSubdir: ghc-9.10.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.2/ghc-javascript-unknown-ghcjs-9.10.2-x86_64-freebsd-14.2-RELEASE.tar.xz
+          Darwin:
+            unknown_versioning:
+              dlHash: 8499e5ea97edd95f373cff2b56db875685616c84db4031992721c7fb26b84dfe
+              dlSubdir: ghc-9.10.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.2/ghc-javascript-unknown-ghcjs-9.10.2-x86_64-darwin.tar.xz
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlHash: 27acded8f6efe09bd37bfa2bbf001c3661421cdc271ca3fc8dcc4a320bfe71a8
+              dlSubdir: ghc-9.10.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.2/ghc-javascript-unknown-ghcjs-9.10.2-aarch64-darwin.tar.xz
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: 9cc3acbe0742e1ea60c83a716e8e94b7097344d6901a6bb31987ff9e9234590b
+              dlSubdir: ghc-9.10.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.10.2/ghc-javascript-unknown-ghcjs-9.10.2-aarch64-linux-rocky-8.10.tar.xz
+    javascript-unknown-ghcjs-9.12.1:
+      viPreInstall: |
+        To use this bindist, you have to use emscripten version 3.1.74
+        Also see: https://www.haskell.org/ghcup/guide/#ghc-js-cross-bindists-experimental
+      viTags:
+      - base-4.21.0.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: d5cb272048ac8107504ceadb03e660048a6427b1bd85fac936d53279c978de64
+              dlSubdir: ghc-9.12.1-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.1/ghc-javascript-unknown-ghcjs-9.12.1-x86_64-linux-rocky-8.10-2025-01-07-d5cb2720.tar.xz
+          FreeBSD:
+            unknown_versioning:
+              dlHash: 8249de6d38ceb6304d42bdf3abe5735275e34317a9ece7acb5375d3ff1c3b4c2
+              dlSubdir: ghc-9.12.1-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.1/ghc-javascript-unknown-ghcjs-9.12.1-x86_64-freebsd-14.2-RELEASE-2025-01-12-8249de6d.tar.xz
+          Darwin:
+            unknown_versioning:
+              dlHash: 2877606d4c8e1983076447a0af9d8c7f44439ad24b2294eb4f87243862271e53
+              dlSubdir: ghc-9.12.1-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.1/ghc-javascript-unknown-ghcjs-9.12.1-x86_64-darwin-2025-01-12-2877606d.tar.xz
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlHash: 8757258cda3f366d2f559a0ec7c000ab338d70f855a2332da53c33d708b2685e
+              dlSubdir: ghc-9.12.1-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.1/ghc-javascript-unknown-ghcjs-9.12.1-aarch64-darwin-2025-01-12-8757258c.tar.xz
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: 25991a4a9881faab1ac301ba1ba6bf1009929c8513235901c6be58b11fa88abf
+              dlSubdir: ghc-9.12.1-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.1/ghc-javascript-unknown-ghcjs-9.12.1-aarch64-linux-rocky-8.9-2025-01-12-25991a4a.tar.xz
+    javascript-unknown-ghcjs-9.12.2:
+      viPreInstall: |
+        To use this bindist, you have to use emscripten version 3.1.74
+        Also see: https://www.haskell.org/ghcup/guide/#ghc-js-cross-bindists-experimental
+      viTags:
+      - base-4.21.0.0
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: 953bc9e76583ada1be8f05a33954227a9e16525e3d456d55de33d8d7d517deb5
+              dlSubdir: ghc-9.12.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.2/ghc-javascript-unknown-ghcjs-9.12.2-x86_64-linux-rocky-8.tar.xz
+          FreeBSD:
+            unknown_versioning:
+              dlHash: 50a734055dec06601fe9db740397aea963d3e246f3677890f66293121b184b50
+              dlSubdir: ghc-9.12.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.2/ghc-javascript-unknown-ghcjs-9.12.2-x86_64-freebsd-14.2.tar.xz
+          Darwin:
+            unknown_versioning:
+              dlHash: d3c1abb6db4008b8ad247763b996cd79f49483369286fb2040c069c86e14bfee
+              dlSubdir: ghc-9.12.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.2/ghc-javascript-unknown-ghcjs-9.12.2-x86_64-darwin.tar.xz
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlHash: 7807dd0a84f9fba12ee4e9cded3dccba3704090d64cc37bae65e9723e50cd500
+              dlSubdir: ghc-9.12.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.2/ghc-javascript-unknown-ghcjs-9.12.2-aarch64-darwin.tar.xz
+          Linux_UnknownLinux:
+            unknown_versioning:
+              dlHash: 681e71b9fdaa3a1a142a91bcae61c226dc83cac1fad764fe718bf8c63feb78ca
+              dlSubdir: ghc-9.12.2-javascript-unknown-ghcjs
+              dlUri: https://downloads.haskell.org/~ghcup/unofficial-bindists/ghc/javascript-unknown-ghcjs-9.12.2/ghc-javascript-unknown-ghcjs-9.12.2-aarch64-linux-rocky-8.tar.xz
+    wasm32-wasi-9.6.3.20230927:
+      viTags:
+      - base-4.18.1.0
+      viPreInstall: &old-wasm-pre-install |
+        To use this bindist, you need to use the commit c0aa3bb7d88bb6ec809210e17658dd1ed64ba66c of ghc-wasm-meta repository.
+        Also see: https://www.haskell.org/ghcup/guide/#ghc-wasm-cross-bindists-experimental
+
+        Note that WASM is a technology preview and is not in sync with GHC release branches.
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-963-64-static
+              dlHash: 2e1d363320c03e35fd9048a252a0cfed8f7b87da76c063c7fc52122c390f42c3
+              dlSubdir: ghc-9.6.3.20230927-wasm32-wasi
+              dlUri: https://github.com/amesgen/ghc-wasm-bindists/releases/download/20231001T201511/wasm32-wasi-ghc-9.6.tar.xz
+              dlOutput: ghc-9.6.3.20230927-x86_64-linux-alpine3_12-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-963-64-static
+    wasm32-wasi-9.6.4:
+      viTags:
+      - base-4.18.2.0
+      viPreInstall: &wasm-pre-install |
+        Note that WASM is a technology preview and is not in sync with GHC release branches.
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-964-64-static
+              dlHash: 9eebb42c40d880ec777f729e24b9b52e8aa51d76994f386bd79893d065f5239a
+              dlSubdir: ghc-9.6.4-wasm32-wasi
+              dlUri: https://github.com/amesgen/ghc-wasm-bindists/releases/download/20240218T031934/wasm32-wasi-ghc-9.6.tar.xz
+              dlOutput: ghc-9.6.4-x86_64-linux-alpine3_18-wasm-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-964-64-static
+    wasm32-wasi-9.6.7.20250206:
+      viTags:
+        - base-4.18.3.0
+      viPreInstall: *old-wasm-pre-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux: &ghc-wasm32-wasi-967_20250206-64-static
+            unknown_versioning:
+              dlHash: 6c3f664aa8cdc380848f622e45ede8afb407fe08dde03def28db7110a3f9a719
+              dlSubdir: ghc-9.6.7.20250206-wasm32-wasi
+              dlUri: 'https://github.com/haskell-wasm/ghc-wasm-bindists/releases/download/20250207T172205/wasm32-wasi-ghc-9.6.tar.xz'
+              dlOutput: ghc-9.6.7.20250206-x86_64-linux-unknown-wasm32-wasi.tar.xz
+          Linux_Alpine: *ghc-wasm32-wasi-967_20250206-64-static
+    wasm32-wasi-9.8.0.20230927:
+      viTags:
+      - base-4.19.0.0
+      viPreInstall: *old-wasm-pre-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-980-64-static
+              dlHash: bad3393b6eba103230c62f050ffd9d458916c6238e5d5fa031d3eee5d995305a
+              dlSubdir: ghc-9.8.0.20230927-wasm32-wasi
+              dlUri: https://github.com/amesgen/ghc-wasm-bindists/releases/download/20231001T201511/wasm32-wasi-ghc-9.8.tar.xz
+              dlOutput: ghc-9.8.0.20230927-x86_64-linux-alpine3_12-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-980-64-static
+    wasm32-wasi-9.8.1:
+      viTags:
+      - base-4.19.0.0
+      viPreInstall: *wasm-pre-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-981-64-static
+              dlHash: b1714d54468754e3a4353661bec883fef8b5d27398db53b5955753db7453da3e
+              dlSubdir: ghc-9.8.1-wasm32-wasi
+              dlUri: https://github.com/amesgen/ghc-wasm-bindists/releases/download/20240218T031934/wasm32-wasi-ghc-9.8.tar.xz
+              dlOutput: ghc-9.8.1-x86_64-linux-alpine3_18-wasm-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-981-64-static
+    wasm32-wasi-9.10.0.20240313:
+      viTags:
+      - base-4.20.0.0
+      viPreInstall: *wasm-pre-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-9101-a2-64-static
+              dlHash: e2ee5a0417f3617a93f8ca8df2b455c17e50dd5fb750b2fbe37e75982c3a4917
+              dlSubdir: ghc-9.10.0.20240313-wasm32-wasi
+              dlUri: https://github.com/amesgen/ghc-wasm-bindists/releases/download/20240318T183143/wasm32-wasi-ghc-9.10.tar.xz
+              dlOutput: ghc-9.10.0.20240313-x86_64-linux-alpine3_18-wasm-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-9101-a2-64-static
+    wasm32-wasi-9.10.0.20240412:
+      viTags:
+      - base-4.20.0.0
+      viPreInstall: *wasm-pre-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-9101-a3-64-static
+              dlHash: e7648d84f7948d53dcd6935a0358967dc8d5d68ee3a60c0706f4b5a94a0fb628
+              dlSubdir: ghc-9.10.0.20240412-wasm32-wasi
+              dlUri: https://github.com/amesgen/ghc-wasm-bindists/releases/download/20240414T232345/wasm32-wasi-ghc-9.10.tar.xz
+              dlOutput: ghc-9.10.0.20240412-x86_64-linux-alpine3_18-wasm-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-9101-a3-64-static
+    wasm32-wasi-9.10.1:
+      viTags:
+      - base-4.20.0.0
+      viPreInstall: *wasm-pre-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-9101-64-static
+              dlHash: 791f50ad71f28a5febd10e5b7384545c74d87805228a5e541d801aaab727448a
+              dlSubdir: ghc-9.10.1-wasm32-wasi
+              dlUri: https://github.com/tweag/ghc-wasm-bindists/releases/download/20240609T200531/wasm32-wasi-ghc-9.10.tar.xz
+              dlOutput: ghc-9.10.1-x86_64-linux-alpine3_18-wasm-cross_wasm32-wasi-release+fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-9101-64-static
+    wasm32-wasi-9.10.1.20241021:
+      viTags:
+      - base-4.20.0.0
+      - TH-support
+      viPreInstall: *wasm-pre-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux:
+            unknown_versioning: &ghc-wasm32-wasi-9101-th-64-static
+              dlHash: 74bc9138dfc1221564a32594436f4e376887b5f2f0b86c7a3f902d98744239f3
+              dlSubdir: ghc-9.10.1.20241021-wasm32-wasi
+              dlUri: https://github.com/tweag/ghc-wasm-bindists/releases/download/20241022T075120/wasm32-wasi-ghc-9.10.tar.xz
+              dlOutput: ghc-9.10.1.20241021-x86_64-linux-alpine3_20-wasm-cross_wasm32-wasi-release+host_fully_static.tar.xz
+          Linux_Alpine:
+            unknown_versioning: *ghc-wasm32-wasi-9101-th-64-static
+    wasm32-wasi-9.10.1.20250327:
+      viTags:
+      - base-4.20.0.0
+      viPreInstall: *old-wasm-pre-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux: &ghc-wasm32-wasi-9101_20250327-64-static
+            unknown_versioning:
+              dlHash: 20aec21dd9d6dac7923ef006eaa4a2f4108e09a30ad3146dc7c0a1fbbec8c291
+              dlSubdir: ghc-9.10.1.20250327-wasm32-wasi
+              dlUri: 'https://github.com/haskell-wasm/ghc-wasm-bindists/releases/download/20250327T193751/wasm32-wasi-ghc-9.10.tar.xz'
+              dlOutput: ghc-9.10.1.20250327-x86_64-linux-unknown-wasm32-wasi.tar.xz
+          Linux_Alpine: *ghc-wasm32-wasi-9101_20250327-64-static
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlHash: e37fadbd7ef8e8806d63749e8259f7cfa71cfe0e8bc5b5fba31197e20479d39e
+              dlSubdir: ghc-9.10.1.20250327-wasm32-wasi
+              dlUri: 'https://github.com/haskell-wasm/ghc-wasm-bindists/releases/download/20250327T193751/wasm32-wasi-ghc-gmp-aarch64-darwin-9.10.tar.xz'
+              dlOutput: ghc-9.10.1.20250327-arm64-darwin-wasm32-wasi.tar.xz
+          Linux_UnknownLinux: &ghc-wasm32-wasi-9101_20250327-arm64-static
+            unknown_versioning:
+              dlHash: d6100705576f24a90979868eaad0d40eab4c8ee1edbb74200adbb7968a3527e2
+              dlSubdir: ghc-9.10.1.20250327-wasm32-wasi
+              dlUri: 'https://github.com/haskell-wasm/ghc-wasm-bindists/releases/download/20250327T193751/wasm32-wasi-ghc-gmp-aarch64-linux-9.10.tar.xz'
+              dlOutput: ghc-9.10.1.20250327-arm64-linux-unknown-wasm32-wasi.tar.xz
+          Linux_Alpine: *ghc-wasm32-wasi-9101_20250327-arm64-static
+    wasm32-wasi-9.12.2.20250327:
+      viTags:
+      - base-4.21.0.0
+      - TH-support
+      viPreInstall: *wasm-pre-install
+      viArch:
+        A_64:
+          Linux_UnknownLinux: &ghc-wasm32-wasi-9_12_2_20250327-th-64-static
+            unknown_versioning:
+              dlHash: 410cf532da919b6277c814f82c5631722d5ff85bf1b1019dcd2572a0c4ceb193
+              dlSubdir: ghc-9.12.2.20250327-wasm32-wasi
+              dlUri: 'https://github.com/haskell-wasm/ghc-wasm-bindists/releases/download/20250327T193751/wasm32-wasi-ghc-9.12.tar.xz'
+              dlOutput: ghc-9.12.2.20250327-x86_64-linux-unknown-wasm32-wasi.tar.xz
+          Linux_Alpine: *ghc-wasm32-wasi-9_12_2_20250327-th-64-static
+        A_ARM64:
+          Darwin:
+            unknown_versioning:
+              dlHash: 369e9e841d00fc4341b014b5df05806f82097e5b37fdef0b19fc407c0af0e2ee
+              dlSubdir: ghc-9.12.2.20250327-wasm32-wasi
+              dlUri: 'https://github.com/haskell-wasm/ghc-wasm-bindists/releases/download/20250327T193751/wasm32-wasi-ghc-gmp-aarch64-darwin-9.12.tar.xz'
+              dlOutput: ghc-9.12.2.20250327-arm64-darwin-wasm32-wasi.tar.xz
+          Linux_UnknownLinux: &ghc-wasm32-wasi-9_12_2_20250327-th-arm64-static
+            unknown_versioning:
+              dlHash: adbab74774e589a124ec56032bcf270c30b60c0aa3c5994f1aa3726015bf5ecf
+              dlSubdir: ghc-9.12.2.20250327-wasm32-wasi
+              dlUri: 'https://github.com/haskell-wasm/ghc-wasm-bindists/releases/download/20250327T193751/wasm32-wasi-ghc-gmp-aarch64-linux-9.12.tar.xz'
+              dlOutput: ghc-9.12.2.20250327-arm64-linux-unknown-wasm32-wasi.tar.xz
+          Linux_Alpine: *ghc-wasm32-wasi-9_12_2_20250327-th-arm64-static

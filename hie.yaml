@@ -14,3 +14,5 @@ cradle:
     path: "./test/ghcup-test"
   - component: "ghcup:test:ghcup-optparse-test"
     path: "./test/optparse-test"
+  - component: "ghcup:benchmark:bench"
+    path: "./bench"
