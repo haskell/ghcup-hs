@@ -38,14 +38,17 @@ put x86_64-apple-darwin-ghcup.plan.json
 put x86_64-portbld-freebsd-ghcup-${ver}
 put x86_64-portbld-freebsd-ghcup-${ver}.sig
 put x86_64-portbld-freebsd-ghcup.plan.json
+put x86_64-openbsd-ghcup-${ver}
+put x86_64-openbsd-ghcup-${ver}.sig
+put x86_64-openbsd-ghcup.plan.json
 put x86_64-linux-ghcup-${ver}
 put x86_64-linux-ghcup-${ver}.sig
 put x86_64-linux-ghcup.plan.json
 put x86_64-mingw64-ghcup-${ver}.exe
 put x86_64-mingw64-ghcup-${ver}.exe.sig
 put x86_64-mingw64-ghcup.plan.json
-put ghcup-${ver}-src.tar.xz
-put ghcup-${ver}-src.tar.xz.sig
+put ghcup-${ver}-src.tar.gz
+put ghcup-${ver}-src.tar.gz.sig
 EOF
 
 curl -X PURGE https://downloads.haskell.org/~ghcup/${ver}/

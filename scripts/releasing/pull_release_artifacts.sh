@@ -26,6 +26,9 @@ cd "gh-release-artifacts/${RELEASE}"
 
 # github
 gh release download "$RELEASE"
+for file in * ; do
+	gpg --detach-sign -u "${SIGNER}" "${file}"
+done
 
 sha256sum ./*-ghcup-* > SHA256SUMS
 gpg --detach-sign -u "${SIGNER}" SHA256SUMS

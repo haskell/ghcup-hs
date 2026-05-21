@@ -21,12 +21,14 @@ rm x86_64-apple-darwin-ghcup
 rm x86_64-linux-ghcup
 rm x86_64-mingw64-ghcup.exe
 rm x86_64-portbld-freebsd-ghcup
+rm x86_64-openbsd-ghcup
 
 symlink ${ver}/aarch64-apple-darwin-ghcup-${ver} aarch64-apple-darwin-ghcup
 symlink ${ver}/aarch64-linux-ghcup-${ver} aarch64-linux-ghcup
 symlink ${ver}/i386-linux-ghcup-${ver} i386-linux-ghcup
 symlink ${ver}/x86_64-apple-darwin-ghcup-${ver} x86_64-apple-darwin-ghcup
 symlink ${ver}/x86_64-portbld-freebsd-ghcup-${ver} x86_64-portbld-freebsd-ghcup
+symlink ${ver}/x86_64-openbsd-ghcup-${ver} x86_64-openbsd-ghcup
 symlink ${ver}/x86_64-linux-ghcup-${ver} x86_64-linux-ghcup
 symlink ${ver}/x86_64-mingw64-ghcup-${ver}.exe x86_64-mingw64-ghcup.exe
 EOF
