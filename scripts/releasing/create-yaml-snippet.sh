@@ -36,6 +36,10 @@ cat <<EOF > /dev/stdout
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/${RELEASE}/x86_64-portbld-freebsd-ghcup-${RELEASE}
               dlHash: $(get_sha "x86_64-portbld-freebsd-ghcup-${RELEASE}")
+          OpenBSD:
+            unknown_versioning:
+              dlUri: https://downloads.haskell.org/~ghcup/${RELEASE}/x86_64-openbsd-ghcup-${RELEASE}
+              dlHash: $(get_sha "x86_64-openbsd-ghcup-${RELEASE}")
           Windows:
             unknown_versioning:
               dlUri: https://downloads.haskell.org/~ghcup/${RELEASE}/x86_64-mingw64-ghcup-${RELEASE}.exe

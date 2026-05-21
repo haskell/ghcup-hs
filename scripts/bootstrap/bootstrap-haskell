@@ -41,7 +41,7 @@ die() {
 
 plat="$(uname -s)"
 arch=$(uname -m)
-ghver="0.2.0.0-rc2"
+ghver="0.2.1.0"
 : "${GHCUP_BASE_URL:=https://downloads.haskell.org/~ghcup}"
 
 export GHCUP_SKIP_UPDATE_CHECK=yes
@@ -340,6 +340,18 @@ download_ghcup() {
 					;;
 			esac
 			_url=${GHCUP_BASE_URL}/${ghver}/x86_64-portbld-freebsd-ghcup-${ghver}
+            ;;
+        "OpenBSD"|"openbsd")
+			case "${arch}" in
+				x86_64|amd64)
+					;;
+				i*86)
+					die "i386 currently not supported!"
+					;;
+				*) die "Unknown architecture: ${arch}"
+					;;
+			esac
+			_url=${GHCUP_BASE_URL}/${ghver}/x86_64-openbsd-ghcup-${ghver}
             ;;
         "Darwin"|"darwin")
 			case "${arch}" in
