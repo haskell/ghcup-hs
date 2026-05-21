@@ -57,7 +57,7 @@ jobs:
       - if: matrix.ARCH == '32'
         name: Run build (32 bit linux)
         uses: docker://hasufell/i386-alpine-haskell:3.21
-        with: &build-linux
+        with:
           args: ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ runner.os }} --check-linking --strip -- --enable-executable-static
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
@@ -71,7 +71,8 @@ jobs:
       - if: matrix.ARCH == '64'
         name: Run build (64 bit linux)
         uses: docker://hasufell/alpine-haskell:3.21
-        with: *build-linux
+        with:
+          args: ghcup run -i --ghc ${{ env.GHC_VER }} --cabal ${{ env.CABAL_VER }} -- bash .github/scripts/build.sh --verbose --os ${{ runner.os }} --check-linking --strip -- --enable-executable-static -f+dhall-tests
         env:
           ARTIFACT: ${{ matrix.ARTIFACT }}
           ARCH: ${{ matrix.ARCH }}
