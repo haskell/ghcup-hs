@@ -14,6 +14,7 @@ import GHCup.CabalConfig
 import GHCup.Command.List
 import GHCup.Download
 import GHCup.Hardcoded.Version
+import GHCup.Input.Parsers
 import GHCup.Prelude
 import GHCup.Prelude.Process
 import GHCup.Query.GHCupDirs
@@ -68,6 +69,16 @@ import qualified System.FilePath.Posix as FP
     --[ Parser ]--
     --------------
 
+parseUrlSourceP :: Parser [NewURLSource]
+parseUrlSourceP =
+    option
+      (eitherReader parseUrlSource)
+      (  short 's'
+      <> long "url-source"
+      <> metavar "<URL_SOURCE|cross|prereleases|vanilla|default>"
+      <> help "Alternative ghcup download info"
+      <> completer urlSourceCompleter
+      )
 
 toolVersionTagArgument :: [ListCriteria] -> Maybe Tool -> Parser ToolVersion
 toolVersionTagArgument criteria tool =

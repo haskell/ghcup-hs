@@ -110,28 +110,45 @@ import qualified Data.Yaml.Aeson        as Y
     ------------------
 
 
-
--- | Downloads the download information! But only if we need to ;P
-getDownloadsF :: ( FromJSONKey Tool
-                 , FromJSONKey Version
-                 , FromJSON VersionInfo
-                 , MonadReader env m
-                 , HasSettings env
-                 , HasDirs env
-                 , MonadIO m
-                 , MonadCatch m
-                 , HasLog env
-                 , MonadThrow m
-                 , MonadFail m
-                 , MonadMask m
-                 )
-              => PlatformRequest
-              -> Excepts
-                   '[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError, UnsupportedMetadataFormat]
+getDownloadsF ::
+  ( FromJSONKey Tool
+  , FromJSONKey Version
+  , FromJSON VersionInfo
+  , MonadReader env m
+  , HasSettings env
+  , HasDirs env
+  , HasLog env
+  , MonadIOish m
+  )
+  => PlatformRequest
+  -> Excepts
+       '[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError, UnsupportedMetadataFormat]
                    m
                    GHCupInfo
-getDownloadsF pfreq@(PlatformRequest arch plat _) = do
+getDownloadsF pfreq = do
   Settings { urlSource } <- lift getSettings
+  getDownloadsF' pfreq urlSource
+
+-- | Downloads the download information! But only if we need to ;P
+--
+-- This ignores the 'urlSource' from 'Settings'.
+getDownloadsF' ::
+  ( FromJSONKey Tool
+  , FromJSONKey Version
+  , FromJSON VersionInfo
+  , MonadReader env m
+  , HasSettings env
+  , HasDirs env
+  , HasLog env
+  , MonadIOish m
+  )
+  => PlatformRequest
+  -> [NewURLSource]
+  -> Excepts
+       '[DigestError, ContentLengthError, GPGError, JSONError , DownloadFailed , FileDoesNotExistError, StackPlatformDetectError, UnsupportedMetadataFormat]
+                   m
+                   GHCupInfo
+getDownloadsF' pfreq@(PlatformRequest arch plat _) urlSource = do
   infos <- liftE $ mapM dl' urlSource
   keys <- if any isRight infos
           then liftE . reThrowAll @_ @_ @'[StackPlatformDetectError] StackPlatformDetectError $ getStackPlatformKey pfreq
@@ -197,7 +214,7 @@ getDownloadsF pfreq@(PlatformRequest arch plat _) = do
    where
     fromDownloadInfo :: DownloadInfo -> VersionMetadata
     fromDownloadInfo dli = let aspec = ArchitectureSpec $ MapIgnoreUnknownKeys $ M.singleton arch (PlatformSpec $ MapIgnoreUnknownKeys $ M.singleton plat (PlatformVersionSpec $ M.singleton Nothing dli))
-                           in VersionMetadata [] Nothing Nothing Nothing Nothing Nothing Nothing (RevisionSpec . M.singleton 0 . VersionInfo Nothing Nothing $ aspec)
+                           in VersionMetadata [] Nothing Nothing Nothing Nothing Nothing Nothing (RevisionSpec . M.singleton (Rev 0) . VersionInfo Nothing Nothing $ aspec)
 
     fromStackDownloadInfo :: MonadThrow m => Version -> Stack.GHCDownloadInfo -> m DownloadInfo
     fromStackDownloadInfo ver (Stack.GHCDownloadInfo { gdiDownloadInfo = Stack.DownloadInfo{..} }) = do

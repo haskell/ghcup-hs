@@ -37,6 +37,10 @@ instance Arbitrary GHCupDownloads where
   arbitrary = genericArbitrary
   shrink    = genericShrink
 
+instance Arbitrary Rev where
+  arbitrary = genericArbitrary
+  shrink    = genericShrink
+
 instance Arbitrary RevisionSpec where
   arbitrary = genericArbitrary
   shrink    = genericShrink

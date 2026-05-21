@@ -40,7 +40,7 @@ import Control.Monad.Catch
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource
 #if defined(DHALL)
-import Dhall ( FromDhall )
+import Dhall ( FromDhall, ToDhall )
 #endif
 import Data.List.NonEmpty             ( NonEmpty (..) )
 import Data.Map.Strict                ( Map )
@@ -181,7 +181,25 @@ newtype ToolVersionSpec = ToolVersionSpec
   deriving (Eq, GHC.Generic, Ord, Show)
 
 newtype RevisionSpec = RevisionSpec
-  { unRev :: Map Int VersionInfo }
+  { unRevisionSpec :: Map Rev VersionInfo }
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+-- for compatibility with Dhall format,
+-- which uses:
+-- >
+-- >    revisionSpec:
+-- >    - mapKey: 0
+-- >      mapValue:
+-- >        viArch:
+-- >          ...
+newtype RevisionSpecDhall = RevisionSpecDhall
+  { unRevisionSpecDhall :: [DhallRevision] }
+  deriving (Eq, GHC.Generic, Ord, Show)
+
+data DhallRevision = DhallRevision {
+    mapKey :: Int
+  , mapValue :: VersionInfo
+  }
   deriving (Eq, GHC.Generic, Ord, Show)
 
 newtype ArchitectureSpec = ArchitectureSpec
@@ -229,8 +247,16 @@ newtype Tool = Tool String
   deriving (Eq, GHC.Generic, Show, Ord
 #if defined(DHALL)
            , FromDhall
+           , ToDhall
 #endif
            )
+
+-- this type is not consistently used... it's mainly to work
+-- around quirks in Dhall, so we can have a proper instance on @Map Rev Blah@
+newtype Rev = Rev { unRev :: Int }
+  deriving (Eq, GHC.Generic, Show, Ord)
+
+instance NFData Rev
 
 toolPriority :: Tool -> Maybe Int
 toolPriority (Tool "ghc")   = Just 1
@@ -395,6 +421,7 @@ data LinuxDistro = Debian
   deriving (Bounded, Eq, Enum, GHC.Generic, Ord, Show
 #if defined(DHALL)
            , FromDhall
+           , ToDhall
 #endif
            )
 
@@ -572,6 +599,7 @@ data EnvUnion = PreferSystem
   deriving (Eq, Ord, GHC.Generic, Show
 #if defined(DHALL)
            , FromDhall
+           , ToDhall
 #endif
            )
 
@@ -717,19 +745,17 @@ instance NFData Authority
 
 
 -- | How to descend into a tar archive.
-data TarDir = RealDir FilePath
-            | RegexDir String     -- ^ will be compiled to regex, the first match will "win"
+data TarDir = RealDir { realDir :: FilePath }
+            | RegexDir { regexDir :: String }     -- ^ will be compiled to regex, the first match will "win"
             deriving (Eq, Ord, GHC.Generic, Show
 #if defined(DHALL)
            , FromDhall
+           , ToDhall
 #endif
            )
 
 instance NFData TarDir
 
-instance Pretty TarDir where
-  pPrint (RealDir path)   = text path
-  pPrint (RegexDir regex) = text regex
 
 
 -- | Where to fetch GHCupDownloads from.

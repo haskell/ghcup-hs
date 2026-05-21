@@ -226,7 +226,7 @@ getLatestToolFor tool target pvpIn dls = do
 
 
 selectLatestRevL :: Getter ToolVersionSpec (M.Map TargetVersion (Int, VersionInfo))
-selectLatestRevL = _ToolVersionSpec % to (M.mapMaybe (lastMay . Map.toAscList . unRev . _vmRevisionSpec))
+selectLatestRevL = _ToolVersionSpec % to (M.mapMaybe (lastMay . Map.toAscList . Map.mapKeys unRev . unRevisionSpec . _vmRevisionSpec))
 
 selectRevL :: Maybe Int -> AffineFold VersionMetadata (Int, VersionInfo)
 selectRevL mrev = revisionSpecL % ixOrLast mrev

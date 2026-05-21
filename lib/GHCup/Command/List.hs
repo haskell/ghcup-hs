@@ -207,11 +207,11 @@ listVersions' dls pfreq instTools hlsGHCs lt' criteria showRevisions hideOld sho
 
               let lReleaseDay = _vmReleaseDay
 
-              let latestMetaRev = maximum $ M.keys (unRev _vmRevisionSpec)
+              let (Rev latestMetaRev) = maximum $ M.keys (unRevisionSpec _vmRevisionSpec)
 
 
               -- add all revision
-              forM_ (M.toList (unRev _vmRevisionSpec)) $ \(metaRev, vi) -> do
+              forM_ (M.toList (unRevisionSpec _vmRevisionSpec)) $ \(Rev metaRev, vi) -> do
                 let mdli = getDownloadInfo' pfreq vi
                 let bTags = fromMaybe [] $ mdli >>= _dlTag
 

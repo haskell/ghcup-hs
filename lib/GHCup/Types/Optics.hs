@@ -42,6 +42,7 @@ makePrisms ''RevisionSpec
 makePrisms ''ArchitectureSpec
 makePrisms ''PlatformSpec
 makePrisms ''PlatformVersionSpec
+makePrisms ''Rev
 
 makeLenses ''ToolInfo
 makeLenses ''ToolDescription
@@ -67,8 +68,8 @@ makeLenses ''CapturedProcess
 toolVersionsL :: Lens' ToolInfo (Map TargetVersion VersionMetadata)
 toolVersionsL = toolVersions % _ToolVersionSpec
 
-revisionSpecL :: Lens' VersionMetadata (Map Int VersionInfo)
-revisionSpecL = vmRevisionSpec % _RevisionSpec
+revisionSpecL :: Getter VersionMetadata (Map Int VersionInfo)
+revisionSpecL = vmRevisionSpec % _RevisionSpec % to (M.mapKeys unRev)
 
 archL :: Lens' VersionInfo (MapIgnoreUnknownKeys Architecture PlatformSpec)
 archL = viArch % _ArchitectureSpec

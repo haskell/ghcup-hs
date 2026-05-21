@@ -43,6 +43,8 @@ flags:
 
   ghcup:
     tar: true
+    dhall: false
+    dhall-tests: false
 
   dhall:
     cross: false

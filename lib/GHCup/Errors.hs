@@ -506,8 +506,10 @@ data TarDirDoesNotExist = TarDirDoesNotExist TarDir
   deriving (Show)
 
 instance Pretty TarDirDoesNotExist where
-  pPrint (TarDirDoesNotExist dir) =
+  pPrint (TarDirDoesNotExist (RealDir dir)) =
     text "Tar directory does not exist:" <+> pPrint dir
+  pPrint (TarDirDoesNotExist (RegexDir rx)) =
+    text "Couldn't find tar dir via regex:" <+> pPrint rx
 
 instance HFErrorProject TarDirDoesNotExist where
   eBase _ = 190
