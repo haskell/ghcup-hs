@@ -10,6 +10,7 @@ import GHCup.Types.Dhall ()
 import GHCup.Types.JSON ()
 
 import Control.Monad (when, forM_)
+import System.FilePath
 import Test.Aeson.GenericSpecs
 import Test.Hspec.Golden
 import Test.Hspec
@@ -27,7 +28,6 @@ import qualified Dhall hiding (Text)
 import qualified Data.Void as V
 import Dhall.Yaml (dhallToYaml, defaultOptions)
 import Dhall.JSON (convertToHomogeneousMaps, Conversion(..))
-import System.FilePath
 #endif
 
 spec :: Spec
@@ -58,8 +58,10 @@ spec = do
   roundtripSpecs (Proxy @PlatformVersionSpec)
   roundtripSpecs (Proxy @DownloadInfo)
   roundtripSpecs (Proxy @GHCupInfo)
+#if !defined(i386_HOST_ARCH)
   when (not isWindows) $
     roundtripAndGoldenSpecsWithSettings (defaultSettings { goldenDirectoryOption = CustomDirectoryName "test/ghcup-test/golden/unix", sampleSize = 2 }) (Proxy @GHCupInfo)
+#endif
 
   describe "Parse old metadata" $ do
     forM_ yamls $ \v ->

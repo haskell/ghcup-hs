@@ -87,6 +87,11 @@ flag dhall
   default:     True
   manual:      True
 
+flag dhall-tests
+  description: Run dhall tests depedning on dhall-yaml/dhall-json
+  default:     True
+  manual:      False
+
 common common-ghc-options
   ghc-options:
     -Wall -fwarn-tabs -fwarn-incomplete-uni-patterns
@@ -447,7 +452,7 @@ test-suite ghcup-test
   ghc-options:
     -fconstraint-solver-iterations=0
 
-  if flag(dhall)
+  if flag(dhall) && flag(dhall-tests)
     cpp-options: -DDHALL
     build-depends:
         dhall  ^>=1.42
