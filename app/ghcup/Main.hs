@@ -268,10 +268,10 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
                                              <> " "
                                              <> T.pack (prettyShow l)
 
-                            let warnMsg = warnMsg' <> "'\nTo skip this check in the future, export GHCUP_SKIP_UPDATE_CHECK=1"
+                            let warnMsg = warnMsg' <> "\nTo skip this check in the future, export GHCUP_SKIP_UPDATE_CHECK=1"
                             let warnFile = fromGHCupPath cacheDir </> "ghcup_update_check"
                             prevWarn <- try @_ @SomeException $ liftIO $ T.readFile warnFile
-                            if either (const Nothing) Just prevWarn == Just warnMsg
+                            if T.null warnMsg' || either (const Nothing) Just prevWarn == Just warnMsg
                             then pure ()
                             else do
                               liftIO $ T.writeFile warnFile warnMsg
