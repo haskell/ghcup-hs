@@ -1,6 +1,6 @@
 # Version history for ghcup
 
-## 0.2.1.0 -- 2026-05-17
+## 0.2.1.0 -- 2026-05-21
 
 ### New feature
 
