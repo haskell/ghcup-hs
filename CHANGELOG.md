@@ -1,5 +1,9 @@
 # Version history for ghcup
 
+## 0.2.2.0 -- 2026-05-21
+
+* fix minor bug in "new tool available" update check
+
 ## 0.2.1.0 -- 2026-05-21
 
 ### New feature
