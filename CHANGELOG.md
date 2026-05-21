@@ -16,7 +16,7 @@
 * pave the way for **OpenBSD** support wrt [#182](https://github.com/haskell/ghcup-hs/issues/182)
   - we still lack GHC bindists
 * add experimental support for **Dhall metadata** wrt [#60](https://github.com/haskell/ghcup-hs/issues/60)
-  - dump the Dhall schema via `ghcup generate-dhall-schema`
+  - dump the Dhall schema via `ghcup generate dhall-schema`
 * add `ghcup config reset` subcommand by Vladislav Sabanov
 * add experimental healthcheck command `ghcup check tool ghc <ver>`
   - this may only give useful information on newly installed versions since the database needs to be populated
