@@ -363,17 +363,17 @@ warnOnMetadataUpdate uri (GHCupInfo { _metadataUpdate = Just newUri })
   | scheme' uri == "file"
   , urlBase' uri /= urlBase' newUri = do
       confFile <- getConfigFilePath'
-      logWarn $ "New metadata version detected"
+      logWarn $ "New available metadata version detected"
                            <> "\n    old URI: " <> (decUTF8Safe . serializeURIRef') uri
                            <> "\n    new URI: " <> (decUTF8Safe . serializeURIRef') newUri
-                           <> "\nYou might need to update your " <> T.pack confFile
+                           <> "\nRun 'ghcup upgrade' first. If the waring persists, then you might need to update your " <> T.pack confFile
   | scheme' uri /= "file"
   , uri /= newUri = do
       confFile <- getConfigFilePath'
-      logWarn $ "New metadata version detected"
+      logWarn $ "New available metadata version detected"
                            <> "\n    old URI: " <> (decUTF8Safe . serializeURIRef') uri
                            <> "\n    new URI: " <> (decUTF8Safe . serializeURIRef') newUri
-                           <> "\nYou might need to update your " <> T.pack confFile
+                           <> "\nRun 'ghcup upgrade' first. If the waring persists, then you might need to update your " <> T.pack confFile
  where
   scheme' = view (uriSchemeL' % schemeBSL')
   urlBase' = T.unpack . decUTF8Safe . urlBaseName . view pathL'
