@@ -156,6 +156,17 @@ if [ "${OS}" = "Windows" ] ; then
 	eghcup run -m -- sh -c 'echo $PATH' | sed 's/:/\n/' | grep '^/clang64/bin$'
 fi
 
+# test install targets
+eghcup install ghc --install-targets "install_bin install_lib update_package_db install_extra" "9.10.3"
+eghcup set ghc "9.10.3"
+eghcup unset ghc
+ls -lah "$(eghcup whereis -d ghc "9.10.3")"
+[ "$($(eghcup whereis ghc "9.10.3") --numeric-version)" = "9.10.3" ]
+[ "$(eghcup run -q --ghc "9.10.3" -- ghc --numeric-version)" = "9.10.3" ]
+[ "$(ghcup run -q --ghc "9.10.3" -- ghc -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" = "$($(ghcup whereis ghc "9.10.3") -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" ]
+eghcup rm ghc "9.10.3"
+
+# normal
 eghcup install ghc "${GHC_VER}"
 eghcup set ghc "${GHC_VER}"
 eghcup unset ghc
@@ -164,6 +175,7 @@ ls -lah "$(eghcup whereis -d ghc "${GHC_VER}")"
 [ "$(eghcup run -q --ghc "${GHC_VER}" -- ghc --numeric-version)" = "${GHC_VER}" ]
 [ "$(ghcup run -q --ghc "${GHC_VER}" -- ghc -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" = "$($(ghcup whereis ghc "${GHC_VER}") -e 'Control.Monad.join (Control.Monad.fmap System.IO.putStr System.Environment.getExecutablePath)')" ]
 eghcup set ghc "${GHC_VER}"
+
 eghcup install cabal "${CABAL_VER}"
 [ "$($(eghcup whereis cabal "${CABAL_VER}") --numeric-version)" = "${CABAL_VER}" ]
 eghcup unset cabal
