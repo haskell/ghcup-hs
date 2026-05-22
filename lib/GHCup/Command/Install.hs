@@ -87,6 +87,7 @@ installTool ::
         , DirNotEmpty
         , UninstallFailed
         , MalformedInstallInfo
+        , InvalidBuildConfig
         ]
        m
        (InstallationSpecResolved, FilePath)
@@ -143,6 +144,7 @@ installBindist ::
         , DirNotEmpty
         , UninstallFailed
         , MalformedInstallInfo
+        , InvalidBuildConfig
         ]
        m
        (InstallationSpecResolved, FilePath)
@@ -214,6 +216,7 @@ installPackedBindist ::
               , ArchiveResult
               , NoInstallInfo
               , MalformedInstallInfo
+              , InvalidBuildConfig
               ] m InstallationSpecResolved
 installPackedBindist tool toolDesc dl dlInfo inst trev forceInstall extraArgs installTargets = do
   PlatformRequest {..} <- lift getPlatformReq
@@ -261,6 +264,7 @@ installUnpackedBindist :: forall m env .
               , ParseError
               , NoInstallInfo
               , MalformedInstallInfo
+              , InvalidBuildConfig
               ] m InstallationSpecResolved
 installUnpackedBindist tool toolDesc workdir installDest tmpInstallDest dlInfo trev@(TargetVersionRev tver _rev) forceInstall extraArgs installTargets = do
   instSpec <- liftE $ installationSpecFromMetadata' dlInfo tool tver

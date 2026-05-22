@@ -215,6 +215,7 @@ type RunEffects = '[ AlreadyInstalled
                    , ParseError
                    , IncompatibleConfig
                    , MalformedInstallInfo
+                   , InvalidBuildConfig
                    ]
 
 
@@ -368,6 +369,7 @@ run RunOptions{..} settings (getAppState', leanAppstate) = do
                               , ParseError
                               , FileDoesNotExistError
                               , MalformedInstallInfo
+                              , InvalidBuildConfig
                               ] (ResourceT (ReaderT AppState m)) ()
    installToolChainFull Toolchain{..} tmp = do
          case ghcVer of

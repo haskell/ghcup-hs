@@ -509,8 +509,8 @@ defaultGHCInstallSpec pfreq tver =
     , _csConfigFile = Just "configure"
     }
   , _isMake = Just MakeSpec {
-      _msMakeArgs   = ["DESTDIR=${TMPDIR}", "install"]
-    , _msMakeEnv    = Nothing
+      _msMakeArgs   = ["install"]
+    , _msMakeEnv    = Just $ EnvSpec [("DESTDIR", "${TMPDIR}")] PreferSpec
     }
   , _isPreserveMtimes = True
   , _isExeSymLinked = defaultGHCExeSymLinked pfreq tver (ghcBinaries pfreq tver)
@@ -546,8 +546,8 @@ defaultHLSInstallSpec _pfreq _tver =
   , _isDataRules = []
   , _isConfigure = Nothing
   , _isMake = Just MakeSpec {
-      _msMakeArgs   = ["DESTDIR=${TMPDIR}", "PREFIX=${PREFIX}", "install"]
-    , _msMakeEnv    = Nothing
+      _msMakeArgs   = ["install"]
+    , _msMakeEnv    = Just $ EnvSpec [("DESTDIR", "${TMPDIR}"), ("PREFIX", "${PREFIX}")] PreferSpec
     }
   , _isPreserveMtimes = False
   , _isExeSymLinked = [] -- we can't figure it out

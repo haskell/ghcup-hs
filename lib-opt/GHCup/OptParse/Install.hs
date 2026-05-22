@@ -335,6 +335,7 @@ type InstallEffects = '[ AlreadyInstalled
                        , NoInstallInfo
                        , GHCup.Errors.ParseError
                        , MalformedInstallInfo
+                       , InvalidBuildConfig
                        ]
 
 
