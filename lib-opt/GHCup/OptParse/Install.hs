@@ -39,6 +39,7 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Resource
 import Data.Functor
 import Data.Maybe
+import Data.Either
 import Data.Variant.Excepts
 import Options.Applicative             hiding ( style )
 import Options.Applicative.Pretty.Shim ( text )
@@ -392,12 +393,12 @@ install installCommand settings (getAppState', leanAppstate) = case installComma
                "...waiting for 5 seconds, you can still abort..."
              liftIO $ threadDelay 5000000 -- give the user a sec to intervene
            liftE $ runBothE' (do
-                     (rev, _) <- liftE $ getDownloadInfoE' instTool (TargetVersionReq tver Nothing)
+                     rev <- fmap (fmap fst . veitherToEither) $ runE $ getDownloadInfoE' instTool (TargetVersionReq tver Nothing)
                      installBindist
                        instTool
                        Nothing
                        (DownloadInfo ((decUTF8Safe . serializeURIRef') uri) regexDir "" Nothing Nothing Nothing (toInstallationInputSpec <$> defaultToolInstallSpec instTool pfreq tver))
-                       (TargetVersionRev tver rev)
+                       (TargetVersionRev tver (fromRight 0 rev))
                        (maybe GHCupInternal IsolateDir isolateDir)
                        forceInstall
                        addConfArgs
