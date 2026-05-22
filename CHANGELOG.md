@@ -1,5 +1,9 @@
 # Version history for ghcup
 
+## 0.2.3.0 -- 2026-05-22
+
+* [fix bug](https://github.com/haskell/ghcup-hs/pull/1338) when passing `--install-targets` causes failure
+
 ## 0.2.2.0 -- 2026-05-21
 
 * fix minor bug in "new tool available" update check
