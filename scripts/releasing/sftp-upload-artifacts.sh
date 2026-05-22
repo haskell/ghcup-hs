@@ -1,8 +1,11 @@
 #!/bin/bash
 
 url=$1
-ver=$2
-artifacts_dir=$3
+shift 1
+ver=$1
+shift 1
+artifacts_dir=$1
+shift 1
 
 die() {
     (>&2 printf "%s\\n" "$1")
@@ -16,7 +19,7 @@ die() {
 
 cd "${artifacts_dir}"
 
-sftp $url <<EOF
+sftp "$@" $url <<EOF
 cd ghcup
 
 mkdir ${ver}
