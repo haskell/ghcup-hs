@@ -98,6 +98,7 @@ installTheSpec ::
               , ProcessError
               , ParseError
               , MalformedInstallInfo
+              , InvalidBuildConfig
               ] m ()
 installTheSpec InstallationSpec{..} workdir installDest tmpInstallDest extraArgs installTargets forceInstall = do
   -- run configure first
@@ -106,8 +107,10 @@ installTheSpec InstallationSpec{..} workdir installDest tmpInstallDest extraArgs
       addConfArgs <- lift $ sanitizefConfOptions extraArgs
 
       let configFile = fromMaybe "configure" _csConfigFile
-      processedConfArgs <- forM _csConfigArgs $ \a -> either (throwE . ParseError . show) pure . parseDomain $ a
-      newEnv <- forM _csConfigEnv $ \EnvSpec{..} -> liftIO (augmentEnvironment _esEnv _esUnion)
+      processedConfArgs <- forM _csConfigArgs $ \a -> throwOnParseError . parseDomain $ a
+      newEnv <- forM _csConfigEnv $ \EnvSpec{..} -> do
+        processedEnv <- throwOnParseError $ forM _esEnv (\(var, val) -> (var,) <$> parseDomain val)
+        liftIO (augmentEnvironment processedEnv _esUnion)
       liftE $ execWithWrapper "sh"
                        (("." Posix.</> configFile) : processedConfArgs <> addConfArgs
                        )
@@ -119,8 +122,19 @@ installTheSpec InstallationSpec{..} workdir installDest tmpInstallDest extraArgs
   -- then make
   case _isMake of
     Just MakeSpec{..} -> do
-      processedMakeArgs <- either (throwE . ParseError . show) pure $ forM (fromMaybe _msMakeArgs installTargets) parseDomain
-      newEnv <- forM _msMakeEnv $ \EnvSpec{..} -> liftIO (augmentEnvironment _esEnv _esUnion)
+      processedMakeArgs <- case installTargets of
+        Just it -> do
+          -- we need to check whether applying 'installTargets' would wipe out PREFIX/DESTDIR
+          origArgs <- throwOnParseError $ forM _msMakeArgs parseDomain
+          if origArgs /= _msMakeArgs
+          then throwE $ InvalidBuildConfig $ "Can't overwrite install targets " <> T.pack (show _msMakeArgs) <> " since they contain domain variables."
+          else throwOnParseError $ forM it parseDomain
+        Nothing ->
+          throwOnParseError $ forM _msMakeArgs parseDomain
+
+      newEnv <- forM _msMakeEnv $ \EnvSpec{..} -> do
+        processedEnv <- throwOnParseError $ forM _esEnv (\(var, val) -> (var,) <$> parseDomain val)
+        liftIO (augmentEnvironment processedEnv _esUnion)
       liftE $ makeWithWrapper processedMakeArgs (Just workdir) "make" newEnv
     _ -> pure ()
 
@@ -153,6 +167,8 @@ installTheSpec InstallationSpec{..} workdir installDest tmpInstallDest extraArgs
     pure into
 
   parseDomain = MP.parse domainParser ""
+
+  throwOnParseError = either (throwE . ParseError . show) pure
 
   domainParser :: MP.Parsec Void String String
   domainParser = concat <$> many anyOrKnownVars

@@ -264,7 +264,7 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
 
   liftE $ runBuildAction
     tmpUnpack
-    (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, ContentLengthError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError, ParseError , MergeFileTreeError , MalformedInstallInfo, FileDoesNotExistError, NoInstallInfo] @'[BuildFailed] (BuildFailed $ fromGHCupPath workdir) $ do
+    (reThrowAll @_ @'[GPGError, DownloadFailed, DigestError, ContentLengthError, PatchFailed, ProcessError, FileAlreadyExistsError, CopyError, ParseError , MergeFileTreeError , MalformedInstallInfo, FileDoesNotExistError, NoInstallInfo, InvalidBuildConfig] @'[BuildFailed] (BuildFailed $ fromGHCupPath workdir) $ do
       let tmpInstallDir = fromGHCupPath workdir </> "out"
       liftIO $ createDirRecursive' tmpInstallDir
 
@@ -402,6 +402,7 @@ compileHLS targetHLS ghcs jobs vps installDir cabalProject cabalProjectLocal upd
                 , MalformedInstallInfo
                 , NoInstallInfo
                 , ProcessError
+                , InvalidBuildConfig
                 ] m ()
   addAdHocBinaries mMetadata toolDesc workdir installDest tmpInstallDest VersionRev{..} forceInstall = do
     let tver = mkTVer _vrVersion

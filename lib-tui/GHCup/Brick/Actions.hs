@@ -267,6 +267,7 @@ installWithOptions opts (_ix, lTool, td, ListResult {..}) = do
               , URIParseError
               , NoInstallInfo
               , MalformedInstallInfo
+              , InvalidBuildConfig
               ]
 
       withNoVerify :: (MonadReader AppState m) => m a -> m a

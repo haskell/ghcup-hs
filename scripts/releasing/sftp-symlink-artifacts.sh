@@ -1,7 +1,9 @@
 #!/bin/bash
 
 url=$1
-ver=$2
+shift 1
+ver=$1
+shift 1
 
 die() {
     (>&2 printf "%s\\n" "$1")
@@ -11,7 +13,7 @@ die() {
 [ -z $url ] && die "no url set"
 [ -z $ver ] && die "no version set"
 
-sftp $url <<EOF
+sftp "$@" $url <<EOF
 cd ghcup
 
 rm aarch64-apple-darwin-ghcup
