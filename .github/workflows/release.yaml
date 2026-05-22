@@ -83,7 +83,7 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-${{ matrix.ARTIFACT }}
           path: |
@@ -115,7 +115,7 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-${{ env.ARTIFACT }}
           path: |
@@ -157,7 +157,7 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-${{ matrix.ARTIFACT }}
           path: |
@@ -203,7 +203,7 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-${{ env.ARTIFACT }}
           path: |
@@ -239,7 +239,7 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-${{ env.ARTIFACT }}
           path: |
@@ -273,7 +273,7 @@ jobs:
 
       - if: always()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-${{ env.ARTIFACT }}
           path: |
@@ -306,7 +306,7 @@ jobs:
         with:
           submodules: 'true'
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           merge-multiple: true
@@ -344,7 +344,7 @@ jobs:
 
       - if: failure()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testfiles-${{ matrix.ARTIFACT }}
           path: |
@@ -364,7 +364,7 @@ jobs:
         with:
           submodules: 'true'
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           merge-multiple: true
@@ -376,7 +376,7 @@ jobs:
 
       - if: failure()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testfiles-${{ env.ARTIFACT }}
           path: |
@@ -407,7 +407,7 @@ jobs:
       - name: Install GHCup
         uses: haskell/ghcup-setup@v1
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           merge-multiple: true
@@ -422,7 +422,7 @@ jobs:
           ARCH: ${{ matrix.ARCH }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testfiles-${{ matrix.ARTIFACT }}
           path: |
@@ -454,7 +454,7 @@ jobs:
       - name: Install msys2 dependencies
         run: *msys2-install
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           merge-multiple: true
@@ -469,7 +469,7 @@ jobs:
           CABAL_DIR: "C:\\Users\\runneradmin\\AppData\\Roaming\\cabal"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testfiles-${{ env.ARTIFACT }}
           path: |
@@ -496,7 +496,7 @@ jobs:
           sudo tzsetup Etc/GMT
           sudo adjkerntz -a
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           merge-multiple: true
@@ -510,7 +510,7 @@ jobs:
 
       - if: failure()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testfiles-${{ env.ARTIFACT }}
           path: |
@@ -535,7 +535,7 @@ jobs:
           gcc_ver=$(pkg_info -Q gcc | grep '^gcc-[0-9]' | sort -u | head -1 | awk '{ print $1 }')
           doas pkg_add -I ghc cabal-install git bash libiconv curl ${gcc_ver} gmp gmake libffi
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           merge-multiple: true
@@ -548,7 +548,7 @@ jobs:
 
       - if: failure()
         name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testfiles-${{ env.ARTIFACT }}
           path: |
@@ -574,7 +574,7 @@ jobs:
         with:
           submodules: 'true'
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           merge-multiple: true
@@ -595,7 +595,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           merge-multiple: true
