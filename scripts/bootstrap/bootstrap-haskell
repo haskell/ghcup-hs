@@ -448,7 +448,6 @@ download_ghcup() {
             die "Unknown downloader: ${BOOTSTRAP_HASKELL_DOWNLOADER}"
             ;;
     esac
-    eghcup upgrade
 }
 
 # Figures out the users login shell and sets
