@@ -741,9 +741,9 @@ keyHandlersToolList KeyBindings {..} =
     )
   , (KeyCombination (Vty.KChar 'h') [], Just $ const "help", mode .= KeyInfo)
   , (KeyCombination Vty.KEnter [], Just $ const "Show tool details", mode .= Common.ToolInfo )
-  , (KeyCombination KLeft [], Nothing, versionFocus .= False)
-  , (KeyCombination KRight [], Nothing, versionFocus .= True)
-  , (KeyCombination (Vty.KChar '\t') [], Nothing, versionFocus %= not)
+  , (bLeft, Nothing, versionFocus .= False)
+  , (bRight, Nothing, versionFocus .= True)
+  , (bTab, Nothing, versionFocus %= not)
   ]
 
 keyHandlersVersionList :: KeyBindings
@@ -765,9 +765,9 @@ keyHandlersVersionList KeyBindings {..} =
     )
   , (KeyCombination (Vty.KChar 'h') [], Just $ const "Help", mode .= KeyInfo)
   , (KeyCombination Vty.KEnter [], Just $ const "Advanced options", createMenuforTool )
-  , (KeyCombination KLeft [], Nothing, versionFocus .= False)
-  , (KeyCombination KRight [], Nothing, versionFocus .= True)
-  , (KeyCombination (Vty.KChar '\t') [], Nothing, versionFocus %= not)
+  , (bLeft, Nothing, versionFocus .= False)
+  , (bRight, Nothing, versionFocus .= True)
+  , (bTab, Nothing, versionFocus %= not)
   ]
  where
   createMenuforTool = do

@@ -17,7 +17,9 @@ import GHCup.Types
       Tool(..),
       Tag(..),
       tVerToText,
-      tagToString, ToolDescription )
+      tagToString, ToolDescription,
+      KeyBindings(..),
+      KeyCombination(..))
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Attributes as Attributes
 import Brick
@@ -48,9 +50,14 @@ type BrickList = L.GenericList Common.Name V.Vector
 type BrickInternalState = BrickList (Tool, (Maybe ToolDescription, BrickList ListResult))
 
 -- | How the navigation handler handle events
-handler :: Bool -> BrickEvent Common.Name e -> EventM Common.Name BrickInternalState ()
-handler False (Brick.VtyEvent e) = L.handleListEvent e
-handler True (Brick.VtyEvent e) = do
+handler :: Bool -> KeyBindings -> BrickEvent Common.Name e -> EventM Common.Name BrickInternalState ()
+handler False KeyBindings{..} (Brick.VtyEvent e) = handleToolEvent e
+ where
+  handleToolEvent (Vty.EvKey key mod')
+    | KeyCombination key mod' == bUp   = L.handleListEvent (Vty.EvKey Vty.KUp [])
+    | KeyCombination key mod' == bDown = L.handleListEvent (Vty.EvKey Vty.KDown [])
+  handleToolEvent e' = L.handleListEvent e'
+handler True KeyBindings{..} (Brick.VtyEvent e) = do
   bis :: BrickInternalState <- get
   case L.listSelectedElement bis of
     Nothing -> pure ()
@@ -59,14 +66,17 @@ handler True (Brick.VtyEvent e) = do
       modify (L.listModify $ (fmap . fmap) (const updatedVlr))
  where
   -- need to reverse because we reversed the list
+  handleVersionEvent (Vty.EvKey key mod')
+    | KeyCombination key mod' == bUp   = L.handleListEvent (Vty.EvKey Vty.KDown [])
+    | KeyCombination key mod' == bDown = L.handleListEvent (Vty.EvKey Vty.KUp [])
   handleVersionEvent (Vty.EvKey Vty.KUp [])   = L.handleListEvent (Vty.EvKey Vty.KDown [])
   handleVersionEvent (Vty.EvKey Vty.KDown []) = L.handleListEvent (Vty.EvKey Vty.KUp [])
-  handleVersionEvent (Vty.EvKey Vty.KPageDown [])   = L.handleListEvent (Vty.EvKey Vty.KPageUp [])
+  handleVersionEvent (Vty.EvKey Vty.KPageDown []) = L.handleListEvent (Vty.EvKey Vty.KPageUp [])
   handleVersionEvent (Vty.EvKey Vty.KPageUp [])   = L.handleListEvent (Vty.EvKey Vty.KPageDown [])
-  handleVersionEvent (Vty.EvKey Vty.KHome [])   = L.handleListEvent (Vty.EvKey Vty.KEnd [])
-  handleVersionEvent (Vty.EvKey Vty.KEnd [])   = L.handleListEvent (Vty.EvKey Vty.KHome [])
+  handleVersionEvent (Vty.EvKey Vty.KHome [])     = L.handleListEvent (Vty.EvKey Vty.KEnd [])
+  handleVersionEvent (Vty.EvKey Vty.KEnd [])      = L.handleListEvent (Vty.EvKey Vty.KHome [])
   handleVersionEvent e' = L.handleListEvent e'
-handler _ _ = pure ()
+handler _ _ _ = pure ()
 
 
 -- | How to draw the navigation widget

@@ -152,12 +152,12 @@ navigationHandler ev = do
       | _versionFocus -> do
           case find (\(key', _, _) -> key' == KeyCombination key mods) (Actions.keyHandlersVersionList kb) of
             Just (_, _, handler) -> handler
-            Nothing -> void $ Common.zoom appState $ Navigation.handler _versionFocus inner_event
+            Nothing -> void $ Common.zoom appState $ Navigation.handler _versionFocus kb inner_event
       | otherwise -> do
           case find (\(key', _, _) -> key' == KeyCombination key mods) (Actions.keyHandlersToolList kb) of
             Just (_, _, handler) -> handler
-            Nothing -> void $ Common.zoom appState $ Navigation.handler _versionFocus inner_event
-    inner_event -> Common.zoom appState $ Navigation.handler _versionFocus inner_event
+            Nothing -> void $ Common.zoom appState $ Navigation.handler _versionFocus kb inner_event
+    inner_event -> Common.zoom appState $ Navigation.handler _versionFocus kb inner_event
 
 contextMenuHandler :: BrickEvent Name e -> EventM Name BrickState ()
 contextMenuHandler ev = do
