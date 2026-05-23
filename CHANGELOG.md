@@ -1,5 +1,9 @@
 # Version history for ghcup
 
+## 0.2.4.0 -- 2026-05-24
+
+* fix bug when installing via `--url` and specifying a version that doesn't exist in the metadata wrt [#1339](https://github.com/haskell/ghcup-hs/issues/1339)
+
 ## 0.2.3.0 -- 2026-05-22
 
 * [fix bug](https://github.com/haskell/ghcup-hs/pull/1338) when passing `--install-targets` causes failure
