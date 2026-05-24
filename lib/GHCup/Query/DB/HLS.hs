@@ -5,7 +5,6 @@
 module GHCup.Query.DB.HLS where
 
 import GHCup.Legacy.Utils
-import GHCup.Prelude
 import GHCup.Query.DB
 import GHCup.Types
 import GHCup.Types.Optics
@@ -15,7 +14,6 @@ import Data.List            ( stripPrefix )
 import Data.Maybe           ( catMaybes )
 import Data.Variant.Excepts ( pattern VLeft, pattern VRight, runE )
 import Data.Versions        ( Version, version )
-import Safe                 ( headMay )
 
 import qualified Data.Text as T
 
@@ -33,8 +31,8 @@ getHLSGHCs hlsVer = do
   vspec <- runE $ getSymlinkSpec hls (mkTVer hlsVer)
   case vspec of
     VRight (fmap (\SymlinkSpec{..} -> _slLinkName) -> bins) -> do
-      let extractGHCVerFromBinary bin = do
-            prefix <- headMay $ splitOn "~" bin
+      let extractGHCVerFromBinary (stripExe -> bin) = do
+            prefix <- splitIt '~' bin
             s <- stripPrefix "haskell-language-server-" prefix
             either (const Nothing) pure . version . T.pack $ s
           ghcs = catMaybes $ extractGHCVerFromBinary <$> bins
@@ -42,4 +40,14 @@ getHLSGHCs hlsVer = do
     -- legacy
     VLeft _ -> do
       hlsGHCVersions' hlsVer
+ where
+  splitIt ch = go []
+   where
+    go prefix (x:xs)
+      | x == ch = Just prefix
+      | otherwise = go (prefix <> [x]) xs
+    go _ [] = Nothing
 
+  stripExe f = case reverse f of
+                 ('e':'x':'e':'.':r) -> reverse r
+                 _ -> f
