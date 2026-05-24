@@ -236,18 +236,36 @@ selectRevL mrev = revisionSpecL % ixOrLast mrev
 getTaggedL' :: Tag
             -> Lens' a [Tag]
             -> Fold (Map.Map TargetVersion a) (TargetVersion, a)
-getTaggedL' tag getTags =
-  to (Map.toDescList . Map.filter (\a -> tag `elem` fromMaybe [] (preview getTags a)))
-  % folding id
+getTaggedL' tag = getTaggedFL' (tag `elem`)
 
 getTaggedL :: Tag
            -> Fold ToolVersionSpec (TargetVersion, VersionMetadata)
-getTaggedL tag = _ToolVersionSpec % getTaggedL' tag vmTags
+getTaggedL tag = getTaggedFL (tag `elem`)
 
-getFirstTag :: Tag -> GHCupDownloads -> Tool -> Maybe TargetVersion
-getFirstTag tag av tool = do
-  (tv, _) <- headOf (_GHCupDownloads % ix tool % toolVersions % getTaggedL tag) av
-  pure tv
+getFirstTag :: Tag -> GHCupDownloads -> Tool -> Maybe Text -> Maybe TargetVersion
+getFirstTag tag = getFirstTagF (tag `elem`)
+
+getLatestTag :: Tag -> GHCupDownloads -> Tool -> Maybe Text -> Maybe TargetVersion
+getLatestTag tag = getLatestTagF (tag `elem`)
+
+getTaggedFL' :: ([Tag] -> Bool)
+             -> Lens' a [Tag]
+             -> Fold (Map.Map TargetVersion a) (TargetVersion, a)
+getTaggedFL' tagF getTags =
+  to (Map.toDescList . Map.filter (\a -> tagF $ fromMaybe [] (preview getTags a)))
+  % folding id
+
+getTaggedFL :: ([Tag] -> Bool)
+            -> Fold ToolVersionSpec (TargetVersion, VersionMetadata)
+getTaggedFL tagF = _ToolVersionSpec % getTaggedFL' tagF vmTags
+
+getFirstTagF :: ([Tag] -> Bool) -> GHCupDownloads -> Tool -> Maybe Text -> Maybe TargetVersion
+getFirstTagF tagF av tool target = do
+  headOf (_GHCupDownloads % ix tool % toolVersions % getTaggedFL tagF % _1 % filtered (\TargetVersion{..} -> _tvTarget == target)) av
+
+getLatestTagF :: ([Tag] -> Bool) -> GHCupDownloads -> Tool -> Maybe Text -> Maybe TargetVersion
+getLatestTagF tagF av tool target = do
+  maximumOf (_GHCupDownloads % ix tool % toolVersions % getTaggedFL tagF % _1 % filtered (\TargetVersion{..} -> _tvTarget == target)) av
 
 getRev :: GHCupDownloads -> Tool -> TargetVersion -> Maybe Int -> Maybe (VersionMetadata, Int, VersionInfo)
 getRev av tool tv mRev = do
@@ -273,20 +291,20 @@ getByReleaseDayFold :: Day -> Fold (Map.Map TargetVersion VersionMetadata) Targe
 getByReleaseDayFold day = to (fmap fst . Map.toDescList . Map.filter (\VersionMetadata {..} -> Just day == _vmReleaseDay)) % folding id
 
 getLatest :: GHCupDownloads -> Tool -> Maybe TargetVersion
-getLatest = getFirstTag Latest
+getLatest dls tool = getFirstTag Latest dls tool Nothing
 
 getLatestPrerelease :: GHCupDownloads -> Tool -> Maybe TargetVersion
-getLatestPrerelease = getFirstTag LatestPrerelease
+getLatestPrerelease dls tool = getFirstTag LatestPrerelease dls tool Nothing
 
 getLatestNightly :: GHCupDownloads -> Tool -> Maybe TargetVersion
-getLatestNightly = getFirstTag LatestNightly
+getLatestNightly dls tool = getFirstTag LatestNightly dls tool Nothing
 
 getRecommended :: GHCupDownloads -> Tool -> Maybe TargetVersion
-getRecommended = getFirstTag Recommended
+getRecommended dls tool = getFirstTag Recommended dls tool Nothing
 
 -- | Gets the latest GHC with a given base version.
 getLatestBaseVersion :: GHCupDownloads -> PVP -> Maybe TargetVersion
-getLatestBaseVersion g pvpVer = getFirstTag (Base pvpVer) g ghc
+getLatestBaseVersion g pvpVer = getFirstTag (Base pvpVer) g ghc Nothing
 
 
 getVersionMetadata :: TargetVersion

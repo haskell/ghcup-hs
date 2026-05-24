@@ -46,8 +46,8 @@ import Prelude              hiding ( appendFile )
 import Safe
 import System.FilePath
 import URI.ByteString       hiding ( parseURI )
-import Text.PrettyPrint.HughesPJClass (prettyShow)
 
+import qualified Data.Set                   as Set
 import qualified Data.Attoparsec.ByteString as AP
 import qualified Data.ByteString.UTF8       as UTF8
 import qualified Data.Text                  as T
@@ -109,11 +109,6 @@ data SetToolVersion
   | SetNext
   deriving (Eq, Show)
 
-prettyToolVer :: ToolVersion -> String
-prettyToolVer (GHCVersion v')  = prettyShow v'
-prettyToolVer (ToolVersion v') = prettyShow v'
-prettyToolVer (ToolTag t)      = show t
-prettyToolVer (ToolDay day)    = show day
 
 toSetToolVer :: Maybe ToolVersion -> SetToolVersion
 toSetToolVer (Just (GHCVersion v'))  = SetGHCVersion v'
@@ -215,15 +210,25 @@ toolVersionTagEither s' =
   second ToolDay (dayParser s') <|> second ToolTag (tagEither s') <|> second ToolVersion (toolVersionEither' s')
 
 tagEither :: String -> Either String Tag
-tagEither s' = case fmap toLower s' of
-  "recommended"              -> Right Recommended
-  "latest"                   -> Right Latest
-  "latest-prerelease"        -> Right LatestPrerelease
-  "latest-nightly"           -> Right LatestNightly
-  ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
-                                  Right x -> Right (Base x)
-                                  Left  _ -> Left $ "Invalid PVP version for base " <> ver'
-  other                      -> Left $ "Unknown tag " <> other
+tagEither s' = case ls of
+  "recommended"       -> Right Recommended
+  "latest"            -> Right Latest
+  "latest-prerelease" -> Right LatestPrerelease
+  "latest-nightly"    -> Right LatestNightly
+  _ -> case s' of
+         ('b':'a':'s':'e':'-':ver') -> case pvp (T.pack ver') of
+                                         Right x -> Right (Base x)
+                                         Left  _ -> Left $ "Invalid PVP version for base " <> ver'
+         ('G':'H':'C':':':xs) -> do
+                                   vers <- forM (splitOn "," xs)
+                                     $ \ver' -> either (\_ -> Left $ "Invalid PVP version for GHC " <> ver') pure (pvp . T.pack $ ver')
+                                   pure $ GHCCompat vers
+         ('g':'h':'c':'-':ver') -> case pvp (T.pack ver') of
+                                         Right x -> Right (GHCCompat [x])
+                                         Left  _ -> Left $ "Invalid PVP version for GHC " <> ver'
+         other                      -> Left $ "Unknown tag " <> other
+ where
+  ls = fmap toLower s'
 
 
 ghcVersionEither :: String -> Either String TargetVersion
@@ -399,10 +404,33 @@ resolveVersion' (SetToolTag LatestNightly) _ tool = do
 resolveVersion' (SetToolTag Recommended) _ tool = do
   GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
   fmap (`TargetVersionReq` Nothing) $ getRecommended dls tool ?? TagNotFound Recommended tool
-resolveVersion' (SetToolTag (Base pvp'')) _ t
+resolveVersion' (SetToolTag tag@(Base _)) _ t
   | t == ghc = do
       GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
-      fmap (`TargetVersionReq` Nothing) $ getLatestBaseVersion dls pvp'' ?? TagNotFound (Base pvp'') ghc
+      fmap (`TargetVersionReq` Nothing)
+        $ getLatestTagF
+            (\tags -> Prerelease `notElem` tags
+                    && LatestPrerelease `notElem` tags
+                    && tag `elem` tags
+            )
+            dls ghc Nothing ?? TagNotFound tag hls
+resolveVersion' (SetToolTag (GHCCompat ghcs)) _ t
+  | t == hls = do
+      GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
+      fmap (`TargetVersionReq` Nothing)
+        $ getLatestTagF
+            (\tags ->
+              if | Prerelease `elem` tags -> False
+                 | LatestPrerelease `elem` tags -> False
+                 | otherwise -> any
+                     (\case
+                       GHCCompat (Set.fromList -> ghcs') -> Set.fromList ghcs `Set.isSubsetOf` ghcs'
+                       _ -> False
+                     )
+                     tags
+            )
+            dls hls Nothing ?? TagNotFound (GHCCompat ghcs) hls
+
 resolveVersion' SetNext _ tool = do
   set <- liftE $ getSetVersion tool Nothing !!? NoToolVersionSet tool Nothing -- TODO
   vers <- lift $ getInstalledVersions tool Nothing
