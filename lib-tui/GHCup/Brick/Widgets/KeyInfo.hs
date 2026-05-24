@@ -44,7 +44,11 @@ draw KeyBindings {..} =
             ],
             Brick.hBox [
               Brick.txt "Press "
-            , Brick.txt "← and → or TAB"
+            , Common.keyToWidget bLeft
+            , Brick.txt " and "
+            , Common.keyToWidget bRight
+            , Brick.txt " or "
+            , Common.keyToWidget bTab
             , Brick.txtWrap " to switch between tool and version list"
             ]
           , Brick.hBox [

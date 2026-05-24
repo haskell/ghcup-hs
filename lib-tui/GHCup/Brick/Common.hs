@@ -185,9 +185,12 @@ checkBoxSelectedSign :: String
 
 
 showKey :: Vty.Key -> String
+showKey (Vty.KChar '\t') = "TAB"
 showKey (Vty.KChar c) = [c]
 showKey Vty.KUp = "↑"
 showKey Vty.KDown = "↓"
+showKey Vty.KLeft = "←"
+showKey Vty.KRight = "→"
 showKey key = tail (show key)
 
 showMod :: Vty.Modifier -> String
