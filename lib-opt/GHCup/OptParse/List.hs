@@ -175,16 +175,15 @@ printListResult no_color show_revisions (PagerConfig pList pCmd) raw lr = do
           | otherwise       = Pretty.color
 
   let
-    printTag Recommended        = color Green "recommended"
-    printTag Latest             = color Yellow "latest"
-    printTag Prerelease         = color Red "prerelease"
-    printTag Nightly            = color Red "nightly"
-    printTag (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
-    printTag (UnknownTag t    ) = t
-    printTag LatestPrerelease   = color Red "latest-prerelease"
-    printTag LatestNightly      = color Red "latest-nightly"
-    printTag Experimental       = color Red "experimental"
-    printTag Old                = ""
+    printTag t@Recommended        = color Green $ tagToString t
+    printTag t@Latest             = color Yellow $ tagToString t
+    printTag t@Prerelease         = color Red $ tagToString t
+    printTag t@Nightly            = color Red $ tagToString t
+    printTag t@LatestPrerelease   = color Red $ tagToString t
+    printTag t@LatestNightly      = color Red $ tagToString t
+    printTag t@Experimental       = color Red $ tagToString t
+    printTag Old                  = ""
+    printTag t                    = tagToString t
 
   let
     rows =

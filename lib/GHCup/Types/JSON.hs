@@ -34,6 +34,7 @@ import GHCup.Types.JSON.Versions
 import GHCup.Types.Stack                     ( SetupInfo )
 
 import Control.Applicative ( (<|>) )
+import Control.Exception (displayException)
 import Control.Monad
 import Data.Aeson          hiding ( Key )
 import Data.Aeson.TH
@@ -47,14 +48,15 @@ import Data.Versions
 import System.FilePath     ( hasDrive, isAbsolute, splitPath )
 import Text.Casing
 import URI.ByteString      hiding ( parseURI )
+import Data.Functor.Contravariant (Contravariant(contramap))
 
+import qualified Data.Yaml.Aeson  as Y
 import qualified Data.Map.Strict          as M
 import qualified Data.List.NonEmpty       as NE
 import qualified Data.Text                as T
 import qualified Data.Text.Encoding.Error as E
 import qualified Text.Megaparsec          as MP
 import qualified Text.Megaparsec.Char.Lexer as L
-import Data.Functor.Contravariant (Contravariant(contramap))
 
 safePath :: FilePath -> Bool
 safePath fp
@@ -194,27 +196,52 @@ instance ToJSON Tag where
   toJSON Recommended        = String "Recommended"
   toJSON Prerelease         = String "Prerelease"
   toJSON Nightly            = String "Nightly"
-  toJSON Old                = String "old"
+  toJSON Old                = String "Old"
   toJSON (Base       pvp'') = String ("base-" <> prettyPVP pvp'')
+  toJSON (GHCCompat  ghcs)  = object ["GHCCompat" .= ghcs]
   toJSON LatestPrerelease   = String "LatestPrerelease"
   toJSON LatestNightly      = String "LatestNightly"
   toJSON Experimental       = String "Experimental"
   toJSON (UnknownTag x    ) = String (T.pack x)
 
 instance FromJSON Tag where
-  parseJSON = withText "Tag" $ \t -> case T.unpack t of
-    "Latest"                             -> pure Latest
-    "Recommended"                        -> pure Recommended
-    "Prerelease"                         -> pure Prerelease
-    "Nightly"                            -> pure Nightly
-    "LatestPrerelease"                   -> pure LatestPrerelease
-    "LatestNightly"                      -> pure LatestNightly
-    "Experimental"                       -> pure Experimental
-    "old"                                -> pure Old
-    ('b' : 'a' : 's' : 'e' : '-' : ver') -> case pvp (T.pack ver') of
-      Right x -> pure $ Base x
-      Left  e -> fail . show $ e
-    x -> pure (UnknownTag x)
+  parseJSON v = textParser v <|> objectParser v <|> generic v <|> pure (UnknownTag "??")
+   where
+    textParser = withText "Tag" $ \t -> case T.unpack t of
+      "Latest"                             -> pure Latest
+      "Recommended"                        -> pure Recommended
+      "Prerelease"                         -> pure Prerelease
+      "Nightly"                            -> pure Nightly
+      "LatestPrerelease"                   -> pure LatestPrerelease
+      "LatestNightly"                      -> pure LatestNightly
+      "Experimental"                       -> pure Experimental
+      "old"                                -> pure Old
+      "Old"                                -> pure Old
+      ('b' : 'a' : 's' : 'e' : '-' : ver') -> case pvp (T.pack ver') of
+        Right x -> pure $ Base x
+        Left  e -> fail . show $ e
+      x -> do
+        case Y.decodeEither' @Value (E.encodeUtf8 $ T.pack x) of
+          Right val -> objectParser val <|> pure (UnknownTag x)
+          Left _ -> pure (UnknownTag x)
+    objectParser = withObject "Tag" $ \o ->
+      (do
+         ghcs <- o .:: ["GHCCompat", "ghcCompat"]
+         pure $ GHCCompat ghcs
+      )
+      <|>
+      (do
+         base <- o .:: ["Base", "base"]
+         case pvp base of
+           Right v' -> pure $ Base v'
+           Left e -> fail (displayException e)
+      )
+      <|>
+      (do
+         tag <- o .:: ["UnknownTag", "unknownTag"]
+         pure $ UnknownTag tag
+      )
+    generic = genericParseJSON defaultOptions { unwrapUnaryRecords = True }
 
 instance ToJSON Tool where
   toJSON (Tool t) = String (T.toLower . T.pack $ t)

@@ -40,6 +40,7 @@ spec = do
   roundtripSpecs (Proxy @InstallationSpecInput)
   roundtripSpecs (Proxy @Tool)
   roundtripSpecs (Proxy @TargetVersion)
+  roundtripSpecs (Proxy @Tag)
   roundtripSpecs (Proxy @VersionInfo)
   roundtripSpecs (Proxy @Architecture)
   roundtripSpecs (Proxy @Platform)
@@ -80,7 +81,7 @@ spec = do
 #if defined(DHALL)
   describe "Dhall roundtrip" $ do
     beforeAll (do
-        info <- YAML.decodeFileEither @GHCupInfo "data/test/ghcup-0.1.0.yaml" >>= either (fail . show) pure
+        info <- YAML.decodeFileEither @GHCupInfo "data/test/ghcup-cross-0.1.0.yaml" >>= either (fail . show) pure
         let expr = Dhall.denote $ Dhall.embed @GHCupInfo Dhall.inject info
         pure (info, expr)
       ) $ do

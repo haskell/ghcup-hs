@@ -42,6 +42,7 @@ import Control.Monad.Trans.Resource
 #if defined(DHALL)
 import Dhall ( FromDhall, ToDhall )
 #endif
+import Data.List                      ( intercalate )
 import Data.List.NonEmpty             ( NonEmpty (..) )
 import Data.Map.Strict                ( Map )
 import Data.Text                      ( Text )
@@ -61,6 +62,7 @@ import qualified Data.Text             as T
 import qualified GHC.Generics          as GHC
 import           System.FilePath       ( takeFileName, (<.>) )
 import qualified System.FilePath.Posix as Posix
+import Data.Functor ((<&>))
 
 
     -------------------------
@@ -321,10 +323,11 @@ data Tag
   --   (a version should either be 'Nightly' or
   --   'LatestNightly', but not both)
   | LatestNightly -- ^ the latest nightly (unique per tool)
-  | Base PVP -- ^ the base version shipped with GHC
+  | Base { base :: PVP } -- ^ the base version shipped with GHC
   | Old -- ^ old versions are hidden by default in TUI
   | Experimental -- ^ an experimental version/bindist
-  | UnknownTag String -- ^ used for upwardscompat
+  | GHCCompat { ghcCompat :: [PVP] }
+  | UnknownTag { unknownTag :: String } -- ^ used for upwardscompat
   deriving (Eq, GHC.Generic, Ord, Show)
 
 instance NFData Tag
@@ -335,6 +338,7 @@ tagToString Latest             = "latest"
 tagToString Prerelease         = "prerelease"
 tagToString Nightly            = "nightly"
 tagToString (Base       pvp'') = "base-" ++ T.unpack (prettyPVP pvp'')
+tagToString (GHCCompat  ghcs)  = "GHC:[" <> intercalate "|" (ghcs <&> \ghc' -> T.unpack $ prettyPVP ghc') <> "]"
 tagToString (UnknownTag t    ) = t
 tagToString LatestPrerelease   = "latest-prerelease"
 tagToString LatestNightly      = "latest-nightly"
@@ -347,6 +351,7 @@ instance Pretty Tag where
   pPrint Prerelease         = text "prerelease"
   pPrint Nightly            = text "nightly"
   pPrint (Base       pvp'') = text ("base-" ++ T.unpack (prettyPVP pvp''))
+  pPrint (GHCCompat  ghcs)  = text $ "GHC:[" <> intercalate "|" (ghcs <&> \ghc' -> T.unpack $ prettyPVP ghc') <> "]"
   pPrint (UnknownTag t    ) = text t
   pPrint LatestPrerelease   = text "latest-prerelease"
   pPrint LatestNightly      = text "latest-prerelease"

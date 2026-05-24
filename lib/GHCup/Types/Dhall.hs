@@ -46,7 +46,7 @@ import           GHCup.Types.JSON
 import           GHCup.Types.Stack
     ()
 
-import           Data.Versions            ( PVP, Version, pvp', version', prettyPVP, prettyVer, pvp )
+import           Data.Versions            ( PVP, Version, pvp', version', prettyPVP, prettyVer )
 import           Data.Void                ( Void )
 import           GHCup.Prelude.MegaParsec ( ghcTargetVerP, versionRangeP )
 import qualified Text.Megaparsec          as MP
@@ -66,9 +66,6 @@ import           Dhall.Parser            ( Src )
 import           GHCup.Input.Parsers.URI ( parseURI' )
 import           URI.ByteString          ( URI, serializeURIRef' )
 import Text.PrettyPrint.HughesPJClass (prettyShow)
-import Text.Read (readMaybe)
-import qualified Data.Map.Strict as M
-import qualified Dhall.Map
 
 
 pattern DhallString :: T.Text -> Expr s a
@@ -93,7 +90,7 @@ instance FromDhall Architecture where
 instance ToDhall Architecture where
   injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
 
-instance {-# OVERLAPPING #-} FromDhall Platform where
+instance FromDhall Platform where
   autoWith _ =
     Dhall.string
       { extract = extractParser' parsePlatform
@@ -199,38 +196,10 @@ extractParser' parse expr = fromMonadic $ do
   first (DhallErrors . NE.singleton . ExtractError . T.pack . show) . parse . T.pack $ t
 
 instance FromDhall Tag where
-  autoWith _ = Dhall.string
-    { extract = \case
-        DhallString "Latest"                             -> pure Latest
-        DhallString "Recommended"                        -> pure Recommended
-        DhallString "Prerelease"                         -> pure Prerelease
-        DhallString "Nightly"                            -> pure Nightly
-        DhallString "LatestPrerelease"                   -> pure LatestPrerelease
-        DhallString "LatestNightly"                      -> pure LatestNightly
-        DhallString "Experimental"                       -> pure Experimental
-        DhallString "old"                                -> pure Old
-        e@(DhallString (T.unpack -> 'b' : 'a' : 's' : 'e' : '-' : ver')) -> case pvp (T.pack ver') of
-          Right x -> pure $ Base x
-          Left  _ -> Dhall.typeError (Dhall.expected Dhall.string) e
-        DhallString x -> pure (UnknownTag $ T.unpack x)
-        e -> Dhall.typeError (Dhall.expected Dhall.string) e
-    }
+  autoWith _ = genericAutoWith defaultInterpretOptions
 
 instance ToDhall Tag where
-  injectWith _ = Dhall.Encoder
-    { embed = \case
-        Latest             -> DhallString "Latest"
-        Recommended        -> DhallString "Recommended"
-        Prerelease         -> DhallString "Prerelease"
-        Nightly            -> DhallString "Nightly"
-        Old                -> DhallString "old"
-        (Base       pvp'') -> DhallString ("base-" <> prettyPVP pvp'')
-        LatestPrerelease   -> DhallString "LatestPrerelease"
-        LatestNightly      -> DhallString "LatestNightly"
-        Experimental       -> DhallString "Experimental"
-        (UnknownTag x    ) -> DhallString (T.pack x)
-    , declared = Dhall.Core.Text
-    }
+  injectWith = genericToDhallWithInputNormalizer defaultInterpretOptions
 
 instance FromDhall URI where
   autoWith _ =

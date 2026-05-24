@@ -37,7 +37,7 @@ import           Brick.Widgets.Center ( center )
 import qualified Brick.Widgets.List as L
 import           Data.List ( intercalate, sort )
 import           Data.Maybe ( mapMaybe )
-import           Data.Versions ( prettyPVP, prettyVer )
+import           Data.Versions ( prettyVer )
 import           Prelude                 hiding ( appendFile )
 import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
@@ -163,16 +163,15 @@ draw versionFocus dimAttrs bis
           <+> Brick.vLimit 1 (Brick.fill ' ')
           )
 
-  printTag Recommended    = Just $ Brick.withAttr Attributes.recommendedAttr $ Brick.str "recommended"
-  printTag Latest         = Just $ Brick.withAttr Attributes.latestAttr $ Brick.str "latest"
-  printTag Prerelease     = Just $ Brick.withAttr Attributes.prereleaseAttr $ Brick.str "prerelease"
-  printTag Nightly        = Just $ Brick.withAttr Attributes.nightlyAttr $ Brick.str "nightly"
-  printTag (Base pvp'')   = Just $ Brick.str ("base-" ++ T.unpack (prettyPVP pvp''))
-  printTag Old            = Nothing
+  printTag Recommended      = Just $ Brick.withAttr Attributes.recommendedAttr $ Brick.str "recommended"
+  printTag Latest           = Just $ Brick.withAttr Attributes.latestAttr $ Brick.str "latest"
+  printTag Prerelease       = Just $ Brick.withAttr Attributes.prereleaseAttr $ Brick.str "prerelease"
+  printTag Nightly          = Just $ Brick.withAttr Attributes.nightlyAttr $ Brick.str "nightly"
   printTag LatestPrerelease = Just $ Brick.withAttr Attributes.latestPrereleaseAttr $ Brick.str "latest-prerelease"
   printTag LatestNightly    = Just $ Brick.withAttr Attributes.latestNightlyAttr $ Brick.str "latest-nightly"
   printTag Experimental     = Just $ Brick.withAttr Attributes.latestNightlyAttr $ Brick.str "experimental"
-  printTag (UnknownTag t) = Just $ Brick.str t
+  printTag Old              = Nothing
+  printTag t                = Just $ Brick.str $ tagToString t
 
   printTool (Tool "cabal") = Brick.str "cabal"
   printTool (Tool "ghc") = Brick.str "GHC"
