@@ -888,6 +888,7 @@ fromSettings Settings{..} (Just KeyBindings{..}) =
             , kLeft         = Just bLeft
             , kRight        = Just bRight
             , kTab          = Just bTab
+            , kHelp         = Just bHelp
             , kQuit         = Just bQuit
             , kInstall      = Just bInstall
             , kUninstall    = Just bUninstall
@@ -921,6 +922,7 @@ data UserKeyBindings = UserKeyBindings
   , kLeft :: Maybe KeyCombination
   , kRight :: Maybe KeyCombination
   , kTab :: Maybe KeyCombination
+  , kHelp :: Maybe KeyCombination
   , kQuit :: Maybe KeyCombination
   , kInstall :: Maybe KeyCombination
   , kUninstall :: Maybe KeyCombination
@@ -936,6 +938,7 @@ data KeyBindings = KeyBindings
   , bLeft :: KeyCombination
   , bRight :: KeyCombination
   , bTab :: KeyCombination
+  , bHelp :: KeyCombination
   , bQuit :: KeyCombination
   , bInstall :: KeyCombination
   , bUninstall :: KeyCombination
@@ -961,6 +964,7 @@ defaultKeyBindings = KeyBindings
   , bLeft            = KeyCombination { key = KLeft      , mods = [] }
   , bRight           = KeyCombination { key = KRight     , mods = [] }
   , bTab             = KeyCombination { key = KChar '\t' , mods = [] }
+  , bHelp            = KeyCombination { key = KChar 'h'  , mods = [] }
   , bQuit            = KeyCombination { key = KChar 'q'  , mods = [] }
   , bInstall         = KeyCombination { key = KChar 'i'  , mods = [] }
   , bUninstall       = KeyCombination { key = KChar 'u'  , mods = [] }

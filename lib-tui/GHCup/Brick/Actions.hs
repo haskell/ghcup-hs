@@ -739,7 +739,7 @@ keyHandlersToolList KeyBindings {..} =
        if _showAllVersions then "Don't show all versions" else "Show all versions"
     , hideShowHandler' (not . _showAllVersions)
     )
-  , (KeyCombination (Vty.KChar 'h') [], Just $ const "help", mode .= KeyInfo)
+  , (bHelp, Just $ const "help", mode .= KeyInfo)
   , (KeyCombination Vty.KEnter [], Just $ const "Show tool details", mode .= Common.ToolInfo )
   , (bLeft, Nothing, versionFocus .= False)
   , (bRight, Nothing, versionFocus .= True)
@@ -763,7 +763,7 @@ keyHandlersVersionList KeyBindings {..} =
        if _showAllVersions then "Don't show all versions" else "Show all versions"
     , hideShowHandler' (not . _showAllVersions)
     )
-  , (KeyCombination (Vty.KChar 'h') [], Just $ const "Help", mode .= KeyInfo)
+  , (bHelp, Just $ const "Help", mode .= KeyInfo)
   , (KeyCombination Vty.KEnter [], Just $ const "Advanced options", createMenuforTool )
   , (bLeft, Nothing, versionFocus .= False)
   , (bRight, Nothing, versionFocus .= True)

@@ -187,6 +187,7 @@ updateSettings usl usr =
        Just $ UserKeyBindings {
            kUp = kUp kbl <|> kUp kbr
          , kDown = kDown kbl <|> kDown kbr
+         , kHelp = kHelp kbl <|> kHelp kbr
          , kQuit = kQuit kbl <|> kQuit kbr
          , kLeft = kLeft kbl <|> kLeft kbr
          , kRight = kRight kbl <|> kRight kbr

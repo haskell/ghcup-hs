@@ -114,6 +114,7 @@ toSettings noColor pagerCmd options = do
      in KeyBindings {
            bUp = fromMaybe bUp kUp
          , bDown = fromMaybe bDown kDown
+         , bHelp = fromMaybe bHelp kHelp
          , bQuit = fromMaybe bQuit kQuit
          , bLeft = fromMaybe bLeft kLeft
          , bRight = fromMaybe bRight kRight
