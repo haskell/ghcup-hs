@@ -1,7 +1,12 @@
 # Version history for ghcup
 
-## 0.2.4.0 -- 2026-05-24
+## 0.2.4.0 -- 2026-05-25
 
+* Add GHC compatibility to metadata format
+  - this shows which GHC is supported by a particular HLS even if it's not installed
+  - it also allows to install HLS such as `ghcup install hls ghc-9.14.1`
+* Fix up/down/right/left/tab not changable wrt [#1343](https://github.com/haskell/ghcup-hs/issues/1343)
+* Fix HLS compatibility check on windows wrt [#1342](https://github.com/haskell/ghcup-hs/issues/1342)
 * fix bug when installing via `--url` and specifying a version that doesn't exist in the metadata wrt [#1339](https://github.com/haskell/ghcup-hs/issues/1339)
 
 ## 0.2.3.0 -- 2026-05-22
