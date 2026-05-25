@@ -5,6 +5,7 @@
 module GHCup.Query.DB.HLS where
 
 import GHCup.Legacy.Utils
+import GHCup.Prelude (isWindows)
 import GHCup.Query.DB
 import GHCup.Types
 import GHCup.Types.Optics
@@ -34,7 +35,9 @@ getHLSGHCs hlsVer = do
       let extractGHCVerFromBinary (stripExe -> bin) = do
             prefix <- splitIt '~' bin
             s <- stripPrefix "haskell-language-server-" prefix
-            either (const Nothing) pure . version . T.pack $ s
+            -- stripExe here because we might have a binary of the form
+            -- haskell-language-server-9.12.2.exe~2.14.0.0
+            either (const Nothing) pure . version . T.pack . stripExe $ s
           ghcs = catMaybes $ extractGHCVerFromBinary <$> bins
       pure ghcs
     -- legacy
@@ -48,6 +51,8 @@ getHLSGHCs hlsVer = do
       | otherwise = go (prefix <> [x]) xs
     go _ [] = Nothing
 
-  stripExe f = case reverse f of
-                 ('e':'x':'e':'.':r) -> reverse r
-                 _ -> f
+  stripExe f
+    | isWindows = case reverse f of
+                    ('e':'x':'e':'.':r) -> reverse r
+                    _ -> f
+    | otherwise = f
