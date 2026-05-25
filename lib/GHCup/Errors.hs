@@ -436,6 +436,8 @@ instance HFErrorProject NotInstalled where
   eBase _ = 130
   eDesc _ = "The required tool is not installed"
 
+instance Exception NotInstalled
+
 data UninstallFailed = UninstallFailed FilePath [FilePath]
   deriving (Show)
 

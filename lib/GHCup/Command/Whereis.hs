@@ -66,14 +66,15 @@ whereIsTool :: ( MonadReader env m
                )
             => Tool
             -> TargetVersion
-            -> Excepts '[NotInstalled, ParseError, NoInstallInfo] m FilePath
+            -> Excepts '[NotInstalled] m FilePath
 whereIsTool tool ver@TargetVersion {..} = do
   dirs <- lift getDirs
-  sSpec <- lift $ getSymlinkSpecPortable tool ver
   toolDir <- fromGHCupPath <$> lift (toolInstallDestination tool ver)
 
+  sSpec <- runE $ getSymlinkSpec tool ver
+
   case sSpec of
-    (SymlinkSpec{..}:_) ->
+    (VRight (SymlinkSpec{..}:_)) ->
       pure $ toolDir </> _slTarget
     _ ->
       case tool of
@@ -102,6 +103,5 @@ whereIsTool tool ver@TargetVersion {..} = do
         Tool "ghcup" -> do
           currentRunningExecPath <- liftIO getExecutablePath
           liftIO $ canonicalizePath currentRunningExecPath
-        -- TODO
-        _ -> pure ""
+        _ -> throwE (NotInstalled tool ver)
 
