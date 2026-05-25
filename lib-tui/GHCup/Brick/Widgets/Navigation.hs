@@ -18,6 +18,7 @@ import GHCup.Types
       Tag(..),
       tVerToText,
       tagToString, ToolDescription,
+      isCompat,
       KeyBindings(..),
       KeyCombination(..))
 import qualified GHCup.Brick.Common as Common
@@ -92,7 +93,7 @@ draw versionFocus dimAttrs bis
   allElements = L.listElements bis
   minToolSize = V.maximum $ V.map (length . prettyShow . fst) allElements
   selectedTool = fmap snd $ L.listSelectedElement bis
-  minTagSize = maybe 0 (\(t, (_, vlr)) -> V.maximum $ V.map (length . intercalate "," . fmap tagToString . lTag) $ L.listElements vlr) selectedTool
+  minTagSize = maybe 0 (\(t, (_, vlr)) -> V.maximum $ V.map (length . intercalate "," . fmap tagToString . filter (not . isCompat) .  lTag) $ L.listElements vlr) selectedTool
   minVerSizeList = maybe 0 (\(t, (_, vlr)) ->  V.maximum $ V.map (\ListResult{..} -> T.length $ tVerToText (TargetVersion lCross lVer)) $ L.listElements vlr) selectedTool
   minVerHeaderSize = length $ maybe "Versions" (\(fst -> t) -> prettyShow t <> " versions") selectedTool
   minVerSize = max minVerSizeList minVerHeaderSize
@@ -170,6 +171,7 @@ draw versionFocus dimAttrs bis
   printTag LatestPrerelease = Just $ Brick.withAttr Attributes.latestPrereleaseAttr $ Brick.str "latest-prerelease"
   printTag LatestNightly    = Just $ Brick.withAttr Attributes.latestNightlyAttr $ Brick.str "latest-nightly"
   printTag Experimental     = Just $ Brick.withAttr Attributes.latestNightlyAttr $ Brick.str "experimental"
+  printTag (GHCCompat _)    = Nothing
   printTag Old              = Nothing
   printTag t                = Just $ Brick.str $ tagToString t
 
@@ -187,4 +189,5 @@ draw versionFocus dimAttrs bis
       ++ (case lReleaseDay of
             Nothing -> mempty
             Just d  -> [Brick.withAttr Attributes.dayAttr $ Brick.str (show d)])
+      ++ (Brick.str . tagToString <$> filter isCompat lTag)
 

@@ -330,6 +330,10 @@ data Tag
   | UnknownTag { unknownTag :: String } -- ^ used for upwardscompat
   deriving (Eq, GHC.Generic, Ord, Show)
 
+isCompat :: Tag -> Bool
+isCompat (GHCCompat _) = True
+isCompat _ = False
+
 instance NFData Tag
 
 tagToString :: Tag -> String

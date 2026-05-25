@@ -183,6 +183,7 @@ printListResult no_color show_revisions (PagerConfig pList pCmd) raw lr = do
     printTag t@LatestNightly      = color Red $ tagToString t
     printTag t@Experimental       = color Red $ tagToString t
     printTag Old                  = ""
+    printTag (GHCCompat _)        = ""
     printTag t                    = tagToString t
 
   let
@@ -227,6 +228,7 @@ printListResult no_color show_revisions (PagerConfig pList pCmd) raw lr = do
                           then [color Red "no-bindist"]
                           else mempty
                         )
+                     ++ (tagToString <$> filter isCompat lTag)
                      ]
             )
         $ M.toList lr
