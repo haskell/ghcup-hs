@@ -1,5 +1,9 @@
 # Version history for ghcup
 
+## 0.2.6.0 -- 2026-??-??
+
+* Allows bash substitution in domain variables wrt [#1342](https://github.com/haskell/ghcup-hs/issues/1342)
+
 ## 0.2.5.0 -- 2026-05-26
 
 * Fix broken `ghcup whereis` on non-installed tools wrt [#1347](https://github.com/haskell/ghcup-hs/issues/1347)
