@@ -1430,3 +1430,14 @@ data ShowRevisions = ShowUpdates
                    | ShowNone
   deriving (Eq, Show)
 
+data Substitution = Replace String String
+                  | ReplaceAll String String
+                  | StripPrefix String
+                  | StripSuffix String
+  deriving (Eq, Show)
+
+data DomainVariable = TARGETFN
+                    | PKGVER
+                    | PREFIX
+                    | TMPDIR
+  deriving (Eq, Show, Ord)

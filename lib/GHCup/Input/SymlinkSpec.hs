@@ -5,21 +5,21 @@
 module GHCup.Input.SymlinkSpec where
 
 import GHCup.Errors
+import GHCup.Input.Parsers.Domain
+import GHCup.Prelude.Logger
 import GHCup.Query.GHCupDirs
 import GHCup.Types
 import GHCup.Types.Optics
-import GHCup.Prelude.Logger
 
-import Control.Applicative          ( Alternative (many), (<|>) )
 import Control.Monad                ( forM )
 import Control.Monad.IO.Class       ( liftIO )
 import Control.Monad.Reader         ( MonadReader )
 import Data.Variant.Excepts         ( Excepts, throwE )
 import Data.Versions                ( Version, prettyVer )
-import Data.Void                    ( Void )
 import System.FilePath              ( takeFileName )
 import System.FilePattern.Directory ( getDirectoryFilesIgnore )
 
+import qualified Data.Map.Strict as M
 import qualified Data.Text       as T
 import qualified Text.Megaparsec as MP
 
@@ -38,15 +38,10 @@ parseSymlinkSpec ver SymlinkSpec{..} = do
   setName <- forM _slSetName $ either (throwE . ParseError . show) pure . parseDomain
   pure $ SymlinkSpec target linkName _slPVPMajorLinks setName
  where
-   parseDomain = MP.parse domainParser ""
+   parseDomain = MP.parse (domainParserVer env) "parseSymlinkSpec"
+   env = M.fromList [(PKGVER, T.unpack $ prettyVer ver)
+                    ]
 
-   domainParser :: MP.Parsec Void String [Either Char Version]
-   domainParser = many anyOrKnownVars
-     where
-      -- TODO: make this more efficient
-      anyOrKnownVars :: MP.Parsec Void String (Either Char Version)
-      anyOrKnownVars = MP.try (fmap (const (Right ver)) (MP.chunk "${PKGVER}"))
-                   <|> fmap Left MP.anySingle
 
 substituteSpec :: SymlinkSpec [Either Char Version] -> SymlinkFileSpec
 substituteSpec SymlinkSpec{..} =
@@ -79,13 +74,8 @@ resolveSymlinkSpec (fromGHCupPath -> workDir) SymlinkPatternSpec{..} = do
     logDebug2 $ "Parsed slSetName: " <> T.pack (show _slSetName)
     pure SymlinkSpec{..}
  where
-   parseDomain targetFn = either (throwE . ParseError . show) pure . MP.parse (domainParser targetFn) ""
-
-   domainParser :: FilePath -> MP.Parsec Void String String
-   domainParser targetFn = concat <$> many anyOrKnownVars
-     where
-      -- TODO: make this more efficient
-      anyOrKnownVars :: MP.Parsec Void String String
-      anyOrKnownVars = MP.try (fmap (const targetFn) (MP.chunk "${TARGETFN}"))
-                   <|> fmap (:[]) MP.anySingle
+   parseDomain targetFn = throwOnParseError . MP.parse (domainParser' env [PKGVER]) "resolveSymlinkSpec"
+    where
+     env = M.fromList [(TARGETFN, targetFn)
+                      ]
 

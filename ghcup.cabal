@@ -223,6 +223,7 @@ library
     GHCup.Hardcoded.URLs
     GHCup.Hardcoded.Version
     GHCup.Input.Parsers
+    GHCup.Input.Parsers.Domain
     GHCup.Input.Parsers.URI
     GHCup.Input.Prompts
     GHCup.Input.SymlinkSpec

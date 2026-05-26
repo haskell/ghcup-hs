@@ -9,13 +9,16 @@ import GHCup.Prelude.Version.QQ
 import GHCup.Types
 import GHCup.Types.JSON
     ()
+import GHCup.Input.Parsers.Domain
 
 import           Data.Either        ( isLeft )
 import           Data.List.NonEmpty ( NonEmpty (..) )
-import qualified Data.Set           as Set
 import           Data.Versions
-import qualified Text.Megaparsec    as MP
 import           Text.Megaparsec
+
+import qualified Data.Map.Strict as M
+import qualified Data.Set           as Set
+import qualified Text.Megaparsec    as MP
 
 import Test.Hspec
 
@@ -96,7 +99,64 @@ spec = do
     it "ghcLinkVersion" $ do
       MP.parse ghcLinkVersion "" "ghc-8.10.7" `shouldBe` Right ghc8107
 
+    it "domainParserP" $ do
+      MP.parse domainParserP "" "${TARGETFN}"               `shouldBe` Right (TARGETFN, Nothing)
+      MP.parse domainParserP "" "${TARGETFN//./}"           `shouldBe` Right (TARGETFN, Just $ ReplaceAll "." "")
+      MP.parse domainParserP "" "${TARGETFN/foo/bar}"       `shouldBe` Right (TARGETFN, Just $ Replace "foo" "bar")
+      MP.parse domainParserP "" "${TARGETFN/\\/foo/\\/bar}" `shouldBe` Right (TARGETFN, Just $ Replace "/foo" "/bar")
+      MP.parse domainParserP "" "${PKGVER#foo}"             `shouldBe` Right (PKGVER,   Just $ StripPrefix "foo")
+      MP.parse domainParserP "" "${PKGVER%bar}"             `shouldBe` Right (PKGVER,   Just $ StripSuffix "bar")
+      MP.parse domainParserP "" "${PKGVER%\\/bar}"          `shouldBe` Right (PKGVER,   Just $ StripSuffix "/bar")
+
+    it "domainParser" $ do
+      MP.parse (domainParser $ ml (PKGVER, "1.2.3")) "" "haskell-language-server.exe"
+        `shouldBe` Right "haskell-language-server.exe"
+      MP.parse (domainParser $ ml (PKGVER, "1.2.3")) "" "haskell-language-server-${PKGVER//./}.exe"
+        `shouldBe` Right "haskell-language-server-123.exe"
+      MP.parse (domainParser $ ml' [(TARGETFN, "haskell-language-server-9.6.7.exe")
+                                   ,(PKGVER, "2.14.0.0")
+                                   ]
+               ) "" "${TARGETFN%.exe}~${PKGVER}.exe"
+        `shouldBe` Right "haskell-language-server-9.6.7~2.14.0.0.exe"
+      MP.parse (domainParser $ ml' [(TARGETFN, "haskell-language-server-9.6.7.exe")
+                                   ,(PKGVER, "2.14.0.0")
+                                   ]
+               ) "" "${TARGETFN%.*}~${PKGVER}.exe"
+        `shouldBe` Right "haskell-language-server-9~2.14.0.0.exe"
+
+    it "globToRegex" $ do
+      globToRegex "foo/bar.ext" `shouldBe` "foo/bar\\.ext"
+      globToRegex "[][!]" `shouldBe` "[\\]\\[!]"
+      globToRegex "[!][!]" `shouldBe` "\\[!]\\[!]"
+      globToRegex "[abk*?]" `shouldBe` "[abk\\*?]"
+      globToRegex "foo/bar.ext" `shouldBe` "foo/bar\\.ext"
+      globToRegex "f?o/ba*.ext" `shouldBe` "f.o/ba.*\\.ext"
+
+    it "evalDomainVal" $ do
+      evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Nothing)                   `shouldBe` Just "1.2.3"
+      evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Just $ Replace "." "")     `shouldBe` Just "12.3"
+      evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Just $ ReplaceAll "." "")  `shouldBe` Just "123"
+      evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Just $ Replace "." ",")    `shouldBe` Just "1,2.3"
+      evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Just $ ReplaceAll "." ",") `shouldBe` Just "1,2,3"
+
+      evalDomainVal (ml (TARGETFN, "1.2.3")) (PKGVER, Nothing)                   `shouldBe` Nothing
+      evalDomainVal (ml (TARGETFN, "1.2.3")) (PKGVER, Just $ Replace "." "")     `shouldBe` Nothing
+      evalDomainVal (ml (TARGETFN, "1.2.3")) (PKGVER, Just $ ReplaceAll "." "")  `shouldBe` Nothing
+      evalDomainVal (ml (TARGETFN, "1.2.3")) (PKGVER, Just $ Replace "." ",")    `shouldBe` Nothing
+      evalDomainVal (ml (TARGETFN, "1.2.3")) (PKGVER, Just $ ReplaceAll "." ",") `shouldBe` Nothing
+
+      evalDomainVal (ml (TARGETFN, "foo/bar.ext")) (TARGETFN, Nothing)                     `shouldBe` Just "foo/bar.ext"
+      evalDomainVal (ml (TARGETFN, "foo/bar.ext")) (TARGETFN, Just $ Replace ".ext" "")    `shouldBe` Just "foo/bar"
+      evalDomainVal (ml (TARGETFN, "foo/bar.ext")) (TARGETFN, Just $ ReplaceAll ".ext" "") `shouldBe` Just "foo/bar"
+      evalDomainVal (ml (TARGETFN, "foo/bar.ext")) (TARGETFN, Just $ StripSuffix ".ext")   `shouldBe` Just "foo/bar"
+      evalDomainVal (ml (TARGETFN, "foo/bar.ext")) (TARGETFN, Just $ StripPrefix "foo/")   `shouldBe` Just "bar.ext"
+      evalDomainVal (ml (TARGETFN, "foo/bar.ext*")) (TARGETFN, Just $ Replace ".ext[abk*?]" "") `shouldBe` Just "foo/bar"
+      evalDomainVal (ml (TARGETFN, "foo/BaR.ext*")) (TARGETFN, Just $ Replace "[!.][B-D][a-b][A-R][.*?]" "bar") `shouldBe` Just "foobarext*"
+      evalDomainVal (ml (TARGETFN, "foo*bar.ext")) (TARGETFN, Just $ StripPrefix "foo\\*")   `shouldBe` Just "bar.ext"
+
   where
+    ml (a, b) = M.singleton a b
+    ml' = M.fromList
     hls2_13_0_0 = Right TargetVersion {
                    _tvTarget = Nothing,
                    _tvVersion = Version {
