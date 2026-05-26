@@ -8,6 +8,7 @@
 module GHCup.Command.Install.LowLevel where
 
 import GHCup.Errors
+import GHCup.Input.Parsers.Domain
 import GHCup.Input.SymlinkSpec
 import GHCup.Prelude
 import GHCup.Prelude.Process
@@ -30,12 +31,12 @@ import Control.Monad.Reader
 import Data.Maybe
 import Data.Variant.Excepts
 import Data.Versions                hiding ( patch )
-import Data.Void
 import Prelude                      hiding ( abs )
 import System.FilePath
 import System.FilePattern.Directory
 
 import qualified Data.ByteString       as B
+import qualified Data.Map.Strict       as M
 import qualified Data.Text             as T
 import qualified System.FilePath.Posix as Posix
 import qualified Text.Megaparsec       as MP
@@ -107,9 +108,9 @@ installTheSpec InstallationSpec{..} workdir installDest tmpInstallDest extraArgs
       addConfArgs <- lift $ sanitizefConfOptions extraArgs
 
       let configFile = fromMaybe "configure" _csConfigFile
-      processedConfArgs <- forM _csConfigArgs $ \a -> throwOnParseError . parseDomain $ a
+      processedConfArgs <- forM _csConfigArgs $ \a -> liftE $ throwOnParseError . parseDomain $ a
       newEnv <- forM _csConfigEnv $ \EnvSpec{..} -> do
-        processedEnv <- throwOnParseError $ forM _esEnv (\(var, val) -> (var,) <$> parseDomain val)
+        processedEnv <- liftE $ throwOnParseError $ forM _esEnv (\(var, val) -> (var,) <$> parseDomain val)
         liftIO (augmentEnvironment processedEnv _esUnion)
       liftE $ execWithWrapper "sh"
                        (("." Posix.</> configFile) : processedConfArgs <> addConfArgs
@@ -125,15 +126,15 @@ installTheSpec InstallationSpec{..} workdir installDest tmpInstallDest extraArgs
       processedMakeArgs <- case installTargets of
         Just it -> do
           -- we need to check whether applying 'installTargets' would wipe out PREFIX/DESTDIR
-          origArgs <- throwOnParseError $ forM _msMakeArgs parseDomain
+          origArgs <- liftE $ throwOnParseError $ forM _msMakeArgs parseDomain
           if origArgs /= _msMakeArgs
           then throwE $ InvalidBuildConfig $ "Can't overwrite install targets " <> T.pack (show _msMakeArgs) <> " since they contain domain variables."
-          else throwOnParseError $ forM it parseDomain
+          else liftE $ throwOnParseError $ forM it parseDomain
         Nothing ->
-          throwOnParseError $ forM _msMakeArgs parseDomain
+          liftE $ throwOnParseError $ forM _msMakeArgs parseDomain
 
       newEnv <- forM _msMakeEnv $ \EnvSpec{..} -> do
-        processedEnv <- throwOnParseError $ forM _esEnv (\(var, val) -> (var,) <$> parseDomain val)
+        processedEnv <- liftE $ throwOnParseError $ forM _esEnv (\(var, val) -> (var,) <$> parseDomain val)
         liftIO (augmentEnvironment processedEnv _esUnion)
       liftE $ makeWithWrapper processedMakeArgs (Just workdir) "make" newEnv
     _ -> pure ()
@@ -166,18 +167,10 @@ installTheSpec InstallationSpec{..} workdir installDest tmpInstallDest extraArgs
     logDebug $ "cp " <> (if forceInstall then "-f " else "") <> T.pack from <> " " <> T.pack into
     pure into
 
-  parseDomain = MP.parse domainParser ""
-
-  throwOnParseError = either (throwE . ParseError . show) pure
-
-  domainParser :: MP.Parsec Void String String
-  domainParser = concat <$> many anyOrKnownVars
-   where
-    -- TODO: make this more efficient
-    anyOrKnownVars :: MP.Parsec Void String String
-    anyOrKnownVars = MP.try (fmap (const (fromInstallDir installDest)) (MP.chunk "${PREFIX}"))
-                 <|> MP.try (fmap (const (fromGHCupPath tmpInstallDest)) (MP.chunk "${TMPDIR}"))
-                 <|> fmap (:[]) MP.anySingle
+  env = M.fromList [(PREFIX, fromInstallDir installDest)
+                   ,(TMPDIR, fromGHCupPath tmpInstallDest)
+                   ]
+  parseDomain = MP.parse (domainParser env) "installTheSpec"
 
 makeWithWrapper ::
   ( MonadIOish m

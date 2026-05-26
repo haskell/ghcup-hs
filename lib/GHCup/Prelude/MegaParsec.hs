@@ -14,7 +14,7 @@ module GHCup.Prelude.MegaParsec where
 
 import GHCup.Types
 
-import Control.Applicative ( Alternative((<|>), many) )
+import Control.Applicative ( Alternative (many, (<|>)) )
 
 #if !MIN_VERSION_base(4,13,0)
 import Control.Monad.Fail ( MonadFail )
