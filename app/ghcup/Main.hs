@@ -179,6 +179,7 @@ Release Channels:
   * prereleases: contains pre-releases of all tools
   * vanilla: similar to default but only uses upstream bindists
     (no patches/fixes are applied, no missing platforms added)
+  * 3rdparty: access to non-core tools (e.g. hlint, ormolu, agda)
 More details at <https://www.haskell.org/ghcup/guide/#release-channels>
 
 ENV variables:
