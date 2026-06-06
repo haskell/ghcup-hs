@@ -273,6 +273,7 @@ getInstalledVersions' tool
       pure $ TargetVersionRev tv rev
 
 
+-- | Might return more tools than requested.
 getAllInstalledTools ::
   ( MonadReader env m
   , HasGHCupInfo env
