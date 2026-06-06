@@ -163,7 +163,7 @@ installTheSpec InstallationSpec{..} workdir installDest tmpInstallDest extraArgs
         destDir = fromGHCupPath tmpInstallDest </> dropDrive (fromInstallDir installDest)
         into = destDir </> fromMaybe source destFile
     liftIO $ createDirRecursive' (takeDirectory into)
-    copyFileE from into (not forceInstall)
+    handleIO (throwE . CopyError . show) . liftIO . install from into  $ not forceInstall
     logDebug $ "cp " <> (if forceInstall then "-f " else "") <> T.pack from <> " " <> T.pack into
     pure into
 
