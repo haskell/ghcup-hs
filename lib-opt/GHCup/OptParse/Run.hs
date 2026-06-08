@@ -514,18 +514,17 @@ run RunOptions{..} settings (getAppState', leanAppstate) = do
    setHLS' v tmp = do
           Dirs {..}  <- getDirs
           legacy <- isLegacyHLS v
+          hlsWrapper <- liftE @_ @'[NotInstalled] $ hlsWrapperBinary v !? NotInstalled hls (mkTVer v)
+          cw <- liftIO $ canonicalizePath (binDir </> hlsWrapper)
+          liftIO $ print cw
+          lift $ createLink (relativeSymlink tmp cw) (tmp </> takeFileName cw)
+          liftIO $ print $ relativeSymlink tmp cw
+          hlsBins <- hlsServerBinaries v Nothing >>= liftIO . traverse (canonicalizePath . (binDir </>))
+          forM_ hlsBins $ \bin ->
+            lift $ createLink (relativeSymlink tmp bin) (tmp </> takeFileName bin)
           if legacy
-          then do
-            -- TODO: factor this out
-            hlsWrapper <- liftE @_ @'[NotInstalled] $ hlsWrapperBinary v !? NotInstalled hls (mkTVer v)
-            cw <- liftIO $ canonicalizePath (binDir </> hlsWrapper)
-            lift $ createLink (relativeSymlink tmp cw) (tmp </> takeFileName cw)
-            hlsBins <- hlsServerBinaries v Nothing >>= liftIO . traverse (canonicalizePath . (binDir </>))
-            forM_ hlsBins $ \bin ->
-              lift $ createLink (relativeSymlink tmp bin) (tmp </> takeFileName bin)
-            liftE $ setHLS v SetHLSOnly (Just tmp)
-          else do
-            liftE $ void $ setToolVersion' hls (mkTVer v) (Just tmp)
+          then liftE $ setHLS v SetHLSOnly (Just tmp)
+          else liftE $ setHLS v SetHLS_XYZ (Just tmp)
 
    createTmpDir :: ( MonadIOish m )
                 => Toolchain
