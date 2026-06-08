@@ -140,7 +140,14 @@ listVersions lt' criteria showRevisions hideOld showNightly days = do
                Just VersionRev{..} -> do
                  getHLSGHCs _vrVersion
                Nothing -> pure []
-  pure $ listVersions' dls pfreq instTools hlsGHCs lt' criteria showRevisions hideOld showNightly days
+  pure $ listVersions' dls pfreq (filterTools lt' instTools) hlsGHCs lt' criteria showRevisions hideOld showNightly days
+
+filterTools ::
+     Maybe [Tool]
+  -> Map.Map Tool (Map.Map (Maybe Text) ([VersionRev], Maybe VersionRev))
+  -> Map.Map Tool (Map.Map (Maybe Text) ([VersionRev], Maybe VersionRev))
+filterTools Nothing    tools = tools
+filterTools (Just lt') tools = M.filterWithKey (\k _ -> k `elem` lt') tools
 
 listVersions' ::
      GHCupDownloads
