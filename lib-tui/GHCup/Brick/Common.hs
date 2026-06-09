@@ -56,6 +56,7 @@ module GHCup.Brick.Common  (
     , CompileGHCButton, CompileHLSButton, CabalProjectEditBox
     , CabalProjectLocalEditBox, UpdateCabalCheckBox, GitRefEditBox
     , BootstrapGhcSelectBox, HadrianGhcSelectBox, ToolVersionBox, GHCInstallTargets
+    , DocsEditBox
   ) ) where
 
 import           GHCup.Command.List ( ToolListResult, ListCriteria )
@@ -147,6 +148,9 @@ pattern ToolVersionBox = ResourceId 23
 
 pattern GHCInstallTargets :: ResourceId
 pattern GHCInstallTargets = ResourceId 24
+
+pattern DocsEditBox :: ResourceId
+pattern DocsEditBox = ResourceId 25
 
 -- | Name data type. Uniquely identifies each widget in the TUI.
 -- some constructors might end up unused, but still is a good practise

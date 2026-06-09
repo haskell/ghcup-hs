@@ -30,6 +30,7 @@ module GHCup.Brick.Widgets.Menus.CompileGHC (
   setCompile,
   overwriteVer,
   buildFlavour,
+  docs,
   buildSystem,
   isolateDir,
   gitRef,
@@ -75,6 +76,7 @@ data CompileGHCOptions = CompileGHCOptions
   , _setCompile   :: Bool
   , _overwriteVer :: Maybe [VersionPattern]
   , _buildFlavour :: Maybe String
+  , _docs         :: Maybe String
   , _buildSystem  :: Maybe BuildSystem
   , _isolateDir   :: Maybe FilePath
   , _gitRef       :: Maybe String
@@ -105,6 +107,7 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
         Nothing
         Nothing
         initialInstallTargets
+        Nothing
     validator CompileGHCOptions {..} = case (_setCompile, _isolateDir) of
       (True, Just _) -> Just "Cannot set active when doing an isolated install"
       _ -> case (_buildConfig, _buildSystem) of
@@ -206,6 +209,9 @@ create k availableGHCs = Menu.createMenu CompileGHCBox initialState "Compile GHC
       , Menu.createEditableField (Common.MenuElement Common.BuildFlavourEditBox) (Right . Just . T.unpack) buildFlavour
           & Menu.fieldLabelL .~ "flavour"
           & Menu.fieldHelpMsgL .~ "Set the compile build flavour (this value depends on the build system type: 'make' vs 'hadrian')"
+      , Menu.createEditableField (Common.MenuElement Common.DocsEditBox) (Right . Just . T.unpack) docs
+          & Menu.fieldLabelL .~ "docs"
+          & Menu.fieldHelpMsgL .~ "Disable some or all of the docs (e.g. 'none' or 'no-sphinx')"
       , Menu.createEditableField (Common.MenuElement Common.AdditionalEditBox) additionalValidator addConfArgs
           & Menu.fieldLabelL .~ "CONFIGURE_ARGS"
           & Menu.fieldHelpMsgL .~ "Additional arguments to bindist configure"

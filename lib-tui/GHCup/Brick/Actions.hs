@@ -551,6 +551,7 @@ compileGHC compopts (_, Tool "ghc", _, lr@ListResult{..}) = do
                     (compopts ^. CompileGHC.buildSystem)
                     (maybe GHCupInternal IsolateDir $ compopts ^. CompileGHC.isolateDir)
                     (fmap (words . T.unpack) $ compopts ^. CompileGHC.installTargets)
+                    (compopts ^. CompileGHC.docs)
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls2 }} <- ask
       let vi2 = getVersionMetadata targetVer ghc dls2
       when

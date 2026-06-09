@@ -172,6 +172,7 @@ compileGHC :: ( MonadMask m
            -> Maybe BuildSystem
            -> InstallDir
            -> Maybe [String]
+           -> Maybe String
            -> Excepts
                 '[ AlreadyInstalled
                  , BuildFailed
@@ -204,7 +205,7 @@ compileGHC :: ( MonadMask m
                  ]
                 m
                 TargetVersion
-compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs buildFlavour buildSystem installDir installTargets
+compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs buildFlavour buildSystem installDir installTargets docs
   = do
     pfreq@PlatformRequest { .. } <- lift getPlatformReq
     GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
@@ -570,6 +571,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
     liftE $ execWithWrapper hadrian_build
                           ( maybe [] (\j  -> ["-j" <> show j]         ) jobs
                          ++ maybe [] (\bf -> ["--flavour=" <> bf]) buildFlavour
+                         ++ maybe [] (\d -> ["--docs=" <> d]) docs
                          ++ ["binary-dist"]
                           )
                           (Just workdir) "ghc-make"

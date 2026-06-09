@@ -154,6 +154,9 @@ revisionCompleter = listCompleter ["updates", "all", "none"]
 nightlyCompleter :: Completer
 nightlyCompleter = listCompleter ["latest", "all", "none"]
 
+docsCompleter :: Completer
+docsCompleter = listCompleter ["none", "no-haddocks", "no-sphinx", "no-sphinx-html", "no-sphinx-pdfs", "no-sphinx-man"]
+
 toolCompleter :: Completer
 toolCompleter = listCompleter ["ghc", "cabal", "hls", "stack"]
 
