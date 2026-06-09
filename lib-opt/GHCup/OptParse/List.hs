@@ -16,7 +16,7 @@ import           GHCup.Command.List
 import           GHCup.Errors
 import           GHCup.Prelude
 import           GHCup.Types
-import           GHCup.Input.Parsers (dayParser, toolParserWithGHCup, criteriaParser, revisionShowParser)
+import           GHCup.Input.Parsers (dayParser, toolParserWithGHCup, criteriaParser, revisionShowParser, nightlyShowParser)
 import           GHCup.OptParse.Common
 import           GHCup.Prelude.String.QQ
 import           GHCup.Compat.Terminal
@@ -65,7 +65,7 @@ data ListOptions = ListOptions
   , lFrom          :: Maybe Day
   , lTo            :: Maybe Day
   , lHideOld       :: Bool
-  , lShowNightly   :: Bool
+  , lShowNightly   :: ShowNightly
   , lRawFormat     :: Bool
   , lShowRevisions :: ShowRevisions
   } deriving (Eq, Show)
@@ -120,9 +120,18 @@ listOpts =
     <*> switch
           (short 'o' <> long "hide-old" <> help "Hide 'old' tool versions (installed ones are always shown)"
           )
-    <*> switch
-          (short 'n' <> long "show-nightly" <> help "Show nightlies (installed ones are always shown)"
+    <*> (option
+          (eitherReader nightlyShowParser)
+          (long "show-nightlies" <> help "How to show nightlies (default: latest)"
+              <> metavar "<latest|all|none>"
+              <> completer nightlyCompleter
+              <> value NShowLatest
           )
+          <|> fmap (\_ -> NShowAll) (switch
+                (short 'n' <> long "show-nightly" <> help "Show nightlies (installed ones are always shown)"
+                )
+                )
+        )
     <*> switch
           (short 'r' <> long "raw-format" <> help "More machine-parsable format"
           )

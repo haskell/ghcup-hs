@@ -34,9 +34,16 @@ module GHCup.Brick.Common  (
   frontwardLayer,
   enableScreenReader,
   zoom,
-  defaultAppSettings,
   lr,
   showAllVersions,
+  _showAllVersions,
+  bsToolL,
+  bsCriteriaL,
+  bsFromL,
+  bsToL,
+  bsHideOldL,
+  bsShowNightlyL,
+  bsShowRevisionsL,
   Name(..),
   Mode(..),
   BrickData(..),
@@ -51,13 +58,14 @@ module GHCup.Brick.Common  (
     , BootstrapGhcSelectBox, HadrianGhcSelectBox, ToolVersionBox, GHCInstallTargets
   ) ) where
 
-import           GHCup.Command.List ( ToolListResult )
+import           GHCup.Command.List ( ToolListResult, ListCriteria )
 import           GHCup.Prelude ( isWindows )
-import           GHCup.Types ( Tool, KeyCombination (KeyCombination) )
+import           GHCup.Types ( Tool, KeyCombination (KeyCombination), ShowRevisions, ShowNightly(..) )
 import Data.List (intercalate)
 import           Prelude                 hiding ( appendFile )
 import qualified Graphics.Vty                  as Vty
-import           Optics.TH (makeLenses)
+import           Optics (Lens', lens)
+import           Optics.TH (makeLenses, makeLensesFor)
 import           Optics.Lens (toLensVL)
 import qualified Brick
 import qualified Brick.Widgets.Border as Border
@@ -65,6 +73,7 @@ import Brick ((<+>))
 import qualified Data.Text as T
 import qualified Brick.Widgets.Center as Brick
 import qualified Brick.Widgets.Border.Style as Border
+import Data.Time.Calendar (Day)
 
 -- We could use regular ADTs but different menus share the same options.
 -- example: all of ghcup compile ghc, ghcup compile hls, ghcup install cabal, etc...
@@ -229,10 +238,34 @@ data BrickData = BrickData
 
 makeLenses ''BrickData
 
-data BrickSettings = BrickSettings { _showAllVersions :: Bool}
+-- Currently the only TUI 'toggable' setting is ioHideOldL... all the
+-- other fiels are only used in 'getAppData'. If you want to make
+-- them toggable as well, they have to be utilized in 'constructList'.
+data BrickSettings = BrickSettings {
+    bsTool          :: Maybe [Tool]
+  , bsCriteria      :: [ListCriteria]
+  , bsFrom          :: Maybe Day
+  , bsTo            :: Maybe Day
+  , bsHideOld       :: Bool
+  , bsShowNightly   :: ShowNightly
+  , bsShowRevisions :: ShowRevisions
+  }
   --deriving Show
 
-makeLenses ''BrickSettings
+makeLensesFor
+  [ ("bsTool", "bsToolL")
+  , ("bsCriteria", "bsCriteriaL")
+  , ("bsFrom", "bsFromL")
+  , ("bsTo", "bsToL")
+  , ("bsHideOld", "bsHideOldL")
+  , ("bsShowNightly", "bsShowNightlyL")
+  , ("bsShowRevisions", "bsShowRevisionsL")
+  ]
+  ''BrickSettings
 
-defaultAppSettings :: BrickSettings
-defaultAppSettings = BrickSettings False
+showAllVersions :: Lens' BrickSettings Bool
+showAllVersions = lens (not . bsHideOld) (\BrickSettings{..} showAll -> let bsHideOld = not showAll in BrickSettings{..})
+
+_showAllVersions :: BrickSettings -> Bool
+_showAllVersions = not . bsHideOld
+

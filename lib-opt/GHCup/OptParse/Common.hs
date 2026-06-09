@@ -151,6 +151,9 @@ invertableSwitch' longopt shortopt defv enmod dismod = optional
 revisionCompleter :: Completer
 revisionCompleter = listCompleter ["updates", "all", "none"]
 
+nightlyCompleter :: Completer
+nightlyCompleter = listCompleter ["latest", "all", "none"]
+
 toolCompleter :: Completer
 toolCompleter = listCompleter ["ghc", "cabal", "hls", "stack"]
 
@@ -338,7 +341,7 @@ versionCompleter' criteria tool filter' = listIOCompleter $ do
 
           runEnv = flip runReaderT appState . runE
 
-      (VRight installedVersions) <- runEnv $ listVersions (Just [tool]) criteria ShowUpdates False False (Nothing, Nothing)
+      (VRight installedVersions) <- runEnv $ listVersions (Just [tool]) criteria ShowUpdates False NShowNone (Nothing, Nothing)
       return $ fmap (T.unpack . prettyVer) . filter filter' . maybe [] (fmap lVer . snd) $ M.lookup tool installedVersions
 
 
@@ -495,7 +498,7 @@ checkForUpdates :: ( MonadReader env m
 checkForUpdates = do
   dl@GHCupInfo { _ghcupDownloads = dls } <- getGHCupInfo
   pfreq <- getPlatformReq
-  (VRight lInstalled') <- runE $ listVersions Nothing [ListInstalled True] ShowUpdates False False (Nothing, Nothing)
+  (VRight lInstalled') <- runE $ listVersions Nothing [ListInstalled True] ShowUpdates False NShowNone (Nothing, Nothing)
   let latestInstalled tool = do
         (_, xs) <- M.lookup tool lInstalled'
         ListResult{..} <- lastMay xs

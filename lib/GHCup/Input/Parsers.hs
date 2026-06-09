@@ -271,6 +271,13 @@ revisionShowParser s' | t == T.pack "updates"   = Right ShowUpdates
                       | otherwise               = Left ("Unknown criteria: " <> s')
   where t = T.toLower (T.pack s')
 
+nightlyShowParser :: String -> Either String ShowNightly
+nightlyShowParser s' | t == T.pack "latest"   = Right NShowLatest
+                     | t == T.pack "all"      = Right NShowAll
+                     | t == T.pack "none"     = Right NShowNone
+                     | otherwise              = Left ("Unknown criteria: " <> s')
+  where t = T.toLower (T.pack s')
+
 criteriaParser :: String -> Either String ListCriteria
 criteriaParser s' | t == T.pack "installed"   = Right $ ListInstalled True
                   | t == T.pack "set"         = Right $ ListSet True

@@ -125,7 +125,7 @@ listVersions ::
   -> [ListCriteria]
   -> ShowRevisions
   -> Bool
-  -> Bool
+  -> ShowNightly
   -> (Maybe Day, Maybe Day)
   -> Excepts '[ParseError] m ToolListResult
 listVersions lt' criteria showRevisions hideOld showNightly days = do
@@ -158,7 +158,7 @@ listVersions' ::
   -> [ListCriteria]
   -> ShowRevisions
   -> Bool
-  -> Bool
+  -> ShowNightly
   -> (Maybe Day, Maybe Day)
   -> ToolListResult
 listVersions' dls pfreq instTools hlsGHCs lt' criteria showRevisions hideOld showNightly days =
@@ -367,9 +367,14 @@ listVersions' dls pfreq instTools hlsGHCs lt' criteria showRevisions hideOld sho
     | otherwise = Just lr
 
   filterNightly :: ListResult -> Maybe ListResult
-  filterNightly lr@ListResult {..}
-    | showNightly = Just lr
-    | otherwise   = if lInstalled || (Nightly `notElem` lTag && LatestNightly `notElem` lTag)
-                    then Just lr
-                    else Nothing
+  filterNightly lr@ListResult {..} = case showNightly of
+    NShowAll -> Just lr
+    NShowLatest -> if | lInstalled -> Just lr
+                      | LatestNightly `elem` lTag -> Just lr
+                      | Nightly `elem` lTag -> Nothing
+                      | otherwise -> Just lr
+    NShowNone -> if | lInstalled -> Just lr
+                    | LatestNightly `elem` lTag -> Nothing
+                    | Nightly `elem` lTag -> Nothing
+                    | otherwise -> Just lr
 

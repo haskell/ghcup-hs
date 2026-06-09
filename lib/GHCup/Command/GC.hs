@@ -86,7 +86,7 @@ rmUnsetTools :: ( MonadReader env m
                 )
              => Excepts '[NotInstalled, UninstallFailed, ParseError, MalformedInstallInfo] m ()
 rmUnsetTools = do
-  vers <- liftE $ listVersions Nothing [ListInstalled True, ListSet False] ShowUpdates False True (Nothing, Nothing)
+  vers <- liftE $ listVersions Nothing [ListInstalled True, ListSet False] ShowUpdates False NShowAll (Nothing, Nothing)
   iforM_ vers $ \tool (_, ls) -> forM_ ls $ \ListResult{..} -> liftE $ rmToolVersion tool (TargetVersion lCross lVer)
 
 

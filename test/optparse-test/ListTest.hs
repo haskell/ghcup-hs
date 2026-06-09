@@ -11,7 +11,7 @@ listTests :: TestTree
 listTests = buildTestTree listParseWith ("list", listCheckList)
 
 defaultOptions :: ListOptions
-defaultOptions = ListOptions Nothing [] Nothing Nothing False False False ShowUpdates
+defaultOptions = ListOptions Nothing [] Nothing Nothing False NShowLatest False ShowUpdates
 
 listCheckList :: [(String, ListOptions)]
 listCheckList =
@@ -35,8 +35,8 @@ listCheckList =
                             defaultOptions{lFrom = Just $ read "2023-07-22", lTo = Just $ read "2023-07-22"})
   , ("list -o",             defaultOptions{lHideOld = True})
   , ("list --hide-old",     defaultOptions{lHideOld = True})
-  , ("list -n",             defaultOptions{lShowNightly = True})
-  , ("list --show-nightly", defaultOptions{lShowNightly = True})
+  , ("list -n",             defaultOptions{lShowNightly = NShowAll})
+  , ("list --show-nightly", defaultOptions{lShowNightly = NShowAll})
   , ("list -r",             defaultOptions{lRawFormat = True})
   , ("list --raw-format",   defaultOptions{lRawFormat = True})
   ]

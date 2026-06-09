@@ -55,7 +55,7 @@ listVersionsA s' = do
     []          -- list criteria
     ShowUpdates -- showRevisions
     False       -- hideOld
-    True        -- showNightly
+    NShowAll    -- showNightly
     (Nothing, Nothing)
   pure r
 
@@ -66,6 +66,6 @@ listVersionsB (dls, pfreq, instTools, hlsGHCs) =
     []          -- list criteria
     ShowUpdates -- showRevisions
     False       -- hideOld
-    True        -- showNightly
+    NShowAll    -- showNightly
     (Nothing, Nothing)
 

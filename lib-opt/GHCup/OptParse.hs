@@ -9,6 +9,7 @@ module GHCup.OptParse (
     module GHCup.OptParse.Common
   , module GHCup.OptParse.Install
   , module GHCup.OptParse.Test
+  , module GHCup.OptParse.TUI
   , module GHCup.OptParse.Set
   , module GHCup.OptParse.UnSet
   , module GHCup.OptParse.Rm
@@ -37,6 +38,7 @@ module GHCup.OptParse (
 import           GHCup.OptParse.Common
 import           GHCup.OptParse.Install
 import           GHCup.OptParse.Test
+import           GHCup.OptParse.TUI
 import           GHCup.OptParse.Set
 import           GHCup.OptParse.UnSet
 import           GHCup.OptParse.Rm
@@ -120,7 +122,7 @@ data Command
 #endif
   | Nuke
 #if defined(BRICK)
-  | Interactive
+  | Interactive InteractiveOptions
 #endif
   | Prefetch PrefetchCommand
   | GC GCOptions
@@ -203,9 +205,9 @@ com =
 #if defined(BRICK)
       (  command
           "tui"
-          (   (\_ -> Interactive)
+          (   Interactive
           <$> info
-                helper
+                (interactiveParser <**> helper)
                 (  progDesc "Start the interactive GHCup UI"
                 )
           )
