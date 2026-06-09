@@ -335,6 +335,7 @@ jobs:
       - if: matrix.DISTRO != 'Alpine'
         name: Run test (64 bit linux)
         run: |
+          sudo apt-get update -y
           sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
           bash .github/scripts/test.sh --verbose --ghcup-binary out/${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-binary out/test-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --test-optparse-binary out/test-optparse-${{ env.ARTIFACT }}-${{ env.GHCUP_VER }} --os ${{ runner.os }} --arch ${{ env.ARCH }} --distro ${{ env.DISTRO }} --ghcup-dir ${{ github.workspace }} --ghc-version ${{ env.GHC_VER }} --cabal-version ${{ env.CABAL_VER }} --json-version ${{ env.JSON_VERSION }}
         env:
@@ -582,6 +583,7 @@ jobs:
 
       - name: Run hls build
         run: |
+          sudo apt-get update -y
           sudo apt-get install -y libnuma-dev zlib1g-dev libgmp-dev libgmp10 libssl-dev liblzma-dev libbz2-dev git wget lsb-release software-properties-common gnupg2 apt-transport-https gcc autoconf automake build-essential curl gzip
           sh .github/scripts/hls.sh
         env:
