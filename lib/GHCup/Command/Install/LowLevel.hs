@@ -18,6 +18,7 @@ import GHCup.Query.Symlink
 import GHCup.System.Cmd
 import GHCup.System.Directory
 import GHCup.Types
+import GHCup.Types.JSON (safePath, safeFilename)
 import GHCup.Types.Optics
 
 import Control.Applicative
@@ -272,6 +273,7 @@ symlinkBinaries ::
 symlinkBinaries (IsolateDirResolved _) _ _ _ _ = pure ()
 symlinkBinaries (fromInstallDir -> toolDir) rawSpec bindir tool tver = do
   let spec = substituteSpec <$> rawSpec
+  forM_ spec safeSpec
   pvpSyms <- lift $ getPVPSymlinks' (fromInstallDir bindir) spec toolDir
   forM_ pvpSyms $ lift . uncurry createLink
   case bindir of
@@ -279,6 +281,15 @@ symlinkBinaries (fromInstallDir -> toolDir) rawSpec bindir tool tver = do
     GHCupDir d           -> linkMajor (fromGHCupPath d)
     GHCupBinDir d        -> whenM (lift isLatest) $ linkMajor d
  where
+  safeSpec SymlinkSpec{..} = do
+    checkSafePath _slTarget
+    checkSafeFilename _slLinkName
+    forM_ _slSetName checkSafeFilename
+
+  checkSafePath fp = unless (safePath fp) $ throwE (MalformedInstallInfo "'..' or '.' are not allowed")
+
+  checkSafeFilename fp = unless (safeFilename fp) $ throwE (MalformedInstallInfo "'..' or '.' are not allowed and filepath must have no path separators")
+
   linkMajor d = do
     let ver = _tvVersion tver
     pvpMajorSyms <- liftE $ getPVPMajorSymlinks' d rawSpec ver toolDir

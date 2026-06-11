@@ -424,9 +424,6 @@ instance FromJSON SymlinkFileSpec where
     _slLinkName <- o .: "linkName"
     _slPVPMajorLinks <- fromMaybe False <$> o .:? "pVPMajorLinks"
     _slSetName <- o .:? "setName"
-    checkSafePath _slTarget
-    checkSafeFilename _slLinkName
-    forM_ _slSetName checkSafeFilename
     pure SymlinkSpec{..}
 
 instance FromJSON SymlinkInputSpec where
@@ -437,9 +434,6 @@ instance FromJSON SymlinkInputSpec where
         _slLinkName <- o .: "linkName"
         _slPVPMajorLinks <- o .:? "pVPMajorLinks" .!= False
         _slSetName <- o .:? "setName"
-        checkSafePath _slTarget
-        checkSafeFilename _slLinkName
-        forM_ _slSetName checkSafeFilename
         pure SymlinkInputSpec{..}
       Nothing -> do
         _slTargetPattern <- o .: "targetPattern"
@@ -447,10 +441,6 @@ instance FromJSON SymlinkInputSpec where
         _slLinkName <- o .: "linkName"
         _slPVPMajorLinks <- o .:? "pVPMajorLinks" .!= False
         _slSetName <- o .:? "setName"
-        forM_ _slTargetPattern checkSafePath
-        forM_ _slTargetPatternIgnore checkSafePath
-        checkSafeFilename _slLinkName
-        forM_ _slSetName checkSafeFilename
         pure SymlinkPatternSpec{..}
 
 instance FromJSON InstallFileRule where
