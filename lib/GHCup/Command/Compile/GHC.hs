@@ -202,6 +202,7 @@ compileGHC :: ( MonadMask m
                  , ParseError
                  , NoInstallInfo
                  , MalformedInstallInfo
+                 , NotFoundInPATH
                  ]
                 m
                 TargetVersion
@@ -236,7 +237,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                 Just vps' -> fmap Just $ expandVersionPattern (Just ver) "" "" "" "" vps'
                 Nothing   -> pure Nothing
 
-        pure (workdir, tmpUnpack, Just (TargetVersion crossTarget ver), ov)
+        pure (workdir, tmpUnpack, TargetVersion crossTarget ver, ov)
 
       RemoteDist uri -> do
         lift $ logDebug $ "Requested to compile (from uri): " <> T.pack (show uri)
@@ -245,7 +246,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
         tmpDownload <- lift withGHCupTmpDir
         tmpUnpack <- lift mkGhcupTmpDir
         tar <- liftE $ download uri Nothing Nothing Nothing (fromGHCupPath tmpDownload) Nothing False
-        (bf, ver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError] tmpUnpack $ do
+        (bf, ver) <- liftE $ cleanUpOnError @'[UnknownArchive, ArchiveResult, ProcessError, NotFoundInPATH, ParseError] tmpUnpack $ do
           liftE $ unpackToDir (fromGHCupPath tmpUnpack) tar
           let regex = [s|^(.*/)*boot$|] :: B.ByteString
           [bootFile] <- liftIO $ findFilesDeep
@@ -254,24 +255,23 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                            execBlank
                            regex
             )
-          ver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
-            (appendGHCupPath tmpUnpack (takeDirectory bootFile))
+          ver <- liftE $ getGHCVer (appendGHCupPath tmpUnpack (takeDirectory bootFile))
           pure (bootFile, ver)
 
         let workdir = appendGHCupPath tmpUnpack (takeDirectory bf)
 
         ov <- case vps of
-                Just vps' -> fmap Just $ expandVersionPattern ver "" "" "" "" vps'
+                Just vps' -> fmap Just $ expandVersionPattern (Just ver) "" "" "" "" vps'
                 Nothing   -> pure Nothing
 
-        let tver = TargetVersion crossTarget <$> ver
+        let tver = TargetVersion crossTarget ver
         pure (workdir, tmpUnpack, tver, ov)
 
       -- clone from git
       GitDist GitBranch{..} -> do
         tmpUnpack <- lift mkGhcupTmpDir
         let git args = execLogged "git" ("--no-pager":args) (Just $ fromGHCupPath tmpUnpack) "git" Nothing
-        (ver, ov) <- cleanUpOnError tmpUnpack $ reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError] DownloadFailed $ do
+        (ver, ov) <- cleanUpOnError tmpUnpack $ reThrowAll @_ @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError, ParseError] DownloadFailed $ do
           let rep = fromMaybe "https://gitlab.haskell.org/ghc/ghc.git" repo
           lift $ logInfo $ "Fetching git repo " <> T.pack rep <> " at ref " <> T.pack ref <> " (this may take a while)"
           lEM $ git [ "init" ]
@@ -281,7 +281,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
                     , fromString rep ]
 
           -- figure out if we can do a shallow clone
-          remoteBranches <- catchE @ProcessError @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError] @'[PatchFailed, NotFoundInPATH, DigestError, DownloadFailed, GPGError] (\(_ :: ProcessError) -> pure [])
+          remoteBranches <- catchE @ProcessError @'[PatchFailed, ProcessError, NotFoundInPATH, DigestError, ContentLengthError, DownloadFailed, GPGError, ParseError] @'[PatchFailed, NotFoundInPATH, DigestError, DownloadFailed, GPGError, ParseError] (\(_ :: ProcessError) -> pure [])
               $ fmap processBranches $ gitOut ["ls-remote", "--heads", "origin"] (fromGHCupPath tmpUnpack)
           let shallow_clone
                 | isCommitHash ref                     = True
@@ -312,18 +312,17 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
           liftE $ applyAnyPatch patches (fromGHCupPath tmpUnpack)
 
           -- bootstrap
-          ver <- liftE $ catchAllE @_ @'[ProcessError, ParseError, NotFoundInPATH] @'[] (\_ -> pure Nothing) $ fmap Just $ getGHCVer
-            tmpUnpack
+          ver <- liftE $ getGHCVer tmpUnpack
           liftE $ catchWarn $ lEM @_ @'[ProcessError] $ darwinNotarization _rPlatform (fromGHCupPath tmpUnpack)
           lift $ logInfo $ "Examining git ref " <> T.pack ref <> "\n  " <>
-                           "GHC version (from Makefile): " <> T.pack (show (prettyVer <$> ver)) <>
+                           "GHC version (from Makefile): " <> prettyVer ver <>
                            (if not shallow_clone then "\n  " <> "'git describe' output: " <> fromJust git_describe else mempty) <>
                            (if isCommitHash ref then mempty else "\n  " <> "commit hash: " <> chash)
           liftIO $ threadDelay 5000000 -- give the user a sec to intervene
 
           ov <- case vps of
                   Just vps' -> fmap Just $ expandVersionPattern
-                                             ver
+                                             (Just ver)
                                              (take 7 $ T.unpack chash)
                                              (T.unpack chash)
                                              (maybe "" T.unpack git_describe)
@@ -333,13 +332,12 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
 
           pure (ver, ov)
 
-        let tver = TargetVersion crossTarget <$> ver
+        let tver = TargetVersion crossTarget ver
         pure (tmpUnpack, tmpUnpack, tver, ov)
     -- the version that's installed may differ from the
     -- compiled version, so the user can overwrite it
     installVer <- if | Just ov'   <- ov   -> pure (TargetVersion crossTarget ov')
-                     | Just tver' <- tver -> pure tver'
-                     | otherwise          -> fail "No GHC version given and couldn't detect version. Giving up..."
+                     | otherwise          -> pure tver
 
     let rev = fromMaybe 0 $ preview (_GHCupDownloads % ix ghc % toolVersionsL % ix installVer % revisionSpecL % mapLast % _1) dls
 
@@ -363,10 +361,8 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
     mBindist <- liftE $ runBuildAction
       tmpUnpack
       (do
-        -- prefer 'tver', because the real version carries out compatibility checks
-        -- we don't want the user to do funny things with it
-        let doHadrian = Just <$> compileHadrianBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
-            doMake    = compileMakeBindist (fromMaybe installVer tver) (fromGHCupPath workdir) ghcdir
+        let doHadrian = Just <$> compileHadrianBindist tver (fromGHCupPath workdir) ghcdir
+            doMake    = compileMakeBindist tver (fromGHCupPath workdir) ghcdir
         case buildSystem of
           Just Hadrian -> do
             lift $ logInfo "Requested to use Hadrian"
@@ -401,7 +397,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
     let trev = TargetVersionRev installVer rev
     case mBindist of
       Just bindist -> do
-        spec <- liftE $ compileInstallSpec bindist installVer
+        spec <- liftE $ compileInstallSpec bindist installVer tver
         cSize <- liftIO $ getFileSize bindist
         cDigest <- liftIO $ getFileDigest bindist
         liftE $ void $ installPackedBindist ghc toolDesc bindist
@@ -422,7 +418,7 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
       -- for old Make cross installations we don't get a bindist,
       -- so this needs to be done manually
       Nothing -> do
-        spec <- liftE $ compileInstallSpec' (fromInstallDir ghcdir </> "bin") installVer
+        spec <- liftE $ compileInstallSpec' (fromInstallDir ghcdir </> "bin") installVer tver
         let dlInfo = (DownloadInfo {
                        _dlUri = ""
                      , _dlSubdir = Just $ RegexDir "ghc-.*"
@@ -455,17 +451,18 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
     , HasPlatformReq env
     )
     => FilePath                   -- ^ Binary dir
-    -> TargetVersion
+    -> TargetVersion              -- ^ user requested version
+    -> TargetVersion              -- ^ original version
     -> Excepts '[ UnknownArchive
                 , ArchiveResult
                 ] m InstallationSpecResolved
-  compileInstallSpec' bindir installVer = do
+  compileInstallSpec' bindir installVer origVer = do
     pfreq <- lift getPlatformReq
-    let pred' f = not (null f) && not (prettyVer (_tvVersion installVer) `T.isSuffixOf` T.pack f)
+    let pred' f = not (null f) && not (prettyVer (_tvVersion origVer) `T.isSuffixOf` T.pack f)
     files <- liftIO $ listDirectoryFiles bindir
     let binaries = filter pred' . fmap takeFileName $ files
         -- ghcup whereis picks the first binary, so we need to ensure 'ghc' is at the front
-        binariesSorted = nub (maybe id (\(T.unpack -> t) a -> t <> "-" <> a) (_tvTarget installVer) "ghc" <.> exeExt:binaries)
+        binariesSorted = nub (maybe id (\(T.unpack -> t) a -> t <> "-" <> a) (_tvTarget origVer) "ghc" <.> exeExt:binaries)
     pure $ (defaultGHCInstallSpec pfreq installVer) { _isExeSymLinked = syml binariesSorted }
    where
     syml binaries =
@@ -482,17 +479,18 @@ compileGHC targetGhc crossTarget vps bstrap hghc jobs mbuildConfig patches aargs
     , HasPlatformReq env
     )
     => FilePath                   -- ^ archive path
-    -> TargetVersion
+    -> TargetVersion              -- ^ user requested version
+    -> TargetVersion              -- ^ original version
     -> Excepts '[ UnknownArchive
                 , ArchiveResult
                 ] m InstallationSpecResolved
-  compileInstallSpec tarball installVer = do
+  compileInstallSpec tarball installVer origVer = do
     pfreq <- lift getPlatformReq
     archiveFiles <- liftE $ getArchiveFiles tarball
-    let pred' f = not (null f) && not (prettyVer (_tvVersion installVer) `T.isSuffixOf` T.pack f)
+    let pred' f = not (null f) && not (prettyVer (_tvVersion origVer) `T.isSuffixOf` T.pack f)
     let binaries = filter pred' . fmap takeFileName . filter ("*/bin/*" ?==) $ archiveFiles
         -- ghcup whereis picks the first binary, so we need to ensure 'ghc' is at the front
-        binariesSorted = nub (maybe id (\(T.unpack -> t) a -> t <> "-" <> a) (_tvTarget installVer) "ghc" <.> exeExt:binaries)
+        binariesSorted = nub (maybe id (\(T.unpack -> t) a -> t <> "-" <> a) (_tvTarget origVer) "ghc" <.> exeExt:binaries)
     pure $ (defaultGHCInstallSpec pfreq installVer) { _isExeSymLinked = syml binariesSorted }
    where
     syml binaries =
