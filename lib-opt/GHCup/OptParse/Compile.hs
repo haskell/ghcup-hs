@@ -86,6 +86,7 @@ data GHCCompileOptions = GHCCompileOptions
   , buildSystem :: Maybe BuildSystem
   , isolateDir :: Maybe FilePath
   , installTargets :: Maybe [String]
+  , docs :: Maybe String
   }
   deriving (Eq, Show)
 
@@ -173,7 +174,7 @@ Examples:
 
 ghcCompileOpts :: Parser GHCCompileOptions
 ghcCompileOpts =
-  (\targetGhc bootstrapGhc hadrianGhc jobs patches crossTarget addConfArgs setCompile overwriteVer buildFlavour (buildSystem, buildConfig) isolateDir installTargets -> GHCCompileOptions {..})
+  (\targetGhc bootstrapGhc hadrianGhc jobs patches crossTarget addConfArgs setCompile overwriteVer buildFlavour (buildSystem, buildConfig) isolateDir installTargets docs -> GHCCompileOptions {..})
     <$> ((GHC.SourceDist <$> option
           (eitherReader
             (first (const "Not a valid version") . version . T.pack)
@@ -327,6 +328,11 @@ ghcCompileOpts =
            <> completer (listCompleter ["install", "install_bin", "install_lib", "install_extra", "install_man", "install_docs", "install_data", "update_package_db"])
            )
            )
+    <*> optional (option str
+            (  long "docs" <> metavar "none|no-haddocks|no-sphinx|no-sphinx-html|no-sphinx-pdfs|no-sphinx-man" <> help "Disable some or all of the docs"
+            <> completer docsCompleter
+            )
+            )
 
 hlsCompileOpts :: Parser HLSCompileOptions
 hlsCompileOpts =
@@ -642,6 +648,7 @@ compile compileCommand settings Dirs{..} (getAppState', leanAppstate) = do
                     buildSystem
                     instDir
                     installTargets
+                    docs
         GHCupInfo { _ghcupDownloads = dls } <- lift getGHCupInfo
         let vm = getVersionMetadata targetVer ghc dls
         case instDir of

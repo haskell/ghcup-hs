@@ -41,6 +41,7 @@ mkDefaultGHCCompileOptions target boot =
     Nothing
     Nothing
     Nothing
+    Nothing
 
 mkDefaultHLSCompileOptions :: HLSVer -> [ToolVersion] -> HLSCompileOptions
 mkDefaultHLSCompileOptions target ghcs =

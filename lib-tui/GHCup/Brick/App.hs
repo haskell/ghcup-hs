@@ -103,7 +103,7 @@ drawUI dimAttrs st =
       $ if st ^. versionFocus
          then Actions.keyHandlersVersionList (st ^. appKeys)
          else Actions.keyHandlersToolList (st ^. appKeys)
-    navg = Navigation.draw (st ^. versionFocus) dimAttrs (st ^. appState) <=> footer
+    navg = Navigation.draw (st ^. versionFocus) dimAttrs (st ^. appSettings ) (st ^. appState) <=> footer
   in case st ^. mode of
        Navigation   -> [navg]
        Tutorial     -> [Tutorial.draw (bQuit $ st ^. appKeys), navg]

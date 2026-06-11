@@ -1430,6 +1430,11 @@ data ShowRevisions = ShowUpdates
                    | ShowNone
   deriving (Eq, Show)
 
+data ShowNightly = NShowLatest
+                 | NShowAll
+                 | NShowNone
+  deriving (Eq, Show)
+
 data Substitution = Replace String String
                   | ReplaceAll String String
                   | StripPrefix String

@@ -308,9 +308,9 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
 
           res <- case optCommand of
 #if defined(BRICK)
-            Interactive -> do
+            Interactive ioOptions -> do
               (appState, _) <- liftIO $ getAppState_and_updateCheckAction
-              liftIO $ brickMain appState >> pure ExitSuccess
+              liftIO $ brickMain appState ioOptions >> pure ExitSuccess
 #endif
             Install installCommand     -> install installCommand settings (getAppState_and_updateCheckAction, leanAppstate)
             Test testCommand           -> test testCommand settings (getAppState_and_updateCheckAction, leanAppstate)

@@ -15,6 +15,7 @@ This module contains the entrypoint for the brick application and nothing else.
 
 module GHCup.BrickMain where
 
+import GHCup.OptParse.TUI (InteractiveOptions (..))
 import GHCup.Command.List ( ListResult (..))
 import GHCup.Types
     ( Settings(noColor),
@@ -42,18 +43,29 @@ import qualified Data.Text                     as T
 import qualified GHCup.Brick.Widgets.Menus.CompileHLS as CompileHLS
 import Data.Maybe (isNothing)
 import qualified Data.Map.Strict as M
+import GHCup.Brick.Common (BrickSettings(..))
 
 
 
 brickMain :: AppState
+          -> InteractiveOptions
           -> IO ()
-brickMain s = do
+brickMain s InteractiveOptions{..} = do
   writeIORef Actions.settings' s
+  let brickSettings = BrickSettings {
+          bsTool = ioTool
+        , bsCriteria = ioCriteria
+        , bsFrom = ioFrom
+        , bsTo = ioTo
+        , bsHideOld = ioHideOld
+        , bsShowNightly = ioShowNightly
+        , bsShowRevisions = ioShowRevisions
+        }
 
-  eAppData <- Actions.getAppData (Just $ ghcupInfo s)
+  eAppData <- Actions.getAppData (Just $ ghcupInfo s) brickSettings
   case eAppData of
     Right ad -> do
-      let initial_list = Actions.constructList ad Common.defaultAppSettings Nothing
+      let initial_list = Actions.constructList ad brickSettings Nothing
           current_element = L.listSelectedElement initial_list
           exit_key =
             let KeyBindings {..} = keyBindings s
@@ -77,7 +89,7 @@ brickMain s = do
                     pure $ filter (\(ListResult {..}) -> lInstalled && isNothing lCross) lr'
                   initstate =
                     AppState.BrickState ad
-                          Common.defaultAppSettings
+                          brickSettings
                           initial_list
                           (ContextMenu.create (t, (td, lr)) exit_key)
                           (AdvancedInstall.create exit_key)

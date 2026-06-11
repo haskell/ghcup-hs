@@ -9,6 +9,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module GHCup.Brick.Actions where
 
@@ -121,7 +122,7 @@ constructList :: BrickData
               -> Maybe BrickInternalState
               -> BrickInternalState
 constructList appD settings =
-  replaceLR (filterVisible (_showAllVersions settings))
+  replaceLR (filterVisible (Common._showAllVersions settings))
             (_lr appD)
 
 -- | Focus on the tool section and the predicate which matches. If no result matches, focus on index 0
@@ -161,16 +162,16 @@ replaceLR filterF list_result s =
         (V.fromList $ fmap (\(tool, (td, filter filterF -> lr)) -> (tool, (td, L.list (Singular tool) (V.fromList lr) 1))) $ M.toList list_result) 1
 
 
-
 filterVisible :: Bool -> ListResult -> Bool
-filterVisible v e | lInstalled e = True
-                  | v
-                  , Nightly `notElem` lTag e = True
-                  | not v
-                  , Old `notElem` lTag e
-                  , Nightly `notElem` lTag e = True
-                  | otherwise = (Old `notElem` lTag e)       &&
-                                (Nightly `notElem` lTag e)
+filterVisible showAll e
+  | lInstalled e = True
+  | showAll
+  = True
+  | not showAll
+  , Old `notElem` lTag e
+  = True
+  | otherwise
+  = Old `notElem` lTag e
 
 -- | Suspend the current UI and run an IO action in terminal. If the
 -- IO action returns a Left value, then it's thrown as userError.
@@ -188,7 +189,7 @@ withIOAction action = do
           flip runReaderT settings $ action (curr_ix', tool, td, lr) >>= \case
             Left  err -> liftIO $ putStrLn ("Error: " <> err)
             Right _   -> liftIO $ putStrLn "Success"
-          getAppData Nothing >>= \case
+          getAppData Nothing (view appSettings as) >>= \case
             Right data' -> do
               putStrLn "Press enter to continue"
               _ <- getLine
@@ -212,7 +213,7 @@ withIOActionRecommended action = do
             flip runReaderT settings $ action (curr_ix, tool, td, lr) >>= \case
               Left  err -> liftIO $ putStrLn ("Error: " <> err)
               Right _   -> liftIO $ putStrLn "Success"
-            getAppData Nothing >>= \case
+            getAppData Nothing (view appSettings as) >>= \case
               Right data' -> do
                 putStrLn "Press enter to continue"
                 _ <- getLine
@@ -550,6 +551,7 @@ compileGHC compopts (_, Tool "ghc", _, lr@ListResult{..}) = do
                     (compopts ^. CompileGHC.buildSystem)
                     (maybe GHCupInternal IsolateDir $ compopts ^. CompileGHC.isolateDir)
                     (fmap (words . T.unpack) $ compopts ^. CompileGHC.installTargets)
+                    (compopts ^. CompileGHC.docs)
       AppState { ghcupInfo = GHCupInfo { _ghcupDownloads = dls2 }} <- ask
       let vi2 = getVersionMetadata targetVer ghc dls2
       when
@@ -711,14 +713,15 @@ getGHCupInfo = do
 
 
 getAppData :: Maybe GHCupInfo
+           -> BrickSettings
            -> IO (Either String BrickData)
-getAppData mgi = runExceptT $ do
+getAppData mgi BrickSettings{..} = runExceptT $ do
   r <- ExceptT $ maybe getGHCupInfo (pure . Right) mgi
   liftIO $ modifyIORef settings' (\s -> s { ghcupInfo = r })
   settings <- liftIO $ readIORef settings'
 
   r' <- lift $ flip runReaderT settings $ runE $ do
-    lV <- listVersions Nothing [] ShowUpdates False True (Nothing, Nothing)
+    lV <- listVersions bsTool bsCriteria bsShowRevisions bsHideOld bsShowNightly (bsFrom, bsTo)
     pure $ BrickData lV
   ExceptT $ pure $  either (Left . prettyHFError) Right $ veitherToEither r'
 
@@ -736,8 +739,8 @@ keyHandlersToolList KeyBindings {..} =
        withIOActionRecommended $ installWithOptions (AdvancedInstall.InstallOptions Nothing True Nothing Nothing False [] Nothing))
   , ( bShowAllVersions
     , Just $ \BrickSettings {..} ->
-       if _showAllVersions then "Don't show all versions" else "Show all versions"
-    , hideShowHandler' (not . _showAllVersions)
+       if not bsHideOld then "Don't show all versions" else "Show all versions"
+    , hideShowHandler' (not . Common._showAllVersions)
     )
   , (bHelp, Just $ const "help", mode .= KeyInfo)
   , (KeyCombination Vty.KEnter [], Just $ const "Show tool details", mode .= Common.ToolInfo )
@@ -760,8 +763,8 @@ keyHandlersVersionList KeyBindings {..} =
   , (bChangelog, Just $ const "ChangeLog", withIOAction changelog')
   , ( bShowAllVersions
     , Just $ \BrickSettings {..} ->
-       if _showAllVersions then "Don't show all versions" else "Show all versions"
-    , hideShowHandler' (not . _showAllVersions)
+       if not bsHideOld then "Don't show all versions" else "Show all versions"
+    , hideShowHandler' (not . Common._showAllVersions)
     )
   , (bHelp, Just $ const "Help", mode .= KeyInfo)
   , (KeyCombination Vty.KEnter [], Just $ const "Advanced options", createMenuforTool )

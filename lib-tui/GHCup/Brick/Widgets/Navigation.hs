@@ -20,7 +20,7 @@ import GHCup.Types
       tagToString, ToolDescription,
       isCompat,
       KeyBindings(..),
-      KeyCombination(..))
+      KeyCombination(..), ShowRevisions(..))
 import qualified GHCup.Brick.Common as Common
 import qualified GHCup.Brick.Attributes as Attributes
 import Brick
@@ -45,6 +45,7 @@ import qualified Data.Vector                   as V
 import Text.PrettyPrint.HughesPJClass (prettyShow)
 import Control.Monad.State.Class (get, modify)
 import qualified Graphics.Vty           as Vty
+import GHCup.Brick.Common (BrickSettings (..))
 
 type BrickList = L.GenericList Common.Name V.Vector
 
@@ -81,8 +82,8 @@ handler _ _ _ = pure ()
 
 
 -- | How to draw the navigation widget
-draw :: Bool -> AttrMap -> BrickInternalState -> Widget Common.Name
-draw versionFocus dimAttrs bis
+draw :: Bool -> AttrMap -> BrickSettings -> BrickInternalState -> Widget Common.Name
+draw versionFocus dimAttrs BrickSettings{..} bis
   = Brick.padBottom Max
       ( Brick.joinBorders $ Brick.withBorderStyle unicode
         $ borderWithLabel (Brick.str "GHCup")
@@ -127,9 +128,15 @@ draw versionFocus dimAttrs bis
           | lInstalled -> (Brick.withAttr Attributes.installedAttr $ Brick.str Common.installedSign)
           | otherwise  -> (Brick.withAttr Attributes.notInstalledAttr $ Brick.str Common.notInstalledSign)
         rev = case lRev of
-                (rev', RevUpdate)   -> "-r" <> show rev'
-                (rev', RevOutdated) -> "-r" <> show rev'
-                (_,    RevNormal)   -> ""
+                (rev', RevUpdate)
+                  | bsShowRevisions == ShowNone -> ""
+                  | otherwise -> "-r" <> show rev'
+                (rev', RevOutdated)
+                  | bsShowRevisions == ShowNone -> ""
+                  | otherwise -> "-r" <> show rev'
+                (rev', RevNormal)
+                  | bsShowRevisions == ShowAll -> "-r" <> show rev'
+                  | otherwise -> ""
         ver = case lCross of
           Nothing -> T.unpack (prettyVer lVer) <> rev
           Just c  -> T.unpack (c <> "-" <> prettyVer lVer) <> rev
