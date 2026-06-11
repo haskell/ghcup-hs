@@ -1,7 +1,23 @@
 # Version history for ghcup
 
-## 0.2.6.0 -- 2026-??-??
+## 0.2.6.0 -- 2026-06-11
 
+### Bugfixes affecting VSCode
+
+* Fix filtering in `ghcup list` wrt [#1354](https://github.com/haskell/ghcup-hs/issues/1354)
+* Fix `ghcup run` with hls [#1357](https://github.com/haskell/ghcup-hs/issues/1357)
+
+### Other bugfixes
+
+* Fix `ghcup compile -o '%v-pre'` wrt [#1361](https://github.com/haskell/ghcup-hs/issues/1361)
+* Add missing `--disable-ld-override` to GHC bindist configure runs
+
+### Improvements
+
+* Support installing symlinks via installTheSpec [#1351](https://github.com/haskell/ghcup-hs/issues/1351)
+* Add `--docs=TARGET` to 'ghcup compile ghc'
+* Implement tui show criteria [#1353](https://github.com/haskell/ghcup-hs/issues/1353)
+* Add release channels info to the `--help` by Divam
 * Allows bash substitution in domain variables wrt [#1342](https://github.com/haskell/ghcup-hs/issues/1342)
 
 ## 0.2.5.0 -- 2026-05-26
