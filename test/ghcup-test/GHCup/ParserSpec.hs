@@ -107,12 +107,17 @@ spec = do
       MP.parse domainParserP "" "${PKGVER#foo}"             `shouldBe` Right (PKGVER,   Just $ StripPrefix "foo")
       MP.parse domainParserP "" "${PKGVER%bar}"             `shouldBe` Right (PKGVER,   Just $ StripSuffix "bar")
       MP.parse domainParserP "" "${PKGVER%\\/bar}"          `shouldBe` Right (PKGVER,   Just $ StripSuffix "/bar")
+      MP.parse domainParserP "" "${PKGVER//./\\/..\\/}"     `shouldBe` Right (PKGVER,   Just $ ReplaceAll "." "/../")
 
     it "domainParser" $ do
       MP.parse (domainParser $ ml (PKGVER, "1.2.3")) "" "haskell-language-server.exe"
         `shouldBe` Right "haskell-language-server.exe"
       MP.parse (domainParser $ ml (PKGVER, "1.2.3")) "" "haskell-language-server-${PKGVER//./}.exe"
         `shouldBe` Right "haskell-language-server-123.exe"
+      MP.parse (domainParser $ ml (PKGVER, "1.2.3")) "" "haskell-language-server-${PKGVER/./..}.exe"
+        `shouldBe` Right "haskell-language-server-1..2.3.exe"
+      MP.parse (domainParser $ ml (PKGVER, "1.2.3")) "" "haskell-language-server-${PKGVER//./\\/..\\/}.exe"
+        `shouldBe` Right "haskell-language-server-1/../2/../3.exe"
       MP.parse (domainParser $ ml' [(TARGETFN, "haskell-language-server-9.6.7.exe")
                                    ,(PKGVER, "2.14.0.0")
                                    ]
