@@ -44,14 +44,19 @@ evalDomainVal env (dvar, msubst) = do
   replace (T.pack -> needle) (T.pack -> replacement) (T.pack -> haystack) = T.unpack $ T.replace needle replacement haystack
 
   substitute var (Replace needle replacement)
-    = let matchedNeedle = match (mkRegex (globToRegex needle)) var
-          (pre, rest) = breakOn matchedNeedle var
+    | null matchedNeedle = var
+    | otherwise =
+      let (pre, rest) = breakOn matchedNeedle var
       in case stripPrefix matchedNeedle rest of
            Nothing    -> var
            Just rest' -> pre <> replacement <> rest'
+   where
+    matchedNeedle = match (mkRegex (globToRegex needle)) var
   substitute var (ReplaceAll needle replacement)
-    = let matchedNeedle = match (mkRegex (globToRegex needle)) var
-      in replace matchedNeedle replacement var
+    | null matchedNeedle = var
+    | otherwise = replace matchedNeedle replacement var
+   where
+    matchedNeedle = match (mkRegex (globToRegex needle)) var
   substitute var (StripPrefix prefix)
     = let matchedPrefix = match (mkRegex ("^" <> globToRegex prefix)) var
       in fromMaybe var (stripPrefix matchedPrefix var)

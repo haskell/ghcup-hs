@@ -138,6 +138,8 @@ spec = do
       evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Just $ ReplaceAll "." "")  `shouldBe` Just "123"
       evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Just $ Replace "." ",")    `shouldBe` Just "1,2.3"
       evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Just $ ReplaceAll "." ",") `shouldBe` Just "1,2,3"
+      evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Just $ Replace "l" "k")    `shouldBe` Just "1.2.3"
+      evalDomainVal (ml (PKGVER, "1.2.3")) (PKGVER, Just $ ReplaceAll "l" "k") `shouldBe` Just "1.2.3"
 
       evalDomainVal (ml (TARGETFN, "1.2.3")) (PKGVER, Nothing)                   `shouldBe` Nothing
       evalDomainVal (ml (TARGETFN, "1.2.3")) (PKGVER, Just $ Replace "." "")     `shouldBe` Nothing
