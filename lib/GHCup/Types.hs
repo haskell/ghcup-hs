@@ -8,6 +8,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 #if defined(DHALL)
 {-# LANGUAGE DeriveAnyClass #-}
 #endif
@@ -32,6 +33,7 @@ module GHCup.Types
   where
 
 import {-# SOURCE #-} GHCup.Query.GHCupDirs ( GHCupPath, fromGHCupPath )
+import                GHCup.Prelude.Version.QQ (vver)
 import                GHCup.Types.Stack     ( SetupInfo )
 import                GHCup.Types.Tar       ( ArchiveResult (..) )
 
@@ -513,7 +515,7 @@ defaultGHCInstallSpec pfreq tver =
     _isExeRules = []
   , _isDataRules = []
   , _isConfigure = Just ConfigSpec {
-      _csConfigArgs = ["--prefix=${PREFIX}"]
+      _csConfigArgs = ["--prefix=${PREFIX}"] <> ldOverride
     , _csConfigEnv  = Nothing
     , _csConfigFile = Just "configure"
     }
@@ -524,6 +526,13 @@ defaultGHCInstallSpec pfreq tver =
   , _isPreserveMtimes = True
   , _isExeSymLinked = defaultGHCExeSymLinked pfreq tver (ghcBinaries pfreq tver)
   }
+ where
+  ldOverride
+    | _tvVersion tver >= [vver|8.2.2|]
+    = ["--disable-ld-override"]
+    | otherwise
+    = []
+
 
 ghcBinaries :: PlatformRequest -> TargetVersion -> [FilePath]
 ghcBinaries _pfreq _tver = ["ghc", "haddock", "hpc", "hsc2hs", "ghci", "ghc-pkg", "hp2ps", "runhaskell", "runghc"]
