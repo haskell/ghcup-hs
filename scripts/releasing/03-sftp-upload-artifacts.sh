@@ -56,3 +56,14 @@ EOF
 
 curl -X PURGE https://downloads.haskell.org/~ghcup/${ver}/
 curl -X PURGE https://downloads.haskell.org/ghcup/${ver}/
+
+(>&2 echo "Now run:
+  ./scripts/releasing/04-create-yaml-snippet.sh ${ver}
+
+Then add the snippet to all the ghcup metadata (this is not automated),
+replacing the existing GHCup version.
+There may be some format differences you have to accomodate between
+what the script dumps for the latest metadata version and older metadata
+versions.
+")
+

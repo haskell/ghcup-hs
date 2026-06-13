@@ -20,3 +20,6 @@ put bootstrap-haskell
 put bootstrap-haskell.ps1
 EOF
 
+(>&2 echo "Now run:
+  ./scripts/releasing/08-upload-hackage.sh <ver>
+")

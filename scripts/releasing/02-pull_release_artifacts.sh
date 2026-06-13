@@ -34,3 +34,12 @@ sha256sum ./*-ghcup-* > SHA256SUMS
 gpg --detach-sign -u "${SIGNER}" SHA256SUMS
 
 gh release upload "$RELEASE" "ghcup-${TAG}-src.tar.gz" SHA256SUMS SHA256SUMS.sig
+
+(>&2 echo "Now publish the release on github.
+  git tag -sf v${ver}
+  git push origin v${ver}
+")
+
+(>&2 echo "Then run:
+  ./scripts/releasing/03-sftp-upload-artifacts.sh <dl-user>@<dl-url> ${ver} gh-release-artifacts/v${ver}/ -P <port>")
+

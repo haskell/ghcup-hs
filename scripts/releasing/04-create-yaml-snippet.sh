@@ -75,3 +75,15 @@ cat <<EOF > /dev/stdout
                 dlHash: $(get_sha "aarch64-apple-darwin-ghcup-${RELEASE}")
 EOF
 
+
+
+(>&2 echo "=========================
+Add the above snippet to the ghcup metadata, then create a PR and
+run the bindist action.
+
+On success, merge and push from 'develop' to 'master'.
+
+Then run:
+  ./scripts/releasing/05-bump-bootstrap-ver.sh ${ver}
+")
+

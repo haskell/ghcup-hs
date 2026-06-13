@@ -37,3 +37,8 @@ EOF
 
 curl -X PURGE https://downloads.haskell.org/~ghcup/
 curl -X PURGE https://downloads.haskell.org/ghcup/
+
+(>&2 echo "Now run:
+  ./scripts/releasing/07-sftp-upload-bootstrap.sh <www-user>@<www-server>
+")
+

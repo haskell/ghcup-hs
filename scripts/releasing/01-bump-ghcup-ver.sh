@@ -20,6 +20,10 @@ sed -E -i -e \
 	"s/^([[:blank:]]*)GHCUP_VER:([[:blank:]]+)[0-9]+(\\.[0-9]+)*/\1GHCUP_VER:\2${ver}/" \
 	.github/workflows/cross.yaml
 
-(>&2 echo "After releasing, make sure to run:
-  ./scripts/releasing/bump-bootstrap-ver.sh ${ver}")
+(>&2 echo "Now tag ghcup and push:
+  git tag -sf v${ver}
+  git push origin v${ver}")
+
+(>&2 echo "After CI succeeds, run:
+  ./scripts/releasing/02-pull_release_artifacts.sh v${ver} <your-email>")
 
