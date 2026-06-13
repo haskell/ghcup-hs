@@ -1,5 +1,11 @@
 # Version history for ghcup
 
+## 0.2.6.1 -- 2026-06-13
+
+### Bugfixes affecting VSCode
+
+* Fix another bug with `ghcup run --hls` affecting VSCode, wrt [vscode-haskell#1378](https://github.com/haskell/vscode-haskell/issues/1378)
+
 ## 0.2.6.0 -- 2026-06-11
 
 ### Bugfixes affecting VSCode
