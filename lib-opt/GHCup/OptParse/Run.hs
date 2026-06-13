@@ -516,9 +516,7 @@ run RunOptions{..} settings (getAppState', leanAppstate) = do
           legacy <- isLegacyHLS v
           hlsWrapper <- liftE @_ @'[NotInstalled] $ hlsWrapperBinary v !? NotInstalled hls (mkTVer v)
           cw <- liftIO $ canonicalizePath (binDir </> hlsWrapper)
-          liftIO $ print cw
           lift $ createLink (relativeSymlink tmp cw) (tmp </> takeFileName cw)
-          liftIO $ print $ relativeSymlink tmp cw
           hlsBins <- hlsServerBinaries v Nothing >>= liftIO . traverse (canonicalizePath . (binDir </>))
           forM_ hlsBins $ \bin ->
             lift $ createLink (relativeSymlink tmp bin) (tmp </> takeFileName bin)
