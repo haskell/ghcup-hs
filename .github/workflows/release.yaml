@@ -603,6 +603,130 @@ jobs:
           PROJECT_DIR: ${{ github.workspace }}
           OS: ${{ runner.os }}
 
+  vscode:
+    needs: ["build-linux", "build-mac", "build-win"]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            ARTIFACT: "aarch64-apple-darwin-ghcup"
+            ghc: 9.12.2
+            legacy: false
+            ext: ''
+          - os: ubuntu-latest
+            ARTIFACT: "x86_64-linux-ghcup"
+            ghc: 9.12.2
+            legacy: false
+            ext: ''
+          - os: windows-latest
+            ARTIFACT: "x86_64-mingw64-ghcup"
+            ghc: 9.12.2
+            legacy: false
+            ext: '.exe'
+
+          - os: macos-latest
+            ARTIFACT: "aarch64-apple-darwin-ghcup"
+            ghc: 9.12.2
+            legacy: true
+            ext: ''
+          - os: ubuntu-latest
+            ARTIFACT: "x86_64-linux-ghcup"
+            ghc: 9.12.2
+            legacy: true
+            ext: ''
+          - os: windows-latest
+            ARTIFACT: "x86_64-mingw64-ghcup"
+            ghc: 9.12.2
+            legacy: true
+            ext: '.exe'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          repository: haskell/vscode-haskell
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          ## make sure this corresponds with the version in release.yml
+          node-version: latest
+
+      # Install test dependencies
+      - run: npm ci
+      - run: npm run webpack
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: artifacts-${{ matrix.ARTIFACT }}
+          path: ./out
+
+      - run: |
+          mv ./out/${{ matrix.ARTIFACT }}-${{ env.GHCUP_VER }}${{ matrix.ext }} ./out/ghcup
+          chmod +x ./out/ghcup
+        shell: bash
+
+      - name: Add bin to PATH
+        run: echo "$PWD/out" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Install toolchain
+        run: |
+          echo $PATH
+          which ghcup
+          ghcup --version
+          ghcup install ghc ${{ matrix.ghc }}
+          ghcup install cabal latest
+          ghcup install stack latest
+          ghcup install hls 2.2.0.0
+          ghcup install hls latest
+          ghcup config add-release-channel cross
+          ghcup config add-release-channel 3rdparty
+          ghcup config add-release-channel prereleases
+        shell: bash
+        if: matrix.legacy != 'true'
+
+      - name: Install toolchain (legacy)
+        run: |
+          exe=${{ matrix.ARTIFACT }}${{ matrix.ext }}
+          curl -O https://downloads.haskell.org/~ghcup/${exe}
+          chmod +x ${exe}
+          ./${exe} --version
+          ./${exe} install ghc ${{ matrix.ghc }}
+          ./${exe} install cabal latest
+          ./${exe} install stack latest
+          ./${exe} install hls 2.2.0.0
+          ./${exe} install hls latest
+
+          echo $PATH
+          which ghcup
+          ghcup --version
+          ghcup config add-release-channel cross
+          ghcup config add-release-channel 3rdparty
+          ghcup config add-release-channel prereleases
+        shell: bash
+        if: matrix.legacy == 'true'
+
+      # Run the tests
+      - name: Run the test on Linux
+        run: |
+          xvfb-run -s '-screen 0 640x480x16' -a npm run test
+        shell: bash
+        if: runner.os == 'Linux'
+
+      - name: Run the test on macOS
+        run: |
+          npm run test
+        shell: bash
+        if: runner.os == 'macOS'
+
+      - name: Run the test on Windows
+        run: |
+          npm run test
+        shell: bash
+        if: runner.os == 'Windows'
+
   release:
     name: release
     needs: ["test-linux", "test-arm", "test-mac", "test-win", "test-freebsd", "test-openbsd", "hls"]
