@@ -27,6 +27,7 @@ module GHCup.OptParse (
   , module GHCup.OptParse.Generate
 #endif
   , module GHCup.OptParse.HealthCheck
+  , module GHCup.OptParse.Fixup
   , module GHCup.OptParse.DebugInfo
   , module GHCup.OptParse.Nuke
   , module GHCup.OptParse.ToolRequirements
@@ -57,6 +58,7 @@ import           GHCup.OptParse.GC
 import           GHCup.OptParse.Generate
 #endif
 import           GHCup.OptParse.HealthCheck
+import           GHCup.OptParse.Fixup
 import           GHCup.OptParse.DebugInfo
 import           GHCup.OptParse.ToolRequirements
 import           GHCup.OptParse.Nuke
@@ -128,6 +130,7 @@ data Command
   | GC GCOptions
   | Run RunOptions
   | HealthCheck HealthCheckCommand
+  | Fixup FixupCommand
   | PrintAppErrors
 
 
@@ -326,6 +329,12 @@ com =
               ( HealthCheck <$>
                info (hcP <**> helper)
                     (progDesc "Health check ghcup")
+              )
+      <> command
+              "fixup"
+              ( Fixup <$>
+               info (fixupP <**> helper)
+                    (progDesc "Fix up issues with installations")
               )
       <> commandGroup "Main commands:"
       )
