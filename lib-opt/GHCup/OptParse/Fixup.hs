@@ -57,8 +57,8 @@ fixupP =
   subparser
       (  command
           "symlinks"
-          (   (const FixupSymlinks)
-          <$> info
+          (   FixupSymlinks
+          <$ info
                 helper
                 (  progDesc "Fix up symlinks in bin/"
                 <> footerDoc (Just $ text toolFooter)

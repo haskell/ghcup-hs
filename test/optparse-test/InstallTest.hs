@@ -8,13 +8,10 @@ module InstallTest where
 
 import Test.Tasty
 import GHCup.OptParse hiding (HLSCompileOptions(isolateDir))
-import Utils
 import GHCup.Types
+import Utils
 import Data.Versions
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import GHCup.Types (Tag(Prerelease))
-import GHCup.Types (Tag(Prerelease))
-import GHCup.Types (ToolVersion(ToolTag))
 
 -- Some interests:
 --   install ghc *won't* select `set as activate version` as default
