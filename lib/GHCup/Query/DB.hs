@@ -156,6 +156,30 @@ getSymlinkSpecPortable tool tver = do
          | tool == ghcup -> pure [] -- Hm
          | otherwise     -> pure []
 
+-- TODO: not neat the random combination of different SymlinkSpec types
+getSymlinkSpecPortable' ::
+  ( MonadReader env m
+  , HasDirs env
+  , HasPlatformReq env
+  , HasLog env
+  , MonadIOish m
+  )
+  => Tool
+  -> TargetVersion
+  -> Excepts '[ParseError] m [SymlinkSpec [Either Char Version]]
+getSymlinkSpecPortable' tool tver = do
+  runE (getSymlinkSpec' tool tver) >>= \case
+    VRight r -> pure r
+    VLeft (V pe@(ParseError _)) -> fail $ prettyHFError pe
+    VLeft _ -> do -- legacy
+      if | tool == ghc   -> do
+             pfreq <- getPlatformReq
+             liftE $ forM (defaultGHCExeSymLinked pfreq tver (ghcBinaries pfreq tver)) $ parseSymlinkSpec (_tvVersion tver)
+         | tool == cabal -> pure []
+         | tool == stack -> pure []
+         | tool == hls   -> pure []
+         | tool == ghcup -> pure [] -- Hm
+         | otherwise     -> pure []
 
 
 

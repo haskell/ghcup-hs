@@ -41,6 +41,7 @@ import qualified Data.Map.Strict       as M
 import qualified Data.Text             as T
 import qualified System.FilePath.Posix as Posix
 import qualified Text.Megaparsec       as MP
+import Safe (maximumMay)
 
 
 
@@ -271,15 +272,12 @@ symlinkBinaries ::
   -> TargetVersion
   -> Excepts '[MalformedInstallInfo] m ()
 symlinkBinaries (IsolateDirResolved _) _ _ _ _ = pure ()
-symlinkBinaries (fromInstallDir -> toolDir) rawSpec bindir tool tver = do
+symlinkBinaries idr@(fromInstallDir -> toolDir) rawSpec bindir tool tver = do
   let spec = substituteSpec <$> rawSpec
   forM_ spec safeSpec
   pvpSyms <- lift $ getPVPSymlinks' (fromInstallDir bindir) spec toolDir
   forM_ pvpSyms $ lift . uncurry createLink
-  case bindir of
-    IsolateDirResolved d -> linkMajor d
-    GHCupDir d           -> linkMajor (fromGHCupPath d)
-    GHCupBinDir d        -> whenM (lift isLatest) $ linkMajor d
+  symlinkMajorMinor idr rawSpec bindir tool tver
  where
   safeSpec SymlinkSpec{..} = do
     checkSafePath _slTarget
@@ -290,12 +288,71 @@ symlinkBinaries (fromInstallDir -> toolDir) rawSpec bindir tool tver = do
 
   checkSafeFilename fp = unless (safeFilename fp) $ throwE (MalformedInstallInfo "'..' or '.' are not allowed and filepath must have no path separators")
 
+
+-- | For the given X.Y version, we
+-- find the latest X.Y.Z and create symlinks.
+fixMajorMinorSymlink ::
+  ( HasLog env
+  , MonadReader env m
+  , HasDirs env   -- createLink needs it on windows
+  , HasPlatformReq env
+  , MonadIOish m
+  )
+  => Tool
+  -> Maybe T.Text
+  -> (Int, Int)
+  -> Excepts '[MalformedInstallInfo, ParseError] m ()
+fixMajorMinorSymlink tool mtarget majorMinor = do
+  Dirs {..}  <- getDirs
+  vers <- lift $ getInstalledVersions tool mtarget
+  let filterMajor = filter (\(getMajorMinorV  . _vrVersion -> mj) -> mj == Just majorMinor)
+  let mLatestMajorVer = fmap _vrVersion $ maximumMay $ filterMajor vers
+  case mLatestMajorVer of
+    Nothing -> pure ()
+    Just latestMajorVer -> do
+      let tver = TargetVersion mtarget latestMajorVer
+      idr <- toolInstallDestination tool tver
+      rawSpec <- liftE $ getSymlinkSpecPortable' tool tver
+      liftE $ symlinkMajorMinor (GHCupDir idr) rawSpec (GHCupBinDir binDir) tool tver
+
+
+-- | Create X.Y major symlinks for the given GHC version, but only
+-- if it is the 'latest' version.
+--
+-- E.g. if we have
+--   * ghc-9.8.3
+--   * ghc-9.8.4
+-- then we want the following symlink:
+--   * ghc-9.8 -> ghc-9.8.4
+symlinkMajorMinor ::
+  ( HasLog env
+  , MonadReader env m
+  , HasDirs env   -- createLink needs it on windows
+  , MonadIOish m
+  )
+  => InstallDirResolved                    -- ^ base dir of the tool
+  -> [SymlinkSpec [Either Char Version]]   -- ^ symlink spec
+  -> InstallDirResolved                    -- ^ binary dir
+  -> Tool
+  -> TargetVersion
+  -> Excepts '[MalformedInstallInfo] m ()
+symlinkMajorMinor (IsolateDirResolved _) _ _ _ _ = pure ()
+symlinkMajorMinor (fromInstallDir -> toolDir) rawSpec bindir tool tver = do
+  case bindir of
+    IsolateDirResolved d -> linkMajor d
+    GHCupDir d           -> linkMajor (fromGHCupPath d)
+    GHCupBinDir d        -> whenM (lift isLatest) $ linkMajor d
+ where
   linkMajor d = do
     let ver = _tvVersion tver
     pvpMajorSyms <- liftE $ getPVPMajorSymlinks' d rawSpec ver toolDir
     forM_ pvpMajorSyms $ lift . uncurry createLink
-  isLatest = do
-    vers <- getInstalledVersions tool (_tvTarget tver)
-    let latestVer = _vrVersion $ maximum vers
-    pure $ latestVer == _tvVersion tver
 
+  isLatest = do
+    case getMajorMinorV (_tvVersion tver) of
+      Just cMJ -> do
+        vers <- getInstalledVersions tool (_tvTarget tver)
+        let filterMajor = filter (\(getMajorMinorV  . _vrVersion -> mj) -> mj == Just cMJ)
+        let latestMajorVer = fmap _vrVersion $ maximumMay $ filterMajor vers
+        pure $ latestMajorVer == Just (_tvVersion tver)
+      Nothing -> pure False
