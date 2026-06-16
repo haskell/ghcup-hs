@@ -332,6 +332,7 @@ Report bugs at <https://github.com/haskell/ghcup-hs/issues>|]
             Run runCommand             -> run runCommand settings (getAppState_and_updateCheckAction, leanAppstate)
             PrintAppErrors             -> putStrLn allHFError >> pure ExitSuccess
             HealthCheck hcCommands     -> hc hcCommands (getAppState_and_updateCheckAction, leanAppstate)
+            Fixup fixupCommand         -> fixup fixupCommand (getAppState_and_updateCheckAction, leanAppstate)
 #if defined(DHALL)
             Generate gen -> generate gen (getAppState_and_updateCheckAction, leanAppstate)
 #endif
