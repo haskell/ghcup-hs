@@ -12,6 +12,9 @@ import Utils
 import GHCup.Types
 import Data.Versions
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import GHCup.Types (Tag(Prerelease))
+import GHCup.Types (Tag(Prerelease))
+import GHCup.Types (ToolVersion(ToolTag))
 
 -- Some interests:
 --   install ghc *won't* select `set as activate version` as default
@@ -58,10 +61,7 @@ installGhcCheckList =
             $(versionQ "nightly")
       )
     , ("install ghc recommended", ToolTag Recommended)
-    , ("install ghc prerelease", GHCVersion
-          $ toTargetVersionReq''
-            $(versionQ "prerelease")
-      )
+    , ("install ghc prerelease", ToolTag Prerelease)
     , ("install ghc latest-prerelease", ToolTag LatestPrerelease)
     , ("install ghc latest-nightly", ToolTag LatestNightly)
     , ("install ghc javascript-unknown-ghcjs-9.6", GHCVersion
@@ -81,7 +81,7 @@ installCabalCheckList =
     , ("install cabal latest", ToolTag Latest)
     , ("install cabal nightly", ToolVersion $ (`VersionReq` Nothing) $(versionQ "nightly"))
     , ("install cabal recommended", ToolTag Recommended)
-    , ("install cabal prerelease", ToolVersion $ (`VersionReq` Nothing) $(versionQ "prerelease"))
+    , ("install cabal prerelease", ToolTag Prerelease)
     , ("install cabal latest-prerelease", ToolTag LatestPrerelease)
     , ("install cabal latest-nightly", ToolTag LatestNightly)
     , ("install cabal base-4.18", ToolTag (Base (PVP {_pComponents = 4 :| [18]})))
@@ -96,7 +96,7 @@ installHlsCheckList =
     , ("install hls latest", ToolTag Latest)
     , ("install hls nightly", ToolVersion $ (`VersionReq` Nothing) $(versionQ "nightly"))
     , ("install hls recommended", ToolTag Recommended)
-    , ("install hls prerelease", ToolVersion $ (`VersionReq` Nothing) $(versionQ "prerelease"))
+    , ("install hls prerelease", ToolTag Prerelease)
     , ("install hls latest-prerelease", ToolTag LatestPrerelease)
     , ("install hls latest-nightly", ToolTag LatestNightly)
     , ("install hls base-4.18", ToolTag (Base (PVP {_pComponents = 4 :| [18]})))
@@ -111,7 +111,7 @@ installStackCheckList =
     , ("install stack latest", ToolTag Latest)
     , ("install stack nightly", ToolVersion $ (`VersionReq` Nothing) $(versionQ "nightly"))
     , ("install stack recommended", ToolTag Recommended)
-    , ("install stack prerelease", ToolVersion $ (`VersionReq` Nothing) $(versionQ "prerelease"))
+    , ("install stack prerelease", ToolTag Prerelease)
     , ("install stack latest-prerelease", ToolTag LatestPrerelease)
     , ("install stack latest-nightly", ToolTag LatestNightly)
     , ("install stack base-4.18", ToolTag (Base (PVP {_pComponents = 4 :| [18]})))

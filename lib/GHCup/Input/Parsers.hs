@@ -212,6 +212,7 @@ toolVersionTagEither s' =
 tagEither :: String -> Either String Tag
 tagEither s' = case ls of
   "recommended"       -> Right Recommended
+  "prerelease"        -> Right Prerelease
   "latest"            -> Right Latest
   "latest-prerelease" -> Right LatestPrerelease
   "latest-nightly"    -> Right LatestNightly
@@ -279,16 +280,40 @@ nightlyShowParser s' | t == T.pack "latest"   = Right NShowLatest
   where t = T.toLower (T.pack s')
 
 criteriaParser :: String -> Either String ListCriteria
-criteriaParser s' | t == T.pack "installed"   = Right $ ListInstalled True
-                  | t == T.pack "set"         = Right $ ListSet True
-                  | t == T.pack "available"   = Right $ ListAvailable True
-                  | t == T.pack "+installed"  = Right $ ListInstalled True
-                  | t == T.pack "+set"        = Right $ ListSet True
-                  | t == T.pack "+available"  = Right $ ListAvailable True
-                  | t == T.pack "-installed"  = Right $ ListInstalled False
-                  | t == T.pack "-set"        = Right $ ListSet False
-                  | t == T.pack "-available"  = Right $ ListAvailable False
-                  | otherwise                 = Left ("Unknown criteria: " <> s')
+criteriaParser s' | t == T.pack "installed"  = Right $ ListInstalled True
+                  | t == T.pack "set"        = Right $ ListSet True
+                  | t == T.pack "available"  = Right $ ListAvailable True
+                  | t == T.pack "+installed" = Right $ ListInstalled True
+                  | t == T.pack "+set"       = Right $ ListSet True
+                  | t == T.pack "+available" = Right $ ListAvailable True
+                  | t == T.pack "-installed" = Right $ ListInstalled False
+                  | t == T.pack "-set"       = Right $ ListSet False
+                  | t == T.pack "-available" = Right $ ListAvailable False
+                  | t == T.pack "cross"      = Right $ ListTarget False Nothing
+                  | t == T.pack "-cross"     = Right $ ListTarget True Nothing
+                  | t == T.pack "+cross"     = Right $ ListTarget False Nothing
+                  | Just target <- T.stripPrefix "-target=" t = Right $ ListTarget False (Just target)
+                  | Just target <- T.stripPrefix "+target=" t = Right $ ListTarget True (Just target)
+                  | Just target <- T.stripPrefix "target=" t  = Right $ ListTarget True (Just target)
+                  | Just target <- T.stripPrefix "-target" t  = Right $ ListTarget False (Just target)
+                  | Just target <- T.stripPrefix "+target" t  = Right $ ListTarget True (Just target)
+                  | Just target <- T.stripPrefix "target" t   = Right $ ListTarget True (Just target)
+
+                  | Just tagText <- T.stripPrefix "tag=" t
+                  , Right tag <- tagEither (T.unpack tagText) = Right $ ListTag True tag
+                  | Just tagText <- T.stripPrefix "+tag=" t
+                  , Right tag <- tagEither (T.unpack tagText) = Right $ ListTag True tag
+                  | Just tagText <- T.stripPrefix "-tag=" t
+                  , Right tag <- tagEither (T.unpack tagText) = Right $ ListTag False tag
+
+                  | Just tagText <- T.stripPrefix "tag" t
+                  , Right tag <- tagEither (T.unpack tagText) = Right $ ListTag True tag
+                  | Just tagText <- T.stripPrefix "+tag" t
+                  , Right tag <- tagEither (T.unpack tagText) = Right $ ListTag True tag
+                  | Just tagText <- T.stripPrefix "-tag" t
+                  , Right tag <- tagEither (T.unpack tagText) = Right $ ListTag False tag
+
+                  | otherwise = Left ("Unknown criteria: " <> s')
   where t = T.toLower (T.pack s')
 
 

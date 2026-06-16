@@ -66,6 +66,8 @@ data ListCriteria
   = ListInstalled Bool
   | ListSet Bool
   | ListAvailable Bool
+  | ListTarget Bool (Maybe Text)
+  | ListTag Bool Tag
   deriving (Eq, Show)
 
 
@@ -356,6 +358,8 @@ listVersions' dls pfreq instTools hlsGHCs lt' criteria showRevisions hideOld sho
     ListInstalled  b -> f b lInstalled
     ListSet        b -> f b lSet
     ListAvailable  b -> f b $ not lNoBindist
+    ListTarget     b t -> f b (lCross == t)
+    ListTag        b t -> f b (t `elem` lTag)
    where
     f b
       | b         = id
