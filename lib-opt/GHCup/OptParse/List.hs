@@ -95,10 +95,10 @@ listOpts =
             (eitherReader criteriaParser)
             (  short 'c'
             <> long "show-criteria"
-            <> metavar "<installed|set|available>"
+            <> metavar "<installed|set|available|cross|target=...|tag=...>"
             <> help "Apply filtering criteria, prefix with + or -"
               <> completer (listCompleter
-                [ "+installed", "+set", "+available", "-installed", "-set", "-available"])
+                [ "+installed", "+set", "+available", "+cross", "-installed", "-set", "-available", "-cross"])
             )
           )
     <*> optional
