@@ -3,8 +3,9 @@
 ## 0.2.6.2 -- 2026-06-16
 
 * Fix X.Y symlinks wrt [#1365](https://github.com/haskell/ghcup-hs/issues/1365)
-* Provide a way to filter by target when invoking `ghcup list` [#1362](https://github.com/haskell/ghcup-hs/issues/1362)
+  - you may want to run `ghcup fixup symlinks` if you are affected
 * Introduce `ghcup fixup` [#1369](https://github.com/haskell/ghcup-hs/issues/1369)
+* Provide a way to filter by target when invoking `ghcup list` [#1362](https://github.com/haskell/ghcup-hs/issues/1362)
 
 ## 0.2.6.1 -- 2026-06-13
 
