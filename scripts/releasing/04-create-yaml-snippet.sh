@@ -84,6 +84,6 @@ run the bindist action.
 On success, merge and push from 'develop' to 'master'.
 
 Then run:
-  ./scripts/releasing/05-bump-bootstrap-ver.sh ${ver}
+  ./scripts/releasing/05-bump-bootstrap-ver.sh ${RELEASE}
 ")
 

@@ -39,5 +39,5 @@ gh release upload "$RELEASE" "ghcup-${TAG}-src.tar.gz" SHA256SUMS SHA256SUMS.sig
 ")
 
 (>&2 echo "Then run:
-  ./scripts/releasing/03-sftp-upload-artifacts.sh <dl-user>@<dl-url> ${ver} gh-release-artifacts/v${ver}/ -P <port>")
+  ./scripts/releasing/03-sftp-upload-artifacts.sh <dl-user>@<dl-url> ${TAG} gh-release-artifacts/v${TAG}/ -P <port>")
 
