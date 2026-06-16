@@ -40,6 +40,7 @@ import System.IO.Error
 import System.IO.Temp
 
 import qualified Data.Text as T
+import GHCup.Command.Install.LowLevel
 
 
 -- | Remove a tool completely.
@@ -143,6 +144,10 @@ rmToolVersion tool tver = do
       | tool == stack -> liftE $ rmStackVer ver'
       | tool == ghcup -> lift rmGhcup
       | otherwise -> fail "Could not find installed files... your DB seems corrupted"
+
+  -- now restore the X.Y symlink
+  majorMinor <- getMajorMinorV (_tvVersion tver)
+  liftE $ fixMajorMinorSymlink tool (_tvTarget tver) majorMinor
  where
   rmGHCShareDir = do
     Dirs {..}  <- getDirs
