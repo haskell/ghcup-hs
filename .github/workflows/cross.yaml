@@ -38,7 +38,7 @@ jobs:
       ARCH: 64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
 
@@ -79,7 +79,7 @@ jobs:
         GHC_TARGET_VERSION: "8.10.7"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
 
@@ -133,7 +133,7 @@ jobs:
         WRAPPER: "emconfigure"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
 

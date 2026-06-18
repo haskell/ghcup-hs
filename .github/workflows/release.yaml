@@ -50,7 +50,7 @@ jobs:
             ARCH: 64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -105,7 +105,7 @@ jobs:
         shell: bash
 
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -142,7 +142,7 @@ jobs:
             ARCH: 64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -179,7 +179,7 @@ jobs:
         shell: 'C:/msys64/usr/bin/bash.exe --login -e {0}'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -223,7 +223,7 @@ jobs:
       RUNNER_OS: FreeBSD
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -263,7 +263,7 @@ jobs:
       RUNNER_OS: OpenBSD
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -308,7 +308,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -368,7 +368,7 @@ jobs:
       DISTRO: Alpine
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -409,7 +409,7 @@ jobs:
             ARCH: 64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -452,7 +452,7 @@ jobs:
         shell: 'C:/msys64/usr/bin/bash.exe --login -e {0}'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -496,7 +496,7 @@ jobs:
       DISTRO: na
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -538,7 +538,7 @@ jobs:
       DISTRO: na
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
@@ -583,7 +583,7 @@ jobs:
       S3_HOST: ${{ secrets.S3_HOST }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'true'
           fetch-tags: true
