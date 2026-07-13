@@ -1,6 +1,7 @@
 when:
   - platform: freebsd/amd64
   - event: push
+  - event: manual
 
 steps:
   - name: build
