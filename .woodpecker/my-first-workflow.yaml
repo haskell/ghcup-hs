@@ -10,7 +10,6 @@ steps:
     image: vm1
     commands:
       - echo "This is the build step"
-      - ls -lah
     backend_options:
       libvirt:
         ssh_config:
