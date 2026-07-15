@@ -12,6 +12,7 @@ steps:
       - echo "This is the build step"
       - ls -lah
     backend_options:
-      ssh_config:
-        username: root
-        password: root
+      libvirt:
+        ssh_config:
+          username: root
+          password: root
