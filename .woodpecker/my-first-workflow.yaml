@@ -11,6 +11,7 @@ steps:
     commands:
       - echo "This is the build step"
       - ls -lah
-    ssh_config:
-      - username: root
+    backend_options:
+      ssh_config:
+        username: root
         password: root
