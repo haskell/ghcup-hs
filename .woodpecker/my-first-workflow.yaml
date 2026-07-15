@@ -3,6 +3,8 @@ when:
   - event: push
   - event: manual
 
+skip_clone: true
+
 steps:
   - name: build
     image: vm1
