@@ -10,5 +10,5 @@ steps:
       - echo "This is the build step"
       - ls -lah
     auth_config:
-      username: root
-      password: root
+      - username: root
+        password: root
