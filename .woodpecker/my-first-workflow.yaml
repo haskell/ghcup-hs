@@ -19,7 +19,7 @@ steps:
           xml: |
             <disk type='file' device='disk'>
               <driver name='qemu' type='raw'/>
-              <source file='/var/lib/libvirt/images/shared.img'/>
+              <source file='/var/lib/libvirt/images/shared.qcow2'/>
               <target dev='vdb' bus='virtio'/>
             </disk>
         ssh_config:
