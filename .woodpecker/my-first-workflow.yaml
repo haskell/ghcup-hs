@@ -15,7 +15,7 @@ steps:
     backend_options:
       libvirt:
         shared_disk:
-          label: shareddata
+          uuid: bd5ea041-e765-4d3a-9cda-083e4e52b187
           xml: |
             <disk type='file' device='disk'>
               <driver name='qemu' type='raw'/>
