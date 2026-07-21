@@ -21,7 +21,6 @@ steps:
               <driver name='qemu' type='raw'/>
               <source file='/var/lib/libvirt/images/shared.img'/>
               <target dev='vdb' bus='virtio'/>
-              <shareable/>
             </disk>
         ssh_config:
           username: root
