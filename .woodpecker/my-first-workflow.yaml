@@ -11,6 +11,8 @@ steps:
     commands:
       - mount
       - ls -lah /woodpecker
+      - touch /woodpecker/.blah
+      - ls -lah /woodpecker
       - pwd
       - ls -lah
       - echo "This is the build step"
