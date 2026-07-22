@@ -18,12 +18,7 @@ steps:
       libvirt:
         shared_disk:
           uuid: bd5ea041-e765-4d3a-9cda-083e4e52b187
-          xml: |
-            <disk type='file' device='disk'>
-              <driver name='qemu' type='qcow2'/>
-              <source file='/var/lib/libvirt/images/shared.qcow2'/>
-              <target dev='vdb' bus='virtio'/>
-            </disk>
+          image: /var/lib/libvirt/images/shared.qcow2
         ssh_config:
           username: root
           password: root
