@@ -9,8 +9,6 @@ steps:
   - name: build
     image: vm1
     commands:
-      - ls -lah
-      - touch foo
       - pwd
       - ls -lah
       - echo "This is the build step"
