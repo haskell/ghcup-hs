@@ -9,6 +9,8 @@ steps:
   - name: build
     image: vm1
     commands:
+      - mount
+      - touch /woodpecker/foo
       - pwd
       - ls -lah
       - echo "This is the build step"
