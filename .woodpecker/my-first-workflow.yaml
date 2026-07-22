@@ -9,7 +9,6 @@ steps:
   - name: build
     image: vm1
     commands:
-      - touch /woodpecker/LOL
       - mount
       - ls -lah /woodpecker
       - pwd
