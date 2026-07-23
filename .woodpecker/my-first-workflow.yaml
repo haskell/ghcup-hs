@@ -7,6 +7,7 @@ skip_clone: true
 
 steps:
   - name: build
+    image: vm1
     commands:
       - mount
       - ls -lah /woodpecker
@@ -15,9 +16,7 @@ steps:
       - echo "This is the build step"
     backend_options:
       libvirt:
-        vm_image:
-          domain: vm1
-          ephemeral: true
+        ephemeral: true
         shared_disk:
           uuid: bd5ea041-e765-4d3a-9cda-083e4e52b187
           disk_image: /var/lib/libvirt/images/shared.qcow2
