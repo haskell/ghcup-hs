@@ -23,3 +23,5 @@ steps:
         ssh_config:
           username: root
           password: root
+          timeout: 1m
+          interface: eth0
