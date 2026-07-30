@@ -6,22 +6,37 @@ when:
 skip_clone: true
 
 steps:
-  - name: build
-    image: vm1
-    commands:
-      - mount
-      - ls -lah /woodpecker
-      - pwd
-      - ls -lah
-      - echo "This is the build step"
-    backend_options:
-      libvirt:
-        ephemeral: true
-        shared_disk:
-          uuid: bd5ea041-e765-4d3a-9cda-083e4e52b187
-          disk_image: /var/lib/libvirt/images/shared.qcow2
-        ssh_config:
-          username: root
-          password: root
-          timeout: 1m
-          interface: eth0
+ - name: build
+   image: win10
+   commands:
+     - cd
+   backend_options:
+     libvirt:
+       ephemeral: true
+       shared_disk:
+         uuid: BHYVE-EACC-BD89-8B7D
+         disk_image: /var/lib/libvirt/images/win10-shared.img
+       ssh_config:
+         username: maerwald
+         password: anevasti
+         timeout: 2m
+         hostname: win10
+# - name: build
+#   image: vm1
+#   commands:
+#     - mount
+#     - ls -lah /woodpecker
+#     - pwd
+#     - ls -lah
+#     - echo "This is the build step"
+#   backend_options:
+#     libvirt:
+#       ephemeral: true
+#       shared_disk:
+#         uuid: bd5ea041-e765-4d3a-9cda-083e4e52b187
+#         disk_image: /var/lib/libvirt/images/shared.qcow2
+#       ssh_config:
+#         username: root
+#         password: root
+#         timeout: 1m
+#         interface: eth0
