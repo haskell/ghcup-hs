@@ -13,9 +13,9 @@ steps:
    backend_options:
      libvirt:
        ephemeral: true
-       shared_disk:
-         uuid: BHYVE-EACC-BD89-8B7D
-         disk_image: /var/lib/libvirt/images/win10-shared.img
+#       shared_disk:
+#         uuid: BHYVE-EACC-BD89-8B7D
+#         disk_image: /var/lib/libvirt/images/win10-shared.img
        ssh_config:
          username: maerwald
          password: anevasti
