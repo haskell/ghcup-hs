@@ -16,12 +16,12 @@ steps:
      libvirt:
        ephemeral: true
        shared_disk:
-         uuid: BHYVE-EACC-BD89-8B7D
+         uuid: "589C_FC20_C5D2_0001."
          disk_config: |
-           <disk type='file' device='disk'>
+           <disk type='file'>
+             <driver name='file' type='raw'/>
              <source file='/var/lib/libvirt/images/win10-shared.img'/>
-             <target dev='sdb' bus='sata'/>
-             <address type='drive' controller='0' bus='0' target='0' unit='1'/>
+             <target dev='nvme0n1' bus='nvme'/>
            </disk>
        ssh_config:
          username: maerwald
