@@ -128,6 +128,7 @@ cabalBadNames =
   , "edit"
   , "env"
   , "fmt"
+  , "gild"
   , "haddock-server"
   , "hasklint"
   , "helper"
