@@ -11,6 +11,7 @@ steps:
    commands:
      - cd
      - Set-Content -Path ".\hello.txt" -Value "hello"
+     - Get-ChildItem
    backend_options:
      libvirt:
        ephemeral: true
