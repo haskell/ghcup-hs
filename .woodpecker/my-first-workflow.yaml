@@ -9,8 +9,10 @@ steps:
  - name: build
    image: win10
    commands:
+     - Write-Host "Hello, World!"
      - Set-Content -Path ".\hello.txt" -Value "hello"
      - Get-ChildItem
+     - Write-Host "Hello, World2!"
    backend_options:
      libvirt:
        ephemeral: true
