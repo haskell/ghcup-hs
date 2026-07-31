@@ -9,7 +9,6 @@ steps:
  - name: build
    image: win10
    commands:
-     - cd
      - Set-Content -Path ".\hello.txt" -Value "hello"
      - Get-ChildItem
    backend_options:
