@@ -10,12 +10,18 @@ steps:
    image: win10
    commands:
      - cd
+     - Set-Content -Path ".\hello.txt" -Value "hello"
    backend_options:
      libvirt:
        ephemeral: true
-#       shared_disk:
-#         uuid: BHYVE-EACC-BD89-8B7D
-#         disk_image: /var/lib/libvirt/images/win10-shared.img
+       shared_disk:
+         uuid: BHYVE-EACC-BD89-8B7D
+         disk_config: |
+           <disk type='file' device='disk'>
+             <source file='/var/lib/libvirt/images/win10-shared.img'/>
+             <target dev='sdb' bus='sata'/>
+             <address type='drive' controller='0' bus='0' target='0' unit='1'/>
+           </disk>
        ssh_config:
          username: maerwald
          password: anevasti
