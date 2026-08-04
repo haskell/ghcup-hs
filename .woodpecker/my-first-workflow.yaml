@@ -12,7 +12,7 @@ steps:
      - Write-Host "Hello, World!"
      - Set-Content -Path ".\hello.txt" -Value "hello"
      - Get-ChildItem
-   backend_options: &backend-options
+   backend_options:
      libvirt:
        ephemeral: true
        shared_disk:
@@ -34,7 +34,22 @@ steps:
      - Write-Host "Hello, World2!"
      - Get-Content -Path ".\hello.text"
      - Get-ChildItem
-   backend_options: *backend-options
+   backend_options:
+     libvirt:
+       ephemeral: true
+       shared_disk:
+         uuid: "589C_FC20_C5D2_0001."
+         disk_config: |
+           <disk type='file'>
+             <driver name='file' type='raw'/>
+             <source file='/var/lib/libvirt/images/win10-shared.img'/>
+             <target dev='nvme0n1' bus='nvme'/>
+           </disk>
+       ssh_config:
+         username: maerwald
+         password: anevasti
+         timeout: 2m
+         hostname: win10-clone
 # - name: build
 #   image: vm1
 #   commands:
