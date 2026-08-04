@@ -29,7 +29,7 @@ steps:
          timeout: 2m
          hostname: win10
  - name: build
-   image: win10
+   image: win10-clone
    commands:
      - Write-Host "Hello, World2!"
      - Get-Content -Path ".\hello.text"
