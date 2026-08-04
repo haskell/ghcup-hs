@@ -12,13 +12,7 @@ steps:
      - Write-Host "Hello, World!"
      - Set-Content -Path ".\hello.txt" -Value "hello"
      - Get-ChildItem
- - name: build
-   image: win10
-   commands:
-     - Write-Host "Hello, World2!"
-     - Get-Content -Path ".\hello.text"
-     - Get-ChildItem
-   backend_options:
+   backend_options: &backend-options
      libvirt:
        ephemeral: true
        shared_disk:
@@ -34,6 +28,13 @@ steps:
          password: anevasti
          timeout: 2m
          hostname: win10
+ - name: build
+   image: win10
+   commands:
+     - Write-Host "Hello, World2!"
+     - Get-Content -Path ".\hello.text"
+     - Get-ChildItem
+   backend_options: *backend-options
 # - name: build
 #   image: vm1
 #   commands:
