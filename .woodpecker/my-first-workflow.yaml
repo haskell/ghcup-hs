@@ -34,7 +34,7 @@ steps:
    image: win10-clone
    commands:
      - Write-Host "Hello, World2!"
-     - Get-Content -Path ".\hello.text"
+     - Get-Content -Path ".\hello.txt"
      - Get-ChildItem
    backend_options:
      libvirt:
