@@ -10,15 +10,17 @@ steps:
    image: win10
    commands:
      - Write-Host "Hello, World!"
+     - Write-Host "Hello, World2"
      - Set-Content -Path ".\hello.txt" -Value "hello"
      - Get-ChildItem
    backend_options:
      libvirt:
        ephemeral: true
-       shared_disk:
-         uuid: "589C_FC20_C5D2_0001."
+       shared_disk: &shared_disk
+         uuid: "BHYVE-ABCDEF-CAFE"
          disk_config: |
            <disk type='file'>
+             <serial>BHYVE-ABCDEF-CAFE</serial>
              <driver name='file' type='raw'/>
              <source file='/var/lib/libvirt/images/win10-shared.img'/>
              <target dev='nvme0n1' bus='nvme'/>
@@ -37,14 +39,7 @@ steps:
    backend_options:
      libvirt:
        ephemeral: true
-       shared_disk:
-         uuid: "589C_FC20_C5D2_0001."
-         disk_config: |
-           <disk type='file'>
-             <driver name='file' type='raw'/>
-             <source file='/var/lib/libvirt/images/win10-shared.img'/>
-             <target dev='nvme0n1' bus='nvme'/>
-           </disk>
+       shared_disk: *shared_disk
        ssh_config:
          username: maerwald
          password: anevasti
