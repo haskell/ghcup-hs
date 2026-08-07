@@ -20,6 +20,7 @@ steps:
          uuid: "BHYVE-ABCDEF-CAFE"
          disk_config: |
            <disk type='file'>
+             <serial>BHYVE-ABCDEF-CAFE</serial>
              <driver name='file' type='raw'/>
              <source file='/var/lib/libvirt/images/win10-shared.img'/>
              <target dev='nvme0n1' bus='nvme'/>
