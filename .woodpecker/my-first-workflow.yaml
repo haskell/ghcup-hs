@@ -23,7 +23,7 @@ steps:
              <serial>BHYVE-ABCDEF-CAFE</serial>
              <driver name='file' type='raw'/>
              <source file='/var/lib/libvirt/images/win10-shared.img'/>
-             <target dev='nvme0n1' bus='nvme'/>
+             <target dev='sda' bus='sata'/>
            </disk>
        ssh_config:
          username: maerwald
