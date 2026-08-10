@@ -44,7 +44,7 @@ steps:
          username: julian
          password: yup
          timeout: 2m
-         hostname: win10-clone
+         hostname: fedora
 # - name: build
 #   image: vm1
 #   commands:
