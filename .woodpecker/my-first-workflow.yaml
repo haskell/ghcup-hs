@@ -7,42 +7,42 @@ skip_clone: true
 
 steps:
  - name: build
-   image: win10
+   image: vm1
    commands:
-     - Write-Host "Hello, World!"
-     - Write-Host "Hello, World2"
-     - Set-Content -Path ".\hello.txt" -Value "hello"
-     - Get-ChildItem
+     - ls -lah
+     - pwd
+     - echo "foo" > hello.txt
    backend_options:
      libvirt:
        ephemeral: true
        shared_disk: &shared_disk
-         uuid: "BHYVE-ABCDEF-CAFE"
+         uuid: "f1b0bcff-6b05-4c2a-872c-7ce394691f7a"
          disk_config: |
-           <disk type='file'>
-             <serial>BHYVE-ABCDEF-CAFE</serial>
-             <driver name='file' type='raw'/>
-             <source file='/var/lib/libvirt/images/win10-shared.img'/>
+           <disk type='file' device='disk'>
+             <driver name='qemu' type='raw'/>
+             <source file='/var/lib/libvirt/images/linux-shared.img'/>
              <target dev='sdb' bus='sata'/>
+             <serial>BHYVE-ABCDEF-CAFE</serial>
+             <address type='drive' controller='0' bus='0' target='0' unit='1'/>
            </disk>
        ssh_config:
-         username: maerwald
-         password: anevasti
+         username: root
+         password: root
          timeout: 2m
-         hostname: win10
+         hostname: vm1
  - name: build
-   image: win10-clone
+   image: fedora
    commands:
-     - Write-Host "Hello, World2!"
-     - Get-Content -Path ".\hello.txt"
-     - Get-ChildItem
+     - ls -lah
+     - pwd
+     - cat hello.txt
    backend_options:
      libvirt:
        ephemeral: true
        shared_disk: *shared_disk
        ssh_config:
-         username: maerwald
-         password: anevasti
+         username: julian
+         password: yup
          timeout: 2m
          hostname: win10-clone
 # - name: build
