@@ -21,7 +21,7 @@ steps:
      libvirt:
        ephemeral: true
        shared_disk: &shared_disk
-         uuid: "aec8e2aa-fe07-49eb-b293-2cde1ff60992"
+         uuid: "59d13fbb-c409-48f9-8ff1-f979a69dc28a"
          disk_config: |
            <disk type='file' device='disk'>
              <driver name='qemu' type='qcow2'/>
