@@ -13,8 +13,7 @@ steps:
      - apk add --no-cache git
      - git clone "${CI_REPO_CLONE_URL}" --branch "${CI_COMMIT_BRANCH}" .
      - git reset --hard "${CI_COMMIT_SHA}"
-     - apk add --no-cache alpine-sdk autoconf automake bash binutils-gold build-base coreutils cpio curl gcc gmp gmp-dev grep libffi linux-headers gzip jq libffi-dev lld musl-dev musl-locales ncurses-dev ncurses-libs ncurses-static perl python3 sudo unzip wget xz zlib-dev zstd py3-sphinx texlive texlive-xetex texmf-dist-latexextra ttf-dejavu
-     - apk add --no-cache gmp-static llvm clang texmf-dist-lang texmf-dist-fontsrecommended texinfo
+     - apk add --no-cache alpine-sdk autoconf automake bash build-base coreutils cpio curl gcc gmp gmp-dev grep libffi linux-headers gzip jq libffi-dev lld musl-dev musl-locales ncurses-dev ncurses-libs perl python3 unzip wget xz zlib-dev zstd
      - curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=yes sh
      - source ~/.ghcup/env
      - cabal build
