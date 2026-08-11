@@ -9,9 +9,13 @@ steps:
  - name: build
    image: vm1
    commands:
-     - ls -lah
-     - pwd
-     - echo "foo" > hello.txt
+     - git clone "$CI_REPO_CLONE_URL" --branch "$CI_COMMIT_BRANCH"
+     - get reset --hard "$CI_COMMIT_SHA"
+     - apk add --no-cache alpine-sdk autoconf automake bash binutils-gold build-base coreutils cpio curl gcc git gmp gmp-dev grep libffi linux-headers gzip jq libffi-dev lld musl-dev musl-locales ncurses-dev ncurses-libs ncurses-static perl python3 sudo unzip wget xz zlib-dev zstd py3-sphinx texlive texlive-xetex texmf-dist-latexextra ttf-dejavu
+     - apk add --no-cache gmp-static llvm clang texmf-dist-lang texmf-dist-fontsrecommended texinfo
+     - curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=yes sh
+     - source ~/.ghcup/env
+     - cabal build
    backend_options:
      libvirt:
        ephemeral: true
@@ -30,21 +34,6 @@ steps:
          password: root
          timeout: 2m
          hostname: vm1
- - name: build
-   image: fedora
-   commands:
-     - ls -lah
-     - pwd
-     - cat hello.txt
-   backend_options:
-     libvirt:
-       ephemeral: true
-       shared_disk: *shared_disk
-       ssh_config:
-         username: julian
-         password: yup
-         timeout: 2m
-         hostname: fedora
 # - name: build
 #   image: vm1
 #   commands:
