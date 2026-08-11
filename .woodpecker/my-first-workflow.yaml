@@ -21,11 +21,11 @@ steps:
      libvirt:
        ephemeral: true
        shared_disk: &shared_disk
-         uuid: "f1b0bcff-6b05-4c2a-872c-7ce394691f7a"
+         uuid: "aec8e2aa-fe07-49eb-b293-2cde1ff60992"
          disk_config: |
            <disk type='file' device='disk'>
              <driver name='qemu' type='qcow2'/>
-             <source file='/var/lib/libvirt/images/disk.qcow2'/>
+             <source file='/var/lib/libvirt/images/linux-shared.qcow2'/>
              <target dev='sdb' bus='sata'/>
              <serial>BHYVE-ABCDEF-CAFE</serial>
              <address type='drive' controller='0' bus='0' target='0' unit='1'/>
