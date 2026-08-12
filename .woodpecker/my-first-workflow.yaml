@@ -17,19 +17,12 @@ steps:
      - curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=yes sh
      - source ~/.ghcup/env
      - cabal build
+    environment:
+      LIBVIRT_SSH_PW:
+        from_secret: vm1_ssh_pw
    backend_options:
      libvirt:
        ephemeral: true
-       shared_disk: &shared_disk
-         uuid: "59d13fbb-c409-48f9-8ff1-f979a69dc28a"
-         disk_config: |
-           <disk type='file' device='disk'>
-             <driver name='qemu' type='qcow2'/>
-             <source file='/var/lib/libvirt/images/linux-shared.qcow2'/>
-             <target dev='sdb' bus='sata'/>
-             <serial>BHYVE-ABCDEF-CAFE</serial>
-             <address type='drive' controller='0' bus='0' target='0' unit='1'/>
-           </disk>
        ssh_config:
          username: root
          password: root
