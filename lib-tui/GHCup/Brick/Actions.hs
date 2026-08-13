@@ -122,8 +122,15 @@ constructList :: BrickData
               -> Maybe BrickInternalState
               -> BrickInternalState
 constructList appD settings =
-  replaceLR (filterVisible (Common._showAllVersions settings))
-            (_lr appD)
+  fmap (fmap (fmap wrap)) .
+  wrap
+    . replaceLR (filterVisible (Common._showAllVersions settings))
+                (_lr appD)
+  where
+    wrap :: BrickList a -> BrickList a
+    wrap = L.setScrollWrap True
+
+type BrickList = L.GenericList Common.Name V.Vector
 
 -- | Focus on the tool section and the predicate which matches. If no result matches, focus on index 0
 selectBy :: Tool -> (ListResult -> Bool) -> BrickInternalState -> BrickInternalState
