@@ -30,7 +30,7 @@ import Brick
       EventM,
       Widget(..),
       (<+>),
-      (<=>))
+      (<=>), VScrollBarOrientation (OnRight))
 import qualified Brick
 import           Brick.Widgets.Border ( hBorder, borderWithLabel, vBorder)
 import           Brick.Widgets.Border.Style ( unicode )
@@ -46,6 +46,7 @@ import Text.PrettyPrint.HughesPJClass (prettyShow)
 import Control.Monad.State.Class (get, modify)
 import qualified Graphics.Vty           as Vty
 import GHCup.Brick.Common (BrickSettings (..))
+import Brick.Widgets.Core (withVScrollBars)
 
 type BrickList = L.GenericList Common.Name V.Vector
 
@@ -84,7 +85,7 @@ handler _ _ _ = pure ()
 -- | How to draw the navigation widget
 draw :: Bool -> AttrMap -> BrickSettings -> BrickInternalState -> Widget Common.Name
 draw versionFocus dimAttrs BrickSettings{..} bis
-  = Brick.padBottom Max
+  = withVScrollBars OnRight $ Brick.padBottom Max
       ( Brick.joinBorders $ Brick.withBorderStyle unicode
         $ borderWithLabel (Brick.str "GHCup")
           (center (Brick.vLimit 1 header <=> hBorder <=> renderList'))
