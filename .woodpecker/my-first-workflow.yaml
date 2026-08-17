@@ -29,6 +29,7 @@ steps:
          password: root
          timeout: 2m
          hostname: vm1
+         tty: true
 # - name: build
 #   image: vm1
 #   commands:
