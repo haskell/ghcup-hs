@@ -20,10 +20,10 @@ steps:
    environment:
      GHC: 9.10.3
      CABAL: 3.18.1.0
-     CABAL_DIR: "C:\\Users\\runneradmin\\AppData\\Roaming\\cabal"
+     CABAL_DIR: "C:/Users/runneradmin/AppData/Roaming/cabal"
      GHCUP_MSYS2: 'C:/msys64'
      GHCUP_MSYS2_ENV: CLANG64
-     GHCUP_INSTALL_BASE_PREFIX: "C:\\"
+     GHCUP_INSTALL_BASE_PREFIX: "C:/"
      LIBVIRT_SSH_PW:
        from_secret: win11_ssh_pw
    backend_options:
