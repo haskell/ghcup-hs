@@ -9,7 +9,7 @@ steps:
  - name: build
    image: win11
    commands:
-     - Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; try { & ([ScriptBlock]::Create((Invoke-WebRequest https://raw.githubusercontent.com/haskell/ghcup-hs/79a038615a5e424d957bc350e45e5f34444afa09/scripts/bootstrap/bootstrap-haskell.ps1 -UseBasicParsing))) -DisableCurl -Msys2Env CLANG64 -Minimal } catch { Write-Error $_ }
+     - Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; try { & ([ScriptBlock]::Create((Invoke-WebRequest https://raw.githubusercontent.com/haskell/ghcup-hs/refs/heads/no-pty/scripts/bootstrap/bootstrap-haskell.ps1 -UseBasicParsing))) -DisableCurl -Msys2Env CLANG64 -Minimal } catch { Write-Error $_ }
      - C:/ghcup/msys64/usr/bin/bash.exe --login -e -c "pacman --noconfirm -S --needed --overwrite '*' bash winpty git tar bsdtar unzip binutils autoconf make xz curl libtool automake p7zip patch ca-certificates python3 zip mingw-w64-clang-x86_64-toolchain mingw-w64-clang-x86_64-tools-git gzip mingw-w64-clang-x86_64-pkgconf mingw-w64-clang-x86_64-zlib && git clone ${CI_REPO_CLONE_URL} --branch ${CI_COMMIT_BRANCH} . && rm -f /c/Strawberry/perl/bin/pkg-config /clang64/bin/zlib1.dll && ghcup install ghc --set ${GHC} && ghcup install cabal --set ${CABAL}"
      - C:/ghcup/msys64/usr/bin/bash.exe --login -e .github/scripts/build.sh --ghc ghc-${GHC} --verbose --os Windows --check-linking --strip
    environment:
