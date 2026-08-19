@@ -557,7 +557,7 @@ if ($msys2Action -eq 0) {
     Remove-Item -Path "$archivePath" -ErrorAction Continue
 
     Print-Msg -msg 'Processing MSYS2 bash for first time use...'
-    Exec "$Bash" '-lc' 'exit'
+    Start-Process cmd.exe -ArgumentList '/c', "`"$Bash`" -x -lc exit" -Wait
 
     Exec "$env:windir\system32\taskkill.exe" /F /FI "MODULES eq msys-2.0.dll"
 
