@@ -27,7 +27,6 @@ steps:
          username: maerwald
          timeout: 2m
          hostname: win11
-         tty: true
 # - name: build
 #   image: vm1
 #   commands:
