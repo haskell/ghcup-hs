@@ -13,7 +13,9 @@ steps:
        Write-Output "lol"
        Write-Output "lol2"
      - "Get-ChildItem Env:"
+     - Write-Output "$env:CHERE_INVOKING"
      - "[Environment]::GetEnvironmentVariable('CHERE_INVOKING')"
+     - Write-Output "$env:GHC"
      - "[Environment]::GetEnvironmentVariable('GHC')"
      - Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; try { & ([ScriptBlock]::Create((Invoke-WebRequest https://raw.githubusercontent.com/haskell/ghcup-hs/refs/heads/no-pty/scripts/bootstrap/bootstrap-haskell.ps1 -UseBasicParsing))) -DisableCurl -Msys2Env CLANG64 -Minimal } catch { Write-Error $_ }
      - C:/ghcup/msys64/usr/bin/bash.exe --login -e -c "ls -lah && pwd && pacman --noconfirm -S --needed --overwrite '*' bash git && git clone ${CI_REPO_CLONE_URL} --branch ${CI_COMMIT_BRANCH} . && rm -f /c/Strawberry/perl/bin/pkg-config /clang64/bin/zlib1.dll && ghcup install ghc --set $env:GHC && ghcup install cabal --set $env:CABAL"
