@@ -178,7 +178,7 @@ installBindist tool toolDesc dlinfo trev@(TargetVersionRev tver rev) installDir 
 
   case installDir of
     IsolateDir isoDir -> do             -- isolated install
-      lift $ logInfo $ "isolated installing Cabal to " <> T.pack isoDir
+      lift $ logInfo $ T.pack $ "isolated installing " <> prettyShow tool <> " to " <> isoDir
       installSpec <- liftE $ installPackedBindist tool toolDesc dl dlinfo (IsolateDirResolved isoDir) trev forceInstall extraArgs installTargets
       pure (installSpec, isoDir)
 
