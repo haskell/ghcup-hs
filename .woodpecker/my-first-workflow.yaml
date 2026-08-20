@@ -12,6 +12,7 @@ steps:
      - |
        Write-Output "lol"
        Write-Output "lol2"
+     - "Get-ChildItem Env:"
      - "[Environment]::GetEnvironmentVariable('CHERE_INVOKING')"
      - "[Environment]::GetEnvironmentVariable('GHC')"
      - Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; try { & ([ScriptBlock]::Create((Invoke-WebRequest https://raw.githubusercontent.com/haskell/ghcup-hs/refs/heads/no-pty/scripts/bootstrap/bootstrap-haskell.ps1 -UseBasicParsing))) -DisableCurl -Msys2Env CLANG64 -Minimal } catch { Write-Error $_ }
