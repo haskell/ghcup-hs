@@ -704,7 +704,7 @@ $Msys2EnvExport = ('export GHCUP_MSYS2_ENV={0} ;' -f $Msys2Env)
 # export GHCUP_MSYS2_ENV
 $null = [Environment]::SetEnvironmentVariable("GHCUP_MSYS2_ENV", $Msys2Env, [System.EnvironmentVariableTarget]::User)
 
-if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBash) {
+if ((Get-Process -ID $PID).ProcessName.StartsWith("bootstrap-haskell") -Or $InBash -Or -Not $Interactive) {
   Exec "$Bash" '-lc' ('{4} {6} {7} {8} {9} {10} {12} {13} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript, $AdjustBashRcExport, $Msys2EnvExport)
 } else {
   Exec "$Msys2Shell" $ShellType '-mintty'  '-shell' 'bash' '-c' ('{4} {6} {7} {8} {9} {10} {12} {13} [ -n ''{1}'' ] && export GHCUP_MSYS2=$(cygpath -m ''{1}'') ; [ -n ''{2}'' ] && export GHCUP_INSTALL_BASE_PREFIX=$(cygpath -m ''{2}/'') ; export PATH=$(cygpath -u ''{3}/bin''):$PATH ; export CABAL_DIR=''{5}'' ; trap ''echo Press any key to exit && read -n 1 && exit'' 2 ; [[ ''{0}'' = https* ]]  && {11} {0} | bash || cat $(cygpath -m ''{0}'') | bash ; echo ''Press any key to exit'' && read -n 1' -f $BootstrapUrl, $MsysDir, $GhcupBasePrefix, $GhcupDir, $SilentExport, $CabalDirFull, $StackInstallExport, $HLSInstallExport, $AdjustCabalConfigExport, $MinimalExport, $BootstrapDownloader, $DownloadScript, $AdjustBashRcExport, $Msys2EnvExport)
