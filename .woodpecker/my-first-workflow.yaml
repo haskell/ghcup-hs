@@ -9,6 +9,7 @@ steps:
  - name: build
    image: vm1
    commands:
+     - cat ${TMPDIR:-/tmp}/woodpecker_*.pid
      - echo $CI_SCRIPT
      - apk update
      - apk add --no-cache git
