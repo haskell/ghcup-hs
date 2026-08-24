@@ -9,6 +9,7 @@ steps:
  - name: build
    image: vm1
    commands:
+     - echo $CI_SCRIPT
      - apk update
      - apk add --no-cache git
      - git clone "${CI_REPO_CLONE_URL}" --branch "${CI_COMMIT_BRANCH}" .
