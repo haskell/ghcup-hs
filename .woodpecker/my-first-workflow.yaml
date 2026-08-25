@@ -7,28 +7,37 @@ skip_clone: true
 
 steps:
  - name: build
-   image: vm1
+   image: win11
    commands:
-     - cat ${TMPDIR:-/tmp}/woodpecker_*.pid
-     - echo $CI_SCRIPT
-     - apk update
-     - apk add --no-cache git
-     - git clone "${CI_REPO_CLONE_URL}" --branch "${CI_COMMIT_BRANCH}" .
-     - git reset --hard "${CI_COMMIT_SHA}"
-     - apk add --no-cache alpine-sdk autoconf automake bash build-base bsd-compat-headers coreutils cpio curl gcc gmp gmp-dev grep libffi-dev linux-headers gzip jq libffi-dev lld musl-dev musl-locales ncurses-dev ncurses-libs perl python3 unzip wget xz-dev bzip2-dev zlib-dev openssl-dev zstd
-     - curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=yes sh
-     - source ~/.ghcup/env
-     - cabal build
+     - |
+       Write-Output "lol"
+       Write-Output "lol2"
+     - "Get-ChildItem Env:"
+     - Write-Output "$env:CHERE_INVOKING"
+     - "[Environment]::GetEnvironmentVariable('CHERE_INVOKING')"
+     - Write-Output "$env:GHC"
+     - "[Environment]::GetEnvironmentVariable('GHC')"
+     - Set-ExecutionPolicy Bypass -Scope Process -Force;[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; try { & ([ScriptBlock]::Create((Invoke-WebRequest https://raw.githubusercontent.com/haskell/ghcup-hs/refs/heads/no-pty/scripts/bootstrap/bootstrap-haskell.ps1 -UseBasicParsing))) -DisableCurl -Msys2Env CLANG64 -Minimal } catch { Write-Error $_ }
+     - C:/ghcup/msys64/usr/bin/bash.exe --login -e -c "ls -lah && pwd && pacman --noconfirm -S --needed --overwrite '*' bash git && git clone ${CI_REPO_CLONE_URL} --branch ${CI_COMMIT_BRANCH} . && rm -f /c/Strawberry/perl/bin/pkg-config /clang64/bin/zlib1.dll && ghcup install ghc --set $env:GHC && ghcup install cabal --set $env:CABAL"
+     - C:/ghcup/msys64/usr/bin/bash.exe --login -e .github/scripts/build.sh --ghc ghc-$env:GHC --verbose --os Windows --check-linking --strip
+     # - C:/ghcup/msys64/usr/bin/bash.exe --login -e -c "ls -lah pacman --noconfirm -S --needed --overwrite '*' bash winpty git tar bsdtar unzip binutils autoconf make xz curl libtool automake p7zip patch ca-certificates python3 zip mingw-w64-clang-x86_64-toolchain mingw-w64-clang-x86_64-tools-git gzip mingw-w64-clang-x86_64-pkgconf mingw-w64-clang-x86_64-zlib && git clone ${CI_REPO_CLONE_URL} --branch ${CI_COMMIT_BRANCH} . && rm -f /c/Strawberry/perl/bin/pkg-config /clang64/bin/zlib1.dll && ghcup install ghc --set $env:GHC && ghcup install cabal --set $env:CABAL"
    environment:
+     GHC: 9.10.3
+     CABAL: 3.18.1.0
+     CABAL_DIR: "C:/Users/runneradmin/AppData/Roaming/cabal"
+     MSYSTEM: CLANG64
+     CHERE_INVOKING: 1
+     GHCUP_MSYS2_ENV: CLANG64
+     GHCUP_INSTALL_BASE_PREFIX: "C:/"
      LIBVIRT_SSH_PW:
-       from_secret: vm1_ssh_pw
+       from_secret: win11_ssh_pw
    backend_options:
      libvirt:
        ephemeral: true
        ssh_config:
-         username: root
+         username: maerwald
          timeout: 2m
-         hostname: vm1
+         hostname: win11
 # - name: build
 #   image: vm1
 #   commands:
